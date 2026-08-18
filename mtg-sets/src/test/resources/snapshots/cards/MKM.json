@@ -9165,6 +9165,100 @@
     ]
 }
 
+// Living Conundrum
+{
+    "name": "Living Conundrum",
+    "manaCost": "{4}{U}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "Hexproof\nIf you would draw a card while your library has no cards in it, skip that draw instead.\nAs long as there are no cards in your library, this creature has base power and toughness 10/10 and has flying and vigilance.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "keywords": [
+        "HEXPROOF"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "CompositeStaticAbility",
+                    "abilities": [
+                        {
+                            "type": "SetBasePowerToughnessStatic",
+                            "power": 10,
+                            "toughness": 10,
+                            "filter": {
+                                "baseFilter": "permanent",
+                                "scope": "Self"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FLYING",
+                            "filter": {
+                                "baseFilter": "permanent",
+                                "scope": "Self"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "VIGILANCE",
+                            "filter": {
+                                "baseFilter": "permanent",
+                                "scope": "Self"
+                            }
+                        }
+                    ]
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Library",
+                    "negate": true
+                }
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "ReplaceDrawWith",
+                "replacementEffect": {
+                    "type": "Composite",
+                    "effects": []
+                },
+                "restrictions": [
+                    {
+                        "type": "Exists",
+                        "player": "You",
+                        "zone": "Library",
+                        "negate": true
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "63",
+        "rarity": "UNCOMMON",
+        "artist": "Yeong-Hao Han",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/7/97fb11c7-7b7f-4bdb-a022-53e28ebadecc.jpg?1783912908",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If you're instructed to draw more than one card and you have fewer cards in your library, you draw each card in your library, then skip the remaining draws."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If two or more replacement effects would apply to a card-drawing event, the player drawing the card chooses the order in which to apply them."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Long Goodbye
 {
     "name": "Long Goodbye",
