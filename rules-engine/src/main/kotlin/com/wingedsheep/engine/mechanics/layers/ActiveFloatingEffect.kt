@@ -608,8 +608,9 @@ sealed interface SerializableModification {
     data object RemoveAllAbilities : SerializableModification
 
     /**
-     * Single-instance prevention shield tied to a chosen source: the next time [damageSourceId]
-     * would deal damage to the affected player this turn, prevent that damage. The shield is
+     * Single-instance prevention shield tied to a source: the next time [damageSourceId]
+     * would deal damage to an affected entity this turn, prevent that damage. An empty affected
+     * set means any recipient, for source-facing effects such as Awe Strike. The shield is
      * consumed after preventing one damage instance and emits a
      * [com.wingedsheep.engine.core.DamagePreventedEvent] carrying [linkId], which fires the linked
      * "when damage is prevented this way, …" delayed triggered ability on the stack (Deflecting Palm,
@@ -619,7 +620,7 @@ sealed interface SerializableModification {
      * @property linkId The id of the delayed triggered ability that fires when this shield prevents damage
      */
     @Serializable
-    data class PreventNextDamageFromChosenSourceShield(
+    data class PreventNextDamageFromSourceShield(
         val damageSourceId: EntityId,
         val linkId: String,
         /**
@@ -794,8 +795,8 @@ fun SerializableModification.toModification(): Modification = when (this) {
     is SerializableModification.PreventCombatDamageToAndBy -> Modification.NoOp
     // RedirectCombatDamageToController doesn't map to a layer modification - it's checked by CombatManager directly
     is SerializableModification.RedirectCombatDamageToController -> Modification.NoOp
-    // PreventNextDamageFromChosenSourceShield doesn't map to a layer modification - it's checked during damage resolution directly
-    is SerializableModification.PreventNextDamageFromChosenSourceShield -> Modification.NoOp
+    // PreventNextDamageFromSourceShield doesn't map to a layer modification - it's checked during damage resolution directly
+    is SerializableModification.PreventNextDamageFromSourceShield -> Modification.NoOp
     // PreventAllDamageFromSource doesn't map to a layer modification - it's checked during damage resolution directly
     is SerializableModification.PreventAllDamageFromSource -> Modification.NoOp
     // PreventNextDamageInstanceFromSource is checked during damage resolution directly (no layer mod)

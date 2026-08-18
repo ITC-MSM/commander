@@ -467,6 +467,49 @@
     ]
 }
 
+// Awe Strike
+{
+    "name": "Awe Strike",
+    "manaCost": "{W}",
+    "typeLine": "Instant",
+    "oracleText": "The next time target creature would deal damage this turn, prevent that damage. You gain life equal to the damage prevented this way.",
+    "script": {
+        "spellEffect": {
+            "type": "PreventDamageShield",
+            "target": {
+                "type": "ContextTarget",
+                "index": 0
+            },
+            "direction": "FromTarget",
+            "onPrevented": {
+                "type": "GainLife",
+                "amount": {
+                    "type": "ContextProperty",
+                    "key": "PREVENTED_DAMAGE_AMOUNT"
+                }
+            },
+            "nextInstanceOnly": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "6",
+        "artist": "Scott M. Fischer",
+        "flavorText": "Stunned by the mere presence of the leonin kha, the nim raider quickly fell to its knees.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/5/a5cd231b-7891-42b5-b5de-5112d1230c37.jpg?1783944563"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Banshee's Blade
 {
     "name": "Banshee's Blade",

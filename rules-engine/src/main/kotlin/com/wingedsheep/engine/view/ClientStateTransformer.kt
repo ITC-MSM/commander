@@ -2720,7 +2720,7 @@ class ClientStateTransformer(
                         )
                     )
                 }
-                is SerializableModification.PreventNextDamageFromChosenSourceShield -> {
+                is SerializableModification.PreventNextDamageFromSourceShield -> {
                     effects.add(
                         ClientCardEffect(
                             effectId = "deflect_damage_${modification.damageSourceId}",

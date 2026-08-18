@@ -184,6 +184,22 @@ class PreventDamageExecutor(
         effect: PreventDamageEffect,
         context: EffectContext
     ): EffectResult {
+        if (effect.direction == PreventionDirection.FromTarget && effect.onPrevented != null) {
+            val targetId = context.resolveTarget(effect.target)
+                ?: return EffectResult.success(state)
+            state.getEntity(targetId) ?: return EffectResult.success(state)
+            val newState = state.installPreventAndReactShield(
+                damageSourceId = targetId,
+                protectedEntityId = null,
+                controllerId = context.controllerId,
+                effectSourceId = context.sourceId,
+                effectSourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name },
+                onPrevented = effect.onPrevented,
+                preventDamage = effect.preventDamage
+            )
+            return EffectResult.success(newState)
+        }
+
         // Determine affected entities
         val affectedEntities: Set<EntityId>
         val modification: SerializableModification

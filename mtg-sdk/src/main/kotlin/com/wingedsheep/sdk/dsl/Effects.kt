@@ -4376,6 +4376,19 @@ object Effects {
         )
 
     /**
+     * Prevent the next damage instance [target] would deal this turn, then run [onPrevented] as a
+     * linked delayed trigger with the prevented amount available through
+     * [DynamicAmounts.preventedDamage].
+     */
+    fun PreventNextDamageDealtBy(target: EffectTarget, onPrevented: Effect): Effect =
+        PreventDamageEffect(
+            target = target,
+            direction = PreventionDirection.FromTarget,
+            onPrevented = onPrevented,
+            nextInstanceOnly = true
+        )
+
+    /**
      * Choose a source on resolution, prevent the next damage it would deal to you this turn, then run
      * [onPrevented] — an arbitrary follow-up effect — as a triggered ability when that damage is
      * prevented ("When damage is prevented this way, …"). Inside the follow-up the prevented amount is
