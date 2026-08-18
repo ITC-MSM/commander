@@ -977,6 +977,31 @@
     ]
 }
 
+// Marsh Goblins
+{
+    "name": "Marsh Goblins",
+    "manaCost": "{B}{R}",
+    "typeLine": "Creature — Goblin",
+    "oracleText": "Swampwalk (This creature can't be blocked as long as defending player controls a Swamp.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "SWAMPWALK"
+    ],
+    "metadata": {
+        "collectorNumber": "93",
+        "artist": "Quinton Hoover",
+        "flavorText": "Even the other Goblin races shun the Marsh Goblins, thanks to certain unwholesome customs they practice.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/a/8aabd80f-a18a-4bc1-9f05-4c3a63de77ce.jpg?1783947928"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Merfolk Assassin
 {
     "name": "Merfolk Assassin",
