@@ -509,6 +509,53 @@
     ]
 }
 
+// Merfolk Assassin
+{
+    "name": "Merfolk Assassin",
+    "manaCost": "{U}{U}",
+    "typeLine": "Creature — Merfolk Assassin",
+    "oracleText": "{T}: Destroy target creature with islandwalk.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature with islandwalk"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature kw:islandwalk"
+                        },
+                        "id": "target creature with islandwalk"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "32",
+        "rarity": "UNCOMMON",
+        "artist": "Dennis Detwiller",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/6/36313dc7-6bf2-4d73-b696-969d984a7466.jpg?1783947942"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Morale
 {
     "name": "Morale",
