@@ -1712,6 +1712,47 @@
     "colorIdentityOverride": []
 }
 
+// Stone Calendar
+{
+    "name": "Stone Calendar",
+    "manaCost": "{5}",
+    "typeLine": "Artifact",
+    "oracleText": "Spells you cast cost {1} less to cast.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": {}
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "111",
+        "rarity": "RARE",
+        "artist": "Amy Weber",
+        "flavorText": "The Pretender Mairsil ordered a great Calendar drawn up to show when the paths to the Dark Lands were strongest.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a49ba1a5-33b1-40f2-9780-26139ed829d7.jpg?1783947924",
+        "rulings": [
+            {
+                "date": "2004-10-04",
+                "text": "Does not change the mana cost of the spell, it just reduces what you pay for it."
+            },
+            {
+                "date": "2004-10-04",
+                "text": "You may choose not to apply Stone Calendar's cost reduction effect."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Sunken City
 {
     "name": "Sunken City",
