@@ -389,7 +389,7 @@ object DamageUtils {
                 // dealt damage by this source, so a deathtouch source still marks it for
                 // destruction as an SBA (CR 702.2b / 704.5h) even though nothing is marked as
                 // normal damage. Record the deathtouch flag without marking damage.
-                if (projected.hasKeyword(sourceId, Keyword.DEATHTOUCH)) {
+                if (sourceId != null && sourceHasDeathtouch(newState, projected, sourceId)) {
                     newState = newState.updateEntity(targetId) { container ->
                         val existing = container.get<DamageComponent>()
                         container.with(DamageComponent(
@@ -401,7 +401,7 @@ object DamageUtils {
             } else {
                 val existingDamage = newState.getEntity(targetId)?.get<DamageComponent>()
                 val currentDamage = existingDamage?.amount ?: 0
-                val hasDeathtouch = sourceId != null && projected.hasKeyword(sourceId, Keyword.DEATHTOUCH)
+                val hasDeathtouch = sourceId != null && sourceHasDeathtouch(newState, projected, sourceId)
                 // Excess damage (CR 120.4a) — damage in excess of what was needed to be
                 // lethal. With deathtouch, any amount of damage greater than 1 is excess —
                 // lethal collapses to a flat 1 regardless of marked damage (CR 120.4a refs
@@ -518,7 +518,7 @@ object DamageUtils {
         if (sourceId != null) {
             val projected = newState.projectedState
             if (projected.hasKeyword(sourceId, Keyword.LIFELINK.name) ||
-                sourceHasGrantedLifelink(newState, sourceId)
+                sourceHasGrantedDamageKeyword(newState, sourceId, Keyword.LIFELINK)
             ) {
                 val controllerId = projected.getController(sourceId)
                     ?: newState.getEntity(sourceId)?.get<ControllerComponent>()?.playerId
@@ -686,24 +686,47 @@ object DamageUtils {
     }
 
     /**
-     * Lifelink (and other damage keywords) can be granted onto a spell *object on the stack*, not
-     * just printed on or projected onto a battlefield source. Static keyword projection
+     * A damage keyword can be granted onto a spell *object on the stack*, not just printed on or
+     * projected onto a battlefield source. Static keyword projection
      * ([StateProjector]/[AffectsFilterResolver]) only reaches battlefield permanents, so a spell
-     * that "has lifelink" via a grant is invisible to `projected.hasKeyword`. This mirrors the
-     * wither treatment above by consulting the two spell-grant channels for the noncombat-damage
-     * lifelink check:
+     * that "has lifelink" or "has deathtouch" via a grant is invisible to `projected.hasKeyword`.
+     * This mirrors the wither treatment above by consulting the two spell-grant channels:
      *  - [SpellGrantedKeywordsComponent] — a one-shot keyword stamped onto this specific spell
-     *    (e.g. a copy that "gains lifelink").
-     *  - [GrantKeywordToOwnSpells] — a continuous "<type> spells you control have lifelink" static
+     *    (e.g. Judith, Carnage Connoisseur's "that spell gains deathtouch and lifelink", or a copy
+     *    that "gains lifelink").
+     *  - [GrantKeywordToOwnSpells] — a continuous "<type> spells you control have <keyword>" static
      *    on a permanent the spell's current controller controls (e.g. Lo and Li, Twin Tutors →
      *    Lesson spells). Resolved live via [GrantedKeywordResolver].
      *
      * Only spells on the stack qualify (gated on [SpellOnStackComponent]); battlefield sources are
      * already covered by projected keywords.
+     *
+     * [keyword] is a parameter rather than a hard-coded LIFELINK because both damage keywords that
+     * read off the *source* — lifelink (CR 702.15b) and deathtouch (CR 702.2b) — reach a spell by
+     * exactly these two channels; only the read site differs.
      */
-    private fun sourceHasGrantedLifelink(state: GameState, sourceId: EntityId): Boolean {
+    /**
+     * Does [sourceId] have deathtouch for the purpose of the damage it is dealing right now?
+     *
+     * Projected keywords cover every battlefield source; a *spell* on the stack is not projected,
+     * so a spell that gained deathtouch (Judith, Carnage Connoisseur) has to be read off the
+     * spell-grant channels instead — the same split the lifelink and wither checks already make.
+     */
+    private fun sourceHasDeathtouch(
+        state: GameState,
+        projected: ProjectedState,
+        sourceId: EntityId
+    ): Boolean =
+        projected.hasKeyword(sourceId, Keyword.DEATHTOUCH) ||
+            sourceHasGrantedDamageKeyword(state, sourceId, Keyword.DEATHTOUCH)
+
+    private fun sourceHasGrantedDamageKeyword(
+        state: GameState,
+        sourceId: EntityId,
+        keyword: Keyword
+    ): Boolean {
         val container = state.getEntity(sourceId) ?: return false
-        if (container.get<SpellGrantedKeywordsComponent>()?.keywords?.contains(Keyword.LIFELINK.name) == true) {
+        if (container.get<SpellGrantedKeywordsComponent>()?.keywords?.contains(keyword.name) == true) {
             return true
         }
         // A resolving spell is popped from `state.stack` *before* its effects run, but keeps its
@@ -713,7 +736,7 @@ object DamageUtils {
         val controllerId = container.get<ControllerComponent>()?.playerId ?: spellOnStack.casterId
         val cardDef = container.get<CardComponent>()
             ?.let { cardRegistry.getCard(it.cardDefinitionId) } ?: return false
-        return GrantedKeywordResolver(cardRegistry).hasKeyword(state, controllerId, cardDef, Keyword.LIFELINK)
+        return GrantedKeywordResolver(cardRegistry).hasKeyword(state, controllerId, cardDef, keyword)
     }
 
     /**

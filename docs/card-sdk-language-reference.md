@@ -6697,15 +6697,20 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
     grant. (Cascade-style granted keywords are instead modelled as a `youCastSpell(...)`-triggered `Effects.Cascade`
     on the granter — see **Quandrix, the Proof** / Wildsear, Scouring Maw — since cascade is a cast trigger, not a
     cost keyword.)
-  - **Damage keywords on the spell object** (LIFELINK) — the noncombat-damage path (`DamageUtils.dealDamageToTarget`)
-    now also consults `GrantedKeywordResolver` for the spell *source's* current controller, so
-    "`<type>` spells you control have lifelink" is honored when a matching spell deals damage → its controller
-    gains that much life (**Lo and Li, Twin Tutors** → `GrantKeywordToOwnSpells(LIFELINK, Any.withSubtype("Lesson"))`,
-    validated with a burn Lesson like Ozai's Cruelty). Static keyword projection only reaches battlefield permanents,
-    so a *spell* granted lifelink is invisible to `projected.hasKeyword`; the damage site reads the grant directly
-    (the same shape as the existing wither-on-spell check, which reads `SpellGrantedKeywordsComponent`). One-shot
-    per-spell grants (`GrantKeywordToSpellEffect` → `SpellGrantedKeywordsComponent`, e.g. a copy that gains lifelink)
-    feed the same check.
+  - **Damage keywords on the spell object** (LIFELINK, DEATHTOUCH) — the noncombat-damage path
+    (`DamageUtils.dealDamageToTarget`) also consults `GrantedKeywordResolver` for the spell *source's* current
+    controller, so "`<type>` spells you control have lifelink" is honored when a matching spell deals damage → its
+    controller gains that much life (**Lo and Li, Twin Tutors** →
+    `GrantKeywordToOwnSpells(LIFELINK, Any.withSubtype("Lesson"))`, validated with a burn Lesson like Ozai's
+    Cruelty). Static keyword projection only reaches battlefield permanents, so a *spell* granted lifelink or
+    deathtouch is invisible to `projected.hasKeyword`; the damage site reads the grant directly (the same shape as
+    the existing wither-on-spell check, which reads `SpellGrantedKeywordsComponent`). One-shot per-spell grants
+    (`GrantKeywordToSpellEffect` → `SpellGrantedKeywordsComponent`) feed the same check — a copy that gains
+    lifelink, or **Judith, Carnage Connoisseur**'s "that spell gains deathtouch and lifelink". Both read sites go
+    through one helper each (`DamageUtils.sourceHasDeathtouch` / `sourceHasGrantedDamageKeyword`), so a third
+    source-read damage keyword is a one-line addition rather than a new hunt for read sites. Combat damage is
+    deliberately *not* wired this way: a combat-damage source is always a permanent, which projection already
+    covers.
   **Gating this with a condition is silently inert today.** `staticAbility { condition = … }`
   wraps the ability in a `ConditionalStaticAbility`, and `GrantedKeywordResolver` matches the bare type
   without unwrapping it — so the grant never applies rather than applying conditionally. Teach
