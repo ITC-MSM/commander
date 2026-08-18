@@ -3104,6 +3104,107 @@
     ]
 }
 
+// Case of the Ransacked Lab
+{
+    "name": "Case of the Ransacked Lab",
+    "manaCost": "{2}{U}",
+    "typeLine": "Enchantment — Case",
+    "oracleText": "Instant and sorcery spells you cast cost {1} less to cast.\nTo solve — You've cast four or more instant and sorcery spells this turn. (If unsolved, solve at the beginning of your end step.)\nSolved — Whenever you cast an instant or sorcery spell, draw a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": "BecomeSolved",
+                "interveningIf": {
+                    "type": "All",
+                    "conditions": [
+                        {
+                            "type": "PlayerCastSpellsThisTurn",
+                            "filter": "instant|sorcery",
+                            "atLeast": 4
+                        },
+                        {
+                            "type": "Not",
+                            "condition": {
+                                "type": "EntityMatches",
+                                "entity": "Self",
+                                "filter": {
+                                    "statePredicates": [
+                                        "IsSolved"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "To solve — if you cast 4 or more instant or sorceries spells this turn"
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "triggerRestriction": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            "IsSolved"
+                        ]
+                    }
+                },
+                "descriptionOverride": "Solved — Whenever you cast an instant or sorcery spell, draw a card."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "instant|sorcery"
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "rarity": "RARE",
+        "artist": "Borja Pindado",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/6/16a9a596-61de-4fcf-aae0-41836c3deca5.jpg?1783912914"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Case of the Shattered Pact
 {
     "name": "Case of the Shattered Pact",
