@@ -364,6 +364,56 @@
     ]
 }
 
+// Coal Golem
+{
+    "name": "Coal Golem",
+    "manaCost": "{5}",
+    "typeLine": "Artifact Creature — Golem",
+    "oracleText": "{3}, Sacrifice this creature: Add {R}{R}{R}.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "99",
+        "rarity": "UNCOMMON",
+        "artist": "Christopher Rush",
+        "flavorText": "\"Three such creatures stood burning at the crest of the hill. Only seconds later, the Fireball struck our front line.\" —Lydia, Countess Brellis",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/a/1ad7692d-5a51-493f-a322-7b615446ea8e.jpg?1783947927"
+    },
+    "colorIdentityOverride": []
+}
+
 // Dark Heart of the Wood
 {
     "name": "Dark Heart of the Wood",
