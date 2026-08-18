@@ -375,6 +375,55 @@
     ]
 }
 
+// Fissure
+{
+    "name": "Fissure",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Destroy target creature or land. It can't be regenerated.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "CantBeRegenerated",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or land"
+                    }
+                },
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or land"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature|land"
+                },
+                "id": "target creature or land"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "63",
+        "artist": "Douglas Shuler",
+        "flavorText": "\"Must not all things at the last be swallowed up in death?\" —Plato",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/a/aa2d778d-d74b-45ec-a86b-5d52ffad6ba5.jpg?1783947935"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Flood
 {
     "name": "Flood",
