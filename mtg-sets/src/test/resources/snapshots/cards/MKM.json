@@ -14620,6 +14620,122 @@
     ]
 }
 
+// Slime Against Humanity
+{
+    "name": "Slime Against Humanity",
+    "manaCost": "{2}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create a 0/0 green Ooze creature token with trample. Put X +1/+1 counters on it, where X is two plus the total number of cards you own in exile and in your graveyard that are Oozes or are named Slime Against Humanity.\nA deck can have any number of cards named Slime Against Humanity.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "CreateToken",
+                    "power": 0,
+                    "toughness": 0,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Ooze"
+                    ],
+                    "keywords": [
+                        "TRAMPLE"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/5/4/54b37032-9660-4dfb-9629-c4e8eddc43b0.jpg?1783912608"
+                },
+                {
+                    "type": "AddDynamicCounters",
+                    "counterType": "+1/+1",
+                    "amount": {
+                        "type": "Add",
+                        "left": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "right": {
+                            "type": "Add",
+                            "left": {
+                                "type": "AggregateZone",
+                                "player": "You",
+                                "zone": "Exile",
+                                "filter": {
+                                    "cardPredicates": [
+                                        {
+                                            "type": "Or",
+                                            "predicates": [
+                                                {
+                                                    "type": "HasSubtype",
+                                                    "subtype": "Ooze"
+                                                },
+                                                {
+                                                    "type": "NameEquals",
+                                                    "name": "Slime Against Humanity"
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                    "statePredicates": [
+                                        "IsFaceUp"
+                                    ]
+                                }
+                            },
+                            "right": {
+                                "type": "AggregateZone",
+                                "player": "You",
+                                "zone": "Graveyard",
+                                "filter": {
+                                    "cardPredicates": [
+                                        {
+                                            "type": "Or",
+                                            "predicates": [
+                                                {
+                                                    "type": "HasSubtype",
+                                                    "subtype": "Ooze"
+                                                },
+                                                {
+                                                    "type": "NameEquals",
+                                                    "name": "Slime Against Humanity"
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                    "statePredicates": [
+                                        "IsFaceUp"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "target": {
+                        "type": "PipelineTarget",
+                        "collectionName": "createdTokens"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "177",
+        "artist": "Brent Hollowell",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/e/1eb21318-d32e-4724-8908-c0d7613de2f4.jpg?1783912861",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Slime Against Humanity isn't put into your graveyard until after it finishes resolving, so it doesn't count itself for its own effect."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you own face-down cards in exile, they won't count toward the value of X, even if you're allowed to look at them and you know they are Ooze cards or cards named Slime Against Humanity."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Slimy Dualleech
 {
     "name": "Slimy Dualleech",
