@@ -191,6 +191,79 @@
     ]
 }
 
+// Brown Ouphe
+{
+    "name": "Brown Ouphe",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Ouphe",
+    "oracleText": "{1}{G}, {T}: Counter target activated ability from an artifact source. (Mana abilities can't be targeted.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{G}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Counter",
+                    "target": "CounterTarget.Ability"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsActivatedAbility",
+                                    {
+                                        "type": "AbilitySourceMatches",
+                                        "subfilter": {
+                                            "cardPredicates": [
+                                                "IsArtifact"
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            "zone": "Stack"
+                        }
+                    }
+                ],
+                "descriptionOverride": "{1}{G}, {T}: Counter target activated ability from an artifact source."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "228",
+        "artist": "Daniel Gelon",
+        "flavorText": "\"Ouphes love trinkets and love to take them apart. I only wish they wouldn't do so with the magical ones.\"\n—Taaveti of Kelsinko, Elvish Hunter",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/2/e26ce35b-ba65-451d-a5ed-e1db6f1d0c6f.jpg?1783947480",
+        "rulings": [
+            {
+                "date": "6/8/2016",
+                "text": "Activated abilities contain a colon and are generally written as '[Cost]: [Effect].' Some keywords are activated abilities and have colons in their reminder text."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Brushland
 {
     "name": "Brushland",
