@@ -3,6 +3,7 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.state.components.battlefield.SolvedComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
+import com.wingedsheep.engine.view.ClientStateTransformer
 import com.wingedsheep.mtg.sets.definitions.mkm.cards.CaseOfTheGorgonsKiss
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
@@ -83,6 +84,15 @@ class CaseOfTheGorgonsKissScenarioTest : FunSpec({
 
     fun GameTestDriver.isSolved(id: EntityId): Boolean =
         state.getEntity(id)?.has<SolvedComponent>() == true
+
+    /** The "to solve" progress badge the controller's client renders on [id], e.g. "2/3". */
+    fun GameTestDriver.solveProgress(id: EntityId): String? =
+        ClientStateTransformer(cardRegistry)
+            .transform(state, player1)
+            .cards.getValue(id)
+            .activeEffects
+            .firstOrNull { it.effectId.startsWith("condition_compare") }
+            ?.name
 
     fun GameTestDriver.castSorcery(name: String) {
         val spell = putCardInHand(player1, name)
@@ -167,5 +177,26 @@ class CaseOfTheGorgonsKissScenarioTest : FunSpec({
         projected.hasSubtype(case, "Gorgon") shouldBe true
         // "In addition to its other types" — it is still an enchantment Case.
         projected.hasType(case, "ENCHANTMENT") shouldBe true
+    }
+
+    test("the client counts the creature cards put into graveyards, 0/3 up to 3/3") {
+        val driver = newDriver()
+        val case = driver.putPermanentOnBattlefield(driver.player1, "Case of the Gorgon's Kiss")
+
+        driver.solveProgress(case) shouldBe "0/3"
+
+        driver.putCreatureOnBattlefield(driver.player1, "Grizzly Bears")
+        driver.putCreatureOnBattlefield(driver.player2, "Grizzly Bears")
+        driver.castSorcery("Test Purge")
+        driver.solveProgress(case) shouldBe "2/3"
+
+        // Tokens reach graveyards too, and the badge agrees with the ruling that they don't count.
+        driver.castSorcery("Test Deploy")
+        driver.castSorcery("Test Purge")
+        driver.solveProgress(case) shouldBe "2/3"
+
+        driver.putCreatureOnBattlefield(driver.player1, "Grizzly Bears")
+        driver.castSorcery("Test Purge")
+        driver.solveProgress(case) shouldBe "3/3"
     }
 })

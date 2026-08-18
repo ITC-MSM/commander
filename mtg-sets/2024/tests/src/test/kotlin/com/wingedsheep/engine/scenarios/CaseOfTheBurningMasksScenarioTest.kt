@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.state.components.battlefield.SolvedComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
+import com.wingedsheep.engine.view.ClientStateTransformer
 import com.wingedsheep.mtg.sets.definitions.mkm.cards.CaseOfTheBurningMasks
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Step
@@ -66,6 +67,15 @@ class CaseOfTheBurningMasksScenarioTest : FunSpec({
 
     fun GameTestDriver.isSolved(id: EntityId): Boolean =
         state.getEntity(id)?.has<SolvedComponent>() == true
+
+    /** The "to solve" progress badge the controller's client renders on [id], e.g. "2/3". */
+    fun GameTestDriver.solveProgress(id: EntityId): String? =
+        ClientStateTransformer(cardRegistry)
+            .transform(state, player1)
+            .cards.getValue(id)
+            .activeEffects
+            .firstOrNull { it.effectId.startsWith("condition_compare") }
+            ?.name
 
     fun GameTestDriver.cast(name: String, target: EntityId) {
         val spell = putCardInHand(player1, name)
@@ -155,5 +165,27 @@ class CaseOfTheBurningMasksScenarioTest : FunSpec({
         playable.size shouldBe 1
         driver.state.getZone(com.wingedsheep.engine.state.ZoneKey(driver.player1, Zone.EXILE))
             .containsAll(exiled) shouldBe true
+    }
+
+    test("the client counts the sources on the card, 0/3 up to 3/3") {
+        val driver = newDriver()
+        val case = driver.putPermanentOnBattlefield(driver.player1, "Case of the Burning Masks")
+        val wall = driver.putCreatureOnBattlefield(driver.player2, "Force of Nature") // 5/5
+
+        driver.solveProgress(case) shouldBe "0/3"
+
+        driver.cast("Test Spark", wall)
+        driver.solveProgress(case) shouldBe "1/3"
+
+        // A second copy is a second source; the double-damage one still only adds a third.
+        driver.cast("Test Spark", wall)
+        driver.cast("Test Double Spark", wall)
+        driver.solveProgress(case) shouldBe "3/3"
+
+        // And once it solves, the count stops being the thing to show.
+        driver.passPriorityUntil(Step.END)
+        driver.bothPass()
+        driver.isSolved(case) shouldBe true
+        driver.solveProgress(case) shouldBe null
     }
 })

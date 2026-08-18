@@ -158,6 +158,34 @@ import com.wingedsheep.engine.mechanics.enduringstory.EnduringStoryService
 import com.wingedsheep.engine.state.components.player.TheRingComponent
 
 /**
+ * How far along a count-shaped condition is: [current] things counted against the [required] many
+ * it wants, related by [operator] ("three or more sources dealt damage" is `GTE 3`, "no cards in
+ * hand" is `LTE 0`).
+ *
+ * Produced by [ConditionEvaluator.countProgress] for the client's progress badges. [met] is the
+ * same comparison the condition itself performs, so "0/3" is grey and "3/3" is green for the same
+ * reason the trigger does or doesn't go on the stack.
+ */
+data class CountProgress(
+    val current: Int,
+    val required: Int,
+    val operator: ComparisonOperator
+) {
+    val met: Boolean get() = compareAmounts(current, operator, required)
+}
+
+/** The one place [ComparisonOperator] is turned into an actual comparison. */
+internal fun compareAmounts(left: Int, operator: ComparisonOperator, right: Int): Boolean =
+    when (operator) {
+        ComparisonOperator.LT -> left < right
+        ComparisonOperator.LTE -> left <= right
+        ComparisonOperator.EQ -> left == right
+        ComparisonOperator.NEQ -> left != right
+        ComparisonOperator.GT -> left > right
+        ComparisonOperator.GTE -> left >= right
+    }
+
+/**
  * Evaluates conditions from the SDK against the game state.
  *
  * [defaultProjection] is forwarded to this evaluator's [DynamicAmountEvaluator] for battlefield
@@ -183,6 +211,55 @@ class ConditionEvaluator(
         condition: Condition,
         context: EffectContext
     ): Boolean = evaluate(state, condition, Resolution(context))
+
+    /**
+     * The count-shaped reading of [condition] — how many things it counts right now against how
+     * many it needs — or `null` when the condition isn't count-shaped ("it's your turn", "this
+     * permanent is attacking", a composite; a caller that wants the parts of a composite splits it
+     * itself).
+     *
+     * This is display vocabulary: it feeds the client's "2/4" progress badge, so a player can see
+     * how close an intervening-if — a Case's "to solve" line above all — is to being satisfied. It
+     * deliberately reuses the same counting code the boolean [evaluate] runs on, so a badge can
+     * never claim progress the trigger itself disagrees with.
+     */
+    fun countProgress(
+        state: GameState,
+        condition: Condition,
+        context: EffectContext
+    ): CountProgress? {
+        val ctx = Resolution(context)
+        return when (condition) {
+            is Compare -> CountProgress(
+                current = dynamicAmountEvaluator.evaluate(state, condition.left, context),
+                required = dynamicAmountEvaluator.evaluate(state, condition.right, context),
+                operator = condition.operator
+            )
+
+            is PlayerCastSpellsThisTurn -> CountProgress(
+                current = countCastSpellsThisTurnCtx(state, condition, ctx, cap = Int.MAX_VALUE),
+                required = condition.atLeast,
+                operator = ComparisonOperator.GTE
+            )
+
+            is PlayerAttackedWithCreaturesThisTurn -> CountProgress(
+                current = countAttackedWithCreaturesCtx(state, condition, ctx, cap = Int.MAX_VALUE),
+                required = condition.atLeast,
+                operator = ComparisonOperator.GTE
+            )
+
+            // "There are no suspected Skeletons you control" reads as a count against zero rather
+            // than a bare unmet flag, which is what makes Case of the Stashed Skeleton's progress
+            // legible: 1/0 while one is still suspected, 0/0 once it isn't.
+            is Exists -> CountProgress(
+                current = countExistsCtx(state, condition, ctx, cap = Int.MAX_VALUE),
+                required = if (condition.negate) 0 else 1,
+                operator = if (condition.negate) ComparisonOperator.LTE else ComparisonOperator.GTE
+            )
+
+            else -> null
+        }
+    }
 
     /**
      * Evaluate a condition in either resolution or projection mode.
@@ -639,14 +716,7 @@ class ConditionEvaluator(
         }
         val left = dynamicAmountEvaluator.evaluate(state, condition.left, effectCtx)
         val right = dynamicAmountEvaluator.evaluate(state, condition.right, effectCtx)
-        return when (condition.operator) {
-            ComparisonOperator.LT -> left < right
-            ComparisonOperator.LTE -> left <= right
-            ComparisonOperator.EQ -> left == right
-            ComparisonOperator.NEQ -> left != right
-            ComparisonOperator.GT -> left > right
-            ComparisonOperator.GTE -> left >= right
-        }
+        return compareAmounts(left, condition.operator, right)
     }
 
     /**
@@ -801,6 +871,23 @@ class ConditionEvaluator(
         condition: Exists,
         ctx: ConditionEvaluationContext
     ): Boolean {
+        val found = countExistsCtx(state, condition, ctx, cap = 1) > 0
+        return if (condition.negate) !found else found
+    }
+
+    /**
+     * How many objects match [condition]'s zone + filter, stopping once [cap] of them are found.
+     * The boolean evaluation above is `count > 0` (negated for "there are no…"); the progress
+     * badge ([countProgress]) is the same count uncapped, which is what makes a "you control no
+     * suspected Skeletons" gate readable as "1/0" rather than a bare unmet flag.
+     */
+    private fun countExistsCtx(
+        state: GameState,
+        condition: Exists,
+        ctx: ConditionEvaluationContext,
+        cap: Int
+    ): Int {
+        if (cap <= 0) return 0
         val predicateEvaluator = PredicateEvaluator()
         val controllerId = ctx.controllerId
         val projected = ctx.projectedStateFor(state)
@@ -811,7 +898,7 @@ class ConditionEvaluator(
                 // `sharingChosenColorWithSource`) can find the source's
                 // `CastChoicesComponent` during static-ability gating.
                 PredicateContext(controllerId = it, sourceId = ctx.sourceId)
-            } ?: return condition.negate
+            } ?: return 0
         }
 
         val playerIds: List<EntityId> = when (condition.player) {
@@ -835,7 +922,8 @@ class ConditionEvaluator(
             else -> controllerId?.let { listOf(it) } ?: emptyList()
         }
 
-        val found = playerIds.any { playerId ->
+        var matches = 0
+        for (playerId in playerIds) {
             var entities = if (condition.zone == Zone.BATTLEFIELD) {
                 state.getBattlefield().filter { entityId -> projected.getController(entityId) == playerId }
             } else {
@@ -844,15 +932,16 @@ class ConditionEvaluator(
             if (condition.excludeSelf) {
                 entities = entities.filter { it != ctx.sourceId }
             }
-            if (condition.filter == GameObjectFilter.Any) {
-                entities.isNotEmpty()
-            } else {
-                entities.any { entityId ->
+            for (entityId in entities) {
+                if (condition.filter == GameObjectFilter.Any ||
                     predicateEvaluator.matches(state, projected, entityId, condition.filter, predicateContext)
+                ) {
+                    matches++
+                    if (matches >= cap) return matches
                 }
             }
         }
-        return if (condition.negate) !found else found
+        return matches
     }
 
     /**
@@ -1042,8 +1131,22 @@ class ConditionEvaluator(
         state: GameState,
         condition: PlayerAttackedWithCreaturesThisTurn,
         ctx: ConditionEvaluationContext
-    ): Boolean {
-        if (condition.atLeast <= 0) return true
+    ): Boolean =
+        condition.atLeast <= 0 ||
+            countAttackedWithCreaturesCtx(state, condition, ctx, cap = condition.atLeast) >= condition.atLeast
+
+    /**
+     * How many creatures matching [condition] have attacked this turn, stopping once [cap] of them
+     * are found. The boolean evaluation above is this count against `atLeast`; the progress badge
+     * ([countProgress]) is the same count uncapped, so the two can't disagree.
+     */
+    private fun countAttackedWithCreaturesCtx(
+        state: GameState,
+        condition: PlayerAttackedWithCreaturesThisTurn,
+        ctx: ConditionEvaluationContext,
+        cap: Int
+    ): Int {
+        if (cap <= 0) return 0
         // Player.Each / Player.Any make this the *player-agnostic* count — "three or more creatures
         // attacked this turn" (Case of the Gateway Express) rather than "you attacked with three or
         // more". Every other scope resolves to the single player it names, so Player.You behaves
@@ -1051,12 +1154,12 @@ class ConditionEvaluator(
         val playerIds = when (condition.player) {
             is Player.Each, is Player.Any -> state.activePlayers
             is Player.EachOpponent -> {
-                val controller = resolvePlayer(state, Player.You, ctx) ?: return false
+                val controller = resolvePlayer(state, Player.You, ctx) ?: return 0
                 state.getOpponents(controller)
             }
             else -> listOfNotNull(resolvePlayer(state, condition.player, ctx))
         }
-        if (playerIds.isEmpty()) return false
+        if (playerIds.isEmpty()) return 0
         // Attackers are recorded per declaring player, so the union is the set of creatures that
         // attacked at all this turn — a creature counts once even if two scopes both name it.
         val attackerIds = playerIds.flatMapTo(mutableSetOf()) { playerId ->
@@ -1065,7 +1168,7 @@ class ConditionEvaluator(
                 ?.attackerIds
                 ?: emptySet()
         }
-        if (attackerIds.size < condition.atLeast) return false
+        if (attackerIds.isEmpty()) return 0
         val predicateEvaluator = PredicateEvaluator()
         val predicateContext = when (ctx) {
             is Resolution -> PredicateContext.fromEffectContext(ctx.effectContext)
@@ -1080,10 +1183,10 @@ class ConditionEvaluator(
         for (id in attackerIds) {
             if (predicateEvaluator.matches(state, projected, id, condition.filter, predicateContext)) {
                 matches++
-                if (matches >= condition.atLeast) return true
+                if (matches >= cap) return matches
             }
         }
-        return false
+        return matches
     }
 
     private fun evaluateAttackedPlayerThisTurnCtx(
@@ -1104,11 +1207,24 @@ class ConditionEvaluator(
         state: GameState,
         condition: PlayerCastSpellsThisTurn,
         ctx: ConditionEvaluationContext
-    ): Boolean {
-        if (condition.atLeast <= 0) return true
-        val playerId = resolvePlayer(state, condition.player, ctx) ?: return false
-        val records = state.spellsCastThisTurnByPlayer[playerId] ?: return false
-        if (records.size < condition.atLeast) return false
+    ): Boolean =
+        condition.atLeast <= 0 ||
+            countCastSpellsThisTurnCtx(state, condition, ctx, cap = condition.atLeast) >= condition.atLeast
+
+    /**
+     * How many spells matching [condition] the player has cast this turn, stopping once [cap] of
+     * them are found. Counterpart of [countAttackedWithCreaturesCtx]: the boolean evaluation is
+     * this count against `atLeast`, the progress badge is the same count uncapped.
+     */
+    private fun countCastSpellsThisTurnCtx(
+        state: GameState,
+        condition: PlayerCastSpellsThisTurn,
+        ctx: ConditionEvaluationContext,
+        cap: Int
+    ): Int {
+        if (cap <= 0) return 0
+        val playerId = resolvePlayer(state, condition.player, ctx) ?: return 0
+        val records = state.spellsCastThisTurnByPlayer[playerId] ?: return 0
         val evaluator = PredicateEvaluator()
         var matches = 0
         for (record in records) {
@@ -1120,9 +1236,9 @@ class ConditionEvaluator(
             if (condition.fromZoneOtherThan != null && record.castFromZone == condition.fromZoneOtherThan) continue
             if (condition.filter != GameObjectFilter.Any && !evaluator.matchesFilter(record, condition.filter)) continue
             matches++
-            if (matches >= condition.atLeast) return true
+            if (matches >= cap) return matches
         }
-        return false
+        return matches
     }
 
     private fun evaluateHasCitysBlessingCtx(

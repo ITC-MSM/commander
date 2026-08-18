@@ -4223,6 +4223,17 @@ attacks, create a token **if** you control a creature with power 4 or greater" �
 That ability triggers unconditionally and checks only as it resolves, which is a `ConditionalEffect`
 (§ 5). Likewise an "**unless**" rider, which CR 603.5 settles on resolution.
 
+**A countable condition shows up as a progress badge.** A permanent whose triggered ability carries a
+condition renders a `current/required` badge on the card — "2/4" in grey until the clause is
+satisfied, green after — for every clause the engine can count: a `Compare`, an `Exists` (a "you
+control no…" clause counts *down*, "1/0" then "0/0"), "you've cast N spells this turn", "N creatures
+attacked this turn". A composite `All(...)` contributes one badge per countable clause, and none at
+all while an *un*countable clause of it is already false — which is what stops a solved Case sitting
+on a stale "3/3" forever, since `not solved`, not the criterion, is the half that ends the trigger.
+`ClientStateTransformer.buildTriggerConditionBadges` builds them from
+`ConditionEvaluator.countProgress`, which is the same counting code the trigger itself runs, so a
+badge can't promise progress the ability disagrees with.
+
 Getting the choice wrong is silent in both directions — an "if" filed as a restriction resolves
 abilities that should do nothing, a "while" filed as an "if" fizzles abilities that should resolve —
 so `InterveningIfClassificationTest` re-derives the reading from each card's own Oracle text and
@@ -11001,6 +11012,10 @@ Card authors rarely reference these directly; they are created/updated by the ma
     nor a copiable value. `Effects.BecomeSolved` stamps it, `Conditions.SourceIsSolved` / `.solved()` /
     `StatePredicate.IsSolved` read it, `ClientCard.isSolved` surfaces it as a card badge, and
     `ZoneMovementUtils.stripBattlefieldComponents` drops it when the Case leaves the battlefield.
+  - An **unsolved** Case shows how close its criterion is as a `current/required` badge — Case of the
+    Burning Masks counts 0/3 up to 3/3 as sources deal damage — and drops it once solved. That falls
+    out of the generic intervening-if badge (§ Triggered abilities) reading inside the
+    `All(condition, Not(SourceIsSolved))` composite that `toSolve` emits; no Case-specific plumbing.
   - A Case's remaining lines — the "When this Case enters" ability, or an always-on static like Case of
     the Ransacked Lab's cost reduction — are plain `triggeredAbility { }` / `staticAbility { }` blocks;
     they function whether or not the Case is solved.

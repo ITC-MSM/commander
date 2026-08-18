@@ -3184,7 +3184,8 @@ class ClientStateTransformer(
 
     /**
      * Build badges showing progress toward intervening-if trigger conditions.
-     * For example, Oversold Cemetery shows "Creatures in GY: 2/4".
+     * For example, Oversold Cemetery shows "Creatures in GY: 2/4", and an unsolved Case shows how
+     * far along its "to solve" criterion is ("2/3 sources dealt damage").
      */
     private fun buildTriggerConditionBadges(
         state: GameState,
@@ -3199,16 +3200,17 @@ class ClientStateTransformer(
 
         for (ability in cardDef.triggeredAbilities) {
             val condition = ability.triggerCondition ?: continue
-            val badge = evaluateConditionBadge(state, condition, controllerId, entityId)
-            if (badge != null) badges.add(badge)
+            badges.addAll(evaluateConditionBadges(state, condition, controllerId, entityId))
         }
 
-        return badges
+        // The client keys badges by effectId, so a card with two countable conditions — two
+        // intervening-ifs, or one composite carrying two of them — needs them distinguished. The
+        // first keeps the bare id so existing badges are untouched.
+        return badges.mapIndexed { index, badge ->
+            if (index == 0) badge else badge.copy(effectId = "${badge.effectId}_$index")
+        }
     }
 
-    /**
-     * Evaluate a trigger condition and return a badge showing progress.
-     */
     /**
      * Whether [subtypes] covers every creature type — printed changeling, granted changeling, or an
      * "is all creature types" static (Undercover Skrull, Stalactite Dagger). Two places need the
@@ -3223,42 +3225,51 @@ class ClientStateTransformer(
         return Subtype.ALL_CREATURE_TYPES.all { it in lookup }
     }
 
-    private fun evaluateConditionBadge(
+    /**
+     * The progress badges one triggered ability's condition contributes: one per countable clause,
+     * none while an uncountable clause is already false.
+     */
+    private fun evaluateConditionBadges(
         state: GameState,
         condition: Condition,
         controllerId: EntityId,
         sourceId: EntityId,
-    ): ClientCardEffect? {
-        return when (condition) {
-            is Compare -> {
-                // The badge must evaluate against the permanent that owns the ability: conditions
-                // routinely read `EntityReference.Source` (counters on this permanent, its power,
-                // whether it's attacking). With a null sourceId those resolve to 0, so the badge
-                // reads a permanently-stuck "0/N" while the real condition works fine — e.g. MSH's
-                // Plan enchantments, whose "the number of plan counters" badge never moved.
-                val context = com.wingedsheep.engine.handlers.EffectContext(
-                    sourceId = sourceId,
-                    controllerId = controllerId,
-                )
-                val evaluator = com.wingedsheep.engine.handlers.DynamicAmountEvaluator()
-                val leftVal = evaluator.evaluate(state, condition.left, context)
-                val rightVal = evaluator.evaluate(state, condition.right, context)
-                val met = when (condition.operator) {
-                    ComparisonOperator.LT -> leftVal < rightVal
-                    ComparisonOperator.LTE -> leftVal <= rightVal
-                    ComparisonOperator.EQ -> leftVal == rightVal
-                    ComparisonOperator.NEQ -> leftVal != rightVal
-                    ComparisonOperator.GT -> leftVal > rightVal
-                    ComparisonOperator.GTE -> leftVal >= rightVal
-                }
+    ): List<ClientCardEffect> {
+        // The badge must evaluate against the permanent that owns the ability: conditions
+        // routinely read `EntityReference.Source` (counters on this permanent, its power,
+        // whether it's attacking). With a null sourceId those resolve to 0, so the badge
+        // reads a permanently-stuck "0/N" while the real condition works fine — e.g. MSH's
+        // Plan enchantments, whose "the number of plan counters" badge never moved.
+        val context = com.wingedsheep.engine.handlers.EffectContext(
+            sourceId = sourceId,
+            controllerId = controllerId,
+        )
+        // An intervening-if with more than one clause is one condition to the engine and several
+        // to a player. Every Case's "to solve" is such a composite — the printed criterion ANDed
+        // with "and this Case is not solved" (CR 719.3a) — so without splitting it, the very cards
+        // whose whole point is a countdown were the ones showing no countdown at all.
+        val parts = when (condition) {
+            is AllConditions -> condition.conditions
+            else -> listOf(condition)
+        }
+        val progress = parts.map { part -> part to conditionEvaluator.countProgress(state, part, context) }
+        // A clause that can't be counted is a gate, and a gate that's already shut makes the count
+        // moot: a solved Case would otherwise sit on a stale "5/3" for the rest of the game,
+        // because "not solved" — not the criterion — is what stops it triggering again.
+        val gateShut = progress.any { (part, counted) ->
+            counted == null && !conditionEvaluator.evaluate(state, part, context)
+        }
+        if (gateShut) return emptyList()
+
+        return progress.mapNotNull { (part, counted) ->
+            counted?.let {
                 ClientCardEffect(
                     effectId = "condition_compare",
-                    name = "$leftVal/$rightVal",
-                    description = "${condition.left.description} ($leftVal/${rightVal})",
-                    icon = if (met) "condition-met" else "condition-unmet"
+                    name = "${it.current}/${it.required}",
+                    description = "${part.description} (${it.current}/${it.required})",
+                    icon = if (it.met) "condition-met" else "condition-unmet"
                 )
             }
-            else -> null
         }
     }
 
