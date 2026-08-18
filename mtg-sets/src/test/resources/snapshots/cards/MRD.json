@@ -5983,6 +5983,61 @@
     ]
 }
 
+// Mesmeric Orb
+{
+    "name": "Mesmeric Orb",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever a permanent becomes untapped, that permanent's controller mills a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "UntapEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "204",
+        "rarity": "RARE",
+        "artist": "David Martin",
+        "flavorText": "A step in one direction is two steps away from another.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/9/29d11b14-43a9-4d1c-ba2c-3025d51d841e.jpg?1783944514",
+        "rulings": [
+            {
+                "date": "8/7/2020",
+                "text": "If permanents become untapped during the untap step, Mesmeric Orb's ability triggers once for each of them. The triggers wait to be put on the stack until the upkeep begins."
+            }
+        ]
+    }
+}
+
 // Mind's Eye
 {
     "name": "Mind's Eye",
