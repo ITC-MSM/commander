@@ -1,10 +1,11 @@
 package com.wingedsheep.engine.handlers.continuations
 
 import com.wingedsheep.engine.core.*
-import com.wingedsheep.engine.handlers.effects.mana.AdditionalManaOnSourceTapOnColorChoice
+import com.wingedsheep.engine.handlers.effects.mana.ManaAbilityResolutionPipeline
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
 import com.wingedsheep.engine.state.components.battlefield.withCastChoice
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.ChoiceSlot
 
 class ColorChoiceContinuationResumer(
@@ -14,6 +15,14 @@ class ColorChoiceContinuationResumer(
 
     private val tappedForManaBonusResolver =
         com.wingedsheep.engine.handlers.effects.mana.TappedForManaBonusResolver(services.cardRegistry)
+
+    /** Shared with `ActivateAbilityHandler` so a paused mana ability finishes the same way. */
+    private val manaPipeline = ManaAbilityResolutionPipeline(
+        cardRegistry = services.cardRegistry,
+        conditionEvaluator = services.conditionEvaluator,
+        effectExecutorRegistry = services.effectExecutorRegistry,
+        predicateEvaluator = services.predicateEvaluator,
+    )
 
     override fun resumers(): List<ContinuationResumer<*>> = listOf(
         resumer(ChooseColorThenContinuation::class, ::resumeChooseColorThen),
@@ -192,19 +201,40 @@ class ColorChoiceContinuationResumer(
 
         if (effectResult.isPaused) return effectResult.toExecutionResult()
 
-        // CR 605 tap bonus: if the just-chosen mana came from tapping a permanent for mana (the
-        // continuation's source), apply every battlefield `AdditionalManaOnSourceTap` static that
-        // matches that source for this tapper — the mirror form (Roxanne, color = null) needs the
-        // colour that was just chosen, and the fixed-colour form (Badgermole Cub's "+{G}") would
-        // otherwise be dropped entirely. This is the any-color analogue of
-        // `ActivateAbilityHandler.resolveAdditionalManaOnSourceTap`: that inline pass runs only
-        // when the mana ability resolved without pausing, so an any-color producer never reaches
-        // it and both forms must fire here instead.
-        val mirrored = AdditionalManaOnSourceTapOnColorChoice.applyForResolvedTap(
-            services, effectResult.state, continuation.sourceId, continuation.controllerId, response.color
+        // The mana ability itself is now done, but only its *effect* ran — `ActivateAbilityHandler`
+        // returned at the pause, before the rest of the tap pipeline. Everything downstream of the
+        // produced mana (Damping Sphere, Elvish Guidance, Badgermole Cub / Roxanne / Overabundance,
+        // the land-tapped event, Fertile Ground) therefore has to run here instead, through the
+        // same [ManaAbilityResolutionPipeline] the synchronous path uses. The two are mutually
+        // exclusive — the inline pass runs only when the effect did not pause — so nothing is
+        // applied twice.
+        val sourceId = continuation.sourceId
+            ?: return checkForMore(effectResult.state, effectResult.events.toList())
+        val tapperId = continuation.controllerId
+        val sourceCard = effectResult.state.getEntity(sourceId)?.get<CardComponent>()
+
+        var events = effectResult.events.toList()
+        var producedMana = events.filterIsInstance<ManaAddedEvent>().lastOrNull { it.sourceId == sourceId }
+
+        // Damping Sphere: a land tapped for two or more mana produces {C} instead. `state` is the
+        // pool as it stood before the chosen mana was added, which is the delta this reads.
+        val dampening = manaPipeline.applyLandManaDampening(state, effectResult.state, sourceCard, tapperId)
+        if (dampening.dampened) {
+            val replacement = ManaAddedEvent(
+                playerId = tapperId,
+                sourceId = sourceId,
+                sourceName = sourceCard?.name ?: continuation.sourceName,
+                colorless = 1
+            )
+            events = events.filterNot { it === producedMana } + replacement
+            producedMana = replacement
+        }
+
+        val finished = manaPipeline.finishTapBonuses(
+            dampening.state, sourceId, sourceCard, tapperId, producedMana, events
         )
-        if (mirrored.isPaused) return mirrored
-        return checkForMore(mirrored.newState, effectResult.events.toList() + mirrored.events)
+        if (finished.isPaused) return finished
+        return checkForMore(finished.newState, finished.events.toList())
     }
 
     fun resumeChooseColorForTarget(

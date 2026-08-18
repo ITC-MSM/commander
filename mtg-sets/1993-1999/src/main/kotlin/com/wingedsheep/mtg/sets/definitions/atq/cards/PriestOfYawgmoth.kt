@@ -34,6 +34,7 @@ val PriestOfYawgmoth = card("Priest of Yawgmoth") {
     oracleText = "{T}, Sacrifice an artifact: Add an amount of {B} equal to the sacrificed artifact's mana value."
 
     activatedAbility {
+        manaAbility = true
         cost = Costs.Composite(Costs.Tap, Costs.Sacrifice(GameObjectFilter.Artifact))
         effect = Effects.AddMana(
             Color.BLACK,

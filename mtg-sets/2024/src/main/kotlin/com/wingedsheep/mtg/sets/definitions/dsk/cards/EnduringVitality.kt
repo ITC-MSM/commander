@@ -25,11 +25,10 @@ import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
  *
  * The mana ability is granted to every creature you control via [GrantActivatedAbility] (the
  * Citanul Hierophants / Cryptolith Rite lord shape); each grantee taps for one mana of any
- * color. The raw [ActivatedAbility] constructor defaults to `isManaAbility = false`, so both
- * that flag and [TimingRule.ManaAbility] are set explicitly — without them the grant is an
- * ordinary activated ability that uses the stack, can't be activated during mana payment, and
- * is invisible to the auto-tap solver and to "whenever you tap a creature for mana" statics
- * (Badgermole Cub). The death clause is the Duskmourn "Enduring" mechanic — see [enduring].
+ * color. A granted mana ability must say so explicitly — the raw [ActivatedAbility] constructor
+ * has no builder to derive `isManaAbility` / [TimingRule.ManaAbility] from the effect, and without
+ * them the grant is an ordinary stack-using ability (`CardLintTest` now enforces this corpus-wide).
+ * The death clause is the Duskmourn "Enduring" mechanic — see [enduring].
  */
 val EnduringVitality = card("Enduring Vitality") {
     manaCost = "{1}{G}{G}"

@@ -83,8 +83,6 @@ private val RoarOfTheFifthPeople = card("Roar of the Fifth People") {
                     effect = Effects.AddManaOfChoice(
                         ManaColorSet.Specific(setOf(Color.RED, Color.GREEN, Color.WHITE)),
                     ),
-                    // The raw constructor defaults to the non-mana classification; without these
-                    // the grant would use the stack and be unusable while paying a cost.
                     isManaAbility = true,
                     timing = TimingRule.ManaAbility,
                 ),

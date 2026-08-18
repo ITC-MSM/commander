@@ -119,7 +119,7 @@ class EnduringVitalityScenarioTest : ScenarioTestBase() {
                 )
                 withClue("Activation should succeed: ${result.error}") { result.error shouldBe null }
 
-                withClue("A mana ability never uses the stack (CR 605.3a)") {
+                withClue("A mana ability never uses the stack (CR 605.3b)") {
                     game.state.stack shouldBe emptyList()
                 }
                 val pool = game.state.getEntity(game.player1Id)?.get<ManaPoolComponent>()
@@ -131,7 +131,9 @@ class EnduringVitalityScenarioTest : ScenarioTestBase() {
             test("a 'whenever you tap a creature for mana' static sees the granted ability") {
                 // Badgermole Cub: "Whenever you tap a creature for mana, add an additional {G}."
                 // The bonus only fires for abilities the engine classifies as mana abilities, so
-                // this pins the classification from the payoff side as well.
+                // this pins the classification from the payoff side as well. Activated *without*
+                // a manaColorChoice — as the AI and the gym always do — so the ability pauses for
+                // the color and the bonus has to survive the resume.
                 val game = scenario()
                     .withPlayers("Player1", "Player2")
                     .withCardOnBattlefield(1, "Enduring Vitality", summoningSickness = false)
@@ -149,14 +151,16 @@ class EnduringVitalityScenarioTest : ScenarioTestBase() {
                     ActivateAbility(
                         playerId = game.player1Id,
                         sourceId = bears,
-                        abilityId = abilityId,
-                        manaColorChoice = Color.BLUE
+                        abilityId = abilityId
                     )
                 )
                 withClue("Activation should succeed: ${result.error}") { result.error shouldBe null }
-                (game.getPendingDecision() as? ChooseColorDecision)?.let { decision ->
-                    game.submitDecision(ColorChosenResponse(decision.id, Color.BLUE))
+
+                val decision = game.getPendingDecision() as? ChooseColorDecision
+                withClue("the any-color ability should have paused for a color choice") {
+                    decision shouldNotBe null
                 }
+                game.submitDecision(ColorChosenResponse(decision!!.id, Color.BLUE))
 
                 val pool = game.state.getEntity(game.player1Id)?.get<ManaPoolComponent>()!!
                 withClue("one blue from the Bears + one green from the Cub, pool was $pool") {

@@ -22,10 +22,7 @@ import com.wingedsheep.sdk.scripting.TimingRule
  *
  * The granted ability is a *separate* mana ability on the land (it doesn't replace or
  * augment the land's own tap-for-mana), so it is modelled as [GrantActivatedAbility]
- * rather than the `AdditionalManaOnTap` (Fertile Ground) shape. The raw [ActivatedAbility]
- * constructor defaults to `isManaAbility = false`, so the flag and [TimingRule.ManaAbility] are
- * set explicitly — without them the granted ability would use the stack instead of resolving
- * immediately, and couldn't be activated while paying a cost.
+ * rather than the `AdditionalManaOnTap` (Fertile Ground) shape.
  */
 val NewHorizons = card("New Horizons") {
     manaCost = "{2}{G}"

@@ -60,7 +60,6 @@ import com.wingedsheep.sdk.scripting.costs.manaCostOrNull
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.ActivationRestriction
-import com.wingedsheep.sdk.scripting.DampLandManaProduction
 import com.wingedsheep.sdk.scripting.ExtraLoyaltyActivation
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
 import com.wingedsheep.sdk.scripting.filters.unified.Scope
@@ -75,15 +74,10 @@ import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
-import com.wingedsheep.sdk.scripting.AdditionalManaOnSourceTap
 import com.wingedsheep.sdk.scripting.MultiplyManaOnSourceTap
-import com.wingedsheep.sdk.scripting.TappedForManaType
 import com.wingedsheep.sdk.scripting.ReplaceLandManaColor
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.values.ManaColorSet
-import com.wingedsheep.engine.core.LandTappedForManaEvent
-import com.wingedsheep.sdk.scripting.AdditionalManaOnTap
-import com.wingedsheep.sdk.scripting.AdditionalSourceTriggers
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.CostPaymentChoices
@@ -1397,7 +1391,7 @@ class ActivateAbilityHandler(
         // — fires its dies/leaves-the-battlefield trigger). The mana-ability path resolves off
         // the stack and returns early, so capture these now to detect triggers before returning.
         // Scoped to cost-payment events so mana-production events keep their existing inline
-        // handling (resolveAdditionalManaOnSourceTap etc.).
+        // handling ([ManaAbilityResolutionPipeline] etc.).
         val costPaymentEvents = costResult.events
 
         // Deduct X mana from the pool. ManaPool.pay() skips X symbols ("handled by caller"),
@@ -1571,6 +1565,13 @@ class ActivateAbilityHandler(
                 // ("{X}, {T}, Sacrifice this: Add X mana..." — Wizard's Rockets). Without
                 // this, DynamicAmount.XValue resolves to 0 and the ability adds no mana.
                 xValue = action.xValue,
+                // A mana ability resolves off the stack, so nothing else hands it the last-known
+                // information its cost captured. Priest of Yawgmoth ("{T}, Sacrifice an artifact:
+                // Add an amount of {B} equal to the sacrificed artifact's mana value") reads the
+                // sacrificed permanent's mana value through EntityReference.Sacrificed after that
+                // permanent is already in the graveyard (CR 113.7a); without the snapshots the
+                // amount resolves to 0 and the ability produces nothing.
+                sacrificedPermanents = sacrificedSnapshots,
                 manaColorChoice = action.manaColorChoice
             )
 
@@ -1610,40 +1611,11 @@ class ActivateAbilityHandler(
             currentState = effectResult.newState
 
             // Check for Damping Sphere-style mana dampening on lands
-            var manaDampened = false
-            if (cardComponent.typeLine.isLand && hasDampLandManaProduction(currentState)) {
-                val oldPool = state.getEntity(action.playerId)?.get<ManaPoolComponent>() ?: ManaPoolComponent()
-                val newPool = currentState.getEntity(action.playerId)?.get<ManaPoolComponent>() ?: ManaPoolComponent()
-                val totalManaProduced = (newPool.white - oldPool.white) +
-                    (newPool.blue - oldPool.blue) +
-                    (newPool.black - oldPool.black) +
-                    (newPool.red - oldPool.red) +
-                    (newPool.green - oldPool.green) +
-                    (newPool.colorless - oldPool.colorless)
-
-                if (totalManaProduced >= 2) {
-                    // Replace with 1 colorless mana: revert to old pool + 1 colorless.
-                    // Restricted mana and mana-source provenance the player had floating before this
-                    // activation are preserved — Damping Sphere only replaces what the land just
-                    // produced, not what was already in the pool. The replacement colorless carries no
-                    // provenance (it comes from the replacement effect, not the land).
-                    val dampenedPool = ManaPoolComponent(
-                        white = oldPool.white,
-                        blue = oldPool.blue,
-                        black = oldPool.black,
-                        red = oldPool.red,
-                        green = oldPool.green,
-                        colorless = oldPool.colorless + 1,
-                        restrictedMana = oldPool.restrictedMana,
-                        manaBySubtype = oldPool.manaBySubtype,
-                        manaBySource = oldPool.manaBySource
-                    )
-                    currentState = currentState.updateEntity(action.playerId) { container ->
-                        container.with(dampenedPool)
-                    }
-                    manaDampened = true
-                }
-            }
+            val dampening = manaPipeline.applyLandManaDampening(
+                state, currentState, cardComponent, action.playerId
+            )
+            currentState = dampening.state
+            val manaDampened = dampening.dampened
 
             // Emit ManaAddedEvent — if dampened, always emit 1 colorless
             val manaEvent: ManaAddedEvent? = if (manaDampened) {
@@ -1753,38 +1725,14 @@ class ActivateAbilityHandler(
                 events.add(manaEvent)
             }
 
-            // Check for "additional mana on tap" auras (e.g., Elvish Guidance)
-            // These are triggered mana abilities that resolve immediately
-            val additionalManaResult = resolveAdditionalManaOnTap(
-                currentState, action.sourceId, action.playerId, events + effectResult.events
+            // Aura bonuses (Elvish Guidance), global "whenever a matching source is tapped for
+            // mana" statics (Lavaleaper, Badgermole Cub, Overabundance), the land-tapped event, and
+            // the any-color tap bonuses (Fertile Ground) — the last of which may pause for a color
+            // decision. Shared with the color-choice resume path so both agree.
+            val bonusResult = manaPipeline.finishTapBonuses(
+                currentState, action.sourceId, cardComponent, action.playerId,
+                manaEvent, events + effectResult.events
             )
-            currentState = additionalManaResult.state
-
-            // Check for global "additional mana whenever a matching source is tapped for mana"
-            // (Lavaleaper: basic land mirror; Badgermole Cub: creature → +{G}).
-            // Triggered mana ability — resolves immediately without the stack.
-            val onSourceTapResult = resolveAdditionalManaOnSourceTap(
-                currentState, action.sourceId, action.playerId, manaEvent, additionalManaResult.events
-            )
-            currentState = onSourceTapResult.state
-            var allManaEvents = onSourceTapResult.events
-
-            // Emit a "land tapped for mana" event so triggers like Overabundance / Mana Flare
-            // ("whenever a player taps a land for mana") can fire. Manual-tap path only —
-            // automatic cost payment adds mana via the solver without re-entering this handler.
-            if (cardComponent.typeLine.isLand) {
-                allManaEvents = allManaEvents + LandTappedForManaEvent(
-                    tapperId = action.playerId,
-                    landId = action.sourceId,
-                    landName = cardComponent.name
-                )
-            }
-
-            // Resolve "additional one mana of any color" tap bonuses (Fertile Ground). Unlike the
-            // fixed/mirror bonuses above these need a per-tap color choice, so this may pause for a
-            // color decision (resuming via ChooseAnyColorTapBonusContinuation).
-            val anyColorBonuses = tappedForManaBonusResolver.collect(currentState, action.sourceId, action.playerId)
-            val bonusResult = tappedForManaBonusResolver.drive(currentState, anyColorBonuses, allManaEvents)
             if (bonusResult.isPaused) return bonusResult
 
             // A mana ability whose cost lacks {T} (e.g. Ashnod's Altar's "Sacrifice a creature: Add
@@ -2498,87 +2446,21 @@ class ActivateAbilityHandler(
         }
     }
 
-    /**
-     * After a mana ability resolves on a permanent, check for auras attached to it
-     * that have AdditionalManaOnTap (e.g., Elvish Guidance). These are triggered mana
-     * abilities that resolve immediately without using the stack.
-     */
-    private data class AdditionalManaResult(
-        val state: GameState,
-        val events: List<GameEvent>
-    )
-
     private val dynamicAmountEvaluator = DynamicAmountEvaluator()
     private val predicateEvaluator = PredicateEvaluator()
-    private val tappedForManaBonusResolver =
-        com.wingedsheep.engine.handlers.effects.mana.TappedForManaBonusResolver(cardRegistry, dynamicAmountEvaluator)
 
     /**
-     * Count how many [AdditionalSourceTriggers] doublers on the battlefield apply to a
-     * triggered ability with source [triggerSourceId] controlled by [triggerControllerId].
-     *
-     * Triggered mana abilities ([AdditionalManaOnTap], [AdditionalManaOnSourceTap]) bypass
-     * the stack and are resolved synchronously, so they never flow through the normal
-     * `TriggerDetector` doubling pass. This helper lets the inline mana resolution paths
-     * apply the same doubling logic as the trigger pipeline.
-     *
-     * Returns N — N additional firings on top of the natural one (so total firings = N + 1).
+     * Everything that happens after a mana ability's effect resolves. Shared with
+     * [com.wingedsheep.engine.handlers.continuations.ColorChoiceContinuationResumer], which
+     * finishes the mana abilities that paused for a color choice.
      */
-    private fun countAdditionalSourceTriggerDoublers(
-        state: GameState,
-        triggerSourceId: EntityId,
-        triggerControllerId: EntityId
-    ): Int {
-        val projected = state.projectedState
-        var count = 0
-        for (permanentId in state.getBattlefield()) {
-            val container = state.getEntity(permanentId) ?: continue
-            val card = container.get<CardComponent>() ?: continue
-            if (container.has<FaceDownComponent>()) continue
-            val controllerId = projected.getController(permanentId) ?: continue
-            if (controllerId != triggerControllerId) continue
-            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            val classLevel = container.get<ClassLevelComponent>()?.currentLevel
-            for (ability in cardDef.script.effectiveStaticAbilities(classLevel)) {
-                if (ability !is AdditionalSourceTriggers) continue
-                // Optional gate ("as long as ~ is equipped") — evaluated against the doubler source.
-                val gate = ability.condition
-                if (gate != null && !conditionEvaluator.evaluate(
-                        state, gate, EffectContext(sourceId = permanentId, controllerId = controllerId)
-                    )
-                ) continue
-                // `alsoSource` doubles the doubler's own triggers regardless of the filter.
-                if (ability.alsoSource && permanentId == triggerSourceId) {
-                    count++
-                    continue
-                }
-                if (ability.excludeSelf && permanentId == triggerSourceId) continue
-                if (!predicateEvaluator.matches(
-                        state, projected, triggerSourceId, ability.sourceFilter,
-                        PredicateContext(controllerId = controllerId, sourceId = permanentId)
-                    )
-                ) continue
-                count++
-            }
-        }
-        return count
-    }
-
-    /**
-     * Check if any permanent on the battlefield has DampLandManaProduction static ability.
-     */
-    private fun hasDampLandManaProduction(state: GameState): Boolean {
-        for (playerId in state.turnOrder) {
-            for (entityId in state.getBattlefield(playerId)) {
-                val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
-                val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-                if (cardDef.script.staticAbilities.any { it is DampLandManaProduction }) {
-                    return true
-                }
-            }
-        }
-        return false
-    }
+    private val manaPipeline = com.wingedsheep.engine.handlers.effects.mana.ManaAbilityResolutionPipeline(
+        cardRegistry = cardRegistry,
+        conditionEvaluator = conditionEvaluator,
+        effectExecutorRegistry = effectExecutorRegistry,
+        predicateEvaluator = predicateEvaluator,
+        dynamicAmountEvaluator = dynamicAmountEvaluator,
+    )
 
     /**
      * If any aura attached to [sourceId] has an [OverrideEnchantedLandManaColor]
@@ -2688,206 +2570,6 @@ class ActivateAbilityHandler(
             effect.copy(amountSource = DynamicAmount.Multiply(effect.amountSource, multiplier))
         is CompositeEffect -> effect.copy(effects = effect.effects.map { multiplyManaProduced(it, multiplier) })
         else -> effect
-    }
-
-    private fun resolveAdditionalManaOnTap(
-        state: GameState,
-        sourceId: com.wingedsheep.sdk.model.EntityId,
-        controllerId: com.wingedsheep.sdk.model.EntityId,
-        existingEvents: List<GameEvent>
-    ): AdditionalManaResult {
-        var currentState = state
-        val events = existingEvents.toMutableList()
-
-        // Find all auras attached to the source permanent
-        for (entityId in currentState.getBattlefield()) {
-            val container = currentState.getEntity(entityId) ?: continue
-            val attachedTo = container.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
-            if (attachedTo?.targetId != sourceId) continue
-
-            val card = container.get<CardComponent>() ?: continue
-            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-
-            // Check each static ability for AdditionalManaOnTap
-            for (staticAbility in cardDef.script.staticAbilities) {
-                val additionalMana = staticAbility as? AdditionalManaOnTap ?: continue
-
-                // The controller of the enchanted land gets the mana
-                val landController = currentState.getEntity(sourceId)
-                    ?.get<ControllerComponent>()?.playerId ?: controllerId
-
-                val context = EffectContext(
-                    sourceId = entityId,
-                    controllerId = landController,
-                    targets = emptyList(),
-                    xValue = null
-                )
-
-                val amount = dynamicAmountEvaluator.evaluate(currentState, additionalMana.amount, context)
-                if (amount <= 0) continue
-
-                // Resolve the color: if the ability specifies null, read the aura's chosen color.
-                // If no color is chosen (e.g., somehow on battlefield without a choice), skip.
-                val manaColor = additionalMana.color
-                    ?: container.chosenColor()
-                    ?: continue
-
-                // Triggered mana ability — apply AdditionalSourceTriggers doublers
-                // (e.g., Twinflame Travelers) so the bonus fires N+1 times.
-                val auraController = container.get<ControllerComponent>()?.playerId ?: landController
-                val extraFirings = countAdditionalSourceTriggerDoublers(currentState, entityId, auraController)
-                val firings = 1 + extraFirings
-                repeat(firings) {
-                    currentState = currentState.updateEntity(landController) { c ->
-                        val pool = c.get<ManaPoolComponent>() ?: ManaPoolComponent()
-                        c.with(pool.add(manaColor, amount))
-                    }
-
-                    events.add(ManaAddedEvent(
-                        playerId = landController,
-                        sourceId = entityId,
-                        sourceName = card.name,
-                        white = if (manaColor == Color.WHITE) amount else 0,
-                        blue = if (manaColor == Color.BLUE) amount else 0,
-                        black = if (manaColor == Color.BLACK) amount else 0,
-                        red = if (manaColor == Color.RED) amount else 0,
-                        green = if (manaColor == Color.GREEN) amount else 0,
-                        colorless = 0
-                    ))
-                }
-            }
-        }
-
-        return AdditionalManaResult(currentState, events)
-    }
-
-    /**
-     * After a permanent's mana ability resolves, check for [AdditionalManaOnSourceTap]
-     * statics anywhere on the battlefield whose `sourceFilter` matches the tapped source.
-     * Each match adds bonus mana to the tapping player's pool.
-     *
-     * Filter matching uses projected state so animated creature-lands and typeshifted
-     * lands count under their projected types (Rule 613.1). The static-ability source's
-     * controller is read from projected state so control-changing effects (Annex,
-     * Ray of Command) correctly transfer the "you tap" condition along with the permanent.
-     *
-     * Triggered mana ability — resolves immediately without using the stack (Rule 605).
-     */
-    private fun resolveAdditionalManaOnSourceTap(
-        state: GameState,
-        sourceId: EntityId,
-        tappingPlayerId: EntityId,
-        manaEvent: ManaAddedEvent?,
-        existingEvents: List<GameEvent>
-    ): AdditionalManaResult {
-        state.getEntity(sourceId) ?: return AdditionalManaResult(state, existingEvents)
-
-        // The mirror-color form (color = null) needs the actual produced color from manaEvent.
-        // The fixed-color form does not.
-        val producedColor: Color? = manaEvent?.let {
-            when {
-                it.white > 0 -> Color.WHITE
-                it.blue > 0 -> Color.BLUE
-                it.black > 0 -> Color.BLACK
-                it.red > 0 -> Color.RED
-                it.green > 0 -> Color.GREEN
-                else -> null
-            }
-        }
-        val producedColorless = manaEvent != null && producedColor == null && manaEvent.colorless > 0
-
-        var currentState = state
-        val events = existingEvents.toMutableList()
-
-        for (entityId in currentState.getBattlefield()) {
-            val container = currentState.getEntity(entityId) ?: continue
-            val card = container.get<CardComponent>() ?: continue
-            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-
-            for (staticAbility in cardDef.script.staticAbilities) {
-                val onSourceTap = staticAbility as? AdditionalManaOnSourceTap ?: continue
-
-                // Gate on the produced-mana type ("tap a land for {C}" only fires on a colorless tap).
-                if (!producedManaMatches(onSourceTap.whenProducing, producedColor, producedColorless)) continue
-
-                val staticController = currentState.projectedState.getController(entityId) ?: continue
-
-                // Filter is evaluated from the static-ability controller's perspective so
-                // `youControl` on the source filter means "controlled by you, the static
-                // controller" — see AdditionalManaOnSourceTap kdoc.
-                val filterContext = PredicateContext(controllerId = staticController, sourceId = entityId)
-                if (!predicateEvaluator.matches(
-                        currentState, currentState.projectedState, sourceId, onSourceTap.sourceFilter, filterContext
-                    )) continue
-
-                val effectContext = EffectContext(
-                    sourceId = entityId,
-                    controllerId = tappingPlayerId,
-                    targets = emptyList(),
-                    xValue = null
-                )
-                val bonusAmount = dynamicAmountEvaluator.evaluate(currentState, onSourceTap.amount, effectContext)
-                if (bonusAmount <= 0) continue
-
-                // Resolve the bonus color: explicit color wins; null means mirror the produced color.
-                val bonusColor: Color? = onSourceTap.color ?: producedColor
-                val bonusColorless = onSourceTap.color == null && bonusColor == null && producedColorless
-                if (bonusColor == null && !bonusColorless) continue
-
-                // Triggered mana abilities bypass the stack but are still triggered
-                // abilities — so AdditionalSourceTriggers (Twinflame Travelers) doubles
-                // them just like any other trigger. firings = 1 (natural) + N (doublers).
-                val extraFirings = countAdditionalSourceTriggerDoublers(currentState, entityId, staticController)
-                val firings = 1 + extraFirings
-                repeat(firings) {
-                    currentState = currentState.updateEntity(tappingPlayerId) { c ->
-                        val pool = c.get<ManaPoolComponent>() ?: ManaPoolComponent()
-                        val newPool = if (bonusColor != null) pool.add(bonusColor, bonusAmount)
-                                      else pool.addColorless(bonusAmount)
-                        c.with(newPool)
-                    }
-
-                    events.add(ManaAddedEvent(
-                        playerId = tappingPlayerId,
-                        sourceId = entityId,
-                        sourceName = card.name,
-                        white = if (bonusColor == Color.WHITE) bonusAmount else 0,
-                        blue = if (bonusColor == Color.BLUE) bonusAmount else 0,
-                        black = if (bonusColor == Color.BLACK) bonusAmount else 0,
-                        red = if (bonusColor == Color.RED) bonusAmount else 0,
-                        green = if (bonusColor == Color.GREEN) bonusAmount else 0,
-                        colorless = if (bonusColorless) bonusAmount else 0
-                    ))
-
-                    // Inline non-mana rider (Overabundance: "deals 1 damage to the player").
-                    // Resolved with controllerId = the tapping player, sourceId = this static's
-                    // source, so EffectTarget.Controller is the tapper and EffectTarget.Self is the
-                    // enchantment. Riders here must not require player input (no stack).
-                    val rider = onSourceTap.rider
-                    if (rider != null) {
-                        val riderResult = effectExecutorRegistry.execute(currentState, rider, effectContext)
-                        currentState = riderResult.state
-                        events.addAll(riderResult.events)
-                    }
-                }
-            }
-        }
-
-        return AdditionalManaResult(currentState, events)
-    }
-
-    /**
-     * Whether a tap that produced [producedColor] (colored) or [producedColorless] (colorless)
-     * satisfies an [AdditionalManaOnSourceTap]'s [TappedForManaType] gate.
-     */
-    private fun producedManaMatches(
-        whenProducing: TappedForManaType,
-        producedColor: Color?,
-        producedColorless: Boolean
-    ): Boolean = when (whenProducing) {
-        TappedForManaType.ANY -> true
-        TappedForManaType.COLORLESS -> producedColorless
-        TappedForManaType.COLORED -> producedColor != null
     }
 
     /**

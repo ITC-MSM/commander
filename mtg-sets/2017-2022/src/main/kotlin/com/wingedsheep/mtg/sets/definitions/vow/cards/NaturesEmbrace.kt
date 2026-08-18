@@ -29,9 +29,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetPermanent
  * permanent" scope regardless of the host's type), each gated by an [Conditions.EnchantedPermanentMatches]
  * check on the host's *current* type so the buff and the mana ability switch on continuously if the
  * host ever changes types. The granted land ability mirrors New Horizons' `{T}: Add two mana of any
- * one color` ([Effects.AddAnyColorMana]`(2)`), and like it must set `isManaAbility = true` /
- * [TimingRule.ManaAbility] by hand — the raw [ActivatedAbility] constructor defaults both to the
- * non-mana classification, which would push the grant onto the stack.
+ * one color` ([Effects.AddAnyColorMana]`(2)`).
  */
 val NaturesEmbrace = card("Nature's Embrace") {
     manaCost = "{2}{G}"

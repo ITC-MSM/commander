@@ -18,10 +18,6 @@ import com.wingedsheep.sdk.scripting.TimingRule
  * Enchant land
  * When this Aura enters, draw a card.
  * Enchanted land has "{T}: Add one mana of any color."
- *
- * The raw [ActivatedAbility] constructor defaults to `isManaAbility = false`, so the grant sets
- * both that flag and [TimingRule.ManaAbility] explicitly — otherwise the enchanted land's granted
- * ability would use the stack and couldn't be activated while paying for a spell.
  */
 val AbundantGrowth = card("Abundant Growth") {
     manaCost = "{G}"

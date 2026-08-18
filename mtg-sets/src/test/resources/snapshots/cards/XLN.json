@@ -803,7 +803,9 @@
                             "type": "Fixed",
                             "amount": 2
                         }
-                    }
+                    },
+                    "timing": "ManaAbility",
+                    "isManaAbility": true
                 }
             }
         ],

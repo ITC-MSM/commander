@@ -19,10 +19,6 @@ import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
  * 2/3
  *
  * Each land and Ally you control has "{T}: Add one mana of any color."
- *
- * The raw [ActivatedAbility] constructor defaults to `isManaAbility = false`, so the flag and
- * [TimingRule.ManaAbility] are set explicitly — without them the grant would use the stack, be
- * unusable during mana payment, and stay invisible to the auto-tap solver.
  */
 val GreatDivideGuide = card("Great Divide Guide") {
     manaCost = "{1}{G}"
