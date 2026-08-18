@@ -6839,6 +6839,48 @@
     ]
 }
 
+// Goblin Maskmaker
+{
+    "name": "Goblin Maskmaker",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Goblin Citizen",
+    "oracleText": "Whenever this creature attacks, face-down spells you cast this turn cost {1} less to cast.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ReduceSpellCostsThisTurn",
+                    "spellFilter": {
+                        "statePredicates": [
+                            "IsFaceDown"
+                        ]
+                    },
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever this creature attacks, face-down spells you cast this turn cost {1} less to cast."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "130",
+        "artist": "Tomas Duchek",
+        "flavorText": "\"When you can't show your own face, try one of mine!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/1/6154a991-c602-4fca-91a3-3830060da60e.jpg?1783912880"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Granite Witness
 {
     "name": "Granite Witness",
