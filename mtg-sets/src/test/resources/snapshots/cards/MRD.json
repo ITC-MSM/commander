@@ -263,6 +263,72 @@
     ]
 }
 
+// Arc-Slogger
+{
+    "name": "Arc-Slogger",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "{R}, Exile the top ten cards of your library: This creature deals 2 damage to any target.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{R}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomExileTopOfLibrary",
+                                "count": 10
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ],
+                "descriptionOverride": "{R}, Exile the top ten cards of your library: This creature deals 2 damage to any target."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "85",
+        "rarity": "RARE",
+        "artist": "Jeff Easley",
+        "flavorText": "A shuffling sound and the smell of ozone follow the slogger as surely as its electric tail.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/3/d3dd67e0-72b4-4c55-b49b-c69950feccb1.jpg?1783944543"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Assert Authority
 {
     "name": "Assert Authority",
@@ -4528,6 +4594,39 @@
     ]
 }
 
+// Hum of the Radix
+{
+    "name": "Hum of the Radix",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Each artifact spell costs {1} more to cast for each artifact its controller controls.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "AnyCaster",
+                    "filter": "artifact"
+                },
+                "modification": {
+                    "type": "IncreaseGenericBy",
+                    "source": "ArtifactsYouControl"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "122",
+        "rarity": "RARE",
+        "artist": "John Avon",
+        "flavorText": "The elves learned long ago that anything left here slowly vanishes. Now it is a sacred site where the dead are laid to rest and where unnatural magic is erased forever.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/2/328f3afb-1a56-42a5-bd1e-3e704291972f.jpg?1783944533"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Incite War
 {
     "name": "Incite War",
@@ -7154,6 +7253,60 @@
         "artist": "Dave Dorman",
         "flavorText": "It knows what you are planning, and does not approve.",
         "imageUri": "https://cards.scryfall.io/normal/front/f/9/f98ce711-8f68-4487-b67b-be35796ffcff.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
+// Myr Prototype
+{
+    "name": "Myr Prototype",
+    "manaCost": "{5}",
+    "typeLine": "Artifact Creature — Myr",
+    "oracleText": "At the beginning of your upkeep, put a +1/+1 counter on this creature.\nThis creature can't attack or block unless you pay {1} for each +1/+1 counter on it.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "At the beginning of your upkeep, put a +1/+1 counter on this creature."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CantAttackOrBlockUnlessPay",
+                "amount": {
+                    "type": "EntityProperty",
+                    "entity": "Source",
+                    "numericProperty": {
+                        "type": "CounterCount",
+                        "counterType": {
+                            "type": "Named",
+                            "name": "+1/+1"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "214",
+        "rarity": "UNCOMMON",
+        "artist": "Dave Dorman",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/d/6d929b28-c184-4e77-a40b-ee43b8a37d79.jpg?1783944510"
     },
     "colorIdentityOverride": []
 }

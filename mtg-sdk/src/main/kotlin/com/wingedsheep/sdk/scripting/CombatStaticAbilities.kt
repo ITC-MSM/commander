@@ -347,6 +347,34 @@ data class AttackTax(
 }
 
 /**
+ * This permanent can't attack or block unless its controller pays [amount] generic mana for it
+ * (CR 508.1a / 509.1a — the payment is part of the cost of declaring it).
+ *
+ * The self-scoped counterpart of [AttackTax] and [BlockTax], which tax *other* players' creatures
+ * from the side of the board they are aimed at. Here the taxed creature and the taxing permanent
+ * are the same object, so there is no filter and no per-attacker multiplier: the amount is what
+ * this one creature costs to send.
+ *
+ * Used for Myr Prototype ("This creature can't attack or block unless you pay {1} for each +1/+1
+ * counter on it"), where [amount] counts the source's own counters — the reason the amount is a
+ * [DynamicAmount] rather than an `Int`, since the price changes every upkeep.
+ *
+ * Attack and block are one ability rather than two flags because the printed line is one sentence.
+ * A card that taxes only one half wants its own variant, not a boolean here.
+ *
+ * @property amount Generic mana the controller must pay to declare this creature as an attacker,
+ *           and again to declare it as a blocker. Evaluated with this permanent as the source.
+ */
+@SerialName("CantAttackOrBlockUnlessPay")
+@Serializable
+data class CantAttackOrBlockUnlessPay(
+    val amount: DynamicAmount,
+) : StaticAbility {
+    override val description: String =
+        "can't attack or block unless you pay {${amount.description}}"
+}
+
+/**
  * Creatures can't block unless their controller pays generic mana for each blocking creature.
  * The defending side of Archangel of Tithes' second ability
  * ("creatures can't block unless their controller pays {1} for each of those creatures").
