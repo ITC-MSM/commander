@@ -84,11 +84,13 @@ val TasterOfWares = card("Taster of Wares") {
                     storeSelected = "revealed",
                     prompt = "Reveal X cards from your hand (X = number of Goblins your opponent controls)"
                 ),
-                // You choose one of the revealed cards (use ChooseUpTo so X=0
-                // and empty-hand cases resolve cleanly)
+                // You choose one of the revealed cards. Mandatory (ChooseExactly), not a "may":
+                // ChooseUpTo would offer a min-0 decision that a player or the AI can decline,
+                // and nothing would be exiled. ChooseExactly still resolves cleanly when X = 0 or
+                // the hand is empty — an empty collection auto-selects nothing rather than pausing.
                 SelectFromCollectionEffect(
                     from = "revealed",
-                    selection = SelectionMode.ChooseUpTo(DynamicAmount.Fixed(1)),
+                    selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(1)),
                     chooser = Chooser.Controller,
                     storeSelected = "chosen",
                     prompt = "Choose one of the revealed cards to exile"
