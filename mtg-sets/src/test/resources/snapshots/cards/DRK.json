@@ -565,6 +565,59 @@
     ]
 }
 
+// Goblin Digging Team
+{
+    "name": "Goblin Digging Team",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Goblin",
+    "oracleText": "{T}, Sacrifice this creature: Destroy target Wall.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target Wall"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature Wall"
+                        },
+                        "id": "target Wall"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "65",
+        "artist": "Ron Spencer",
+        "flavorText": "\"From down here we can make the whole wall collapse!\" \"Uh, yeah, boss, but how do we get out?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/a/8a538b9d-351e-40bb-be11-9ba08c16352b.jpg?1783947935"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Goblin Hero
 {
     "name": "Goblin Hero",
