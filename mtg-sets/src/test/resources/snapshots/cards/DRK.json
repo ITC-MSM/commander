@@ -147,6 +147,30 @@
     ]
 }
 
+// Carnivorous Plant
+{
+    "name": "Carnivorous Plant",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Plant Wall",
+    "oracleText": "Defender",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "metadata": {
+        "collectorNumber": "75",
+        "artist": "Quinton Hoover",
+        "flavorText": "\"It had a mouth like that of a great beast, and gnashed its teeth as it strained to reach us. I am thankful it possessed no means of locomotion.\" —Vervamon the Elder",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/a/6a615650-4da3-4efc-aa5e-c1f2c4f79478.jpg?1783947933"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Cave People
 {
     "name": "Cave People",
