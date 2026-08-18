@@ -928,6 +928,76 @@
     ]
 }
 
+// Anzrag, the Quake-Mole
+{
+    "name": "Anzrag, the Quake-Mole",
+    "manaCost": "{2}{R}{G}",
+    "typeLine": "Legendary Creature — Mole God",
+    "oracleText": "Whenever Anzrag becomes blocked, untap each creature you control. After this phase, there is an additional combat phase.\n{3}{R}{R}{G}{G}: Anzrag must be blocked each combat this turn if able.",
+    "creatureStats": {
+        "power": 8,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "BecomesBlockedEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "TapUntap",
+                                "target": "Self",
+                                "tap": false
+                            }
+                        },
+                        "AddCombatPhase"
+                    ]
+                },
+                "descriptionOverride": "Whenever Anzrag becomes blocked, untap each creature you control. After this phase, there is an additional combat phase."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{R}{R}{G}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "MustBeBlocked",
+                    "target": "Self",
+                    "allCreatures": false
+                },
+                "descriptionOverride": "Anzrag must be blocked each combat this turn if able."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "186",
+        "rarity": "MYTHIC",
+        "artist": "Helge C. Balzer",
+        "flavorText": "His claws tear at the foundations of civilization.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/0/70e9d8b8-4b32-4414-b32f-1f47523239c5.jpg?1783912855"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Archdruid's Charm
 {
     "name": "Archdruid's Charm",
@@ -3983,6 +4053,100 @@
         ]
     },
     "colorIdentityOverride": []
+}
+
+// Cryptic Coat
+{
+    "name": "Cryptic Coat",
+    "manaCost": "{2}{U}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "When this Equipment enters, cloak the top card of your library, then attach this Equipment to it. (To cloak a card, put it onto the battlefield face down as a 2/2 creature with ward {2}. Turn it face up any time for its mana cost if it's a creature card.)\nEquipped creature gets +1/+0 and can't be blocked.\n{1}{U}: Return this Equipment to its owner's hand.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "crypticCoatCloak"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "crypticCoatCloak",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "faceDown": "CLOAK",
+                            "storeMovedAs": "crypticCoatCloaked"
+                        },
+                        {
+                            "type": "AttachEquipment",
+                            "target": {
+                                "type": "PipelineTarget",
+                                "collectionName": "crypticCoatCloaked"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this Equipment enters, cloak the top card of your library, then attach this Equipment to it."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand"
+                },
+                "descriptionOverride": "Return this Equipment to its owner's hand."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 0
+            },
+            {
+                "type": "CantBeBlocked",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "AttachedTo"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "50",
+        "rarity": "RARE",
+        "artist": "Julia Metzger",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/c/0c3d7e2c-a104-4757-9984-fb31088f92c4.jpg?1783912915"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
 }
 
 // Culvert Ambusher
@@ -16217,6 +16381,119 @@
     ]
 }
 
+// The Pride of Hull Clade
+{
+    "name": "The Pride of Hull Clade",
+    "manaCost": "{10}{G}",
+    "typeLine": "Legendary Creature — Crocodile Elk Turtle",
+    "oracleText": "This spell costs {X} less to cast, where X is the total toughness of creatures you control.\nDefender\n{2}{U}{U}: Until end of turn, target creature you control gets +1/+0, gains \"Whenever this creature deals combat damage to a player, draw cards equal to its toughness,\" and can attack as though it didn't have defender.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 15
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{U}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        },
+                        {
+                            "type": "GrantTriggeredAbility",
+                            "ability": {
+                                "id": "ability_2",
+                                "trigger": {
+                                    "type": "DealsDamageEvent",
+                                    "damageType": "DamageCombat",
+                                    "recipient": "AnyPlayer"
+                                },
+                                "effect": {
+                                    "type": "DrawCards",
+                                    "count": {
+                                        "type": "EntityProperty",
+                                        "entity": "Source",
+                                        "numericProperty": "Toughness"
+                                    }
+                                }
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        },
+                        {
+                            "type": "CanAttackDespiteDefenderThisTurn",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "target creature you control"
+                    }
+                ],
+                "descriptionOverride": "Until end of turn, target creature you control gets +1/+0, gains \"Whenever this creature deals combat damage to a player, draw cards equal to its toughness,\" and can attack as though it didn't have defender."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "TotalPropertyAmongPermanentsYouControl",
+                        "property": "Toughness",
+                        "filter": "creature"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "172",
+        "rarity": "MYTHIC",
+        "artist": "Brent Hollowell",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/d/edb40ab9-e552-4eb5-9c35-09094136dd4f.jpg?1783912862"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ]
+}
+
 // They Went This Way
 {
     "name": "They Went This Way",
@@ -17374,6 +17651,109 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Vannifar, Evolved Enigma
+{
+    "name": "Vannifar, Evolved Enigma",
+    "manaCost": "{2}{G}{U}",
+    "typeLine": "Legendary Creature — Elf Ooze Wizard",
+    "oracleText": "At the beginning of combat on your turn, choose one —\n• Cloak a card from your hand. (Put it onto the battlefield face down as a 2/2 creature with ward {2}. Turn it face up any time for its mana cost if it's a creature card.)\n• Put a +1/+1 counter on each colorless creature you control.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "vannifarHand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "vannifarHand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "vannifarCloaking",
+                                        "prompt": "Choose a card to cloak"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "vannifarCloaking",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Battlefield"
+                                        },
+                                        "faceDown": "CLOAK"
+                                    }
+                                ]
+                            },
+                            "description": "Cloak a card from your hand"
+                        },
+                        {
+                            "effect": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": {
+                                            "cardPredicates": [
+                                                "IsCreature",
+                                                "IsColorless"
+                                            ],
+                                            "controllerPredicate": "ControlledByYou"
+                                        }
+                                    }
+                                },
+                                "body": {
+                                    "type": "AddCounters",
+                                    "counterType": "+1/+1",
+                                    "count": 1,
+                                    "target": "Self"
+                                }
+                            },
+                            "description": "Put a +1/+1 counter on each colorless creature you control"
+                        }
+                    ],
+                    "countsAsModalSpell": false
+                },
+                "descriptionOverride": "At the beginning of combat on your turn, choose one — Cloak a card from your hand; or put a +1/+1 counter on each colorless creature you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "241",
+        "rarity": "MYTHIC",
+        "artist": "Uriah Voth",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/6/f6d381eb-6cb6-4505-aebe-995c1ddc8527.jpg?1783912833"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
     ]
 }
 
