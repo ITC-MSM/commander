@@ -1,0 +1,32 @@
+{
+  "player1Name": "Scales Controller",
+  "player2Name": "Opponent",
+  "player1": {
+    "lifeTotal": 20,
+    "hand": [],
+    "battlefield": [
+      {"name": "Culling Scales"},
+      {"name": "Chromatic Sphere"}
+    ],
+    "graveyard": [],
+    "library": ["Forest", "Forest"]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": [],
+    "battlefield": [
+      {"name": "Myr Moonvessel"},
+      {"name": "Hill Giant"}
+    ],
+    "graveyard": [],
+    "library": ["Mountain", "Mountain"]
+  },
+  "phase": "ENDING",
+  "step": "END",
+  "activePlayer": 2,
+  "priorityPlayer": 2,
+  "player1StopAtSteps": ["UPKEEP"],
+  "player2StopAtSteps": [],
+  "player1OpponentStopAtSteps": [],
+  "player2OpponentStopAtSteps": []
+}

@@ -2146,6 +2146,82 @@
     ]
 }
 
+// Culling Scales
+{
+    "name": "Culling Scales",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "At the beginning of your upkeep, destroy target nonland permanent with the lowest mana value. (If two or more permanents are tied for lowest, target any one of them.)",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsNonland",
+                                "IsPermanent"
+                            ],
+                            "statePredicates": [
+                                {
+                                    "type": "HasLeastManaValueAmong",
+                                    "candidates": {
+                                        "cardPredicates": [
+                                            "IsNonland",
+                                            "IsPermanent"
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                },
+                "descriptionOverride": "At the beginning of your upkeep, destroy target nonland permanent with the lowest mana value. (If two or more permanents are tied for lowest, target any one of them.)"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "160",
+        "rarity": "RARE",
+        "artist": "Daren Bader",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/b/db9a57d6-bba6-463d-ad12-6f93c035d16b.jpg?1783944524",
+        "rulings": [
+            {
+                "date": "2004-12-01",
+                "text": "You choose the target. If there's more than one nonland permanent tied for lowest mana value, you choose which one to target."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "If the targeted permanent doesn't have the lowest mana value when the ability resolves, the ability doesn't resolve and the permanent isn't destroyed."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "Most tokens have a mana value of 0. A token that's a copy of another permanent or card has a mana value equal to that permanent or card's mana value."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "If the lowest mana value is 3, Culling Scales can destroy itself."
+            }
+        ]
+    }
+}
+
 // Damping Matrix
 {
     "name": "Damping Matrix",

@@ -1,6 +1,7 @@
 package com.wingedsheep.sdk.scripting.predicates
 
 import com.wingedsheep.sdk.core.CardType
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -535,6 +536,18 @@ sealed interface StatePredicate {
     @Serializable
     data object HasLeastPowerAmongAllCreatures : Entity {
         override val description: String = "with the least power"
+    }
+
+    /**
+     * Has the least mana value among battlefield permanents matching [candidates]. Ties match every
+     * permanent sharing the minimum, allowing ordinary target selection to choose among them.
+     */
+    @SerialName("HasLeastManaValueAmong")
+    @Serializable
+    data class HasLeastManaValueAmong(
+        val candidates: GameObjectFilter
+    ) : Entity {
+        override val description: String = "with the least mana value among ${candidates.description}"
     }
 
     /** Has the least power among creatures its controller controls */
