@@ -3558,6 +3558,211 @@
     "colorIdentityOverride": []
 }
 
+// Case of the Stashed Skeleton
+{
+    "name": "Case of the Stashed Skeleton",
+    "manaCost": "{1}{B}",
+    "typeLine": "Enchantment — Case",
+    "oracleText": "When this Case enters, create a 2/1 black Skeleton creature token and suspect it. (It has menace and can't block.)\nTo solve — You control no suspected Skeletons. (If unsolved, solve at the beginning of your end step.)\nSolved — {1}{B}, Sacrifice this Case: Search your library for a card, put it into your hand, then shuffle. Activate only as a sorcery.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 2,
+                            "toughness": 1,
+                            "colors": [
+                                "BLACK"
+                            ],
+                            "creatureTypes": [
+                                "Skeleton"
+                            ],
+                            "name": "Skeleton",
+                            "imageUri": "https://cards.scryfall.io/normal/front/0/2/02404852-5788-4adb-b2dc-98bf705d8d96.jpg?1783912608"
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "SetSuspected",
+                                    "target": {
+                                        "type": "PipelineTarget",
+                                        "collectionName": "createdTokens"
+                                    }
+                                },
+                                {
+                                    "type": "GrantKeyword",
+                                    "keyword": "MENACE",
+                                    "target": {
+                                        "type": "PipelineTarget",
+                                        "collectionName": "createdTokens"
+                                    },
+                                    "duration": "Permanent"
+                                },
+                                {
+                                    "type": "CantBlockTargetCreatures",
+                                    "target": {
+                                        "type": "PipelineTarget",
+                                        "collectionName": "createdTokens"
+                                    },
+                                    "duration": "Permanent"
+                                }
+                            ],
+                            "descriptionOverride": "the chosen target becomes suspected"
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this Case enters, create a 2/1 black Skeleton creature token and suspect it."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": "BecomeSolved",
+                "interveningIf": {
+                    "type": "All",
+                    "conditions": [
+                        {
+                            "type": "Exists",
+                            "player": "You",
+                            "zone": "Battlefield",
+                            "filter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Skeleton"
+                                    }
+                                ],
+                                "statePredicates": [
+                                    "IsSuspected"
+                                ]
+                            },
+                            "negate": true
+                        },
+                        {
+                            "type": "Not",
+                            "condition": {
+                                "type": "EntityMatches",
+                                "entity": "Self",
+                                "filter": {
+                                    "statePredicates": [
+                                        "IsSolved"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "To solve — if there are no suspected Skeleton creature in your battlefield"
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{B}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": {
+                                "statePredicates": [
+                                    "IsSolved"
+                                ]
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "Search your library for a card, put it into your hand, then shuffle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "80",
+        "rarity": "RARE",
+        "artist": "Camille Alquier",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/b/4b120cbe-f0af-46c5-863f-03ecadf0435c.jpg?1783912902",
+        "rulings": [
+            {
+                "date": "2024-02-09",
+                "text": "When an effect suspects a creature, it becomes suspected. It gains menace and \"This creature can't block\" for as long as it's suspected. It stays suspected until it leaves the battlefield or another effect causes it to no longer be suspected."
+            },
+            {
+                "date": "2024-02-09",
+                "text": "If a suspected creature loses all abilities, it will lose menace and \"This creature can't block\", but it won't stop being suspected."
+            },
+            {
+                "date": "2024-02-09",
+                "text": "Being suspected isn't a copiable value. If a permanent becomes a copy of a suspected creature, it won't be suspected."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Case of the Uneaten Feast
 {
     "name": "Case of the Uneaten Feast",
