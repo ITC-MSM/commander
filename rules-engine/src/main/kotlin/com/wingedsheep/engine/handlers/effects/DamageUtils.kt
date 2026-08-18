@@ -1187,7 +1187,7 @@ object DamageUtils {
     ): Triple<GameState, EntityId?, Int> {
         val shieldIndex = state.floatingEffects.indexOfFirst { effect ->
             effect.effect.modification is SerializableModification.RedirectNextDamage &&
-                targetId in effect.effect.affectedEntities
+                (effect.effect.affectedEntities.isEmpty() || targetId in effect.effect.affectedEntities)
         }
         if (shieldIndex == -1) return Triple(state, null, 0)
 
@@ -1347,7 +1347,7 @@ object DamageUtils {
     /**
      * Check for single-instance chosen-source prevention shields (Deflecting Palm, New Way Forward).
      *
-     * Scans floating effects for [SerializableModification.PreventNextDamageFromChosenSourceShield]
+     * Scans floating effects for [SerializableModification.PreventNextDamageFromSourceShield]
      * matching the damage source. If found, consumes the shield (one instance prevented) and emits a
      * [DamagePreventedEvent] carrying the shield's `linkId`. That event fires the shield's linked
      * "when damage is prevented this way, …" delayed triggered ability on the stack, which deals the
@@ -1365,16 +1365,21 @@ object DamageUtils {
         damageAmount: Int,
         sourceId: EntityId
     ): DeflectOutcome? {
+        val sourceEntity = state.getEntity(sourceId)
+        val originatingSourceId = sourceEntity
+            ?.get<com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent>()?.sourceId
+            ?: sourceEntity?.get<com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent>()?.sourceId
+            ?: sourceEntity?.get<com.wingedsheep.engine.state.components.stack.AbilityOnStackComponent>()?.sourceId
         val shieldIndex = state.floatingEffects.indexOfFirst { effect ->
             val mod = effect.effect.modification
-            mod is SerializableModification.PreventNextDamageFromChosenSourceShield &&
-                mod.damageSourceId == sourceId &&
-                targetId in effect.effect.affectedEntities
+            mod is SerializableModification.PreventNextDamageFromSourceShield &&
+                (mod.damageSourceId == sourceId || mod.damageSourceId == originatingSourceId) &&
+                (effect.effect.affectedEntities.isEmpty() || targetId in effect.effect.affectedEntities)
         }
         if (shieldIndex == -1) return null
 
         val shield = state.floatingEffects[shieldIndex]
-        val mod = shield.effect.modification as SerializableModification.PreventNextDamageFromChosenSourceShield
+        val mod = shield.effect.modification as SerializableModification.PreventNextDamageFromSourceShield
 
         // Consume the shield (one damage instance) and announce it so the linked delayed triggered
         // ability fires on the stack with the captured amount.
