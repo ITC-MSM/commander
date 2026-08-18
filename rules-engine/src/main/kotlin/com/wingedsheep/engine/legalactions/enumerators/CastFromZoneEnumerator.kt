@@ -2289,7 +2289,12 @@ class CastFromZoneEnumerator : ActionEnumerator {
         fun grantIsSpent(sourceId: EntityId, sa: MayCastFromGraveyard): Boolean =
             sa.oncePerTurn && state.getEntity(sourceId)?.has<MayCastFromGraveyardUsedThisTurnComponent>() == true
 
-        val permissions = mutableListOf<MayCastFromGraveyard>()
+        // A permission, plus the one graveyard card it is scoped to (null = every matching card).
+        // Card-scoped entries come from a grant handed to the card itself — "creature cards in your
+        // graveyard gain 'You may cast this card from your graveyard'" (Case of the Uneaten Feast),
+        // where the set of cards is fixed when the ability resolves (CR 611.2c) rather than being a
+        // standing player-wide permission that later arrivals would also enjoy.
+        val permissions = mutableListOf<Pair<MayCastFromGraveyard, EntityId?>>()
         for (permId in state.getBattlefield()) {
             val container = state.getEntity(permId) ?: continue
             val controller = container.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()?.playerId
@@ -2298,20 +2303,25 @@ class CastFromZoneEnumerator : ActionEnumerator {
             val cardDef = context.cardRegistry.getCard(cardComp.cardDefinitionId) ?: continue
             for (sa in cardDef.script.staticAbilities) {
                 if (sa is MayCastFromGraveyard && !grantIsSpent(permId, sa)) {
-                    permissions.add(sa)
+                    permissions.add(sa to null)
                 }
             }
         }
-        // Durational grants (e.g. Forgotten Cellar's "you may cast spells from your graveyard this
-        // turn") recorded in grantedStaticAbilities, anchored to a permanent the player controls.
+        // Durational grants recorded in grantedStaticAbilities, in their two anchorings:
+        // anchored to a permanent the player controls, the grant is a player-wide permission
+        // (Forgotten Cellar's "you may cast spells from your graveyard this turn"); anchored to a
+        // card sitting in the player's own graveyard, it is that card's own permission.
+        val graveyard = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD))
         for (grant in state.grantedStaticAbilities) {
             val ability = grant.ability
             if (ability !is MayCastFromGraveyard) continue
+            if (grantIsSpent(grant.entityId, ability)) continue
             val anchor = state.getEntity(grant.entityId) ?: continue
             val controller = anchor.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()?.playerId
-            if (controller != playerId) continue
-            if (grantIsSpent(grant.entityId, ability)) continue
-            permissions.add(ability)
+            when {
+                controller == playerId -> permissions.add(ability to null)
+                grant.entityId in graveyard -> permissions.add(ability to grant.entityId)
+            }
         }
 
         if (permissions.isEmpty()) return
@@ -2324,7 +2334,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
         val emitted = HashSet<String>()
 
         // Check timing restrictions
-        for (permission in permissions) {
+        for ((permission, scopedCardId) in permissions) {
             if (permission.duringYourTurnOnly && !state.isActiveTurnFor(playerId)) continue
             val lifeCost = permission.lifeCost
             val lifeSuffix = if (lifeCost > 0) " (pay $lifeCost life)" else ""
@@ -2338,6 +2348,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
 
             val graveyardCards = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD))
             for (cardId in graveyardCards) {
+                if (scopedCardId != null && cardId != scopedCardId) continue
                 val container = state.getEntity(cardId) ?: continue
                 val cardComponent = container.get<CardComponent>() ?: continue
                 val cardDef = context.cardRegistry.getCard(cardComponent.cardDefinitionId) ?: continue

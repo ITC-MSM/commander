@@ -3083,6 +3083,134 @@
     "colorIdentityOverride": []
 }
 
+// Case of the Uneaten Feast
+{
+    "name": "Case of the Uneaten Feast",
+    "manaCost": "{W}",
+    "typeLine": "Enchantment — Case",
+    "oracleText": "Whenever a creature you control enters, you gain 1 life.\nTo solve — You've gained 5 or more life this turn. (If unsolved, solve at the beginning of your end step.)\nSolved — Sacrifice this Case: Creature cards in your graveyard gain \"You may cast this card from your graveyard\" until end of turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever a creature you control enters, you gain 1 life."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": "BecomeSolved",
+                "interveningIf": {
+                    "type": "All",
+                    "conditions": [
+                        {
+                            "type": "Compare",
+                            "left": {
+                                "type": "TurnTracking",
+                                "player": "You",
+                                "tracker": "LIFE_GAINED"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 5
+                            }
+                        },
+                        {
+                            "type": "Not",
+                            "condition": {
+                                "type": "EntityMatches",
+                                "entity": "Self",
+                                "filter": {
+                                    "statePredicates": [
+                                        "IsSolved"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "To solve — the amount of life your gained this turn is at least 5"
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "filter": "creature"
+                            },
+                            "storeAs": "uneatenFeast.creatures"
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Collection",
+                                "collection": "uneatenFeast.creatures"
+                            },
+                            "body": {
+                                "type": "GrantStaticAbility",
+                                "ability": {
+                                    "type": "MayCastFromGraveyard",
+                                    "filter": "creature"
+                                },
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": {
+                                "statePredicates": [
+                                    "IsSolved"
+                                ]
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "Sacrifice this Case: Creature cards in your graveyard gain \"You may cast this card from your graveyard\" until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "10",
+        "rarity": "RARE",
+        "artist": "Titus Lunter",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/c/ac63941b-3f78-4bd3-8b05-ca12aaaa006c.jpg?1783912926"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Caught Red-Handed
 {
     "name": "Caught Red-Handed",

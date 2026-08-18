@@ -6560,7 +6560,14 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   The spent-grant gate lives in two places that must stay in step — `CastFromZoneEnumerator`
   (which offers the action) and `CastZoneResolver.mayCastFromGraveyardGrantApplies` (which authorizes
   it) — with `CastSpellHandler` marking the source via
-  `CastZoneResolver.oncePerTurnGraveyardCastSourceToConsume` after the cast. Pair with `MayPlayLandsFromGraveyard` for "play
+  `CastZoneResolver.oncePerTurnGraveyardCastSourceToConsume` after the cast. **A grant anchored to a card
+  in the player's own graveyard is that one card's permission**, not a player-wide one — the shape behind
+  "creature cards in your graveyard gain \"You may cast this card from your graveyard\" until end of turn"
+  (Case of the Uneaten Feast). That wording grants to *cards*, so the affected set is fixed when the
+  ability resolves (CR 611.2c) and a card that reaches the graveyard later that turn is not covered; the
+  card gathers its graveyard and hands each card its own `GrantStaticAbility(MayCastFromGraveyard(...),
+  EffectTarget.Self, Duration.EndOfTurn)`. Both read sites treat a graveyard-card anchor this way.
+  Pair with `MayPlayLandsFromGraveyard` for "play
   lands and cast spells from your graveyard". Lands are *played*, not cast, so they need the lands
   permission separately. This grants permission over *other* cards in your graveyard from a
   battlefield permanent — for a card that grants permission to cast *itself* from a zone, use
