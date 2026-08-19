@@ -9,7 +9,6 @@ import com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
-import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.EntityId
@@ -131,7 +130,7 @@ class CastPaymentProcessor(
     ): PaymentResult {
         val lifePayments = (action.paymentStrategy as? PaymentStrategy.Explicit)?.phyrexianLifePayments.orEmpty()
         val lifeToPay = lifePayments.size * 2
-        val currentLife = state.getEntity(action.playerId)?.get<LifeTotalComponent>()?.life ?: 0
+        val currentLife = state.lifeTotal(action.playerId)
         if (lifeToPay > currentLife) {
             return PaymentResult(state, emptyList(), "Insufficient life for Phyrexian mana payment")
         }

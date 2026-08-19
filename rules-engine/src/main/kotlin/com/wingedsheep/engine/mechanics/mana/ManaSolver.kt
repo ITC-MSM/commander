@@ -56,7 +56,6 @@ import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
-import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
@@ -2014,7 +2013,7 @@ class ManaSolver(
         // A Phyrexian pip may be paid with 2 life instead of its color. Try each distinct pip
         // choice before the mana-only solver below; recursive calls see a strictly smaller cost.
         // Paying down to exactly 0 is legal, though state-based actions will make the player lose.
-        val life = state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 0
+        val life = state.lifeTotal(playerId)
         if ((phyrexianLifePipsCommitted + 1) * 2 <= life) {
             val triedColors = mutableSetOf<Color>()
             for (pip in cost.phyrexianSymbols) {
