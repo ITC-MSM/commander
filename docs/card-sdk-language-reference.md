@@ -1683,7 +1683,8 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   set-specific-art note below).
 - `CreateFood(count?, controller?)` — Food tokens. `count` accepts an `Int` or a `DynamicAmount` (the latter evaluated at resolution, e.g. `CreateFood(DynamicAmount.Divide(DynamicAmount.CastX, DynamicAmount.Fixed(2), roundUp = true))` for The Goose Mother's "create half X Food tokens, rounded up").
 - `CreateEldraziSpawn(count?, controller?, imageUri?)` — 0/1 colorless Eldrazi Spawn creature tokens
-  ("Sacrifice this creature: Add {C}."), `count: Int` (default 1).
+  ("Sacrifice this creature: Add {C}."). `count` accepts an `Int` (default 1) or a `DynamicAmount`
+  evaluated at resolution, such as `DynamicAmount.XValue` for Kozilek's Command.
 - `CreateBlood(count?, controller?)` — Blood tokens (artifact with "{1}, {T}, Discard a card, Sacrifice this artifact: Draw a card."). `count` accepts an `Int` or a `DynamicAmount` (the latter evaluated at resolution, e.g. `CreateBlood(DynamicAmount.EntityProperty(EntityReference.Target(0), EntityNumericProperty.ExcessMarkedDamage))` for Lacerate Flesh's "create a number of Blood tokens equal to the amount of excess damage dealt").
 - `CreateClue(count?, controller?)` / `Investigate(count?, controller?)` — Clue tokens (artifact with
   "{2}, Sacrifice this token: Draw a card."). `Investigate` is the keyword-action spelling (CR 701.36) so

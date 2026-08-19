@@ -37,7 +37,7 @@ class DismemberScenarioTest : ScenarioTestBase() {
                 game.castSpell(1, "Dismember", giant).error shouldBe null
                 game.resolveStack()
 
-                withClue("-5/-5 kills a 3/3 (0 or less toughness, CR 704.5g)") {
+                withClue("-5/-5 kills a 3/3 (0 or less toughness, CR 704.5f)") {
                     game.isOnBattlefield("Hill Giant") shouldBe false
                     game.isInGraveyard(2, "Hill Giant") shouldBe true
                 }

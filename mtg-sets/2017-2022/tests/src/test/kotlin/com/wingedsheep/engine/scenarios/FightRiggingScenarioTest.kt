@@ -140,7 +140,7 @@ class FightRiggingScenarioTest : ScenarioTestBase() {
                 }
 
                 // Grizzly Bears is a creature (sorcery speed, CR 117.1a) — the granted permission is
-                // an ordinary "may play" grant (CR 118.9/601.3i-style), not "as though it had flash",
+                // an ordinary "may play" grant (CR 118.9), not "as though it had flash",
                 // so it can't actually be cast during the beginning-of-combat step it was offered in.
                 // It's only usable once a main phase with an empty stack comes around again — here,
                 // the postcombat main phase later this same turn.

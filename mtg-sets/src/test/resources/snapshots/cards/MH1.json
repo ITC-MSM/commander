@@ -105,6 +105,64 @@
     ]
 }
 
+// Force of Vigor
+{
+    "name": "Force of Vigor",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Instant",
+    "oracleText": "If it's not your turn, you may exile a green card from your hand rather than pay this spell's mana cost.\nDestroy up to two target artifacts and/or enchantments.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": "IterationSpace.Targets",
+            "body": {
+                "type": "MoveToZone",
+                "target": {
+                    "type": "ContextTarget",
+                    "index": 0
+                },
+                "destination": "Graveyard",
+                "byDestruction": true
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "count": 2,
+                "optional": true,
+                "filter": {
+                    "baseFilter": "artifact|enchantment"
+                },
+                "id": "targets"
+            }
+        ],
+        "selfAlternativeCost": {
+            "manaCost": "{0}",
+            "additionalCosts": [
+                {
+                    "type": "AdditionalAtom",
+                    "atom": {
+                        "type": "AtomExileFrom",
+                        "zone": "Hand",
+                        "filter": "green"
+                    }
+                }
+            ],
+            "condition": "IsNotYourTurn"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "164",
+        "rarity": "RARE",
+        "artist": "Randy Vargas",
+        "flavorText": "The vines overgrew the construct, snapping gears and soaking up aether.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/1/017c415b-d635-43c6-92b8-8c95d1c4ff8d.jpg?1783933099"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Goblin Oriflamme
 {
     "name": "Goblin Oriflamme",

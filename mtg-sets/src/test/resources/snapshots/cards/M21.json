@@ -98,6 +98,118 @@
     ]
 }
 
+// Elder Gargaroth
+{
+    "name": "Elder Gargaroth",
+    "manaCost": "{3}{G}{G}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "Reach, vigilance, trample\nWhenever this creature attacks or blocks, choose one —\n• Create a 3/3 green Beast creature token.\n• You gain 3 life.\n• Draw a card.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "REACH",
+        "VIGILANCE",
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "CreateToken",
+                                "power": 3,
+                                "toughness": 3,
+                                "colors": [
+                                    "GREEN"
+                                ],
+                                "creatureTypes": [
+                                    "Beast"
+                                ],
+                                "imageUri": "https://cards.scryfall.io/normal/front/8/8/882247ba-99d2-46db-8314-f800f3366b7f.jpg?1783930590"
+                            }
+                        },
+                        {
+                            "effect": {
+                                "type": "GainLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                }
+                            }
+                        },
+                        {
+                            "effect": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": "BlockEvent",
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "CreateToken",
+                                "power": 3,
+                                "toughness": 3,
+                                "colors": [
+                                    "GREEN"
+                                ],
+                                "creatureTypes": [
+                                    "Beast"
+                                ],
+                                "imageUri": "https://cards.scryfall.io/normal/front/8/8/882247ba-99d2-46db-8314-f800f3366b7f.jpg?1783930590"
+                            }
+                        },
+                        {
+                            "effect": {
+                                "type": "GainLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                }
+                            }
+                        },
+                        {
+                            "effect": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "179",
+        "rarity": "MYTHIC",
+        "artist": "Nicholas Gregory",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/5/d51269cf-a333-4a64-94cd-245798d840d2.jpg?1783930678"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Garruk's Gorehorn
 {
     "name": "Garruk's Gorehorn",

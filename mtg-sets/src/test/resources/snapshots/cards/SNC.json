@@ -1435,6 +1435,182 @@
     ]
 }
 
+// Fight Rigging
+{
+    "name": "Fight Rigging",
+    "manaCost": "{2}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Hideaway 5 (When this enchantment enters, look at the top five cards of your library, exile one face down, then put the rest on the bottom in a random order.)\nAt the beginning of combat on your turn, put a +1/+1 counter on target creature you control. Then if you control a creature with power 7 or greater, you may play the exiled card without paying its mana cost.",
+    "keywords": [
+        "HIDEAWAY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "HIDEAWAY",
+            "n": 5
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 5
+                                }
+                            },
+                            "storeAs": "fightRiggingTop"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "fightRiggingTop",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "fightRiggingPicked",
+                            "storeRemainder": "fightRiggingRest",
+                            "prompt": "Choose a card to exile face down",
+                            "selectedLabel": "Exile face down",
+                            "remainderLabel": "Put on bottom of library"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "fightRiggingPicked",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true,
+                            "faceDown": "HIDDEN"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "fightRiggingRest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": {
+                                        "type": "AggregateBattlefield",
+                                        "player": "You",
+                                        "filter": "creature pow>=7"
+                                    },
+                                    "operator": "GTE",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "Gated",
+                                "gate": "Gate.MayDecide",
+                                "then": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "GatherCards",
+                                            "source": "FromLinkedExile",
+                                            "storeAs": "fightRiggingLinked"
+                                        },
+                                        {
+                                            "type": "GrantMayPlayFromExile",
+                                            "from": "fightRiggingLinked"
+                                        },
+                                        {
+                                            "type": "GrantPlayWithoutPayingCost",
+                                            "from": "fightRiggingLinked"
+                                        }
+                                    ]
+                                },
+                                "descriptionOverride": "Play the exiled card without paying its mana cost"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target"
+                },
+                "descriptionOverride": "At the beginning of combat on your turn, put a +1/+1 counter on target creature you control. Then if you control a creature with power 7 or greater, you may play the exiled card without paying its mana cost."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "145",
+        "rarity": "RARE",
+        "artist": "Daarken",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/6/86fd3454-efe7-4feb-a6ad-069ae2fdbd18.jpg?1783923103",
+        "rulings": [
+            {
+                "date": "2022-04-29",
+                "text": "\"Hideaway N\" means \"When this permanent enters the battlefield, look at the top N cards of your library. Exile one of them face down and put the rest on the bottom of your library in a random order. The exiled card gains 'The player who controls the permanent that exiled this card may look at this card in the exile zone.'\""
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Any player who has controlled a permanent with a hideaway ability since a card was exiled with it may look at that card."
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Hideaway now causes you to put the rest of the cards on the bottom of your library in a random order instead of any order."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Fleetfoot Dancer
 {
     "name": "Fleetfoot Dancer",

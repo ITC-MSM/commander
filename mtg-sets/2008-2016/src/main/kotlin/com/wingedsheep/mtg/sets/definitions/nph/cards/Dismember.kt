@@ -13,7 +13,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  *
  * Target creature gets -5/-5 until end of turn.
  *
- * ({B/P} can be paid with either {B} or 2 life — CR 107.4f/g.) The Phyrexian mana symbols are
+ * ({B/P} can be paid with either {B} or 2 life — CR 107.4f.) The Phyrexian mana symbols are
  * parsed directly by `ManaCost.parse` (same syntax as Skrelv, Defector Mite / Namor, the
  * Sub-Mariner's activated-ability costs); a Phyrexian pip always contributes 1 to mana value
  * regardless of how it's paid (2024-06-07 ruling), so no special-casing is needed here.

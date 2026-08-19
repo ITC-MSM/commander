@@ -867,6 +867,99 @@
     ]
 }
 
+// Ulamog, the Ceaseless Hunger
+{
+    "name": "Ulamog, the Ceaseless Hunger",
+    "manaCost": "{10}",
+    "typeLine": "Legendary Creature — Eldrazi",
+    "oracleText": "When you cast this spell, exile two target permanents.\nIndestructible\nWhenever Ulamog attacks, defending player exiles the top twenty cards of their library.",
+    "creatureStats": {
+        "power": 10,
+        "toughness": 10
+    },
+    "keywords": [
+        "INDESTRUCTIBLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CastThisSpellEvent",
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "destination": "Exile"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "count": 2,
+                    "filter": {
+                        "baseFilter": "permanent"
+                    },
+                    "id": "target permanents"
+                },
+                "descriptionOverride": "When you cast this spell, exile two target permanents."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 20
+                                },
+                                "player": "DefendingPlayer"
+                            },
+                            "storeAs": "exiled_top"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "exiled_top",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile",
+                                "player": "DefendingPlayer"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever Ulamog attacks, defending player exiles the top twenty cards of their library."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "15",
+        "rarity": "MYTHIC",
+        "artist": "Michael Komarck",
+        "flavorText": "A force as voracious as time itself.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/1/1192f7a9-102e-4b3a-b154-18c8eb332217.jpg?1783938222",
+        "rulings": [
+            {
+                "date": "2015-08-25",
+                "text": "Ulamog's first ability resolves independently of Ulamog once they've both been put on the stack. If Ulamog is countered, that triggered ability will still resolve. That triggered ability will always resolve before Ulamog does."
+            },
+            {
+                "date": "2015-08-25",
+                "text": "If the player has less than twenty cards in their library, exile all of them. That player won't lose the game until they have to draw a card from an empty library."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Valakut Invoker
 {
     "name": "Valakut Invoker",
