@@ -5,29 +5,27 @@ import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.TimingRule
 
 /**
  * Leaf Gilder
  * {1}{G}
  * Creature — Elf Druid
  * 2/1
+ *
  * {T}: Add {G}.
  */
 val LeafGilder = card("Leaf Gilder") {
     manaCost = "{1}{G}"
     colorIdentity = "G"
     typeLine = "Creature — Elf Druid"
+    oracleText = "{T}: Add {G}."
     power = 2
     toughness = 1
-    oracleText = "{T}: Add {G}."
 
     activatedAbility {
         cost = Costs.Tap
-        effect = Effects.AddMana(Color.GREEN, 1)
+        effect = Effects.AddMana(Color.GREEN)
         manaAbility = true
-        timing = TimingRule.ManaAbility
-        description = "{T}: Add {G}."
     }
 
     metadata {

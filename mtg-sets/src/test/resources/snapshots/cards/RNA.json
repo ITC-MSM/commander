@@ -681,6 +681,46 @@
     ]
 }
 
+// Sylvan Brushstrider
+{
+    "name": "Sylvan Brushstrider",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "When this creature enters, you gain 2 life.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "When this creature enters, you gain 2 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "144",
+        "artist": "Dan Murayama Scott",
+        "flavorText": "The mournful lowing of brushstriders warns of changing weather and ill winds.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/b/8bc288a3-ea56-450a-96fd-c2123121f663.jpg?1783933664"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Wilderness Reclamation
 {
     "name": "Wilderness Reclamation",

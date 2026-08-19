@@ -2707,6 +2707,169 @@
     ]
 }
 
+// Case File Auditor
+{
+    "name": "Case File Auditor",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Human Detective",
+    "oracleText": "When this creature enters and whenever you solve a Case, look at the top six cards of your library. You may reveal an enchantment card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.\nYou may spend mana as though it were mana of any color to cast Case spells.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 6
+                                }
+                            },
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered0",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "enchantment",
+                            "storeSelected": "selected1",
+                            "storeRemainder": "remainder1",
+                            "prompt": "You may reveal an enchantment card and put it into your hand",
+                            "selectedLabel": "To hand",
+                            "remainderLabel": "Bottom of library",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "RevealCollection",
+                            "from": "selected1"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected1",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "remainder1",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, look at the top six cards of your library. You may reveal an enchantment card from among them and put it into your hand. Put the rest on the bottom of your library in a random order."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "CaseSolvedEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 6
+                                }
+                            },
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered0",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "enchantment",
+                            "storeSelected": "selected1",
+                            "storeRemainder": "remainder1",
+                            "prompt": "You may reveal an enchantment card and put it into your hand",
+                            "selectedLabel": "To hand",
+                            "remainderLabel": "Bottom of library",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "RevealCollection",
+                            "from": "selected1"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected1",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "remainder1",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever you solve a Case, look at the top six cards of your library. You may reveal an enchantment card from among them and put it into your hand. Put the rest on the bottom of your library in a random order."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "SpendAnyManaTypeForSpells",
+                "filter": "Case"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "7",
+        "rarity": "UNCOMMON",
+        "artist": "Ryan Valle",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/0/70a52038-9d1c-4be1-8dbe-6f0ee916ba94.jpg?1783912929",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Case File Auditor's first ability triggers whenever a \"to solve\" ability you control resolves."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Case of the Burning Masks
 {
     "name": "Case of the Burning Masks",
@@ -7574,6 +7737,125 @@
             {
                 "date": "2024-02-02",
                 "text": "Players pay all costs and follow all normal timing rules for cards played from exile with Expedited Inheritance's permission. For example, if one of the exiled cards is a land card, they may play it only during their main phase while the stack is empty."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Expose the Culprit
+{
+    "name": "Expose the Culprit",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one or both —\n• Turn target face-down creature face up.\n• Exile any number of face-up creatures you control with disguise in a face-down pile, shuffle that pile, then cloak them. (To cloak a card, put it onto the battlefield face down as a 2/2 creature with ward {2}. Turn it face up any time for its mana cost if it's a creature card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "TurnFaceUp",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "face-down creature"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature facedown"
+                            },
+                            "id": "face-down creature"
+                        }
+                    ],
+                    "description": "Turn target face-down creature face up"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "BattlefieldMatching",
+                                    "filter": {
+                                        "cardPredicates": [
+                                            "IsCreature"
+                                        ],
+                                        "statePredicates": [
+                                            "IsFaceUp",
+                                            "HasDisguiseAbility"
+                                        ],
+                                        "controllerPredicate": "ControlledByYou"
+                                    }
+                                },
+                                "storeAs": "gathered0"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "gathered0",
+                                "selection": "ChooseAnyNumber",
+                                "storeSelected": "selected1",
+                                "prompt": "Exile any number of face-up creatures you control with disguise",
+                                "useTargetingUI": true
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "selected1",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                },
+                                "storeMovedAs": "moved2"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "moved2",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield"
+                                },
+                                "order": "Random",
+                                "faceDown": "CLOAK"
+                            }
+                        ]
+                    },
+                    "description": "Exile any number of face-up creatures you control with disguise, then cloak them"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1
+        }
+    },
+    "metadata": {
+        "collectorNumber": "124",
+        "rarity": "UNCOMMON",
+        "artist": "Ryan Valle",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/31aadd3d-5ce1-44ba-ac6d-b192a9ea491b.jpg?1783912881",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "The pile is shuffled to disguise from your opponents which cloaked creature is which. After you cloak the creatures, you may look at them."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "To cloak a card, put it onto the battlefield face down. It becomes a 2/2 face-down creature card with ward {2} and no name, mana cost, or creature types. It's colorless and has a mana value of 0. Other effects that apply to the permanent can still grant it any characteristics it doesn't have or change the characteristics it does have."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a cloaked creature would have disguise (or morph) if it were face up, you may also turn it face up by paying its disguise (or morph) cost."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Because the permanent is on the battlefield both before and after it's turned face up, turning a permanent face up doesn't cause any enters-the-battlefield abilities to trigger."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If something tries to turn a face-down instant or sorcery card on the battlefield face up, reveal that card to show all players it's an instant or sorcery card. The permanent remains on the battlefield face down. Abilities that trigger when a permanent turns face up won't trigger, because even though you revealed the card, it never turned face up."
             }
         ]
     },

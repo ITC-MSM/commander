@@ -582,6 +582,13 @@ class TriggerMatcher(
                 event is com.wingedsheep.engine.core.EvidenceCollectedEvent &&
                     matchesPlayer(trigger.player, event.playerId, controllerId)
             }
+            is EventPattern.CaseSolvedEvent -> {
+                // The solving player rides the event (the Case's controller when its "To solve"
+                // trigger resolved), so a Case sacrificed by its own Solved ability still credits
+                // the right player here.
+                event is com.wingedsheep.engine.core.CaseSolvedEvent &&
+                    matchesPlayer(trigger.player, event.controllerId, controllerId)
+            }
             is EventPattern.ExploredEvent -> {
                 if (event !is com.wingedsheep.engine.core.PermanentExploredEvent) return false
                 // Reveal-type gate (CR 701.44a): ANY always matches; LAND/NONLAND require the
@@ -2161,6 +2168,7 @@ class TriggerMatcher(
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.BlockedOrWasBlockedByLegendaryThisTurn,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsFaceUp,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasMorphAbility,
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasDisguiseAbility,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsRingBearer,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasGreatestPower,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasLeastPowerAmongAllCreatures,

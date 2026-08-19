@@ -3859,6 +3859,18 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
 - `.nontoken()` / `.token()` — token vs printed.
 - `.monocolored()` — restrict to monocolored objects (exactly one color, CR 105.2); colorless objects don't match. ("for each color among monocolored permanents you control" — Tarnation Vista.)
 - `.faceDown()` — face-down state.
+- `.withMorph()` — has a morph *procedure*: the printed keyword (`HasMorphAbilityComponent`, any
+  zone) **or** a turn-up procedure whose mechanic is morph. "Creature with a morph ability"
+  (Backslide) — a manifested/cloaked/disguised permanent carries turn-up data too, so the runtime
+  half checks the mechanic rather than the component's presence.
+- `.withDisguise()` — has a printed **disguise** ability (CR 702.168), read off the card definition
+  via `HasDisguiseAbilityComponent`, so it answers the same in every zone and regardless of whether
+  the object is currently face down. Deliberately *not* a `withMorph()` variant: that asks "can this
+  be turned face up", which is also true of a cloaked permanent that has no disguise, and is only
+  answerable while the permanent is face **down**. Expose the Culprit's "any number of face-up
+  creatures you control **with disguise**" asks the printed-ability question about a face-**up**
+  permanent, which is why the component rides the card rather than the turn-up data:
+  `GameObjectFilter.Creature.youControl().faceUp().withDisguise()`.
 - `.card(filter)` — defer to a card-shape filter for off-battlefield checks.
 
 **Explicit constructor**:
@@ -5144,6 +5156,25 @@ Triggers.youCastSpell(
   for "This ability triggers only once each turn." Used by Curator of Sun's Creation. The event is
   emitted from a completed resolution (not the paused may-cast batch), so watchers fire reliably; it
   fires even when the library was empty or no matching card was found.
+
+### Cases (CR 719)
+
+- `WheneverYouSolveACase` — fires as one of your Cases becomes solved (CR 719.3a), i.e. when its
+  "To solve" trigger resolves and `BecomeSolvedExecutor` stamps the designation. Case File Auditor's
+  printed ruling words it as "whenever a 'to solve' ability you control resolves". Backed by
+  `EventPattern.CaseSolvedEvent(player)` + the engine `CaseSolvedEvent`; the binding is
+  `TriggerBinding.ANY`, because the event subject is the **Case**, not the permanent carrying the
+  payoff.
+  - The **solving player rides the event** (`CaseSolvedEvent.controllerId`, the Case's projected
+    controller at the moment it was solved) rather than being read back off the permanent: a Case
+    whose "Solved —" ability sacrifices it is already gone by the time a payoff is matched. That is
+    also what makes `Player.You` mean "the player who solved it", so an opponent's Case solving
+    never fires your Auditor.
+  - Fires **at most once per Case object**: the designation is sticky and one-way (CR 719.3b), and
+    `BecomeSolvedExecutor` emits nothing for an already-solved permanent. A Case that leaves and
+    returns is a new object and can be solved again.
+  - Solved-ness itself is read with `Conditions.SourceIsSolved` / `.solved()`; this is the *moment
+    it flips*, not the standing state.
 
 ### Explore (CR 701.44)
 
@@ -11022,6 +11053,9 @@ Card authors rarely reference these directly; they are created/updated by the ma
     nor a copiable value. `Effects.BecomeSolved` stamps it, `Conditions.SourceIsSolved` / `.solved()` /
     `StatePredicate.IsSolved` read it, `ClientCard.isSolved` surfaces it as a card badge, and
     `ZoneMovementUtils.stripBattlefieldComponents` drops it when the Case leaves the battlefield.
+  - The **moment** it flips is `Triggers.WheneverYouSolveACase` (§ Cases (CR 719) under triggers) —
+    "when this creature enters **and whenever you solve a Case**" (Case File Auditor). That is the
+    event, not the standing state; `SourceIsSolved` is the state.
   - An **unsolved** Case shows how close its criterion is as a `current/required` badge — Case of the
     Burning Masks counts 0/3 up to 3/3 as sources deal damage — and drops it once solved. That falls
     out of the generic intervening-if badge (§ Triggered abilities) reading inside the

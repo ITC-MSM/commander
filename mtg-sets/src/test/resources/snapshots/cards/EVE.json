@@ -50,6 +50,96 @@
     ]
 }
 
+// Scarecrone
+{
+    "name": "Scarecrone",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Scarecrow",
+    "oracleText": "{1}, Sacrifice a Scarecrow: Draw a card.\n{4}, {T}: Return target artifact creature card from your graveyard to the battlefield.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "permanent Scarecrow"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{1}, Sacrifice a Scarecrow: Draw a card."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{4}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact creature card in your graveyard"
+                    },
+                    "destination": "Battlefield",
+                    "fromZone": "Graveyard"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact creature own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "target artifact creature card in your graveyard"
+                    }
+                ],
+                "descriptionOverride": "{4}, {T}: Return target artifact creature card from your graveyard to the battlefield."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "172",
+        "rarity": "RARE",
+        "artist": "Jesper Ejsing",
+        "flavorText": "Her poppets bring joy to the truly depraved.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/9/1978400d-a8f1-4df7-8caf-b9ca81334bce.jpg?1783942656"
+    },
+    "colorIdentityOverride": []
+}
+
 // Wickerbough Elder
 {
     "name": "Wickerbough Elder",

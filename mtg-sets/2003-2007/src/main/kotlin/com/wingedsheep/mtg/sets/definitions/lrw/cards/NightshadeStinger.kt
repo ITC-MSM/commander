@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.scripting.CantBlock
  * {B}
  * Creature — Faerie Rogue
  * 1/1
+ *
  * Flying
  * This creature can't block.
  */
@@ -17,9 +18,9 @@ val NightshadeStinger = card("Nightshade Stinger") {
     manaCost = "{B}"
     colorIdentity = "B"
     typeLine = "Creature — Faerie Rogue"
+    oracleText = "Flying\nThis creature can't block."
     power = 1
     toughness = 1
-    oracleText = "Flying\nThis creature can't block."
 
     keywords(Keyword.FLYING)
 

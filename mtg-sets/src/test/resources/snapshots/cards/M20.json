@@ -1,3 +1,48 @@
+// Agonizing Syphon
+{
+    "name": "Agonizing Syphon",
+    "manaCost": "{3}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Agonizing Syphon deals 3 damage to any target and you gain 3 life.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            "AnyTarget"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "83",
+        "artist": "Seb McKinnon",
+        "flavorText": "\"Your death will take a mere moment, but it will feel like an eternity.\"\n—Vilis, Broker of Blood",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0d8efd95-1c2f-4dd1-b70b-3cfb10ff3a28.jpg?1783933001"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Angel of Vitality
 {
     "name": "Angel of Vitality",
@@ -703,6 +748,62 @@
     ]
 }
 
+// Ironroot Warlord
+{
+    "name": "Ironroot Warlord",
+    "manaCost": "{1}{G}{W}",
+    "typeLine": "Creature — Treefolk Soldier",
+    "oracleText": "Ironroot Warlord's power is equal to the number of creatures you control.\n{3}{G}{W}: Create a 1/1 white Soldier creature token.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "creature"
+            }
+        },
+        "toughness": 5
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{G}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Soldier"
+                    ]
+                },
+                "descriptionOverride": "{3}{G}{W}: Create a 1/1 white Soldier creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "209",
+        "rarity": "UNCOMMON",
+        "artist": "Filip Burburan",
+        "flavorText": "\"Alone, it's a fortification. At the head of its troops, it's a battering ram.\"\n—Skerk Hobnett, wilderness guide",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/d/edec85ce-7daa-48c2-b25d-b22941e01e73.jpg?1783932951"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
 // Kykar, Wind's Fury
 {
     "name": "Kykar, Wind's Fury",
@@ -811,6 +912,57 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Pyroclastic Elemental
+{
+    "name": "Pyroclastic Elemental",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "{1}{R}{R}: This creature deals 1 damage to target player.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{R}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirements": [
+                    "TargetPlayer"
+                ],
+                "descriptionOverride": "{1}{R}{R}: This creature deals 1 damage to target player."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "296",
+        "rarity": "UNCOMMON",
+        "artist": "Svetlin Velinov",
+        "flavorText": "\"Whoever thought of making mobile volcanoes was a genius.\"\n—Chandra Nalaar",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/d/2d57f8b5-fde9-498d-82bf-34bfb2370703.jpg?1783932918"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -1268,5 +1420,45 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Winged Words
+{
+    "name": "Winged Words",
+    "manaCost": "{2}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "This spell costs {1} less to cast if you control a creature with flying.\nDraw two cards.",
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            }
+        },
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "FixedIfControlFilter",
+                        "amount": 1,
+                        "filter": "creature kw:flying"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "80",
+        "artist": "Chris Seaman",
+        "flavorText": "Magic written across the sky falls like rain on thirsty ground, bringing forth wisdom in its season.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/f/ff765065-b160-49b6-99ac-cd695bd0d903.jpg?1783933001"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }

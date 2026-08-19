@@ -111,6 +111,43 @@
     ]
 }
 
+// Flurry of Horns
+{
+    "name": "Flurry of Horns",
+    "manaCost": "{4}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create two 2/3 red Minotaur creature tokens with haste.",
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "power": 2,
+            "toughness": 3,
+            "colors": [
+                "RED"
+            ],
+            "creatureTypes": [
+                "Minotaur"
+            ],
+            "keywords": [
+                "HASTE"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "96",
+        "artist": "Phill Simmer",
+        "flavorText": "A minotaur does not distinguish between human, satyr, and triton. They are all meat.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/3/333ff270-4bc7-48ee-9738-f8c70b8a7e40.jpg?1783939424"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Heroes' Bane
 {
     "name": "Heroes' Bane",
@@ -161,6 +198,63 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Lightning Diadem
+{
+    "name": "Lightning Diadem",
+    "manaCost": "{5}{R}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nWhen this Aura enters, it deals 2 damage to any target.\nEnchanted creature gets +2/+2.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                },
+                "descriptionOverride": "When this Aura enters, it deals 2 damage to any target."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "102",
+        "artist": "Ryan Alexander Lee",
+        "flavorText": "\"I fight for Keranos and for mortals. I see no contradiction.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/c/4ce3f1c6-2e6f-4087-8619-a01fdcc6d4a3.jpg?1783939422"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -260,6 +354,40 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Sigiled Starfish
+{
+    "name": "Sigiled Starfish",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Starfish",
+    "oracleText": "{T}: Scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Scry",
+                    "count": 1
+                },
+                "descriptionOverride": "{T}: Scry 1."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "52",
+        "artist": "Nils Hamm",
+        "flavorText": "Kruphix hid the most dire prophecies about humankind where humans would never find them and tritons wouldn't care to read them.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/5/85a61f99-44f8-4a2b-b7f2-7899a694552d.jpg?1783939442"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

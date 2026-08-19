@@ -133,6 +133,41 @@
     ]
 }
 
+// Feral Invocation
+{
+    "name": "Feral Invocation",
+    "manaCost": "{2}{G}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Flash (You may cast this spell any time you could cast an instant.)\nEnchant creature\nEnchanted creature gets +2/+2.",
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "158",
+        "artist": "Mathias Kollros",
+        "flavorText": "Nylea's sacred lynx guards those who honor the Nessian Wood and hunts those who don't.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5c1f15a2-0058-4188-9696-385fa6974bd4.jpg?1783939745"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Hero's Downfall
 {
     "name": "Hero's Downfall",
@@ -292,6 +327,54 @@
     ]
 }
 
+// Minotaur Skullcleaver
+{
+    "name": "Minotaur Skullcleaver",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Minotaur Berserker",
+    "oracleText": "Haste\nWhen this creature enters, it gets +2/+0 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "When this creature enters, it gets +2/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "130",
+        "artist": "Phill Simmer",
+        "flavorText": "\"Their only dreams are of full stomachs.\"\n—Kleon the Iron-Booted",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/8/6854c913-d4bd-42f7-901c-f3c25be5c4b2.jpg?1783939759"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Pheres-Band Centaurs
 {
     "name": "Pheres-Band Centaurs",
@@ -309,6 +392,56 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Prescient Chimera
+{
+    "name": "Prescient Chimera",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Creature — Chimera",
+    "oracleText": "Flying\nWhenever you cast an instant or sorcery spell, scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Scry",
+                    "count": 1
+                },
+                "descriptionOverride": "Whenever you cast an instant or sorcery spell, scry 1."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "59",
+        "artist": "Daarken",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/9/f9342aba-e3aa-4210-ad72-e609c7c027b8.jpg?1783939794"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -656,6 +789,50 @@
         "artist": "Howard Lyon",
         "flavorText": "At sunrise, the Champion and her companions awoke to find their supplies gone and Brygus, their sentry, dead. Carefully arranged piles of ornamental shells gave a clear warning: go no further.\n—*The Theriad*",
         "imageUri": "https://cards.scryfall.io/normal/front/d/8/d8f0fe22-dc89-4ad8-b5f6-6d91b61f1385.jpg?1783939787"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Voyage's End
+{
+    "name": "Voyage's End",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Return target creature to its owner's hand. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    },
+                    "destination": "Hand"
+                },
+                {
+                    "type": "Scry",
+                    "count": 1
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "73",
+        "artist": "Chris Rahn",
+        "flavorText": "Philosophers say those lost at sea ascended to a more perfect realm. Sailors say they drowned.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/9/3992ae67-ad0b-40be-a97d-d7fb36754918.jpg?1783939787"
     },
     "colorIdentityOverride": [
         "BLUE"

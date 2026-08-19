@@ -203,6 +203,61 @@
     ]
 }
 
+// Cinder Elemental
+{
+    "name": "Cinder Elemental",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "{X}{R}, {T}, Sacrifice this creature: It deals X damage to any target.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{X}{R}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": "XValue",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirements": [
+                    "AnyTarget"
+                ],
+                "descriptionOverride": "{X}{R}, {T}, Sacrifice this creature: It deals X damage to any target."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "183",
+        "rarity": "UNCOMMON",
+        "artist": "Greg Staples",
+        "flavorText": "Their rage can grow to such proportions that they explode in a cloud of fire.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/0/80b39056-2ee8-4cfd-acbd-ba99f74e788d.jpg?1783945942"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Cloud Sprite
 {
     "name": "Cloud Sprite",
@@ -628,6 +683,46 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Rishadan Airship
+{
+    "name": "Rishadan Airship",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Human Pirate",
+    "oracleText": "Flying\nThis creature can block only creatures with flying.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CanOnlyBlockCreaturesWith",
+                "blockerFilter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        {
+                            "type": "HasKeyword",
+                            "keyword": "FLYING"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "91",
+        "artist": "Kev Walker",
+        "flavorText": "The view is truly spectacular—as long as you don't look at Rishada itself.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/d/5d8e596b-f5ef-405a-8910-c5d0b5c8c0fc.jpg?1783945964"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

@@ -1,3 +1,46 @@
+// Aegis of the Heavens
+{
+    "name": "Aegis of the Heavens",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +1/+7 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": 1
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": 7
+            },
+            "target": {
+                "type": "ContextTarget",
+                "index": 0
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "1",
+        "rarity": "UNCOMMON",
+        "artist": "Anthony Palumbo",
+        "flavorText": "Inner strength is never seen until it makes all the difference.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/5/0503c55d-74bb-4165-9273-127c01bb2214.jpg?1783934612"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Aethershield Artificer
 {
     "name": "Aethershield Artificer",
@@ -212,6 +255,42 @@
         "imageUri": "https://cards.scryfall.io/normal/front/0/c/0ce4702d-f65b-413e-99da-112f632a0a63.jpg?1783934516"
     },
     "colorIdentityOverride": []
+}
+
+// Blood Divination
+{
+    "name": "Blood Divination",
+    "manaCost": "{3}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "As an additional cost to cast this spell, sacrifice a creature.\nDraw three cards.",
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 3
+            }
+        },
+        "additionalCosts": [
+            {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "86",
+        "rarity": "UNCOMMON",
+        "artist": "Filip Burburan",
+        "flavorText": "Predicting the future is a messy business.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/f/6fe72bd9-825e-4451-9314-826882f75c85.jpg?1783934576"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
 }
 
 // Bogstomper
@@ -828,6 +907,50 @@
     ]
 }
 
+// Goblin Instigator
+{
+    "name": "Goblin Instigator",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Goblin Rogue",
+    "oracleText": "When this creature enters, create a 1/1 red Goblin creature token.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "RED"
+                    ],
+                    "creatureTypes": [
+                        "Goblin"
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, create a 1/1 red Goblin creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "142",
+        "artist": "Filip Burburan",
+        "flavorText": "\"We can take 'em. You go first!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/0/90cef94d-d941-4e08-afec-a116626b74fb.jpg?1783934551"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Herald of Faith
 {
     "name": "Herald of Faith",
@@ -979,6 +1102,30 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Knight of the Tusk
+{
+    "name": "Knight of the Tusk",
+    "manaCost": "{4}{W}{W}",
+    "typeLine": "Creature — Human Knight",
+    "oracleText": "Vigilance (Attacking doesn't cause this creature to tap.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 7
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "metadata": {
+        "collectorNumber": "18",
+        "artist": "Jesper Ejsing",
+        "flavorText": "\"Horse? Who needs a horse?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/1/213b4584-420a-48c2-9709-7b07458e914b.jpg?1783934605"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -1155,6 +1302,61 @@
     "colorIdentityOverride": [
         "WHITE"
     ]
+}
+
+// Marauder's Axe
+{
+    "name": "Marauder's Axe",
+    "manaCost": "{2}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature gets +2/+0.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 0
+            }
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "240",
+        "artist": "Mitchell Malloy",
+        "flavorText": "A sharp axe solves most problems.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/2/a2ca16ee-e415-4270-a453-47111d07a07f.jpg?1783934509"
+    },
+    "colorIdentityOverride": []
 }
 
 // Meteor Golem

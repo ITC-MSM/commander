@@ -123,6 +123,57 @@
     ]
 }
 
+// Bloodhunter Bat
+{
+    "name": "Bloodhunter Bat",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Bat",
+    "oracleText": "Flying\nWhen this creature enters, target player loses 2 life and you gain 2 life.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "from": {
+                        "type": "BoundVariable",
+                        "name": "target player"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target player"
+                },
+                "descriptionOverride": "When this creature enters, target player loses 2 life and you gain 2 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "artist": "Tomasz Jedruszek",
+        "flavorText": "It returns eager to share the feast of blood and gore with its ghoulish master.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/9/99c10705-6e0e-46f6-a64c-0095b2796aaf.jpg?1783940499"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Captain's Call
 {
     "name": "Captain's Call",
@@ -190,6 +241,57 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Dragon Hatchling
+{
+    "name": "Dragon Hatchling",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Dragon",
+    "oracleText": "Flying\n{R}: This creature gets +1/+0 until end of turn.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{R}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{R}: This creature gets +1/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "128",
+        "artist": "David Palumbo",
+        "flavorText": "\"Those dragons grow fast. For a while they feed on squirrels and goblins and then suddenly you're missing a mammoth.\"\n—Hurdek, Mazar mammoth trainer",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/d/ed599d52-f2d9-4913-ad88-70f8aa4af7b9.jpg?1783940484"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -285,6 +387,42 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Mark of the Vampire
+{
+    "name": "Mark of the Vampire",
+    "manaCost": "{3}{B}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature gets +2/+2 and has lifelink.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "LIFELINK"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "99",
+        "artist": "Winona Nelson",
+        "flavorText": "\"My 'condition' is a trial. The weak are consumed by it. The strong transcend it.\"\n—Sorin Markov",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/0/90484815-2529-4a81-9f1b-f0f7382e4b66.jpg?1783940493"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -508,6 +646,65 @@
         "artist": "Svetlin Velinov",
         "flavorText": "After Talrand conquered the depths of Shandalar, his ambitions drove him skyward, joined by servants whose drive and curiosity equaled his own.",
         "imageUri": "https://cards.scryfall.io/normal/front/c/2/c2cd809c-557a-42a5-950b-56b5b47b325b.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Talrand, Sky Summoner
+{
+    "name": "Talrand, Sky Summoner",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Legendary Creature — Merfolk Wizard",
+    "oracleText": "Whenever you cast an instant or sorcery spell, create a 2/2 blue Drake creature token with flying.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "BLUE"
+                    ],
+                    "creatureTypes": [
+                        "Drake"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ]
+                },
+                "descriptionOverride": "Whenever you cast an instant or sorcery spell, create a 2/2 blue Drake creature token with flying."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "72",
+        "rarity": "RARE",
+        "artist": "Svetlin Velinov",
+        "flavorText": "\"The seas are vast, but the skies are even more so. Why be content with one kingdom when I can rule them both?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/c/bc1a6867-921d-4912-afae-c3c445ad81e7.jpg?1783940501"
     },
     "colorIdentityOverride": [
         "BLUE"

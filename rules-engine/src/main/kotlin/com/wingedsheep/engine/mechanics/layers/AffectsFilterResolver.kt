@@ -516,6 +516,10 @@ internal class AffectsFilterResolver {
         StatePredicate.HasMorphAbility ->
             container.has<HasMorphAbilityComponent>() ||
                 container.get<MorphDataComponent>()?.hasMorphProcedure == true
+        // Disguise (CR 702.168) is the printed keyword, read off the card in any zone — see
+        // StatePredicate.HasDisguiseAbility for why there is no turn-up-data fallback here.
+        StatePredicate.HasDisguiseAbility ->
+            container.has<com.wingedsheep.engine.state.components.identity.HasDisguiseAbilityComponent>()
         StatePredicate.IsRingBearer -> {
             val bearer = container.get<com.wingedsheep.engine.state.components.identity.RingBearerComponent>()
             bearer != null && projectedController(state, entityId, projectedValues) == bearer.ownerId

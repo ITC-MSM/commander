@@ -546,6 +546,7 @@ class BeginningPhaseManager(
         StatePredicate.IsFaceDown,
         StatePredicate.IsFaceUp,
         StatePredicate.HasMorphAbility,
+        StatePredicate.HasDisguiseAbility,
         StatePredicate.IsRingBearer,
         StatePredicate.HasAnyCounter,
         StatePredicate.HasGreatestPower,
