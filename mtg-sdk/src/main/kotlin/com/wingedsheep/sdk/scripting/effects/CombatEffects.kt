@@ -102,7 +102,10 @@ sealed interface PreventionSourceFilter {
  *   creatures you control this turn by creatures" (Eerie Interference, Riot Control). A player is
  *   not a permanent, so it can never be expressed by the [GroupFilter] itself; this keeps the whole
  *   recipient set on one shield instead of splitting it across two effects with divergent scopes.
- *   Ignored when [recipientGroup] is null.
+ *   Set **without** a [recipientGroup] it names the controller alone — "prevent all damage that
+ *   would be dealt to you this turn by creatures with flying" (Scarecrow) is this flag plus a
+ *   [PreventionSourceFilter.FromGroup], i.e. the same recipient-side shield with an empty permanent
+ *   half rather than a second effect shape.
  * @property amount Amount of damage to prevent; null means prevent all
  * @property scope Whether to prevent all damage or only combat damage
  * @property direction Whether to prevent damage TO the target, FROM the target, or BOTH

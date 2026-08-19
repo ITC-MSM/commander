@@ -571,13 +571,16 @@ sealed interface SerializableModification {
      *
      * [includesController] extends the recipient set to the shield's controller — the "you and" in
      * "prevent all damage that would be dealt to you and creatures you control this turn"; a player
-     * is not a permanent so it can never match [filter]. [sourceFilter], when non-null, additionally
+     * is not a permanent so it can never match [filter]. A null [filter] with [includesController]
+     * set is the controller-only shield ("… that would be dealt to you this turn by creatures with
+     * flying", Scarecrow): no permanent is protected, only the player.
+     * [sourceFilter], when non-null, additionally
      * restricts the shield to damage whose *source* matches it ("… by creatures"), evaluated against
      * projected state at damage time just like [filter].
      */
     @Serializable
     data class PreventAllDamageToGroup(
-        val filter: GameObjectFilter,
+        val filter: GameObjectFilter? = null,
         val combatOnly: Boolean = false,
         val includesController: Boolean = false,
         val sourceFilter: GameObjectFilter? = null

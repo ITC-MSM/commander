@@ -1110,22 +1110,26 @@ object DamageUtils {
         // this turn"): the filter is re-evaluated now against projected state, with the shield's
         // controller as the "you" reference, so permanents that came under control later this turn
         // are protected too. Honours the combat-only variant, the "you and …" player recipient
-        // (a player never matches a permanent filter, so it is checked separately), and an optional
-        // source filter ("… by creatures") evaluated against the damage source the same way.
+        // (a player never matches a permanent filter, so it is checked separately — and a null
+        // filter is the "to you" shield that names no permanent at all), and an optional source
+        // filter ("… by creatures") evaluated against the damage source the same way.
         val groupShieldEvaluator = PredicateEvaluator()
         if (updatedEffects.any { fe ->
                 val mod = fe.effect.modification
                 if (mod !is SerializableModification.PreventAllDamageToGroup) return@any false
                 if (mod.combatOnly && !isCombatDamage) return@any false
                 val predicateContext = PredicateContext(controllerId = fe.controllerId)
+                val recipientFilter = mod.filter
                 val recipientMatches = (mod.includesController && targetId == fe.controllerId) ||
-                    groupShieldEvaluator.matches(
-                        state,
-                        state.projectedState,
-                        targetId,
-                        mod.filter,
-                        predicateContext
-                    )
+                    (
+                        recipientFilter != null && groupShieldEvaluator.matches(
+                            state,
+                            state.projectedState,
+                            targetId,
+                            recipientFilter,
+                            predicateContext
+                        )
+                        )
                 if (!recipientMatches) return@any false
                 // Fail closed on an unidentifiable source: a "by creatures" shield must not swallow
                 // damage it can't attribute to a creature.

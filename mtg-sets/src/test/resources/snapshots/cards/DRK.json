@@ -1551,6 +1551,56 @@
     ]
 }
 
+// Scarecrow
+{
+    "name": "Scarecrow",
+    "manaCost": "{5}",
+    "typeLine": "Artifact Creature — Scarecrow",
+    "oracleText": "{6}, {T}: Prevent all damage that would be dealt to you this turn by creatures with flying.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{6}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "PreventDamageShield",
+                    "recipientGroupIncludesController": true,
+                    "sourceFilter": {
+                        "type": "FromGroup",
+                        "filter": {
+                            "baseFilter": "creature kw:flying"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "108",
+        "rarity": "UNCOMMON",
+        "artist": "Anson Maddocks",
+        "flavorText": "There was more malice in its button eyes than should have been possible in something that had never known life.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/3/93850e74-744c-4261-a84e-01eaced6e49a.jpg?1783947925"
+    },
+    "colorIdentityOverride": []
+}
+
 // Scarwood Goblins
 {
     "name": "Scarwood Goblins",

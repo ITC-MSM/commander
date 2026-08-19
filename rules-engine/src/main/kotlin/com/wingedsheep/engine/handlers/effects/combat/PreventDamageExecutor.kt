@@ -205,13 +205,15 @@ class PreventDamageExecutor(
         val modification: SerializableModification
 
         when {
-            // Recipient-group prevention: "prevent all damage that would be dealt to creatures you
-            // control this turn". No specific affected entity is stored; the recipient filter is
-            // evaluated against projected state at damage time with the shield controller as "you".
-            effect.recipientGroup != null -> {
+            // Recipient-side prevention: "prevent all damage that would be dealt to creatures you
+            // control this turn", and the two shapes that include the player — "to you and creatures
+            // you control" (group + flag) and "to you" alone (flag, no group; Scarecrow). No specific
+            // affected entity is stored; the recipient filter is evaluated against projected state at
+            // damage time with the shield controller as "you".
+            effect.recipientGroup != null || effect.recipientGroupIncludesController -> {
                 affectedEntities = emptySet()
                 modification = SerializableModification.PreventAllDamageToGroup(
-                    filter = effect.recipientGroup!!.baseFilter,
+                    filter = effect.recipientGroup?.baseFilter,
                     combatOnly = effect.scope == PreventionScope.CombatOnly,
                     includesController = effect.recipientGroupIncludesController,
                     // "… by creatures" — a FromGroup source filter narrows a recipient-group shield

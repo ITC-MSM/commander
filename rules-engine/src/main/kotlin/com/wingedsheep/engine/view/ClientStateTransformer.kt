@@ -2061,8 +2061,26 @@ class ClientStateTransformer(
         val preventedCreatureTypes = mutableSetOf<String>()
         val preventedFromSources = mutableSetOf<EntityId>()
         for (floatingEffect in state.floatingEffects) {
+            val modification = floatingEffect.effect.modification
+            if (
+                modification is SerializableModification.PreventAllDamageToGroup &&
+                modification.includesController &&
+                floatingEffect.controllerId == playerId
+            ) {
+                val sourceDescription = modification.sourceFilter?.description
+                val scopeDescription = if (modification.combatOnly) "combat damage" else "damage"
+                val sourceSuffix = sourceDescription?.let { " from $it" } ?: ""
+                effects.add(
+                    ClientPlayerEffect(
+                        effectId = "prevent_damage_to_controller_${floatingEffect.id.value}",
+                        name = "Damage Shield",
+                        description = "All $scopeDescription that would be dealt to you$sourceSuffix is prevented",
+                        icon = "prevent-damage"
+                    )
+                )
+            }
             if (playerId !in floatingEffect.effect.affectedEntities) continue
-            when (val modification = floatingEffect.effect.modification) {
+            when (modification) {
                 is SerializableModification.PreventAllDamageTo -> {
                     preventsAllDamage = true
                 }
