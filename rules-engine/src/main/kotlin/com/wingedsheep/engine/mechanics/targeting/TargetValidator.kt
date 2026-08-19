@@ -500,6 +500,11 @@ class TargetValidator {
                 val cardName = state.getEntity(entityId)?.get<CardComponent>()?.name ?: "target"
                 return "$cardName has hexproof from monocolored"
             }
+            // Hexproof from multicolored: a source with two or more colors can't target (CR 105.2b).
+            if (sourceColors.size >= 2 && projected.hasKeyword(entityId, "HEXPROOF_FROM_MULTICOLORED")) {
+                val cardName = state.getEntity(entityId)?.get<CardComponent>()?.name ?: "target"
+                return "$cardName has hexproof from multicolored"
+            }
         }
         return null
     }

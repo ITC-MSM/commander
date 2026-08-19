@@ -1888,9 +1888,12 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   `SerializableModification.SetMustBlock` for `Duration.EndOfTurn`, i.e. the same projected
   `mustBlock` the *static* `MustBlock` (Grand Melee) writes, so
   `BlockPhaseManager.validateProjectedMustBlockRequirements` enforces it with no extra wiring and
-  the generic end-of-turn cleanup expires it. Distinct from `Effects.ForceBlock`, which pins the
-  creature to blocking one *named* attacker and requires the source to be attacking — this one is
-  satisfied by blocking anything. A requirement, not a guarantee (CR 509.1c): a tapped creature, one
+  the generic end-of-turn cleanup expires it. Distinct from
+  `Effects.ForceBlock(target, attacker = EffectTarget.Self)`, which pins the creature to blocking one
+  *named* attacker and requires that attacker to be attacking — this one is satisfied by blocking
+  anything. `attacker` defaults to the ability's own source ("blocks **it**", Avalanche Tusker); pass
+  `EffectTarget.TriggeringEntity` when an ANY-bound trigger pins the blocker to the creature that
+  attacked instead (Tolsimir, Midnight's Light: "blocks **that Wolf** this combat if able"). A requirement, not a guarantee (CR 509.1c): a tapped creature, one
   that can't block, or one whose every block would be illegal is excused, and its controller is
   never forced to pay a cost associated with blocking. Used by Culvert Ambusher (MKM).
 - `Effects.SkipNextTurn(target = Controller, count = Fixed(1))` (`SkipNextTurnEffect`) — target skips their next `count` turns. `count` is a `DynamicAmount`, so it can read a pipeline value (e.g. a coin-flip tally via `DynamicAmount.VariableReference`). Skips accumulate on a `SkipNextTurnComponent(turns)`, decremented one turn per the player's turn-start; a resolved count of 0 is a no-op. Used by Lethal Vapors (one turn) and **Ral Zarek, Guest Lecturer** (skip N turns where N = heads).
@@ -5638,6 +5641,11 @@ staticAbility {
   monocolored (exactly one color, CR 105.2) spells and abilities opponents control. Colorless and
   multicolored sources are unaffected; the controller can still target their own creatures. (Dragonfire
   Blade)
+- `GrantHexproofFromMulticoloredToGroup(filter = attachedCreature())` — the mirror: "[filter] have
+  hexproof from multicolored" — adds the projected keyword `HEXPROOF_FROM_MULTICOLORED`, which blocks
+  targeting by multicolored (two or more colors, CR 105.2b) spells and abilities opponents control.
+  Monocolored and colorless sources are unaffected; the controller can still target their own
+  permanents. Pass `GroupFilter.source()` for the printed-on-itself shape. (Niv-Mizzet, Guildpact)
 - `CantBeTargetedBySourceTypeAbilities(sourceType, filter = attachedCreature())` — "[filter] can't be the
   target of abilities from [sourceType] sources" — hexproof keyed to a source *card type* (e.g.
   `CardType.ARTIFACT`) rather than a controller or color. Projects the keyword
@@ -9005,8 +9013,8 @@ Numbers computed at resolution time.
 - `AggregateBattlefield(player, filter, aggregation?, property?, counterType?)` — aggregate over
   matching permanents. `aggregation` defaults to `COUNT`; other modes: `MAX`/`MIN`/`SUM` over a
   `property` (`POWER`/`TOUGHNESS`/`MANA_VALUE`), and the distinct-set counters
-  `DISTINCT_TYPES`, `DISTINCT_PERMANENT_TYPES`, `DISTINCT_COLORS`, `DISTINCT_NAMES`,
-  `DISTINCT_BASIC_LAND_SUBTYPES`
+  `DISTINCT_TYPES`, `DISTINCT_PERMANENT_TYPES`, `DISTINCT_COLORS`, `DISTINCT_COLOR_PAIRS`,
+  `DISTINCT_NAMES`, `DISTINCT_BASIC_LAND_SUBTYPES`
   (Domain), `DISTINCT_COUNTER_TYPES` (the number of different kinds of counters present
   across the group — same kind on several permanents counts once), and `DISTINCT_VALUES`
   (the number of *distinct values* of the configured `property` — Selvala, Eager Trailblazer's
@@ -9016,6 +9024,14 @@ Numbers computed at resolution time.
   `DISTINCT_NAMES` counts *differently named* matched permanents (two sharing a name count once) —
   "the number of differently named lands you control" (Emil, Vastlands Roamer) via
   `DynamicAmounts.battlefield(Player.You, GameObjectFilter.Land).distinctNames()`.
+  `DISTINCT_COLOR_PAIRS` counts the *color pairs* the group contributes: one unordered pair per
+  matched permanent that is exactly two colors (CR 105.2c), the same pair on several permanents
+  counting once, so the value is bounded by the ten pairs in Magic. Mono-colored, three-or-more
+  colored, and colorless permanents contribute nothing — "exactly two colors" is part of the
+  aggregation rather than something the filter spells — which is what makes it distinct from
+  `DISTINCT_COLORS` (a set of *colors*, bounded by five). Niv-Mizzet, Guildpact's "the number of
+  different color pairs among permanents you control that are exactly two colors" via
+  `DynamicAmounts.colorPairsAmongPermanents()`.
   `excludeSelf = true` drops the aggregate's own source/affected entity ("among *other* …"), e.g.
   Loot, the Key to Everything's "the number of card types among other nonland permanents you control"
   (`filter = GameObjectFilter.NonlandPermanent, aggregation = DISTINCT_TYPES, excludeSelf = true`).

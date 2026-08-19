@@ -799,6 +799,9 @@ class ClientStateTransformer(
         // Hexproof from monocolored (CR 105.2) — a quality, not a color, so it rides its own flag.
         val hexproofFromMonocolored = projectedValues?.keywords?.contains("HEXPROOF_FROM_MONOCOLORED") ?: false
 
+        // Hexproof from multicolored (CR 105.2b) — the other half of the quality pair, same shape.
+        val hexproofFromMulticolored = projectedValues?.keywords?.contains("HEXPROOF_FROM_MULTICOLORED") ?: false
+
         // Add PROTECTION keyword when protections are present
         val keywords = if (protections.isNotEmpty()) rawKeywords + Keyword.PROTECTION else rawKeywords
 
@@ -1338,6 +1341,7 @@ class ClientStateTransformer(
             protections = protections,
             hexproofFromColors = hexproofFromColors,
             hexproofFromMonocolored = hexproofFromMonocolored,
+            hexproofFromMulticolored = hexproofFromMulticolored,
             counters = counters,
             isTapped = isTapped,
             isExerted = isExerted,
@@ -2664,11 +2668,21 @@ class ClientStateTransformer(
                     )
                 }
                 is SerializableModification.MustBlockSpecificAttacker -> {
+                    // Name the attacker. The pinned creature is not always the obvious one — an
+                    // ANY-bound "blocks that Wolf" trigger (Tolsimir, Midnight's Light) pins the
+                    // blocker to a creature other than the ability's source, and a defender who
+                    // guesses wrong only finds out when their declaration is rejected.
+                    val attackerName = state.getEntity(modification.attackerId)
+                        ?.get<CardComponent>()?.name
                     effects.add(
                         ClientCardEffect(
                             effectId = "must_block_${modification.attackerId}",
                             name = "Must Block",
-                            description = "This creature must block a specific attacker if able",
+                            description = if (attackerName != null) {
+                                "This creature must block $attackerName this combat if able"
+                            } else {
+                                "This creature must block a specific attacker if able"
+                            },
                             icon = "must-attack"
                         )
                     )

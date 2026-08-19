@@ -351,14 +351,29 @@ data class GrantCantBeBlockedByChosenColorEffect(
  * Unlike Provoke, this does NOT untap the target creature.
  * "Target creature defending player controls blocks this creature this combat if able."
  *
+ * [attacker] is the creature that must be blocked. It defaults to [EffectTarget.Self] — the
+ * ability's own source, which is the Avalanche Tusker shape ("blocks **it**", the attacking
+ * permanent that carries the trigger). An ANY-bound trigger that fires off *another* attacker and
+ * pins the blocker to that one instead passes [EffectTarget.TriggeringEntity]: Tolsimir, Midnight's
+ * Light says "whenever a Wolf you control attacks … target creature an opponent controls blocks
+ * **that Wolf** this combat if able", where the Wolf is the triggering entity and Tolsimir is the
+ * source. Any attacking creature the effect context can name works; the executor requires only that
+ * the resolved attacker is actually attacking.
+ *
  * @property target The creature forced to block
+ * @property attacker The attacking creature that must be blocked
  */
 @SerialName("ForceBlock")
 @Serializable
 data class ForceBlockEffect(
-    val target: EffectTarget = EffectTarget.ContextTarget(0)
+    val target: EffectTarget = EffectTarget.ContextTarget(0),
+    val attacker: EffectTarget = EffectTarget.Self
 ) : Effect {
-    override val description: String = "Target creature blocks ${target.description} this combat if able"
+    override val description: String = if (attacker == EffectTarget.Self) {
+        "Target creature blocks ${target.description} this combat if able"
+    } else {
+        "${target.description} blocks ${attacker.description} this combat if able"
+    }
 }
 
 /**

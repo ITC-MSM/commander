@@ -134,6 +134,20 @@ object DynamicAmounts {
         DynamicAmount.AggregateBattlefield(player, filter, Aggregation.DISTINCT_COLORS)
 
     /**
+     * The number of different *color pairs* among the permanents [player] controls that are
+     * exactly two colors (CR 105.2c) — Niv-Mizzet, Guildpact's X. Maxes out at 10.
+     *
+     * A permanent contributes only if it is exactly two colors; mono-colored, three-or-more
+     * colored, and colorless permanents contribute nothing, and two permanents of the same pair
+     * count once. Reads colors via projected state, so recolor effects apply.
+     */
+    fun colorPairsAmongPermanents(
+        player: Player = Player.You,
+        filter: GameObjectFilter = GameObjectFilter.Permanent
+    ): DynamicAmount =
+        DynamicAmount.AggregateBattlefield(player, filter, Aggregation.DISTINCT_COLOR_PAIRS)
+
+    /**
      * The number of distinct colors of mana spent to cast the source spell (0–5).
      * Backs the Converge ability word and the Sunburst counter rule. Colorless is not a
      * color, so it never contributes.

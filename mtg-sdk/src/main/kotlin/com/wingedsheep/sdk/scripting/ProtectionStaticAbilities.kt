@@ -126,6 +126,30 @@ data class GrantHexproofFromMonocoloredToGroup(
 }
 
 /**
+ * Grants each affected permanent "hexproof from multicolored" — it can't be the target of
+ * multicolored (two or more colors, CR 105.2b) spells or abilities opponents control. Monocolored
+ * and colorless sources are unaffected.
+ *
+ * The exact mirror of [GrantHexproofFromMonocoloredToGroup], down to the projected keyword idiom
+ * (`HEXPROOF_FROM_MULTICOLORED`) and the targeting sites that read it. Used by Niv-Mizzet,
+ * Guildpact, where the ability is printed on the permanent itself — pass `GroupFilter.source()`
+ * for that self-only shape, or a wider [GroupFilter] for a card that blankets a group.
+ *
+ * @property filter The group of permanents that gain the hexproof
+ */
+@SerialName("GrantHexproofFromMulticoloredToGroup")
+@Serializable
+data class GrantHexproofFromMulticoloredToGroup(
+    val filter: GroupFilter = GroupFilter.attachedCreature()
+) : StaticAbility {
+    override val description: String = "${filter.description} have hexproof from multicolored"
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = filter.applyTextReplacement(replacer)
+        return if (newFilter !== filter) copy(filter = newFilter) else this
+    }
+}
+
+/**
  * Grants each affected creature protection from the colors of permanents the source's
  * controller currently controls. The protection set is board-derived and re-evaluated at
  * projection (after Layer 5), so it tracks the controller's permanents in real time; a

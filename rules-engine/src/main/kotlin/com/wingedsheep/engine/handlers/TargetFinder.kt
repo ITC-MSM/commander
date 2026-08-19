@@ -634,6 +634,10 @@ class TargetFinder(
         if (sourceColors.size == 1 && projected.hasKeyword(entityId, "HEXPROOF_FROM_MONOCOLORED")) {
             return true
         }
+        // Hexproof from multicolored: a source with two or more colors can't target (CR 105.2b).
+        if (sourceColors.size >= 2 && projected.hasKeyword(entityId, "HEXPROOF_FROM_MULTICOLORED")) {
+            return true
+        }
         return SourceTypeTargeting.sourceCardTypes(state, sourceId).any { cardType ->
             projected.hasKeyword(entityId, "HEXPROOF_FROM_CARDTYPE_${cardType.uppercase()}")
         }

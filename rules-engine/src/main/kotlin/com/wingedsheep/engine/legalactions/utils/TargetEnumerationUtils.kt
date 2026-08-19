@@ -166,6 +166,7 @@ class TargetEnumerationUtils(
         }
         if (sourceColors.any { projected.hasKeyword(targetId, "HEXPROOF_FROM_$it") }) return true
         if (sourceColors.size == 1 && projected.hasKeyword(targetId, "HEXPROOF_FROM_MONOCOLORED")) return true
+        if (sourceColors.size >= 2 && projected.hasKeyword(targetId, "HEXPROOF_FROM_MULTICOLORED")) return true
         val sourceTypes = state.getEntity(sourceId)?.get<CardComponent>()?.typeLine?.cardTypes.orEmpty()
         return sourceTypes.any { projected.hasKeyword(targetId, "HEXPROOF_FROM_CARDTYPE_${it.name}") }
     }

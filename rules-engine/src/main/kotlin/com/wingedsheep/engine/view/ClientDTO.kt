@@ -248,6 +248,9 @@ data class ClientCard(
     /** Hexproof from monocolored (CR 105.2) — shows an uncolored hexproof shield chip */
     val hexproofFromMonocolored: Boolean = false,
 
+    /** Hexproof from multicolored (CR 105.2b) — shows an uncolored hexproof shield chip */
+    val hexproofFromMulticolored: Boolean = false,
+
     /** Counters on the card */
     val counters: Map<CounterType, Int>,
 

@@ -11939,6 +11939,115 @@
     ]
 }
 
+// Niv-Mizzet, Guildpact
+{
+    "name": "Niv-Mizzet, Guildpact",
+    "manaCost": "{W}{U}{B}{R}{G}",
+    "typeLine": "Legendary Creature — Dragon Avatar",
+    "oracleText": "Flying, hexproof from multicolored\nWhenever Niv-Mizzet deals combat damage to a player, it deals X damage to any target, target player draws X cards, and you gain X life, where X is the number of different color pairs among permanents you control that are exactly two colors.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "permanent",
+                                "aggregation": "DISTINCT_COLOR_PAIRS"
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "any target"
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "permanent",
+                                "aggregation": "DISTINCT_COLOR_PAIRS"
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target player"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "permanent",
+                                "aggregation": "DISTINCT_COLOR_PAIRS"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                },
+                "additionalTargetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ]
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantHexproofFromMulticoloredToGroup",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "220",
+        "rarity": "RARE",
+        "artist": "Chris Rallis",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/2/32a8fda6-8614-45cd-879c-0cb7fa29647e.jpg?1783912843",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "A \"color pair\" is exactly two colors. There are ten color pairs in Magic: white-blue, white-black, blue-black, blue-red, black-red, black-green, red-green, red-white, green-white, and green-blue."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "The value of X is checked only once, as Niv-Mizzet, Guildpact's triggered ability resolves."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE",
+        "BLACK",
+        "RED",
+        "GREEN"
+    ]
+}
+
 // No More Lies
 {
     "name": "No More Lies",
@@ -17085,6 +17194,92 @@
     "colorIdentityOverride": [
         "RED",
         "GREEN"
+    ]
+}
+
+// Tolsimir, Midnight's Light
+{
+    "name": "Tolsimir, Midnight's Light",
+    "manaCost": "{2}{G}{W}{W}",
+    "typeLine": "Legendary Creature — Elf Scout",
+    "oracleText": "Lifelink\nWhen Tolsimir enters, create Voja Fenstalker, a legendary 5/5 green and white Wolf creature token with trample.\nWhenever a Wolf you control attacks, if Tolsimir attacked this combat, target creature an opponent controls blocks that Wolf this combat if able.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 5,
+                    "toughness": 5,
+                    "colors": [
+                        "GREEN",
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Wolf"
+                    ],
+                    "keywords": [
+                        "TRAMPLE"
+                    ],
+                    "name": "Voja Fenstalker",
+                    "imageUri": "https://cards.scryfall.io/normal/front/2/1/2175200f-3ed4-4b39-ac76-a7d25967aa8a.jpg?1783912604",
+                    "legendary": true
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "AttackEvent",
+                    "filter": "creature Wolf ctrl:you"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForceBlock",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature an opponent controls"
+                    },
+                    "attacker": "TriggeringEntity"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "creature an opponent controls"
+                },
+                "interveningIf": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            "AttackedThisCombat"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "236",
+        "rarity": "RARE",
+        "artist": "Uriah Voth",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/8/08d22402-c41d-43d7-be1f-42be1e300726.jpg?1783912835"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
     ]
 }
 
