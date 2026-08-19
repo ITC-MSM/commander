@@ -51,6 +51,14 @@ class GameBeansConfigBoosterPoolTest : FunSpec({
         ) shouldBe mapOf("Raging Goblin#POR-145" to 1)
     }
 
+    test("The Dark offers Portal basic lands for sealed deckbuilding") {
+        val drk = boosterGenerator.availableSets["DRK"].shouldNotBeNull()
+
+        drk.basicLands.map { it.name }.toSet() shouldBe
+            setOf("Plains", "Island", "Swamp", "Mountain", "Forest")
+        drk.basicLands.all { it.setCode == "POR" } shouldBe true
+    }
+
     test("Foundations includes its own cards and its reprints in the booster pool") {
         val fdn = boosterGenerator.availableSets["FDN"].shouldNotBeNull()
         val names = fdn.cards.map { it.name }
