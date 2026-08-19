@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.lrw
 
-import com.wingedsheep.mtg.sets.definitions.por.PortalSet
 import com.wingedsheep.mtg.sets.discovery.CardDiscovery
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.MtgSet
@@ -23,11 +22,15 @@ object LorwynSet : MtgSet {
     override val displayName = "Lorwyn"
     override val releaseDate = "2007-10-12"
     override val block = "Lorwyn"
-    override val basicLandsFallback = PortalSet
     override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)
+    }
+
+    /** Lorwyn's own basics: four arts each of the five types, collector numbers 282-301. */
+    override val basicLands: List<CardDefinition> by lazy {
+        CardDiscovery.findBasicLandsIn(CARDS_PACKAGE, code)
     }
 
     override val printings: List<Printing> by lazy {
