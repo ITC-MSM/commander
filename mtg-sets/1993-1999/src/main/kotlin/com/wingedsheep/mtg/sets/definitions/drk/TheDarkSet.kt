@@ -1,5 +1,6 @@
 package com.wingedsheep.mtg.sets.definitions.drk
 
+import com.wingedsheep.mtg.sets.definitions.por.PortalSet
 import com.wingedsheep.mtg.sets.discovery.CardDiscovery
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.MtgSet
@@ -19,6 +20,7 @@ object TheDarkSet : MtgSet {
     override val code = "DRK"
     override val displayName = "The Dark"
     override val releaseDate = "1994-08-01"
+    override val basicLandsFallback = PortalSet
     override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {

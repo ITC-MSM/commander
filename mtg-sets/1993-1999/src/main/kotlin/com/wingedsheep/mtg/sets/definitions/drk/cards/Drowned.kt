@@ -15,7 +15,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  */
 val Drowned = card("Drowned") {
     manaCost = "{1}{U}"
-    colorIdentity = "U"
+    colorIdentity = "UB"
     typeLine = "Creature — Zombie"
     power = 1
     toughness = 1

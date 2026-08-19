@@ -16,7 +16,7 @@ import com.wingedsheep.sdk.scripting.TimingRule
  */
 val CoalGolem = card("Coal Golem") {
     manaCost = "{5}"
-    colorIdentity = ""
+    colorIdentity = "R"
     typeLine = "Artifact Creature — Golem"
     power = 3
     toughness = 3

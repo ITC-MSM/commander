@@ -411,7 +411,9 @@
         "flavorText": "\"Three such creatures stood burning at the crest of the hill. Only seconds later, the Fireball struck our front line.\" —Lydia, Countess Brellis",
         "imageUri": "https://cards.scryfall.io/normal/front/1/a/1ad7692d-5a51-493f-a322-7b615446ea8e.jpg?1783947927"
     },
-    "colorIdentityOverride": []
+    "colorIdentityOverride": [
+        "RED"
+    ]
 }
 
 // Dark Heart of the Wood
@@ -526,7 +528,8 @@
         "imageUri": "https://cards.scryfall.io/normal/front/9/5/951b6c10-cbba-44b6-aae2-2c386b7ebacb.jpg?1783947945"
     },
     "colorIdentityOverride": [
-        "BLUE"
+        "BLUE",
+        "BLACK"
     ]
 }
 
