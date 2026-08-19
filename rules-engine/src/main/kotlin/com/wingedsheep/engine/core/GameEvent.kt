@@ -1119,7 +1119,14 @@ data class BecameSaddledEvent(
 @SerialName("CaseSolvedEvent")
 data class CaseSolvedEvent(
     val entityId: EntityId,
-    val entityName: String
+    val entityName: String,
+    /**
+     * The player who solved it — the Case's controller at the moment the "To solve" trigger
+     * resolved. Carried on the event rather than looked up from the Case, because a "whenever you
+     * solve a Case" payoff (Case File Auditor) is matched after the fact, when the Case may already
+     * have been sacrificed by its own Solved ability.
+     */
+    val controllerId: EntityId
 ) : GameEvent
 
 /**

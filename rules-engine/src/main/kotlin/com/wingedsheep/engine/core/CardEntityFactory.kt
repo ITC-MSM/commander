@@ -121,6 +121,15 @@ object CardEntityFactory {
             result = result.with(HasMorphAbilityComponent)
         }
 
+        // Disguise (CR 702.168) rides the card entity in every zone for the same reason morph does:
+        // "creatures you control with disguise" is asked of a face-**up** permanent, where the
+        // runtime MorphDataComponent that describes a turn-up procedure does not exist.
+        if (cardDef.keywordAbilities.any { it is KeywordAbility.Disguise }) {
+            result = result.with(
+                com.wingedsheep.engine.state.components.identity.HasDisguiseAbilityComponent
+            )
+        }
+
         // Madness (CR 702.35a). The static half functions while the card is in a player's *hand*,
         // so the cost has to ride the card entity in every zone rather than be looked up from the
         // battlefield — see [MadnessComponent].

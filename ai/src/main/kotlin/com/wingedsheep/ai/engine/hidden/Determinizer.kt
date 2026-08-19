@@ -163,6 +163,7 @@ class Determinizer(
                 it is CantBeCounteredComponent ||
                 it is CantBeCopiedComponent ||
                 it is HasMorphAbilityComponent ||
+                it is com.wingedsheep.engine.state.components.identity.HasDisguiseAbilityComponent ||
                 it is ProtectionComponent ||
                 it is SelfZoneRedirectComponent ||
                 it is HexproofFromComponent ||

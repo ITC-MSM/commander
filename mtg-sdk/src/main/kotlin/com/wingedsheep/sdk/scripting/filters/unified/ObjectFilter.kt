@@ -1070,6 +1070,14 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.HasMorphAbility
     )
 
+    /**
+     * Must have a printed disguise ability (CR 702.168) — see [StatePredicate.HasDisguiseAbility].
+     * Zone-independent, and independent of whether the object is currently face down.
+     */
+    fun withDisguise() = copy(
+        statePredicates = statePredicates + StatePredicate.HasDisguiseAbility
+    )
+
     /** Must have a counter of the specified type */
     fun withCounter(counterType: String) = copy(
         statePredicates = statePredicates + StatePredicate.HasCounter(counterType)

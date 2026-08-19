@@ -3859,6 +3859,18 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
 - `.nontoken()` / `.token()` — token vs printed.
 - `.monocolored()` — restrict to monocolored objects (exactly one color, CR 105.2); colorless objects don't match. ("for each color among monocolored permanents you control" — Tarnation Vista.)
 - `.faceDown()` — face-down state.
+- `.withMorph()` — has a morph *procedure*: the printed keyword (`HasMorphAbilityComponent`, any
+  zone) **or** a turn-up procedure whose mechanic is morph. "Creature with a morph ability"
+  (Backslide) — a manifested/cloaked/disguised permanent carries turn-up data too, so the runtime
+  half checks the mechanic rather than the component's presence.
+- `.withDisguise()` — has a printed **disguise** ability (CR 702.168), read off the card definition
+  via `HasDisguiseAbilityComponent`, so it answers the same in every zone and regardless of whether
+  the object is currently face down. Deliberately *not* a `withMorph()` variant: that asks "can this
+  be turned face up", which is also true of a cloaked permanent that has no disguise, and is only
+  answerable while the permanent is face **down**. Expose the Culprit's "any number of face-up
+  creatures you control **with disguise**" asks the printed-ability question about a face-**up**
+  permanent, which is why the component rides the card rather than the turn-up data:
+  `GameObjectFilter.Creature.youControl().faceUp().withDisguise()`.
 - `.card(filter)` — defer to a card-shape filter for off-battlefield checks.
 
 **Explicit constructor**:
