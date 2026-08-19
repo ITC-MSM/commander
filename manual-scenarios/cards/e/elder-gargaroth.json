@@ -1,0 +1,26 @@
+{
+  "player1Name": "Gargaroth Controller",
+  "player2Name": "Defender",
+  "player1": {
+    "lifeTotal": 17,
+    "hand": [],
+    "battlefield": [{"name": "Elder Gargaroth", "summoningSickness": false}],
+    "graveyard": [],
+    "library": ["Forest", "Grizzly Bears", "Forest"]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": [],
+    "battlefield": [{"name": "Hill Giant", "summoningSickness": false}],
+    "graveyard": [],
+    "library": ["Mountain", "Mountain"]
+  },
+  "phase": "COMBAT",
+  "step": "BEGIN_COMBAT",
+  "activePlayer": 1,
+  "priorityPlayer": 1,
+  "player1StopAtSteps": ["DECLARE_ATTACKERS", "DECLARE_BLOCKERS"],
+  "player2StopAtSteps": ["DECLARE_BLOCKERS"],
+  "player1OpponentStopAtSteps": [],
+  "player2OpponentStopAtSteps": []
+}

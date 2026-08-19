@@ -1,0 +1,29 @@
+{
+  "player1Name": "Force Caster",
+  "player2Name": "Active Opponent",
+  "player1": {
+    "lifeTotal": 20,
+    "hand": ["Force of Vigor", "Grizzly Bears"],
+    "battlefield": [],
+    "graveyard": [],
+    "library": ["Forest", "Forest"]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": [],
+    "battlefield": [
+      {"name": "Sol Ring"},
+      {"name": "Fight Rigging"}
+    ],
+    "graveyard": [],
+    "library": ["Mountain", "Mountain"]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "step": "PRECOMBAT_MAIN",
+  "activePlayer": 2,
+  "priorityPlayer": 1,
+  "player1StopAtSteps": [],
+  "player2StopAtSteps": [],
+  "player1OpponentStopAtSteps": [],
+  "player2OpponentStopAtSteps": []
+}
