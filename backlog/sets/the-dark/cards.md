@@ -2,8 +2,7 @@
 
 **Set Size:** 119 cards
 **Release Date:** August 1, 1994
-**Implemented:** 46 / 119
-
+**Implemented:** 47 / 119
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 19    | 8    |
@@ -103,7 +102,7 @@
 
 ### Green
 - [x] Carnivorous Plant
-- [ ] Elves of Deep Shadow
+- [x] Elves of Deep Shadow
 - [ ] Gaea's Touch
 - [x] Hidden Path
 - [x] Land Leeches

@@ -533,6 +533,59 @@
     ]
 }
 
+// Elves of Deep Shadow
+{
+    "name": "Elves of Deep Shadow",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Elf Druid",
+    "oracleText": "{T}: Add {B}. This creature deals 1 damage to you.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddMana",
+                            "color": "BLACK"
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "You"
+                            }
+                        }
+                    ]
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "76",
+        "rarity": "UNCOMMON",
+        "artist": "Jesper Myrfors",
+        "flavorText": "\"They are aberrations who have turned on everything we hold sacred. Let them be cast out.\" —Ailheen, Speaker of the Council",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/3/f395278e-6d74-4f35-af9d-21bad7b19763.jpg?1783947933"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Exorcist
 {
     "name": "Exorcist",
