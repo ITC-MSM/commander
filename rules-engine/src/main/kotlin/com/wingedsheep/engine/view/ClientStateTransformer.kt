@@ -3266,11 +3266,23 @@ class ClientStateTransformer(
                 ClientCardEffect(
                     effectId = "condition_compare",
                     name = "${it.current}/${it.required}",
-                    description = "${part.description} (${it.current}/${it.required})",
+                    description = "${describeCountedClause(part)} (${it.current}/${it.required})",
                     icon = if (it.met) "condition-met" else "condition-unmet"
                 )
             }
         }
+    }
+
+    /**
+     * How a counted clause is named in its badge tooltip: the *quantity* it counts, not the whole
+     * comparison. A [Compare] names its left operand ("the number of creature cards in your
+     * graveyard"), which reads as a label beside the "2/4" rather than repeating the threshold that
+     * is already there. The clause shapes that have no left operand — "you control no suspected
+     * Skeletons", "you've cast N spells this turn" — fall back to describing themselves.
+     */
+    private fun describeCountedClause(condition: Condition): String = when (condition) {
+        is Compare -> condition.left.description
+        else -> condition.description
     }
 
     /**

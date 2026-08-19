@@ -923,13 +923,6 @@ object DamageUtils {
     }
 
     /**
-     * Record a last-known snapshot of [sourceId] (its controller and creature-subtypes as projected
-     * right now) on [targetCreatureId]'s [DamagedBySourcesThisTurnComponent]. Read at death time by
-     * observer triggers of the form "whenever another creature dealt damage this turn by [a source
-     * matching a filter] dies" (Shelob). Snapshotting on the *damaged* creature means a source that
-     * died in the same combat is still evaluated against its damage-time state (CR 608.2h).
-     */
-    /**
      * Record [sourceId] as a source that dealt damage this turn, on the player who controls it
      * **right now** — i.e. at the moment the damage is dealt, which is the only moment Case of the
      * Burning Masks's "sources you controlled dealt damage this turn" cares about.
@@ -962,6 +955,13 @@ object DamageUtils {
         }
     }
 
+    /**
+     * Record a last-known snapshot of [sourceId] (its controller and creature-subtypes as projected
+     * right now) on [targetCreatureId]'s [DamagedBySourcesThisTurnComponent]. Read at death time by
+     * observer triggers of the form "whenever another creature dealt damage this turn by [a source
+     * matching a filter] dies" (Shelob). Snapshotting on the *damaged* creature means a source that
+     * died in the same combat is still evaluated against its damage-time state (CR 608.2h).
+     */
     fun trackDamageSourceLki(state: GameState, sourceId: EntityId, targetCreatureId: EntityId): GameState {
         if (targetCreatureId !in state.getBattlefield()) return state
         val projected = state.projectedState

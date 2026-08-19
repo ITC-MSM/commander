@@ -7,6 +7,7 @@ import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.mkm.cards.CaseOfTheUneatenFeast
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
@@ -33,11 +34,20 @@ class CaseOfTheUneatenFeastScenarioTest : FunSpec({
         oracleText = ""
     }
 
+    /** A {W} instant that gains five life in a single event — five points, one gain. */
+    val testBlessing = card("Feast Blessing") {
+        manaCost = "{W}"
+        typeLine = "Instant"
+        oracleText = "You gain 5 life."
+        spell { effect = Effects.GainLife(5) }
+    }
+
     fun newDriver(): GameTestDriver {
         val driver = GameTestDriver()
         driver.registerCards(TestCards.all)
         driver.registerCard(CaseOfTheUneatenFeast)
         driver.registerCard(testDog)
+        driver.registerCard(testBlessing)
         driver.initMirrorMatch(Deck.of("Plains" to 40), skipMulligans = true, startingPlayer = 0)
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         return driver
@@ -71,7 +81,7 @@ class CaseOfTheUneatenFeastScenarioTest : FunSpec({
         driver.getLifeTotal(driver.player1) shouldBe before + 1
     }
 
-    test("five points of life gained this turn solve it — the amount, not the number of gains") {
+    test("four points isn't enough, and the count doesn't carry over to the next turn") {
         val driver = newDriver()
         val case = driver.putPermanentOnBattlefield(driver.player1, "Case of the Uneaten Feast")
 
@@ -81,13 +91,39 @@ class CaseOfTheUneatenFeastScenarioTest : FunSpec({
         driver.bothPass()
         driver.isSolved(case) shouldBe false
 
-        // Next turn, one more creature carries it past five — the tracker resets each turn, so
-        // this needs five fresh points, which one Dog plus a four-point gain provides.
+        // The tracker resets each turn, so those four points are gone: a single Dog next turn is
+        // one point, not a fifth, and the Case stays unsolved.
         driver.passPriorityUntil(Step.UPKEEP)
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         driver.passPriorityUntil(Step.UPKEEP)
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        driver.castDog()
+        driver.passPriorityUntil(Step.END)
+        driver.bothPass()
+        driver.isSolved(case) shouldBe false
+    }
+
+    test("five gains of one solve it — five separate creatures each gaining 1 life") {
+        val driver = newDriver()
+        val case = driver.putPermanentOnBattlefield(driver.player1, "Case of the Uneaten Feast")
+
         repeat(5) { driver.castDog() }
+        driver.passPriorityUntil(Step.END)
+        driver.bothPass()
+        driver.isSolved(case) shouldBe true
+    }
+
+    test("one gain of five solves it too — the amount, not the number of gains") {
+        val driver = newDriver()
+        val case = driver.putPermanentOnBattlefield(driver.player1, "Case of the Uneaten Feast")
+
+        // A single life-gain event worth five points. If the tracker counted gain *events* rather
+        // than life, this one would read 1 and the Case would never solve.
+        val blessing = driver.putCardInHand(driver.player1, "Feast Blessing")
+        driver.giveMana(driver.player1, Color.WHITE, 1)
+        driver.castSpell(driver.player1, blessing).isSuccess shouldBe true
+        driver.bothPass()
+
         driver.passPriorityUntil(Step.END)
         driver.bothPass()
         driver.isSolved(case) shouldBe true
@@ -98,7 +134,6 @@ class CaseOfTheUneatenFeastScenarioTest : FunSpec({
         val case = driver.putPermanentOnBattlefield(driver.player1, "Case of the Uneaten Feast")
         val dogInYard = driver.putCardInGraveyard(driver.player1, "Feast Dog")
 
-        driver.setLifeTotal(driver.player1, driver.getLifeTotal(driver.player1))
         repeat(5) { driver.castDog() }
         driver.passPriorityUntil(Step.END)
         driver.bothPass()

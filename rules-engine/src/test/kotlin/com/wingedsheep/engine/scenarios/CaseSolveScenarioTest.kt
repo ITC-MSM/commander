@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.state.components.battlefield.SolvedComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
@@ -285,9 +286,15 @@ class CaseSolveScenarioTest : FunSpec({
     test("Solved — activated ability can be activated only if solved (CR 702.169d)") {
         val driver = newDriver()
         val case = driver.putPermanentOnBattlefield(driver.player1, "Test Case Activated")
+        val abilityId = activatedCase.activatedAbilities.single().id
 
+        // Match the ability itself, not merely any action that mentions the Case — otherwise an
+        // unrelated action naming this permanent would read as "activatable".
         fun canActivate(): Boolean =
-            driver.legalActions(driver.player1).any { it.toString().contains(case.toString()) }
+            driver.legalActions(driver.player1).any { legal ->
+                val action = legal.action
+                action is ActivateAbility && action.sourceId == case && action.abilityId == abilityId
+            }
 
         canActivate() shouldBe false
 
@@ -298,5 +305,11 @@ class CaseSolveScenarioTest : FunSpec({
         driver.beginNextTurn()
         driver.beginNextTurn()
         canActivate() shouldBe true
+
+        // And it really resolves: "{T}: You gain 2 life".
+        val lifeBefore = driver.getLifeTotal(driver.player1)
+        driver.submitSuccess(ActivateAbility(driver.player1, case, abilityId))
+        driver.bothPass()
+        driver.getLifeTotal(driver.player1) shouldBe lifeBefore + 2
     }
 })

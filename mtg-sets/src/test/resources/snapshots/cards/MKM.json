@@ -3155,9 +3155,6 @@
                             "creatureTypes": [
                                 "Bird"
                             ],
-                            "addTypes": [
-                                "ARTIFACT"
-                            ],
                             "duration": "Permanent"
                         }
                     ]

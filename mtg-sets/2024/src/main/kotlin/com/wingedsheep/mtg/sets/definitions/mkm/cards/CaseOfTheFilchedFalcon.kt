@@ -28,10 +28,11 @@ import com.wingedsheep.sdk.scripting.targets.TargetPermanent
  * The Case investigates itself most of the way to solved: the Clue it makes is one of the three
  * artifacts, and it is still there to be animated later.
  *
- * "In addition to its other types" is why the animate keeps `addTypes = {"ARTIFACT"}` and no
- * `removeTypes`: per the ruling the artifact retains every type, subtype and supertype it had, so
- * a Clue stays a Clue and a Vehicle stays a Vehicle — it is only its base power and toughness that
- * are overwritten with 0/0 (which is why crewing an animated Vehicle afterwards can't restore its
+ * "In addition to its other types" needs no argument on the animate: `BecomeCreature` *adds* the
+ * CREATURE type rather than replacing the type line, and `SetCreatureSubtypes` strips only creature
+ * subtypes — so with no `removeTypes` the artifact retains every type, subtype and supertype it
+ * had, and a Clue stays a Clue and a Vehicle stays a Vehicle. Only its base power and toughness are
+ * overwritten with 0/0 (which is why crewing an animated Vehicle afterwards can't restore its
  * printed P/T). The four counters are what keep it alive; without them the state-based actions
  * would bin a 0/0 immediately, so they are placed in the same resolution.
  *
@@ -67,7 +68,6 @@ val CaseOfTheFilchedFalcon = card("Case of the Filched Falcon") {
                 toughness = 0,
                 keywords = setOf(Keyword.FLYING),
                 creatureTypes = setOf("Bird"),
-                addTypes = setOf("ARTIFACT"),
                 duration = Duration.Permanent
             )
         )

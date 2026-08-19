@@ -18,6 +18,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.ModifyStats
+import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -133,12 +135,15 @@ class TriggerConditionProgressBadgeTest : FunSpec({
         driver.progressBadges(case).single().icon shouldBe "condition-met"
     }
 
-    test("the badge's tooltip names the criterion it is counting") {
+    test("the badge's tooltip names the quantity it is counting, not the whole comparison") {
         val driver = newDriver()
         val case = driver.putPermanentOnBattlefield(driver.player1, "Test Case Creature Count")
 
-        driver.progressBadges(case).single().description shouldBe
-            "the number of creatures you control is at least 3 (0/3)"
+        // A Compare is labelled with its *left operand* — the wording badges had before Cases
+        // existed, so an unrelated card like Oversold Cemetery reads the same as it always did.
+        // Describing the whole comparison instead would repeat the threshold already in "0/3".
+        val counted = DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature)
+        driver.progressBadges(case).single().description shouldBe "${counted.description} (0/3)"
     }
 
     test("a solved Case drops the badge instead of freezing it at a met count") {
