@@ -2311,6 +2311,14 @@ class CastFromZoneEnumerator : ActionEnumerator {
         // anchored to a permanent the player controls, the grant is a player-wide permission
         // (Forgotten Cellar's "you may cast spells from your graveyard this turn"); anchored to a
         // card sitting in the player's own graveyard, it is that card's own permission.
+        //
+        // The player-wide reading is gated on the anchor actually being *on the battlefield*, not
+        // just on it having a controller. A card that reached the graveyard without passing through
+        // the battlefield — milled, discarded — keeps the ControllerComponent it was minted with,
+        // so a controller-only test would silently promote Case of the Uneaten Feast's per-card
+        // grant into a standing "cast any creature card from your graveyard" permission, letting
+        // the same card be recast every time it died.
+        val battlefield = state.getBattlefield()
         val graveyard = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD))
         for (grant in state.grantedStaticAbilities) {
             val ability = grant.ability
@@ -2319,7 +2327,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
             val anchor = state.getEntity(grant.entityId) ?: continue
             val controller = anchor.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()?.playerId
             when {
-                controller == playerId -> permissions.add(ability to null)
+                grant.entityId in battlefield && controller == playerId -> permissions.add(ability to null)
                 grant.entityId in graveyard -> permissions.add(ability to grant.entityId)
             }
         }

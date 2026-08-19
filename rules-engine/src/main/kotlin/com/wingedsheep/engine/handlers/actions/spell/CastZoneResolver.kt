@@ -244,6 +244,7 @@ class CastZoneResolver(
         cardId: EntityId
     ): List<Pair<EntityId, MayCastFromGraveyard>> {
         val matches = mutableListOf<Pair<EntityId, MayCastFromGraveyard>>()
+        val battlefield = state.getBattlefield()
         for (permId in state.getBattlefield(playerId)) {
             val permCard = state.getEntity(permId)?.get<CardComponent>() ?: continue
             val permDef = cardRegistry.getCard(permCard.cardDefinitionId) ?: continue
@@ -266,7 +267,12 @@ class CastZoneResolver(
             if (sa !is MayCastFromGraveyard) continue
             val anchor = state.getEntity(grant.entityId) ?: continue
             val controller = anchor.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()?.playerId
-            if (controller != playerId && grant.entityId != cardId) continue
+            // Player-wide only when the anchor is a battlefield permanent — a graveyard card keeps
+            // the ControllerComponent it was minted with if it was milled or discarded rather than
+            // dying, and a controller-only test would read its own per-card grant as covering every
+            // creature card in the yard. Kept in step with `enumerateGraveyardCast`.
+            val playerWide = grant.entityId in battlefield && controller == playerId
+            if (!playerWide && grant.entityId != cardId) continue
             if (mayCastFromGraveyardGrantApplies(state, playerId, cardId, sa, grant.entityId)) {
                 matches.add(grant.entityId to sa)
             }

@@ -43,8 +43,14 @@
   },
   "player2": {
     "lifeTotal": 20,
-    "hand": [],
-    "battlefield": [],
+    "hand": [
+      "Lightning Bolt"
+    ],
+    "battlefield": [
+      {
+        "name": "Mountain"
+      }
+    ],
     "graveyard": [],
     "library": [
       "Forest",

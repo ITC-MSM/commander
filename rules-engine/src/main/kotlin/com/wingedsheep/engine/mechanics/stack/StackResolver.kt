@@ -3548,7 +3548,19 @@ class StackResolver(
         // Also check graveyard (for flashback etc.)
         val graveyardZone = ZoneKey(playerId, Zone.GRAVEYARD)
         if (cardId in state.getZone(graveyardZone)) {
+            // A static ability granted to the *card while it sat in the graveyard* — Case of the
+            // Uneaten Feast's "creature cards in your graveyard gain 'You may cast this card from
+            // your graveyard'" — ends the moment the card leaves that zone (CR 400.7: the spell,
+            // and anything the card later becomes, is a new object). Dropping it here is what stops
+            // a countered graveyard cast from being recastable off the same grant; the battlefield
+            // exit in ZoneTransitionService covers the spell that does resolve. Every read of the
+            // grant (CastSpellHandler's rider freeze, the once-per-turn source) happens against the
+            // pre-cast state, so this prune can't strip a permission out from under its own cast.
             return state.removeFromZone(graveyardZone, cardId)
+                .copy(
+                    grantedStaticAbilities = state.grantedStaticAbilities
+                        .filter { it.entityId != cardId }
+                )
         }
 
         // Check all players' exile zones (cards may be in another player's exile,

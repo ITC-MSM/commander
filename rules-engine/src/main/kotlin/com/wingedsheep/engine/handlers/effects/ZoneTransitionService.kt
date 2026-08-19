@@ -453,6 +453,18 @@ object ZoneTransitionService {
             newState = ZoneMovementUtils.unlinkFromAllLinkedExiles(newState, entityId)
         }
 
+        // A static ability granted to a card *while it sat in the graveyard* — Case of the Uneaten
+        // Feast's "creature cards in your graveyard gain 'You may cast this card from your
+        // graveyard'" — ends when the card leaves that zone (CR 400.7). The battlefield-exit prune
+        // below only covers grants held by permanents, and the cast path never reaches this service
+        // at all (StackResolver.removeFromCurrentZone prunes there), so this is what catches a
+        // graveyard card returned to hand, exiled, or shuffled away and then put back the same turn.
+        if (fromZone == Zone.GRAVEYARD && actualDestZone != Zone.GRAVEYARD) {
+            newState = newState.copy(
+                grantedStaticAbilities = newState.grantedStaticAbilities.filter { it.entityId != entityId }
+            )
+        }
+
         // Strip battlefield components and remove floating effects AFTER removal
         if (leavingBattlefield) {
             // Capture LinkedExileComponent BEFORE stripping so LTB triggers (e.g. Seam Rip's
