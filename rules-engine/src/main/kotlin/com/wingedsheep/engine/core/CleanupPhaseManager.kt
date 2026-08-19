@@ -727,6 +727,9 @@ class CleanupPhaseManager(
                 if (result.has<RedNoncombatDamageDealtThisTurnComponent>()) {
                     result = result.without<RedNoncombatDamageDealtThisTurnComponent>()
                 }
+                if (result.has<com.wingedsheep.engine.state.components.player.DamageSourcesThisTurnComponent>()) {
+                    result = result.without<com.wingedsheep.engine.state.components.player.DamageSourcesThisTurnComponent>()
+                }
                 if (result.has<PermanentEnteredFaceDownThisTurnComponent>()) {
                     result = result.without<PermanentEnteredFaceDownThisTurnComponent>()
                 }

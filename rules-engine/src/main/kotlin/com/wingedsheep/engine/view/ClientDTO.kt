@@ -340,6 +340,10 @@ data class ClientCard(
     /** Whether this permanent is suspected (CR 701.60 — has menace and can't block). Battlefield only. */
     val isSuspected: Boolean = false,
 
+    /** Whether this Case has the solved designation (CR 719.3b — its "Solved —" abilities are
+     * switched on). Sticky until it leaves the battlefield. Battlefield only. */
+    val isSolved: Boolean = false,
+
     /**
      * Saddle N (CR 702.171a) printed on this permanent, or null if it has no saddle ability.
      * Battlefield only. Sent for every player's Mounts, not just the controller's: whether a Mount

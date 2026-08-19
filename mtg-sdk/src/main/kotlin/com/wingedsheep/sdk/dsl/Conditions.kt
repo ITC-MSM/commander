@@ -1149,6 +1149,18 @@ object Conditions {
     val SourceIsSuspected: ConditionInterface =
         SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.suspected())
 
+    /**
+     * If this permanent has the solved designation (CR 719.3b). The gate behind every "Solved —"
+     * ability (CR 702.169): as a [com.wingedsheep.sdk.dsl.CardBuilder.solvedStaticAbility]
+     * condition, a [com.wingedsheep.sdk.dsl.CardBuilder.solvedTriggeredAbility] intervening-if, or
+     * a [com.wingedsheep.sdk.dsl.CardBuilder.solvedActivatedAbility] activation restriction.
+     *
+     * Negated by [Not] it is the other half of the "To solve" trigger — a Case only becomes solved
+     * "if [condition] and this Case is not solved" (CR 719.3a).
+     */
+    val SourceIsSolved: ConditionInterface =
+        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.solved())
+
     /** If this creature is soulbond-paired with another creature (CR 702.95b). */
     val SourceIsPaired: ConditionInterface =
         SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.paired())
@@ -1392,6 +1404,19 @@ object Conditions {
         atLeast: Int
     ): ConditionInterface =
         PlayerAttackedWithCreaturesThisTurn(Player.You, filter, atLeast)
+
+    /**
+     * If [atLeast] or more creatures matching [filter] attacked this turn, **whoever declared
+     * them** — the player-agnostic sibling of [YouAttackedWithCreaturesThisTurn], for text that
+     * says "three or more creatures attacked this turn" rather than "you attacked with three or
+     * more" (Case of the Gateway Express). Counts each creature once even if the scopes overlap.
+     */
+    fun CreaturesAttackedThisTurn(
+        atLeast: Int,
+        filter: com.wingedsheep.sdk.scripting.GameObjectFilter =
+            com.wingedsheep.sdk.scripting.GameObjectFilter.Creature
+    ): ConditionInterface =
+        PlayerAttackedWithCreaturesThisTurn(Player.Each, filter, atLeast)
 
     /**
      * Whether [attacker] attacked [defender] this turn (CR 508.6) — declared one or more
@@ -1722,6 +1747,38 @@ object Conditions {
     fun CreatureCardPutIntoYourGraveyardThisTurn(atLeast: Int = 1): ConditionInterface =
         trackerAtLeast(
             com.wingedsheep.sdk.scripting.values.TurnTracker.CREATURE_CARDS_PUT_INTO_GRAVEYARD,
+            atLeast = atLeast,
+        )
+
+    /**
+     * If [atLeast] or more creature cards were put into graveyards this turn — **game-wide**,
+     * counting every player's graveyard (summed via [Player.Each]), not just yours. The
+     * player-agnostic sibling of [CreatureCardPutIntoYourGraveyardThisTurn], for Case of the
+     * Gorgon's Kiss's "three or more creature cards were put into graveyards from anywhere this
+     * turn".
+     *
+     * The underlying tracker reads the card's own type line, i.e. what it *is in the graveyard*,
+     * which is the printed ruling: a creature card that was a noncreature permanent on the
+     * battlefield still counts, and a noncreature card animated into a creature does not. Tokens
+     * are never counted — a token isn't a card (CR 111.6).
+     */
+    fun CreatureCardsPutIntoGraveyardsThisTurn(atLeast: Int = 1): ConditionInterface =
+        trackerAtLeast(
+            com.wingedsheep.sdk.scripting.values.TurnTracker.CREATURE_CARDS_PUT_INTO_GRAVEYARD,
+            atLeast = atLeast,
+            player = Player.Each,
+        )
+
+    /**
+     * If [atLeast] or more distinct sources you controlled dealt damage this turn — Case of the
+     * Burning Masks. Counts source *objects* at the moment they dealt the damage: a source that
+     * pings twice counts once, a source that left and returned counts twice, and one that dies or
+     * changes controller afterwards still counts. Abilities are not sources; the source is the
+     * object the ability came from.
+     */
+    fun SourcesYouControlledDealtDamageThisTurn(atLeast: Int): ConditionInterface =
+        trackerAtLeast(
+            com.wingedsheep.sdk.scripting.values.TurnTracker.DAMAGE_SOURCES,
             atLeast = atLeast,
         )
 

@@ -175,6 +175,18 @@ enum class TurnTracker {
      */
     RED_NONCOMBAT_DAMAGE_DEALT,
     /**
+     * Number of distinct sources the player controlled that dealt damage this turn — Case of the
+     * Burning Masks's "three or more sources you controlled dealt damage this turn". Backed by
+     * `DamageSourcesThisTurnComponent`, recorded on the source's controller *at the time it dealt
+     * the damage* and cleared at end of turn.
+     *
+     * Counts objects, not damage events: a permanent that deals damage several times in a turn is
+     * one source, and one that left the battlefield and returned is two (CR 400.7). Abilities are
+     * not sources — the source of an activated or triggered ability is the object it came from — so
+     * a creature that pings twice with its own ability still counts once.
+     */
+    DAMAGE_SOURCES,
+    /**
      * Number of *distinct* elemental bending keyword actions ([com.wingedsheep.sdk.core.BendType]:
      * waterbend, earthbend, firebend, airbend) the player has performed this turn — 0 through 4.
      * Backed by `BendsThisTurnComponent`, reset to empty for every player at the start of each
@@ -214,6 +226,7 @@ enum class TurnTracker {
         CARDS_PUT_INTO_EXILE -> "the number of cards put into exile this turn"
         PERMANENTS_SACRIFICED -> "the number of permanents ${player.description} sacrificed this turn"
         RED_NONCOMBAT_DAMAGE_DEALT -> "the noncombat damage red sources ${player.description} controlled dealt this turn"
+        DAMAGE_SOURCES -> "the number of sources ${player.description} controlled that dealt damage this turn"
         DISTINCT_BENDS -> "the number of different ways ${player.description} bent this turn"
     }
 }

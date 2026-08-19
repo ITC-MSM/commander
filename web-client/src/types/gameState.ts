@@ -300,6 +300,9 @@ export interface ClientCard {
   /** Whether this permanent is suspected (CR 701.60 — has menace and can't block). Battlefield only. */
   readonly isSuspected?: boolean
 
+  /** Whether this Case has the solved designation (CR 719.3b — its "Solved —" abilities are on). Battlefield only. */
+  readonly isSolved?: boolean
+
   /** Whether this card is plotted in exile (CR 718 — Plot keyword, castable for free on a later turn). Exile only. */
   readonly isPlotted?: boolean
 

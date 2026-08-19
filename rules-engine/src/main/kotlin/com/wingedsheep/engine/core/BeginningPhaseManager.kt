@@ -505,6 +505,10 @@ class BeginningPhaseManager(
         // silently untap everything.
         StatePredicate.IsPaired ->
             container.has<com.wingedsheep.engine.state.components.battlefield.PairedComponent>()
+        // Solved (CR 719.3b) is likewise plain per-entity state and survives the turn boundary,
+        // so an "untap each solved Case" filter is answered exactly rather than falling open.
+        StatePredicate.IsSolved ->
+            container.has<com.wingedsheep.engine.state.components.battlefield.SolvedComponent>()
         is StatePredicate.Or -> predicate.predicates.any { matchesStatePredicateForUntap(it, container) }
         is StatePredicate.And -> predicate.predicates.all { matchesStatePredicateForUntap(it, container) }
         is StatePredicate.Not -> !matchesStatePredicateForUntap(predicate.predicate, container)

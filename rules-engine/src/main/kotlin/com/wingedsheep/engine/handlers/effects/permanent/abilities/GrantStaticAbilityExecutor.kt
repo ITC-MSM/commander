@@ -6,6 +6,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.effects.GrantStaticAbilityEffect
 import kotlin.reflect.KClass
 
@@ -35,8 +36,17 @@ class GrantStaticAbilityExecutor : EffectExecutor<GrantStaticAbilityEffect> {
             ?: return EffectResult.error(state, "Target no longer exists")
         targetContainer.get<CardComponent>()
             ?: return EffectResult.error(state, "Target is not a card")
-        if (!state.getBattlefield().contains(targetId)) {
-            return EffectResult.error(state, "Target is not on the battlefield")
+        // Battlefield permanents are the common case, but a static ability can also be handed to a
+        // *card* — "creature cards in your graveyard gain 'You may cast this card from your
+        // graveyard' until end of turn" (Case of the Uneaten Feast). The graveyard-cast read sites
+        // treat a grant anchored to a graveyard card as that card's own permission, so the grant
+        // has to be allowed to land there. Anywhere else is still rejected.
+        val onBattlefield = state.getBattlefield().contains(targetId)
+        val inAGraveyard = state.zones.any { (key, ids) ->
+            key.zoneType == Zone.GRAVEYARD && targetId in ids
+        }
+        if (!onBattlefield && !inAGraveyard) {
+            return EffectResult.error(state, "Target is not on the battlefield or in a graveyard")
         }
 
         val grant = GrantedStaticAbility(

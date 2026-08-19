@@ -2076,6 +2076,12 @@ class TriggerMatcher(
         // "whenever a suspected creature …" trigger filter gates exactly instead of failing open.
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsSuspected ->
             com.wingedsheep.engine.handlers.predicates.isSuspected(state, entityId)
+        // Solved (CR 719.3b) — a plain component marker, evaluable here, so the "Solved —" trigger
+        // gate (CR 702.169c) and any "whenever a solved Case …" filter gate exactly rather than
+        // failing open. Failing open would let a Case's solved trigger fire while it is unsolved.
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsSolved ->
+            state.getEntity(entityId)
+                ?.has<com.wingedsheep.engine.state.components.battlefield.SolvedComponent>() == true
         // Soulbond pairing (CR 702.95b) — plain per-entity state, evaluable here, so a
         // "whenever a paired creature …" trigger filter gates correctly instead of failing open.
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsPaired ->

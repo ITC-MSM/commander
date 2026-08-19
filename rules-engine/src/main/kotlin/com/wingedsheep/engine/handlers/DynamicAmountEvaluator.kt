@@ -647,6 +647,14 @@ class DynamicAmountEvaluator(
                             ?.get<com.wingedsheep.engine.state.components.player.RedNoncombatDamageDealtThisTurnComponent>()
                             ?.amount ?: 0
                     }
+                    // Distinct source objects, so a multi-player scope unions rather than sums —
+                    // the same object can't be controlled by two players at once, but summing set
+                    // sizes across players is the same number either way.
+                    TurnTracker.DAMAGE_SOURCES -> playerIds.sumOf { playerId ->
+                        state.getEntity(playerId)
+                            ?.get<com.wingedsheep.engine.state.components.player.DamageSourcesThisTurnComponent>()
+                            ?.sources?.size ?: 0
+                    }
                     TurnTracker.DISTINCT_BENDS -> playerIds.sumOf { playerId ->
                         state.getEntity(playerId)
                             ?.get<com.wingedsheep.engine.state.components.player.BendsThisTurnComponent>()

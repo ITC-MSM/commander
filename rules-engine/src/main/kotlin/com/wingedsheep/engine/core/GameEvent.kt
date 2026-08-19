@@ -1108,6 +1108,21 @@ data class BecameSaddledEvent(
 ) : GameEvent
 
 /**
+ * A Case became solved (CR 719.3b) — its "To solve" trigger resolved with the condition met.
+ * Fires once per permanent: the designation is sticky, and the trigger's intervening-if stops an
+ * already-solved Case from triggering again, so there is no "already solved" flag to carry.
+ *
+ * Emitted so the log and the client can show the moment a Case flips, and so "whenever a Case you
+ * control becomes solved" payoffs have an event to match.
+ */
+@Serializable
+@SerialName("CaseSolvedEvent")
+data class CaseSolvedEvent(
+    val entityId: EntityId,
+    val entityName: String
+) : GameEvent
+
+/**
  * An Aura, Equipment, or Fortification became attached to a permanent (CR 603.2e). Emitted only
  * at the moment of attaching — when the attachment moves onto a new host — not when an
  * already-attached state persists, and not on phasing in/out (CR 702.26j). Emitted from every

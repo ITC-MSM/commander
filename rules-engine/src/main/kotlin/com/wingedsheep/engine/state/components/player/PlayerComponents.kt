@@ -1224,6 +1224,40 @@ data class LandsPlayedThisTurnComponent(
 data class RedNoncombatDamageDealtThisTurnComponent(val amount: Int = 0) : Component
 
 /**
+ * One damage source, identified as the *object* it was when it dealt the damage.
+ *
+ * [incarnation] is the source's battlefield-entry timestamp, or 0 for a source that wasn't on the
+ * battlefield (a spell on the stack). It is what makes a permanent that left and came back count as
+ * a second source: an object that changes zones becomes a new object (CR 400.7), and the engine
+ * reuses the entity id across that move, so the id alone would collapse the two into one.
+ */
+@Serializable
+data class DamageSourceIdentity(
+    val entityId: EntityId,
+    val incarnation: Long = 0L
+)
+
+/**
+ * The distinct sources this player controlled that have dealt damage this turn — the set behind
+ * Case of the Burning Masks's "three or more sources you controlled dealt damage this turn"
+ * (`TurnTracker.DAMAGE_SOURCES`).
+ *
+ * Recorded on the *damage-time* controller, which is exactly what the printed ruling asks for: you
+ * need to have controlled the sources only when they dealt the damage, so a source that dies or
+ * changes hands afterwards still counts. A set, so a permanent that deals damage several times in
+ * a turn (double strike, an extra combat, a ping ability) counts once — but a source that left and
+ * returned counts twice, because its [DamageSourceIdentity.incarnation] changed. Cleared at end of
+ * turn by `CleanupPhaseManager`.
+ */
+@Serializable
+data class DamageSourcesThisTurnComponent(
+    val sources: Set<DamageSourceIdentity> = emptySet()
+) : Component {
+    fun adding(source: DamageSourceIdentity): DamageSourcesThisTurnComponent =
+        if (source in sources) this else copy(sources = sources + source)
+}
+
+/**
  * The set of distinct elemental bending keyword actions ([BendType]: waterbend, earthbend,
  * firebend, airbend) this player has performed this turn (CR 701.65–701.67 / 702.189). Folded in by
  * `BendEvents.record` whenever the player bends, and reset to empty for every player at the start of

@@ -1009,6 +1009,8 @@ internal class CombatDamageManager(
                     .with(DealtCombatDamageToPlayersThisTurnComponent(priorRecipients + targetId))
             }
         }
+        // Combat damage counts toward "sources you controlled dealt damage this turn" too.
+        newState = DamageUtils.trackDamageSourceForController(newState, sourceId)
         // Track that player was dealt combat damage this turn (boolean marker + running total).
         newState = newState.updateEntity(targetId) { container ->
             val priorCombat = container.get<CombatDamageReceivedThisTurnComponent>()?.amount ?: 0
@@ -1116,6 +1118,8 @@ internal class CombatDamageManager(
                 container.with(HasDealtDamageComponent(newState.turnNumber))
             }
         }
+        // Combat damage counts toward "sources you controlled dealt damage this turn" too.
+        newState = DamageUtils.trackDamageSourceForController(newState, sourceId)
 
         val sourceName = newState.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Creature"
         val defaultName = if (counterType == com.wingedsheep.sdk.core.CounterType.LOYALTY) "Planeswalker" else "Battle"
@@ -1223,6 +1227,8 @@ internal class CombatDamageManager(
                         .with(DealtCombatDamageToPlayersThisTurnComponent(priorRecipients + targetId))
                 }
             }
+            // Combat damage counts toward "sources you controlled dealt damage this turn" too.
+            newState = DamageUtils.trackDamageSourceForController(newState, sourceId)
             // Track that player was dealt combat damage this turn (boolean marker + running total).
             newState = newState.updateEntity(targetId) { container ->
                 val priorCombat = container.get<CombatDamageReceivedThisTurnComponent>()?.amount ?: 0
@@ -1338,6 +1344,8 @@ internal class CombatDamageManager(
                     container.with(HasDealtDamageComponent(newState.turnNumber))
                 }
             }
+            // Combat damage counts toward "sources you controlled dealt damage this turn" too.
+            newState = DamageUtils.trackDamageSourceForController(newState, sourceId)
             newState = DamageUtils.trackDamageDealtToCreature(newState, sourceId, targetId)
             // Snapshot the source's last-known controller / subtypes onto the recipient so observer
             // death triggers ("a creature dealt damage this turn by a Spider you controlled dies",

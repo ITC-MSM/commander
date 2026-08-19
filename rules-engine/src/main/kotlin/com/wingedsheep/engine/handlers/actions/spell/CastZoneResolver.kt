@@ -244,6 +244,7 @@ class CastZoneResolver(
         cardId: EntityId
     ): List<Pair<EntityId, MayCastFromGraveyard>> {
         val matches = mutableListOf<Pair<EntityId, MayCastFromGraveyard>>()
+        val battlefield = state.getBattlefield()
         for (permId in state.getBattlefield(playerId)) {
             val permCard = state.getEntity(permId)?.get<CardComponent>() ?: continue
             val permDef = cardRegistry.getCard(permCard.cardDefinitionId) ?: continue
@@ -253,17 +254,26 @@ class CastZoneResolver(
                 }
             }
         }
-        // Durational grants (e.g. Forgotten Cellar's "cast spells from your graveyard this turn",
-        // or The Tomb of Aclazotz's per-turn creature-cast grant) recorded in grantedStaticAbilities,
-        // anchored to a permanent the player controls.
+        // Durational grants recorded in grantedStaticAbilities, in their two anchorings. Anchored
+        // to a permanent the player controls, the grant is a player-wide permission (Forgotten
+        // Cellar's "cast spells from your graveyard this turn", The Tomb of Aclazotz's per-turn
+        // creature-cast grant). Anchored to the graveyard card itself, it is that one card's own
+        // permission — "creature cards in your graveyard gain 'You may cast this card from your
+        // graveyard'" (Case of the Uneaten Feast), whose affected set is fixed when the ability
+        // resolves (CR 611.2c), so a card that arrives later this turn is not covered. Kept in step
+        // with the same split in `CastFromZoneEnumerator.enumerateGraveyardCast`.
         for (grant in state.grantedStaticAbilities) {
+            val sa = grant.ability
+            if (sa !is MayCastFromGraveyard) continue
             val anchor = state.getEntity(grant.entityId) ?: continue
             val controller = anchor.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()?.playerId
-            if (controller != playerId) continue
-            val sa = grant.ability
-            if (sa is MayCastFromGraveyard &&
-                mayCastFromGraveyardGrantApplies(state, playerId, cardId, sa, grant.entityId)
-            ) {
+            // Player-wide only when the anchor is a battlefield permanent — a graveyard card keeps
+            // the ControllerComponent it was minted with if it was milled or discarded rather than
+            // dying, and a controller-only test would read its own per-card grant as covering every
+            // creature card in the yard. Kept in step with `enumerateGraveyardCast`.
+            val playerWide = grant.entityId in battlefield && controller == playerId
+            if (!playerWide && grant.entityId != cardId) continue
+            if (mayCastFromGraveyardGrantApplies(state, playerId, cardId, sa, grant.entityId)) {
                 matches.add(grant.entityId to sa)
             }
         }

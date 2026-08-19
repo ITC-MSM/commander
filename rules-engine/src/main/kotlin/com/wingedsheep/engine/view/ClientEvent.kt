@@ -335,6 +335,15 @@ sealed interface ClientEvent {
         override val description: String = "$permanentName became saddled"
     ) : ClientEvent
 
+    /** A Case became solved (CR 719.3b) — its "Solved —" abilities are now switched on. */
+    @Serializable
+    @SerialName("caseSolved")
+    data class CaseSolved(
+        val permanentId: EntityId,
+        val permanentName: String,
+        override val description: String = "$permanentName was solved"
+    ) : ClientEvent
+
     @Serializable
     @SerialName("permanentExerted")
     data class PermanentExerted(
@@ -1057,6 +1066,11 @@ object ClientEventTransformer {
             )
 
             is BecameSaddledEvent -> ClientEvent.PermanentSaddled(
+                permanentId = event.entityId,
+                permanentName = event.entityName
+            )
+
+            is CaseSolvedEvent -> ClientEvent.CaseSolved(
                 permanentId = event.entityId,
                 permanentName = event.entityName
             )
