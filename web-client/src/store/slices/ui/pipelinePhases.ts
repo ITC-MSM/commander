@@ -213,6 +213,7 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
       'BouncePermanent',
       'DiscardCard',
       'ExileFromGraveyard',
+      'ExileFromHand',
       'CollectEvidence',
       'ExileForTotal',
       'ExileFromZone',
@@ -456,7 +457,8 @@ export function mergeResult(
               ? { discardedCards: selectedTargets }
               : costType === 'BouncePermanent'
                 ? { bouncedPermanents: selectedTargets }
-                : costType === 'ExileFromGraveyard' || costType === 'CollectEvidence' ||
+                : costType === 'ExileFromGraveyard' || costType === 'ExileFromHand' ||
+                    costType === 'CollectEvidence' ||
                     costType === 'ExileForTotal'
                   ? { exiledCards: selectedTargets }
                   : costType === 'Behold' || costType === 'ChooseEntity'
@@ -493,7 +495,8 @@ export function mergeResult(
               ? { discardedCards: selectedTargets }
               : costType === 'BouncePermanent'
                 ? { bouncedPermanents: selectedTargets }
-                : costType === 'ExileFromGraveyard' || costType === 'Craft' ||
+                : costType === 'ExileFromGraveyard' || costType === 'ExileFromHand' ||
+                    costType === 'Craft' ||
                     costType === 'CollectEvidence' || costType === 'ExileForTotal'
                   ? { exiledCards: selectedTargets }
                   : costType === 'Blight'
@@ -916,6 +919,14 @@ export function enterPhase(
           flags.sourceCardName = actionInfo.description
             .replace(/^Cast /, '')
             .replace(/^Activate /, '')
+          break
+        case 'ExileFromHand':
+          validTargets = [...(costInfo.validExileTargets ?? [])]
+          minTargets = costInfo.exileMinCount ?? 1
+          maxTargets = costInfo.exileMaxCount ?? costInfo.validExileTargets?.length ?? 1
+          flags.isSacrificeSelection = true
+          flags.targetZone = 'Hand'
+          flags.targetDescription = costInfo.description
           break
         // The sum-gated graveyard exiles: collect evidence N (CR 701.59a) and "exile any number of
         // <filter> cards from your graveyard with N or more <measure>" (Baron Helmut Zemo). Any

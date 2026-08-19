@@ -46,6 +46,13 @@ class ForceOfVigorScenarioTest : FunSpec({
                 action.alternativeCostType == AlternativeCostType.SELF_ALTERNATIVE
         }
 
+    fun altCastAction(driver: GameTestDriver, player: EntityId, cardId: EntityId): LegalAction =
+        driver.legalActions(player).first { legal ->
+            val action = legal.action
+            action is CastSpell && action.cardId == cardId &&
+                action.alternativeCostType == AlternativeCostType.SELF_ALTERNATIVE
+        }
+
     test("on your own turn: the alternative cost is not offered, and paying full mana cost destroys the chosen targets") {
         val driver = createDriver()
         driver.initMirrorMatch(deck = Deck.of("Forest" to 40), startingLife = 20)
@@ -103,6 +110,11 @@ class ForceOfVigorScenarioTest : FunSpec({
         val spell = driver.putCardInHand(you, "Force of Vigor")
 
         altCastOffered(driver, you, spell) shouldBe true
+        val cost = altCastAction(driver, you, spell).additionalCostInfo!!
+        cost.costType shouldBe "ExileFromHand"
+        cost.validExileTargets shouldBe listOf(greenFodder)
+        cost.exileMinCount shouldBe 1
+        cost.exileMaxCount shouldBe 1
 
         driver.submit(
             CastSpell(
@@ -119,6 +131,20 @@ class ForceOfVigorScenarioTest : FunSpec({
         // No mana was ever given to "you" — the spell resolved for free.
         driver.getExileCardNames(you) shouldBe listOf("Llanowar Elves")
         driver.state.getBattlefield(opponentTurn).contains(artifact) shouldBe false
+    }
+
+    test("off your turn: the alternative cost is not offered without another green card in hand") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Forest" to 40), startingLife = 20, startingPlayer = 1)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        val opponentTurn = driver.activePlayer!!
+        val you = driver.getOpponent(opponentTurn)
+        driver.passPriority(opponentTurn)
+
+        driver.putCardInHand(you, "Artifact Creature")
+        val spell = driver.putCardInHand(you, "Force of Vigor")
+
+        altCastOffered(driver, you, spell) shouldBe false
     }
 
     test("up to two targets: choosing only one, or none, still resolves without fizzling") {

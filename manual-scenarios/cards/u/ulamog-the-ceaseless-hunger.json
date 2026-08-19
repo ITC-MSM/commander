@@ -33,5 +33,6 @@
   "player1StopAtSteps": ["DECLARE_ATTACKERS"],
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
-  "player2OpponentStopAtSteps": []
+  "player2OpponentStopAtSteps": [],
+  "mode": "SELF"
 }

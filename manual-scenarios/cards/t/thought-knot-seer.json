@@ -15,8 +15,11 @@
   },
   "player2": {
     "lifeTotal": 20,
-    "hand": ["Lightning Bolt", "Mountain"],
-    "battlefield": [],
+    "hand": ["Lightning Bolt", "Mountain", "Terror"],
+    "battlefield": [
+      {"name": "Swamp"},
+      {"name": "Swamp"}
+    ],
     "graveyard": [],
     "library": ["Mountain", "Mountain", "Mountain"]
   },
@@ -27,5 +30,6 @@
   "player1StopAtSteps": [],
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
-  "player2OpponentStopAtSteps": []
+  "player2OpponentStopAtSteps": [],
+  "mode": "SELF"
 }

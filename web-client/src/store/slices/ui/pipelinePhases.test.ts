@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computePhases, enterPhase } from './pipelinePhases'
+import { computePhases, enterPhase, mergeResult } from './pipelinePhases'
 import type { LegalActionInfo } from '@/types/messages'
 
 /**
@@ -157,6 +157,56 @@ describe('computePhases — Phyrexian mana', () => {
     })
 
     expect(computePhases(info, { autoTapEnabled: true })).toEqual([{ type: 'manaSource' }])
+  })
+})
+
+describe('Force of Vigor hand-exile payment', () => {
+  const info = castAction({
+    actionType: 'CastWithAlternativeCost',
+    description: 'Cast Force of Vigor ({0})',
+    action: {
+      type: 'CastSpell',
+      playerId: 'p1',
+      cardId: 'force',
+      useAlternativeCost: true,
+      alternativeCostType: 'SELF_ALTERNATIVE',
+    },
+    additionalCostInfo: {
+      costType: 'ExileFromHand',
+      description: 'Exile a green card from your hand',
+      validExileTargets: ['green-card'],
+      exileMinCount: 1,
+      exileMaxCount: 1,
+    },
+  })
+
+  it('opens a hand selection phase and exposes the eligible green card', () => {
+    expect(computePhases(info, { autoTapEnabled: true })).toEqual([{ type: 'costPayment' }])
+
+    let captured: Record<string, unknown> | null = null
+    const store = {
+      startTargeting: (arg: Record<string, unknown>) => { captured = arg },
+    } as unknown as Parameters<typeof enterPhase>[3]
+    enterPhase({ type: 'costPayment' }, info, info.action, store)
+
+    expect(captured).toMatchObject({
+      validTargets: ['green-card'],
+      minTargets: 1,
+      maxTargets: 1,
+      targetZone: 'Hand',
+    })
+  })
+
+  it('submits the chosen card through additionalCostPayment.exiledCards', () => {
+    const action = mergeResult(
+      info.action,
+      info,
+      { type: 'costPayment', costType: 'ExileFromHand', selectedTargets: ['green-card' as never] },
+      {} as never,
+    )
+    expect(action).toMatchObject({
+      additionalCostPayment: { exiledCards: ['green-card'] },
+    })
   })
 })
 

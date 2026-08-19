@@ -577,12 +577,11 @@ class CastSpellEnumerator : ActionEnumerator {
                 val selfAltEffective = context.costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, selfAltMana, playerId)
                 val canPayMana = context.manaSolver.canPay(state, playerId, selfAltEffective, precomputedSources = cachedSources)
                 val canPayAdditional = selfAltCost.additionalCosts.all { cost ->
-                    when (val atom = (cost as? AdditionalCost.Atom)?.atom) {
-                        is CostAtom.TapPermanents -> {
-                            context.costUtils.findAbilityTapTargets(state, playerId, atom.filter).size >= atom.count
-                        }
-                        else -> true
-                    }
+                    val candidates = SelectionCostPresentation.candidates(
+                        state, playerId, cardId, cost, context.costUtils, context.predicateEvaluator
+                    )
+                    val selectionCount = SelectionCostPresentation.selectionCount(cost)
+                    selectionCount == 0 || candidates.size >= selectionCount
                 }
                 canPayMana && canPayAdditional
             } else false
@@ -787,16 +786,12 @@ class CastSpellEnumerator : ActionEnumerator {
                     context.manaSolver.solve(state, playerId, selfAltEffective, precomputedSources = cachedSources)
                         ?.sources?.map { it.entityId }
                 }
-                val tapCost = selfAltCost.additionalCosts.firstNotNullOfOrNull { (it as? AdditionalCost.Atom)?.atom as? CostAtom.TapPermanents }
-                val tapTargets = if (tapCost != null) context.costUtils.findAbilityTapTargets(state, playerId, tapCost.filter) else null
-                val addlCostInfo = if (tapTargets != null && tapCost != null) {
-                    AdditionalCostData(
-                        description = tapCost.description,
-                        costType = "TapPermanents",
-                        validTapTargets = tapTargets,
-                        tapCount = tapCost.count
+                val addlCostInfo = selfAltCost.additionalCosts.firstNotNullOfOrNull { cost ->
+                    val candidates = SelectionCostPresentation.candidates(
+                        state, playerId, cardId, cost, context.costUtils, context.predicateEvaluator
                     )
-                } else null
+                    SelectionCostPresentation.costData(cost, candidates)?.second
+                }
                 SelfAltCostResult(
                     manaCostString = selfAltEffective.toString(),
                     autoTapPreview = selfAltPreview,

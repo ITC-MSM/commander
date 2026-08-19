@@ -4,9 +4,16 @@
   "player1": {
     "lifeTotal": 20,
     "hand": ["Force of Vigor", "Grizzly Bears"],
-    "battlefield": [],
+    "battlefield": [
+      { "name": "Forest" },
+      { "name": "Forest" },
+      { "name": "Forest" },
+      { "name": "Forest" },
+      { "name": "Forest" },
+      { "name": "Forest" }
+    ],
     "graveyard": [],
-    "library": ["Forest", "Forest"]
+    "library": ["Forest", "Forest", "Forest", "Forest", "Forest", "Forest"]
   },
   "player2": {
     "lifeTotal": 20,
@@ -25,5 +32,6 @@
   "player1StopAtSteps": [],
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
-  "player2OpponentStopAtSteps": []
+  "player2OpponentStopAtSteps": [],
+  "mode": "SELF"
 }
