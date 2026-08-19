@@ -34,6 +34,16 @@ object ArabianNightsSet : MtgSet {
     }
 
     /**
+     * Arabian Nights printed exactly one basic land — Mountain (#77). [basicLandsFallback] stays
+     * pointed at Portal so a deck built from an ARN pool can still reach the other four types;
+     * the booster/sealed land pool reads the fallback set, so ARN's own Mountain is registered as
+     * a card of the set without claiming to be a complete five-type land cycle.
+     */
+    override val basicLands: List<CardDefinition> by lazy {
+        CardDiscovery.findBasicLandsIn(CARDS_PACKAGE, code)
+    }
+
+    /**
      * Arabian Nights predates token *cards* — Scryfall has no `tarn` set to sync from — so its token
      * art is self-hosted under `web-client/public/images/tokens/` and declared here, the same route
      * Invasion, Apocalypse and Odyssey take.
