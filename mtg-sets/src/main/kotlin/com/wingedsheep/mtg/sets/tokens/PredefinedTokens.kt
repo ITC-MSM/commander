@@ -44,6 +44,28 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
 object PredefinedTokens {
 
     /**
+     * Eldrazi Spawn token — a 0/1 colorless Eldrazi creature with:
+     * "Sacrifice this creature: Add {C}."
+     * Created by Kozilek's Command, Malevolent Rumble, Drowner of Truth, and others.
+     */
+    val EldraziSpawn = card("Eldrazi Spawn") {
+        typeLine = "Creature — Eldrazi Spawn"
+        power = 0
+        toughness = 1
+
+        activatedAbility {
+            cost = Costs.SacrificeSelf
+            effect = Effects.AddColorlessMana(1)
+            manaAbility = true
+        }
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/e/0/e0e3826c-3c85-4910-bd6c-04894ea328d0.jpg?1783941948"
+            artist = "Aleksi Briclot"
+        }
+    }
+
+    /**
      * Treasure token — an artifact with:
      * "{T}, Sacrifice this artifact: Add one mana of any color."
      */
@@ -885,6 +907,7 @@ object PredefinedTokens {
      * Register these in the CardRegistry so token abilities are resolved.
      */
     val allTokens: List<CardDefinition> = listOf(
+        EldraziSpawn,
         Treasure,
         Meteorite,
         Food,

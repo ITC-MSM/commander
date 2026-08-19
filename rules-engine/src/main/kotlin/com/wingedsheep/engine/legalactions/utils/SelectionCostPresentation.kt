@@ -82,8 +82,8 @@ object SelectionCostPresentation {
      * client cost data for paying [cost] from [candidates], or null when [cost] carries no
      * selection a picker could drive.
      *
-     * `"ExileFromGraveyard"` pins the client's picker to the graveyard, so a non-graveyard exile
-     * cost is declined rather than shown against the wrong zone.
+     * Exile costs identify their source zone so the client opens the matching picker instead of
+     * assuming every exile payment comes from the graveyard.
      */
     fun costData(
         cost: AdditionalCost,
@@ -110,10 +110,15 @@ object SelectionCostPresentation {
                     validDiscardTargets = candidates,
                     discardCount = atom.count,
                 )
-                is CostAtom.ExileFrom -> if (atom.zone != Zone.GRAVEYARD) null else {
-                    "Exile from graveyard" to AdditionalCostData(
+                is CostAtom.ExileFrom -> {
+                    val (label, costType) = when (atom.zone) {
+                        Zone.GRAVEYARD -> "Exile from graveyard" to "ExileFromGraveyard"
+                        Zone.HAND -> "Exile from hand" to "ExileFromHand"
+                        else -> return null
+                    }
+                    label to AdditionalCostData(
                         description = description,
-                        costType = "ExileFromGraveyard",
+                        costType = costType,
                         validExileTargets = candidates,
                         exileMinCount = atom.count,
                         exileMaxCount = atom.count,

@@ -442,8 +442,12 @@ class ActivateAbilityHandler(
         // Check summoning sickness for tap/untap abilities. CR 302.6 restricts a *creature's*
         // activated ability whose cost includes the tap symbol **or the untap symbol** — read
         // creature-ness and haste from projected state so a Vehicle or animated permanent that
-        // became a creature this turn is gated correctly. The `!typeLine.isLand` carve-out is
-        // preserved (basic-land mana abilities are not restricted by summoning sickness).
+        // became a creature this turn is gated correctly. Gating on `isCreature` alone (no
+        // `!typeLine.isLand` carve-out) is already correct for plain lands — a land that isn't
+        // also a creature never satisfies `isCreature`, so this is a no-op for every ordinary
+        // land's mana ability — and it's the only way to catch a land that *is* also a creature
+        // (Dryad Arbor: "This land ... is affected by summoning sickness"), which the old
+        // land-wide carve-out silently exempted.
         //
         // `ActivatedAbilityEnumerator` mirrors this for `AbilityCost.Untap` both bare and inside a
         // `Composite`, so the two agree on `{Q}` in either shape and the enumerator never offers an
@@ -452,7 +456,7 @@ class ActivateAbilityHandler(
         if (costTouchesTapSymbol(effectiveCost) ||
             (effectiveCost is AbilityCost.Composite && effectiveCost.costs.any(costTouchesTapSymbol))
         ) {
-            if (!cardComponent.typeLine.isLand && state.projectedState.isCreature(action.sourceId) &&
+            if (state.projectedState.isCreature(action.sourceId) &&
                 SummoningSicknessRules.blocksTapOrUntapCost(action.sourceId, container, state.projectedState)
             ) {
                 return "This creature has summoning sickness"

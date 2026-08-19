@@ -93,6 +93,7 @@ export interface SelectionSliceActions {
   confirmDecisionSelection: () => void
   startManaSelection: (actionInfo: LegalActionInfo) => void
   toggleManaSource: (entityId: EntityId) => void
+  togglePhyrexianLifePayment: (pipIndex: number) => void
   cancelManaSelection: () => void
   confirmManaSelection: () => void
 }
@@ -565,8 +566,8 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
 
   // Mana source selection actions (pre-cast)
   startManaSelection: (actionInfo) => {
-    const sources = actionInfo.availableManaSources
-    if (!sources || sources.length === 0) return
+    const sources = actionInfo.availableManaSources ?? []
+    if (sources.length === 0 && !(actionInfo.manaCostString ?? '').includes('/P}')) return
     const sourceColors: Record<string, readonly string[]> = {}
     const sourceManaAmounts: Record<string, number> = {}
     for (const source of sources) {
@@ -622,6 +623,7 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
           harmonizeReduction,
           sourceColors,
           sourceManaAmounts,
+          phyrexianLifePipIndices: [],
         },
       })
       return
@@ -672,6 +674,7 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
         harmonizeReduction: 0,
         sourceColors,
         sourceManaAmounts,
+        phyrexianLifePipIndices: [],
       },
     })
   },
@@ -687,6 +690,21 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
           selectedSources: isSelected
             ? selectedSources.filter(id => id !== entityId)
             : [...selectedSources, entityId],
+        },
+      }
+    })
+  },
+
+  togglePhyrexianLifePayment: (pipIndex) => {
+    set((state) => {
+      if (!state.manaSelectionState) return state
+      const selected = state.manaSelectionState.phyrexianLifePipIndices
+      return {
+        manaSelectionState: {
+          ...state.manaSelectionState,
+          phyrexianLifePipIndices: selected.includes(pipIndex)
+            ? selected.filter((index) => index !== pipIndex)
+            : [...selected, pipIndex],
         },
       }
     })

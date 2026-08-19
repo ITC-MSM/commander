@@ -343,6 +343,11 @@ excluded.
 
 ## 3. Costs (`Costs.*`)
 
+Spell mana costs containing Phyrexian symbols (for example `{B/P}`) are paid per pip with either
+one mana of that color or 2 life. Manual payment records the chosen life-paid pip colors as a
+multiset on `PaymentStrategy.Explicit.phyrexianLifePayments`; the engine validates that those pips
+exist in the cost and charges the life through the shared life-payment service.
+
 > **One cost vocabulary (`CostAtom`).** The payable things shared across cost *contexts* — mana, life,
 > sacrifice, discard, exile-from-zone, tap, return-to-hand, reveal — are defined **once** in the
 > `CostAtom` sealed hierarchy (`scripting/costs/CostAtom.kt`). All three context wrappers carry them via
@@ -1115,6 +1120,8 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Library reveal & free cast
 
+- `PlayFromCollectionWithoutPayingCostEffect(from)` (facade `Effects.PlayFromCollectionWithoutPayingCost(from)`) — play the first card in the pipeline collection immediately during the resolving effect. Nonlands use the free-cast machinery; lands use the normal land-play path, consume a land play for the turn, and remain unplayed when no land play is available. Use this for Oracle text that says **play**, such as **Fight Rigging**; it grants no permission that survives resolution.
+
 - `Effects.Cascade` — CR 702.85a (`CascadeEffect`). Exile from the top of the controller's library
   until a nonland card with mana value **strictly less than** the triggering spell's is exiled,
   offer to cast it for free, bottom-randomize every exiled card that isn't cast.
@@ -1682,6 +1689,9 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   two Treasure tokens" (An Offer You Can't Refuse). `imageUri` overrides the token art (see the
   set-specific-art note below).
 - `CreateFood(count?, controller?)` — Food tokens. `count` accepts an `Int` or a `DynamicAmount` (the latter evaluated at resolution, e.g. `CreateFood(DynamicAmount.Divide(DynamicAmount.CastX, DynamicAmount.Fixed(2), roundUp = true))` for The Goose Mother's "create half X Food tokens, rounded up").
+- `CreateEldraziSpawn(count?, controller?, imageUri?)` — 0/1 colorless Eldrazi Spawn creature tokens
+  ("Sacrifice this creature: Add {C}."). `count` accepts an `Int` (default 1) or a `DynamicAmount`
+  evaluated at resolution, such as `DynamicAmount.XValue` for Kozilek's Command.
 - `CreateBlood(count?, controller?)` — Blood tokens (artifact with "{1}, {T}, Discard a card, Sacrifice this artifact: Draw a card."). `count` accepts an `Int` or a `DynamicAmount` (the latter evaluated at resolution, e.g. `CreateBlood(DynamicAmount.EntityProperty(EntityReference.Target(0), EntityNumericProperty.ExcessMarkedDamage))` for Lacerate Flesh's "create a number of Blood tokens equal to the amount of excess damage dealt").
 - `CreateClue(count?, controller?)` / `Investigate(count?, controller?)` — Clue tokens (artifact with
   "{2}, Sacrifice this token: Draw a card."). `Investigate` is the keyword-action spelling (CR 701.36) so

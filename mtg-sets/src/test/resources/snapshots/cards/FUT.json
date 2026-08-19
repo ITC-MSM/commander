@@ -36,6 +36,60 @@
     ]
 }
 
+// Dryad Arbor
+{
+    "name": "Dryad Arbor",
+    "manaCost": "",
+    "typeLine": "Land Creature — Forest Dryad",
+    "oracleText": "(This land isn't a spell, it's affected by summoning sickness, and it has \"{T}: Add {G}.\")",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {G}."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "174",
+        "rarity": "UNCOMMON",
+        "artist": "Eric Fortune",
+        "flavorText": "\"Touch no tree, break no branch, and speak only the question you wish answered.\"\n—Von Yomm, elder druid, to her initiates",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/c/8cee476d-42e1-4997-87af-73e18f542167.jpg?1783943089",
+        "rulings": [
+            {
+                "date": "2021-03-19",
+                "text": "Due to its color indicator (appearing to the left of its type line), Dryad Arbor is green. Color indicators apply in all zones, not just the battlefield."
+            },
+            {
+                "date": "2021-03-19",
+                "text": "If Dryad Arbor is changed into another basic land type, it continues to be a green Dryad creature."
+            },
+            {
+                "date": "2021-03-19",
+                "text": "Dryad Arbor is played as a land. It doesn't use the stack, it's not a spell, it can't be responded to, it has no mana cost, and it counts as your land play for the turn."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ],
+    "colorIndicator": [
+        "GREEN"
+    ]
+}
+
 // Fomori Nomad
 {
     "name": "Fomori Nomad",

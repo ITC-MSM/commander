@@ -83,6 +83,7 @@ import com.wingedsheep.sdk.scripting.effects.ForEachPlayerEffect
 import com.wingedsheep.sdk.scripting.effects.CopyCardIntoCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.CopyCollectionIntoCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.CastFromCollectionWithoutPayingCostEffect
+import com.wingedsheep.sdk.scripting.effects.PlayFromCollectionWithoutPayingCostEffect
 import com.wingedsheep.sdk.scripting.effects.CastAnyNumberFromCollectionWithoutPayingCostEffect
 import com.wingedsheep.sdk.scripting.effects.AnyPlayerMayPayEffect
 import com.wingedsheep.sdk.scripting.costs.PayCost
@@ -2647,6 +2648,31 @@ object Effects {
         CreatePredefinedTokenEffect("Treasure", tapped = tapped, dynamicCount = count, imageUri = imageUri)
 
     /**
+     * Create 0/1 colorless Eldrazi Spawn creature tokens.
+     * "Sacrifice this creature: Add {C}."
+     *
+     * @param count Number of tokens to create
+     * @param controller Who controls the tokens (null = effect controller)
+     */
+    fun CreateEldraziSpawn(count: Int = 1, controller: EffectTarget? = null, imageUri: String? = null): Effect =
+        CreatePredefinedTokenEffect("Eldrazi Spawn", count, controller, imageUri = imageUri)
+
+    /**
+     * Create a dynamic number of 0/1 colorless Eldrazi Spawn creature tokens.
+     * The count is evaluated at resolution time.
+     */
+    fun CreateEldraziSpawn(
+        count: DynamicAmount,
+        controller: EffectTarget? = null,
+        imageUri: String? = null
+    ): Effect = CreatePredefinedTokenEffect(
+        tokenType = "Eldrazi Spawn",
+        controller = controller,
+        dynamicCount = count,
+        imageUri = imageUri
+    )
+
+    /**
      * "You may behold a [filter]. If you do, [ifBeheld]." — the resolution-time behold
      * (choose a matching permanent you control or reveal a matching card from hand). See
      * [com.wingedsheep.sdk.scripting.effects.BeholdEffect]. Used by Sarkhan, Dragon Ascendant.
@@ -3328,6 +3354,14 @@ object Effects {
      */
     fun CastFromCollectionWithoutPayingCost(from: String, storeCastTo: String? = null): Effect =
         CastFromCollectionWithoutPayingCostEffect(from = from, storeCastTo = storeCastTo)
+
+    /**
+     * Play the (0..1) card stored under [from] immediately during resolution without paying its
+     * mana cost. Unlike [CastFromCollectionWithoutPayingCost], this also supports lands; playing
+     * one consumes a land play and is impossible when none remain.
+     */
+    fun PlayFromCollectionWithoutPayingCost(from: String): Effect =
+        PlayFromCollectionWithoutPayingCostEffect(from = from)
 
     /**
      * Cast the (0..1) card stored under [from], **paying its normal mana cost** (the "you may

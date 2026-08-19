@@ -485,6 +485,79 @@
     ]
 }
 
+// Malevolent Rumble
+{
+    "name": "Malevolent Rumble",
+    "manaCost": "{1}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Reveal the top four cards of your library. You may put a permanent card from among them into your hand. Put the rest into your graveyard. Create a 0/1 colorless Eldrazi Spawn creature token with \"Sacrifice this token: Add {C}.\"",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 4
+                        }
+                    },
+                    "storeAs": "revealed",
+                    "revealed": true
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "revealed",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "filter": "permanent",
+                    "storeSelected": "toHand",
+                    "storeRemainder": "toGraveyard",
+                    "prompt": "You may put a permanent card into your hand",
+                    "selectedLabel": "Put into hand",
+                    "remainderLabel": "Put into graveyard",
+                    "showAllCards": true
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "toHand",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "toGraveyard",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    }
+                },
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Eldrazi Spawn"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "161",
+        "artist": "Néstor Ossandón Leal",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/1/a178cfe8-f9fa-4255-88d0-54a0bed079f5.jpg?1783911259"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Nightshade Dryad
 {
     "name": "Nightshade Dryad",
@@ -953,6 +1026,137 @@
     "colorIdentityOverride": [
         "WHITE"
     ]
+}
+
+// Ugin's Labyrinth
+{
+    "name": "Ugin's Labyrinth",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "Imprint — When this land enters, you may exile a colorless card with mana value 7 or greater from your hand.\n{T}: Add {C}. If a card is exiled with this land, add {C}{C} instead.\n{T}: Return the exiled card to its owner's hand.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsColorless",
+                                        {
+                                            "type": "ManaValueAtLeast",
+                                            "min": 7
+                                        }
+                                    ]
+                                }
+                            },
+                            "storeAs": "labyrinthEligible"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "labyrinthEligible",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "labyrinthPicked",
+                            "prompt": "Exile a colorless card with mana value 7 or greater?",
+                            "selectedLabel": "Exile"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "labyrinthPicked",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "Imprint — When this land enters, you may exile a colorless card with mana value 7 or greater from your hand."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Add",
+                        "left": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "right": {
+                            "type": "Min",
+                            "left": {
+                                "type": "ContextProperty",
+                                "key": "LINKED_EXILE_CARD_COUNT"
+                            },
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {C}. If a card is exiled with this land, add {C}{C} instead."
+            },
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return_hand"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return_hand",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "{T}: Return the exiled card to its owner's hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "233",
+        "rarity": "MYTHIC",
+        "artist": "Mark Poole",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/2/020e1348-1a35-4cc8-bad6-9fbddfa79277.jpg?1783911233",
+        "rulings": [
+            {
+                "date": "2024-06-07",
+                "text": "In the rare case where more than one card is exiled with Ugin's Labyrinth's imprint ability (likely because the triggered ability was copied or the ability triggered a second time), its last ability will return all such cards to their owners' hands."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Warren Soultrader

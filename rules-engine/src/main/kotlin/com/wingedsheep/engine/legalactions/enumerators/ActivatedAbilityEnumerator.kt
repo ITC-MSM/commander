@@ -215,7 +215,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 when (effectiveCost) {
                     is AbilityCost.Tap -> {
                         if (container.has<TappedComponent>()) continue
-                        if (!cardComponent.typeLine.isLand && projected.isCreature(entityId) &&
+                        if (projected.isCreature(entityId) &&
                             SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
                         ) continue
                     }
@@ -224,7 +224,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                     // enumerator and `ActivateAbilityHandler`'s authoritative re-check agree.
                     is AbilityCost.Untap -> {
                         if (!container.has<TappedComponent>()) continue
-                        if (!cardComponent.typeLine.isLand && projected.isCreature(entityId) &&
+                        if (projected.isCreature(entityId) &&
                             SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
                         ) continue
                     }
@@ -402,7 +402,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                         costCanBePaid = false
                                         break
                                     }
-                                    if (!cardComponent.typeLine.isLand && projected.isCreature(entityId) &&
+                                    if (projected.isCreature(entityId) &&
                                         SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
                                     ) {
                                         costCanBePaid = false
@@ -419,7 +419,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                         costCanBePaid = false
                                         break
                                     }
-                                    if (!cardComponent.typeLine.isLand && projected.isCreature(entityId) &&
+                                    if (projected.isCreature(entityId) &&
                                         SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
                                     ) {
                                         costCanBePaid = false

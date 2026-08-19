@@ -575,7 +575,7 @@ object CardLinter {
             "MakePlotted",
             "GrantPlayWithAdditionalCost", "GrantPlayWithCostIncrease", "FilterCollection",
             "ChooseOnePerCategory",
-            "StoreCardName", "CastFromCollectionWithoutPayingCost",
+            "StoreCardName", "CastFromCollectionWithoutPayingCost", "PlayFromCollectionWithoutPayingCost",
             "CastAnyNumberFromCollectionWithoutPayingCost", "ExileFromStorage",
             "CopyCollectionIntoCollection", "RecordChosenLinkedExile",
             "PairWithSource",

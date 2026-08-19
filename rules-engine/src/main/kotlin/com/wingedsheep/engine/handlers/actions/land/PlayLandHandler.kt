@@ -12,6 +12,7 @@ import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
+import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
@@ -60,15 +61,18 @@ class PlayLandHandler(
 
     private val predicateEvaluator = com.wingedsheep.engine.handlers.PredicateEvaluator()
 
-    override fun validate(state: GameState, action: PlayLand): String? {
+    override fun validate(state: GameState, action: PlayLand): String? =
+        validate(state, action, duringResolution = false)
+
+    private fun validate(state: GameState, action: PlayLand, duringResolution: Boolean): String? {
         if (!state.isActiveTurnFor(action.playerId)) {
             // CR 805.4c — each player on the active team may play a land on the team's turn.
             return "You can only play lands on your turn"
         }
-        if (!state.step.isMainPhase) {
+        if (!duringResolution && !state.step.isMainPhase) {
             return "You can only play lands during a main phase"
         }
-        if (state.stack.isNotEmpty()) {
+        if (!duringResolution && state.stack.isNotEmpty()) {
             return "You can only play lands when the stack is empty"
         }
 
@@ -115,6 +119,13 @@ class PlayLandHandler(
         }
 
         return null
+    }
+
+    /** Play a land when a resolving effect explicitly instructs the player to do so. */
+    fun executeDuringResolution(state: GameState, action: PlayLand): ExecutionResult {
+        val validationError = validate(state, action, duringResolution = true)
+        return if (validationError != null) ExecutionResult.error(state, validationError)
+        else execute(state, action)
     }
 
     override fun execute(state: GameState, action: PlayLand): ExecutionResult {
@@ -199,6 +210,14 @@ class PlayLandHandler(
         // GameObjectFilter.enteredThisTurn() check keyed on a land would never see it as true,
         // even on the very turn it was played.
         newState = newState.updateEntity(action.cardId) { c -> c.with(EnteredThisTurnComponent) }
+
+        // Same bypass, same consequence for CR 302.6/508.1a: ZoneTransitionService stamps
+        // SummoningSicknessComponent on every permanent it puts onto the battlefield (a no-op for
+        // an ordinary land, since only a {T}/{Q} cost or an attack check ever reads it, gated on
+        // isCreature). A land played from hand skips that stamp entirely, which was invisible
+        // until a land that's also a creature existed (Dryad Arbor) — its "{T}: Add {G}" must be
+        // blocked the turn it's played, and without this it never was.
+        newState = newState.updateEntity(action.cardId) { c -> c.with(SummoningSicknessComponent) }
 
         // Same bypass, same consequence for Rule 712 face tracking: a double-faced *land* played
         // from hand (Balamb Garden, SeeD Academy — "{5}{G}{U}, {T}: Transform this land") never went

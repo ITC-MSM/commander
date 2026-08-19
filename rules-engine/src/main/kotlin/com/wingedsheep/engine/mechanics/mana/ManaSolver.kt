@@ -1203,7 +1203,7 @@ class ManaSolver(
                 }
 
                 // Check summoning sickness for creatures (non-lands)
-                if (!card.typeLine.isLand && isCreature && tapBlockedBySickness) {
+                if (isCreature && tapBlockedBySickness) {
                     continue // Can't use this ability due to summoning sickness
                 }
 
@@ -2006,8 +2006,26 @@ class ManaSolver(
         spellContext: SpellPaymentContext? = null,
         precomputedSources: List<ManaSource>? = null,
         /** Colors that may pay the `{X}` portion ("spend only [colors] on X"); empty = any. */
-        xManaRestriction: Set<Color> = emptySet()
+        xManaRestriction: Set<Color> = emptySet(),
+        /** Internal recursion tally for Phyrexian pips tentatively paid with life. */
+        phyrexianLifePipsCommitted: Int = 0
     ): Boolean {
+        // A Phyrexian pip may be paid with 2 life instead of its color. Try each distinct pip
+        // choice before the mana-only solver below; recursive calls see a strictly smaller cost.
+        // Paying down to exactly 0 is legal, though state-based actions will make the player lose.
+        val life = state.lifeTotal(playerId)
+        if ((phyrexianLifePipsCommitted + 1) * 2 <= life) {
+            val triedColors = mutableSetOf<Color>()
+            for (pip in cost.phyrexianSymbols) {
+                if (!triedColors.add(pip.color)) continue
+                val reduced = cost.withPhyrexianPaidByLife(listOf(pip.color)) ?: continue
+                if (canPay(
+                        state, playerId, reduced, xValue, excludeSources, spellContext,
+                        precomputedSources, xManaRestriction, phyrexianLifePipsCommitted + 1
+                    )) return true
+            }
+        }
+
         // Get the player's floating mana pool
         val poolComponent = state.getEntity(playerId)?.get<ManaPoolComponent>()
         val pool = if (poolComponent != null) {
@@ -2411,10 +2429,11 @@ class ManaSolver(
     private fun canTapForCost(state: GameState, entityId: EntityId): Boolean {
         val container = state.getEntity(entityId) ?: return false
         if (container.has<TappedComponent>()) return false
-        val card = container.get<CardComponent>() ?: return false
         val projected = state.projectedState
-        // Summoning sickness only bites non-land creatures (CR 302.6).
-        if (!card.typeLine.isLand && projected.isCreature(entityId)) {
+        // Summoning sickness bites any creature (CR 302.6) — including a land that is also a
+        // creature (Dryad Arbor). A land that isn't also a creature never satisfies isCreature,
+        // so this is a no-op for every ordinary land's mana ability.
+        if (projected.isCreature(entityId)) {
             if (SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)) return false
         }
         return true
@@ -2472,7 +2491,7 @@ class ManaSolver(
             // Summoning sickness applies to non-land creatures (CR 302.6) — they can't tap unless
             // they have haste or an "activate as though hasty" grant.
             val isCreature = projected.isCreature(entityId)
-            if (!card.typeLine.isLand && isCreature &&
+            if (isCreature &&
                 SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
             ) continue
 
@@ -2589,7 +2608,7 @@ class ManaSolver(
             if (projected.hasLostAllAbilities(entityId)) continue
 
             val isCreature = projected.isCreature(entityId)
-            if (!card.typeLine.isLand && isCreature &&
+            if (isCreature &&
                 SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
             ) continue
 

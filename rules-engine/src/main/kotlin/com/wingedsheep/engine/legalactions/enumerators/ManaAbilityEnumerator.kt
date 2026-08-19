@@ -206,7 +206,7 @@ class ManaAbilityEnumerator : ActionEnumerator {
                                     if (container.has<TappedComponent>()) {
                                         affordable = false; break
                                     }
-                                    if (!cardComponent.typeLine.isLand && projected.isCreature(entityId) &&
+                                    if (projected.isCreature(entityId) &&
                                         SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
                                     ) {
                                         affordable = false; break

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { groupStackCards, stackGroupKey } from './stackGrouping'
+import { chosenModeGroupsForStack, groupStackCards, stackGroupKey } from './stackGrouping'
 import type { ClientCard } from '@/types/gameState'
 
 /** Minimal ClientCard factory — only the fields stackGroupKey reads matter here. */
@@ -80,5 +80,23 @@ describe('groupStackCards', () => {
 
   it('handles an empty stack', () => {
     expect(groupStackCards([])).toEqual([])
+  })
+})
+
+describe('chosenModeGroupsForStack', () => {
+  it('exposes the chosen mode for a triggered ability such as Elder Gargaroth', () => {
+    const chosenMode = {
+      modeDescription: 'You gain 3 life',
+      targets: [],
+      targetNames: [],
+    }
+    const trigger = card({
+      id: 'gargaroth-trigger',
+      name: 'Elder Gargaroth trigger',
+      typeLine: 'Triggered Ability',
+      perModeTargets: [chosenMode],
+    })
+
+    expect(chosenModeGroupsForStack(trigger)).toEqual([chosenMode])
   })
 })

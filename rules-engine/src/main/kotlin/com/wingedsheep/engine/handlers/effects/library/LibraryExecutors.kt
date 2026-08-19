@@ -5,6 +5,7 @@ import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.handlers.actions.spell.CastSpellHandler
+import com.wingedsheep.engine.handlers.actions.land.PlayLandHandler
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.ExecutorModule
 import com.wingedsheep.engine.registry.CardRegistry
@@ -27,6 +28,7 @@ class LibraryExecutors(
 ) : ExecutorModule {
 
     private val castSpellHandlerRef = AtomicReference<CastSpellHandler?>(null)
+    private val playLandHandlerRef = AtomicReference<PlayLandHandler?>(null)
 
     /**
      * The registry's recursive effect executor, used by the scry/surveil macro executors to run
@@ -49,6 +51,7 @@ class LibraryExecutors(
     /** Late-bind the cast machinery once [EngineServices] is fully constructed. */
     fun initialize(services: EngineServices) {
         castSpellHandlerRef.set(CastSpellHandler.create(services))
+        playLandHandlerRef.set(PlayLandHandler.create(services))
     }
 
     /** Late-bind the registry's recursive executor so the scry/surveil macros can delegate. */
@@ -75,6 +78,18 @@ class LibraryExecutors(
         CastFromCollectionWithoutPayingCostExecutor(
             castSpellHandlerProvider = {
                 castSpellHandlerRef.get()
+                    ?: error("LibraryExecutors.initialize(services) was not called before the executor ran")
+            },
+            cardRegistry = cardRegistry,
+            targetFinder = targetFinder ?: TargetFinder(),
+        ),
+        PlayFromCollectionWithoutPayingCostExecutor(
+            castSpellHandlerProvider = {
+                castSpellHandlerRef.get()
+                    ?: error("LibraryExecutors.initialize(services) was not called before the executor ran")
+            },
+            playLandHandlerProvider = {
+                playLandHandlerRef.get()
                     ?: error("LibraryExecutors.initialize(services) was not called before the executor ran")
             },
             cardRegistry = cardRegistry,
