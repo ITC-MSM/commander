@@ -2951,6 +2951,56 @@
     ]
 }
 
+// Primordial Sage
+{
+    "name": "Primordial Sage",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Whenever you cast a creature spell, you may draw a card.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                },
+                "descriptionOverride": "Whenever you cast a creature spell, you may draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "177",
+        "rarity": "RARE",
+        "artist": "Justin Sweet",
+        "flavorText": "For each creature that arrives in its audience, the sage imparts another piece of ancient wisdom for all to hear.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/e/5e11e6d8-d375-4278-8cb0-94deeecaeeca.jpg?1783943634"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Privileged Position
 {
     "name": "Privileged Position",

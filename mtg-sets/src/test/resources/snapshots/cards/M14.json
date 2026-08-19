@@ -1,3 +1,62 @@
+// Barrage of Expendables
+{
+    "name": "Barrage of Expendables",
+    "manaCost": "{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "{R}, Sacrifice a creature: This enchantment deals 1 damage to any target.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{R}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirements": [
+                    "AnyTarget"
+                ],
+                "descriptionOverride": "{R}, Sacrifice a creature: This enchantment deals 1 damage to any target."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "127",
+        "rarity": "UNCOMMON",
+        "artist": "Trevor Claxton",
+        "flavorText": "Goblin generals don't distinguish between troops and ammunition.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/9/b9e0912d-b4b9-497c-bce7-ed80b79bab32.jpg?1783939918"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Encroaching Wastes
 {
     "name": "Encroaching Wastes",

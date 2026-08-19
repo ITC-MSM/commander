@@ -1788,6 +1788,65 @@
     ]
 }
 
+// Torch Fiend
+{
+    "name": "Torch Fiend",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Devil",
+    "oracleText": "{R}, Sacrifice this creature: Destroy target artifact.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{R}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact"
+                        }
+                    }
+                ],
+                "descriptionOverride": "{R}, Sacrifice this creature: Destroy target artifact."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "106",
+        "artist": "Winona Nelson",
+        "flavorText": "Devils redecorate every room with fire.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/5/d596feee-6ccc-4648-884b-ed2eeb1cffc0.jpg?1783940810"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Tower Geist
 {
     "name": "Tower Geist",

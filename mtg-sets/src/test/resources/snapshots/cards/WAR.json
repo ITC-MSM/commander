@@ -43,6 +43,46 @@
     ]
 }
 
+// Bulwark Giant
+{
+    "name": "Bulwark Giant",
+    "manaCost": "{5}{W}",
+    "typeLine": "Creature — Giant Soldier",
+    "oracleText": "When this creature enters, you gain 5 life.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 6
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 5
+                    }
+                },
+                "descriptionOverride": "When this creature enters, you gain 5 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "7",
+        "artist": "Victor Adame Minguez",
+        "flavorText": "\"Where did she come from? More importantly, are there more like her?\"\n—Gideon Jura",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/1/11510817-edb3-40d4-bd27-6161fedadd11.jpg?1783933488"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Casualties of War
 {
     "name": "Casualties of War",
@@ -371,6 +411,155 @@
     ]
 }
 
+// Erratic Visionary
+{
+    "name": "Erratic Visionary",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "{1}{U}, {T}: Draw a card, then discard a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{U}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "descriptionOverride": "{1}{U}, {T}: Draw a card, then discard a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "artist": "Randy Vargas",
+        "flavorText": "An Izzet experiment begins with a \"what if,\" gets approved with a \"why not,\" and concludes with a \"eureka!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/3/03188bc3-0ef1-40cd-9c3c-4bb4d806fb92.jpg?1783933466"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Eternal Taskmaster
+{
+    "name": "Eternal Taskmaster",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Zombie",
+    "oracleText": "This creature enters tapped.\nWhenever this creature attacks, you may pay {2}{B}. If you do, return target creature card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}{B}"
+                        }
+                    },
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature card in your graveyard"
+                        },
+                        "destination": "Hand"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target creature card in your graveyard"
+                },
+                "descriptionOverride": "Whenever this creature attacks, you may pay {2}{B}. If you do, return target creature card from your graveyard to your hand."
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "90",
+        "rarity": "UNCOMMON",
+        "artist": "Tomasz Jedruszek",
+        "flavorText": "\"They are called Eternals. They will never stop.\"\n—Jace Beleren",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/7/7789188e-5caa-4500-b3e4-bb95f7657903.jpg?1783933446"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Finale of Revelation
 {
     "name": "Finale of Revelation",
@@ -468,6 +657,48 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Heartfire
+{
+    "name": "Heartfire",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant",
+    "oracleText": "As an additional cost to cast this spell, sacrifice a creature or planeswalker.\nHeartfire deals 4 damage to any target.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 4
+            },
+            "target": {
+                "type": "ContextTarget",
+                "index": 0
+            }
+        },
+        "targetRequirements": [
+            "AnyTarget"
+        ],
+        "additionalCosts": [
+            {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "creature|planeswalker"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "131",
+        "artist": "Craig J Spearing",
+        "flavorText": "The mage looked within and realized there was still one piece of fuel to burn.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/d/7db219ea-2ed1-4a86-955c-d61ecedbc019.jpg?1783933427"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -745,6 +976,46 @@
     ]
 }
 
+// Mana Geode
+{
+    "name": "Mana Geode",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "When this artifact enters, scry 1.\n{T}: Add one mana of any color.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Scry",
+                    "count": 1
+                },
+                "descriptionOverride": "When this artifact enters, scry 1."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "241",
+        "artist": "Raoul Vitale",
+        "flavorText": "\"I don't care if it's an all-powerful relic or a street vendor's lucky charm. If it brings you courage, wear it.\"\n—Saheeli Rai",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/7/17315a12-a7f8-45ba-ac3b-a62c789e75d0.jpg?1783933371"
+    },
+    "colorIdentityOverride": []
+}
+
 // Naga Eternal
 {
     "name": "Naga Eternal",
@@ -869,6 +1140,81 @@
         "artist": "James Paick",
         "flavorText": "Freed from their respective labs, the two weirds formed a partnership, feeding on the arcane energies of war.",
         "imageUri": "https://cards.scryfall.io/normal/front/9/1/91551f85-4630-43a0-af72-8332d2ff0752.jpg?1557576817"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Tibalt's Rager
+{
+    "name": "Tibalt's Rager",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Devil",
+    "oracleText": "When this creature dies, it deals 1 damage to any target.\n{1}{R}: This creature gets +2/+0 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                },
+                "descriptionOverride": "When this creature dies, it deals 1 damage to any target."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{1}{R}: This creature gets +2/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "147",
+        "rarity": "UNCOMMON",
+        "artist": "Yongjae Choi",
+        "flavorText": "\"Find out whose that is. I like its energy.\"\n—Judith",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/9/2985520d-dfce-414e-a4ac-61695be67406.jpg?1783933420"
     },
     "colorIdentityOverride": [
         "RED"

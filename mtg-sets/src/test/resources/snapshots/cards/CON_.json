@@ -368,3 +368,61 @@
         "WHITE"
     ]
 }
+
+// Volcanic Fallout
+{
+    "name": "Volcanic Fallout",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Instant",
+    "oracleText": "This spell can't be countered.\nVolcanic Fallout deals 2 damage to each creature and each player.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature"
+                        }
+                    },
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": "Self"
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "Each"
+                    },
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": "Controller"
+                    }
+                }
+            ]
+        },
+        "cantBeCountered": true
+    },
+    "metadata": {
+        "collectorNumber": "74",
+        "rarity": "UNCOMMON",
+        "artist": "Zoltan Boros & Gabor Szikszai",
+        "flavorText": "\"How can we outrun the sky?\"\n—Hadran, sunseeder of Naya",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/5/65536d12-e75c-42b5-b592-a3ad4f550a71.jpg?1783942477"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}

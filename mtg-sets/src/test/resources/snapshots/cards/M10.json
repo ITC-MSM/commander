@@ -65,6 +65,30 @@
     ]
 }
 
+// Child of Night
+{
+    "name": "Child of Night",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Vampire",
+    "oracleText": "Lifelink",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "metadata": {
+        "collectorNumber": "88",
+        "artist": "Ash Wood",
+        "flavorText": "A vampire enacts vengeance on the entire world, claiming her debt two tiny pinpricks at a time.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/1/e1f7a9a7-3679-4a18-a52a-e3a8ab16ad32.jpg?1783942385"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Divine Verdict
 {
     "name": "Divine Verdict",

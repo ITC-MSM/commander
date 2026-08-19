@@ -591,3 +591,102 @@
     },
     "colorIdentityOverride": []
 }
+
+// Sylvan Ranger
+{
+    "name": "Sylvan Ranger",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elf Scout Ranger",
+    "oracleText": "When this creature enters, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "basicland"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                },
+                "descriptionOverride": "When this creature enters, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "198",
+        "artist": "Christopher Moeller",
+        "flavorText": "\"Not all paths are found on the forest floor.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/f/5f73ea30-c6d2-4224-ae54-f6b89e006cf4.jpg?1783941792"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Wall of Vines
+{
+    "name": "Wall of Vines",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Plant Wall",
+    "oracleText": "Defender (This creature can't attack.)\nReach (This creature can block creatures with flying.)",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 3
+    },
+    "keywords": [
+        "DEFENDER",
+        "REACH"
+    ],
+    "metadata": {
+        "collectorNumber": "199",
+        "artist": "John Stanko",
+        "flavorText": "Like all jungle plants, the vines must fight and claw for sunlight. Once their place is secured, they grow strong, sharp, and impenetrable.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/0/2050a168-870e-4c47-bc74-bc1c90dd7b3b.jpg?1783941792"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}

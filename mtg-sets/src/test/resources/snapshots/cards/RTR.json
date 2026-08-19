@@ -1,3 +1,46 @@
+// Auger Spree
+{
+    "name": "Auger Spree",
+    "manaCost": "{1}{B}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +4/-4 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": 4
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": -4
+            },
+            "target": {
+                "type": "ContextTarget",
+                "index": 0
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "144",
+        "artist": "Raymond Swanland",
+        "flavorText": "\"Finally, a weapon the Boros can't confiscate!\"\n—Juri, proprietor of the Juri Revue",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/5/9580a40b-b413-4f0d-9b38-13903a9d367d.jpg?1783940345"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Axebane Stag
 {
     "name": "Axebane Stag",
@@ -60,6 +103,31 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLUE"
+    ]
+}
+
+// Brushstrider
+{
+    "name": "Brushstrider",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "Vigilance (Attacking doesn't cause this creature to tap.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "metadata": {
+        "collectorNumber": "117",
+        "rarity": "UNCOMMON",
+        "artist": "Raoul Vitale",
+        "flavorText": "Magistrate Ludy agreed to designate land for the brushstriders only after several broken windows and dozens of missing blini-cakes.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/9/59bd1534-52d1-4946-b430-d26f039a9067.jpg?1783940350"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -160,6 +228,98 @@
         "rarity": "RARE",
         "artist": "Jason Chan",
         "imageUri": "https://cards.scryfall.io/normal/front/8/2/8242fade-754c-4404-b3fb-f3cccf84b3b6.jpg?1782714261"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Drainpipe Vermin
+{
+    "name": "Drainpipe Vermin",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Rat",
+    "oracleText": "When this creature dies, you may pay {B}. If you do, target player discards a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{B}"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "storeAs": "hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "chooser": "TargetPlayer",
+                                "storeSelected": "discarded",
+                                "prompt": "Choose 1 card to discard"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target player"
+                },
+                "descriptionOverride": "When this creature dies, you may pay {B}. If you do, target player discards a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "artist": "Trevor Claxton",
+        "flavorText": "When times are tough, the poor eat the rats. When times are tougher, the rats eat the poor.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/d/4d7251f3-df66-4611-a84c-1897f74431f7.jpg?1783940362"
     },
     "colorIdentityOverride": [
         "BLACK"
@@ -426,6 +586,65 @@
     "colorIdentityOverride": [
         "BLUE",
         "RED"
+    ]
+}
+
+// Knightly Valor
+{
+    "name": "Knightly Valor",
+    "manaCost": "{4}{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nWhen this Aura enters, create a 2/2 white Knight creature token with vigilance. (Attacking doesn't cause it to tap.)\nEnchanted creature gets +2/+2 and has vigilance.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Knight"
+                    ],
+                    "keywords": [
+                        "VIGILANCE"
+                    ]
+                },
+                "descriptionOverride": "When this Aura enters, create a 2/2 white Knight creature token with vigilance."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "VIGILANCE"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "13",
+        "artist": "Matt Stewart",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/2/122d821f-c8dd-4a3c-a6d7-b42fe5491f02.jpg?1783940374"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

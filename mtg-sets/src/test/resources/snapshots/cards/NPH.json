@@ -1,3 +1,34 @@
+// Alloy Myr
+{
+    "name": "Alloy Myr",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Myr",
+    "oracleText": "{T}: Add one mana of any color.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "129",
+        "rarity": "UNCOMMON",
+        "artist": "Matt Cavotta",
+        "flavorText": "With or without witnesses, the suns continued their prismatic dance.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/b/abd3350b-89fb-40b4-a942-28e0c8c274aa.jpg?1783941297"
+    },
+    "colorIdentityOverride": []
+}
+
 // Dismember
 {
     "name": "Dismember",

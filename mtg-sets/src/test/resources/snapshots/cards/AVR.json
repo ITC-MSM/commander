@@ -2183,6 +2183,73 @@
     ]
 }
 
+// Scroll of Avacyn
+{
+    "name": "Scroll of Avacyn",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "{1}, Sacrifice this artifact: Draw a card. If you control an Angel, you gain 5 life.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "permanent Angel"
+                                }
+                            },
+                            "then": {
+                                "type": "GainLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 5
+                                }
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "{1}, Sacrifice this artifact: Draw a card. If you control an Angel, you gain 5 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "220",
+        "artist": "Cliff Childs",
+        "flavorText": "Words to bless the eye that reads them, telling of a future beyond the reach of fear.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/7/871e6e2a-7e45-446b-b964-94377eb6ca92.jpg?1783940650"
+    },
+    "colorIdentityOverride": []
+}
+
 // Seraph Sanctuary
 {
     "name": "Seraph Sanctuary",
@@ -2447,6 +2514,56 @@
         "rarity": "RARE",
         "artist": "Steve Argyle",
         "imageUri": "https://cards.scryfall.io/normal/front/4/0/409c0272-7a43-4a6c-ab3f-740397b1f5c8.jpg?1782714442"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Soul of the Harvest
+{
+    "name": "Soul of the Harvest",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "Trample\nWhenever another nontoken creature you control enters, you may draw a card.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature nontoken ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                },
+                "descriptionOverride": "Whenever another nontoken creature you control enters, you may draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "195",
+        "rarity": "RARE",
+        "artist": "Eytan Zana",
+        "flavorText": "It's there when a seed sprouts, when gourds ripen on the vines, and when the reapers cut the grains under the Harvest Moon.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/7/078f5e79-18dd-44e5-a930-8dc288f0b535.jpg?1783940661"
     },
     "colorIdentityOverride": [
         "GREEN"

@@ -520,6 +520,53 @@
     ]
 }
 
+// Perilous Myr
+{
+    "name": "Perilous Myr",
+    "manaCost": "{2}",
+    "typeLine": "Artifact Creature — Phyrexian Myr",
+    "oracleText": "When this creature dies, it deals 2 damage to any target.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                },
+                "descriptionOverride": "When this creature dies, it deals 2 damage to any target."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "192",
+        "artist": "Jason Felix",
+        "flavorText": "To Mirrodin, an explosive. To Phyrexia, a missionary.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/b/4b942605-eb4a-452d-9b07-a4f912f96958.jpg?1783941699"
+    },
+    "colorIdentityOverride": []
+}
+
 // Plated Seastrider
 {
     "name": "Plated Seastrider",

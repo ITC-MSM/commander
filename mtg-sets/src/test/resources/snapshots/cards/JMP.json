@@ -1,3 +1,113 @@
+// Archaeomender
+{
+    "name": "Archaeomender",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "When this creature enters, return target artifact card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact card in your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target artifact card in your graveyard"
+                },
+                "descriptionOverride": "When this creature enters, return target artifact card from your graveyard to your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "9",
+        "artist": "Miranda Meeks",
+        "flavorText": "\"Just as a broken relic can be mended, a shattered history can be made whole.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/2/22bb8779-ac19-43d6-b818-86eb8ee2f87d.jpg?1783930507"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Chained Brute
+{
+    "name": "Chained Brute",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Devil",
+    "oracleText": "This creature doesn't untap during your untap step.\n{1}, Sacrifice another creature: Untap this creature. Activate only during your turn.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "flags": [
+        "DOESNT_UNTAP"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": "Self",
+                    "tap": false
+                },
+                "restrictions": [
+                    "OnlyDuringYourTurn"
+                ],
+                "descriptionOverride": "{1}, Sacrifice another creature: Untap this creature. Activate only during your turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "rarity": "UNCOMMON",
+        "artist": "Dan Murayama Scott",
+        "flavorText": "A momentary lapse is all it needs to break free.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/d/1d4e5c23-3a7f-4a6b-99c4-6a1487a9b097.jpg?1783930504"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Corsair Captain
 {
     "name": "Corsair Captain",
@@ -46,6 +156,85 @@
     ]
 }
 
+// Lightning Visionary
+{
+    "name": "Lightning Visionary",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Minotaur Shaman",
+    "oracleText": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "PROWESS"
+    ],
+    "metadata": {
+        "collectorNumber": "22",
+        "artist": "Bryan Sola",
+        "flavorText": "\"The gods don't speak to mortals with gentle entreaties. They speak with thunder and fury.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/f/af648aaf-a8e0-4291-acf9-5f8533728f92.jpg?1783930502"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Lightning-Core Excavator
+{
+    "name": "Lightning-Core Excavator",
+    "manaCost": "{1}",
+    "typeLine": "Artifact Creature — Golem",
+    "oracleText": "{5}, {T}, Sacrifice this creature: It deals 3 damage to any target.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{5}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirements": [
+                    "AnyTarget"
+                ],
+                "descriptionOverride": "{5}, {T}, Sacrifice this creature: It deals 3 damage to any target."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "32",
+        "artist": "Cristi Balanescu",
+        "flavorText": "\"That's the third time this month it's exploded on site. Maybe we should switch to something a little less defective.\"\n—Kerrin, archaeologist",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/1/b1b959af-bb23-42e7-8848-7405ed597c8d.jpg?1783930499"
+    },
+    "colorIdentityOverride": []
+}
+
 // Release the Dogs
 {
     "name": "Release the Dogs",
@@ -75,6 +264,228 @@
         "artist": "Jason Kang",
         "flavorText": "They charge into battle and out for their morning walk with the same exuberance.",
         "imageUri": "https://cards.scryfall.io/normal/front/7/d/7df3cd89-02c9-4a1c-9a8a-d17a0b1030c9.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Sethron, Hurloon General
+{
+    "name": "Sethron, Hurloon General",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Legendary Creature — Minotaur Warrior",
+    "oracleText": "Whenever Sethron or another nontoken Minotaur you control enters, create a 2/3 red Minotaur creature token.\n{2}{B/R}: Minotaurs you control get +1/+0 and gain menace and haste until end of turn. ({B/R} can be paid with either {B} or {R}.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature Minotaur nontoken ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 3,
+                    "colors": [
+                        "RED"
+                    ],
+                    "creatureTypes": [
+                        "Minotaur"
+                    ]
+                },
+                "descriptionOverride": "Whenever Sethron or another nontoken Minotaur you control enters, create a 2/3 red Minotaur creature token."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{B/R}"
+                    }
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature Minotaur ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 0
+                                },
+                                "target": "Self"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "MENACE",
+                                "target": "Self"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "HASTE",
+                                "target": "Self"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "{2}{B/R}: Minotaurs you control get +1/+0 and gain menace and haste until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "25",
+        "rarity": "RARE",
+        "artist": "Jason Rainville",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/7/274cdb39-1454-4c9b-acd8-4f762a48e71f.jpg?1783930501"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
+// Stone Haven Pilgrim
+{
+    "name": "Stone Haven Pilgrim",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Kor Cleric",
+    "oracleText": "Whenever this creature attacks, if you control an artifact or enchantment, this creature gets +1/+1 and gains lifelink until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "LIFELINK",
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "interveningIf": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "artifact|enchantment"
+                },
+                "descriptionOverride": "Whenever this creature attacks, if you control an artifact or enchantment, this creature gets +1/+1 and gains lifelink until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "6",
+        "rarity": "UNCOMMON",
+        "artist": "Cristi Balanescu",
+        "flavorText": "The persistence to overcome obstacles is the most esteemed of kor virtues.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5cd3287d-e4d8-4670-a2dd-b683055ae4b9.jpg?1783930508"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Trusty Retriever
+{
+    "name": "Trusty Retriever",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Dog",
+    "oracleText": "When this creature enters, choose one —\n• Put a +1/+1 counter on this creature.\n• Return target artifact or enchantment card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": "Self"
+                            },
+                            "description": "Put a +1/+1 counter on this creature"
+                        },
+                        {
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "destination": "Hand"
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "artifact|enchantment own:you",
+                                        "zone": "Graveyard"
+                                    }
+                                }
+                            ],
+                            "description": "Return target artifact or enchantment card from your graveyard to your hand"
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, choose one — Put a +1/+1 counter on this creature; or return target artifact or enchantment card from your graveyard to your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "8",
+        "artist": "Ralph Horsley",
+        "flavorText": "Wipe away the slobber and it's as good as new, give or take a few bite marks.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/b/ab4eb490-acd0-4162-8e8a-7e7ff003d0f3.jpg?1783930507"
     },
     "colorIdentityOverride": [
         "WHITE"

@@ -229,6 +229,41 @@
     ]
 }
 
+// Leaf Gilder
+{
+    "name": "Leaf Gilder",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elf Druid",
+    "oracleText": "{T}: Add {G}.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "227",
+        "artist": "Quinton Hoover",
+        "flavorText": "Eidren, perfect of Lys Alana, ordered hundreds of trees uprooted and rearranged into a pattern he deemed beautiful. Thus the Gilt-Leaf Wood was born.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/a/3aaff934-cc79-4a01-a4be-3c4936605e4e.jpg?1783942859"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Mosswort Bridge
 {
     "name": "Mosswort Bridge",
@@ -505,6 +540,35 @@
         "collectorNumber": "128",
         "artist": "Jeff Miracola",
         "imageUri": "https://cards.scryfall.io/normal/front/9/4/94b4e4d2-2358-48d2-9a2a-3d17afea28f5.jpg?1562358824"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Nightshade Stinger
+{
+    "name": "Nightshade Stinger",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Faerie Rogue",
+    "oracleText": "Flying\nThis creature can't block.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "staticAbilities": [
+            "CantBlock"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "132",
+        "artist": "Mark Poole",
+        "flavorText": "\"Most faeries are harmless pranksters. Every now and again, though, you get one that crosses over from mischievous to malicious.\"\n—Gaddock Teeg",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/a/aa341824-bf3a-49ce-a8a0-ee53f537d626.jpg?1783942886"
     },
     "colorIdentityOverride": [
         "BLACK"

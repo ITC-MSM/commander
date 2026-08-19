@@ -1,3 +1,116 @@
+// Blighted Bat
+{
+    "name": "Blighted Bat",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Zombie Bat",
+    "oracleText": "Flying\n{1}: This creature gains haste until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}"
+                    }
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "target": "Self"
+                },
+                "descriptionOverride": "{1}: This creature gains haste until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "80",
+        "artist": "Nils Hamm",
+        "flavorText": "Amonkhet's dual suns don't allow for the darkness of night, so bats are most active under the gloom of the frequent sandstorms.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/d/8da308e9-1862-46c1-a62a-90720b484d91.jpg?1783936512"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Bloodrage Brawler
+{
+    "name": "Bloodrage Brawler",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Minotaur Warrior",
+    "oracleText": "When this creature enters, discard a card.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "discarded",
+                            "prompt": "Choose 1 card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, discard a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "121",
+        "rarity": "UNCOMMON",
+        "artist": "Lars Grant-West",
+        "flavorText": "To Hazoret, those who fight for her are her beloved children.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/6/e6080f9e-2415-4e05-97a1-0fe4ad4fdf3b.jpg?1783936492"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Colossapede
 {
     "name": "Colossapede",
@@ -257,6 +370,55 @@
     ]
 }
 
+// Initiate's Companion
+{
+    "name": "Initiate's Companion",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Cat",
+    "oracleText": "Whenever this creature deals combat damage to a player, untap target creature or land.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or land"
+                    },
+                    "tap": false
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature|land"
+                    },
+                    "id": "target creature or land"
+                },
+                "descriptionOverride": "Whenever this creature deals combat damage to a player, untap target creature or land."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "174",
+        "artist": "Dan Murayama Scott",
+        "flavorText": "\"I'd like to say that it's our pet, but the reverse may be closer to the truth.\"\n—Ixor, initiate of Rhet crop",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/0/0046b802-bc71-44af-8925-666684d5fc87.jpg?1783936472"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Liliana's Mastery
 {
     "name": "Liliana's Mastery",
@@ -377,6 +539,81 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Minotaur Sureshot
+{
+    "name": "Minotaur Sureshot",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Minotaur Archer",
+    "oracleText": "Reach (This creature can block creatures with flying.)\n{1}{R}: This creature gets +1/+0 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{1}{R}: This creature gets +1/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "143",
+        "artist": "Joseph Meehan",
+        "flavorText": "\"Those wings are no advantage. I will pin them to the ceiling of the Hekma.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/7/777b98c3-d0b8-4ee3-9d89-e86344269ff1.jpg?1783936484"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Pouncing Cheetah
+{
+    "name": "Pouncing Cheetah",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Cat",
+    "oracleText": "Flash",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "metadata": {
+        "collectorNumber": "179",
+        "artist": "Matt Stewart",
+        "flavorText": "Rhonas's monument is home to a wider variety of creatures than anywhere else in the city of Naktamun—a feature most initiates fail to appreciate.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/c/fca8a590-75c1-4e85-b8b7-8c0c0f18b96e.jpg?1783936471"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

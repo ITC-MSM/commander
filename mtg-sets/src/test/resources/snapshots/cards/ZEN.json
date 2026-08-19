@@ -981,6 +981,54 @@
     "colorIdentityOverride": []
 }
 
+// Molten Ravager
+{
+    "name": "Molten Ravager",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "{R}: This creature gets +1/+0 until end of turn.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 4
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{R}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{R}: This creature gets +1/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "138",
+        "artist": "Dave Kendall",
+        "flavorText": "\"Only the foolhardy would venture into the Akoum Mountains without a lullmage to tame the raging rocks and living fires.\"\n—Sachir, Akoum Expeditionary House",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/e/9ebc7622-e7a7-419c-abb4-d9d339e6cdb0.jpg?1783942142"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Pillarfield Ox
 {
     "name": "Pillarfield Ox",

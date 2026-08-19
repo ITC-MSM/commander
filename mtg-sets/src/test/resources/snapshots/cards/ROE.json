@@ -1,3 +1,62 @@
+// Affa Guard Hound
+{
+    "name": "Affa Guard Hound",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Dog",
+    "oracleText": "Flash (You may cast this spell any time you could cast an instant.)\nWhen this creature enters, target creature gets +0/+3 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                },
+                "descriptionOverride": "When this creature enters, target creature gets +0/+3 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "14",
+        "rarity": "UNCOMMON",
+        "artist": "Ryan Pancoast",
+        "flavorText": "Once a welcoming hub for explorers, Affa became a place of guarded tongues and quick defenses.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/5/85623f54-1c18-4b1e-a8da-df66de3832a6.jpg?1783942011"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Artisan of Kozilek
 {
     "name": "Artisan of Kozilek",
@@ -127,6 +186,62 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Cadaver Imp
+{
+    "name": "Cadaver Imp",
+    "manaCost": "{1}{B}{B}",
+    "typeLine": "Creature — Imp",
+    "oracleText": "Flying\nWhen this creature enters, you may return target creature card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature card in your graveyard"
+                        },
+                        "destination": "Hand"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target creature card in your graveyard"
+                },
+                "descriptionOverride": "When this creature enters, you may return target creature card from your graveyard to your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "99",
+        "artist": "Dave Kendall",
+        "flavorText": "The mouth must be pried open before rigor mortis sets in. Otherwise the returning soul can find no ingress.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/b/1b2f83d5-9269-4297-b507-558c2bdec32b.jpg?1783941988"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -328,6 +443,62 @@
     ]
 }
 
+// Kiln Fiend
+{
+    "name": "Kiln Fiend",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Elemental Beast",
+    "oracleText": "Whenever you cast an instant or sorcery spell, this creature gets +3/+0 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you cast an instant or sorcery spell, this creature gets +3/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "153",
+        "artist": "Adi Granov",
+        "flavorText": "It traps an explosion within its stony skin.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/c/0c584268-67c3-411b-a26c-aee3adf23872.jpg?1783941974"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Lagac Lizard
 {
     "name": "Lagac Lizard",
@@ -478,6 +649,87 @@
         "imageUri": "https://cards.scryfall.io/normal/front/c/f/cfb90d44-8cb1-4b83-b2f2-92c19d6304fb.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Sea Gate Oracle
+{
+    "name": "Sea Gate Oracle",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "When this creature enters, look at the top two cards of your library. Put one of them into your hand and the other on the bottom of your library.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "storeAs": "looked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "looked",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "kept",
+                            "storeRemainder": "rest",
+                            "selectedLabel": "Put in hand",
+                            "remainderLabel": "Put on bottom"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "kept",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "rest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, look at the top two cards of your library. Put one of them into your hand and the other on the bottom of your library."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "85",
+        "artist": "Daniel Ljunggren",
+        "flavorText": "\"The secret entrance should be near.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fd056c91-5026-41ea-bc9e-68078d78ca82.jpg?1783941992"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
 }
 
 // Wildheart Invoker
