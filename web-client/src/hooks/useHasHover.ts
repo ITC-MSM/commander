@@ -10,32 +10,29 @@ import { useSyncExternalStore } from 'react'
  * that follows the cursor — or only because it doesn't — the "View card" row in the action menu,
  * tap-to-dismiss on the preview — keys off this.
  *
- * Every card on the board calls this, so the MediaQueryList is a module-level singleton and the
- * snapshot is cached: `useSyncExternalStore` calls `getSnapshot` on every render, and re-running
- * `matchMedia()` there would allocate ~50 query objects per board repaint.
+ * Every card on the board calls this, so the MediaQueryList is a module-level singleton —
+ * `useSyncExternalStore` calls `getSnapshot` on every render, and re-running `matchMedia()` there
+ * would allocate a query object per card per repaint. Reading `.matches` off the one instance is
+ * free and always current, which a cached copy would not be: a change that lands while nothing is
+ * subscribed has no listener to record it.
+ *
+ * Assume hover wherever the query can't be answered (SSR, jsdom). The desktop behaviour is the safe
+ * default — it costs a phone nothing it didn't already have, while the reverse would strip hover
+ * previews from a real mouse.
  */
 const HOVER_QUERY = '(hover: hover)'
 
 const mediaQuery: MediaQueryList | null =
   typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(HOVER_QUERY) : null
 
-// Assume hover wherever the query can't be answered (SSR, jsdom): the desktop behaviour is the
-// safe default — it costs a phone nothing it didn't already have, while the reverse would strip
-// hover previews from a real mouse.
-let snapshot = mediaQuery?.matches ?? true
-
 function subscribe(onChange: () => void): () => void {
   if (!mediaQuery) return () => {}
-  const listener = () => {
-    snapshot = mediaQuery.matches
-    onChange()
-  }
-  mediaQuery.addEventListener('change', listener)
-  return () => mediaQuery.removeEventListener('change', listener)
+  mediaQuery.addEventListener('change', onChange)
+  return () => mediaQuery.removeEventListener('change', onChange)
 }
 
 function getSnapshot(): boolean {
-  return snapshot
+  return mediaQuery ? mediaQuery.matches : true
 }
 
 function getServerSnapshot(): boolean {
