@@ -8,6 +8,7 @@ import { useResponsiveContext, handleImageError, getCounterStatModifier, hasStat
 import { styles } from '../board/styles'
 import { counterManaClass } from '@/assets/icons/keywords'
 import { HoverCardPreview } from '../../ui/HoverCardPreview'
+import { useHasHover } from '@/hooks/useHasHover.ts'
 import { ManaCost, AbilityText } from '../../ui/ManaSymbols'
 import { buildActionOptions, playCostRange, playLadderOptions } from '@/utils/actionOptions.ts'
 import { parseManaCost, totalManaNeeded } from '@/utils/manaCost.ts'
@@ -22,6 +23,7 @@ export function CardPreview() {
   const gameState = useGameStore(selectGameState)
   const playerId = useGameStore(selectViewingPlayerId)
   const responsive = useResponsiveContext()
+  const hasHover = useHasHover()
 
   // All hooks must be called before any early return
   const cardActions = useCardLegalActions(hoveredCardId)
@@ -94,9 +96,15 @@ export function CardPreview() {
 
   if (!card) return null
 
-  // On mobile, show the fullscreen overlay (game-specific behaviour)
-  if (responsive.isMobile) {
-    return <MobileCardPreview card={card} />
+  // On mobile, show the fullscreen overlay (game-specific behaviour). Any device that can't hover
+  // gets it too, whatever its width: the cursor-following variant has nowhere to anchor without a
+  // cursor, and a landscape tablet would otherwise get a 280px card pinned to the top-left corner.
+  //
+  // `dismissible` is exactly "can't hover", not "is a phone": with a mouse the preview is dismissed
+  // by moving off the card, and a tap-catching backdrop over a hovered card would both swallow the
+  // board's clicks and prevent the mouseleave that clears it.
+  if (responsive.isMobile || !hasHover) {
+    return <MobileCardPreview card={card} dismissible={!hasHover} />
   }
 
   const isRevealedFaceDown = card.isFaceDown && !!card.revealedName
@@ -433,31 +441,39 @@ export function CardPreview() {
 /**
  * Mobile fullscreen card preview overlay (game-specific).
  */
-function MobileCardPreview({ card }: { card: import('@/types').ClientCard }) {
+function MobileCardPreview({ card, dismissible = false }: { card: import('@/types').ClientCard; dismissible?: boolean }) {
+  const hoverCard = useGameStore((state) => state.hoverCard)
   const isRevealedFaceDown = card.isFaceDown && !!card.revealedName
   const cardImageUrl = isRevealedFaceDown
     ? getCardImageUrl(card.revealedName!, card.revealedImageUri ?? undefined, 'large')
     : getCardImageUrl(card.name, card.imageUri, 'large')
 
-  const previewWidth = 200
-  const previewHeight = Math.round(previewWidth * 1.4)
+  // As wide as the desktop preview wherever the viewport allows, shrinking to fit narrow or short
+  // screens — the point of opening it is to read the rules text, which 200px can't carry.
+  const previewWidth = 'min(280px, 78vw, calc((100vh - 140px) / 1.4))'
 
   // Portalled to <body> for the same reason HoverCardPreview is: the spectator/replay shells
   // wrap the board in their own stacking context, and the zone browsers (graveyard/exile/deck)
   // portal to <body> — an in-tree preview lands underneath them.
   return createPortal(
-    <div style={{
-      ...styles.cardPreviewOverlay,
-      top: 0, left: 0, right: 0, bottom: 0,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    }}>
-      <div style={{ ...styles.cardPreviewContainer, width: previewWidth }}>
+    <div
+      style={{
+        ...styles.cardPreviewOverlay,
+        top: 0, left: 0, right: 0, bottom: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        // A long-press preview clears itself on touchend; one opened from the action menu's
+        // "View card" has no such gesture behind it, so the backdrop takes the next tap.
+        ...(dismissible ? { pointerEvents: 'auto' as const, cursor: 'pointer' } : null),
+      }}
+      onClick={dismissible ? () => hoverCard(null) : undefined}
+    >
+      <div style={{ ...styles.cardPreviewContainer, width: previewWidth, alignItems: 'center' }}>
         <div style={{
           ...styles.cardPreviewCard,
           position: 'relative',
           width: previewWidth,
-          height: previewHeight,
+          aspectRatio: '63 / 88',
         }}>
           {card.isToken && card.imageUri?.includes('/art_crop/') ? (
             <div style={{
@@ -512,6 +528,16 @@ function MobileCardPreview({ card }: { card: import('@/types').ClientCard }) {
             </div>
           )}
         </div>
+        {dismissible && (
+          <div style={{
+            color: '#aaa',
+            fontSize: 12,
+            textAlign: 'center',
+            textShadow: '0 1px 3px rgba(0, 0, 0, 0.9)',
+          }}>
+            Tap anywhere to close
+          </div>
+        )}
       </div>
     </div>,
     document.body,

@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import type { EntityId, GameAction, LegalActionInfo } from '@/types'
 import { resolveAction, needsInteraction } from './interaction/actionResolvers'
+import { useOpenCardMenuOnTap } from './useOpenCardMenuOnTap'
 import type { ActionContext } from './interaction/actionResolvers'
 
 /**
@@ -31,9 +32,12 @@ export type CardClickResult =
  * couple of cards care about — and each card already tracks its own selection and playability
  * with a narrow per-card selector. Both are only ever needed *inside* the handlers below, so they
  * are read lazily from the store at call time (the same lazy-read pattern as `useLobbyCommands`),
- * leaving this hook with no subscriptions at all.
+ * leaving this hook with no store subscriptions of consequence. (`useOpenCardMenuOnTap` adds two
+ * that effectively never fire: a media query for hover capability, and whether this session is
+ * spectating.)
  */
 export function useInteraction() {
+  const openCardMenuOnTap = useOpenCardMenuOnTap()
   const submitAction = useGameStore((state) => state.submitAction)
   const selectCard = useGameStore((state) => state.selectCard)
   const startTapForPowerSelection = useGameStore((state) => state.startTapForPowerSelection)
@@ -128,8 +132,11 @@ export function useInteraction() {
 
       switch (result.type) {
         case 'noAction':
-          // Clicking a card with no actions deselects
-          selectCard(null)
+          // Clicking a card with no actions deselects — except on a device that can't hover,
+          // where the menu is the only route to the zoomed card, so it opens anyway and shows
+          // just "View card".
+          if (openCardMenuOnTap) openCardMenuOnTap(cardId)
+          else selectCard(null)
           break
 
         case 'singleAction':
@@ -141,7 +148,7 @@ export function useInteraction() {
           break
       }
     },
-    [processCardClick, getCardActions, selectCard]
+    [processCardClick, getCardActions, selectCard, openCardMenuOnTap]
   )
 
   /**

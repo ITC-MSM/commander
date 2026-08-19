@@ -236,6 +236,31 @@
 }
 
 /* =========================================================================
+ * View Card Button
+ * -------------------------------------------------------------------------
+ * Touch-only row (see ActionMenu.showViewCard): opens the full-screen zoomed
+ * card that a mouse gets by hovering. Deliberately neutral rather than one of
+ * the action gradients — it changes nothing about the game state.
+ * ========================================================================= */
+.viewCardButton {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background-color: var(--bg-surface-3);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.viewCardButton:hover {
+  filter: brightness(1.15);
+}
+
+/* =========================================================================
  * Cancel Button
  * ========================================================================= */
 .cancelButton {

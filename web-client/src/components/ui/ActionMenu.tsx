@@ -2,6 +2,7 @@ import { useEffect, useCallback, useMemo, useState } from 'react'
 import { useGameStore } from '@/store/gameStore.ts'
 import { useCardActions } from '@/hooks/useLegalActions.ts'
 import { useInteraction } from '@/hooks/useInteraction.ts'
+import { useHasHover } from '@/hooks/useHasHover.ts'
 import type { LegalActionInfo } from '@/types'
 import { ManaCost, AbilityText } from './ManaSymbols'
 import { ManaCostProgress } from './ManaCostProgress'
@@ -19,6 +20,8 @@ export function ActionMenu() {
   const selectedCardId = useGameStore((state) => state.selectedCardId)
   const gameState = useGameStore((state) => state.gameState)
   const cardActions = useCardActions(selectedCardId)
+  const hoverCard = useGameStore((state) => state.hoverCard)
+  const hasHover = useHasHover()
   const { executeAction, cancelAction } = useInteraction()
 
   // Get card info for modal display
@@ -36,8 +39,13 @@ export function ActionMenu() {
   const hasMultiplePotentialOptions = actionOptions.length > 1
   const hasSingleAction = actionOptions.length === 1
   const hasAnyLegalAction = cardActions.length > 0
+  // A device that can't hover has no other way to read a card, so the menu doubles as the route to
+  // the zoomed preview: it carries a "View card" row, and it opens for cards with nothing to do at
+  // all (an opponent's creature, a land already played this turn). The 120px thumbnail in this
+  // panel is not that view — it's too small on a phone to read rules text off.
+  const showViewCard = !hasHover
   // Show the nice modal for any actionable card click
-  const shouldShowModal = hasMultiplePotentialOptions || hasSingleAction
+  const shouldShowModal = hasMultiplePotentialOptions || hasSingleAction || showViewCard
 
   // Debug logging - always log when card is selected
   if (import.meta.env.DEV && selectedCardId) {
@@ -67,8 +75,16 @@ export function ActionMenu() {
     }
   }, [selectedCardId, shouldShowModal, handleKeyDown])
 
-  // Don't show if no card selected or no potential options
-  if (!selectedCardId || !hasAnyLegalAction) {
+  // A spell resolving off the stack — or a permanent dying — takes the menu's subject with it.
+  // The menu used to close on its own because it required a legal action, and the vanished card
+  // has none; now that "View card" alone can hold it open, the selection has to be dropped
+  // explicitly or the player is left with a menu for a card that no longer exists.
+  useEffect(() => {
+    if (selectedCardId && gameState && !cardInfo) cancelAction()
+  }, [selectedCardId, gameState, cardInfo, cancelAction])
+
+  // Don't show if no card selected, the card is gone, or there is nothing to offer for it
+  if (!selectedCardId || !cardInfo || (!hasAnyLegalAction && !showViewCard)) {
     return null
   }
 
@@ -104,6 +120,19 @@ export function ActionMenu() {
                 }}
               />
             ))}
+
+            {/* The touch stand-in for desktop hover. The menu deliberately stays open underneath
+                the preview (which sits on the tooltip layer, above it): dismissing the zoomed card
+                drops the player back on the same list of actions rather than making them re-tap
+                the card to play what they just read. */}
+            {showViewCard && (
+              <button
+                className={styles.viewCardButton}
+                onClick={() => hoverCard(selectedCardId)}
+              >
+                View card
+              </button>
+            )}
           </div>
 
           {/* Cancel button */}
