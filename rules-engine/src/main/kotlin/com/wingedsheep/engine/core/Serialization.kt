@@ -413,6 +413,7 @@ val engineSerializersModule = SerializersModule {
         subclass(VanguardAvatarComponent::class)
         subclass(ExileAfterResolveComponent::class)
         subclass(HasMorphAbilityComponent::class)
+        subclass(com.wingedsheep.engine.state.components.identity.HasDisguiseAbilityComponent::class)
         subclass(PlayWithAdditionalCostComponent::class)
         subclass(PlayWithCostIncreaseComponent::class)
         subclass(PlayWithFixedAlternativeManaCostComponent::class)

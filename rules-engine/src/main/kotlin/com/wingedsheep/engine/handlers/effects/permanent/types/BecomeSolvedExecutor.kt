@@ -7,6 +7,7 @@ import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.SolvedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.sdk.scripting.effects.BecomeSolvedEffect
 import kotlin.reflect.KClass
 
@@ -47,8 +48,13 @@ class BecomeSolvedExecutor : EffectExecutor<BecomeSolvedEffect> {
         }
 
         val name = container.get<CardComponent>()?.name ?: "Unknown"
+        // The solving player is the Case's controller (CR 719.3a — its own "To solve" trigger), read
+        // from the projection so a Case under someone else's control credits that player.
+        val solver = state.projectedState.getController(targetId)
+            ?: container.get<ControllerComponent>()?.playerId
+            ?: context.controllerId
         val newState = state.updateEntity(targetId) { it.with(SolvedComponent) }
 
-        return EffectResult.success(newState, listOf(CaseSolvedEvent(targetId, name)))
+        return EffectResult.success(newState, listOf(CaseSolvedEvent(targetId, name, solver)))
     }
 }

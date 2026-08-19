@@ -542,6 +542,26 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     }
 
     /**
+     * Whenever [player] solves a Case (CR 719.3a) — fires as that Case's "To solve" trigger
+     * resolves and the designation is stamped, which is exactly what the printed ruling for Case
+     * File Auditor says ("triggers whenever a 'to solve' ability you control resolves").
+     *
+     * The solving player is the Case's controller, carried on the engine event rather than looked
+     * up afterwards: a Case whose Solved ability sacrifices it is already gone by the time this
+     * payoff is matched.
+     *
+     * The designation is sticky and one-way (CR 719.3b), so this can only fire once per Case
+     * object — a Case that leaves and returns is a new object and can be solved again.
+     */
+    @SerialName("CaseSolvedEvent")
+    @Serializable
+    data class CaseSolvedEvent(
+        val player: Player = Player.You
+    ) : EventPattern {
+        override val description: String = "${player.description} solves a Case"
+    }
+
+    /**
      * Whenever a permanent matching [filter] explores (CR 701.44), optionally gated by whether the
      * revealed card was a land ([revealedType]). The exploring permanent is the event subject, so
      * "a creature you control explores" is `filter = GameObjectFilter.Creature.youControl()` with a

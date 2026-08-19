@@ -2451,6 +2451,20 @@ object Triggers {
     )
 
     /**
+     * Whenever you solve a Case (CR 719.3a). Fires as the Case's own "To solve" trigger resolves and
+     * stamps the designation — Case File Auditor's ruling words it as "whenever a 'to solve' ability
+     * you control resolves". Binding is [TriggerBinding.ANY]: the event subject is the *Case*, not
+     * the permanent bearing this trigger, and "you" is the solving player.
+     *
+     * Fires once per Case, ever: the designation is sticky and one-way (CR 719.3b), so a Case can't
+     * be re-solved. This includes the Case that carries the payoff, if it is itself a Case.
+     */
+    val WheneverYouSolveACase: TriggerSpec = TriggerSpec(
+        event = CaseSolvedEvent(Player.You),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
      * Whenever a permanent matching [filter] explores (CR 701.44), optionally gated by the reveal
      * outcome ([revealedType]). Binding is [TriggerBinding.ANY] — the observer watches every
      * matching permanent, so `filter.youControl()` resolves "you" to the observer's controller.

@@ -497,6 +497,24 @@ sealed interface StatePredicate {
         override val description: String = "with a morph ability"
     }
 
+    /**
+     * Has a **disguise** ability (CR 702.168) — the printed keyword, read off the card definition,
+     * so it answers the same in every zone.
+     *
+     * Deliberately *not* folded into [HasMorphAbility], which asks "can this be turned face up by a
+     * morph-family procedure" and therefore also answers true for a permanent that is face down for
+     * some other reason. Disguise is a printed ability of a card, and Expose the Culprit's "any
+     * number of face-up creatures you control **with disguise**" asks about the card's abilities
+     * while it is face **up** — a moment at which no turn-up procedure exists to inspect. A cloaked
+     * permanent is face down without having disguise; a card with disguise sitting in hand has it
+     * without being face down. This predicate is the printed-ability half only.
+     */
+    @SerialName("HasDisguiseAbility")
+    @Serializable
+    data object HasDisguiseAbility : Entity {
+        override val description: String = "with disguise"
+    }
+
     // =============================================================================
     // Counters (Entity)
     // =============================================================================

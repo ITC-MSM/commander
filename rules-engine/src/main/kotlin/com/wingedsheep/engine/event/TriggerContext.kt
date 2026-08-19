@@ -295,6 +295,12 @@ data class TriggerContext(
                 is com.wingedsheep.engine.core.EvidenceCollectedEvent -> TriggerContext(
                     triggeringPlayerId = event.playerId
                 )
+                // Solve a Case (CR 719.3a): the solving player is the triggering player, and the
+                // solved Case itself is the triggering entity — so a payoff can name either.
+                is com.wingedsheep.engine.core.CaseSolvedEvent -> TriggerContext(
+                    triggeringEntityId = event.entityId,
+                    triggeringPlayerId = event.controllerId
+                )
                 // Manifest dread (CR 701.60): the cards put into the graveyard this way are
                 // carried as capturedEntityIds, seeded into the resolving trigger's pipeline under
                 // TRIGGER_CAPTURED_COLLECTION so "a card you put into your graveyard this way"

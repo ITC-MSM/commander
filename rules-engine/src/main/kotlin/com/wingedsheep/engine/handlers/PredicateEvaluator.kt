@@ -1449,6 +1449,12 @@ class PredicateEvaluator {
                 container.has<HasMorphAbilityComponent>() ||
                 container.get<MorphDataComponent>()?.hasMorphProcedure == true
 
+            // Disguise ability (CR 702.168) — the printed keyword only, read off the card in any
+            // zone. No MorphDataComponent fallback: the turn-up data exists only while the
+            // permanent is face down, and "creatures with disguise" asks about face-up ones.
+            StatePredicate.HasDisguiseAbility ->
+                container.has<com.wingedsheep.engine.state.components.identity.HasDisguiseAbilityComponent>()
+
             // Ring-bearer designation (CR 701.54e): only while it has the component AND is controlled
             // by the player who designated it.
             StatePredicate.IsRingBearer -> {

@@ -86,6 +86,18 @@ data class MorphDataComponent(
 data object HasMorphAbilityComponent : Component
 
 /**
+ * Marks a card as having a disguise keyword ability (CR 702.168).
+ *
+ * The disguise sibling of [HasMorphAbilityComponent], and stamped from the card definition for the
+ * same reason: the printed ability has to be readable while the card is face **up** (and in any
+ * zone), which is exactly when [MorphDataComponent] — the runtime turn-up data — is absent. Backs
+ * `StatePredicate.HasDisguiseAbility` / `GameObjectFilter.withDisguise()`, i.e. Expose the
+ * Culprit's "face-up creatures you control with disguise".
+ */
+@Serializable
+data object HasDisguiseAbilityComponent : Component
+
+/**
  * Which face-down mechanic put this permanent onto the battlefield face down (CR 708.6: which
  * ability or rule made a permanent face down is public information, and paper Magic represents
  * morph, manifest and disguise/cloak with visually distinct helper cards).
