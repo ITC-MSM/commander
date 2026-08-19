@@ -21,6 +21,8 @@ docs it points at; load those when the work needs them.
     lookup, oracle errata, canonical-printing placement, scenario test).
   - Any engine/SDK/server/client capability that isn't a single card — effect, trigger, condition,
     keyword, decision flow → **`add-feature`** (composition-first design, cross-layer tracing, perf + UX).
+  - Starting a set that has no `backlog/sets/` entry yet → **`create-backlog-for-set`** (Scryfall dump,
+    `cards.md` checklist, `definitions/<code>/` scaffold, `mechanics.md`). It runs *before* `set-loop`.
   - Running the build/test gates and reading the results → **`verify`**.
   - Working autonomously through a whole set, one PR at a time, until it's done → **`set-loop`** (launches
     the harness's own loop — Claude Code `/loop`, Codex `/goal`; every PR it opens is titled
