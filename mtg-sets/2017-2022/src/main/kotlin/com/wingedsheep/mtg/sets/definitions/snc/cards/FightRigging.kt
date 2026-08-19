@@ -17,8 +17,6 @@ import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.effects.FaceDownMode
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
-import com.wingedsheep.sdk.scripting.effects.GrantMayPlayFromExileEffect
-import com.wingedsheep.sdk.scripting.effects.GrantPlayWithoutPayingCostEffect
 import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
@@ -41,7 +39,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * Hideaway is modeled compositionally, same shape as Mosswort Bridge / Evercoat Ursine: the ETB
  * trigger gathers the top five cards, prompts the controller to exile one face down (linked to
  * this enchantment), and bottom-randomizes the rest. The beginning-of-combat trigger targets a
- * creature you control for the mandatory +1/+1 counter, then gates the free-cast grant behind
+ * creature you control for the mandatory +1/+1 counter, then gates the immediate free cast behind
  * [ConditionalEffect] testing [Conditions.YouControlAtLeast] on a power-7-or-greater creature —
  * only the "may play" half is conditional; the counter always happens if there's a legal target.
  */
@@ -107,8 +105,7 @@ val FightRigging = card("Fight Rigging") {
                                     source = CardSource.FromLinkedExile(),
                                     storeAs = "fightRiggingLinked"
                                 ),
-                                GrantMayPlayFromExileEffect("fightRiggingLinked"),
-                                GrantPlayWithoutPayingCostEffect("fightRiggingLinked")
+                                Effects.PlayFromCollectionWithoutPayingCost("fightRiggingLinked")
                             )
                         ),
                         descriptionOverride = "Play the exiled card without paying its mana cost"

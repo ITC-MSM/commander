@@ -10,7 +10,7 @@ import { ActiveEffectBadges } from '../card/CardOverlays'
 import { AbilityText, ManaCost } from '../../ui/ManaSymbols'
 import { useResponsiveContext, handleImageError } from './shared'
 import { styles } from './styles'
-import { groupStackCards, type StackGroup } from './stackGrouping'
+import { chosenModeGroupsForStack, groupStackCards, type StackGroup } from './stackGrouping'
 import { YieldContextMenu } from './YieldContextMenu'
 
 /**
@@ -581,10 +581,11 @@ export function StackDisplay() {
       if (!topCard) return null
       const isAbility = topCard.typeLine === 'Ability' || topCard.typeLine === 'Triggered Ability'
 
-      // Modal spells with cast-time mode choices (700.2) render per-mode descriptions with their
-      // chosen targets below, so opponents can see exactly what's been committed before responding.
-      const perModeGroups = topCard.perModeTargets ?? []
-      if (!isAbility && perModeGroups.length > 0) {
+      // Modal spells and triggered abilities render their chosen modes (and any targets) below,
+      // so opponents can see exactly what's been committed before responding. Triggered modes are
+      // chosen as the ability is put on the stack, just like a modal spell's cast-time choice.
+      const perModeGroups = chosenModeGroupsForStack(topCard)
+      if (perModeGroups.length > 0) {
         return (
           <div style={{
             padding: responsive.isMobile ? '4px 6px' : '6px 10px',

@@ -1,9 +1,11 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ChooseTargetsDecision
+import com.wingedsheep.engine.core.PlayLand
 import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Phase
@@ -98,7 +100,7 @@ class FightRiggingScenarioTest : ScenarioTestBase() {
                 }
             }
 
-            test("begin combat: with a power-7+ creature, offers and completes the free cast of the exiled card") {
+            test("begin combat: accepting casts the exiled card immediately during resolution") {
                 val game = scenario()
                     .withPlayers("Player1", "Player2")
                     .withCardInHand(1, "Fight Rigging")
@@ -133,27 +135,83 @@ class FightRiggingScenarioTest : ScenarioTestBase() {
                 game.answerYesNo(true)
                 game.resolveStack()
 
-                withClue("accepting grants a may-play-without-cost permission for the exiled card") {
-                    val exiledBears = game.state.getExile(game.player1Id).single()
-                    game.state.mayPlayPermissions.flatMap { it.cardIds } shouldNotBe emptyList<Any>()
-                    game.state.mayPlayPermissions.flatMap { it.cardIds }.contains(exiledBears) shouldBe true
+                withClue("accepting casts Grizzly Bears during the beginning-of-combat trigger") {
+                    game.state.getExile(game.player1Id) shouldBe emptyList()
+                    game.state.step shouldBe Step.BEGIN_COMBAT
+                    game.findPermanent("Grizzly Bears") shouldNotBe null
                 }
+            }
 
-                // Grizzly Bears is a creature (sorcery speed, CR 117.1a) — the granted permission is
-                // an ordinary "may play" grant (CR 118.9), not "as though it had flash",
-                // so it can't actually be cast during the beginning-of-combat step it was offered in.
-                // It's only usable once a main phase with an empty stack comes around again — here,
-                // the postcombat main phase later this same turn.
-                game.passUntilPhase(Phase.POSTCOMBAT_MAIN, Step.POSTCOMBAT_MAIN)
+            test("begin combat: declining leaves no permission to cast the exiled card later") {
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Fight Rigging")
+                    .withLandsOnBattlefield(1, "Forest", 3)
+                    .withCardOnBattlefield(1, "Ghalta, Primal Hunger", summoningSickness = false)
+                    .withCardInLibrary(1, "Grizzly Bears")
+                    .withCardInLibrary(1, "Hill Giant")
+                    .withCardInLibrary(1, "Sol Ring")
+                    .withCardInLibrary(1, "Plains")
+                    .withCardInLibrary(1, "Swamp")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
 
-                val cast = game.castSpellFromExile(1, "Grizzly Bears")
-                withClue("the granted permission lets Grizzly Bears be cast from exile for free: ${cast.error}") {
-                    cast.error shouldBe null
-                }
+                val ghalta = game.findPermanent("Ghalta, Primal Hunger")!!
+                resolveHideaway(game)
+                game.passUntilPhase(Phase.COMBAT, Step.BEGIN_COMBAT)
+                if (game.getPendingDecision() is ChooseTargetsDecision) game.selectTargets(listOf(ghalta))
+                game.resolveStack()
+                game.answerYesNo(false)
                 game.resolveStack()
 
-                withClue("Grizzly Bears resolved onto the battlefield without paying its mana cost") {
-                    game.findPermanent("Grizzly Bears") shouldNotBe null
+                withClue("declining leaves the card exiled and grants no lingering permission") {
+                    game.state.getExile(game.player1Id).size shouldBe 1
+                    game.state.mayPlayPermissions.flatMap { it.cardIds } shouldBe emptyList()
+                }
+
+                game.passUntilPhase(Phase.POSTCOMBAT_MAIN, Step.POSTCOMBAT_MAIN)
+                withClue("the declined card cannot be cast later in the turn") {
+                    game.castSpellFromExile(1, "Grizzly Bears").error shouldNotBe null
+                }
+            }
+
+            test("begin combat: an exiled land is played immediately and consumes the land play") {
+                val game = fightRiggingWithHiddenForest()
+                val ghalta = game.findPermanent("Ghalta, Primal Hunger")!!
+                resolveHideaway(game)
+
+                game.passUntilPhase(Phase.COMBAT, Step.BEGIN_COMBAT)
+                if (game.getPendingDecision() is ChooseTargetsDecision) game.selectTargets(listOf(ghalta))
+                game.resolveStack()
+                game.answerYesNo(true)
+
+                withClue("the Forest is played during resolution, despite combat timing") {
+                    game.state.getBattlefield(game.player1Id).count {
+                        game.state.getEntity(it)?.get<CardComponent>()?.name == "Forest"
+                    } shouldBe 4
+                    game.state.getExile(game.player1Id) shouldBe emptyList()
+                    game.state.step shouldBe Step.BEGIN_COMBAT
+                }
+            }
+
+            test("begin combat: an exiled land stays exiled when the land play was already used") {
+                val game = fightRiggingWithHiddenForest(includeLandInHand = true)
+                val ghalta = game.findPermanent("Ghalta, Primal Hunger")!!
+                resolveHideaway(game)
+                val handLand = game.state.getHand(game.player1Id).first {
+                    game.state.getEntity(it)?.get<CardComponent>()?.name == "Plains"
+                }
+                game.execute(PlayLand(game.player1Id, handLand)).error shouldBe null
+
+                game.passUntilPhase(Phase.COMBAT, Step.BEGIN_COMBAT)
+                if (game.getPendingDecision() is ChooseTargetsDecision) game.selectTargets(listOf(ghalta))
+                game.resolveStack()
+                game.answerYesNo(true)
+
+                withClue("Fight Rigging cannot provide an additional land play") {
+                    game.state.getExile(game.player1Id).size shouldBe 1
+                    game.state.mayPlayPermissions.flatMap { it.cardIds } shouldBe emptyList()
                 }
             }
         }
@@ -166,5 +224,22 @@ class FightRiggingScenarioTest : ScenarioTestBase() {
         val decision = game.getPendingDecision() as? SelectCardsDecision
             ?: error("expected a hideaway selection, got ${game.getPendingDecision()}")
         game.selectCards(listOf(decision.options.first()))
+    }
+
+    private fun fightRiggingWithHiddenForest(includeLandInHand: Boolean = false): TestGame {
+        val builder = scenario()
+            .withPlayers("Player1", "Player2")
+            .withCardInHand(1, "Fight Rigging")
+            .withLandsOnBattlefield(1, "Forest", 3)
+            .withCardOnBattlefield(1, "Ghalta, Primal Hunger", summoningSickness = false)
+            .withCardInLibrary(1, "Forest")
+            .withCardInLibrary(1, "Hill Giant")
+            .withCardInLibrary(1, "Sol Ring")
+            .withCardInLibrary(1, "Island")
+            .withCardInLibrary(1, "Swamp")
+            .withActivePlayer(1)
+            .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+        if (includeLandInHand) builder.withCardInHand(1, "Plains")
+        return builder.build()
     }
 }

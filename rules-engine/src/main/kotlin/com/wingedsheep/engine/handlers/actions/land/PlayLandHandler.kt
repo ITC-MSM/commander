@@ -61,15 +61,18 @@ class PlayLandHandler(
 
     private val predicateEvaluator = com.wingedsheep.engine.handlers.PredicateEvaluator()
 
-    override fun validate(state: GameState, action: PlayLand): String? {
+    override fun validate(state: GameState, action: PlayLand): String? =
+        validate(state, action, duringResolution = false)
+
+    private fun validate(state: GameState, action: PlayLand, duringResolution: Boolean): String? {
         if (!state.isActiveTurnFor(action.playerId)) {
             // CR 805.4c — each player on the active team may play a land on the team's turn.
             return "You can only play lands on your turn"
         }
-        if (!state.step.isMainPhase) {
+        if (!duringResolution && !state.step.isMainPhase) {
             return "You can only play lands during a main phase"
         }
-        if (state.stack.isNotEmpty()) {
+        if (!duringResolution && state.stack.isNotEmpty()) {
             return "You can only play lands when the stack is empty"
         }
 
@@ -116,6 +119,13 @@ class PlayLandHandler(
         }
 
         return null
+    }
+
+    /** Play a land when a resolving effect explicitly instructs the player to do so. */
+    fun executeDuringResolution(state: GameState, action: PlayLand): ExecutionResult {
+        val validationError = validate(state, action, duringResolution = true)
+        return if (validationError != null) ExecutionResult.error(state, validationError)
+        else execute(state, action)
     }
 
     override fun execute(state: GameState, action: PlayLand): ExecutionResult {

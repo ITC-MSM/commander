@@ -282,6 +282,8 @@ export interface ManaSelectionState {
   sourceColors: Readonly<Record<EntityId, readonly string[]>>
   /** Mana amount per source: entityId -> amount (e.g., 3 for Gilded Lotus) */
   sourceManaAmounts: Readonly<Record<EntityId, number>>
+  /** Indices of Phyrexian pips selected to be paid with life. */
+  phyrexianLifePipIndices: readonly number[]
 }
 
 /**
@@ -837,7 +839,7 @@ export type PhaseResult =
   | { type: 'convoke'; convokedCreatures: Record<string, { color: string | null }> }
   | { type: 'tapForGeneric'; tapForGenericPermanents: EntityId[] }
   | { type: 'harmonize'; harmonizeCreature: EntityId | null; reduction: number }
-  | { type: 'manaSource'; selectedSources: EntityId[] }
+  | { type: 'manaSource'; selectedSources: EntityId[]; phyrexianLifePayments?: string[] }
   | { type: 'costPayment'; costType: string; selectedTargets: EntityId[] }
   | { type: 'blightVariable'; blightAmount: number }
   | { type: 'payXLife'; payXLifeAmount: number }
@@ -1220,6 +1222,7 @@ export type GameStore = {
   confirmCounterDistribution: () => void
   startManaSelection: (actionInfo: LegalActionInfo) => void
   toggleManaSource: (entityId: EntityId) => void
+  togglePhyrexianLifePayment: (pipIndex: number) => void
   cancelManaSelection: () => void
   confirmManaSelection: () => void
   showRevealedHand: (cardIds: readonly EntityId[]) => void

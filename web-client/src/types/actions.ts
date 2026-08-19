@@ -174,7 +174,12 @@ export interface CastSpellAction {
 export type PaymentStrategy =
   | { readonly type: 'AutoPay' }
   | { readonly type: 'FromPool' }
-  | { readonly type: 'Explicit'; readonly manaAbilitiesToActivate: readonly EntityId[] }
+  | {
+      readonly type: 'Explicit'
+      readonly manaAbilitiesToActivate: readonly EntityId[]
+      /** Multiset of Phyrexian pip colors paid with 2 life each. */
+      readonly phyrexianLifePayments?: readonly string[]
+    }
 
 // =============================================================================
 // Ability Actions

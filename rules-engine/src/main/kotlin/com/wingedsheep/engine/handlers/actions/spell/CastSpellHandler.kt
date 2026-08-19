@@ -1242,9 +1242,15 @@ class CastSpellHandler(
         val xManaRestriction = (action.faceIndex?.let { cardDef?.cardFaces?.getOrNull(it)?.script }
             ?: cardDef?.script)?.xManaRestriction ?: emptySet()
 
+        val validationCost = when (val strategy = action.paymentStrategy) {
+            is PaymentStrategy.Explicit -> effectiveCost.withPhyrexianPaidByLife(strategy.phyrexianLifePayments)
+                ?: return "Invalid Phyrexian mana payment"
+            else -> effectiveCost
+        }
+
         return when (action.paymentStrategy) {
             is PaymentStrategy.AutoPay -> {
-                if (!manaSolver.canPay(state, action.playerId, effectiveCost, xValue, spellContext = spellCtx, xManaRestriction = xManaRestriction)) {
+                if (!manaSolver.canPay(state, action.playerId, validationCost, xValue, spellContext = spellCtx, xManaRestriction = xManaRestriction)) {
                     "Not enough mana to cast this spell"
                 } else null
             }
@@ -1260,7 +1266,7 @@ class CastSpellHandler(
                     colorless = poolComponent.colorless,
                     restrictedMana = poolComponent.restrictedMana
                 )
-                if (!pool.canPay(effectiveCost, spellCtx)) {
+                if (!pool.canPay(validationCost, spellCtx)) {
                     "Insufficient mana in pool to cast this spell"
                 } else null
             }
@@ -1289,12 +1295,12 @@ class CastSpellHandler(
                     colorless = poolComponent.colorless,
                     restrictedMana = poolComponent.restrictedMana
                 )
-                val partial = pool.payPartial(effectiveCost, spellCtx)
+                val partial = pool.payPartial(validationCost, spellCtx)
                 val remainingCost = partial.remainingCost
                 // Floating mana also covers the {X} portion (execution — explicitPay → autoPay —
                 // spends it before tapping anything), so only ask the chosen sources for the X
                 // the pool can't pay. Eligible restricted mana counts via ManaPool.xCoverage.
-                val xSymbolCount = effectiveCost.xCount.coerceAtLeast(1)
+                val xSymbolCount = validationCost.xCount.coerceAtLeast(1)
                 val totalXMana = xValue * xSymbolCount
                 val xRemaining = totalXMana -
                     partial.newPool.xCoverage(totalXMana, xManaRestriction, spellCtx)

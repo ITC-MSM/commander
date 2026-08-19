@@ -50,6 +50,14 @@ export interface StackGroup {
 }
 
 /**
+ * Chosen modal details shown beneath a stack object. This deliberately applies to triggered
+ * abilities as well as spells: a modal trigger's choice is committed before opponents respond.
+ */
+export function chosenModeGroupsForStack(card: ClientCard) {
+  return card.perModeTargets ?? []
+}
+
+/**
  * Fold a stack-ordered card list into contiguous identity groups, preserving order.
  * A run of length 1 is just a single-member group.
  */

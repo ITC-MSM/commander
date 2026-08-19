@@ -82,6 +82,7 @@ import com.wingedsheep.sdk.scripting.effects.ForEachPlayerEffect
 import com.wingedsheep.sdk.scripting.effects.CopyCardIntoCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.CopyCollectionIntoCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.CastFromCollectionWithoutPayingCostEffect
+import com.wingedsheep.sdk.scripting.effects.PlayFromCollectionWithoutPayingCostEffect
 import com.wingedsheep.sdk.scripting.effects.CastAnyNumberFromCollectionWithoutPayingCostEffect
 import com.wingedsheep.sdk.scripting.effects.AnyPlayerMayPayEffect
 import com.wingedsheep.sdk.scripting.costs.PayCost
@@ -3352,6 +3353,14 @@ object Effects {
      */
     fun CastFromCollectionWithoutPayingCost(from: String, storeCastTo: String? = null): Effect =
         CastFromCollectionWithoutPayingCostEffect(from = from, storeCastTo = storeCastTo)
+
+    /**
+     * Play the (0..1) card stored under [from] immediately during resolution without paying its
+     * mana cost. Unlike [CastFromCollectionWithoutPayingCost], this also supports lands; playing
+     * one consumes a land play and is impossible when none remain.
+     */
+    fun PlayFromCollectionWithoutPayingCost(from: String): Effect =
+        PlayFromCollectionWithoutPayingCostEffect(from = from)
 
     /**
      * Cast the (0..1) card stored under [from], **paying its normal mana cost** (the "you may

@@ -140,6 +140,26 @@ describe('computePhases — tap-for-generic (improvise / waterbend)', () => {
   })
 })
 
+describe('computePhases — Phyrexian mana', () => {
+  it('opens manual payment even when auto-tap is enabled so life is selectable', () => {
+    const info = castAction({
+      manaCostString: '{1}{B/P}{B/P}',
+      availableManaSources: [{ entityId: 'swamp', producesColors: ['B'] }],
+    })
+
+    expect(computePhases(info, { autoTapEnabled: true })).toEqual([{ type: 'manaSource' }])
+  })
+
+  it('opens manual payment for a Phyrexian-only cost with no mana sources', () => {
+    const info = castAction({
+      manaCostString: '{B/P}',
+      availableManaSources: [],
+    })
+
+    expect(computePhases(info, { autoTapEnabled: true })).toEqual([{ type: 'manaSource' }])
+  })
+})
+
 describe('enterPhase — sum-gated graveyard exile costs', () => {
   /**
    * Collect evidence N (CR 701.59a) and Baron Helmut Zemo's pip total are the same picker: any

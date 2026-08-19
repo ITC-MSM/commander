@@ -194,9 +194,10 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
   const hasAlternativePaymentPhase = phases.some(
     (p) => p.type === 'delve' || p.type === 'convoke',
   )
+  const hasPhyrexianMana = (actionInfo.manaCostString ?? '').includes('/P}')
   if (
-    actionInfo.availableManaSources && actionInfo.availableManaSources.length > 0 &&
-    (hasAlternativePaymentPhase || !options?.autoTapEnabled)
+    ((actionInfo.availableManaSources?.length ?? 0) > 0 || hasPhyrexianMana) &&
+    (hasAlternativePaymentPhase || hasPhyrexianMana || !options?.autoTapEnabled)
   ) {
     phases.push({ type: 'manaSource' })
   }
@@ -393,6 +394,7 @@ export function mergeResult(
           paymentStrategy: {
             type: 'Explicit' as const,
             manaAbilitiesToActivate: result.selectedSources,
+            phyrexianLifePayments: result.phyrexianLifePayments ?? [],
           },
         }
       }

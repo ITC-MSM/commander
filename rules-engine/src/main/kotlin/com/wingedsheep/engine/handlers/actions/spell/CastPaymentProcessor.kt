@@ -4,10 +4,12 @@ import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ManaSpentEvent
 import com.wingedsheep.engine.core.PaymentStrategy
 import com.wingedsheep.engine.handlers.CostHandler
+import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
 import com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
+import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.EntityId
@@ -127,20 +129,35 @@ class CastPaymentProcessor(
         spellContext: SpellPaymentContext? = null,
         xManaRestriction: Set<Color> = emptySet()
     ): PaymentResult {
-        return when (action.paymentStrategy) {
-            is PaymentStrategy.FromPool -> payFromPool(state, action.playerId, effectiveCost, cardName, xValue, spellContext, xManaRestriction)
-            is PaymentStrategy.AutoPay -> autoPay(state, action.playerId, effectiveCost, cardName, xValue, spellContext, xManaRestriction = xManaRestriction)
+        val lifePayments = (action.paymentStrategy as? PaymentStrategy.Explicit)?.phyrexianLifePayments.orEmpty()
+        val lifeToPay = lifePayments.size * 2
+        val currentLife = state.getEntity(action.playerId)?.get<LifeTotalComponent>()?.life ?: 0
+        if (lifeToPay > currentLife) {
+            return PaymentResult(state, emptyList(), "Insufficient life for Phyrexian mana payment")
+        }
+        val manaCost = effectiveCost.withPhyrexianPaidByLife(lifePayments)
+            ?: return PaymentResult(state, emptyList(), "Invalid Phyrexian mana payment")
+        val manaResult = when (action.paymentStrategy) {
+            is PaymentStrategy.FromPool -> payFromPool(state, action.playerId, manaCost, cardName, xValue, spellContext, xManaRestriction)
+            is PaymentStrategy.AutoPay -> autoPay(state, action.playerId, manaCost, cardName, xValue, spellContext, xManaRestriction = xManaRestriction)
             is PaymentStrategy.Explicit -> explicitPay(
                 state,
                 action.playerId,
                 action.paymentStrategy,
-                effectiveCost,
+                manaCost,
                 cardName,
                 xValue,
                 spellContext,
                 xManaRestriction
             )
         }
+        if (manaResult.error != null || lifePayments.isEmpty()) return manaResult
+        val lifePayment = LifePaymentService.pay(manaResult.state, action.playerId, lifeToPay)
+            ?: return PaymentResult(state, emptyList(), "Unable to pay life for Phyrexian mana")
+        return manaResult.copy(
+            state = lifePayment.first,
+            events = manaResult.events + lifePayment.second
+        )
     }
 
     private fun payFromPool(

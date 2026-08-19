@@ -339,7 +339,11 @@ sealed interface PaymentStrategy {
      */
     @Serializable
     @SerialName("Explicit")
-    data class Explicit(val manaAbilitiesToActivate: List<EntityId>) : PaymentStrategy
+    data class Explicit(
+        val manaAbilitiesToActivate: List<EntityId>,
+        /** Multiset of Phyrexian pip colors paid with 2 life each instead of mana. */
+        val phyrexianLifePayments: List<com.wingedsheep.sdk.core.Color> = emptyList()
+    ) : PaymentStrategy
 }
 
 // =============================================================================

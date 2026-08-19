@@ -1561,11 +1561,7 @@
                                             "storeAs": "fightRiggingLinked"
                                         },
                                         {
-                                            "type": "GrantMayPlayFromExile",
-                                            "from": "fightRiggingLinked"
-                                        },
-                                        {
-                                            "type": "GrantPlayWithoutPayingCost",
+                                            "type": "PlayFromCollectionWithoutPayingCost",
                                             "from": "fightRiggingLinked"
                                         }
                                     ]

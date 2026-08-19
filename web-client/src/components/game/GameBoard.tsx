@@ -242,6 +242,10 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       advancePipeline({
         type: 'manaSource',
         selectedSources: [...manaSelectionState.selectedSources],
+        phyrexianLifePayments: manaSelectionState.phyrexianLifePipIndices.map((pipIndex) => {
+          const pip = manaSelectionState.manaCost.match(/\{([^}]+)\}/g)?.[pipIndex]?.slice(1, -1).split('/')[0]
+          return pip === 'B' ? 'BLACK' : pip === 'W' ? 'WHITE' : pip === 'U' ? 'BLUE' : pip === 'R' ? 'RED' : 'GREEN'
+        }),
       })
       return
     }
@@ -250,6 +254,13 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
     const paymentStrategy = {
       type: 'Explicit' as const,
       manaAbilitiesToActivate: [...manaSelectionState.selectedSources],
+      phyrexianLifePayments: manaSelectionState.phyrexianLifePipIndices.map((pipIndex) => {
+        const symbol = manaSelectionState.manaCost.match(/\{([^}]+)\}/g)?.[pipIndex] ?? ''
+        return symbol.slice(1, -1).split('/')[0] === 'B' ? 'BLACK'
+          : symbol.slice(1, -1).split('/')[0] === 'W' ? 'WHITE'
+          : symbol.slice(1, -1).split('/')[0] === 'U' ? 'BLUE'
+          : symbol.slice(1, -1).split('/')[0] === 'R' ? 'RED' : 'GREEN'
+      }),
     }
     // Cast to add paymentStrategy - only actions with mana costs reach here
     const modifiedAction = { ...manaSelectionState.action, paymentStrategy } as import('../../types').GameAction
@@ -444,8 +455,14 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
     // Build list of unfulfilled requirements: colored pips + generic pips
     const coloredReqs: string[] = []
     let genericCount = 0
-    for (const match of symbols) {
+    for (const [pipIndex, match] of symbols.entries()) {
       const inner = match.slice(1, -1)
+      if (inner.endsWith('/P')) {
+        if (!manaSelectionState.phyrexianLifePipIndices.includes(pipIndex)) {
+          coloredReqs.push(inner.split('/')[0]!)
+        }
+        continue
+      }
       const num = parseInt(inner, 10)
       if (!isNaN(num)) {
         genericCount += num
@@ -2008,6 +2025,42 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           alignItems: 'flex-end',
           zIndex: 100,
         }}>
+          {manaSelectionState.manaCost.match(/\{([^}]+)\}/g)?.some((symbol) => symbol.includes('/P')) && (
+            <div style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.9)',
+              border: '1px solid rgba(239, 68, 68, 0.45)',
+              borderRadius: 8,
+              padding: '10px 12px',
+              display: 'flex',
+              gap: 8,
+              alignItems: 'center',
+            }}>
+              <span style={{ color: '#ddd', fontSize: responsive.fontSize.small }}>Pay with life:</span>
+              {manaSelectionState.manaCost.match(/\{([^}]+)\}/g)!.map((symbol, pipIndex) => {
+                if (!symbol.includes('/P')) return null
+                const selected = manaSelectionState.phyrexianLifePipIndices.includes(pipIndex)
+                const canSelect = selected || ((manaSelectionState.phyrexianLifePipIndices.length + 1) * 2 <= (viewingPlayer?.life ?? 0))
+                return (
+                  <button
+                    key={pipIndex}
+                    type="button"
+                    disabled={!canSelect}
+                    onClick={() => useGameStore.getState().togglePhyrexianLifePayment(pipIndex)}
+                    style={{
+                      padding: '5px 8px',
+                      borderRadius: 6,
+                      border: `1px solid ${selected ? '#ef4444' : '#666'}`,
+                      background: selected ? 'rgba(127, 29, 29, 0.9)' : 'rgba(40, 40, 40, 0.9)',
+                      color: selected ? '#fecaca' : '#ddd',
+                      cursor: canSelect ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    <ManaSymbol symbol={symbol.slice(1, -1)} size={18} /> {selected ? '2 life' : 'mana'}
+                  </button>
+                )
+              })}
+            </div>
+          )}
           {/* Mana progress indicator */}
           {manaProgress && (
             <div style={{

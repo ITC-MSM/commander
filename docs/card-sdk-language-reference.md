@@ -343,6 +343,11 @@ excluded.
 
 ## 3. Costs (`Costs.*`)
 
+Spell mana costs containing Phyrexian symbols (for example `{B/P}`) are paid per pip with either
+one mana of that color or 2 life. Manual payment records the chosen life-paid pip colors as a
+multiset on `PaymentStrategy.Explicit.phyrexianLifePayments`; the engine validates that those pips
+exist in the cost and charges the life through the shared life-payment service.
+
 > **One cost vocabulary (`CostAtom`).** The payable things shared across cost *contexts* — mana, life,
 > sacrifice, discard, exile-from-zone, tap, return-to-hand, reveal — are defined **once** in the
 > `CostAtom` sealed hierarchy (`scripting/costs/CostAtom.kt`). All three context wrappers carry them via
@@ -1114,6 +1119,8 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   ifBeheld = Effects.CreateTreasure())`.
 
 ### Library reveal & free cast
+
+- `PlayFromCollectionWithoutPayingCostEffect(from)` (facade `Effects.PlayFromCollectionWithoutPayingCost(from)`) — play the first card in the pipeline collection immediately during the resolving effect. Nonlands use the free-cast machinery; lands use the normal land-play path, consume a land play for the turn, and remain unplayed when no land play is available. Use this for Oracle text that says **play**, such as **Fight Rigging**; it grants no permission that survives resolution.
 
 - `Effects.Cascade` — CR 702.85a (`CascadeEffect`). Exile from the top of the controller's library
   until a nonland card with mana value **strictly less than** the triggering spell's is exiled,

@@ -3,7 +3,7 @@
   "player2Name": "Opponent",
   "player1": {
     "lifeTotal": 20,
-    "hand": ["Fight Rigging"],
+    "hand": ["Fight Rigging", "Forest"],
     "battlefield": [
       {"name": "Forest"},
       {"name": "Forest"},
@@ -24,8 +24,9 @@
   "step": "PRECOMBAT_MAIN",
   "activePlayer": 1,
   "priorityPlayer": 1,
-  "player1StopAtSteps": ["BEGIN_COMBAT"],
+  "player1StopAtSteps": [],
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
-  "player2OpponentStopAtSteps": []
+  "player2OpponentStopAtSteps": [],
+  "mode": "SELF"
 }

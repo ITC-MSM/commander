@@ -51,6 +51,28 @@ data class ManaCost(val symbols: List<ManaSymbol>) {
     val xCount: Int
         get() = symbols.count { it is ManaSymbol.X }
 
+    val phyrexianSymbols: List<ManaSymbol.Phyrexian>
+        get() = symbols.filterIsInstance<ManaSymbol.Phyrexian>()
+
+    /**
+     * Remove the Phyrexian pips the payer chose to satisfy with 2 life instead of mana.
+     * [colors] is a multiset: `{B/P}{B/P}` paid entirely with life is `[BLACK, BLACK]`.
+     * Returns `null` when the choice names more pips of a color than this cost contains.
+     */
+    fun withPhyrexianPaidByLife(colors: List<Color>): ManaCost? {
+        if (colors.isEmpty()) return this
+        val remainingChoices = colors.groupingBy { it }.eachCount().toMutableMap()
+        val kept = mutableListOf<ManaSymbol>()
+        for (symbol in symbols) {
+            if (symbol is ManaSymbol.Phyrexian && (remainingChoices[symbol.color] ?: 0) > 0) {
+                remainingChoices[symbol.color] = remainingChoices.getValue(symbol.color) - 1
+            } else {
+                kept.add(symbol)
+            }
+        }
+        return if (remainingChoices.values.all { it == 0 }) ManaCost(kept) else null
+    }
+
     fun isEmpty(): Boolean = symbols.isEmpty()
 
     /**

@@ -56,6 +56,7 @@ import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
+import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
@@ -2006,8 +2007,26 @@ class ManaSolver(
         spellContext: SpellPaymentContext? = null,
         precomputedSources: List<ManaSource>? = null,
         /** Colors that may pay the `{X}` portion ("spend only [colors] on X"); empty = any. */
-        xManaRestriction: Set<Color> = emptySet()
+        xManaRestriction: Set<Color> = emptySet(),
+        /** Internal recursion tally for Phyrexian pips tentatively paid with life. */
+        phyrexianLifePipsCommitted: Int = 0
     ): Boolean {
+        // A Phyrexian pip may be paid with 2 life instead of its color. Try each distinct pip
+        // choice before the mana-only solver below; recursive calls see a strictly smaller cost.
+        // Paying down to exactly 0 is legal, though state-based actions will make the player lose.
+        val life = state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 0
+        if ((phyrexianLifePipsCommitted + 1) * 2 <= life) {
+            val triedColors = mutableSetOf<Color>()
+            for (pip in cost.phyrexianSymbols) {
+                if (!triedColors.add(pip.color)) continue
+                val reduced = cost.withPhyrexianPaidByLife(listOf(pip.color)) ?: continue
+                if (canPay(
+                        state, playerId, reduced, xValue, excludeSources, spellContext,
+                        precomputedSources, xManaRestriction, phyrexianLifePipsCommitted + 1
+                    )) return true
+            }
+        }
+
         // Get the player's floating mana pool
         val poolComponent = state.getEntity(playerId)?.get<ManaPoolComponent>()
         val pool = if (poolComponent != null) {

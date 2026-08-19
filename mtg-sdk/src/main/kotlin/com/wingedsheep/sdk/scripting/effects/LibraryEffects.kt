@@ -346,6 +346,19 @@ data class CastFromCollectionWithoutPayingCostEffect(
 }
 
 /**
+ * Play the first card in [from] during this effect's resolution without paying its mana cost.
+ * Spells use the ordinary synthesized-cast pipeline; lands are played as a special action and
+ * still consume one of the controller's land plays for the turn.
+ */
+@SerialName("PlayFromCollectionWithoutPayingCost")
+@Serializable
+data class PlayFromCollectionWithoutPayingCostEffect(
+    val from: String,
+) : Effect {
+    override val description: String = "Play that card without paying its mana cost"
+}
+
+/**
  * Cast ANY NUMBER of cards from a named pipeline collection **during this effect's
  * resolution**, each without paying its mana cost, with timing restrictions based on card
  * type ignored (Rule 608.2 / "cast … while [the source] is resolving").
@@ -452,4 +465,3 @@ data class DiscoverEffect(
 ) : Effect {
     override val description: String = "Discover ${amount.description}"
 }
-
