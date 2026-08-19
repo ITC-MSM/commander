@@ -5,6 +5,8 @@ import type { ClientCard, EntityId, LegalActionInfo } from '@/types'
 import { Color, ColorSymbols, Keyword } from '@/types/enums'
 import { getCardImageUrl, getScryfallFallbackUrl, faceDownImageUrl } from '@/utils/cardImages.ts'
 import { useInteraction } from '@/hooks/useInteraction.ts'
+import { useOpenCardMenuOnTap } from '@/hooks/useOpenCardMenuOnTap.ts'
+import { isGhostMouseEvent, noteTouchInteraction } from '@/utils/ghostMouse.ts'
 import { ManaCost, ManaSymbol } from '@/components/ui/ManaSymbols.tsx'
 import { HoverCardPreview } from '@/components/ui/HoverCardPreview.tsx'
 import {
@@ -289,24 +291,35 @@ function GameCardImpl({
   const submitYesNoDecision = useGameStore((state) => state.submitYesNoDecision)
   const isBeheldPulsing = useGameStore((state) => state.beholdPulses.some((p) => p.cardId === card.id))
   const responsive = useResponsiveContext()
+  const openCardMenuOnTap = useOpenCardMenuOnTap()
   const { handleCardClick, handleDoubleClick, executeAction } = useInteraction()
   const dragStartPos = useRef<{ x: number; y: number } | null>(null)
   const handledByDrag = useRef(false)
   /** Whether the attacker was already selected when drag started (to know if short press = select or deselect) */
   const attackerWasSelected = useRef(false)
 
-  // Hover handlers for card preview — track position via onMouseMove like the deckbuilder
+  // Hover handlers for card preview — track position via the move handler like the deckbuilder.
+  //
+  // Pointer events, not mouse events, and only for a device that can actually hover: a tap fires a
+  // synthesized mouseenter/mousemove pair before its click, so on a phone the preview opened on top
+  // of the action menu that same tap had just opened — and since no mouseleave follows a tap, it
+  // stayed there. Touch reaches the preview through the long-press below instead.
   const updateHoverPosition = useGameStore((s) => s.updateHoverPosition)
 
-  const handleMouseEnter = useCallback((e: React.MouseEvent) => {
+  const handleHoverEnter = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType === 'touch') return
     hoverCard(card.id, { x: e.clientX, y: e.clientY })
   }, [card.id, hoverCard])
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  const handleHoverMove = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType === 'touch') return
     updateHoverPosition({ x: e.clientX, y: e.clientY })
   }, [updateHoverPosition])
 
-  const handleMouseLeave = useCallback(() => {
+  // Guarded on touch too: without it a finger straying off the card during a long-press would clear
+  // the preview that long-press just opened.
+  const handleHoverLeave = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType === 'touch') return
     hoverCard(null)
   }, [hoverCard])
 
@@ -328,6 +341,10 @@ function GameCardImpl({
     }, 400)
   }, [card.id, hoverCard, stopDraggingCard, stopDraggingBlocker])
 
+  // Also wired to touchcancel, not just touchend: a long press is exactly the gesture that makes a
+  // mobile browser take the touch away from us (native text selection / callout), and it delivers
+  // touchcancel instead of touchend when it does. Only listening for touchend left the preview
+  // stuck on screen with no way to dismiss it.
   const handleTouchEndPreview = useCallback(() => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current)
@@ -730,7 +747,12 @@ function GameCardImpl({
       stopDraggingCard()
     }
 
-    const handleMouseUp = (e: MouseEvent) => handleGlobalPointerUp(e.clientX, e.clientY)
+    // The mouseup half must ignore a tap's compatibility sequence, or the touchend above and the
+    // ghost mouseup behind it both resolve the same drag.
+    const handleMouseUp = (e: MouseEvent) => {
+      if (isGhostMouseEvent()) return
+      handleGlobalPointerUp(e.clientX, e.clientY)
+    }
     const handleTouchEnd = (e: TouchEvent) => {
       const touch = e.changedTouches[0]
       if (touch) handleGlobalPointerUp(touch.clientX, touch.clientY)
@@ -750,6 +772,7 @@ function GameCardImpl({
     if (!draggingBlockerId) return
 
     const handleGlobalMouseUp = () => {
+      if (isGhostMouseEvent()) return
       stopDraggingBlocker()
     }
 
@@ -886,7 +909,10 @@ function GameCardImpl({
       stopDraggingAttacker()
     }
 
-    const handleMouseUp = (e: MouseEvent) => handleGlobalPointerUp(e.clientX, e.clientY)
+    const handleMouseUp = (e: MouseEvent) => {
+      if (isGhostMouseEvent()) return
+      handleGlobalPointerUp(e.clientX, e.clientY)
+    }
     const handleTouchEnd = (e: TouchEvent) => {
       const touch = e.changedTouches[0]
       if (touch) {
@@ -1077,6 +1103,15 @@ function GameCardImpl({
       } else {
         handleCardClick(card.id)
       }
+      return
+    }
+
+    // Without hover there is no other way to read a card, so on touch every card the player can
+    // actually see opens the menu — an opponent's permanent is `interactive={false}` and would
+    // otherwise swallow the tap, leaving its rules text unreachable. The menu it gets holds only
+    // "View card"; a face-down card is skipped because there is nothing to reveal.
+    if (openCardMenuOnTap && !faceDown && !isInTargetingMode && !isInCombatMode) {
+      openCardMenuOnTap(card.id)
     }
   }
 
@@ -1324,14 +1359,17 @@ function GameCardImpl({
       {...(isGhost ? { 'data-ghost': 'true' } : {})}
       onClick={handleClick}
       onDoubleClick={handleDoubleClickEvent}
-      onMouseDown={handlePointerDown}
-      onMouseUp={handlePointerUp}
-      onTouchStart={(e) => { handleTouchStartPreview(e); handlePointerDown(e) }}
-      onTouchEnd={() => { handleTouchEndPreview(); handlePointerUp() }}
-      onTouchMove={handleTouchMovePreview}
-      onMouseEnter={handleMouseEnter}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      /* Mouse and touch both drive the drag handlers, so every mouse one has to ignore the
+         compatibility sequence a tap fires after touchend — see utils/ghostMouse. */
+      onMouseDown={(e) => { if (!isGhostMouseEvent()) handlePointerDown(e) }}
+      onMouseUp={() => { if (!isGhostMouseEvent()) handlePointerUp() }}
+      onTouchStart={(e) => { noteTouchInteraction(); handleTouchStartPreview(e); handlePointerDown(e) }}
+      onTouchEnd={() => { noteTouchInteraction(); handleTouchEndPreview(); handlePointerUp() }}
+      onTouchCancel={() => { noteTouchInteraction(); handleTouchEndPreview(); handlePointerUp() }}
+      onTouchMove={() => { noteTouchInteraction(); handleTouchMovePreview() }}
+      onPointerEnter={handleHoverEnter}
+      onPointerMove={handleHoverMove}
+      onPointerLeave={handleHoverLeave}
       style={{
         ...styles.card,
         width,

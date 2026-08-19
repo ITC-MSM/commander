@@ -8,6 +8,7 @@ import type { ClientAbilityIdentity, ClientCard } from '@/types/gameState'
 import { getCardImageUrl } from '@/utils/cardImages.ts'
 import { ActiveEffectBadges } from '../card/CardOverlays'
 import { AbilityText, ManaCost } from '../../ui/ManaSymbols'
+import { useOpenCardMenuOnTap } from '@/hooks/useOpenCardMenuOnTap.ts'
 import { useResponsiveContext, handleImageError } from './shared'
 import { styles } from './styles'
 import { groupStackCards, type StackGroup } from './stackGrouping'
@@ -26,6 +27,7 @@ export function StackDisplay() {
   const stackCards = useStackCards()
   const responsive = useResponsiveContext()
   const hoverCard = useGameStore((state) => state.hoverCard)
+  const openCardMenuOnTap = useOpenCardMenuOnTap()
   const targetingState = useGameStore((state) => state.targetingState)
   const addTarget = useGameStore((state) => state.addTarget)
   const removeTarget = useGameStore((state) => state.removeTarget)
@@ -99,6 +101,20 @@ export function StackDisplay() {
     } else if (isValidTarget) {
       addTarget(cardId)
     }
+  }
+
+  /**
+   * A tap/click on a stack item. Targeting and decision selection own it whenever either is
+   * running; otherwise the gesture only ever means "let me read this", which without hover has to
+   * go through the action menu's "View card" row — the same route as any other card the player
+   * can't do anything with.
+   */
+  const handleStackItemTap = (cardId: EntityId) => {
+    if (targetingState || decisionSelectionState) {
+      handleStackItemClick(cardId)
+      return
+    }
+    openCardMenuOnTap?.(cardId)
   }
 
   // A card the player can currently target/select — such a card must never be hidden inside a
@@ -187,10 +203,13 @@ export function StackDisplay() {
           ...seatBorderFor(card.controllerId),
           ...highlight,
         }}
-        onClick={opts.onClick ?? (() => handleStackItemClick(card.id))}
+        onClick={opts.onClick ?? (() => handleStackItemTap(card.id))}
         onContextMenu={(e) => openYieldMenu(card, e)}
-        onMouseEnter={(e) => hoverCard(card.id, { x: e.clientX, y: e.clientY })}
-        onMouseLeave={() => hoverCard(null)}
+        /* Pointer events with a touch guard, as on GameCard: a tap synthesizes mouseenter and
+           never the matching mouseleave, which used to open the preview on top of whatever the
+           same tap opened and leave it stranded there. */
+        onPointerEnter={(e) => { if (e.pointerType !== 'touch') hoverCard(card.id, { x: e.clientX, y: e.clientY }) }}
+        onPointerLeave={(e) => { if (e.pointerType !== 'touch') hoverCard(null) }}
       >
         {(() => {
           // A sideways-printed card (split layout, Room, battle) reads landscape only once rotated
@@ -531,8 +550,10 @@ export function StackDisplay() {
           {/* Source card image */}
           {sourceCard && (
             <div
-              onMouseEnter={(e) => sourceCard && hoverCard(pendingDecision.context.sourceId!, { x: e.clientX, y: e.clientY })}
-              onMouseLeave={() => hoverCard(null)}
+              onPointerEnter={(e) => { if (e.pointerType !== 'touch' && sourceCard) hoverCard(pendingDecision.context.sourceId!, { x: e.clientX, y: e.clientY }) }}
+              onPointerLeave={(e) => { if (e.pointerType !== 'touch') hoverCard(null) }}
+              onClick={() => handleStackItemTap(pendingDecision.context.sourceId!)}
+              style={{ cursor: openCardMenuOnTap ? 'pointer' : 'default' }}
             >
               <img
                 src={getCardImageUrl(sourceCard.name, sourceCard.imageUri, 'small')}

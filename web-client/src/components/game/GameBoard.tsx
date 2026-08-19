@@ -1979,7 +1979,10 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           that size anyway. */}
       {!spectatorMode && !responsive.isMobile && <GameLog />}
       {!spectatorMode && <ActiveYieldsPanel />}
-      {!spectatorMode && <AiInsightPanel />}
+      {/* Hidden on phones for the same reason as the log: its toggle sits in the
+          bottom-left corner, directly on top of the hand, and the expanded panel
+          is a 520px table that a phone can't show. */}
+      {!spectatorMode && !responsive.isMobile && <AiInsightPanel />}
 
       {/* Draw animations */}
       <DrawAnimations />
