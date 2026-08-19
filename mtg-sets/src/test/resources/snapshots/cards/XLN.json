@@ -277,6 +277,59 @@
     ]
 }
 
+// Drover of the Mighty
+{
+    "name": "Drover of the Mighty",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Human Druid",
+    "oracleText": "This creature gets +2/+2 as long as you control a Dinosaur.\n{T}: Add one mana of any color.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 2,
+                    "toughnessBonus": 2,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "permanent Dinosaur"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "187",
+        "rarity": "UNCOMMON",
+        "artist": "Eric Deschamps",
+        "flavorText": "\"I do not lead. They do not follow. We walk together.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/1/51fdf2fc-d948-4c64-a34e-2f90eab83212.jpg?1783935726"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Fiery Cannonade
 {
     "name": "Fiery Cannonade",
@@ -1568,6 +1621,68 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Thundering Spineback
+{
+    "name": "Thundering Spineback",
+    "manaCost": "{5}{G}{G}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Other Dinosaurs you control get +1/+1.\n{5}{G}: Create a 3/3 green Dinosaur creature token with trample. (It can deal excess combat damage to the player or planeswalker it's attacking.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 3,
+                    "toughness": 3,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Dinosaur"
+                    ],
+                    "keywords": [
+                        "TRAMPLE"
+                    ]
+                },
+                "descriptionOverride": "{5}{G}: Create a 3/3 green Dinosaur creature token with trample."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "permanent Dinosaur ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "210",
+        "rarity": "UNCOMMON",
+        "artist": "Tomasz Jedruszek",
+        "flavorText": "\"It appears that nature has risen against us.\"\n—Captain Brinely Rage",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/35711da6-aac4-4c2a-b324-aebeaa843adc.jpg?1783935718"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

@@ -217,6 +217,30 @@
     }
 }
 
+// Murmuring Phantasm
+{
+    "name": "Murmuring Phantasm",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Defender",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 5
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "metadata": {
+        "collectorNumber": "15",
+        "artist": "Peter Mohrbacher",
+        "flavorText": "\"The most insidious thing in the world is nonsense that sounds just plausible enough to listen to.\"\n—Lazav",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/7/9752644c-7c43-429e-a79c-1239b9a0bc8a.jpg?1783940041"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Unflinching Courage
 {
     "name": "Unflinching Courage",

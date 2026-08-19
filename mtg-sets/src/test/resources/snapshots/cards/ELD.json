@@ -661,6 +661,106 @@
     "colorIdentityOverride": []
 }
 
+// Jousting Dummy
+{
+    "name": "Jousting Dummy",
+    "manaCost": "{2}",
+    "typeLine": "Artifact Creature — Scarecrow Knight",
+    "oracleText": "{3}: This creature gets +1/+0 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{3}: This creature gets +1/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "224",
+        "artist": "Milivoj Ćeran",
+        "flavorText": "\"Don't let it fool you. Many of us got our first scars from Syr Nobody.\"\n—Syr Layne, knight of Embereth",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/6/f6601056-af08-4239-97d5-5e11597fce18.jpg?1783932584"
+    },
+    "colorIdentityOverride": []
+}
+
+// Keeper of Fables
+{
+    "name": "Keeper of Fables",
+    "manaCost": "{3}{G}{G}",
+    "typeLine": "Creature — Cat",
+    "oracleText": "Whenever one or more non-Human creatures you control deal combat damage to a player, draw a card.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer",
+                    "sourceFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "NotSubtype",
+                                "subtype": "Human"
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    },
+                    "batch": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever one or more non-Human creatures you control deal combat damage to a player, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "163",
+        "rarity": "UNCOMMON",
+        "artist": "Alex Konstad",
+        "flavorText": "\"Only the lion knows more stories than I do.\"\n—Chulane, Teller of Tales",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/6754d6cf-3506-48b5-a0ef-8a90b8dd2701.jpg?1783932608"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Linden, the Steadfast Queen
 {
     "name": "Linden, the Steadfast Queen",
@@ -976,6 +1076,45 @@
     "colorIdentityOverride": [
         "BLUE"
     ]
+}
+
+// Signpost Scarecrow
+{
+    "name": "Signpost Scarecrow",
+    "manaCost": "{4}",
+    "typeLine": "Artifact Creature — Scarecrow",
+    "oracleText": "Vigilance\n{2}: Add one mana of any color.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "231",
+        "artist": "Jung Park",
+        "flavorText": "\"Accursed scarecrow! Sending folk in every direction is the same as sending them nowhere at all.\"\n—Corliss the Wanderer",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/2/a2c5f336-c100-4bec-89d5-548f60064d7f.jpg?1783932583"
+    },
+    "colorIdentityOverride": []
 }
 
 // Syr Alin, the Lion's Claw

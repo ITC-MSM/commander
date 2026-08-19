@@ -39,6 +39,60 @@
     "colorIdentityOverride": []
 }
 
+// Alabaster Mage
+{
+    "name": "Alabaster Mage",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "{1}{W}: Target creature you control gains lifelink until end of turn. (Damage dealt by the creature also causes its controller to gain that much life.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "target creature you control"
+                    }
+                ],
+                "descriptionOverride": "{1}{W}: Target creature you control gains lifelink until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "2",
+        "rarity": "UNCOMMON",
+        "artist": "Izzy",
+        "flavorText": "\"We hold sacred the powers of light and life. Truth and honor are our greatest weapons.\"\n—Alabaster creed",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f82e6a81-6a45-45f9-829d-332859a32257.jpg?1783941106"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Amphin Cutthroat
 {
     "name": "Amphin Cutthroat",
@@ -171,6 +225,75 @@
     "colorIdentityOverride": [
         "RED"
     ]
+}
+
+// Buried Ruin
+{
+    "name": "Buried Ruin",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{2}, {T}, Sacrifice this land: Return target artifact card from your graveyard to your hand.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact card in your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "target artifact card in your graveyard"
+                    }
+                ],
+                "descriptionOverride": "{2}, {T}, Sacrifice this land: Return target artifact card from your graveyard to your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "224",
+        "rarity": "UNCOMMON",
+        "artist": "Franz Vohwinkel",
+        "flavorText": "History has buried its treasures deep.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/9/e910cf59-f7aa-44b1-bb8a-c2211179137c.jpg?1783941046"
+    },
+    "colorIdentityOverride": []
 }
 
 // Devouring Swarm

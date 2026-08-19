@@ -368,6 +368,58 @@
     ]
 }
 
+// Inspiring Unicorn
+{
+    "name": "Inspiring Unicorn",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Creature — Unicorn",
+    "oracleText": "Whenever this creature attacks, creatures you control get +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Whenever this creature attacks, creatures you control get +1/+1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "16",
+        "rarity": "UNCOMMON",
+        "artist": "Even Amundsen",
+        "flavorText": "There are two lives: the life you live before you see a unicorn, and the life you live after.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/e/ce8b745e-1e62-4c54-9e73-e2d0a40568a0.jpg?1783934199"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // March of the Multitudes
 {
     "name": "March of the Multitudes",

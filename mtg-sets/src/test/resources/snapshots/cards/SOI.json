@@ -953,6 +953,49 @@
     ]
 }
 
+// Cathar's Companion
+{
+    "name": "Cathar's Companion",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Dog",
+    "oracleText": "Whenever you cast a noncreature spell, this creature gains indestructible until end of turn. (Damage and effects that say \"destroy\" don't destroy it.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "INDESTRUCTIBLE",
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you cast a noncreature spell, this creature gains indestructible until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "9",
+        "artist": "Svetlin Velinov",
+        "flavorText": "\"Unwavering and loyal, they represent stability in uncertain times.\"\n—Rem Karolus, Slayer of Angels",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/f/0f4b9943-0fe6-4383-90a0-4a719dcf9499.jpg?1783937824"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Crow of Dark Tidings
 {
     "name": "Crow of Dark Tidings",

@@ -421,6 +421,50 @@
     ]
 }
 
+// Wall of Blossoms
+{
+    "name": "Wall of Blossoms",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Plant Wall",
+    "oracleText": "Defender\nWhen this creature enters, draw a card.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 4
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "When this creature enters, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "125",
+        "rarity": "UNCOMMON",
+        "artist": "Heather Hudson",
+        "flavorText": "Each flower identical, every leaf and petal disturbingly exact.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/e/7eb4a1a3-efcf-4c9a-ad1f-0a3f8f2b456f.jpg?1783946546"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Youthful Knight
 {
     "name": "Youthful Knight",

@@ -4927,6 +4927,72 @@
     ]
 }
 
+// Weaver of Lightning
+{
+    "name": "Weaver of Lightning",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Human Shaman",
+    "oracleText": "Reach (This creature can block creatures with flying.)\nWhenever you cast an instant or sorcery spell, this creature deals 1 damage to target creature an opponent controls.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature an opponent controls"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target creature an opponent controls"
+                },
+                "descriptionOverride": "Whenever you cast an instant or sorcery spell, this creature deals 1 damage to target creature an opponent controls."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "149",
+        "rarity": "UNCOMMON",
+        "artist": "John Stanko",
+        "flavorText": "\"Lightning in a bottle? That's not where I need it.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/a/ba1e6885-dca0-4a4b-abb8-0f32680f618d.jpg?1783937450"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Wolfkin Bond
 {
     "name": "Wolfkin Bond",

@@ -40,6 +40,74 @@
     ]
 }
 
+// Blood Host
+{
+    "name": "Blood Host",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Creature — Vampire",
+    "oracleText": "{1}{B}, Sacrifice another creature: Put a +1/+1 counter on this creature and you gain 2 life.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{B}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "{1}{B}, Sacrifice another creature: Put a +1/+1 counter on this creature and you gain 2 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "87",
+        "rarity": "UNCOMMON",
+        "artist": "Cynthia Sheppard",
+        "flavorText": "It would be ill-mannered to decline his invitation. It would be ill-advised to accept it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/4/1454a83d-f018-446c-89fb-21460924e589.jpg?1783939186"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Borderland Marauder
 {
     "name": "Borderland Marauder",

@@ -130,6 +130,53 @@
     ]
 }
 
+// Ronom Unicorn
+{
+    "name": "Ronom Unicorn",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Unicorn",
+    "oracleText": "Sacrifice this creature: Destroy target enchantment.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "enchantment"
+                        }
+                    }
+                ],
+                "descriptionOverride": "Sacrifice this creature: Destroy target enchantment."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "16",
+        "artist": "Carl Critchlow",
+        "flavorText": "The aberrant magic of the Rimewind drew the unicorns back from the northern wastes to do battle once again.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/e/ae4764e1-e47c-4934-86a5-9b432c29a158.jpg?1783943367"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Simian Brawler
 {
     "name": "Simian Brawler",

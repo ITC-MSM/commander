@@ -1,3 +1,83 @@
+// Bathe in Dragonfire
+{
+    "name": "Bathe in Dragonfire",
+    "manaCost": "{2}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Bathe in Dragonfire deals 4 damage to target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 4
+            },
+            "target": {
+                "type": "ContextTarget",
+                "index": 0
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "92",
+        "artist": "Chris Rallis",
+        "flavorText": "The scent of cooked flesh lingers in the charred landscape of Tarkir.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/8/b8cc6931-2005-4d0a-a42a-ce8bc279372e.jpg?1783938691"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Collateral Damage
+{
+    "name": "Collateral Damage",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "As an additional cost to cast this spell, sacrifice a creature.\nCollateral Damage deals 3 damage to any target.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 3
+            },
+            "target": {
+                "type": "ContextTarget",
+                "index": 0
+            }
+        },
+        "targetRequirements": [
+            "AnyTarget"
+        ],
+        "additionalCosts": [
+            {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "95",
+        "artist": "Ryan Barger",
+        "flavorText": "It is much easier to create fire than to contain it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fb738362-b0b4-4811-9fbf-5f45c852c822.jpg?1783938691"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Feral Krushok
 {
     "name": "Feral Krushok",

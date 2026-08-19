@@ -42,6 +42,58 @@
     ]
 }
 
+// Goblin Commando
+{
+    "name": "Goblin Commando",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Goblin",
+    "oracleText": "When this creature enters, it deals 2 damage to target creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                },
+                "descriptionOverride": "When this creature enters, it deals 2 damage to target creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "100",
+        "rarity": "UNCOMMON",
+        "artist": "Todd Lockwood",
+        "flavorText": "With a commando around, somebody's gonna get hurt.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/a/da90043b-0e67-4a68-b6fb-0ca53ca7defc.jpg?1783946030"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Sea Eagle
 {
     "name": "Sea Eagle",

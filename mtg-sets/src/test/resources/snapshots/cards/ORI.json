@@ -149,6 +149,30 @@
     ]
 }
 
+// Boggart Brute
+{
+    "name": "Boggart Brute",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Goblin Warrior",
+    "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "metadata": {
+        "collectorNumber": "133",
+        "artist": "Igor Kieryluk",
+        "flavorText": "He has the biggest bashing stick, so it's a safe bet he's the leader.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/d/9d735ebf-61a4-4507-9399-6d32c8903ded.jpg?1783938333"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Caustic Caterpillar
 {
     "name": "Caustic Caterpillar",
@@ -774,6 +798,47 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Languish
+{
+    "name": "Languish",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "All creatures get -4/-4 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            },
+            "body": {
+                "type": "ModifyStats",
+                "powerModifier": {
+                    "type": "Fixed",
+                    "amount": -4
+                },
+                "toughnessModifier": {
+                    "type": "Fixed",
+                    "amount": -4
+                },
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "105",
+        "rarity": "RARE",
+        "artist": "Jeff Simpson",
+        "flavorText": "Life is such a fragile thing.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/3/d3593efa-0a05-4061-9f6e-edd0a5ca9a1f.jpg?1783938340"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

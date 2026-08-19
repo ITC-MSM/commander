@@ -378,6 +378,82 @@
     ]
 }
 
+// Dragonloft Idol
+{
+    "name": "Dragonloft Idol",
+    "manaCost": "{4}",
+    "typeLine": "Artifact Creature — Gargoyle",
+    "oracleText": "As long as you control a Dragon, this creature gets +1/+1 and has flying and trample.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 1,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "permanent Dragon"
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "permanent Dragon"
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "TRAMPLE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "permanent Dragon"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "237",
+        "rarity": "UNCOMMON",
+        "artist": "Jung Park",
+        "flavorText": "The idols were forged during the time of the Khanfall, when the dragons came to rule Tarkir and its people aligned themselves with the five dragonlords.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/7/c7463c18-5bef-42a0-a37e-6112809ebc78.jpg?1783938569"
+    },
+    "colorIdentityOverride": []
+}
+
 // Dragonlord's Servant
 {
     "name": "Dragonlord's Servant",
@@ -674,6 +750,62 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Shambling Goblin
+{
+    "name": "Shambling Goblin",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Zombie Goblin",
+    "oracleText": "When this creature dies, target creature an opponent controls gets -1/-1 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": -1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature an opponent controls"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target creature an opponent controls"
+                },
+                "descriptionOverride": "When this creature dies, target creature an opponent controls gets -1/-1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "118",
+        "artist": "Yeong-Hao Han",
+        "flavorText": "\"The Kolaghan send them at us. We kill and raise them. They fight the next wave the Kolaghan send. It's a neat little cycle.\"\n—Asmala, Silumgar sorcerer",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/4/9404c7d5-3450-4425-94e5-aa7d4e571d4e.jpg?1783938594"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

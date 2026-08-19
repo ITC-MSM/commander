@@ -77,6 +77,32 @@
     ]
 }
 
+// Gifted Aetherborn
+{
+    "name": "Gifted Aetherborn",
+    "manaCost": "{B}{B}",
+    "typeLine": "Creature — Aetherborn Vampire",
+    "oracleText": "Deathtouch, lifelink",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "DEATHTOUCH",
+        "LIFELINK"
+    ],
+    "metadata": {
+        "collectorNumber": "61",
+        "rarity": "UNCOMMON",
+        "artist": "Ryan Yee",
+        "flavorText": "A few aetherborn have discovered a way to sustain their own existences at the cost of an insatiable hunger for the life essence of other beings.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/b/abceb4fd-e3c5-400d-af7a-6dd17108a4b4.jpg?1783936763"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Lathnu Sailback
 {
     "name": "Lathnu Sailback",

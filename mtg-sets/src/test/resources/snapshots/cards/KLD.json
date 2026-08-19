@@ -865,6 +865,56 @@
     ]
 }
 
+// Lawless Broker
+{
+    "name": "Lawless Broker",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Aetherborn Rogue",
+    "oracleText": "When this creature dies, put a +1/+1 counter on target creature you control.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                },
+                "descriptionOverride": "When this creature dies, put a +1/+1 counter on target creature you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "86",
+        "artist": "Darek Zabrocki",
+        "flavorText": "Kaladesh's illicit marketplaces are known as \"night markets,\" but if you know who to ask, you can find what you're looking for at any time of the day.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/b/1b5bfff7-aa23-42ef-af1b-bc3304bd3a17.jpg?1783937205"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Prakhata Club Security
 {
     "name": "Prakhata Club Security",

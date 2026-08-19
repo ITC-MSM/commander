@@ -5909,6 +5909,50 @@
     ]
 }
 
+// Zombie Infestation
+{
+    "name": "Zombie Infestation",
+    "manaCost": "{1}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "Discard two cards: Create a 2/2 black Zombie creature token.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomDiscard",
+                        "count": 2
+                    }
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Zombie"
+                    ]
+                },
+                "descriptionOverride": "Discard two cards: Create a 2/2 black Zombie creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "170",
+        "rarity": "UNCOMMON",
+        "artist": "Thomas M. Baxa",
+        "flavorText": "The nomads' funeral pyres are more practical than ceremonial.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/ccd5f98a-7ab5-44b3-850c-b50963dace66.jpg?1783945237"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Zombify
 {
     "name": "Zombify",
