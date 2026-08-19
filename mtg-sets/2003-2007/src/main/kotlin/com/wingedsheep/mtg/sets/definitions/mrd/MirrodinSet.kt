@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.mrd
 
-import com.wingedsheep.mtg.sets.definitions.por.PortalSet
 import com.wingedsheep.mtg.sets.discovery.CardDiscovery
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.model.CardDefinition
@@ -24,11 +23,15 @@ object MirrodinSet : MtgSet {
     override val displayName = "Mirrodin"
     override val releaseDate = "2003-10-02"
     override val block = "Mirrodin"
-    override val basicLandsFallback = PortalSet
     override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)
+    }
+
+    /** Mirrodin's own basics: four arts each of the five types, collector numbers 287-306. */
+    override val basicLands: List<CardDefinition> by lazy {
+        CardDiscovery.findBasicLandsIn(CARDS_PACKAGE, code)
     }
 
     override val printings: List<Printing> by lazy {
