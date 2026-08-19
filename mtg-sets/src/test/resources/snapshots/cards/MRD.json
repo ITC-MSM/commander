@@ -4808,6 +4808,137 @@
     ]
 }
 
+// Isochron Scepter
+{
+    "name": "Isochron Scepter",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Imprint — When this artifact enters, you may exile an instant card with mana value 2 or less from your hand.\n{2}, {T}: You may copy the exiled card. If you do, you may cast the copy without paying its mana cost.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "filter": "instant mv<=2"
+                                },
+                                "storeAs": "scepterImprintCandidates"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "scepterImprintCandidates",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "scepterImprint",
+                                "prompt": "Choose an instant card with mana value 2 or less to exile"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "scepterImprint",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                },
+                                "linkToSource": true
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "You may exile an instant card with mana value 2 or less from your hand."
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": "FromLinkedExile",
+                                "storeAs": "scepterImprinted"
+                            },
+                            {
+                                "type": "CopyCollectionIntoCollection",
+                                "from": "scepterImprinted",
+                                "storeAs": "scepterCopy"
+                            },
+                            {
+                                "type": "CastFromCollectionWithoutPayingCost",
+                                "from": "scepterCopy"
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "You may copy the exiled card and cast the copy without paying its mana cost."
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "188",
+        "rarity": "UNCOMMON",
+        "artist": "Mark Harrison",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/7/878b0159-6917-45d3-b9ea-562ac49f0b8f.jpg?1783944517",
+        "rulings": [
+            {
+                "date": "2020-08-07",
+                "text": "If Isochron Scepter leaves the battlefield while the activated ability is on the stack, the ability can still make a copy. On the other hand, if the imprinted card leaves the exile zone while the activated ability is on the stack, the copy can't be made."
+            },
+            {
+                "date": "2020-08-07",
+                "text": "You cast the copy while the ability is resolving and still on the stack. You can't wait to cast it later in the turn."
+            },
+            {
+                "date": "2020-08-07",
+                "text": "If you don't want to cast the copy, you can choose not to; the copy ceases to exist the next time state-based actions are checked."
+            },
+            {
+                "date": "2020-08-07",
+                "text": "If you cast a spell \"without paying its mana cost,\" you can't choose to cast it for any alternative costs. You can, however, pay additional costs. If the card has any mandatory additional costs, those must be paid to cast the spell."
+            },
+            {
+                "date": "2020-08-07",
+                "text": "If a spell has {X} in its mana cost, you must choose 0 as the value of X when casting it without paying its mana cost."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Jinxed Choker
 {
     "name": "Jinxed Choker",
