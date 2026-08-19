@@ -288,8 +288,12 @@ def kotlin_object_name(display_name: str) -> str:
     ascii_name = (
         unicodedata.normalize("NFKD", display_name).encode("ascii", "ignore").decode()
     )
-    words = re.findall(r"[A-Za-z0-9]+", ascii_name)
-    ident = "".join(w[:1].upper() + w[1:] for w in words) + "Set"
+    # Drop apostrophes before splitting, or "Urza's Saga" derives `UrzaSSagaSet` instead of the
+    # repo's `UrzasSagaSet`; the possessive is part of the word, not a separator.
+    words = re.findall(r"[A-Za-z0-9]+", ascii_name.replace("'", "").replace("\u2019", ""))
+    ident = "".join(w[:1].upper() + w[1:] for w in words)
+    if not ident.endswith("Set"):  # "Arena Beginner Set" is already one
+        ident += "Set"
     if ident[:1].isdigit():
         sys.exit(
             f"bootstrap-set: '{display_name}' produces the invalid Kotlin identifier '{ident}' — "
@@ -337,9 +341,14 @@ def scaffold_set(set_meta: dict, dir_name: str, object_name: str) -> tuple[Path,
         / ("src/main/kotlin/com/wingedsheep/mtg/sets/definitions")
     )
     set_dir = root / dir_name
+    # A scaffolded set is identified by *any* `*Set.kt` in its directory, not by the name this
+    # script would derive. The repo shortens long titles (`LostCavernsOfIxalanSet` for "The Lost
+    # Caverns of Ixalan"), so keying on the derived name would drop a second `MtgSet` object into
+    # the same package and `MtgSetCatalog` would discover both.
+    already = next((p for p in sorted(set_dir.glob("*Set.kt")) if p.is_file()), None)
+    if already is not None:
+        return already, False
     kt = set_dir / f"{object_name}.kt"
-    if kt.is_file():
-        return kt, False
     (set_dir / "cards").mkdir(parents=True, exist_ok=True)
     package = f"com.wingedsheep.mtg.sets.definitions.{dir_name}"
     released = set_meta.get("released_at")

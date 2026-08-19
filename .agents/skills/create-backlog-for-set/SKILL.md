@@ -32,7 +32,7 @@ one and re-run. Useful flags:
 | `--no-scaffold` | backlog files only; don't touch `mtg-sets/` |
 | `--refresh` | re-download the dump (a set still in spoiler season, or a suspect cache) |
 | `--force` | overwrite an existing `cards.md` / `mechanics.md` |
-| `--object-name` | the derived Kotlin object name is wrong or invalid |
+| `--object-name` | the derived Kotlin object name is wrong or invalid — the repo shortens long titles (`LostCavernsOfIxalanSet`, `DuskmournSet`), so a set with a subtitle usually wants this |
 
 It prints one line per artifact. What it writes:
 
