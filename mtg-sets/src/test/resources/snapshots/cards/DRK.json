@@ -48,6 +48,72 @@
     ]
 }
 
+// Ashes to Ashes
+{
+    "name": "Ashes to Ashes",
+    "manaCost": "{1}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Exile two target nonartifact creatures. Ashes to Ashes deals 5 damage to you.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "destination": "Exile"
+                    }
+                },
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "You"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "count": 2,
+                "filter": {
+                    "baseFilter": "creature nonartifact"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "39",
+        "artist": "Drew Tucker",
+        "flavorText": "\"All rivers eventually run to the sea. My job is to sort out who goes first.\" —Maeveen O'Donagh, Memoirs of a Soldier",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/2/825496e5-19c7-4f50-8070-0265a58608dc.jpg?1783947941",
+        "rulings": [
+            {
+                "date": "2009-10-01",
+                "text": "If one targeted creature is illegal as Ashes to Ashes resolves, it still exiles the other one and deals 5 damage to you."
+            },
+            {
+                "date": "2009-10-01",
+                "text": "If both targeted creatures are illegal as Ashes to Ashes resolves, the spell is countered and doesn't deal 5 damage to you."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Ball Lightning
 {
     "name": "Ball Lightning",
@@ -599,6 +665,52 @@
     "colorIdentityOverride": [
         "BLUE",
         "BLACK"
+    ]
+}
+
+// Dust to Dust
+{
+    "name": "Dust to Dust",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Exile two target artifacts.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": "IterationSpace.Targets",
+            "body": {
+                "type": "MoveToZone",
+                "target": {
+                    "type": "ContextTarget",
+                    "index": 0
+                },
+                "destination": "Exile"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "count": 2,
+                "filter": {
+                    "baseFilter": "artifact"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "5",
+        "artist": "Drew Tucker",
+        "flavorText": "Tervish never noticed that the amulet had vanished. It had disappeared not only from his possession, but from his memory as well.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/d/ade075fd-73ee-4d12-a2da-48e5938043af.jpg?1783947948",
+        "rulings": [
+            {
+                "date": "2004-10-04",
+                "text": "If one target is removed or becomes illegal after declaration, the other target is still affected."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

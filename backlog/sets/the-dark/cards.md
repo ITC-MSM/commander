@@ -2,7 +2,7 @@
 
 **Set Size:** 119 cards
 **Release Date:** August 1, 1994
-**Implemented:** 49 / 119
+**Implemented:** 51 / 119
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 19    | 8    |
@@ -23,7 +23,7 @@
 - [ ] Blood of the Martyr
 - [ ] Brainwash
 - [ ] Cleansing
-- [ ] Dust to Dust
+- [x] Dust to Dust
 - [x] Exorcist
 - [ ] Fasting
 - [ ] Festival
@@ -61,7 +61,7 @@
 - [x] Water Wurm
 
 ### Black
-- [ ] Ashes to Ashes
+- [x] Ashes to Ashes
 - [ ] Banshee
 - [x] Bog Imp
 - [x] Bog Rats
