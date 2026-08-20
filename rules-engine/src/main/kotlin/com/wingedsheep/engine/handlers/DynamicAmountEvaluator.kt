@@ -767,6 +767,14 @@ class DynamicAmountEvaluator(
 
             is DynamicAmount.PermanentsSacrificedThisWay -> context.sacrificedPermanents.size
 
+            // "Their total power" over the same snapshots — last-known power as each permanent was
+            // sacrificed (Rule 608.2h), because they are all in the graveyard by the time a later
+            // sibling effect asks. A snapshot with no power at all (a sacrificed noncreature) adds
+            // nothing rather than being an error: "sacrifice any number of other creatures" is the
+            // only shape that reaches here today, but the amount is defined over permanents.
+            is DynamicAmount.TotalPowerSacrificedThisWay ->
+                context.sacrificedPermanents.sumOf { it.power ?: 0 }
+
             // "The greatest number of creatures you control that have a creature type in common"
             // (White Lotus Tile). For every creature type present among the player's creatures,
             // tally how many of those creatures have it, then take the max. A creature with several

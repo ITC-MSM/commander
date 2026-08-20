@@ -8952,6 +8952,108 @@
     ]
 }
 
+// Fugitive Codebreaker
+{
+    "name": "Fugitive Codebreaker",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Goblin Rogue",
+    "oracleText": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nHaste\nDisguise {5}{R}. This cost is reduced by {1} for each instant and sorcery card in your graveyard. (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nWhen this creature is turned face up, discard your hand, then draw three cards.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "PROWESS",
+        "HASTE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{5}{R}"
+                }
+            },
+            "costReduction": {
+                "type": "CardsInGraveyardMatchingFilter",
+                "filter": "instant|sorcery"
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TurnFaceUpEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "discardedHand"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discardedHand",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 3
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature is turned face up, discard your hand, then draw three cards."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "127",
+        "rarity": "RARE",
+        "artist": "Joseph Weston",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b682bf8a-06dc-4828-bc46-9e1427bf981f.jpg?1783912881",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If you have no cards in hand when Fugitive Codebreaker's last ability resolves, you won't discard any cards, but you'll still draw three cards."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to. Only a face-down permanent can be turned face up this way; a face-down spell cannot."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Because the permanent is on the battlefield both before and after it's turned face up, turning a permanent face up doesn't cause any enters-the-battlefield abilities to trigger."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a face-down creature loses its abilities, it can't be turned face up with a disguise ability because it will no longer have a disguise ability (or a disguise cost) once face up."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Furtive Courier
 {
     "name": "Furtive Courier",
@@ -12317,6 +12419,109 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Kylox, Visionary Inventor
+{
+    "name": "Kylox, Visionary Inventor",
+    "manaCost": "{5}{U}{R}",
+    "typeLine": "Legendary Creature — Lizard Artificer",
+    "oracleText": "Menace, ward {2}, haste\nWhenever Kylox attacks, sacrifice any number of other creatures, then exile the top X cards of your library, where X is their total power. You may cast any number of instant and/or sorcery spells from among the exiled cards without paying their mana costs.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "MENACE",
+        "HASTE",
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{2}"
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Sacrifice",
+                            "filter": "creature",
+                            "any": true,
+                            "excludeSource": true
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": "TotalPowerSacrificedThisWay"
+                            },
+                            "storeAs": "exiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "exiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "exiled",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "instant|sorcery"
+                            },
+                            "storeMatching": "castable"
+                        },
+                        {
+                            "type": "CastAnyNumberFromCollectionWithoutPayingCost",
+                            "from": "castable"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever Kylox attacks, sacrifice any number of other creatures, then exile the top X cards of your library, where X is their total power. You may cast any number of instant and/or sorcery spells from among the exiled cards without paying their mana costs."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "214",
+        "rarity": "RARE",
+        "artist": "Lie Setiawan",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/0/00faa272-91ad-407b-9175-8fa1d02585b8.jpg?1783912845",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Use the power of the sacrificed creatures as they last existed on the battlefield to determine the value of X."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "You choose which spells to cast (if any) as Kylox, Visionary Inventor's last ability resolves. If you choose to cast any spells, you do so as part of the resolution of that ability. You can't wait to cast them later in the turn. Timing restrictions based on the cards' types are ignored."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you cast a spell \"without paying its mana cost\", you can't choose to cast it for any alternative costs. You can, however, pay additional costs, such as kicker costs. If the card has any mandatory additional costs, those must be paid to cast the spell."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If the spell you cast has {X} in its mana cost, you must choose 0 as the value of X when casting it without paying its mana cost."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
     ]
 }
 

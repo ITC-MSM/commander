@@ -122,6 +122,16 @@ section; do not let SDK additions land without a corresponding doc update.
   Like `morphFaceUpEffect` it rides the *turn-up procedure* (CR 702.37b's megamorph treatment), so
   a card put face down by cloak or manifest and flipped for its mana cost instead of its disguise
   cost does not get it.
+- `disguiseCostReduction: CostReductionSource?` — "Disguise {5}{R}. This cost is reduced by {1} for
+  each instant and sorcery card in your graveyard" (Fugitive Codebreaker). A **self**-scoped generic
+  reduction on this card's own disguise cost, carried on `KeywordAbility.Disguise.costReduction` and
+  travelling with the card into the face-down permanent's turn-up procedure — as distinct from
+  `SpellCostTarget.MorphActivation`, which is the battlefield-scanned modifier that prices *every*
+  player's turn-up (Exiled Doomsayer). Takes the same `CostReductionSource` values a
+  `ModifySpellCost` static does, and obeys the same rules: increases first, then reductions
+  (CR 601.2f), generic mana only, so a disguise cost's colored pips are a floor. Re-read at every
+  price check, so a card that hits the graveyard after the permanent came down moves the price. The
+  enumerated turn-up action quotes the reduced cost, so the button matches what is charged.
 - `warp: String?` — Warp alt-cost; exiles at end of turn.
 - `dash: String?` — Dash alt-cost (CR 702.109); gains haste and returns to owner's hand at the
   beginning of the next end step.
@@ -1961,13 +1971,17 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   "Sacrifice a creature.": the **ability's controller** sacrifices and no player is named. Distinct
   from `Effects.Sacrifice`, which is the edict and names the player who must sacrifice — writing the
   bare form as `Sacrifice(filter, 1, EffectTarget.Controller)` says the same thing the long way round.
-- `Effects.SacrificeAnyNumber(filter)` (= `SacrificeEffect(filter, any = true)`) — the *resolving*
+- `Effects.SacrificeAnyNumber(filter, excludeSource = false)`
+  (= `SacrificeEffect(filter, any = true, excludeSource)`) — the *resolving*
   player chooses 0+ of their own permanents matching `filter` to sacrifice. Distinct from
   `ForceSacrifice` (edict on a target) and from `Costs.pay.Sacrifice` (a cost): this is a
   resolution effect. The sacrificed permanents are recorded in the effect context, so a later
   composite step can read the count via `DynamicAmounts.permanentsSacrificedThisWay()` — e.g.
   "Sacrifice any number of lands. Reveal the top X cards … where X is the number of lands
-  sacrificed this way" (Hew the Entwood; same shape as Scapeshift).
+  sacrificed this way" (Hew the Entwood; same shape as Scapeshift) — or their combined power via
+  `DynamicAmounts.totalPowerSacrificedThisWay()` (Kylox, Visionary Inventor). `excludeSource = true`
+  keeps the ability's own source off the list, which is how "sacrifice any number of **other**
+  creatures" is spelled on a trigger whose source is itself a creature.
 - "Each player chooses \<one permanent per category\> they control, then \<does something to\> the
   rest" is a **pipeline composition**, not an effect type — see `chooseOnePerCategory` / `exclude` in
   §5.5. Liliana, Dreadhorde General's −9 is
@@ -9274,6 +9288,14 @@ both spellings, and the ability its bare-noun line grants says "Regenerate this 
   composite — the sibling-rider wiring from the sacrifice-snapshot work). Used by "each opponent
   sacrifices a creature … create a Food token for each creature sacrificed this way" (Voracious Fell
   Beast). Evaluates to 0 when nothing was sacrificed.
+- `TotalPowerSacrificedThisWay` (facade `DynamicAmounts.totalPowerSacrificedThisWay()`) — the sibling
+  of `PermanentsSacrificedThisWay` over the same `sacrificedPermanents` snapshots, summing each
+  snapshot's power instead of counting the entries: "sacrifice any number of other creatures, then
+  exile the top X cards of your library, where X is **their total power**" (Kylox, Visionary
+  Inventor). The snapshots are last-known information taken as each permanent was sacrificed
+  (Rule 608.2h) — which is what the wording has to mean, since they are all in the graveyard by the
+  time a later sibling effect reads them. A sacrificed noncreature contributes 0 rather than
+  erroring. Evaluates to 0 when nothing was sacrificed.
 - `LargestSharedCreatureTypeCount(player = You)` — the size of the largest creature-type tribe among
   the creatures `player` controls, i.e. "the greatest number of creatures you control that have a
   creature type in common." For every creature type present, tally how many of the player's creatures
