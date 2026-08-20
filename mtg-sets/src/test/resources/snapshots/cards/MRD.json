@@ -3401,6 +3401,57 @@
     ]
 }
 
+// Fractured Loyalty
+{
+    "name": "Fractured Loyalty",
+    "manaCost": "{1}{R}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nWhenever enchanted creature becomes the target of a spell or ability, that spell or ability's controller gains control of that creature. (This effect lasts indefinitely.)",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "BecomesTargetEvent",
+                    "targetFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "IsAttachedToBySource"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GiveControlToTargetPlayer",
+                    "permanent": "TriggeringEntity",
+                    "newController": {
+                        "type": "PlayerRef",
+                        "player": "ControllerOfTargetingSource"
+                    }
+                },
+                "descriptionOverride": "Whenever enchanted creature becomes the target of a spell or ability, that spell or ability's controller gains control of that creature."
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "93",
+        "rarity": "UNCOMMON",
+        "artist": "Greg Staples",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5c7ce5d5-e51a-4dbc-82f2-b79c88769a7b.jpg?1783944541"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Frogmite
 {
     "name": "Frogmite",
@@ -4402,6 +4453,131 @@
         "imageUri": "https://cards.scryfall.io/normal/front/c/4/c4ab6c59-cd0f-4c29-8e26-6882dca61fb7.jpg?1783944518"
     },
     "colorIdentityOverride": []
+}
+
+// Grim Reminder
+{
+    "name": "Grim Reminder",
+    "manaCost": "{2}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Search your library for a nonland card and reveal it. Each opponent who cast a spell this turn with the same name as that card loses 6 life. Then shuffle.\n{B}{B}: Return this card from your graveyard to your hand. Activate only during your upkeep.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Library",
+                        "filter": "nonland"
+                    },
+                    "storeAs": "gathered0"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "gathered0",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "selected1",
+                    "prompt": "Search your library for a nonland card"
+                },
+                {
+                    "type": "RevealCollection",
+                    "from": "selected1",
+                    "revealToSelf": false
+                },
+                {
+                    "type": "StoreCardName",
+                    "from": "selected1",
+                    "storeAs": "grimName"
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "EachOpponent"
+                    },
+                    "body": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.WhenCondition",
+                            "condition": {
+                                "type": "PlayerCastSpellsThisTurn",
+                                "filter": {
+                                    "cardPredicates": [
+                                        {
+                                            "type": "NameEqualsChosen",
+                                            "variableName": "grimName"
+                                        }
+                                    ]
+                                },
+                                "atLeast": 1
+                            }
+                        },
+                        "then": {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 6
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "You"
+                            }
+                        }
+                    }
+                },
+                "ShuffleLibrary",
+                "EmitLibrarySearchedEvent"
+            ]
+        },
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{B}{B}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand"
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationAll",
+                        "restrictions": [
+                            "OnlyDuringYourTurn",
+                            {
+                                "type": "DuringStep",
+                                "step": "UPKEEP"
+                            }
+                        ]
+                    }
+                ],
+                "activateFromZone": "Graveyard",
+                "descriptionOverride": "Return this card from your graveyard to your hand. Activate only during your upkeep."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "rarity": "RARE",
+        "artist": "Wayne England",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/35baa726-8c2f-4a0b-93d1-d7ecfae69fe4.jpg?1783944547"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
 }
 
 // Groffskithur
@@ -6173,6 +6349,46 @@
     ]
 }
 
+// Loxodon Peacekeeper
+{
+    "name": "Loxodon Peacekeeper",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Elephant Soldier",
+    "oracleText": "At the beginning of your upkeep, the player with the lowest life total gains control of this creature. If two or more players are tied for lowest life total, you choose one of them, and that player gains control of this creature.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GainControlByRank",
+                    "metric": "LifeTotal",
+                    "direction": "LEAST",
+                    "tieBreak": "CONTROLLER_CHOOSES"
+                },
+                "descriptionOverride": "At the beginning of your upkeep, the player with the lowest life total gains control of this creature. If two or more players are tied for lowest life total, you choose one of them, and that player gains control of this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "13",
+        "rarity": "RARE",
+        "artist": "Michael Sutfin",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9c9e7029-bea3-4a33-bd05-774e802616d4.jpg?1783944561"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Loxodon Punisher
 {
     "name": "Loxodon Punisher",
@@ -7010,6 +7226,71 @@
                 "text": "Multiple player-controlling effects that affect the same player overwrite each other. The last one to be created is the one that works."
             }
         ]
+    },
+    "colorIdentityOverride": []
+}
+
+// Mindstorm Crown
+{
+    "name": "Mindstorm Crown",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "At the beginning of your upkeep, draw a card if you had no cards in hand at the beginning of this turn. If you had a card in hand, this artifact deals 1 damage to you.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "TurnTracking",
+                                "player": "You",
+                                "tracker": "CARDS_IN_HAND_AT_TURN_START"
+                            },
+                            "operator": "EQ",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 0
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "otherwise": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": {
+                            "type": "PlayerRef",
+                            "player": "You"
+                        }
+                    }
+                },
+                "descriptionOverride": "At the beginning of your upkeep, draw a card if you had no cards in hand at the beginning of this turn. If you had a card in hand, this artifact deals 1 damage to you."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "207",
+        "rarity": "UNCOMMON",
+        "artist": "Ben Thompson",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/4/347c1442-036b-43e7-9f86-b81a54d6bc41.jpg?1783944513"
     },
     "colorIdentityOverride": []
 }

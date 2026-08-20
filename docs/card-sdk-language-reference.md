@@ -1842,7 +1842,22 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   the condition fails — so a pump that wears off, a re-tap, or a re-acquired source never
   re-grabs the creature.
 - `ExchangeControlEffect(target1, target2)` — swap control of two permanents.
-- `GainControlByMostEffect(metric, target?)` — the player with strictly the most of a `PlayerRankMetric` takes it (tie = no change). Metrics: `PlayerRankMetric.LifeTotal` (Ghazbán Ogre), `PlayerRankMetric.CreaturesOfSubtype(subtype)` (Thoughtbound Primoc). Facades: `Effects.GainControlByMostLife()`, `Effects.GainControlByMostOfSubtype(subtype)`.
+- `GainControlByRankEffect(metric, target?, direction?, tieBreak?)` — rank the players still in the
+  game by a `PlayerRankMetric` and hand the target to whoever sits at one end. Three independent
+  axes, so a new card in this family usually needs no new effect: **what** is ranked (`metric` —
+  `PlayerRankMetric.LifeTotal`, `PlayerRankMetric.CreaturesOfSubtype(subtype)`), **which end** wins
+  (`direction` — `PlayerRankDirection.MOST` / `.LEAST`), and **what a tie means** (`tieBreak` —
+  `RankTieBreak.NONE`, nothing happens, the "more than each other player" intervening-if wording;
+  or `RankTieBreak.CONTROLLER_CHOOSES`, the ability's controller picks one of the tied players).
+  Ghazbán Ogre = `LifeTotal` + `MOST` + `NONE`; Thoughtbound Primoc =
+  `CreaturesOfSubtype(Wizard)` + `MOST` + `NONE`; Loxodon Peacekeeper = `LifeTotal` + `LEAST` +
+  `CONTROLLER_CHOOSES`. Facades: `Effects.GainControlByMostLife()`,
+  `Effects.GainControlByMostOfSubtype(subtype)`, `Effects.GainControlByLowestLife(target, tieBreak)`.
+  The tie-break prompt is not bespoke plumbing — the executor lowers it into a `ChooseActionEffect`
+  with one option per tied player, reusing the ordinary choose-an-option decision. Ranking reads
+  `activePlayers`, so a player who has lost the game is not ranked (a 0-life loser would otherwise
+  win every `LEAST`), and `AbilityFlag.CANT_GAIN_CONTROL` (Guardian Beast) is checked *before* any
+  prompt is raised.
 - `GiftGivenEffect(target)` — "gift" temporary control.
 - `CantAttackEffect(target, unless?)` — target can't attack.
 - `CantBlockEffect(target, unless?)` — target can't block.
@@ -3170,6 +3185,18 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
   resolves to nothing — never "all players" — when the pile is empty. Unidentified Hovership ("the
   exiled card's owner manifests dread", CR 701.62) = `ForEachPlayer(Player.OwnersOfLinkedExile,
   Patterns.Library.manifestDread().effects)`.
+- `Player.ControllerOfTargetingSource` — the controller of the spell or ability that **targeted**
+  the source: the other end of a `Triggers.BecomesTarget*` trigger, read off
+  `TriggerContext.targetingSourceEntityId` (the same field ward uses). Nothing else reaches it — a
+  becomes-target trigger binds the *targeted object* as its triggering entity, so
+  `Player.TriggeringPlayer` is null unless the thing targeted was itself a player, and
+  `EffectTarget.ControllerOfTriggeringEntity` names the *victim's* controller. Resolves through the
+  stack object's own controller field (a spell's caster, an activated/triggered ability's
+  controller), falling back to last-known information and finally the owner if that object was
+  countered in response (CR 608.2h). Fractured Loyalty ("whenever enchanted creature becomes the
+  target of a spell or ability, that spell or ability's controller gains control of that creature")
+  = `GiveControlToTargetPlayerEffect(permanent = EffectTarget.TriggeringEntity, newController =
+  EffectTarget.PlayerRef(Player.ControllerOfTargetingSource))`.
 - `Player.ContextPlayer(i)` / `Player.Candidate` / `Player.Any` — positional target, CR 115
   candidate during target-restriction evaluation, and "a player" matching.
 - `EffectTarget.ContextProperty(key)` — value plumbed into `EffectContext` (damage amount, life gained, blight
@@ -8747,6 +8774,14 @@ default to "you" so card authors don't need to pass it explicitly.
   this turn from anywhere **other than** your hand" (Spider-Man 2099). The origin zone is captured on each
   `CastSpellRecord` (`castFromZone`) at cast time, so flashback/forage (GRAVEYARD), plot/foretell (EXILE),
   and commander (COMMAND) casts are all distinguished from hand casts.
+  `filter` is matched against the `CastSpellRecord`'s snapshot of the spell's characteristics, so
+  only card-level predicates mean anything there (state and controller predicates are skipped, and a
+  face-down spell matches nothing but `GameObjectFilter.Any`). **`namedFromVariable(key)` works**:
+  the record matcher receives the resolving pipeline's chosen values, so a name captured earlier in
+  the same resolution can be matched against cast history — Grim Reminder's "each opponent who cast
+  a spell this turn with the same name as that card", where `storeCardName` supplies the key. In a
+  static/projection evaluation there is no pipeline and so no captured name, and the predicate
+  matches nothing.
 - `YouPlayedLandThisTurn(fromZone?, fromZoneOtherThan?)` — "as long as you've **played a land** this turn"
   (CR 305.1 special land-play action), the land mirror of `YouCastSpellsThisTurn`. No qualifier = any land;
   `fromZone` requires that specific origin; `fromZoneOtherThan` excludes it (mutually exclusive). Backed by
@@ -9905,6 +9940,16 @@ this turn").
   battlefield-entry timestamp, which is what makes a blinked permanent a second source (CR 400.7)
   while a permanent that deals damage repeatedly stays one. Backs
   `Conditions.SourcesYouControlledDealtDamageThisTurn(atLeast)` — Case of the Burning Masks.
+- `CARDS_IN_HAND_AT_TURN_START` — how many cards the player had in hand **at the beginning of the
+  current turn**. The one entry here that is a *snapshot* rather than an accumulator: it is written
+  for every player in `BeginningPhaseManager.performUntapStep` (CR 502, the turn's first turn-based
+  action) and overwritten there each turn, backed by `CardsInHandAtTurnStartComponent`. The untap
+  step rather than `TurnManager.startTurn` because no player gets priority during untap (CR 502.3),
+  so the value is still literally "at the beginning of this turn" when an upkeep ability reads it —
+  and because untap also runs on the game's first turn, so the snapshot is never missing. Wrapped by
+  `Conditions.YouHadNoCardsInHandAtTurnStart`, which backs **Mindstorm Crown**. Do not reach for
+  `Conditions.EmptyHand` for these wordings: that reads the hand *now*, and resolves differently on
+  any turn where something touched the hand before the upkeep.
 - `RED_NONCOMBAT_DAMAGE_DEALT` — total noncombat damage red sources a player controlled dealt this turn
   (controller-scoped). Backed by the per-player `RedNoncombatDamageDealtThisTurnComponent`, incremented in
   `DamageUtils.dealDamageToTarget` on the source's controller whenever a red source deals positive noncombat
