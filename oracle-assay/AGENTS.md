@@ -636,6 +636,17 @@ unreadable sentence dies, so 265 cards "blocked" and 189 "sole-blocked" were mos
 payload the grammar cannot read either. When the family sits at the *front* of its line, read the
 sole-blocked number as an upper bound with no lower bound in it, and let the probe say the rest.
 
+**A family that dies at offset 0 may be an artifact of your own templates, not of the corpus.** A
+`TemplatePhrase` fails at the start of the *literal* it could not match, so a template that swallows a
+whole clause into one literal — `"when ~ enters, {effect}"`, where the prefix and its comma are one
+run — reports every near-miss at offset 0. `TAIL` then keys all of them on the opening words, and the
+result is a family named after a construct the grammar has read since Phase 1. The trigger join found
+the top row of the whole table that way: 177 cards and 88 sole-blocked on "When ~ enters …", which
+dissolved into a hundred-odd per-payload rows of 15 the moment the prefix became a slot. So when a
+ranked family names something you are sure is implemented, **check the template before believing the
+number** — and note that the fix is the same edit reuse wants anyway: a clause that is a slot is a
+clause another sentence can borrow. See [the trigger join](README.md#the-trigger-join).
+
 **Three keyings, three biases, and knowing which to read.** `DeclineKey` holds all of them and the
 gate computes all three in the one sweep, so the CLI and the explorer cannot disagree about a family.
 Read the tail by default. Read `SHAPE` when the family's sentence *is* the whole line. Read `TOKEN`
