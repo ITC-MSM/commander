@@ -589,19 +589,19 @@ class PredicateEvaluator {
                 cmc >= predicate.min
             }
             is CardPredicate.ManaValueAtMostEntity -> {
-                val refEntityId = resolveEntityReference(predicate.reference, context) ?: return false
+                val refEntityId = resolveEntityReference(state, predicate.reference, context) ?: return false
                 val refManaValue = state.getEntity(refEntityId)?.get<CardComponent>()?.manaValue ?: return false
                 val cmc = if (projectedValues?.isFaceDown == true) 0 else card.manaValue
                 cmc <= refManaValue
             }
             is CardPredicate.ManaValueAtMostEntityManaSpent -> {
-                val refEntityId = resolveEntityReference(predicate.reference, context) ?: return false
+                val refEntityId = resolveEntityReference(state, predicate.reference, context) ?: return false
                 val manaSpent = ManaSpentReader.totalSpent(state, refEntityId)
                 val cmc = if (projectedValues?.isFaceDown == true) 0 else card.manaValue
                 cmc <= manaSpent
             }
             is CardPredicate.ManaValueAtMostColorsSpent -> {
-                val refEntityId = resolveEntityReference(predicate.reference, context) ?: return false
+                val refEntityId = resolveEntityReference(state, predicate.reference, context) ?: return false
                 val colorsSpent = ManaSpentReader.distinctColorsSpent(state, refEntityId)
                 val cmc = if (projectedValues?.isFaceDown == true) 0 else card.manaValue
                 cmc <= colorsSpent
@@ -727,7 +727,7 @@ class PredicateEvaluator {
             }
 
             is CardPredicate.PowerGreaterThanEntity -> {
-                val refEntityId = resolveEntityReference(predicate.reference, context) ?: return false
+                val refEntityId = resolveEntityReference(state, predicate.reference, context) ?: return false
                 val refContainer = state.getEntity(refEntityId) ?: return false
                 // Prefer projected power for the reference (layer effects, +1/+1 counters, etc.);
                 // fall back to its base printed power when projection has no entry (e.g., off-battlefield).
@@ -739,7 +739,7 @@ class PredicateEvaluator {
             }
 
             is CardPredicate.PowerAtMostEntity -> {
-                val refEntityId = resolveEntityReference(predicate.reference, context) ?: return false
+                val refEntityId = resolveEntityReference(state, predicate.reference, context) ?: return false
                 val refContainer = state.getEntity(refEntityId) ?: return false
                 val refPower = state.projectedState.getPower(refEntityId)
                     ?: refContainer.get<CardComponent>()?.baseStats?.basePower
@@ -749,7 +749,7 @@ class PredicateEvaluator {
             }
 
             is CardPredicate.PowerLessThanEntity -> {
-                val refEntityId = resolveEntityReference(predicate.reference, context) ?: return false
+                val refEntityId = resolveEntityReference(state, predicate.reference, context) ?: return false
                 val refContainer = state.getEntity(refEntityId) ?: return false
                 val refPower = state.projectedState.getPower(refEntityId)
                     ?: refContainer.get<CardComponent>()?.baseStats?.basePower
@@ -822,7 +822,7 @@ class PredicateEvaluator {
             }
 
             is CardPredicate.SharesCreatureTypeWith -> {
-                val referenceId = resolveEntityReference(predicate.entity, context) ?: return false
+                val referenceId = resolveEntityReference(state, predicate.entity, context) ?: return false
                 val referenceSubtypes = projected.getSubtypes(referenceId).ifEmpty {
                     state.getEntity(referenceId)?.get<CardComponent>()?.typeLine?.subtypes?.map { it.value }?.toSet()
                         ?: emptySet()
@@ -846,13 +846,23 @@ class PredicateEvaluator {
             }
 
             is CardPredicate.SharesColorWith -> {
-                val referenceId = resolveEntityReference(predicate.entity, context) ?: return false
+                val referenceId = resolveEntityReference(state, predicate.entity, context) ?: return false
                 val referenceColors = projected.getColors(referenceId).ifEmpty {
                     state.getEntity(referenceId)?.get<CardComponent>()?.colors?.map { it.name }?.toSet()
                         ?: emptySet()
                 }
                 if (referenceColors.isEmpty()) return false
                 colors.any { it in referenceColors }
+            }
+
+            is CardPredicate.SharesManaValueWith -> {
+                val referenceId = resolveEntityReference(state, predicate.entity, context) ?: return false
+                // Mana value is not a projected characteristic — no layer changes it — so both sides
+                // read their card component directly. That is also what lets the reference be a card
+                // outside the battlefield (an Imprint pile's exiled card).
+                val referenceManaValue = state.getEntity(referenceId)?.get<CardComponent>()?.manaValue
+                    ?: return false
+                card.manaValue == referenceManaValue
             }
 
             is CardPredicate.SharesColorWithPermanentYouControl -> {
@@ -1155,9 +1165,19 @@ class PredicateEvaluator {
         return DynamicAmountEvaluator().evaluate(state, amount, effectContext)
     }
 
-    private fun resolveEntityReference(ref: EntityReference, context: PredicateContext?): EntityId? {
+    private fun resolveEntityReference(
+        state: GameState,
+        ref: EntityReference,
+        context: PredicateContext?
+    ): EntityId? {
         return when (ref) {
             is EntityReference.Source -> context?.sourceId
+            // The card exiled with the source (Imprint). Resolvable here because the pile hangs off
+            // the source entity, which every predicate context that names a source already knows —
+            // no pipeline threading needed, unlike the cost-storage references below.
+            is EntityReference.LinkedExiledCard ->
+                com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExileLookup
+                    .exiledCard(state, context?.sourceId, ref.index)
             is EntityReference.Triggering -> context?.triggeringEntityId
             is EntityReference.Target -> null // Not available in predicate context
             is EntityReference.Sacrificed -> null
@@ -1846,6 +1866,7 @@ class PredicateEvaluator {
             CardPredicate.SharesColorWithRecipient,
             is CardPredicate.SharesCreatureTypeWith,
             is CardPredicate.SharesColorWith,
+            is CardPredicate.SharesManaValueWith,
             is CardPredicate.SharesColorWithPermanentYouControl,
             is CardPredicate.SharesNameWithPermanentYouControl,
             is CardPredicate.DoesNotShareCreatureTypeWithPermanentYouControl,

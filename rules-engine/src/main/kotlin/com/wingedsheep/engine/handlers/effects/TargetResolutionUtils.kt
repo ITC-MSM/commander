@@ -409,6 +409,9 @@ object TargetResolutionUtils {
                 context.pipeline.storedCollections[ref.collectionName]?.getOrNull(ref.index)
             is EntityReference.AmassedArmy ->
                 context.pipeline.storedCollections[EntityReference.AmassedArmy.STORAGE_KEY]?.firstOrNull()
+            is EntityReference.LinkedExiledCard ->
+                com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExileLookup
+                    .exiledCard(state, context.sourceId, ref.index)
         }
 
     /**

@@ -951,6 +951,27 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
     }
 
     /**
+     * Matches objects whose mana value **equals** the referenced entity's mana value — "that shares
+     * a mana value with the exiled card" (Thought Prison). The mana-value sibling of
+     * [SharesColorWith] over the same [EntityReference] vocabulary, so the two compose into the
+     * "shares a color or mana value with X" wording without either half knowing about the other.
+     *
+     * Both sides are read from base card data (mana value is not a projected characteristic — no
+     * layer changes it), so the reference may be a card in any zone. A reference that resolves to
+     * nothing matches nothing. Note that mana value 0 is a real value that matches: a colorless
+     * 0-cost artifact spell *does* share a mana value with an exiled land, exactly as printed.
+     */
+    @SerialName("SharesManaValueWith")
+    @Serializable
+    data class SharesManaValueWith(val entity: EntityReference) : CardPredicate {
+        override val description: String = when (entity) {
+            is EntityReference.Source -> "that shares a mana value with this permanent"
+            is EntityReference.Triggering -> "that shares a mana value with it"
+            else -> "that shares a mana value with ${entity.description}"
+        }
+    }
+
+    /**
      * Matches objects that share a color with the recipient of the in-flight damage,
      * and are not that recipient. Only meaningful inside a damage replacement's source
      * filter, where the engine supplies the recipient. Combine with a type predicate to

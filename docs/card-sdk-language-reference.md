@@ -3614,6 +3614,13 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   Colorless entities share no color (never match). Used by Spreading Plague ("destroy all other creatures
   that share a color with it") — pair with `Effects.DestroyAll(filter, excludeTriggering = true)` so the
   triggering creature itself is spared.
+- `.sharingManaValueWith(entity)` — `CardPredicate.SharesManaValueWith(entity)`: mana value **equals**
+  the referenced entity's. The mana-value sibling of `.sharingColorWith(entity)` over the same
+  `EntityReference` vocabulary, so "shares a color **or** mana value with X" is the two of them OR-ed at
+  the filter level rather than one fused predicate — Thought Prison, with
+  `EntityReference.LinkedExiledCard()`. Both sides read base card data (no layer changes a mana value),
+  which is what lets the reference be a card outside the battlefield. Mana value 0 is a real value that
+  matches; a reference that resolves to nothing matches nothing.
 - `.sharingColorWithPermanentYouControl(filter)` — `CardPredicate.SharesColorWithPermanentYouControl`:
   shares ≥1 (projected) color with at least one permanent the evaluating player controls matching
   `filter`. Used by Ringsight ("search your library for a card that shares a color with a legendary
@@ -9579,6 +9586,33 @@ sibling effect that reads `DynamicAmount.EntityProperty(EntityReference.AmassedA
   "amass Goblins 1, then attach this Equipment to the amassed Army". The Army is not a target
   (nothing is chosen on the stack); this just addresses what Amass already picked. `CardLinter`
   knows `Amass` writes that slot, so the read does not trip the unwired-collection rule.
+
+### The imprinted card (`EntityReference.LinkedExiledCard`)
+
+- `EntityReference.LinkedExiledCard(index = 0)` — a card **exiled with the ability's source**: its
+  `LinkedExileComponent` pile, which the Mirrodin *Imprint* keyword (CR 702.15) fills with exactly one
+  card, and which any `linkToSource = true` exile writes (`Effects.ExileLinkedToSource`,
+  `Patterns.Hand.revealHandAndExileChosen(linkToSource = true)`, `MoveToZone`/`MoveCollection`'s flag).
+  Resolution walks the pile in exile order and **skips ids that have since left exile**, so index `0`
+  is the oldest card still exiled and a pile whose card has moved on resolves to null.
+- It is the read-side companion to that flag, and it exists so an imprint payoff needs no
+  characteristic-specific vocabulary of its own: every `…With(entity)` predicate and every
+  `DynamicAmount.EntityProperty` already works against it. Thought Prison's "shares a color or mana
+  value with the exiled card" is
+  `GameObjectFilter.Any.sharingColorWith(EntityReference.LinkedExiledCard()) or GameObjectFilter.Any.sharingManaValueWith(EntityReference.LinkedExiledCard())`;
+  Mourner's Shield's "a source of your choice that shares a color with the exiled card" is the same
+  colour half used as a `PreventionSourceFilter.ChosenSourceMatching` filter.
+- Reachable wherever the evaluating context knows the source permanent — predicate evaluation
+  (including a cast trigger's `spellFilter`, where the trigger's own source is supplied), dynamic
+  amounts, and target resolution. A **null** resolution is the fail-closed reading of a declined
+  imprint: a `sharing…With` predicate matches nothing and an `EntityProperty` reads 0, so a permanent
+  that exiled no card grants and punishes nothing. Classified `LkiPolicy.LIVE_ONLY` — an exiled card
+  is never on the battlefield, so its characteristics are the printed ones and there is no snapshot
+  to fall back to.
+- For *counting* a pile rather than reading one card's characteristics, prefer the existing
+  `ContextPropertyKey.LINKED_EXILE_CARD_COUNT` / `LINKED_EXILE_DISTINCT_CARD_TYPE_COUNT`; for the
+  pile's colours as a mana choice, `ManaColorSet.AmongLinkedExiledCards`; for its abilities,
+  `HasAllActivatedAbilitiesOfCards(DonorCards.LINKED_EXILE)`.
 
 #### Pipeline values inside target filters (`powerAtMostEntity`/`powerLessThanEntity` + `AmassedArmy`)
 
