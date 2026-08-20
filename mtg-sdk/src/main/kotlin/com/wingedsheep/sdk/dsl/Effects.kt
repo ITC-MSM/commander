@@ -4581,6 +4581,24 @@ object Effects {
         )
 
     /**
+     * Prevent **all** damage that a source of your choice matching [filter] would deal this turn —
+     * to anything, with no recipient clause (Mourner's Shield: "Prevent all damage that would be
+     * dealt this turn by a source of your choice that shares a color with the exiled card").
+     *
+     * The recipient-free sibling of [PreventAllDamageFromChosenSource], which shields one recipient
+     * against the chosen source. `PreventionDirection.FromTarget` is what distinguishes them: it
+     * already means "damage dealt *by*" for a targeted source, and reads the same way for a chosen
+     * one. [filter] is evaluated relative to the ability's source, so it may reference the source or
+     * its linked exile.
+     */
+    fun PreventAllDamageFromChosenSourceMatching(filter: GameObjectFilter): Effect =
+        PreventDamageEffect(
+            amount = null,
+            direction = PreventionDirection.FromTarget,
+            sourceFilter = PreventionSourceFilter.ChosenSourceMatching(filter)
+        )
+
+    /**
      * The next time an artifact source of your choice would deal damage to [target] this turn,
      * prevent that damage (Circle of Protection: Artifacts). Single-instance shield: only artifact
      * sources are eligible for the choice, and the whole next instance from the chosen source is
