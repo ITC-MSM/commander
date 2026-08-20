@@ -245,6 +245,30 @@ sealed interface Player {
         override val description: String = "the exiled card's owner"
     }
 
+    /**
+     * The controller of the spell or ability that **targeted** the source — the other end of a
+     * "becomes the target of a spell or ability" trigger.
+     *
+     * [TriggeringPlayer] cannot name it: a becomes-target trigger binds the *targeted object* as
+     * the triggering entity, and its trigger context deliberately leaves the triggering player
+     * null unless the thing targeted was itself a player. What the context does carry is the
+     * targeting stack object, and this reference reads that object's controller — the caster of a
+     * spell, or the controller of an activated/triggered ability.
+     *
+     * Used by Fractured Loyalty: *"Whenever enchanted creature becomes the target of a spell or
+     * ability, that spell or ability's controller gains control of that creature."*
+     *
+     * The trigger goes on the stack above the spell that caused it, so ordinarily the targeting
+     * object is still on the stack when this resolves. If it left in the meantime (it was
+     * countered in response), resolution falls back to that object's last-known controller and
+     * finally its owner, per CR 608.2h.
+     */
+    @SerialName("ControllerOfTargetingSource")
+    @Serializable
+    data object ControllerOfTargetingSource : Player {
+        override val description: String = "that spell or ability's controller"
+    }
+
     // =============================================================================
     // Possessive Forms (for descriptions)
     // =============================================================================
@@ -272,5 +296,6 @@ sealed interface Player {
             // Names the same player [You] does; the difference is only where it reads from.
             ControllerOfSource -> "your"
             OwnersOfLinkedExile -> "the exiled card's owner's"
+            ControllerOfTargetingSource -> "that spell or ability's controller's"
         }
 }

@@ -916,6 +916,24 @@ data class CardsDrawnThisTurnComponent(
 ) : Component
 
 /**
+ * How many cards this player had in hand **at the beginning of the current turn** — a snapshot,
+ * not a running count. Written for every player in `BeginningPhaseManager.performUntapStep`, the
+ * first turn-based action of every turn (CR 502), and overwritten there each turn.
+ *
+ * The untap step is the honest place for it: no player receives priority during untap (CR 502.3),
+ * so this value is still exactly "at the beginning of this turn" when an upkeep ability reads it,
+ * and unlike `TurnManager.startTurn` the untap step also runs on the game's very first turn (the
+ * mulligan phase advances into it), so there is no turn where the snapshot is missing.
+ *
+ * Backs [com.wingedsheep.sdk.scripting.values.TurnTracker.CARDS_IN_HAND_AT_TURN_START] and, through
+ * it, Mindstorm Crown's "if you had no cards in hand at the beginning of this turn".
+ */
+@Serializable
+data class CardsInHandAtTurnStartComponent(
+    val count: Int = 0
+) : Component
+
+/**
  * Number of equip abilities this player has activated during the current turn. Reset to 0 at
  * turn start by TurnManager. Read by Forge Anew's [com.wingedsheep.sdk.scripting.FreeFirstEquipEachTurn]
  * to know whether the next equip is the "first equip this turn" (count == 0) that may be paid for
