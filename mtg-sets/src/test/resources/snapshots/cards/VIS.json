@@ -669,6 +669,61 @@
     "colorIdentityOverride": []
 }
 
+// Quirion Ranger
+{
+    "name": "Quirion Ranger",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Elf Ranger",
+    "oracleText": "Return a Forest you control to its owner's hand: Untap target creature. Activate only once each turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomReturnToHand",
+                        "filter": "land Forest"
+                    }
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature"
+                    },
+                    "tap": false
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "creature"
+                    }
+                ],
+                "restrictions": [
+                    "OncePerTurn"
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "117",
+        "artist": "Tom Kyffin",
+        "flavorText": "\"Respect the earth, for it will one day be your shield and another day your blanket.\"\n—Liefellen, Quirion exarch",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/56efe72c-6d7f-44f6-ac74-01af9305c4b6.jpg?1783946981"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Simoon
 {
     "name": "Simoon",
