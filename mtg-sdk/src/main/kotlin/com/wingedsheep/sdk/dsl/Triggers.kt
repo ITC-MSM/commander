@@ -524,6 +524,22 @@ object Triggers {
     )
 
     /**
+     * Whenever a creature dealt damage by the *attached* permanent this turn dies — the Soul Collector
+     * shape read one object further out, for an Equipment or Aura whose text says "equipped creature" /
+     * "enchanted creature" (Scythe of the Wretched). Binding ATTACHED, which is the only difference from
+     * [CreatureDealtDamageByThisDies]: the damage tracker is read off the attachment target instead of
+     * off the permanent bearing the trigger.
+     *
+     * The attachment is resolved when the creature *dies*, not when the damage was dealt — so the
+     * Equipment can move between the two moments and still fire (Scythe of the Wretched's ruling), and
+     * an unattached Equipment never fires.
+     */
+    val CreatureDealtDamageByAttachedDies: TriggerSpec = TriggerSpec(
+        event = CreatureDealtDamageBySourceDiesEvent(),
+        binding = TriggerBinding.ATTACHED
+    )
+
+    /**
      * Whenever a creature dealt damage this turn by a source matching [sourceFilter] dies
      * (Shelob, Child of Ungoliant: "by a Spider you controlled"). Binding ANY — any creature on the
      * battlefield can be the dying creature; the damaging source is matched against [sourceFilter]

@@ -1049,10 +1049,14 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `PutIntoLibraryNthFromTop(target, positionFromTop)` — place N from the top.
 - `PutOntoBattlefield(target, tapped?)` — put target on the battlefield.
 - `PutOntoBattlefieldUnderYourControl(target)` — under controller's control.
-- `PutOntoBattlefieldFromGraveyard(target)` — the *guarded* return: `MoveToZone(…, fromZone = GRAVEYARD)`,
-  so the move is skipped if the card has left the graveyard by resolution. Use this for
-  "Return target creature card from your graveyard to the battlefield" (Zombify, Reya Dawnbringer);
-  plain `PutOntoBattlefield` is for a card whose zone the effect already fixed.
+- `PutOntoBattlefieldFromGraveyard(target, underYourControl = false)` — the *guarded* return:
+  `MoveToZone(…, fromZone = GRAVEYARD)`, so the move is skipped if the card has left the graveyard by
+  resolution. Use this for "Return target creature card from your graveyard to the battlefield"
+  (Zombify, Reya Dawnbringer); plain `PutOntoBattlefield` is for a card whose zone the effect already
+  fixed. `underYourControl = true` adds the `controllerOverride` that
+  `PutOntoBattlefieldUnderYourControl` sets, for "return that card to the battlefield **under your
+  control**" where the guard is wanted too (Scythe of the Wretched) — the two axes are independent, so
+  reach for this rather than a raw `MoveToZoneEffect`.
 - `PutOntoBattlefieldFaceDown(count, target?)` — enter face-down (2/2 morph shape).
 - `RevealFaceDownPermanent(target?)` — reveal a face-down permanent (make its hidden card public,
   CR 708.2). Informational only — does **not** turn it face up. Pair with
@@ -4705,6 +4709,7 @@ Named sugar for the common cases; reach for the factories for any other combinat
 - `YouAreDealtDamage` — "whenever **you're** dealt damage" (ANY binding, `DealsDamageEvent(recipient = You)` with no source filter): the *player*-recipient sibling of `TakesDamage`, firing for **every** source — a creature in combat, a burn spell, an artifact. Fires once per damage instance; read the amount with `DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT)` for "put that many counters" payoffs (Sun Droplet), and the triggering entity is the damage source.
 - `damageDealtToYou(sourceFilter?, damageType?)` — the source-restricted factory behind `YouAreDealtDamage`: "whenever [a source matching the filter] deals damage to you". `GameObjectFilter.Creature` for Aurification's "whenever a creature deals damage to you"; `GameObjectFilter.Any.opponentControls()` for Farsight Mask's "a source an opponent controls". "You" is the controller of the permanent bearing the trigger, and the filter's controller-relative predicates resolve against that same player. **Always use one of these two for a player-recipient damage trigger** — `RecipientFilter.You` is unmatchable on the general observer path (`TriggerMatcher.matchesDealsDamageTrigger` returns false for it) and reaches its ability only through the dedicated damage-to-you index.
 - `CreatureDealtDamageByThisDies` — Etali / Sengir / Soul Collector shape (SELF binding): "whenever a creature dealt damage by *this* permanent this turn dies". Uses `CreatureDealtDamageBySourceDiesEvent(sourceFilter = null)`.
+- `CreatureDealtDamageByAttachedDies` — the same event and the same tracker read one object further out (ATTACHED binding): "whenever a creature dealt damage by **equipped** creature this turn dies" (Scythe of the Wretched). The only difference from `CreatureDealtDamageByThisDies` is where the damage tracker is read from — the attachment target rather than the permanent bearing the trigger. The attachment is resolved when the creature *dies*, not when the damage was dealt, so an Equipment that moved between the two moments still fires (its own ruling) and an unattached Equipment never fires. Use this for any Equipment or Aura whose text says "equipped creature" / "enchanted creature" in a dealt-damage-dies trigger; `creatureDealtDamageBySourceDies(filter)` is for the board-wide observer wording instead.
 - `creatureDealtDamageBySourceDies(sourceFilter)` — observer variant (ANY binding): "whenever another creature dealt damage this turn by [a source matching the filter] dies" (Shelob, Child of Ungoliant: `GameObjectFilter.Creature.youControl().withSubtype("Spider")`). The damaging source is matched against the filter using last-known info from when it dealt the damage (a `DamagedBySourcesThisTurnComponent` snapshot of the source's controller + subtypes), so a source that died in the same combat still qualifies (CR 608.2h). Only the filter's controller predicate, required subtype, and creature requirement are evaluated against the snapshot.
 
 **Factories** (axes: `damageType` × `recipient` × `sourceFilter` × `binding` for outgoing; `source` × `binding` for incoming):

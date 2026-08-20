@@ -1440,9 +1440,23 @@ object Effects {
      * card has left the graveyard by resolution. 92 hand-written cards spell that guard by hand and
      * 3 omit it; naming it here is what stops the next card having to choose. Argentum Assay builds
      * this for the sentence, so a card that omits the guard shows up in the differential.
+     *
+     * [underYourControl] adds the "*under your control*" half — the card enters under the effect's
+     * controller rather than under its owner (Scythe of the Wretched: "return that card to the
+     * battlefield under your control"). It sets the same `controllerOverride` that
+     * [PutOntoBattlefieldUnderYourControl] does; the two axes are independent, so a card wanting both
+     * the graveyard guard and the control override says so here rather than reaching past the facade
+     * for a raw `MoveToZoneEffect`.
      */
-    fun PutOntoBattlefieldFromGraveyard(target: EffectTarget): Effect =
-        MoveToZoneEffect(target, Zone.BATTLEFIELD, fromZone = Zone.GRAVEYARD)
+    fun PutOntoBattlefieldFromGraveyard(
+        target: EffectTarget,
+        underYourControl: Boolean = false
+    ): Effect = MoveToZoneEffect(
+        target,
+        Zone.BATTLEFIELD,
+        fromZone = Zone.GRAVEYARD,
+        controllerOverride = if (underYourControl) EffectTarget.Controller else null
+    )
 
     /**
      * Put onto the battlefield under your control (the effect controller's control).
