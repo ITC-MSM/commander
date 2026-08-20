@@ -138,6 +138,7 @@ export function createLobbyHandlers(set: SetState, get: GetState): Pick<MessageH
           readyPlayerIds: [],
           nextOpponentName: msg.nextOpponentName ?? null,
           nextRoundHasBye: msg.nextRoundHasBye ?? false,
+          currentRoundComplete: false,
         },
         // Keep deckBuildingState but ensure phase is 'submitted'
         deckBuildingState: state.deckBuildingState
@@ -158,6 +159,8 @@ export function createLobbyHandlers(set: SetState, get: GetState): Pick<MessageH
               readyPlayerIds: [],
               nextOpponentName: null,
               nextRoundHasBye: false,
+              // We're playing in this round, so it plainly isn't finished.
+              currentRoundComplete: false,
               activeMatches: [], // Clear - player is now in a game
             }
           : null,
@@ -200,6 +203,8 @@ export function createLobbyHandlers(set: SetState, get: GetState): Pick<MessageH
                 readyPlayerIds: [],
                 nextOpponentName: msg.nextOpponentName ?? null,
                 nextRoundHasBye: msg.nextRoundHasBye ?? false,
+                // This message *is* the round ending — every table in it has finished.
+                currentRoundComplete: true,
                 activeMatches: [], // Clear - round is over, no active matches
               }
             : null,
@@ -234,6 +239,9 @@ export function createLobbyHandlers(set: SetState, get: GetState): Pick<MessageH
                 readyPlayerIds: [],
                 nextOpponentName: msg.nextOpponentName ?? null,
                 nextRoundHasBye: msg.nextRoundHasBye ?? false,
+                // Only *our* match ended. The server says whether the round did — an early finisher
+                // gets false here and must keep seeing the round in progress, not the next one.
+                currentRoundComplete: msg.currentRoundComplete ?? false,
                 activeMatches: [],
               }
             : null,
