@@ -664,6 +664,11 @@ data class GameObjectFilter(
         cardPredicates = cardPredicates + CardPredicate.SharesColorWith(entity)
     )
 
+    /** Must have the same mana value as the referenced entity */
+    fun sharingManaValueWith(entity: EntityReference) = copy(
+        cardPredicates = cardPredicates + CardPredicate.SharesManaValueWith(entity)
+    )
+
     /**
      * Must share a color with the recipient of the in-flight damage (and not be that
      * recipient). Only meaningful in a damage replacement's source filter. Used by

@@ -1003,6 +1003,7 @@ class CastZoneResolver(
                 is CardPredicate.SharesCreatureTypeWithTriggeringEntity,
                 is CardPredicate.SharesCreatureTypeWith,
                 is CardPredicate.SharesColorWith,
+                is CardPredicate.SharesManaValueWith,
                 is CardPredicate.SharesColorWithRecipient,
                 is CardPredicate.SharesColorWithPermanentYouControl,
                 is CardPredicate.SharesNameWithPermanentYouControl,

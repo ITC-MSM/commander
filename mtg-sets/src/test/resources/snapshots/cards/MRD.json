@@ -7295,6 +7295,61 @@
     "colorIdentityOverride": []
 }
 
+// Mirror Golem
+{
+    "name": "Mirror Golem",
+    "manaCost": "{6}",
+    "typeLine": "Artifact Creature — Golem",
+    "oracleText": "Imprint — When this creature enters, you may exile target card from a graveyard.\nThis creature has protection from each of the exiled card's card types. (Artifact, battle, creature, enchantment, instant, kindred, land, planeswalker, and sorcery are card types.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target card from a graveyard"
+                        },
+                        "destination": "Exile",
+                        "linkToSource": true
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {},
+                        "zone": "Graveyard"
+                    },
+                    "id": "target card from a graveyard"
+                },
+                "descriptionOverride": "Imprint — When this creature enters, you may exile target card from a graveyard."
+            }
+        ],
+        "staticAbilities": [
+            "GrantProtectionFromLinkedExiledCardTypes"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "208",
+        "rarity": "UNCOMMON",
+        "artist": "Franz Vohwinkel",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/9/d9467839-b2a2-4cfe-a60e-12766e2ba983.jpg?1783944513"
+    },
+    "colorIdentityOverride": []
+}
+
 // Molder Slug
 {
     "name": "Molder Slug",
@@ -7466,6 +7521,88 @@
     "colorIdentityOverride": [
         "BLACK"
     ]
+}
+
+// Mourner's Shield
+{
+    "name": "Mourner's Shield",
+    "manaCost": "{4}",
+    "typeLine": "Artifact",
+    "oracleText": "Imprint — When this artifact enters, you may exile target card from a graveyard.\n{2}, {T}: Prevent all damage that would be dealt this turn by a source of your choice that shares a color with the exiled card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target card from a graveyard"
+                        },
+                        "destination": "Exile",
+                        "linkToSource": true
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {},
+                        "zone": "Graveyard"
+                    },
+                    "id": "target card from a graveyard"
+                },
+                "descriptionOverride": "Imprint — When this artifact enters, you may exile target card from a graveyard."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "PreventDamageShield",
+                    "direction": "FromTarget",
+                    "sourceFilter": {
+                        "type": "ChosenSourceMatching",
+                        "filter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "SharesColorWith",
+                                    "entity": "LinkedExiledCard"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "descriptionOverride": "{2}, {T}: Prevent all damage that would be dealt this turn by a source of your choice that shares a color with the exiled card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "209",
+        "rarity": "UNCOMMON",
+        "artist": "Carl Critchlow",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/8/783fe67f-59f7-46f0-bfa4-fa4a65c9c33c.jpg?1783944512"
+    },
+    "colorIdentityOverride": []
 }
 
 // Myr Adapter
@@ -13016,6 +13153,129 @@
     "colorIdentityOverride": [
         "BLUE"
     ]
+}
+
+// Thought Prison
+{
+    "name": "Thought Prison",
+    "manaCost": "{5}",
+    "typeLine": "Artifact",
+    "oracleText": "Imprint — When this artifact enters, you may have target player reveal their hand. If you do, choose a nonland card from it and exile that card.\nWhenever a player casts a spell that shares a color or mana value with the exiled card, this artifact deals 2 damage to that player.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "RevealHand",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target player"
+                                }
+                            },
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    },
+                                    "filter": "nonland"
+                                },
+                                "storeAs": "thoughtPrisonImprintCandidates"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "thoughtPrisonImprintCandidates",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "thoughtPrisonImprint",
+                                "prompt": "Choose a nonland card to exile with Thought Prison"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "thoughtPrisonImprint",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "linkToSource": true
+                            }
+                        ]
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target player"
+                },
+                "descriptionOverride": "Imprint — When this artifact enters, you may have target player reveal their hand. If you do, choose a nonland card from it and exile that card."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "SharesColorWith",
+                                        "entity": "LinkedExiledCard"
+                                    },
+                                    {
+                                        "type": "SharesManaValueWith",
+                                        "entity": "LinkedExiledCard"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                },
+                "descriptionOverride": "Whenever a player casts a spell that shares a color or mana value with the exiled card, this artifact deals 2 damage to that player."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "261",
+        "rarity": "UNCOMMON",
+        "artist": "Glen Angus",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/0/409087ef-8232-489c-8b98-b601bb0a47a4.jpg?1783944499"
+    },
+    "colorIdentityOverride": []
 }
 
 // Thoughtcast
