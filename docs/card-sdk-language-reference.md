@@ -2953,7 +2953,7 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   The "may" is the `ChooseUpTo(count)`: declining or having no legal choice simply moves nothing.
   `optional = false` swaps it for `ChooseExactly(count)`, for the wishes printed as a plain
   instruction rather than a "you may" — the controller takes a card if they own one outside the
-  game, and an empty or unmatched sideboard still moves nothing rather than stalling (CR 608.2).
+  game, and an empty or unmatched sideboard still moves nothing rather than stalling (CR 609.3).
   **Ring of Ma'rûf** is the one such card, and the only wish that fetches through a *draw
   replacement* rather than on resolution:
   `Effects.ReplaceNextDraw(Patterns.Sideboard.wish(GameObjectFilter.Any, revealed = false, optional = false))`.

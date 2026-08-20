@@ -23,7 +23,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * private per-player [Zone.SIDEBOARD] (CR 100.4 / 400.11a) — into a zone in the game. Mechanically
  * it is the ordinary Gather → Select → Move pipeline (see `LibraryPatterns.searchLibrary`), pointed
  * at the sideboard instead of the library, with **no shuffle** (the sideboard is unordered and
- * stays outside the game) and **reveal on** (the chosen card is shown — CR 701.19j / the wish
+ * stays outside the game) and **reveal on** (the chosen card is shown — CR 701.20 / the wish
  * cycle's "reveal that card"). The "may" of "you may choose a [type] card" is expressed by
  * `ChooseUpTo(1)`: declining or having no legal choice simply moves nothing.
  *
@@ -50,7 +50,7 @@ object SideboardPatterns {
      * wishes worded as a plain instruction (Ring of Ma'rûf: "instead put a card you own from
      * outside the game into your hand"), which the controller must obey if able. Either way an
      * empty or unmatched sideboard simply moves nothing: `ChooseExactly` auto-selects the empty
-     * set rather than stalling on an impossible choice (CR 608.2 — do as much as possible).
+     * set rather than stalling on an impossible choice (CR 609.3 — do as much as possible).
      */
     fun wish(
         filter: GameObjectFilter = GameObjectFilter.Any,

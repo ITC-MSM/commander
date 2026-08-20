@@ -34,10 +34,8 @@ object ArabianNightsSet : MtgSet {
     }
 
     /**
-     * Arabian Nights printed exactly one basic land — Mountain (#77). [basicLandsFallback] stays
-     * pointed at Portal so a deck built from an ARN pool can still reach the other four types;
-     * the booster/sealed land pool reads the fallback set, so ARN's own Mountain is registered as
-     * a card of the set without claiming to be a complete five-type land cycle.
+     * ARN printed only Mountain. Keep [basicLandsFallback] for a complete Limited land supply while
+     * exposing the set's own printing here so discovery and set coverage include it.
      */
     override val basicLands: List<CardDefinition> by lazy {
         CardDiscovery.findBasicLandsIn(CARDS_PACKAGE, code)
