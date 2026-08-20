@@ -3486,11 +3486,31 @@ Every `TargetRequirement` carries count semantics (defaults shown):
   object/player it is (the controller chooses *which* opponent in multiplayer per CR 601.6a/602.3a, and
   that pick follows the controller's own choices per CR 601.6b/602.3b). Orthogonal to legality: target-finding and
   validation ignore `chooser` (always relative to the controller); only the announcement layer reads it
-  to route the selection decision. Honored for **activated abilities** today; list the opponent-chosen
-  requirement after the controller-chosen ones. `Targets.AnyChosenByOpponent` is the ready-made
-  "any target of an opponent's choice". `CardLinter` (§21) fails any card that puts a
-  `TargetChooser.Opponent` target outside an activated ability — a spell or triggered ability would
-  silently let the *controller* choose it instead.
+  to route the selection decision. `TargetChooser.Opponent` is honored for **activated abilities**; list
+  the opponent-chosen requirement after the controller-chosen ones. `Targets.AnyChosenByOpponent` is the
+  ready-made "any target of an opponent's choice".
+
+  Two further cases are honored for **triggered abilities**, for a trigger whose printed text hands the
+  choice to somebody other than the ability's controller. They are two cases rather than one because a
+  trigger names its player in two different ways — exactly as `EffectTarget` splits `TriggeringEntity`
+  from `ControllerOfTriggeringEntity`:
+  - `TargetChooser.TriggeringPlayer` — "**that player** … of their choice" (Quicksilver Fountain:
+    "At the beginning of each player's upkeep, that player puts a flood counter on target non-Island land
+    they control of their choice"). Resolves the way every other reader of the triggering player does
+    (`triggeringPlayerId ?: triggeringEntityId`), so a step trigger's active player lands here. Pair it
+    with `.controlledByTriggeringPlayer()` on the filter so the decision can't offer a land the chooser
+    doesn't control.
+  - `TargetChooser.ControllerOfTriggeringEntity` — "**its controller** chooses target …" (Confusion in
+    the Ranks). An enters trigger's triggering entity is the *permanent*, so the deciding player is read
+    off it.
+
+  A chooser that resolves to nobody falls back to the controller rather than dropping the trigger: a
+  legal target was already found, so somebody has to pick it. Choosers must agree across a trigger's whole
+  requirement list — no printed card splits one trigger's targets between two deciders.
+
+  `CardLinter` (§21) fails any card that puts a chooser in a context the engine doesn't route:
+  `Opponent` outside an activated ability, `TriggeringPlayer` / `ControllerOfTriggeringEntity` outside a
+  triggered one. In the wrong context the *controller* would silently choose the target instead.
 
 ### Player-target restrictions (`TargetPlayer.restriction` / `TargetOpponent.restriction`)
 
