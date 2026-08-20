@@ -14660,6 +14660,72 @@
     ]
 }
 
+// Officious Interrogation
+{
+    "name": "Officious Interrogation",
+    "manaCost": "{W}{U}",
+    "typeLine": "Instant",
+    "oracleText": "This spell costs {W}{U} more to cast for each target beyond the first.\nChoose any number of target players. Investigate X times, where X is the total number of creatures those players control. (To investigate, create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "script": {
+        "spellEffect": {
+            "type": "CreatePredefinedToken",
+            "tokenType": "Clue",
+            "dynamicCount": {
+                "type": "Count",
+                "player": "EachTargetedPlayer",
+                "zone": "Battlefield",
+                "filter": "creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "unlimited": true,
+                "id": "targets"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "IncreaseColoredPerUnit",
+                    "symbols": "{W}{U}",
+                    "countSource": "ChosenTargetsBeyondTheFirst"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "222",
+        "rarity": "RARE",
+        "artist": "Borja Pindado",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a433ca4c-82d0-4e49-bc8e-98e18dd174e9.jpg?1783912842",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Any target players that are no longer legal targets by the time Officious Interrogation resolves won't have their creatures counted when determining how many tokens you create."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "You choose how many targets Officious Interrogation has and what those targets are as you cast it. You can't choose the same target more than once. It's legal to cast Officious Interrogation with no targets, although this particular option should be placed under some serious scrutiny."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Officious Interrogation's mana value doesn't change no matter how many targets it has."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a spell or ability allows you to cast Officious Interrogation without paying its mana cost, you must still pay the additional cost for any targets beyond the first."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // On the Job
 {
     "name": "On the Job",
@@ -21338,5 +21404,113 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Yarus, Roar of the Old Gods
+{
+    "name": "Yarus, Roar of the Old Gods",
+    "manaCost": "{2}{R}{G}",
+    "typeLine": "Legendary Creature — Centaur Druid",
+    "oracleText": "Other creatures you control have haste.\nWhenever one or more face-down creatures you control deal combat damage to a player, draw a card.\nWhenever a face-down creature you control dies, return it to the battlefield face down under its owner's control if it's a permanent card, then turn it face up.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "OneOrMoreDealCombatDamageToPlayerEvent",
+                    "sourceFilter": "creature facedown"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever one or more face-down creatures you control deal combat damage to a player, draw a card."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "facedown ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": "TriggeringEntity",
+                            "filter": "permanent"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "MoveToZone",
+                                "target": "TriggeringEntity",
+                                "destination": "Battlefield",
+                                "fromZone": "Graveyard",
+                                "faceDown": "HIDDEN"
+                            },
+                            {
+                                "type": "TurnFaceUp",
+                                "target": "TriggeringEntity"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "Whenever a face-down creature you control dies, return it to the battlefield face down under its owner's control if it's a permanent card, then turn it face up."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "HASTE",
+                "filter": {
+                    "baseFilter": "creature ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "245",
+        "rarity": "RARE",
+        "artist": "Dmitry Burmak",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/2/326845a7-7502-4dc3-8f3e-867d6c84e931.jpg?1783912832",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Normally, combat damage is dealt all at the same time. In that case, Yarus, Roar of the Old Gods's last ability triggers once for each player that face-down creatures you control dealt combat damage to, regardless of how many creatures were dealing that damage. If any of those face-down creatures have double strike or first strike, the ability will trigger once for each player dealt damage in each combat damage step."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If Yarus, Roar of the Old Gods dies at the same time as one or more face-down creatures you control, its last ability triggers for each of those creatures."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a face-down creature dies but the permanent card it becomes in the graveyard leaves the graveyard before Yarus, Roar of the Old Gods's last ability resolves, it will not return to the battlefield."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a permanent card that would be returned to the battlefield face down by Yarus, Roar of the Old Gods's last ability can't be turned face up for some reason, it'll still be returned to the battlefield, but it will stay face down. In that case, it will be a 2/2 creature with no name, mana cost, or creature types. Since it isn't disguised or cloaked, it won't have ward {2}."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
     ]
 }

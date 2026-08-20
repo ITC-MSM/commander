@@ -34,6 +34,8 @@ import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.scripting.ModifySpellCost
+import com.wingedsheep.sdk.scripting.SpellCostTarget
 import com.wingedsheep.sdk.dsl.giftKeyword
 import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
 import com.wingedsheep.sdk.scripting.effects.Mode
@@ -740,6 +742,15 @@ class CastSpellEnumerator : ActionEnumerator {
             // Always include mana cost string for cast actions
             val manaCostString = effectiveCost.toString()
 
+            // "This spell costs {W}{U} more to cast for each target beyond the first" (Officious
+            // Interrogation): `effectiveCost` above is priced with no targets chosen, so it is the
+            // one-target minimum. Flag it so the client settles targeting before offering a manual
+            // mana-source pick — the same reason an X cost forces its `xSelection` phase first.
+            val manaCostPerExtraTarget = cardDef?.script?.staticAbilities
+                ?.filterIsInstance<ModifySpellCost>()
+                ?.filter { it.target == SpellCostTarget.SelfCast }
+                ?.firstNotNullOfOrNull { context.costCalculator.perExtraTargetCost(it.modification) }
+
             // Compute auto-tap preview for UI highlighting (skipped in ACTIONS_ONLY mode).
             //
             // The solver runs against the worst-case *remaining* cost the player can be
@@ -1257,6 +1268,7 @@ class CastSpellEnumerator : ActionEnumerator {
                                 delveCards = delveCards,
                                 minDelveNeeded = minDelveNeeded,
                                 manaCostString = manaCostString,
+                                manaCostPerExtraTarget = manaCostPerExtraTarget,
                                 requiresDamageDistribution = requiresDamageDistribution,
                                 totalDamageToDistribute = totalDamageToDistribute,
                                 minDamagePerTarget = minDamagePerTarget,

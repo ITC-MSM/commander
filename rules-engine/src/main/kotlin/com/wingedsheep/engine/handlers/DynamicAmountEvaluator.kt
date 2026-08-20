@@ -1162,6 +1162,13 @@ class DynamicAmountEvaluator(
             is Player.TargetOpponent, is Player.TargetPlayer -> listOfNotNull(
                 TargetResolutionUtils.resolvePlayerRef(player, context, state)
             )
+            // "those players" — every player among the chosen targets, so counting primitives sum
+            // across all of them ("the total number of creatures those players control"). Targets
+            // that became illegal are already absent from `context.targets`, so they drop out.
+            is Player.EachTargetedPlayer -> context.targets
+                .filterIsInstance<com.wingedsheep.engine.state.components.stack.ChosenTarget.Player>()
+                .map { it.playerId }
+                .distinct()
             is Player.Each -> state.activePlayers
             is Player.Any -> state.activePlayers
             is Player.ContextPlayer -> {

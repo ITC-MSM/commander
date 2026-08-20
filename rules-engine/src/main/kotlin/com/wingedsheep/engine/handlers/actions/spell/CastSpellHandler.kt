@@ -1113,6 +1113,18 @@ class CastSpellHandler(
             }
         }
 
+        // "This spell costs {W}{U} more to cast for each target beyond the first" (Officious
+        // Interrogation). Charged outside every `playForFree` / alternative-cost branch above,
+        // because a cost *increase* is not part of the cost those branches waive or replace
+        // (CR 601.2f) — the card's own ruling spells it out: a free cast still owes the tax for
+        // targets beyond the first. `calculateEffectiveCost` already applied it on the ordinary
+        // path, so only the branches that bypassed it are topped up here.
+        if (cardDef != null && (playForFree || action.useAlternativeCost || action.castFaceDown)) {
+            effectiveCost = effectiveCost + costCalculator.selfPerTargetTax(
+                cardDef, action.targets.map { it.toEntityId() }
+            )
+        }
+
         // Fold in the "… or pay {N}" alternative mana for every or-pay cost whose non-mana leg the
         // caster declined (validation side; execute() applies the same rule to the cost it charges).
         if (cardDef != null && !playForFree) {
@@ -2447,6 +2459,15 @@ class CastSpellHandler(
             if (kickerManaCost != null) {
                 effectiveCost = ManaCost(effectiveCost.symbols + kickerManaCost.symbols)
             }
+        }
+
+        // Per-target self tax — mirrors validate()'s branch, same CR 601.2f reasoning: the
+        // free-cast / alternative-cost / face-down branches above never called
+        // `calculateEffectiveCost`, so they owe it here.
+        if (cardDef != null && (playForFreeInExecute || action.useAlternativeCost || action.castFaceDown)) {
+            effectiveCost = effectiveCost + costCalculator.selfPerTargetTax(
+                cardDef, action.targets.map { it.toEntityId() }
+            )
         }
 
         // Apply per-mode additional mana cost (e.g., Feed the Cycle "pay {B}" mode).

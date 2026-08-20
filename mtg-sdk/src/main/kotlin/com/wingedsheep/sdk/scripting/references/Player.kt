@@ -99,6 +99,23 @@ sealed interface Player {
         override val description: String = "target player"
     }
 
+    /**
+     * **Every** player among the spell or ability's chosen targets — "those players" after
+     * "choose any number of target players" (Officious Interrogation). The plural sibling of
+     * [TargetPlayer], which resolves to a single targeted player and so silently reads only the
+     * first when a spell targets several.
+     *
+     * Counting primitives sum over the resolved list, which is what makes "the total number of
+     * creatures those players control" one [DynamicAmount] instead of a per-target loop. A target
+     * that has become illegal by resolution is already gone from the context's target list, so it
+     * contributes nothing — exactly what Officious Interrogation's 2024-02-02 ruling requires.
+     */
+    @SerialName("EachTargetedPlayer")
+    @Serializable
+    data object EachTargetedPlayer : Player {
+        override val description: String = "those players"
+    }
+
     /** A targeted opponent (resolved at effect execution) */
     @SerialName("TargetOpponent")
     @Serializable
@@ -281,6 +298,7 @@ sealed interface Player {
             DefendingPlayer -> "defending player's"
             TargetOpponent -> "target opponent's"
             TargetPlayer -> "target player's"
+            EachTargetedPlayer -> "those players'"
             Each -> "each player's"
             ActivePlayerFirst -> "each player's"
             EachOpponent -> "each opponent's"

@@ -192,6 +192,7 @@ object ZoneTransitionService {
         // CastChoicesComponent is stripped so dies/leaves triggers reading CastX still see it
         // as last-known information (CR 603.10a).
         var lastKnownCastX: Int? = null
+        var lastKnownWasFaceDown = false
 
         if (leavingBattlefield) {
             val countersComponent = container.get<CountersComponent>()
@@ -239,6 +240,12 @@ object ZoneTransitionService {
                     ?.sources ?: emptySet()
             lastKnownCastX = container
                 .get<com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent>()?.x
+            // A card is turned face up as it leaves the battlefield for a graveyard (CR 708.4), and
+            // the battlefield entity is gone by trigger-gating time either way, so "whenever a
+            // face-down creature you control dies" (Yarus, Roar of the Old Gods) has to read this
+            // as last-known information (CR 608.2h).
+            lastKnownWasFaceDown = container
+                .has<com.wingedsheep.engine.state.components.identity.FaceDownComponent>()
         }
 
         // 3. Check zone change redirect (unless skipped)
@@ -326,6 +333,7 @@ object ZoneTransitionService {
                 wasToken = lastKnownWasToken,
                 damageDealtByPlayers = lastKnownDamageDealtByPlayers,
                 damageSources = lastKnownDamageSources,
+                wasFaceDown = lastKnownWasFaceDown,
             )
         } else null
 

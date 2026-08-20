@@ -2071,6 +2071,19 @@ class TriggerMatcher(
                 isModified(state, event.entityId)
             }
         }
+        // Face down (CR 708) on a permanent that has left the battlefield reads last-known
+        // information: a card put into a graveyard is turned face up (CR 708.4) and the
+        // battlefield entity is gone by gating time, so the live `FaceDownComponent` the
+        // projected path would read no longer exists. "Whenever a face-down creature you control
+        // dies" (Yarus, Roar of the Old Gods) is only answerable from the snapshot (CR 608.2h).
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsFaceDown -> {
+            if (event.fromZone == Zone.BATTLEFIELD) event.lastKnown?.wasFaceDown == true
+            else matchesStatePredicateForTrigger(predicate, state, event.entityId)
+        }
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsFaceUp -> {
+            if (event.fromZone == Zone.BATTLEFIELD) event.lastKnown?.wasFaceDown == false
+            else matchesStatePredicateForTrigger(predicate, state, event.entityId)
+        }
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsEquipped -> {
             if (event.fromZone == Zone.BATTLEFIELD) event.lastKnown?.wasEquipped == true
             else hasAttachmentOfKind(state, event.entityId, equipment = true)

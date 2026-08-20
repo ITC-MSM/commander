@@ -920,6 +920,17 @@ export interface LegalActionInfo {
    * and waterbend are generic-only, harmonize taps one creature.
    */
   readonly minimumManaCostString?: string
+  /**
+   * Mana this spell adds to its own cost per target beyond the first — Officious Interrogation
+   * ("This spell costs {W}{U} more to cast for each target beyond the first") sends `'{W}{U}'`.
+   * Absent for every spell that doesn't tax itself per target.
+   *
+   * When set, `manaCostString` is only the one-target minimum, so targeting has to be settled
+   * before the player can sensibly pick mana sources by hand: `computePhases` orders `targeting`
+   * ahead of `manaSource`, and `startManaSelection` scales the cost it charges by the targets
+   * actually picked.
+   */
+  readonly manaCostPerExtraTarget?: string
   /** Whether this spell requires damage distribution at cast time (for DividedDamageEffect) */
   readonly requiresDamageDistribution?: boolean
   /** Total damage to distribute for DividedDamageEffect spells */
