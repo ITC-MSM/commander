@@ -183,16 +183,45 @@ object Targets {
      * cast for, which the SDK spells as [TargetObject.dynamicMaxCount] rather than as a large
      * `count`.
      *
-     * [DynamicAmount.XValue] and not `CastX`: both appear in hand-written cards (Doppelgang and
-     * Rot-Curse Rakshasa write the former, Lost in the Maze the latter), so this is one more
-     * two-spellings-for-one-meaning pair, and the grammar prints the one the majority of the corpus
-     * carries and lets the differential report the rest — the rule this module follows everywhere
-     * else. `optional = true` is not redundant beside it: `dynamicMaxCount` caps the count and says
-     * nothing about the minimum, so without it an X of zero would fizzle the cast.
+     * `optional = true` is not redundant beside `dynamicMaxCount`: the cap says nothing about the
+     * minimum, so without it an X of zero would fizzle the cast.
      *
-     * Only the *bare* wording maps. "…, where X is the number of verse counters on ~" defines X from
-     * the board rather than from the cost, which is a different `DynamicAmount` and a trailing clause
-     * [Amounts] owns; those lines decline here rather than being read as this one.
+     * ### [DynamicAmount.XValue] and `CastX` are a *position*, not two spellings
+     *
+     * They are not a two-spellings-for-one-meaning pair to pick a majority from — the SDK draws a
+     * semantic line between them and calls it load-bearing. [DynamicAmount.XValue] resolves from the
+     * transient resolution context (`EffectContext.xValue`) and is populated only while the object
+     * carrying it is resolving; `CastX` is the durable, object-scoped reading that rides onto the
+     * permanent a spell leaves behind. So the right one follows from where the requirement sits:
+     *
+     *  - a **spell effect** — Doppelgang, Rot-Curse Rakshasa's renew, Icy Blast — resolves with that
+     *    context live, so `XValue`.
+     *  - a **triggered ability whose trigger carries the announced X** — cycling, "when you cast
+     *    this spell" — also `XValue`, because `TriggerDetector` deliberately routes the announced
+     *    `{X}` into the trigger's context for exactly this (Valor's Flagship reads it that way, and
+     *    Rampaging War Mammoth is the line this rule wins).
+     *  - a **trigger reading the X off the permanent afterwards** — Lost in the Maze's "When ~
+     *    enters, tap X target creatures" — must be `CastX`, and `XValue` there is silently zero.
+     *
+     * This rule only ever lands in the first two: it is reached as a spell clause, and `Triggers`
+     * lifts that clause's requirement into a trigger that carries the X. A row that could reach the
+     * third would have to translate at the lift — the one place the position is known — and there is
+     * no `DynamicAmount` at all for "the X of an arbitrary activated ability", so a rule wanting that
+     * position needs new SDK vocabulary before it needs a template.
+     *
+     * ### Only the *bare* wording maps
+     *
+     * "…, where X is the number of verse counters on ~" defines X from the board rather than from the
+     * cost, which is a different `DynamicAmount` behind a trailing clause [Amounts] owns.
+     *
+     * "Tap **X** target creatures" — no "up to" — is the other one, and it declines for a stronger
+     * reason than a missing template: it means *exactly* X where this row means at most X. The corpus
+     * has 40 such lines (Gridlock, Malicious Advice, Rats' Feast, Aether Tide) and models them with
+     * this very requirement, because [TargetObject.minCount] is a plain `Int` that cannot take a
+     * [DynamicAmount] — Icy Blast's KDoc records the approximation. Reading that wording here would
+     * be a lossy normalization rather than a variant, and adding a rule for it would make two printed
+     * forms denote one model, which is the redundant-reading class the gate holds at zero. It stays
+     * declined until the SDK can tell the two requirements apart.
      */
     fun upToX(filter: GameObjectFilter): TargetRequirement = TargetCreature(
         optional = true,
@@ -299,6 +328,30 @@ object Targets {
             anyNumber(filter)
         },
     )
+
+    /**
+     * The rows whose noun stays singular — bare "target creature" and "up to one target creature".
+     *
+     * **A family takes this list when its plural is a different sentence rather than a plural noun.**
+     * Two sentences in [Steps] are like that, and both would print something English does not write if
+     * they took the whole table:
+     *
+     *  - damage. "~ deals 3 damage to up to one target creature" is printed 11 times; "deals 3 damage
+     *    to up to two target creatures" is printed never, because a damage verb over several targets
+     *    is spelled "divided as you choose among …" and is a *different requirement*
+     *    (`DivideDamage`), not this one with a plural noun.
+     *  - counters. "Put a +1/+1 counter on up to one target creature" is printed 19 times; the plural
+     *    is "put a +1/+1 counter on **each of** up to two target creatures" (7 lines), which is the
+     *    distribute sentence and its own family.
+     *
+     * Handing those two the plural rows would not merely fail to win cards — it would read a
+     * distribute model as a sentence that means something else, the reversible-but-wrong class this
+     * module's fail-closed matching exists to catch. So the row set is part of what a family declares,
+     * and the *reason* a family declares a subset is always that English changes the sentence rather
+     * than the noun. Where it changes only the noun ([Steps.quantifiedPermanentSteps], the pump, the
+     * grants), the family takes all six.
+     */
+    val singularQuantifiers: List<Quantifier> = quantifiers.filterNot { it.plural }
 
     /**
      * "Enchant creature" — an Aura's attachment restriction, and the whole of its printed line.

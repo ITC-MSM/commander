@@ -21,15 +21,17 @@ attached-permanent statics, which opened `staticAbilities` — the largest `Card
 differential could not see into, and the one every later static family lands in.
 
 The most recent work is the **target quantifier** — "Destroy **up to one** target creature.", "Exile
-**up to three** target creatures.", "Destroy **up to X** target artifacts." (**+61 whole cards**), the
-family the ranking had been naming from three directions at once. Everything English prints in front
+**up to three** target creatures.", "Destroy **up to X** target artifacts." (**+75 whole cards**), the
+family the ranking had been naming from five directions at once. Everything English prints in front
 of the word "target" is now a **six-row table** rather than a word inside each verb's template, and
 the reason it is a table and not a slot is the noun behind it: "up to one target **creature**" and "up
 to two target **creatures**" disagree in number, so a quantifier that could be slotted would leave the
 noun's number undetermined. What the table buys is the thing the old hand-copied shapes had already
 lost — "tap up to three target creatures" was written and "destroy up to three target creatures" was
-not, on a grammar that read both halves of that sentence. Two families slot it, and the ranking's
-"up to one …" row fell from **174 cards to 17**.
+not, on a grammar that read both halves of that sentence. Six families slot it — four of them
+sentences that never had a quantifier before, two of those taking only the rows whose plural is a
+plural *noun* rather than a different sentence — and the ranking's "up to one …" row fell from
+**174 cards to 17**.
 See [the target quantifier](#the-target-quantifier).
 
 Before it came the **trigger join** — "When ~ enters **and** whenever you cast a spell with
@@ -1835,13 +1837,19 @@ relying on it.
 ## The target quantifier
 
 "Destroy **up to one** target creature." — and every other word English puts in front of "target".
-Whole-corpus coverage 8,111 → **8,172 cards** (+61); the baked ledger 7,897 → **7,955 whole** (+58,
-with **none lost**); 76 more lines round-trip byte-exact, 10 more normalize as a variant, and 86 fewer
-decline. MISMATCH, AMBIGUOUS and redundant readings stay at **0**. The differential compares 20 more
-cards (3,765 → 3,785) and its divergences go 35 → 40 — five new ones, all classified below, none a
+Whole-corpus coverage 8,111 → **8,186 cards** (+75); the baked ledger 7,897 → **7,969 whole** (+72,
+with **none lost**); 99 more lines round-trip byte-exact, 17 more normalize as a variant, and 116 fewer
+decline. MISMATCH, AMBIGUOUS and redundant readings stay at **0**. The differential compares 25 more
+cards (3,765 → 3,790) and its divergences go 35 → 43 — eight new ones, all classified below, none a
 parser bug, and the original 35 are the same 35 by name.
 
-The family was the top of the tail ranking read three ways: `up to one …` at 174 cards / 99
+Read in two halves: the table itself is +61 cards over two families, and slotting it into the four
+remaining target-taking sentences is +14 more. The second half is what tested the first — the claim
+that a quantifier is a *row* only means something if a sentence that never had one can take the rows
+unchanged, and one of those four (the compound) matched a hand-written card's model byte-for-byte on
+the first try.
+
+The family was the top of the tail ranking read five ways: `up to one …` at 174 cards / 99
 sole-blocked, `up to two …` at 61 / 38, `Up to two …` at 27 / 25, `up to three …` at 23 / 17 and
 `up to X …` at 19 / 12 — five rows of one construct, which is itself the signal that what was missing
 was a *position* rather than five rules.
@@ -1888,12 +1896,31 @@ verb.
 
 `up to X` is the row worth a note. `dynamicMaxCount` caps the count and says nothing about the
 minimum, so `optional = true` is not redundant beside it — without it an X of zero would fizzle the
-cast. `DynamicAmount.XValue` and not `CastX`: both appear in hand-written cards (Doppelgang and
-Rot-Curse Rakshasa write the former, Lost in the Maze the latter), so it is one more
-two-spellings-for-one-meaning pair, and the grammar prints the majority and lets the differential
-report the rest. Only the *bare* wording maps — "…, where X is the number of verse counters on ~"
-defines X from the board rather than from the cost, and that is a different `DynamicAmount` behind a
-trailing clause `Amounts` owns.
+cast.
+
+`DynamicAmount.XValue` rather than `CastX` is **not** a majority-spelling choice, and calling it one
+would be the wrong lesson to leave behind: the SDK draws a semantic line between the two and calls it
+load-bearing. `XValue` resolves from the transient resolution context and is populated only while the
+object carrying it resolves; `CastX` is the durable, object-scoped reading that rides onto the permanent
+a spell leaves behind. So the right one follows from *where the requirement sits*. A spell effect
+(Doppelgang, Icy Blast) resolves with that context live → `XValue`. A trigger whose trigger carries the
+announced X — cycling, "when you cast this spell" — is also `XValue`, because `TriggerDetector` routes
+the announced `{X}` into the trigger's context for exactly that reason (Valor's Flagship reads it that
+way, and Rampaging War Mammoth is the line this row wins). A trigger reading the X off the permanent
+*afterwards* — Lost in the Maze's "When ~ enters, tap X target creatures" — must be `CastX`, and
+`XValue` there is silently zero. This row only ever lands in the first two positions; a row that could
+reach the third would have to translate at the lift, and no `DynamicAmount` exists at all for "the X of
+an arbitrary activated ability", so that position needs SDK vocabulary before it needs a template.
+
+Only the *bare* wording maps, for two different reasons. "…, where X is the number of verse counters on
+~" defines X from the board rather than from the cost — a different `DynamicAmount` behind a trailing
+clause `Amounts` owns. "Tap **X** target creatures", no "up to", declines for a stronger reason: it
+means *exactly* X where this row means at most X. The corpus prints 40 such lines and models them with
+this very requirement, because `TargetObject.minCount` is a plain `Int` that cannot take a
+`DynamicAmount` (Icy Blast's KDoc records the approximation). Reading that wording here would be a
+lossy normalization rather than a variant, and giving it a rule of its own would make two printed forms
+denote one model — the redundant-reading class the gate holds at zero. It stays declined until the SDK
+can tell the two requirements apart.
 
 ### Two templates, because English agrees past the noun
 
@@ -1906,7 +1933,7 @@ that is also what made the third spelling cheap — Oracle prints the plural pos
 Scapegoat's "Return any number of target creatures you control to their owner's hand." reads as a
 `VARIANT`: the model survives, only the spelling is normalized.
 
-### Two families slot the table, which is the argument that it is one
+### Six families slot the table, which is the argument that it is one
 
 `quantifiedPermanentSteps` covers the seven one-verb sentences — destroy, regenerate, exile, tap,
 untap, return to hand, put on top of library — and the **pump** sentence is the second, sharing
@@ -1915,13 +1942,56 @@ agrees in number ("Up to one target creature **gets** +2/+0", "Up to two target 
 +2/+1"). A quantifier written into one shape would have had to be written into the other. What the two
 share instead is the table and the effect-wrapping pair.
 
-### The five new divergences, classified
+Four more followed, and they are the check on whether a row really is a row:
+
+- the **keyword grant** ("Any number of target creatures **each gain** double strike until end of
+  turn." — Phalanx Formation), same agreement as the pump one verb over;
+- the **compound** ("Up to two target creatures each get +1/+1 **and gain** lifelink until end of
+  turn." — Cutthroat Maneuver, Coordinated Assault, Windborne Charge), where every quantified line the
+  corpus prints is *plural*, and where both halves are per-target so the whole composite goes inside
+  one iteration rather than the iteration being split in two. Oracle attaches the "each" once to the
+  pair, so the second verb is bare "gain";
+- **damage** and **counters**, which take only the *singular* rows.
+
+That last pair is the interesting one, because a table that claims to be exhaustive has to be able to
+say **which rows a sentence takes**. `Targets.singularQuantifiers` is that declaration, and the
+criterion for using it is sharp: a family takes the whole table when its plural changes only the
+*noun*, and the singular rows alone when its plural is a **different sentence**. Damage over several
+targets is not "deals 3 damage to up to two target creatures" — English writes it "divided as you
+choose among …", a different requirement (`DivideDamage`). Counters over several targets is not "put a
++1/+1 counter on up to two target creatures" — English writes "on **each of** up to two target
+creatures", the distribute sentence and its own family. Handing those two the plural rows would not
+merely win nothing; it would read a distribute model as a sentence that means something else, which is
+the reversible-but-wrong class the fail-closed matching exists to catch. So the subset is a
+declaration with a reason attached, and the singular rows alone are worth 30 printed lines (19
+counters, 11 damage).
+
+Between them the four added **+14 whole cards** (8,172 → 8,186) with the gate still at 0/0/0: Abandon
+Reason, Burning Sun's Fury, Chainsaw, Coordinated Assault, Cryogen Relic, Cutthroat Maneuver,
+Invigorated Rampage, Karfell Kennel-Master, Press the Advantage, Quickbeam, Stress Dream, The Art of
+Tea, Wild Pack Squad, Windborne Charge — and Invigorated Rampage picked the compound up inside a
+*modal bullet*, which is the modal band and this one composing with nothing said between them.
+
+### The eight new divergences, classified
 
 | card | what differs | class |
 |---|---|---|
 | Calamitous Tide, Essence Fracture, Second Breakfast | the card unrolls its multi-target effect as a `Composite` of `BoundVariable("creature[0]")`, `…[1]`; Assay writes `ForEachTargetEffect` | second SDK spelling — majority printed, minority reported |
 | Offender at Large | `EventPattern.AnyOf` versus two abilities | the entry band's standing finding, new member |
 | Seize Opportunity | a stored-collection *name* (`impulseExiled` vs `exiledCards`) | pre-existing gate gap, exposed |
+| **Quickbeam, Upstart Ent** | the trigger filter: Assay reads "another Treefolk you control" as `IsPermanent`, the card narrows it to `IsCreature` | **card bug** — the bare-tribal-noun migration's own class, a leftover |
+| **Stress Dream** | `order: ControllerChooses` on the bottom-of-library move, in the sentence's *other* clause | pre-existing `TopOfLibrary` rule gap, exposed |
+| **Cryogen Relic** | `Effects.AddCounters("STUN", …)` where `CounterType.STUN` is the string `"stun"` | card-side spelling; harmless, `fromName` uppercases |
+
+The four sentences that took the table added the last three, and **all three agree on the requirement
+the quantifier produced** — the divergence is elsewhere in the card every time, which is the evidence
+that the rows transplanted cleanly. Quickbeam is the one worth acting on and the strongest of the
+three: its effect *and* its `count = 2, optional = true` requirement match Assay byte-for-byte,
+including the `ForEach(Targets)` wrapping the whole `Composite` rather than two iterations — an
+independent hand-written confirmation of the compound's model — and the only thing left over is a
+trigger filter narrowed to `IsCreature`, which means a Treefolk *artifact* entering does not trigger
+it. It is not fixed here: it is a card in another set and would pull that set's snapshot into a grammar
+PR, which is the same reason the three indexed-unroll cards are named rather than cleaned up.
 
 The first is the interesting one and it is **not** a card bug: `EffectContext.buildNamedTargets`
 publishes `"$id[$i]"` for every position of a multi-count requirement, so the indexed unroll is a
@@ -1935,7 +2005,11 @@ Seize Opportunity is worth stating separately because it is **not** about quanti
 models agree on the "up to two" mode exactly, and differ on the name of a collection its *other* mode
 stores. A collection name is arbitrary in the same way a target slot's name is, and
 `Differential.normalizeSlots` normalizes the second but not the first. That is a gap in the gate rather
-than in either model, and this band is the first thing to have driven a card into it.
+than in either model, and this band is the first thing to have driven a card into it — and then Stress
+Dream and Cryogen Relic drove two more, which turns a one-off into a pattern worth naming: **a band
+that finishes a card's last declining line inherits every unnormalized field in its other clauses.**
+The gap to close is `normalizeSlots`, which already covers target slot names and covers neither
+collection names, ability ids, nor the `order` field.
 
 ### What the band uncovered, in order
 

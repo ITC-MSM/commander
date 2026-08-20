@@ -798,22 +798,29 @@ object Steps {
      * (`Fixed` is the numeral, everything else is the clause).
      */
     private val damageToTargetPermanent: List<Phrase<CardScript>> = run {
-        fun scriptFor(amount: DynamicAmount, filter: GameObjectFilter) = CardScript(
+        fun scriptFor(
+            quantifier: Targets.Quantifier,
+            amount: DynamicAmount,
+            filter: GameObjectFilter,
+        ) = CardScript(
             spellEffect = Effects.DealDamage(amount, Targets.bound()),
-            targetRequirements = listOf(Targets.permanent(filter)),
+            targetRequirements = listOf(quantifier.requirement(1, filter)),
         )
 
         fun readBack(
+            quantifier: Targets.Quantifier,
             script: CardScript,
             domain: (DynamicAmount) -> Boolean,
         ): Pair<DynamicAmount, GameObjectFilter>? {
             val amount = damageDealtAmount(script.spellEffect ?: return null) ?: return null
             if (!domain(amount)) return null
             val requirement = script.targetRequirements.singleOrNull() ?: return null
-            val filter = Targets.permanentFilter(requirement) ?: return null
-            if (script != scriptFor(amount, filter)) return null
+            val filter = Targets.targetedFilter(requirement) ?: return null
+            if (script != scriptFor(quantifier, amount, filter)) return null
             return amount to filter
         }
+
+        val bare = Targets.singularQuantifiers.first { !it.counted && it.prefix.isEmpty() }
 
         val heavy = { value: DynamicAmount -> value !is DynamicAmount.Fixed && value !is DynamicAmount.EntityProperty }
         val light = { value: DynamicAmount -> value is DynamicAmount.EntityProperty }
@@ -825,28 +832,37 @@ object Steps {
                 slot("filter", Filters.filter)
                 build { bindings ->
                     bindings.value<DynamicAmount>("amount").takeIf(domain)
-                        ?.let { scriptFor(it, bindings.value("filter")) }
+                        ?.let { scriptFor(bare, it, bindings.value("filter")) }
                 }
                 match { script ->
-                    val (amount, filter) = readBack(script, domain) ?: return@match null
+                    val (amount, filter) = readBack(bare, script, domain) ?: return@match null
                     bind("self" to Unit, "amount" to amount, "filter" to filter)
                 }
             }
 
-        listOf(
+        // The numeral form takes the two singular quantifier rows — 11 printed lines, all of them
+        // "up to one" (Chainsaw, Stress Dream, Mjölnir, Path to the World Tree). The plural rows are
+        // deliberately absent for the reason [Targets.singularQuantifiers] states: damage over several
+        // targets is spelled "divided as you choose among …" and is a different requirement.
+        //
+        // The "equal to …" clause forms keep the bare row alone, because the corpus prints no
+        // quantified line for either of them — factor when the first member appears, not before.
+        Targets.singularQuantifiers.map { quantifier ->
             phrase<CardScript>(
-                "{self} deals {n} damage to target {filter}",
-                name = "deals damage to target permanent",
+                quantifier.splice("{self} deals {n} damage to {q}target {filter}"),
+                name = "deals damage to target permanent, ${quantifier.name}",
             ) {
                 slot("self", Primitives.self)
                 slot("n", Primitives.cardinal)
                 slot("filter", Filters.filter)
-                build { scriptFor(DynamicAmount.Fixed(it.int("n")), it.value("filter")) }
+                build { scriptFor(quantifier, DynamicAmount.Fixed(it.int("n")), it.value("filter")) }
                 match { script ->
-                    val (amount, filter) = readBack(script) { it is DynamicAmount.Fixed } ?: return@match null
+                    val (amount, filter) =
+                        readBack(quantifier, script) { it is DynamicAmount.Fixed } ?: return@match null
                     bind("self" to Unit, "n" to (amount as DynamicAmount.Fixed).amount, "filter" to filter)
                 }
-            },
+            }
+        } + listOf(
             clause(
                 "{self} deals damage to target {filter} equal to {amount}",
                 "deals damage to target permanent, by a count",
@@ -942,40 +958,54 @@ object Steps {
      * the same split [drawOne] and [drawMany] are, for the same reason, and the reason neither may
      * borrow the other's leaf.
      *
+     * ### The quantifier, but only its singular rows
+     *
+     * Both rules take [Targets.singularQuantifiers] rather than the whole table — 19 printed lines
+     * ("Put a +1/+1 counter on up to one target creature.", Essence Capture, Scale the Heights,
+     * Winterthorn Blessing) — because this sentence's plural is not a plural noun. Oracle writes it
+     * "put a +1/+1 counter on **each of** up to two target creatures", which is the distribute
+     * sentence and its own family; taking the plural rows here would read a distribute model as this
+     * one. That subset is a declaration with a reason, not an omission, and the reason lives in
+     * [Targets.singularQuantifiers] beside the other sentence that needs it.
+     *
      * The count is a **word** here and a numeral in [damageToTargetPermanent] two rules up. That is
      * not an inconsistency to tidy: Oracle spells a quantity of counters as a word ("put two +1/+1
      * counters") and a quantity of damage or life as a numeral ("deals 2 damage"), and the two
      * conventions live in the same sentence often enough that a rule using the wrong one would fail
      * to read the cards it was written for.
      */
-    private val putCountersOnTargetPermanent: List<Phrase<CardScript>> = run {
-        fun scriptFor(kind: String, count: Int, filter: GameObjectFilter) = CardScript(
-            spellEffect = Effects.AddCounters(kind, count, Targets.bound()),
-            targetRequirements = listOf(Targets.permanent(filter)),
-        )
-        fun rule(template: String, name: String, quantity: Phrase<*>?) =
-            phrase(template, name = name) {
-                slot("kind", if (quantity == null) Primitives.singularCounterKind else Primitives.counterKind)
-                if (quantity != null) slot("n", quantity)
-                slot("filter", Filters.filter)
-                build {
-                    scriptFor(it.value("kind"), if (quantity == null) 1 else it.int("n"), it.value("filter"))
+    private val putCountersOnTargetPermanent: List<Phrase<CardScript>> =
+        Targets.singularQuantifiers.flatMap { quantifier ->
+            fun scriptFor(kind: String, count: Int, filter: GameObjectFilter) = CardScript(
+                spellEffect = Effects.AddCounters(kind, count, Targets.bound()),
+                targetRequirements = listOf(quantifier.requirement(1, filter)),
+            )
+            fun rule(template: String, name: String, quantity: Phrase<*>?) =
+                phrase(quantifier.splice(template), name = "$name, ${quantifier.name}") {
+                    slot("kind", if (quantity == null) Primitives.singularCounterKind else Primitives.counterKind)
+                    if (quantity != null) slot("n", quantity)
+                    slot("filter", Filters.filter)
+                    build {
+                        scriptFor(it.value("kind"), if (quantity == null) 1 else it.int("n"), it.value("filter"))
+                    }
+                    match { script ->
+                        val (kind, count) = countersAdded(script.spellEffect, Targets.bound()) ?: return@match null
+                        if (quantity == null && count != 1) return@match null
+                        if (quantity != null && !(count >= 2 && Cardinals.spellable(count))) return@match null
+                        val requirement = script.targetRequirements.singleOrNull() ?: return@match null
+                        val filter = Targets.targetedFilter(requirement) ?: return@match null
+                        if (script != scriptFor(kind, count, filter)) return@match null
+                        bind("kind" to kind, "n" to count, "filter" to filter)
+                    }
                 }
-                match { script ->
-                    val (kind, count) = countersAdded(script.spellEffect, Targets.bound()) ?: return@match null
-                    if (quantity == null && count != 1) return@match null
-                    if (quantity != null && !(count >= 2 && Cardinals.spellable(count))) return@match null
-                    val requirement = script.targetRequirements.singleOrNull() ?: return@match null
-                    val filter = Targets.permanentFilter(requirement) ?: return@match null
-                    if (script != scriptFor(kind, count, filter)) return@match null
-                    bind("kind" to kind, "n" to count, "filter" to filter)
-                }
-            }
-        listOf(
-            rule("put {kind} counter on target {filter}", "put a counter on a target", null),
-            rule("put {n} {kind} counters on target {filter}", "put counters on a target", Cardinals.word),
-        )
-    }
+            // `{n}` is the counter count and the quantifier spells no count of its own here — these
+            // are the singular rows only, for the reason [Targets.singularQuantifiers] gives — so the
+            // two numbers never collide in one template.
+            listOf(
+                rule("put {kind} counter on {q}target {filter}", "put a counter on a target", null),
+                rule("put {n} {kind} counters on {q}target {filter}", "put counters on a target", Cardinals.word),
+            )
+        }
 
     /**
      * "Target creature gains flying until end of turn.", "…gains trample and lifelink until end of
@@ -985,23 +1015,47 @@ object Steps {
      * SDK's own shape: `CompositeEffect` means "these effects, in order", and a list of one has
      * nothing to sequence. Reading it the other way would print every single-keyword card's model as
      * a one-element composite and disagree with every hand-written card that spells it.
+     *
+     * The **third** family to slot [Targets.quantifiers], and the one that shows what the table was
+     * for: its plural changes only the noun and the verb's agreement, so it is the same rows the pump
+     * takes — "Any number of target creatures each gain double strike until end of turn." (Phalanx
+     * Formation), "Up to one target creature you control gains protection from each of your opponents
+     * until end of turn." (Courageous Resolve).
      */
-    private val grantToTargetPermanent: Phrase<CardScript> = run {
-        fun scriptFor(keywords: List<Keyword>, filter: GameObjectFilter) = CardScript(
-            spellEffect = grants(keywords, Targets.bound()),
-            targetRequirements = listOf(Targets.permanent(filter)),
+    private val grantToTargetPermanent: List<Phrase<CardScript>> = Targets.quantifiers.map { quantifier ->
+        fun scriptFor(count: Int, keywords: List<Keyword>, filter: GameObjectFilter) = CardScript(
+            spellEffect = quantifier.effectOver { grants(keywords, it) },
+            targetRequirements = listOf(quantifier.requirement(count, filter)),
         )
-        phrase("target {filter} gains {kws} until end of turn", name = "grant keywords to a target") {
+        // "gains" for one and "each gain" for several — the same agreement the pump sentence carries,
+        // one verb over.
+        val template = quantifier.splice(
+            if (quantifier.plural) {
+                "{q}target {filter} each gain {kws} until end of turn"
+            } else {
+                "{q}target {filter} gains {kws} until end of turn"
+            }
+        )
+        phrase(template, name = "grant keywords to a target, ${quantifier.name}") {
             frontedDuration()
-            slot("filter", Filters.filter)
+            if (quantifier.counted) slot(Targets.COUNT_SLOT, Cardinals.word)
+            slot("filter", if (quantifier.plural) Filters.plural else Filters.filter)
             slot("kws", Keywords.keywordRun)
-            build { scriptFor(it.value("kws"), it.value("filter")) }
+            build {
+                scriptFor(
+                    if (quantifier.counted) it.int(Targets.COUNT_SLOT) else 1,
+                    it.value("kws"),
+                    it.value("filter"),
+                )
+            }
             match { script ->
-                val keywords = grantedKeywords(script.spellEffect) ?: return@match null
+                val keywords = grantedKeywords(quantifier.memberOf(script.spellEffect)) ?: return@match null
                 val requirement = script.targetRequirements.singleOrNull() ?: return@match null
-                val filter = Targets.permanentFilter(requirement) ?: return@match null
-                if (script != scriptFor(keywords, filter)) return@match null
-                bind("filter" to filter, "kws" to keywords)
+                val filter = Targets.targetedFilter(requirement) ?: return@match null
+                val count = if (quantifier.counted) requirement.count else 1
+                if (quantifier.counted && !Cardinals.spellable(count)) return@match null
+                if (script != scriptFor(count, keywords, filter)) return@match null
+                bind(Targets.COUNT_SLOT to count, "filter" to filter, "kws" to keywords)
             }
         }
     }
@@ -1014,36 +1068,70 @@ object Steps {
      * requirement between the two effects. [Statics.pumpAndKeyword] is the same shape on the static
      * side, and the answer is the same — the model is already right, and what a compound SDK type
      * would buy is nothing.
+     *
+     * The **fourth** family to slot [Targets.quantifiers], and where the plural rows actually pay:
+     * every quantified line the corpus prints for this sentence is plural — "Up to two target
+     * creatures each get +1/+1 and gain lifelink until end of turn." (Cutthroat Maneuver, Coordinated
+     * Assault, Press the Advantage), "Any number of target creatures each get +2/+0 and gain trample
+     * until end of turn." (Rouse the Mob, Ajani's Presence, Aerial Formation). The whole compound
+     * goes inside the iteration, because both halves are per-target: [effectOver] wraps the composite
+     * rather than composing two iterations.
+     *
+     * The second verb does *not* take "each" — Oracle writes "each get +1/+1 and **gain** lifelink",
+     * the adverb attaching once to the pair.
      */
-    private val pumpAndGrantTarget: Phrase<CardScript> = run {
+    private val pumpAndGrantTarget: List<Phrase<CardScript>> = Targets.quantifiers.map { quantifier ->
         fun scriptFor(
+            count: Int,
             modifiers: Pair<Int, Int>,
             keywords: List<Keyword>,
             filter: GameObjectFilter,
         ) = CardScript(
-            spellEffect = Effects.Composite(
-                listOf(Effects.ModifyStats(modifiers.first, modifiers.second, Targets.bound())) +
-                    keywords.map { Effects.GrantKeyword(it, Targets.bound()) }
-            ),
-            targetRequirements = listOf(Targets.permanent(filter)),
+            spellEffect = quantifier.effectOver { target ->
+                Effects.Composite(
+                    listOf(Effects.ModifyStats(modifiers.first, modifiers.second, target)) +
+                        keywords.map { Effects.GrantKeyword(it, target) }
+                )
+            },
+            targetRequirements = listOf(quantifier.requirement(count, filter)),
         )
-        phrase(
-            "target {filter} gets {mod} and gains {kws} until end of turn",
-            name = "pump and grant keywords to a target",
-        ) {
+        val template = quantifier.splice(
+            if (quantifier.plural) {
+                "{q}target {filter} each get {mod} and gain {kws} until end of turn"
+            } else {
+                "{q}target {filter} gets {mod} and gains {kws} until end of turn"
+            }
+        )
+        phrase(template, name = "pump and grant keywords to a target, ${quantifier.name}") {
             frontedDuration()
-            slot("filter", Filters.filter)
+            if (quantifier.counted) slot(Targets.COUNT_SLOT, Cardinals.word)
+            slot("filter", if (quantifier.plural) Filters.plural else Filters.filter)
             slot("mod", Primitives.statModifiers)
             slot("kws", Keywords.keywordRun)
-            build { scriptFor(it.value("mod"), it.value("kws"), it.value("filter")) }
+            build {
+                scriptFor(
+                    if (quantifier.counted) it.int(Targets.COUNT_SLOT) else 1,
+                    it.value("mod"),
+                    it.value("kws"),
+                    it.value("filter"),
+                )
+            }
             match { script ->
-                val effects = (script.spellEffect as? CompositeEffect)?.effects ?: return@match null
+                val member = quantifier.memberOf(script.spellEffect)
+                val effects = (member as? CompositeEffect)?.effects ?: return@match null
                 val modifiers = fixedModifiers(effects.firstOrNull()) ?: return@match null
                 val keywords = grantedKeywords(effects.drop(1)) ?: return@match null
                 val requirement = script.targetRequirements.singleOrNull() ?: return@match null
-                val filter = Targets.permanentFilter(requirement) ?: return@match null
-                if (script != scriptFor(modifiers, keywords, filter)) return@match null
-                bind("filter" to filter, "mod" to modifiers, "kws" to keywords)
+                val filter = Targets.targetedFilter(requirement) ?: return@match null
+                val count = if (quantifier.counted) requirement.count else 1
+                if (quantifier.counted && !Cardinals.spellable(count)) return@match null
+                if (script != scriptFor(count, modifiers, keywords, filter)) return@match null
+                bind(
+                    Targets.COUNT_SLOT to count,
+                    "filter" to filter,
+                    "mod" to modifiers,
+                    "kws" to keywords,
+                )
             }
         }
     }
