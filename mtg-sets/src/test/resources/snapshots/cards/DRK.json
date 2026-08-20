@@ -2335,6 +2335,70 @@
     ]
 }
 
+// Tormod's Crypt
+{
+    "name": "Tormod's Crypt",
+    "manaCost": "{0}",
+    "typeLine": "Artifact",
+    "oracleText": "{T}, Sacrifice this artifact: Exile target player's graveyard.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "crypt_graveyard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "crypt_graveyard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "112",
+        "rarity": "UNCOMMON",
+        "artist": "Christopher Rush",
+        "flavorText": "The dark opening seemed to breathe the cold, damp air of the dead earth in a steady rhythm.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/f/0f9668ba-d26d-4484-b4b8-6fb91fbfb617.jpg?1783947925"
+    }
+}
+
 // Water Wurm
 {
     "name": "Water Wurm",
