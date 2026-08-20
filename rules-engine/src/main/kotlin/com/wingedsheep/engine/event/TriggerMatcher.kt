@@ -141,11 +141,22 @@ class TriggerMatcher(
             is EventPattern.CreaturesAttackYouEvent -> {
                 if (event !is AttackersDeclaredEvent) return false
                 // Only count attackers declared against the player themself, not against
-                // a planeswalker they control (per CR 509.1b / Orim's Prayer ruling).
+                // a planeswalker they control (per CR 509.1b / Orim's Prayer ruling) — unless the
+                // card spells out "you and/or planeswalkers you control" (Tomik, Wielder of Law),
+                // which is what `includePlaneswalkersYouControl` opts into.
                 val attackingThisPlayer = event.attackers.count { attackerId ->
-                    val attackingComponent = state.getEntity(attackerId)
+                    val defenderId = state.getEntity(attackerId)
                         ?.get<com.wingedsheep.engine.state.components.combat.AttackingComponent>()
-                    attackingComponent?.defenderId == controllerId
+                        ?.defenderId
+                    when {
+                        defenderId == null -> false
+                        defenderId == controllerId -> true
+                        !trigger.includePlaneswalkersYouControl -> false
+                        else -> state.getEntity(defenderId)
+                            ?.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()
+                            ?.playerId == controllerId &&
+                            state.projectedState.isPlaneswalker(defenderId)
+                    }
                 }
                 attackingThisPlayer >= trigger.minAttackers
             }
@@ -2158,6 +2169,7 @@ class TriggerMatcher(
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttacking,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttackingAlone,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttackingAnOpponent,
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttackingYouOrYourPlaneswalkers,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsBlocking,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsBlocked,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsUnblocked,

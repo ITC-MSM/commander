@@ -928,6 +928,119 @@
     ]
 }
 
+// Anzrag's Rampage
+{
+    "name": "Anzrag's Rampage",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy all artifacts you don't control, then exile the top X cards of your library, where X is the number of artifacts that were put into graveyards from the battlefield this turn. You may put a creature card exiled this way onto the battlefield. It gains haste. Return it to your hand at the beginning of the next end step.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "BattlefieldMatching",
+                        "filter": "artifact ctrl:opponent"
+                    },
+                    "storeAs": "theirArtifacts"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "theirArtifacts",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    },
+                    "moveType": "Destroy"
+                },
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "TurnTracking",
+                            "player": "Each",
+                            "tracker": "ARTIFACTS_DIED"
+                        }
+                    },
+                    "storeAs": "exiledThisWay"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "exiledThisWay",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Exile"
+                    }
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "exiledThisWay",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "filter": "creature",
+                    "storeSelected": "chosenCreature",
+                    "prompt": "You may put a creature card exiled this way onto the battlefield",
+                    "showAllCards": true
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "chosenCreature",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield"
+                    },
+                    "storeMovedAs": "entered",
+                    "markEnteredViaSourceAbility": true
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Collection",
+                        "collection": "entered"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "HASTE",
+                                "target": "Self",
+                                "duration": "Permanent"
+                            },
+                            {
+                                "type": "CreateDelayedTrigger",
+                                "step": "END",
+                                "effect": {
+                                    "type": "MoveToZone",
+                                    "target": "Self",
+                                    "destination": "Hand"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "111",
+        "rarity": "RARE",
+        "artist": "Lucas Graciano",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/d/9dc52b53-3e4f-4d7d-851f-86c6e0ac67b2.jpg?1783912887"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Anzrag, the Quake-Mole
 {
     "name": "Anzrag, the Quake-Mole",
@@ -10942,6 +11055,69 @@
     ]
 }
 
+// Incinerator of the Guilty
+{
+    "name": "Incinerator of the Guilty",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Creature — Dragon",
+    "oracleText": "Flying, trample\nWhenever this creature deals combat damage to a player, you may collect evidence X. When you do, this creature deals X damage to each creature and planeswalker that player controls. (To collect evidence X, exile cards with total mana value X or greater from your graveyard.)",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLYING",
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "CollectEvidenceChosenAmount",
+                        "storeAmountAs": "incineratorEvidenceX"
+                    },
+                    "reflexiveEffect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature|planeswalker ctrl:triggering-player"
+                            }
+                        },
+                        "body": {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "VariableReference",
+                                "variableName": "incineratorEvidenceX"
+                            },
+                            "target": "Self"
+                        }
+                    },
+                    "descriptionOverride": "You may collect evidence X. When you do, this creature deals X damage to each creature and planeswalker that player controls."
+                },
+                "descriptionOverride": "Whenever this creature deals combat damage to a player, you may collect evidence X. When you do, this creature deals X damage to each creature and planeswalker that player controls."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "132",
+        "rarity": "MYTHIC",
+        "artist": "Lucas Graciano",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/c/0c6aca64-a554-45c1-9f23-4f7878abeda5.jpg?1783912888"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Innocent Bystander
 {
     "name": "Innocent Bystander",
@@ -19525,6 +19701,96 @@
     "colorIdentityOverride": [
         "GREEN",
         "WHITE"
+    ]
+}
+
+// Tomik, Wielder of Law
+{
+    "name": "Tomik, Wielder of Law",
+    "manaCost": "{1}{W}{B}",
+    "typeLine": "Legendary Creature — Human Advisor",
+    "oracleText": "Affinity for planeswalkers (This spell costs {1} less to cast for each planeswalker you control.)\nFlying, vigilance\nWhenever an opponent attacks with creatures, if two or more of those creatures are attacking you and/or planeswalkers you control, that opponent loses 3 life and you draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE",
+        "AFFINITY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Affinity",
+            "forType": "PLANESWALKER"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "CreaturesAttackYouEvent",
+                    "minAttackers": 2,
+                    "includePlaneswalkersYouControl": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "TriggeringPlayer"
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "interveningIf": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "Each",
+                        "filter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ],
+                            "statePredicates": [
+                                "IsAttackingYouOrYourPlaneswalkers"
+                            ]
+                        }
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "Whenever an opponent attacks with creatures, if two or more of those creatures are attacking you and/or planeswalkers you control, that opponent loses 3 life and you draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "431",
+        "rarity": "MYTHIC",
+        "artist": "Valera Lutfullina",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/c/2c5a7550-fe1a-4797-9583-70ab56cfac0d.jpg?1783912763"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
     ]
 }
 

@@ -1028,6 +1028,20 @@ data class CreaturesDiedThisTurnComponent(
 ) : Component
 
 /**
+ * Tracks the number of artifacts (including tokens) put into a graveyard from the battlefield
+ * under this player's control during the current turn. Cleared at end of turn by
+ * CleanupPhaseManager alongside [CreaturesDiedThisTurnComponent].
+ *
+ * Summed across all players (`TurnTracking(Player.Each, TurnTracker.ARTIFACTS_DIED)`) this is the
+ * game-wide count Anzrag's Rampage asks for: "the number of artifacts that were put into
+ * graveyards from the battlefield this turn."
+ */
+@Serializable
+data class ArtifactsDiedThisTurnComponent(
+    val count: Int = 0
+) : Component
+
+/**
  * Records the last-known subtypes of each creature that died under this player's control during
  * the current turn — one [diedSubtypeSets] entry per death, in death order. Subtypes are stored
  * as their raw strings (e.g. "Zombie"), captured from the dying creature's projected type line at

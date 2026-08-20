@@ -34,6 +34,7 @@ import com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComp
 import com.wingedsheep.engine.state.components.player.CardsLeftGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CardsPutIntoExileThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CreatureSubtypesDiedThisTurnComponent
+import com.wingedsheep.engine.state.components.player.ArtifactsDiedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CreaturesDiedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.NonTokenCreaturesDiedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.OpponentCreaturesExiledThisTurnComponent
@@ -740,6 +741,22 @@ object ZoneTransitionService {
                 playerContainer.with(
                     CreatureSubtypesDiedThisTurnComponent(existing.diedSubtypeSets + listOf(diedSubtypes))
                 )
+            }
+        }
+
+        // 8b1. Track artifacts put into a graveyard from the battlefield (Anzrag's Rampage).
+        // The artifact-typed sibling of 8b, credited to the same last-known controller. Reads the
+        // last-known *projected* type line (like 8a3, unlike 8b's base read) so an artifact that
+        // was only an artifact through a continuous effect still counts, and an animated artifact
+        // creature counts as both. Summed over Player.Each this is the game-wide "artifacts that
+        // were put into graveyards from the battlefield this turn".
+        if (leavingBattlefield && actualDestZone == Zone.GRAVEYARD &&
+            (lastKnownTypeLine ?: cardComponent.typeLine).isArtifact
+        ) {
+            newState = newState.updateEntity(controllerId) { playerContainer ->
+                val existing = playerContainer.get<ArtifactsDiedThisTurnComponent>()
+                    ?: ArtifactsDiedThisTurnComponent()
+                playerContainer.with(ArtifactsDiedThisTurnComponent(existing.count + 1))
             }
         }
 

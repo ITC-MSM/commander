@@ -195,6 +195,25 @@ enum class TurnTracker {
      */
     DISTINCT_BENDS,
     /**
+     * Count of artifacts (including tokens) put into a graveyard from the battlefield under the
+     * player's control this turn — the artifact-typed sibling of [CREATURES_DIED], recorded by the
+     * same `ZoneTransitionService` battlefield→graveyard hook and credited to the *last-known
+     * controller*, so a stolen artifact that is then destroyed counts for the thief.
+     *
+     * Read it with [Player.Each] for the **game-wide** total: "the number of artifacts that were
+     * put into graveyards from the battlefield this turn" (Anzrag's Rampage) is
+     * `TurnTracking(Player.Each, ARTIFACTS_DIED)`, which sums every player's tally. Every artifact
+     * that hits a graveyard from the battlefield had exactly one controller, so the sum is the
+     * game-wide count with no double-counting. There is deliberately no separate game-scoped
+     * tracker: [Player.Each] already spans the table, and a second component would be a second
+     * thing to keep in sync.
+     *
+     * Type is read off the *last-known* projected type line, so an artifact animated into a
+     * creature still counts as an artifact, and a permanent that was only an artifact through a
+     * continuous effect counts while that effect applied.
+     */
+    ARTIFACTS_DIED,
+    /**
      * How many cards the player had in hand **at the beginning of this turn** — a snapshot taken
      * in the turn's untap step, before any draw, not a running count. Backed by
      * `CardsInHandAtTurnStartComponent`, rewritten for every player at each turn start.
@@ -240,6 +259,12 @@ enum class TurnTracker {
         RED_NONCOMBAT_DAMAGE_DEALT -> "the noncombat damage red sources ${player.description} controlled dealt this turn"
         DAMAGE_SOURCES -> "the number of sources ${player.description} controlled that dealt damage this turn"
         DISTINCT_BENDS -> "the number of different ways ${player.description} bent this turn"
+        ARTIFACTS_DIED -> if (player == Player.Each) {
+            "the number of artifacts that were put into graveyards from the battlefield this turn"
+        } else {
+            "the number of artifacts put into graveyards from the battlefield under " +
+                "${player.possessive} control this turn"
+        }
         CARDS_IN_HAND_AT_TURN_START ->
             "the number of cards ${player.description} had in hand at the beginning of this turn"
     }

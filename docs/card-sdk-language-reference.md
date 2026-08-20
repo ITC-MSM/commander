@@ -2849,6 +2849,26 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   graveyard mana value before prompting, so CR 701.59b holds by construction — a player who can't
   reach N is never *asked*, rather than being asked and forced to decline. Emits the same
   `EvidenceCollectedEvent` the cost contexts do.
+- `Effects.CollectEvidenceChosenAmount(storeAmountAs, player = Player.You)` — collect evidence
+  **X**, where X is a number the player picks as the effect resolves. The one printed shape whose
+  threshold isn't literal: "you may collect evidence X. When you do, this creature deals X damage
+  to each creature and planeswalker that player controls" (Incinerator of the Guilty). Its own
+  effect rather than a `DynamicAmount`-valued `amount` on `CollectEvidenceEffect`, because a
+  player-chosen number is a *decision*, not a computed value, and it has to be bounded before it is
+  asked.
+
+  Two hops, in this order: a `ChooseNumberDecision` over `0 .. <total mana value in the graveyard>`
+  — that ceiling is CR 701.59b moved onto the choice, so an unreachable X is never offered — then
+  the ordinary sum-gated card picker with X as its floor, running through the same
+  `CollectEvidenceResolver` as every other context. Deriving X from whichever cards the player
+  exiled would be the one-hop shortcut and is wrong: over-exiling is legal (CR 701.59a) and would
+  silently raise X above what they chose.
+
+  **X = 0 is legal**, exiles nothing, and still counts as collecting evidence (2024-02-02 ruling),
+  so "whenever you collect evidence" payoffs fire off it — which also makes this effect *always*
+  feasible, so an enclosing "may" is offered however thin the graveyard. X is republished under
+  `storeAmountAs` and read downstream as `DynamicAmount.VariableReference(storeAmountAs)`; stored
+  numbers survive the reflexive trigger's stack round-trip, so the "when you do" half can spend it.
 - `forage(afterEffect?)` — Forage as an *effect* ("you may forage"): a `ChooseActionEffect` letting
   the player choose to exile three cards from their graveyard or sacrifice a Food (each gated by a
   feasibility check), with `afterEffect` appended to whichever mode is taken (Bushy Bodyguard, Curious
@@ -4034,6 +4054,13 @@ work for abilities-on-stack (which carry no `CardComponent`).
   attacking your opponent matches, and one attacking *you* doesn't. Fails closed without controller context,
   and has no last-known fallback (the exit snapshot records *that* it was attacking, not whom). Oviya,
   Automech Artisan: `GrantKeyword(Keyword.TRAMPLE, GroupFilter(GameObjectFilter.Creature.attackingAnOpponent()))`.
+- `IsAttackingYouOrYourPlaneswalkers` (filter builder `attackingYouOrYourPlaneswalkers()`) — the
+  defender-side mirror of `IsAttackingAnOpponent`: the defender is either *you* (the controller of the
+  ability applying the filter) or a planeswalker *you* control. Battles are excluded — "planeswalkers
+  you control" is literal, and a battle you protect is controlled by its caster. Controller-relative,
+  so it matches regardless of who controls the attacker; fails closed without controller context and
+  has no last-known fallback, exactly like its mirror. Tomik, Wielder of Law counts the attacking batch
+  with it: `Compare(DynamicAmounts.battlefield(Player.Each, GameObjectFilter.Creature.attackingYouOrYourPlaneswalkers()).count(), GTE, Fixed(2))`.
 - `IsBlocking` — declared as blocker this combat.
 - `HasLockedDoor` (filter builder `hasLockedDoor()`) — a Room permanent (CR 709.5) with at least one locked
   door, i.e. a half lacking its "unlocked" designation (CR 709.5c). Reads the engine's
@@ -4536,6 +4563,13 @@ sealed set for attack-time facts beyond the basics.
   not per attacker. Excludes creatures attacking a planeswalker you control
   (CR 509.1b). Pair with `DynamicAmounts.creaturesAttackingYou()` for
   attacker-count payoffs (e.g., Orim's Prayer).
+  The underlying `EventPattern.CreaturesAttackYouEvent(minAttackers, includePlaneswalkersYouControl)`
+  exposes both knobs for cards that print them: `minAttackers` raises the batch threshold (there is no
+  `Triggers.` constant for it — construct the pattern inline, as the `YouAttackEvent(minAttackers = n)`
+  cards do), and `includePlaneswalkersYouControl = true` opts into the wider "you **and/or planeswalkers
+  you control**" reading that CR 509.1b denies by default. Tomik, Wielder of Law uses both. Note the
+  widened flag changes only which attackers *count*; the trigger still belongs to the defending player,
+  and battles are never included.
 - `CreaturesAttackYourOpponent` — the "your opponents are attacked" counterpart of
   `CreaturesAttackYou`; fires once per `AttackersDeclaredEvent` when one or more declared
   attackers have one of the controller's opponents (a player, via `state.getOpponents`) as
@@ -9843,6 +9877,15 @@ of `AddMana`. The engine empties pools at end of turn, so:
 ### `TurnTracker` keys (used with `TurnTracking`)
 
 - `CREATURES_DIED` — creatures that died this turn.
+- `ARTIFACTS_DIED` — artifacts (incl. tokens) put into a graveyard from the battlefield this turn,
+  credited to each one's **last-known controller** (so a stolen artifact destroyed after the theft
+  counts for the thief). Type is read off the last-known *projected* type line, so an animated
+  artifact creature counts and a permanent that was only an artifact through a continuous effect
+  counts while that effect applied. Read it with `Player.Each` for the **game-wide** total —
+  `DynamicAmounts.artifactsDiedThisTurn()` defaults to exactly that, and is Anzrag's Rampage's X
+  ("the number of artifacts that were put into graveyards from the battlefield this turn"). Every
+  such artifact had exactly one controller, so the sum double-counts nothing; there is deliberately
+  no separate game-scoped component.
 - `NONTOKEN_CREATURES_DIED` — nontoken creatures that died this turn.
 - `CREATURES_LEFT_BATTLEFIELD` — creatures (incl. tokens) that left the battlefield under the
   player's control this turn, regardless of destination (death, exile, bounce, …). The creature-scoped
