@@ -2,7 +2,7 @@
 
 **Set Size:** 119 cards
 **Release Date:** August 1, 1994
-**Implemented:** 47 / 119
+**Implemented:** 49 / 119
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 19    | 8    |
@@ -45,7 +45,7 @@
 - [ ] Dance of Many
 - [ ] Deep Water
 - [x] Drowned
-- [ ] Electric Eel
+- [x] Electric Eel
 - [ ] Erosion
 - [x] Flood
 - [x] Ghost Ship
@@ -83,7 +83,7 @@
 ### Red
 - [x] Ball Lightning
 - [ ] Blood Moon
-- [ ] Brothers of Fire
+- [x] Brothers of Fire
 - [x] Cave People
 - [ ] Eternal Flame
 - [x] Fire Drake

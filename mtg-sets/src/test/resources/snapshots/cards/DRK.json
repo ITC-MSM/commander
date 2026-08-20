@@ -264,6 +264,75 @@
     "colorIdentityOverride": []
 }
 
+// Brothers of Fire
+{
+    "name": "Brothers of Fire",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Creature — Human Shaman",
+    "oracleText": "{1}{R}{R}: This creature deals 1 damage to any target and 1 damage to you.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{R}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            }
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "You"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "59",
+        "rarity": "UNCOMMON",
+        "artist": "Mark Tedin",
+        "flavorText": "Fire is never a gentle master.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/a/ba2cc4a6-fdcc-4082-801a-d2c50e560e8d.jpg?1783947936"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Carnivorous Plant
 {
     "name": "Carnivorous Plant",
@@ -530,6 +599,90 @@
     "colorIdentityOverride": [
         "BLUE",
         "BLACK"
+    ]
+}
+
+// Electric Eel
+{
+    "name": "Electric Eel",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Fish",
+    "oracleText": "When this creature enters, it deals 1 damage to you.\n{R}{R}: This creature gets +2/+0 until end of turn and deals 1 damage to you.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "You"
+                    }
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{R}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": "Self"
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "You"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "25",
+        "rarity": "UNCOMMON",
+        "artist": "Anson Maddocks",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/8/b8834c18-0e4e-4785-9d15-b33345e3789b.jpg?1783947944"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
     ]
 }
 
