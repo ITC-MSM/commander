@@ -2676,7 +2676,10 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   of a sealed `IterationSpace`. Five lowering facades keep the pre-unification authoring names
   (same precedent as `IfYouDoEffect` → `GatedEffect`); use the one matching the iteration source:
   - `ForEachTargetEffect(effects)` → `IterationSpace.Targets` — per chosen target; the body sees
-    only the current target as `ContextTarget(0)`, fresh `storedCollections` (Kaboom!).
+    only the current legal target as `ContextTarget(0)`, fresh `storedCollections` (Kaboom!). If one
+    target becomes illegal before resolution while another remains legal, the loop still runs for
+    each surviving target and rebinds it to slot 0; legality gaps from the outer spell do not leak
+    into the iteration body.
   - `ForEachPlayerEffect(players, effects)` → `IterationSpace.Players(players)` — per matching
     player; `controllerId` rebound so `Player.You` is the current player, `opponentId` recomputed,
     fresh `storedCollections` (Winds of Change, Bend or Break, One Ring to Rule Them All).
