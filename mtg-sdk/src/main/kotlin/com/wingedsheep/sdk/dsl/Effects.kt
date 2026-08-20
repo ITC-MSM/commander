@@ -1889,6 +1889,18 @@ object Effects {
         com.wingedsheep.sdk.scripting.effects.CollectEvidenceEffect(amount, player)
 
     /**
+     * Collect evidence **X**, where X is chosen by [player] as this resolves (0 through the total
+     * mana value of cards in their graveyard) and republished under [storeAmountAs] for later
+     * effects to read via `DynamicAmount.VariableReference(storeAmountAs)`.
+     *
+     * "You may collect evidence X. When you do, this creature deals X damage to …" (Incinerator of
+     * the Guilty) is this as the `action` half of a `ReflexiveTriggerEffect`. Choosing 0 is always
+     * legal, so the enclosing "may" is always offered.
+     */
+    fun CollectEvidenceChosenAmount(storeAmountAs: String, player: Player = Player.You): Effect =
+        com.wingedsheep.sdk.scripting.effects.CollectEvidenceChosenAmountEffect(player, storeAmountAs)
+
+    /**
      * Move one counter of each kind on [source] that [destination] does not already have,
      * from the source onto the destination. Deterministic (no player choice). Used by
      * Goldberry, River-Daughter's first ability.

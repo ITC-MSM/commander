@@ -2834,6 +2834,26 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   graveyard mana value before prompting, so CR 701.59b holds by construction — a player who can't
   reach N is never *asked*, rather than being asked and forced to decline. Emits the same
   `EvidenceCollectedEvent` the cost contexts do.
+- `Effects.CollectEvidenceChosenAmount(storeAmountAs, player = Player.You)` — collect evidence
+  **X**, where X is a number the player picks as the effect resolves. The one printed shape whose
+  threshold isn't literal: "you may collect evidence X. When you do, this creature deals X damage
+  to each creature and planeswalker that player controls" (Incinerator of the Guilty). Its own
+  effect rather than a `DynamicAmount`-valued `amount` on `CollectEvidenceEffect`, because a
+  player-chosen number is a *decision*, not a computed value, and it has to be bounded before it is
+  asked.
+
+  Two hops, in this order: a `ChooseNumberDecision` over `0 .. <total mana value in the graveyard>`
+  — that ceiling is CR 701.59b moved onto the choice, so an unreachable X is never offered — then
+  the ordinary sum-gated card picker with X as its floor, running through the same
+  `CollectEvidenceResolver` as every other context. Deriving X from whichever cards the player
+  exiled would be the one-hop shortcut and is wrong: over-exiling is legal (CR 701.59a) and would
+  silently raise X above what they chose.
+
+  **X = 0 is legal**, exiles nothing, and still counts as collecting evidence (2024-02-02 ruling),
+  so "whenever you collect evidence" payoffs fire off it — which also makes this effect *always*
+  feasible, so an enclosing "may" is offered however thin the graveyard. X is republished under
+  `storeAmountAs` and read downstream as `DynamicAmount.VariableReference(storeAmountAs)`; stored
+  numbers survive the reflexive trigger's stack round-trip, so the "when you do" half can spend it.
 - `forage(afterEffect?)` — Forage as an *effect* ("you may forage"): a `ChooseActionEffect` letting
   the player choose to exile three cards from their graveyard or sacrifice a Food (each gated by a
   feasibility check), with `afterEffect` appended to whichever mode is taken (Bushy Bodyguard, Curious

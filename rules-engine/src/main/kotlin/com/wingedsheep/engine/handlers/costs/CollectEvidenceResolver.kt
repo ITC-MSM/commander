@@ -170,7 +170,13 @@ object CollectEvidenceResolver {
 
         val toExile = GraveyardTotalExileResolver
             .resolveSelection(candidates.shared, amount, chosenCards)
-        if (toExile.isEmpty()) {
+        // Collecting evidence 0 exiles nothing and is legal — "any number of cards" includes none,
+        // and their total mana value of 0 meets a threshold of 0 (CR 701.59a). Per the 2024-02-02
+        // Incinerator of the Guilty ruling it still *counts* as collecting evidence, so the event
+        // below must fire for "whenever you collect evidence" payoffs. Only reachable from
+        // `CollectEvidenceChosenAmountEffect`, the one shape whose X the player picks; every fixed
+        // threshold in the corpus is at least 1.
+        if (toExile.isEmpty() && amount > 0) {
             return Result.Failure("Cannot collect evidence $amount: no legal selection")
         }
 

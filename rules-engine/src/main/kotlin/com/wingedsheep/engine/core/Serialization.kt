@@ -225,6 +225,7 @@ val engineSerializersModule = SerializersModule {
         subclass(BattleProtectorChoiceContinuation::class)
         subclass(PayOrSufferContinuation::class)
         subclass(CollectEvidenceContinuation::class)
+        subclass(ChooseEvidenceAmountContinuation::class)
         subclass(PayOrSufferChoiceContinuation::class)
         subclass(CostPaymentContinuation::class)
         subclass(ChooseColorThenContinuation::class)
