@@ -110,6 +110,44 @@ class TournamentProgressionTest : FunSpec({
         startable.flatMap { (_, m) -> listOfNotNull(m.player1Id, m.player2Id) }.toSet() shouldBe everyone
     }
 
+    test("a finished round keeps answering isRoundComplete until it is advanced past") {
+        // Why the round-complete path advances the bracket itself. It used to get that for free: it
+        // cleared the ready set, which made the AI-ready pass find work, which called startNextRound.
+        // With readies surviving a round boundary that guard is false, and an un-advanced `currentRound`
+        // is not cosmetic — `isRoundComplete()` reads it, so it answers true forever.
+        val manager = tournament()
+        val round1 = manager.startNextRound()!!
+        manager.startAll(round1)
+        round1.matches.forEach { manager.reportMatchResult(it.gameSessionId!!, it.player1Id) }
+
+        manager.isRoundComplete() shouldBe true
+        manager.currentRound?.roundNumber shouldBe 1
+
+        manager.startNextRound()!!.roundNumber shouldBe 2
+        manager.isRoundComplete() shouldBe false
+    }
+
+    test("a later round's result is attributable to that round, not to the current one") {
+        // The other half: matches from later rounds run concurrently with the current round, so a
+        // result arriving while `currentRound` still points at a finished round must not be taken as
+        // closing it — that re-announces a closed round and clears every player's game-session pointer,
+        // including seats that are mid-game. `getRoundForMatch` is what tells the two apart.
+        val manager = tournament()
+        val round1 = manager.startNextRound()!!
+        manager.startAll(round1)
+        round1.matches.forEach { manager.reportMatchResult(it.gameSessionId!!, it.player1Id) }
+
+        // Round 1 is done but nothing advanced yet — exactly the window the sweep runs in.
+        val (round2, someRound2Match) = manager.getNextMatchForPlayer(human)!!
+        round2.roundNumber shouldBe 2
+        someRound2Match.gameSessionId = "r2-eager"
+        manager.reportMatchResult("r2-eager", human)
+
+        manager.currentRound?.roundNumber shouldBe 1
+        manager.getRoundForMatch("r2-eager")?.roundNumber shouldBe 2
+        manager.getRoundForMatch(round1.matches.first().gameSessionId!!)?.roundNumber shouldBe 1
+    }
+
     test("a player mid-match is distinguishable from one waiting, so a stale Ready can be refused") {
         // The handler refuses a ready click from a player whose match is still running: they can't have
         // dismissed a game-over overlay yet, and banking it would consent to the match *after* this one,

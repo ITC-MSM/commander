@@ -88,33 +88,9 @@ class TournamentMatchHandler(
                 return
             }
 
-            while (true) {
-                val needsPrepare = tournament.currentRound == null ||
-                        tournament.currentRound?.isComplete == true
-                if (!needsPrepare) break
-
-                val round = tournament.startNextRound()
-                if (round == null) {
-                    completeTournament(lobbyId)
-                    return
-                }
-
-                for (match in round.matches) {
-                    if (match.isBye && match.isComplete) {
-                        val byePlayerState = lobby.players[match.player1Id]
-                        val byeWs = byePlayerState?.identity?.webSocketSession
-                        if (byeWs != null && byeWs.isOpen) {
-                            ctx.sender.send(byeWs, ServerMessage.TournamentBye(
-                                lobbyId = lobbyId,
-                                round = round.roundNumber
-                            ))
-                            spectatingHandler.sendActiveMatchesToPlayer(byePlayerState.identity, byeWs)
-                        }
-                    }
-                }
-
-                ctx.lobbyRepository.saveTournament(lobbyId, tournament)
-                logger.info("Prepared round ${round.roundNumber} for tournament $lobbyId")
+            if (!prepareRoundsIfNeeded(lobby, tournament)) {
+                completeTournament(lobbyId)
+                return
             }
 
             val wasNewlyReady = lobby.markPlayerReady(identity.playerId)
@@ -153,7 +129,15 @@ class TournamentMatchHandler(
             // next round when the current one is done, which would make `isRoundComplete()` report on
             // the fresh round and swallow this round's `RoundComplete` broadcast entirely. The
             // round-complete path readies the AI itself, so either branch ends with a start sweep.
-            if (tournament.isRoundComplete()) {
+            //
+            // Only a result *from* the current round can close it. Matches from later rounds run
+            // concurrently with it (eager starting), and letting one of those answer for the current
+            // round would re-report a round already closed — announcing stale results and clearing
+            // every player's game-session pointer, including seats mid-game.
+            val resultRound = tournament.getRoundForMatch(gameSessionId)
+            val closesCurrentRound = resultRound != null &&
+                    resultRound.roundNumber == tournament.currentRound?.roundNumber
+            if (closesCurrentRound && tournament.isRoundComplete()) {
                 doHandleRoundComplete(lobbyId)
             } else {
                 val lobby = ctx.lobbyRepository.findLobbyById(lobbyId)
@@ -180,6 +164,13 @@ class TournamentMatchHandler(
             tournament.recordAbandon(playerId)
             ctx.lobbyRepository.saveTournament(lobbyId, tournament)
 
+            // Drop the departed player's ready flag. Nothing else clears it now that a round boundary
+            // doesn't, and a leaver left in the set inflates the lobby's "n/m ready" for good.
+            ctx.lobbyRepository.findLobbyById(lobbyId)?.let { lobby ->
+                lobby.clearPlayerReady(playerId)
+                ctx.lobbyRepository.saveLobby(lobby)
+            }
+
             // Freeze the standings as they stand after the forfeit; the row keeps these if it later
             // flips to ABANDONED on teardown.
             recordTournamentProgress(lobbyId)
@@ -188,6 +179,16 @@ class TournamentMatchHandler(
 
             if (tournament.isRoundComplete()) {
                 doHandleRoundComplete(lobbyId)
+            } else {
+                // A forfeit completes every match the abandoner had left, in every round — the same
+                // "an earlier game finished" event a real result is, so the pairs it frees need the
+                // same sweep, or they wait on an unrelated result to come along.
+                val lobby = ctx.lobbyRepository.findLobbyById(lobbyId)
+                if (lobby != null) {
+                    startReadyMatches(lobby, tournament)
+                    broadcastReadyStatus(lobby)
+                    ctx.lobbyRepository.saveLobby(lobby)
+                }
             }
         }
     }
@@ -351,6 +352,12 @@ class TournamentMatchHandler(
         }
 
         if (!tournament.isComplete) {
+            // Open the next round now the closing one has been reported. This used to happen as a side
+            // effect of `autoReadyAiPlayers` — reachable only because the ready-clearing above made its
+            // AI guard true — so it has to be explicit here, and it has to come after the broadcast:
+            // the messages above describe the round that just ended.
+            prepareRoundsIfNeeded(lobby, tournament)
+
             // Ready the AI for the next round, but not the human: they must click "Ready for Next
             // Round" after dismissing the game-over overlay, so the next game can't start underneath it.
             autoReadyAiPlayers(lobby, tournament, autoReadyHumansVsAi = false)
@@ -406,11 +413,44 @@ class TournamentMatchHandler(
                 nextOpponentName = nextOpponentName,
                 nextRoundHasBye = hasBye,
                 isTournamentComplete = tournament.isComplete,
-                currentRoundComplete = completedRound.isComplete
+                roundComplete = completedRound.isComplete
             ))
         }
 
         ctx.lobbyRepository.saveTournament(lobbyId, tournament)
+    }
+
+    /**
+     * Advance the bracket until the current round is one that still has games to play, announcing the
+     * BYEs each newly opened round auto-completes.
+     *
+     * Returns false when the schedule ran out — the caller finishes the tournament.
+     *
+     * `currentRound` is what `isRoundComplete`, spectating and the next-opponent fields all read, so
+     * advancing is not bookkeeping: leave it pointing at a finished round and the round-complete path
+     * fires again on the next result. Loops because an all-BYE round is complete the moment it opens.
+     */
+    private fun prepareRoundsIfNeeded(lobby: TournamentLobby, tournament: TournamentManager): Boolean {
+        while (tournament.currentRound.let { it == null || it.isComplete }) {
+            val round = tournament.startNextRound() ?: return false
+
+            for (match in round.matches) {
+                if (!match.isBye || !match.isComplete) continue
+                val byePlayerState = lobby.players[match.player1Id] ?: continue
+                val byeWs = byePlayerState.identity.webSocketSession
+                if (byeWs != null && byeWs.isOpen) {
+                    ctx.sender.send(byeWs, ServerMessage.TournamentBye(
+                        lobbyId = lobby.lobbyId,
+                        round = round.roundNumber
+                    ))
+                    spectatingHandler.sendActiveMatchesToPlayer(byePlayerState.identity, byeWs)
+                }
+            }
+
+            ctx.lobbyRepository.saveTournament(lobby.lobbyId, tournament)
+            logger.info("Prepared round ${round.roundNumber} for tournament ${lobby.lobbyId}")
+        }
+        return true
     }
 
     /**
@@ -711,56 +751,13 @@ class TournamentMatchHandler(
 
         val readyPlayerIds = lobby.getReadyPlayerIds()
         if (readyPlayerIds.isNotEmpty()) {
+            // A snapshot for this one player, not news about them — hence no playerId.
             ctx.sender.send(ws, ServerMessage.PlayerReadyForRound(
                 lobbyId = lobby.lobbyId,
-                playerId = identity.playerId.value,
-                playerName = identity.playerName,
                 readyPlayerIds = readyPlayerIds.map { it.value },
                 totalConnectedPlayers = connectedIds.size
             ))
         }
-    }
-
-    fun tryStartMatchAfterDeckSubmit(
-        lobby: TournamentLobby,
-        tournament: TournamentManager,
-        identity: PlayerIdentity
-    ) {
-        if (tournament.currentRound == null) {
-            val round = tournament.startNextRound()
-            if (round == null) {
-                completeTournament(lobby.lobbyId)
-                return
-            }
-            logger.info("Prepared round ${round.roundNumber} for tournament ${lobby.lobbyId}")
-        }
-
-        val (round, match) = tournament.getNextMatchForPlayer(identity.playerId) ?: return
-
-        if (match.isBye) {
-            match.isComplete = true
-            val ws = identity.webSocketSession
-            if (ws != null && ws.isOpen) {
-                ctx.sender.send(ws, ServerMessage.TournamentBye(
-                    lobbyId = lobby.lobbyId,
-                    round = round.roundNumber
-                ))
-                spectatingHandler.sendActiveMatchesToPlayer(identity, ws)
-            }
-            ctx.lobbyRepository.saveTournament(lobby.lobbyId, tournament)
-            return
-        }
-
-        if (match.gameSessionId != null) return
-
-        val opponentId = if (match.player1Id == identity.playerId) match.player2Id else match.player1Id
-        if (opponentId == null) return
-
-        val opponentState = lobby.players[opponentId] ?: return
-        if (!opponentState.hasSubmittedDeck) return
-
-        logger.info("Both players submitted decks, starting match: ${identity.playerName} vs ${opponentState.identity.playerName}")
-        startSingleMatch(lobby, tournament, round, match)
     }
 
     fun startTournament(lobby: TournamentLobby) {
@@ -804,47 +801,6 @@ class TournamentMatchHandler(
         }
     }
 
-    fun startNextTournamentRound(lobbyId: String) {
-        val lobby = ctx.lobbyRepository.findLobbyById(lobbyId) ?: return
-        val tournament = ctx.lobbyRepository.findTournamentById(lobbyId) ?: return
-
-        if (tournament.currentRound?.isComplete != false) {
-            val round = tournament.startNextRound()
-            if (round == null) {
-                completeTournament(lobbyId)
-                return
-            }
-            lobby.clearReadyState()
-            ctx.lobbyRepository.saveLobby(lobby)
-            ctx.lobbyRepository.saveTournament(lobbyId, tournament)
-        }
-
-        val round = tournament.currentRound ?: return
-        logger.info("Starting round ${round.roundNumber} for tournament $lobbyId")
-
-        for (match in tournament.getCurrentRoundGameMatches()) {
-            if (match.gameSessionId == null) {
-                startSingleMatch(lobby, tournament, round, match)
-            }
-        }
-        ctx.lobbyRepository.saveTournament(lobbyId, tournament)
-
-        for (match in round.matches) {
-            if (match.isBye) {
-                val playerState = lobby.players[match.player1Id]
-                val identity = playerState?.identity
-                val ws = identity?.webSocketSession
-                if (identity != null && ws != null && ws.isOpen) {
-                    ctx.sender.send(ws, ServerMessage.TournamentBye(
-                        lobbyId = lobbyId,
-                        round = round.roundNumber
-                    ))
-                    spectatingHandler.sendActiveMatchesToPlayer(identity, ws)
-                }
-            }
-        }
-    }
-
     /**
      * @param autoReadyHumansVsAi when true, a human whose next opponent is AI is auto-readied (and the
      *   match started) so a solo-vs-AI tournament doesn't require a manual ready click to begin. This is
@@ -867,29 +823,15 @@ class TournamentMatchHandler(
             aiGameManager.isAiPlayer(playerId) && ps.hasSubmittedDeck && playerId !in lobby.getReadyPlayerIds()
         }
 
-        if (hasAiPlayersToReady) {
-            // Ensure the round is initialized so matches can be found and started
-            if (lobby.allDecksSubmitted() && (tournament.currentRound == null || tournament.currentRound?.isComplete == true)) {
-                val round = tournament.startNextRound()
-                if (round != null) {
-                    for (match in round.matches) {
-                        if (match.isBye && match.isComplete) {
-                            val byePlayerState = lobby.players[match.player1Id]
-                            val byeWs = byePlayerState?.identity?.webSocketSession
-                            if (byeWs != null && byeWs.isOpen) {
-                                ctx.sender.send(byeWs, ServerMessage.TournamentBye(
-                                    lobbyId = lobby.lobbyId,
-                                    round = round.roundNumber
-                                ))
-                                spectatingHandler.sendActiveMatchesToPlayer(byePlayerState.identity, byeWs)
-                            }
-                        }
-                    }
-                    ctx.lobbyRepository.saveTournament(lobby.lobbyId, tournament)
-                    logger.info("Prepared round ${round.roundNumber} for tournament ${lobby.lobbyId}")
-                }
-            }
+        // Open a round once everyone has a deck, so there are matches to find: the first one, or the
+        // one an extra rotation just appended past a finished bracket. Deliberately outside the
+        // `hasAiPlayersToReady` guard, which was only ever true here because `doHandleRoundComplete`
+        // had just wiped the ready set — it doesn't, now, and the advance can't hang off that.
+        if (lobby.allDecksSubmitted()) {
+            prepareRoundsIfNeeded(lobby, tournament)
+        }
 
+        if (hasAiPlayersToReady) {
             for ((playerId, playerState) in lobby.players) {
                 if (!aiGameManager.isAiPlayer(playerId)) continue
                 if (!playerState.hasSubmittedDeck) continue

@@ -178,6 +178,9 @@ export function createLobbyHandlers(set: SetState, get: GetState): Pick<MessageH
               currentMatchGameSessionId: null,
               currentMatchOpponentName: null,
               isBye: true,
+              // The round we're sitting out has just opened, so it is not finished. Without this the
+              // flag stays true from the previous roundComplete and the header reads one round ahead.
+              currentRoundComplete: false,
             }
           : null,
       }))
@@ -241,7 +244,7 @@ export function createLobbyHandlers(set: SetState, get: GetState): Pick<MessageH
                 nextRoundHasBye: msg.nextRoundHasBye ?? false,
                 // Only *our* match ended. The server says whether the round did — an early finisher
                 // gets false here and must keep seeing the round in progress, not the next one.
-                currentRoundComplete: msg.currentRoundComplete ?? false,
+                currentRoundComplete: msg.roundComplete ?? false,
                 activeMatches: [],
               }
             : null,
@@ -302,6 +305,10 @@ export function createLobbyHandlers(set: SetState, get: GetState): Pick<MessageH
               readyPlayerIds: [],
               nextOpponentName: msg.nextOpponentName ?? null,
               nextRoundHasBye: msg.nextRoundHasBye ?? false,
+              // Extra rounds are appended to a bracket that had finished, so the last played round is
+              // done — and if the tournament ended without a final roundComplete, the flag could still
+              // be false here and claim that round is running.
+              currentRoundComplete: true,
             }
           : null,
       }))

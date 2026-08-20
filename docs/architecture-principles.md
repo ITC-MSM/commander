@@ -1409,7 +1409,11 @@ the entire round to finish. This "eager match starting" pattern means:
 4. Other players continue waiting or playing their own matches
 
 A ready flag is state, not an event: it is set by a ready click (or the AI auto-ready pass) and
-consumed only when a match actually starts — a round ending does not clear it. That matters because a
+consumed only when a match actually starts — a round ending does not clear it. Because it doesn't, the
+round-complete path opens the next round explicitly rather than as a side effect of the AI-ready pass;
+`currentRound` is what `isRoundComplete` reads, so leaving it on a finished round makes that path fire
+again on the next result. For the same reason, only a result from the current round can close it —
+later-round matches run concurrently with it and answer for their own round. That matters because a
 pair can be refused for a reason that has nothing to do with readiness: `hasIncompleteMatchBefore`
 holds a later-round match back while either seat still owes an earlier-round game, so a pair goes from
 blocked to launchable when a *third* pair's game finishes, with no change to the ready set at all.

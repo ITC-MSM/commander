@@ -1677,11 +1677,12 @@ export interface MatchCompleteMessage {
   /** True if the tournament is complete (no more rounds) */
   readonly isTournamentComplete?: boolean
   /**
-   * True when every match in `round` is finished. False means we finished early and the round is
-   * still running, so the overlay must keep naming `round` instead of advertising the next one; a
-   * `roundComplete` for the same round still follows.
+   * True when every match in `round` is finished. False means we finished early and `round` is still
+   * running, so the overlay must keep naming it instead of advertising the next one; a `roundComplete`
+   * message for the same round still follows. Named for `round`, not for the tournament's current
+   * round — eager starting lets a later round's match finish while an earlier one is still current.
    */
-  readonly currentRoundComplete?: boolean
+  readonly roundComplete?: boolean
 }
 
 export interface PlayerReadyForRoundMessage {

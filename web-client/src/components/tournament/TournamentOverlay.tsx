@@ -246,7 +246,9 @@ export function TournamentOverlay({
           {(roundStillRunning || !isWaitingForReady) && !tournamentState.isBye && !tournamentState.currentMatchGameSessionId && (
             <div className={styles.statusBoxWaiting}>
               {roundStillRunning
-                ? `Round ${roundNumber} is still being played — your next match starts as soon as it can.`
+                ? isPlayerReady
+                  ? `Round ${roundNumber} is still being played — your next match starts as soon as it can.`
+                  : `Round ${roundNumber} is still being played at other tables.`
                 : 'Waiting for other matches to complete...'}
             </div>
           )}

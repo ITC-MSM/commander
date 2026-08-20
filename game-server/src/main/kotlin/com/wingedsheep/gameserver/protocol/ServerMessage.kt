@@ -810,11 +810,14 @@ sealed interface ServerMessage {
         /** True if the tournament is complete (no more rounds) */
         val isTournamentComplete: Boolean = false,
         /**
-         * True when every match in [round] is finished. False means this player finished early and the
-         * round is still running — the client must keep showing [round] as in progress instead of
-         * advertising the next one, and a `RoundComplete` for [round] is still to come.
+         * True when every match in [round] is finished. False means this player finished early and
+         * [round] is still running — the client must keep showing it as in progress instead of
+         * advertising the next one, and a `RoundComplete` for it is still to come.
+         *
+         * Named for [round], not for the tournament's current round: eager starting means a later
+         * round's match can finish while an earlier round is still the current one.
          */
-        val currentRoundComplete: Boolean = false,
+        val roundComplete: Boolean = false,
     ) : ServerMessage
 
     /**
