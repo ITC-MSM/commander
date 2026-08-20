@@ -710,6 +710,16 @@ object DynamicAmounts {
         DynamicAmount.PermanentsSacrificedThisWay
 
     /**
+     * Total power of the permanents sacrificed by the current resolving effect ("their total
+     * power"), read from the same `sacrificedPermanents` snapshots as
+     * [permanentsSacrificedThisWay]. See [DynamicAmount.TotalPowerSacrificedThisWay]. Used by
+     * "exile the top X cards of your library, where X is their total power" (Kylox, Visionary
+     * Inventor).
+     */
+    fun totalPowerSacrificedThisWay(): DynamicAmount =
+        DynamicAmount.TotalPowerSacrificedThisWay
+
+    /**
      * "That many" — the number of repetitions a
      * [com.wingedsheep.sdk.scripting.effects.PayManaCostRepeatedlyEffect] was paid, read back out
      * of the resolution pipeline. Pair it with the matching `storeCountAs` when the effect uses a

@@ -1557,6 +1557,27 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     /**
+     * Total power of the permanents sacrificed by the current resolving effect ("their total
+     * power"). The sibling of [PermanentsSacrificedThisWay] over the same
+     * `EffectContext.sacrificedPermanents` snapshot list, summing each snapshot's power instead of
+     * counting the entries.
+     *
+     * The snapshots are last-known information taken as each permanent was sacrificed (Rule
+     * 608.2h), which is what "their total power" has to mean — the permanents are already in the
+     * graveyard by the time a later sibling effect reads them. Kylox, Visionary Inventor's ruling
+     * of 2024-02-02 says so explicitly: "Use the power of the sacrificed creatures as they last
+     * existed on the battlefield to determine the value of X."
+     *
+     * Negative power counts as written; the sum is floored at 0 by the effects that consume it
+     * (you can't exile a negative number of cards), not here.
+     */
+    @SerialName("TotalPowerSacrificedThisWay")
+    @Serializable
+    data object TotalPowerSacrificedThisWay : DynamicAmount {
+        override val description: String = "their total power"
+    }
+
+    /**
      * The size of the largest creature-type tribe among the creatures [player] controls — i.e.
      * "the greatest number of creatures you control that have a creature type in common."
      *

@@ -3884,10 +3884,19 @@ object Effects {
      * permanents matching [filter] to sacrifice. The sacrificed permanents are recorded in the
      * effect context, so a later step in the same composite can read the count via
      * [com.wingedsheep.sdk.dsl.DynamicAmounts.permanentsSacrificedThisWay] (e.g. "where X is the
-     * number of lands sacrificed this way" — Hew the Entwood, Scapeshift).
+     * number of lands sacrificed this way" — Hew the Entwood, Scapeshift) or their total power via
+     * [com.wingedsheep.sdk.dsl.DynamicAmounts.totalPowerSacrificedThisWay].
+     *
+     * @param excludeSource keeps the ability's own source off the list — "sacrifice any number of
+     *   **other** creatures" (Kylox, Visionary Inventor), which an attack trigger needs so the
+     *   attacker can't eat itself.
      */
-    fun SacrificeAnyNumber(filter: GameObjectFilter): Effect =
-        com.wingedsheep.sdk.scripting.effects.SacrificeEffect(filter = filter, any = true)
+    fun SacrificeAnyNumber(filter: GameObjectFilter, excludeSource: Boolean = false): Effect =
+        com.wingedsheep.sdk.scripting.effects.SacrificeEffect(
+            filter = filter,
+            any = true,
+            excludeSource = excludeSource
+        )
 
     /**
      * Sacrifice a specific permanent identified by target.
