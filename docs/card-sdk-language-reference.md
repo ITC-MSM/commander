@@ -9822,6 +9822,15 @@ of `AddMana`. The engine empties pools at end of turn, so:
 ### `TurnTracker` keys (used with `TurnTracking`)
 
 - `CREATURES_DIED` — creatures that died this turn.
+- `ARTIFACTS_DIED` — artifacts (incl. tokens) put into a graveyard from the battlefield this turn,
+  credited to each one's **last-known controller** (so a stolen artifact destroyed after the theft
+  counts for the thief). Type is read off the last-known *projected* type line, so an animated
+  artifact creature counts and a permanent that was only an artifact through a continuous effect
+  counts while that effect applied. Read it with `Player.Each` for the **game-wide** total —
+  `DynamicAmounts.artifactsDiedThisTurn()` defaults to exactly that, and is Anzrag's Rampage's X
+  ("the number of artifacts that were put into graveyards from the battlefield this turn"). Every
+  such artifact had exactly one controller, so the sum double-counts nothing; there is deliberately
+  no separate game-scoped component.
 - `NONTOKEN_CREATURES_DIED` — nontoken creatures that died this turn.
 - `CREATURES_LEFT_BATTLEFIELD` — creatures (incl. tokens) that left the battlefield under the
   player's control this turn, regardless of destination (death, exile, bounce, …). The creature-scoped

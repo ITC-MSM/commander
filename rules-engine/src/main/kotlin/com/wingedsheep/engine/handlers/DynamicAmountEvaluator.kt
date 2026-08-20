@@ -514,6 +514,13 @@ class DynamicAmountEvaluator(
                             ?.get<com.wingedsheep.engine.state.components.player.CreaturesDiedThisTurnComponent>()
                             ?.count ?: 0
                     }
+                    // Player.Each sums every seat, which is the game-wide "artifacts that were put
+                    // into graveyards from the battlefield this turn" (Anzrag's Rampage).
+                    TurnTracker.ARTIFACTS_DIED -> playerIds.sumOf { playerId ->
+                        state.getEntity(playerId)
+                            ?.get<com.wingedsheep.engine.state.components.player.ArtifactsDiedThisTurnComponent>()
+                            ?.count ?: 0
+                    }
                     TurnTracker.NONTOKEN_CREATURES_DIED -> playerIds.sumOf { playerId ->
                         state.getEntity(playerId)
                             ?.get<com.wingedsheep.engine.state.components.player.NonTokenCreaturesDiedThisTurnComponent>()
