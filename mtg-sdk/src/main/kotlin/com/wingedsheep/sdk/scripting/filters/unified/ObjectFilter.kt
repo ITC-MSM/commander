@@ -756,6 +756,15 @@ data class GameObjectFilter(
     )
 
     /**
+     * The defender-side mirror of [attackingAnOpponent]: must be attacking *you* or a planeswalker
+     * *you* control (Tomik, Wielder of Law). "You" is the controller of whatever ability applies
+     * the filter, so this matches regardless of who controls the attacker. Battles are excluded.
+     */
+    fun attackingYouOrYourPlaneswalkers() = copy(
+        statePredicates = statePredicates + StatePredicate.IsAttackingYouOrYourPlaneswalkers
+    )
+
+    /**
      * Must have been declared as an attacker at least once during the current turn.
      * Survives leaving combat; cleared at end-of-turn cleanup.
      */

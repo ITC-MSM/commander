@@ -842,17 +842,24 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      *
      * Per CR 509.1b and the Orim's Prayer ruling, creatures attacking a planeswalker controlled
      * by the trigger's controller do **not** count toward this trigger — only attackers
-     * declared against the player themself.
+     * declared against the player themself. That is the default, and it is what "creatures attack
+     * you" prints.
+     *
+     * [includePlaneswalkersYouControl] opts into the wider reading for the cards that spell it
+     * out — Tomik, Wielder of Law: "two or more of those creatures are attacking you **and/or
+     * planeswalkers you control**". It widens only which attackers *count*; the trigger is still
+     * the defending player's. Battles are never included: "planeswalkers you control" is literal,
+     * and a battle you protect is controlled by its caster, not by you.
      */
     @SerialName("CreaturesAttackYouEvent")
     @Serializable
     data class CreaturesAttackYouEvent(
-        val minAttackers: Int = 1
+        val minAttackers: Int = 1,
+        val includePlaneswalkersYouControl: Boolean = false
     ) : EventPattern {
-        override val description: String = if (minAttackers <= 1) {
-            "one or more creatures attack you"
-        } else {
-            "$minAttackers or more creatures attack you"
+        override val description: String = buildString {
+            append(if (minAttackers <= 1) "one or more creatures attack" else "$minAttackers or more creatures attack")
+            append(if (includePlaneswalkersYouControl) " you and/or planeswalkers you control" else " you")
         }
     }
 

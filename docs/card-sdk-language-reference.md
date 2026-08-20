@@ -4007,6 +4007,13 @@ work for abilities-on-stack (which carry no `CardComponent`).
   attacking your opponent matches, and one attacking *you* doesn't. Fails closed without controller context,
   and has no last-known fallback (the exit snapshot records *that* it was attacking, not whom). Oviya,
   Automech Artisan: `GrantKeyword(Keyword.TRAMPLE, GroupFilter(GameObjectFilter.Creature.attackingAnOpponent()))`.
+- `IsAttackingYouOrYourPlaneswalkers` (filter builder `attackingYouOrYourPlaneswalkers()`) — the
+  defender-side mirror of `IsAttackingAnOpponent`: the defender is either *you* (the controller of the
+  ability applying the filter) or a planeswalker *you* control. Battles are excluded — "planeswalkers
+  you control" is literal, and a battle you protect is controlled by its caster. Controller-relative,
+  so it matches regardless of who controls the attacker; fails closed without controller context and
+  has no last-known fallback, exactly like its mirror. Tomik, Wielder of Law counts the attacking batch
+  with it: `Compare(DynamicAmounts.battlefield(Player.Each, GameObjectFilter.Creature.attackingYouOrYourPlaneswalkers()).count(), GTE, Fixed(2))`.
 - `IsBlocking` — declared as blocker this combat.
 - `HasLockedDoor` (filter builder `hasLockedDoor()`) — a Room permanent (CR 709.5) with at least one locked
   door, i.e. a half lacking its "unlocked" designation (CR 709.5c). Reads the engine's
@@ -4509,6 +4516,13 @@ sealed set for attack-time facts beyond the basics.
   not per attacker. Excludes creatures attacking a planeswalker you control
   (CR 509.1b). Pair with `DynamicAmounts.creaturesAttackingYou()` for
   attacker-count payoffs (e.g., Orim's Prayer).
+  The underlying `EventPattern.CreaturesAttackYouEvent(minAttackers, includePlaneswalkersYouControl)`
+  exposes both knobs for cards that print them: `minAttackers` raises the batch threshold (there is no
+  `Triggers.` constant for it — construct the pattern inline, as the `YouAttackEvent(minAttackers = n)`
+  cards do), and `includePlaneswalkersYouControl = true` opts into the wider "you **and/or planeswalkers
+  you control**" reading that CR 509.1b denies by default. Tomik, Wielder of Law uses both. Note the
+  widened flag changes only which attackers *count*; the trigger still belongs to the defending player,
+  and battles are never included.
 - `CreaturesAttackYourOpponent` — the "your opponents are attacked" counterpart of
   `CreaturesAttackYou`; fires once per `AttackersDeclaredEvent` when one or more declared
   attackers have one of the controller's opponents (a player, via `state.getOpponents`) as

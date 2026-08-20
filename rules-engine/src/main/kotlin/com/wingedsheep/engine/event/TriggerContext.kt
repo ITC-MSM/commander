@@ -331,7 +331,12 @@ data class TriggerContext(
                     triggeringEntityId = event.permanentId,
                     triggeringPlayerId = event.controllerId
                 )
-                is AttackersDeclaredEvent -> TriggerContext()
+                // The attacking player is the triggering player, so "that opponent loses 3 life"
+                // (Tomik, Wielder of Law) resolves off a declare-attackers trigger. Before this the
+                // context was empty and `Player.TriggeringPlayer` silently evaluated to null here.
+                is AttackersDeclaredEvent -> TriggerContext(
+                    triggeringPlayerId = event.attackingPlayerId
+                )
                 is BlockersDeclaredEvent -> TriggerContext()
                 is TappedEvent -> TriggerContext(triggeringEntityId = event.entityId)
                 is UntappedEvent -> TriggerContext(triggeringEntityId = event.entityId)

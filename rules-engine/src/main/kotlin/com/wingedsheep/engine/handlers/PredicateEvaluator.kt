@@ -1234,6 +1234,24 @@ class PredicateEvaluator {
                 val defenderId = container.get<AttackingComponent>()?.defenderId
                 you != null && defenderId != null && defenderId in state.getOpponents(you)
             }
+            // "Attacking you and/or planeswalkers you control": the defender is either the asking
+            // ability's controller themself, or a planeswalker that player controls. Battles are
+            // excluded — a battle's protector is a player, not its controller, so `defendingPlayerOf`
+            // would wrongly fold "attacking a battle you protect" into this. Same no-last-known
+            // policy as IsAttackingAnOpponent.
+            StatePredicate.IsAttackingYouOrYourPlaneswalkers -> {
+                val you = context?.controllerId
+                val defenderId = container.get<AttackingComponent>()?.defenderId
+                you != null && defenderId != null && (
+                    defenderId == you ||
+                        (
+                            state.getEntity(defenderId)
+                                ?.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()
+                                ?.playerId == you &&
+                                projected.isPlaneswalker(defenderId)
+                            )
+                    )
+            }
             StatePredicate.IsBlocking -> container.has<BlockingComponent>()
             StatePredicate.IsBlocked -> {
                 // Check if this attacking creature has any blockers assigned
