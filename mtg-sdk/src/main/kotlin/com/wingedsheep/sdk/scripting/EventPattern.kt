@@ -735,6 +735,31 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         override val description: String = "${player.description} searches their library"
     }
 
+    /**
+     * Whenever a spell or ability causes [player] to shuffle their library (CR 701.24). The
+     * search twin of [SearchLibraryEvent], and the shape Psychogenic Probe keys on.
+     *
+     * Deliberately restricted to spell- and ability-caused shuffles, matching the only printed
+     * wording: the game rules also shuffle each library while setting up (CR 103.2) and when a
+     * player mulligans (CR 103.5), and neither may fire an ability. The engine tags those two
+     * emission sites, so nothing here has to know about them.
+     *
+     * Every shuffle primitive emits it — `Effects.ShuffleLibrary`, the shuffle leg of every
+     * search pipeline, `ZonePlacement.Shuffled` moves, and the shuffle-into-library replacement
+     * effects (Darksteel Colossus). Three consequences of CR 701.24 come free from being one
+     * event per shuffle: a search-then-shuffle still fires it even though the found cards are
+     * held out of the randomization (701.24b), a library holding zero or one cards still fires
+     * it (701.24e), and two effects shuffling one library simultaneously fire it twice (701.24f).
+     */
+    @SerialName("ShuffleLibraryEvent")
+    @Serializable
+    data class ShuffleLibraryEvent(
+        val player: Player = Player.Any
+    ) : EventPattern {
+        override val description: String =
+            "a spell or ability causes ${player.description} to shuffle their library"
+    }
+
     // =========================================================================
     // Trigger-Only Events (below here — used only as trigger filters)
     // =========================================================================

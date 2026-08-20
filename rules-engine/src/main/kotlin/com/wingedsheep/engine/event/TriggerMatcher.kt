@@ -736,6 +736,13 @@ class TriggerMatcher(
                 event is com.wingedsheep.engine.core.LibrarySearchedEvent &&
                     matchesPlayer(trigger.player, event.playerId, controllerId)
             }
+            is EventPattern.ShuffleLibraryEvent -> {
+                // "a *spell or ability* causes a player to shuffle" — the game-rules shuffles
+                // (game setup, mulligan) carry their own cause and must never fire this.
+                event is com.wingedsheep.engine.core.LibraryShuffledEvent &&
+                    event.cause == com.wingedsheep.engine.core.ShuffleCause.SPELL_OR_ABILITY &&
+                    matchesPlayer(trigger.player, event.playerId, controllerId)
+            }
             // ExtraTurnEvent is only used as a replacement effect filter, not a trigger
             is EventPattern.ExtraTurnEvent -> false
             // Batching trigger — handled in detectLibraryToGraveyardBatchTriggers
