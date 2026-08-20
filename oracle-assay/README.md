@@ -20,7 +20,19 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is the **trigger join** — "When ~ enters **and** whenever you cast a spell with
+The most recent work is the **target quantifier** — "Destroy **up to one** target creature.", "Exile
+**up to three** target creatures.", "Destroy **up to X** target artifacts." (**+61 whole cards**), the
+family the ranking had been naming from three directions at once. Everything English prints in front
+of the word "target" is now a **six-row table** rather than a word inside each verb's template, and
+the reason it is a table and not a slot is the noun behind it: "up to one target **creature**" and "up
+to two target **creatures**" disagree in number, so a quantifier that could be slotted would leave the
+noun's number undetermined. What the table buys is the thing the old hand-copied shapes had already
+lost — "tap up to three target creatures" was written and "destroy up to three target creatures" was
+not, on a grammar that read both halves of that sentence. Two families slot it, and the ranking's
+"up to one …" row fell from **174 cards to 17**.
+See [the target quantifier](#the-target-quantifier).
+
+Before it came the **trigger join** — "When ~ enters **and** whenever you cast a spell with
 mana value 5 or greater, draw a card." (**+6 whole cards**), the top row of the tail ranking and the
 band whose *measurement* was the finding. Two `when` clauses, one payoff, two abilities: the same
 model [the entry band](#the-entry-band)'s five-row table produces, reached the opposite way, because
@@ -1819,6 +1831,131 @@ falls through to `else -> true` for everything else, so a Curse's upkeep trigger
 player's upkeep. That is an engine gap rather than an SDK one, so it is reported here rather than
 routed around: no Curse has a golden today and none of them reads whole yet, so nothing is currently
 relying on it.
+
+## The target quantifier
+
+"Destroy **up to one** target creature." — and every other word English puts in front of "target".
+Whole-corpus coverage 8,111 → **8,172 cards** (+61); the baked ledger 7,897 → **7,955 whole** (+58,
+with **none lost**); 76 more lines round-trip byte-exact, 10 more normalize as a variant, and 86 fewer
+decline. MISMATCH, AMBIGUOUS and redundant readings stay at **0**. The differential compares 20 more
+cards (3,765 → 3,785) and its divergences go 35 → 40 — five new ones, all classified below, none a
+parser bug, and the original 35 are the same 35 by name.
+
+The family was the top of the tail ranking read three ways: `up to one …` at 174 cards / 99
+sole-blocked, `up to two …` at 61 / 38, `Up to two …` at 27 / 25, `up to three …` at 23 / 17 and
+`up to X …` at 19 / 12 — five rows of one construct, which is itself the signal that what was missing
+was a *position* rather than five rules.
+
+### Six rows, because the noun disagrees in number
+
+Every prefix this grammar has factored so far became a **value in a slot** — the trigger join's
+`Prefix`, the fronted duration, `Phases`' whose-turn layer. This one cannot, and the reason is one
+word to the right of it. "Up to one target **creature**" and "up to two target **creatures**" put the
+noun in different numbers; [`Filters`](src/main/kotlin/com/wingedsheep/assay/grammar/Filters.kt) keeps
+its singular and plural as two separately-instantiated cascades because English pluralization is a
+table column and not a suffix rule; and a `{filter}` slot is one phrase fixed at declaration time. A
+slotted quantifier would have to leave the noun's number undetermined, which is exactly what the round
+trip forbids.
+
+So the quantifier is a **row**, a rule that uses it is a *family* of rules, and
+[`Targets.quantifiers`](src/main/kotlin/com/wingedsheep/assay/grammar/Targets.kt) is the table:
+
+| printed | noun | requirement |
+|---|---|---|
+| `target creature` | singular | `TargetPermanent(filter)` |
+| `up to one target creature` | singular | …`optional = true` |
+| `two target creatures` | plural | `count = 2` |
+| `up to two target creatures` | plural | `count = 2, optional = true` |
+| `up to X target creatures` | plural | `optional = true, dynamicMaxCount = XValue` |
+| `any number of target creatures` | plural | `unlimited = true` |
+
+The rows are exhaustive over the *printed* forms rather than over the SDK's fields. "One or two target
+creatures" is a `minCount` below its `count` and is a seventh row nobody has needed yet
+(`Combat.returnOneOrTwoTargets` still spells it whole); "target creature an opponent controls" is a
+filter, not a quantifier; a `sameController` or a `totalManaValueAtMost` is a rider on the noun phrase
+and belongs to a layer above the list, exactly as `Filters`' controller clause does.
+
+### `plural` is one column with two consequences
+
+A plural quantifier is exactly one that admits more than one target. That single fact decides both
+halves of the model: the noun comes from `Filters.plural`, *and* the effect is written once per chosen
+target (`ForEachTargetEffect` over `ContextTarget(0)`) instead of once against the requirement. A
+singular row — bare "target creature", or "up to one target creature", which caps at one and merely
+permits none — keeps the `BoundVariable` reference every single-target rule already used. There is no
+row where the two come apart, which is why it is one column and not two, and why the
+`effectOver`/`memberOf` pair that performs the wrapping lives once beside the table rather than in each
+verb.
+
+`up to X` is the row worth a note. `dynamicMaxCount` caps the count and says nothing about the
+minimum, so `optional = true` is not redundant beside it — without it an X of zero would fizzle the
+cast. `DynamicAmount.XValue` and not `CastX`: both appear in hand-written cards (Doppelgang and
+Rot-Curse Rakshasa write the former, Lost in the Maze the latter), so it is one more
+two-spellings-for-one-meaning pair, and the grammar prints the majority and lets the differential
+report the rest. Only the *bare* wording maps — "…, where X is the number of verse counters on ~"
+defines X from the board rather than from the cost, and that is a different `DynamicAmount` behind a
+trailing clause `Amounts` owns.
+
+### Two templates, because English agrees past the noun
+
+Five of the seven verbs spell one template. Two do not: "return target creature to **its owner's
+hand**" pluralizes to "… to **their owners' hands**", and the agreement reaches past the noun phrase,
+where the `Filters` cascade cannot follow it. So the shape takes a singular and a plural template, and
+that is also what made the third spelling cheap — Oracle prints the plural possessive **both** ways,
+"their owners' hands" 110 times against "their owner's hand" 55, so the minority is
+`PhraseBuilder.alsoSpelled` on the same rule (parsed, never printed) rather than a rule of its own.
+Scapegoat's "Return any number of target creatures you control to their owner's hand." reads as a
+`VARIANT`: the model survives, only the spelling is normalized.
+
+### Two families slot the table, which is the argument that it is one
+
+`quantifiedPermanentSteps` covers the seven one-verb sentences — destroy, regenerate, exile, tap,
+untap, return to hand, put on top of library — and the **pump** sentence is the second, sharing
+nothing with them but the noun phrase: it carries a fronted spelling, a stat modifier, and a verb that
+agrees in number ("Up to one target creature **gets** +2/+0", "Up to two target creatures **each get**
++2/+1"). A quantifier written into one shape would have had to be written into the other. What the two
+share instead is the table and the effect-wrapping pair.
+
+### The five new divergences, classified
+
+| card | what differs | class |
+|---|---|---|
+| Calamitous Tide, Essence Fracture, Second Breakfast | the card unrolls its multi-target effect as a `Composite` of `BoundVariable("creature[0]")`, `…[1]`; Assay writes `ForEachTargetEffect` | second SDK spelling — majority printed, minority reported |
+| Offender at Large | `EventPattern.AnyOf` versus two abilities | the entry band's standing finding, new member |
+| Seize Opportunity | a stored-collection *name* (`impulseExiled` vs `exiledCards`) | pre-existing gate gap, exposed |
+
+The first is the interesting one and it is **not** a card bug: `EffectContext.buildNamedTargets`
+publishes `"$id[$i]"` for every position of a multi-count requirement, so the indexed unroll is a
+supported spelling that resolves to nothing for a position nobody chose. It is a *minority* one — six
+occurrences across five sets, against a corpus that writes the iteration everywhere else, including
+for "destroy two target lands" — so the grammar prints `ForEachTargetEffect` and the gate names the
+three cards. They are a safe mechanical cleanup, and until then the unroll is fixed at the declared
+count in a way the iteration is not.
+
+Seize Opportunity is worth stating separately because it is **not** about quantifiers at all: the two
+models agree on the "up to two" mode exactly, and differ on the name of a collection its *other* mode
+stores. A collection name is arbitrary in the same way a target slot's name is, and
+`Differential.normalizeSlots` normalizes the second but not the first. That is a gap in the gate rather
+than in either model, and this band is the first thing to have driven a card into it.
+
+### What the band uncovered, in order
+
+The ranking's five quantifier rows collapsed — `up to one …` from 174 cards to **17**, `up to two …`
+from 61 to 22, and `up to three …`, `up to X …` and `Up to two …` off the table entirely. What replaced
+them is the payload behind the prefix, which is the product:
+
+| tail family | cards | sole | what it needs |
+|---|---|---|---|
+| `any number of …` | 123 | 76 | divided damage, distributed counters, players, graveyard-zoned targets — the row is now everything the table's sixth row does *not* reach |
+| `, where X …` | 59 | 50 | a trailing clause defining X for a target **count**, i.e. `dynamicMaxCount` fed from `Amounts`' existing vocabulary |
+| `one other target …` | 50 | 34 | the `other` modifier, which has two SDK spellings to classify first — `TargetFilter.other()` and the `TargetOther` wrapper |
+| `each of up …` | 29 | 16 | "put a +1/+1 counter on each of up to X target creatures" — the distribute sentence |
+| `choose up to …` | 28 | 18 | the *modal* quantifier, which `Modal`'s KDoc already records as not a row of its header |
+
+The `, where X …` row is the band's own residue and the cheapest of the five: the prefix now reads and
+only the clause that defines the number is missing. `any number of …` is the honest one to read
+twice — the table's sixth row cost two lines and finished no card, because the corpus writes that
+quantifier almost entirely in sentences no verb here covers. It is in the table because the table
+claims to be exhaustive over printed quantifiers, not because it paid.
 
 ## The trigger join
 
