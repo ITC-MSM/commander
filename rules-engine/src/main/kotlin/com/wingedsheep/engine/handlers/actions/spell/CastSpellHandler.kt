@@ -587,6 +587,20 @@ class CastSpellHandler(
             }
         }
 
+        // Validate a battlefield-granted alternative cost's non-mana half (Conspiracy Unraveler's
+        // "collect evidence 10"). Every `GameAction` field is client-supplied, so the selection the
+        // caster claims to have paid is checked here before anything is exiled.
+        if (action.useAlternativeCost && action.altAllows(AlternativeCostType.GRANTED)) {
+            val grantedAdditional = costCalculator.findAlternativeCastingCosts(state, action.playerId)
+                .firstOrNull()
+                ?.additionalCosts
+                .orEmpty()
+            if (grantedAdditional.isNotEmpty()) {
+                val grantedCostError = validateAdditionalCosts(state, grantedAdditional, action)
+                if (grantedCostError != null) return grantedCostError
+            }
+        }
+
         // Validate flashback's bundled additional cost (e.g., "Flashback—{1}{R}, Behold three Elementals")
         if (action.useAlternativeCost && cardDef != null && hasFlashback && action.altAllows(AlternativeCostType.FLASHBACK)) {
             val flashbackAdditional = cardDef.keywordAbilities
@@ -1048,10 +1062,13 @@ class CastSpellHandler(
                                 val altMana = selfAltCost.manaCost
                                 costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, altMana, action.playerId)
                             } else if (action.altAllows(AlternativeCostType.GRANTED)) {
-                                // Fall back to battlefield-granted alternative cost (e.g., Jodah's {W}{U}{B}{R}{G})
+                                // Fall back to battlefield-granted alternative cost (e.g., Jodah's
+                                // {W}{U}{B}{R}{G}). Only the mana half is priced here; the grant's
+                                // non-mana half (Conspiracy Unraveler's "collect evidence 10") is
+                                // paid with the other additional costs in `execute`.
                                 val altCosts = costCalculator.findAlternativeCastingCosts(state, action.playerId)
                                 if (altCosts.isEmpty()) return null
-                                costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, altCosts.first())
+                                costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, altCosts.first().manaCost)
                             } else {
                                 // A specific alternative cost was requested (e.g. DASH) but its own
                                 // permission gate failed — never silently fall back to an unrelated
@@ -2385,7 +2402,7 @@ class CastSpellHandler(
                             } else if (action.altAllows(AlternativeCostType.GRANTED)) {
                                 val altCosts = costCalculator.findAlternativeCastingCosts(currentState, action.playerId)
                                 if (altCosts.isNotEmpty()) {
-                                    costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, altCosts.first())
+                                    costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, altCosts.first().manaCost)
                                 } else {
                                     cardComponent.manaCost
                                 }
@@ -2525,6 +2542,15 @@ class CastSpellHandler(
                 // unchosen cost's bundled additional cost.
                 val selfAltCost = cardDef.script.selfAlternativeCost
                 if (selfAltCost != null && action.altAllows(AlternativeCostType.SELF_ALTERNATIVE)) addAll(selfAltCost.additionalCosts)
+                // A battlefield-granted alternative cost's non-mana half (Conspiracy Unraveler's
+                // "collect evidence 10"). The mana half was already substituted for the spell's
+                // mana cost above; this is the rest of the same cost, so it is paid by the ordinary
+                // additional-cost loop below — which is also what makes it validate and surface a
+                // picker like every other selection cost.
+                if (action.altAllows(AlternativeCostType.GRANTED)) {
+                    costCalculator.findAlternativeCastingCosts(currentState, action.playerId)
+                        .firstOrNull()?.let { addAll(it.additionalCosts) }
+                }
                 // Flashback's bundled additional cost (e.g., Behold three Elementals)
                 if (action.altAllows(AlternativeCostType.FLASHBACK) &&
                     zoneResolver.hasFlashbackPermission(currentState, action.playerId, action.cardId)) {

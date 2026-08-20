@@ -523,6 +523,12 @@ exist in the cost and charges the life through the shared life-payment service.
   affordability check fails closed on the summed mana value, so the option is never payable and an
   under-total submission is rejected rather than trimmed. For collect evidence as an *effect* rather
   than a cost, use `Effects.CollectEvidence(n)` (§ effects).
+
+  It also serves as the non-mana half of an **alternative** casting cost — Conspiracy Unraveler's
+  "You may collect evidence 10 rather than pay the mana cost for spells you cast", i.e.
+  `GrantAlternativeCastingCost("{0}", listOf(Costs.additional.CollectEvidence(10)))` (§ casting
+  permissions). That path stamps no `ChoiceSlot`, so unlike the linked `card { collectEvidence(n) }`
+  form it does **not** make `Conditions.WasEvidenceCollected` read true on the spell being cast.
 - `Costs.ExileFromGraveyardForTotal(minTotal, measure, filter = Any)` /
   `Costs.ExileFromGraveyardForColoredSymbols(minSymbols, vararg colors)` — the **unnamed, filtered
   generalization of collect evidence**: "exile any number of `<filter>` cards from your graveyard
@@ -6961,6 +6967,39 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   sites were collapsible into a single owner, `FlashTypeGrants`: with one implementation behind both,
   teaching *it* to unwrap fixes every gated flash grant at once and none of them can drift. Fold the
   gate into the type only where no such shared owner exists.
+- `GrantAlternativeCastingCost(cost, additionalCosts = emptyList())` — a battlefield permission to
+  substitute a different cost for a spell's mana cost (CR 118.9a): "You may pay {W}{U}{B}{R}{G}
+  rather than pay the mana cost for spells you cast" (**Jodah, Archmage Eternal**; Leyline of
+  Mutation). Scanned on demand by `CostCalculator.findAlternativeCastingCosts` over the caster's
+  battlefield — it is *not* a continuous effect — and surfaced as a `CastWithAlternativeCost`
+  `LegalAction` routed through `CastSpell(useAlternativeCost = true, alternativeCostType = GRANTED)`.
+
+  The grant carries the same **two halves** a card's own `selfAlternativeCost` does: `cost` is the
+  mana half, and `additionalCosts` is the non-mana half. "Rather than pay the mana cost" says nothing
+  about the substitute being mana, so a wholly non-mana grant sets `cost = "{0}"` — the same `{0}`
+  idiom Fireblast and Force of Vigor use for their own alternative costs — and puts the whole price
+  in `additionalCosts`. **Conspiracy Unraveler** ("You may collect evidence 10 rather than pay the
+  mana cost for spells you cast") is
+  `GrantAlternativeCastingCost("{0}", listOf(Costs.additional.CollectEvidence(10)))`.
+
+  Both halves must be payable for the option to be offered, and the non-mana half is paid by the
+  ordinary additional-cost loop in `CastSpellHandler` — the same one the card's own alternative cost,
+  flashback's and warp's bundled costs, and a linked-exile granter's cost all go through — so it
+  validates, surfaces its normal client picker, and (for collect evidence) inherits the CR 701.59b
+  fail-closed gate for free. Affordability and the picker payload come from
+  `SelectionCostPresentation.canPay` / `.costData`, never from counting candidates: a sum-gated cost
+  like collect evidence can have plenty of candidates and still be unreachable.
+
+  Two things the label must keep apart: `LegalAction.manaCostString` stays a **parseable** mana cost
+  (the client substitutes X into it, counts generic pips, and drives its mana-source phase off it),
+  while the action `description` names the non-mana cost — so a `{0}` grant reads
+  "Cast … (collect evidence 10)" rather than "Cast … ({0})".
+
+  Consequences of being an *alternative* cost, not an additional one: it can't be combined with
+  another alternative cost, but additional costs still apply (including a *second* collect evidence,
+  which triggers "whenever you collect evidence" twice); X in the replaced mana cost is 0; and it
+  stamps **no** `ChoiceSlot`, so it does not satisfy a spell's own linked "if evidence was collected"
+  clause (`Conditions.WasEvidenceCollected`). Only the first grant found is offered.
 - `MayCastWithoutPayingManaCost(controllerOnly = false, firstSpellOfTurnOnly = false, spellFilter = Any, oncePerTurn = false, fromExileOnly = false)` — a
   battlefield permission to cast a spell without paying its mana cost (CR 118.9). Composable
   gates: `controllerOnly = true` restricts the benefit to the source's controller ("you" wording);

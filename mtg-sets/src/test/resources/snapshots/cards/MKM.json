@@ -5532,6 +5532,74 @@
     ]
 }
 
+// Conspiracy Unraveler
+{
+    "name": "Conspiracy Unraveler",
+    "manaCost": "{5}{U}{U}",
+    "typeLine": "Creature — Sphinx Detective",
+    "oracleText": "Flying\nYou may collect evidence 10 rather than pay the mana cost for spells you cast. (To collect evidence 10, exile cards with total mana value 10 or greater from your graveyard.)",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantAlternativeCastingCost",
+                "cost": "{0}",
+                "additionalCosts": [
+                    {
+                        "type": "AdditionalAtom",
+                        "atom": {
+                            "type": "AtomCollectEvidence",
+                            "amount": 10
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "47",
+        "rarity": "MYTHIC",
+        "artist": "Wayne Reynolds",
+        "flavorText": "\"There can be many motives and opportunities, but there is always only one truth.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/8/88e791fc-bf9f-49b6-b5f2-a24d4b3e360e.jpg?1783912913",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If a spell has {X} in its mana cost, you must choose 0 as the value of X when casting it without paying its mana cost."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you cast a spell for another cost \"rather than pay its mana cost\", you can't choose to cast it for any alternative costs. You can, however, pay additional costs. If the spell has any mandatory additional costs, such as that of Demand Answers, those must be paid to cast the card."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you are casting a spell from your graveyard (for example, a spell with flashback) you can't also exile that card to pay the alternative collect evidence cost offered by Conspiracy Unraveler."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you cast a spell with the alternative collect evidence cost offered by Conspiracy Unraveler and you also collect evidence as an additional cost to cast that spell, abilities of permanents that trigger \"whenever you collect evidence\" will trigger twice. This is also true for abilities that trigger \"whenever one or more cards leave your graveyard.\""
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a spell has an additional cost that includes collecting evidence, such as that of Analyze the Pollen, any additional effects that occur \"if evidence was collected\" will occur only if that additional cost was paid. Using the alternative cost from Conspiracy Unraveler will not cause those additional effects to occur."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you can't exile enough cards to meet or exceed the required mana value, you can't choose to collect evidence at all."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Convenient Target
 {
     "name": "Convenient Target",
