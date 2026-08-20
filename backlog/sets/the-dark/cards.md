@@ -2,7 +2,7 @@
 
 **Set Size:** 119 cards
 **Release Date:** August 1, 1994
-**Implemented:** 51 / 119
+**Implemented:** 52 / 119
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 19    | 8    |
@@ -82,7 +82,7 @@
 
 ### Red
 - [x] Ball Lightning
-- [ ] Blood Moon
+- [x] Blood Moon
 - [x] Brothers of Fire
 - [x] Cave People
 - [ ] Eternal Flame
