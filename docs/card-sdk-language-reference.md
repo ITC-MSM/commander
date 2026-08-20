@@ -3672,6 +3672,15 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   `AggregateBattlefield(Player.Each, GameObjectFilter.Creature.sharingCreatureTypeWith(EntityReference.AffectedEntity), excludeSelf = true)`
   for "+X/+X for each OTHER creature that shares a creature type with it" (Alpha Status). In a granted
   context `excludeSelf` excludes the affected (enchanted) creature, not the granting source.
+- `.sharingCardTypeWith(entity)` — `CardPredicate.SharesCardTypeWith(entity)`: shares ≥1 (projected)
+  **card type** with a referenced entity. The card-type sibling of `.sharingCreatureTypeWith(entity)`, one
+  band up the type line — Confusion in the Ranks ("target permanent another player controls that shares a
+  card type with it") with `EntityReference.Triggering`. Both sides read projected types, so an animated
+  artifact land shares "Creature" with an entering creature. **Card types only**: supertypes are sieved
+  out, so two *legendary* permanents don't share a card type by being legendary, and subtypes belong to
+  `.sharingCreatureTypeWith`. A reference that resolves to nothing matches nothing. Evaluated for real in
+  targeting/search/count contexts; inert (false) in static-projection, permissive (true) in
+  cost-calculation.
 - `.sharingColorWith(entity)` — `CardPredicate.SharesColorWith(entity)`: shares ≥1 (projected) color with
   a referenced entity (e.g. `EntityReference.Triggering`). Mirror of `.sharingCreatureTypeWith(entity)`.
   Colorless entities share no color (never match). Used by Spreading Plague ("destroy all other creatures
@@ -3684,6 +3693,15 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   `EntityReference.LinkedExiledCard()`. Both sides read base card data (no layer changes a mana value),
   which is what lets the reference be a card outside the battlefield. Mana value 0 is a real value that
   matches; a reference that resolves to nothing matches nothing.
+- `.sharingNameWith(entity)` — `CardPredicate.SharesNameWith(entity)`: has the **same name** as a
+  referenced entity. The name sibling of `.sharingManaValueWith(entity)` over the same `EntityReference`
+  vocabulary, and the entity-referencing counterpart of `.sharingNameWithPermanentYouControl(filter)`
+  (which searches your battlefield instead of naming one object) — Extraplanar Lens ("a land with the same
+  name as the exiled card") with `EntityReference.LinkedExiledCard()`. Names read from *projected* state
+  with a fall back to base card data, so a renamed permanent (Layer 3, CR 613.1c) compares under its new
+  name while a reference outside the battlefield — an Imprint pile's exiled card, which has no projection
+  entry — compares under its printed one. A reference that resolves to nothing matches nothing (this is
+  what keeps an un-imprinted Extraplanar Lens inert), and a blank name never matches.
 - `.sharingColorWithPermanentYouControl(filter)` — `CardPredicate.SharesColorWithPermanentYouControl`:
   shares ≥1 (projected) color with at least one permanent the evaluating player controls matching
   `filter`. Used by Ringsight ("search your library for a card that shares a color with a legendary

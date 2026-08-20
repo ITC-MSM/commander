@@ -1339,8 +1339,10 @@ class CostCalculator(
                         chosenType in Subtype.ALL_CREATURE_TYPES)
             }
             is CardPredicate.SharesCreatureTypeWith -> true
+            is CardPredicate.SharesCardTypeWith -> true
             is CardPredicate.SharesColorWith -> true
             is CardPredicate.SharesManaValueWith -> true
+            is CardPredicate.SharesNameWith -> true
             is CardPredicate.SharesColorWithPermanentYouControl -> true
             is CardPredicate.SharesNameWithPermanentYouControl -> true
             is CardPredicate.DoesNotShareCreatureTypeWithPermanentYouControl -> true

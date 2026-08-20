@@ -301,6 +301,34 @@ class PredicateEvaluator {
     }
 
     /**
+     * The entity's **card types** as uppercase [CardType] names, read from projected state with a
+     * fall back to base card data.
+     *
+     * [ProjectedState.getTypes] mixes card types and supertypes into one string set (that is how
+     * `Supertype.fromProjectedTypes` recovers the supertypes), so a caller that means "card type"
+     * in the CR 205.2a sense has to sieve the set rather than compare it whole — otherwise a
+     * legendary permanent would "share a card type" with any other legendary one. Pass
+     * [projectedTypes] when the caller already has the projection entry in hand; pass null to look
+     * it up (a reference outside the battlefield has no entry and falls through to its printed
+     * type line).
+     */
+    private fun cardTypesOf(
+        state: GameState,
+        projected: ProjectedState,
+        entityId: EntityId,
+        projectedTypes: Set<String>?
+    ): Set<String> {
+        val raw = projectedTypes ?: projected.getTypes(entityId)
+        val fromProjection = raw.mapNotNullTo(mutableSetOf()) { type ->
+            CardType.entries.firstOrNull { it.name.equals(type, ignoreCase = true) }?.name
+        }
+        if (fromProjection.isNotEmpty()) return fromProjection
+        return state.getEntity(entityId)?.get<CardComponent>()?.typeLine?.cardTypes
+            ?.mapTo(mutableSetOf()) { it.name }
+            ?: emptySet()
+    }
+
+    /**
      * Evaluate a CardPredicate against an entity using projected state.
      */
     fun matchesCardPredicate(
@@ -837,6 +865,28 @@ class PredicateEvaluator {
                 entitySubtypes.any { entitySubtype ->
                     referenceSubtypes.any { it.equals(entitySubtype, ignoreCase = true) }
                 }
+            }
+
+            is CardPredicate.SharesCardTypeWith -> {
+                val referenceId = resolveEntityReference(state, predicate.entity, context) ?: return false
+                val referenceTypes = cardTypesOf(state, projected, referenceId, null)
+                if (referenceTypes.isEmpty()) return false
+                val entityTypes = cardTypesOf(state, projected, entityId, projectedValues?.types)
+                    .ifEmpty { card.typeLine.cardTypes.mapTo(mutableSetOf()) { it.name } }
+                entityTypes.any { it in referenceTypes }
+            }
+
+            is CardPredicate.SharesNameWith -> {
+                val referenceId = resolveEntityReference(state, predicate.entity, context) ?: return false
+                // Projected first so a renamed permanent (Layer 3, CR 613.1c) compares under its
+                // new name; base card data second so a reference with no projection entry — an
+                // Imprint pile's exiled card — still has a name to compare.
+                val referenceName = projected.getName(referenceId)?.takeIf { it.isNotBlank() }
+                    ?: state.getEntity(referenceId)?.get<CardComponent>()?.name
+                    ?: return false
+                if (referenceName.isBlank()) return false
+                val entityName = projected.getName(entityId)?.takeIf { it.isNotBlank() } ?: card.name
+                entityName.isNotBlank() && entityName == referenceName
             }
 
             is CardPredicate.SharesNameWithPermanentYouControl -> {
@@ -1889,8 +1939,10 @@ class PredicateEvaluator {
             CardPredicate.HasChosenColor, CardPredicate.SharesChosenColorWithSource,
             CardPredicate.SharesColorWithRecipient,
             is CardPredicate.SharesCreatureTypeWith,
+            is CardPredicate.SharesCardTypeWith,
             is CardPredicate.SharesColorWith,
             is CardPredicate.SharesManaValueWith,
+            is CardPredicate.SharesNameWith,
             is CardPredicate.SharesColorWithPermanentYouControl,
             is CardPredicate.SharesNameWithPermanentYouControl,
             is CardPredicate.DoesNotShareCreatureTypeWithPermanentYouControl,
