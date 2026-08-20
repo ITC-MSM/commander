@@ -2,7 +2,7 @@
 
 **Set Size:** 119 cards
 **Release Date:** August 1, 1994
-**Implemented:** 52 / 119
+**Implemented:** 53 / 119
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 19    | 8    |
@@ -142,7 +142,7 @@
 - [x] Skull of Orm
 - [x] Standing Stones
 - [x] Stone Calendar
-- [ ] Tormod's Crypt
+- [x] Tormod's Crypt
 - [ ] Tower of Coireall
 - [ ] Wand of Ith
 - [ ] War Barge
