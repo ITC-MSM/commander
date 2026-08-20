@@ -5756,9 +5756,19 @@ staticAbility {
   Loyalty)
 - `GrantProtectionFromCardType(cardType, filter = attachedCreature())` — "[filter] have protection from
   [card type]s" (e.g. *protection from instants*, *protection from sorceries*). Projects the keyword
-  `PROTECTION_FROM_CARDTYPE_<TYPE>`; the engine enforces the *targeting* leg (a spell/permanent of that
-  card type can't target the creature), which is the only DEBT leg that matters for instants/sorceries.
+  `PROTECTION_FROM_CARDTYPE_<TYPE>`, which is read on the targeting leg (`TargetValidator`,
+  `StackResolver`), the blocking leg (`BlockEvasionRules`) and the damage leg (`CombatDamagePipeline`,
+  `CombatDamageManager`, `DamageUtils`) — so protection from a *permanent* card type is enforced too,
+  not just the targeting leg that is all instants and sorceries can use.
   Pair two of these for the two-type wording. (Sword of Wealth and Power)
+- `GrantProtectionFromLinkedExiledCardTypes(filter = source())` — "[filter] has protection from each of
+  the exiled card's card types" — the card-type twin of `GrantProtectionFromControlledColors`: the *set*
+  of qualities is derived at projection time, here from the source's linked-exile pile
+  (`LinkedExileComponent`) rather than from the controller's board. Every card type on each still-exiled
+  card's type line becomes one `PROTECTION_FROM_CARDTYPE_<TYPE>` keyword, so an imprinted **artifact
+  creature** card grants protection from artifacts *and* from creatures. An empty pile grants nothing,
+  which is the right reading of a declined "may" imprint — which is also why this can't be modelled as
+  printed `Keyword.Protection` scopes. (Mirror Golem)
 - `GrantHexproofFromMonocoloredToGroup(filter = attachedCreature())` — "[filter] have hexproof from
   monocolored" — adds the projected keyword `HEXPROOF_FROM_MONOCOLORED`, which blocks targeting by
   monocolored (exactly one color, CR 105.2) spells and abilities opponents control. Colorless and
