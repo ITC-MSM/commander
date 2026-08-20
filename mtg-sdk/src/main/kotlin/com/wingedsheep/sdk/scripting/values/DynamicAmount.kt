@@ -193,7 +193,19 @@ enum class TurnTracker {
      * turn. `Compare(TurnTracking(You, DISTINCT_BENDS), GTE, Fixed(4))` powers "if you've done all
      * four this turn" (Avatar Aang, CR 701.65–701.67 / 702.189).
      */
-    DISTINCT_BENDS;
+    DISTINCT_BENDS,
+    /**
+     * How many cards the player had in hand **at the beginning of this turn** — a snapshot taken
+     * in the turn's untap step, before any draw, not a running count. Backed by
+     * `CardsInHandAtTurnStartComponent`, rewritten for every player at each turn start.
+     *
+     * The one tracker in this enum that does not accumulate, and that is the point: an upkeep
+     * ability asking "did you have no cards in hand at the beginning of this turn" cannot use a
+     * live hand count, because by the upkeep the answer has already been changed by the very
+     * things the card is measuring. `Compare(TurnTracking(You, CARDS_IN_HAND_AT_TURN_START), GTE,
+     * Fixed(1))` powers Mindstorm Crown.
+     */
+    CARDS_IN_HAND_AT_TURN_START;
 
     fun descriptionFor(player: Player): String = when (this) {
         CREATURES_DIED -> "the number of creatures that died under ${player.possessive} control this turn"
@@ -228,6 +240,8 @@ enum class TurnTracker {
         RED_NONCOMBAT_DAMAGE_DEALT -> "the noncombat damage red sources ${player.description} controlled dealt this turn"
         DAMAGE_SOURCES -> "the number of sources ${player.description} controlled that dealt damage this turn"
         DISTINCT_BENDS -> "the number of different ways ${player.description} bent this turn"
+        CARDS_IN_HAND_AT_TURN_START ->
+            "the number of cards ${player.description} had in hand at the beginning of this turn"
     }
 }
 
