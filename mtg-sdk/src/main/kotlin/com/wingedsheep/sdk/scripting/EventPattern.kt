@@ -2191,6 +2191,14 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * Refueler) — which counts an exhaust *mana* ability too. [excludeManaAbilities] adds back the
      * "isn't a mana ability" clause for Pit Automaton, whose Oracle text was updated to
      * "an exhaust ability that isn't a mana ability" so its copy payoff can't grab a mana ability.
+     *
+     * [includeManaAbilities] drops the default "isn't a mana ability" gate entirely: the trigger
+     * fires for *every* activated ability, mana or not. This is the unqualified Oracle wording —
+     * Elrond, Moon-Reader's "whenever you activate an ability of a creature", whose ruling states
+     * that a creature's "{T}: Add {G}" does cause it to trigger. Note this is the opposite axis to
+     * [excludeManaAbilities], which subtracts mana abilities from the *exhaust* semantic; this one
+     * adds them to the default semantic. A trigger that sets it must not itself be able to produce
+     * mana, or CR 605.1b would make it a mana ability.
      */
     @SerialName("AbilityActivatedEvent")
     @Serializable
@@ -2201,27 +2209,33 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         val requireNoTapInCost: Boolean = false,
         val requireExhaust: Boolean = false,
         val excludeManaAbilities: Boolean = false,
+        val includeManaAbilities: Boolean = false,
     ) : EventPattern {
         override val description: String = buildString {
+            // The clause that narrows *which* abilities count, appended after "...ability".
+            // Empty for the unqualified [includeManaAbilities] wording, where the source filter
+            // alone does the narrowing ("you activate a creature's ability" — Elrond).
+            val qualifier = when {
+                targetMatch != null -> "targets a " + targetMatch.description
+                requireExhaust && excludeManaAbilities ->
+                    "is an exhaust ability that isn't a mana ability"
+                requireExhaust -> "is an exhaust ability"
+                requireNoTapInCost -> "doesn't have {T} in its activation cost"
+                includeManaAbilities -> ""
+                else -> "isn't a mana ability"
+            }
             append(player.description)
             append(" activates ")
             if (sourceFilter != null) {
                 append("a ")
                 append(sourceFilter.description)
-                append("'s ability that ")
+                append("'s ability")
             } else {
-                append("an ability that ")
+                append("an ability")
             }
-            when {
-                targetMatch != null -> {
-                    append("targets a ")
-                    append(targetMatch.description)
-                }
-                requireExhaust && excludeManaAbilities ->
-                    append("is an exhaust ability that isn't a mana ability")
-                requireExhaust -> append("is an exhaust ability")
-                requireNoTapInCost -> append("doesn't have {T} in its activation cost")
-                else -> append("isn't a mana ability")
+            if (qualifier.isNotEmpty()) {
+                append(" that ")
+                append(qualifier)
             }
         }
 

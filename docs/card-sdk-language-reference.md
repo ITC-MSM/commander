@@ -5368,13 +5368,21 @@ Named sugar for the common type-primitive cases; reach for `youCastSpell(...)` p
   with `Effects.DealDamage(n, EffectTarget.PlayerRef(Player.TriggeringPlayer))` to punish the activator (Flamescroll
   Celebrant). Backed by `EventPattern.AbilityActivatedEvent(player)`.
 - `YouActivateAbility` — you activate an ability that isn't a mana ability (the `Player.You` form of the above).
-- `activatesAbilityOf(sourceFilter, player?)` — the source-scoped form of the above: an ability that isn't a mana
-  ability, activated from a permanent matching `sourceFilter`. Elrond, Moon-Reader's "whenever you activate an
-  ability of a creature" is `activatesAbilityOf(GameObjectFilter.Creature)`; pair it with `oncePerTurn = true` on
-  the triggered ability for the "this ability triggers only once each turn" clause. Backed by
-  `EventPattern.AbilityActivatedEvent(player, sourceFilter)`. Unlike `activatesAbilityWithoutTap` (below), which
-  keys on the literal `{T}`-in-cost wording, this keeps the "isn't a mana ability" gate — so a creature's
-  tap-for-mana never fires it while a `{T}`-costed non-mana ability does.
+- `activatesAbilityOf(sourceFilter, player?, includeManaAbilities?)` — the source-scoped form of the above: an
+  ability activated from a permanent matching `sourceFilter`. By default it keeps the "isn't a mana ability" gate;
+  set `includeManaAbilities = true` for the unqualified Oracle wording, where mana abilities count too. Elrond,
+  Moon-Reader's "whenever you activate an ability of a creature" is
+  `activatesAbilityOf(GameObjectFilter.Creature, includeManaAbilities = true)` — its ruling confirms a creature's
+  `{T}: Add {G}` triggers it, since a mana ability is still an activated ability (CR 605.3). Pair it with
+  `oncePerTurn = true` on the triggered ability for the "this ability triggers only once each turn" clause. Backed
+  by `EventPattern.AbilityActivatedEvent(player, sourceFilter, includeManaAbilities)`. Unlike
+  `activatesAbilityWithoutTap` (below), which keys on the literal `{T}`-in-cost wording, this ignores the tap cost
+  entirely. A trigger that sets `includeManaAbilities` must not itself be able to add mana, or CR 605.1b would make
+  it a mana ability (and it would resolve off the stack).
+
+  **Engine note.** The engine emits `AbilityActivatedEvent` for *every* activated mana ability, on the manual
+  activation path and on the auto-tap fast path used to pay for spells and abilities, with `isManaAbility = true`
+  and `costsTap` set from the cost. Mana-ability activations are deliberately kept out of the client game log.
 - `YouActivateExhaustAbility` — you activate an ability marked `isExhaust`. Backed by
   `EventPattern.AbilityActivatedEvent(player = Player.You, requireExhaust = true)` and the activation event's
   `isExhaust` flag. The event is emitted as soon as the exhaust ability is put on the stack, so the triggered

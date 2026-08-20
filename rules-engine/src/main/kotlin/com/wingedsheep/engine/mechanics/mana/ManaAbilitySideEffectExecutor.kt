@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.mechanics.mana
 
+import com.wingedsheep.engine.core.AbilityActivatedEvent
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.LifeChangeReason
@@ -73,6 +74,14 @@ class ManaAbilitySideEffectExecutor(
             event?.let(events::add)
 
             val production = solution.manaProduced[source.entityId]
+            // Auto-tapping a source *is* the player activating its mana ability — the fast path is
+            // a UI shortcut, not a different game action (CR 605.3). Emit the activation event the
+            // manual path emits so "whenever you activate an ability" triggers see it (Elrond,
+            // Moon-Reader off an auto-tapped Llanowar Elves). Emitted after the TappedEvent: the
+            // tap is the cost, and the ability is activated once its costs are paid.
+            activationEvent(currentState, source.entityId, production?.color, controllerId)
+                ?.let(events::add)
+
             val (after, sideEvents) = runSideEffects(
                 state = currentState,
                 sourceId = source.entityId,
@@ -85,19 +94,54 @@ class ManaAbilitySideEffectExecutor(
         return currentState to events
     }
 
+    /**
+     * The [AbilityActivatedEvent] for an auto-tapped mana source, or null if [sourceId] isn't a
+     * card (nothing to name in the event).
+     *
+     * `costsTap` is true by construction — this path only ever reaches sources it taps — so the
+     * Antiquities "without {T} in its activation cost" template correctly ignores these. `isExhaust`
+     * is read off the matching printed ability where one is found; an intrinsic land mana ability
+     * has no [ActivatedAbility] entry to consult and is never exhaust anyway.
+     */
+    fun activationEvent(
+        state: GameState,
+        sourceId: EntityId,
+        producedColor: Color?,
+        controllerId: EntityId,
+    ): AbilityActivatedEvent? {
+        val card = state.getEntity(sourceId)?.get<CardComponent>() ?: return null
+        val matchingAbility = matchingManaAbility(state, sourceId, producedColor)
+        return AbilityActivatedEvent(
+            sourceId = sourceId,
+            sourceName = card.name,
+            controllerId = controllerId,
+            abilityEntityId = null,
+            costsTap = true,
+            isManaAbility = true,
+            isExhaust = matchingAbility?.isExhaust == true
+        )
+    }
+
+    /** The printed mana ability of [sourceId] that produced [producedColor], if there is one. */
+    private fun matchingManaAbility(
+        state: GameState,
+        sourceId: EntityId,
+        producedColor: Color?,
+    ): ActivatedAbility? {
+        val card = state.getEntity(sourceId)?.get<CardComponent>() ?: return null
+        val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: return null
+        return cardDef.script.activatedAbilities
+            .filter { it.isManaAbility }
+            .firstOrNull { abilityProducesColor(it, producedColor) }
+    }
+
     fun runSideEffects(
         state: GameState,
         sourceId: EntityId,
         producedColor: Color?,
         controllerId: EntityId,
     ): Pair<GameState, List<GameEvent>> {
-        val card = state.getEntity(sourceId)?.get<CardComponent>()
-            ?: return state to emptyList()
-        val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: return state to emptyList()
-
-        val matchingAbility = cardDef.script.activatedAbilities
-            .filter { it.isManaAbility }
-            .firstOrNull { abilityProducesColor(it, producedColor) }
+        val matchingAbility = matchingManaAbility(state, sourceId, producedColor)
             ?: return state to emptyList()
 
         var currentState = state
