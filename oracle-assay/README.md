@@ -20,7 +20,19 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is the **step-trigger band** — "At the beginning of **each opponent's end
+The most recent work is the **trigger join** — "When ~ enters **and** whenever you cast a spell with
+mana value 5 or greater, draw a card." (**+6 whole cards**), the top row of the tail ranking and the
+band whose *measurement* was the finding. Two `when` clauses, one payoff, two abilities: the same
+model [the entry band](#the-entry-band)'s five-row table produces, reached the opposite way, because
+here each half repeats its own trigger word and so is a complete clause drawn from the same
+vocabulary. So the prefix became a **value** — one `Prefix` per printed `when` clause, one
+`sentence(prefix)` per trigger rule, and one alternation the join slots twice — and every trigger
+family the grammar learns is a legal half of it without being told. What that split also moved is
+where a *decline* lands: the ranking's number-one family, 177 cards on a prefix the grammar could
+already read, was an artifact of the whole clause being one template literal, and it dissolved.
+See [the trigger join](#the-trigger-join).
+
+Before it came the **step-trigger band** — "At the beginning of **each opponent's end
 step**, …" (**+3 whole cards**, and the "At the beginning …" decline family from 197 cards to 20).
 `dsl.Triggers.phase(step, player, binding)` is the SDK's one language for a step trigger and the
 grammar was calling its frozen constants — thirteen whole-prefix rules, one per printed sentence — so
@@ -1807,6 +1819,125 @@ falls through to `else -> true` for everything else, so a Curse's upkeep trigger
 player's upkeep. That is an engine gap rather than an SDK one, so it is reported here rather than
 routed around: no Curse has a golden today and none of them reads whole yet, so nothing is currently
 relying on it.
+
+## The trigger join
+
+"When ~ enters **and** whenever you cast a spell with mana value 5 or greater, draw a card." — Up the
+Beanstalk, and the top row of the tail ranking by every column: **177 cards, 88 sole-blocked, 179
+lines**. Whole-corpus coverage 8,105 → **8,111 cards** (+6); the baked ledger 7,891 → **7,897 whole**
+— Bant, Grixis and Naya Sojourners, Necklace of Girion, Shrine of Burning Rage and Up the Beanstalk —
+with **none lost**; 12 more lines round-trip and 13 fewer decline. MISMATCH, AMBIGUOUS and redundant
+readings stay at 0. The differential compares one more card (3,764 → 3,765) and confirms it, and its
+35 divergences are the same 35 by name, so nothing here changed what an already-readable card means.
+
+**The join is the product that [the entry band](#the-entry-band)'s table deliberately was not**, and
+the difference is in the printed sentence rather than in the model. Both produce two
+`TriggeredAbility`s from one line. Oracle *contracts* five pairs of self-events into a single trigger
+word — "enters or attacks", "attacks or blocks", "enters or dies" — and that is a counted list,
+because a cross product of the vocabulary would have been forty-odd rules for five sentences. The
+"and" join is different: each half prints **its own trigger word** ("and whenever …", "and at the
+beginning of …", "and when …"), so the halves are complete clauses, and one rule that slots the
+vocabulary on both sides *is* the family. 112 corpus lines, 31 of them opening with "When ~ enters".
+
+### The prefix became a value
+
+`Triggers` held forty-odd rules of the shape `"$surface, {effect}"`, and there was no way to say "a
+trigger's `when` clause" — which is exactly what a join needs twice. Spelling the prefixes a second
+time for the join was the one thing this module may not do, so the file now has three pieces where it
+had one:
+
+- `Prefix` — a `Phrase<TriggerSpec>` plus the effect cascade its payoff takes. The cascade cannot
+  travel *inside* the prefix, because it is a property of the event: a trigger whose event names an
+  object of its own reads "it" as that object (`Steps.triggeredStep`) and every other trigger reads it
+  as the source (`Steps.step`).
+- `sentence(prefix)` — `"{trigger}, {effect}"`, the one fail-closed reconstruction every family now
+  shares. It reads the event straight off the ability rather than comparing it against a constant, and
+  nothing is lost by that: `TriggerSpec` is exactly `(event, binding)`, so the spec a printed ability
+  denotes is *total*, and whether this prefix can spell it is the prefix's own `match` to refuse.
+- `event` — the prefixes as one alternation, which is the whole of the join rule.
+
+The rows themselves did not change: `triggerRule`, `filteredTriggerRule`, `slottedTriggerRule`,
+`batchProduct`, `nthCastRule` and `countersPlacedRule` all return a `Prefix` now and read the same
+surfaces they did. The one trigger sentence that is *not* a prefix plus a payoff stayed a whole-line
+rule — the graveyard-zoned step trigger, whose rider lands on the ability's `activeZones` rather than
+on the event, so it cannot be joined either.
+
+**The payoff is `Steps.step`, and for a join that is the only sound reading.** Two different events
+share one effect, so an "it" resolved to a triggering object would mean a different thing under each
+of them. The source anaphor is the one that stays true for both: Hoarder's Overflow's "When ~ enters
+and whenever you expend 4, put a stash counter on **it**" means the source under either event.
+
+**A pair the contracted table owns is declined in both directions.** `[EntersBattlefield, Dies]`
+prints "when ~ enters or dies" and must not also be printable as "when ~ enters and when ~ dies", so
+the guard is on the *pair* rather than on the alternation's position — "one printed form per model"
+is a property of the model, and `oneOf` ordering deciding it is the thing invariant 2 forbids. No
+corpus line writes a contracted pair the long way, so the guard costs nothing. A join of an event with
+itself is declined for the same reason and a simpler one: it denotes two identical abilities.
+
+### The ranking's number-one row was a template literal
+
+This is the part worth more than the +6 cards. A `TemplatePhrase` fails at the start of the literal it
+could not match, and the old rules made the whole `when` clause *and its comma* one literal —
+`"when ~ enters, "`. So every line that began "When ~ enters" and then did anything else declined at
+**offset 0**, and `DeclineKey.TAIL`, which keys a family on the text from the decline onward,
+collapsed 179 unrelated lines into one family named after a prefix the grammar had read since Phase 1.
+177 cards, 88 of them sole-blocked — the largest row in the table, and not a piece of work at all.
+
+Splitting the prefix off moved those declines to the end of the prefix, where the construct that
+actually blocks them starts. The family did not shrink; it **dissolved**, into per-payload rows the
+ranking can act on:
+
+```
+before                                        after (the same lines, re-keyed)
+  cards sole lines tail                          cards sole lines tail
+  177   88   179   When ~ enters …               15    4    15    the battlefield, create …
+                                                 14    11   14    the battlefield, choose …
+                                                 …and ~100 more rows
+```
+
+Tail families went 10,086 → 10,202 for that reason. The lesson generalizes past this band: **a rule
+whose template swallows a whole clause into one literal makes its declines unreadable to the ranking**,
+and the fix is the same one that enables reuse — make the clause a slot. The
+[fronted duration](#the-fronted-duration) and [step-trigger](#the-step-trigger-band) bands each found
+the tail ranking over-stating a front-of-line family; this one found *why* it happens, and it is a
+property of the grammar's own factoring rather than of the key.
+
+### The probe under-stated, for a reason that names its blind spot
+
+The feasibility probe over the family predicted 9 parsing lines and **3** whole cards; the band
+delivered 12 and **6**. Only the second time a probe has erred low, and the reason is new: it
+substitutes a known-good prefix into the lines of *one family*, so it can only see the payoffs behind
+that family's key. Three of the six cards are the Sojourners cycle, whose join opens "When you cycle
+~ …" and was keyed elsewhere entirely. **A rule with more than one slot reaches more than one family,
+and a family-scoped probe is a floor for it** — the same shape as
+[the modal band](#the-modal-band)'s under-statement, where the family was a clause position rather
+than a line.
+
+### What is left in the family
+
+82 join-shaped lines still decline, and because the rule reads both halves out of the vocabulary the
+residue classifies itself — substitute a known-good half and see which side was the blocker:
+
+| what blocks it | lines |
+|---|---|
+| the **second** half is an event with no rule | 41 |
+| **both** halves read — the payload is the blocker | 20 |
+| neither half reads | 16 |
+| the **first** half is an event with no rule | 5 |
+
+Seventeen of those 41 are one sentence: "Whenever an enchantment you control enters and whenever you
+**fully unlock a Room**, …", whose first half the grammar already reads. That is the next row and it is
+one prefix — written once, it lands on every context that slots an event, the join included, which is
+precisely what a prefix vocabulary buys. Behind it the second halves are singletons ("when you
+sacrifice it", "whenever you expend 4", "whenever it attacks while saddled", "whenever you solve a
+Case", "whenever a player taps a Mountain for mana"), and the 20 payload-blocked lines are the ordinary
+backlog — amass, seek, conjure, heist, "choose left or right".
+
+One structural gap worth stating rather than discovering twice: the trigger cap rider
+("This ability triggers only once each turn.") wraps a **single** ability —
+see [the batch-trigger band](#the-batch-trigger-band) — so a two-ability line cannot carry it. Three
+corpus joins print it, all of them blocked on their event as well, so it costs nothing today; the fix
+is to move the rider up to the line, where it would reach the contracted pairs too.
 
 ## The differential gate
 
