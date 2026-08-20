@@ -4695,6 +4695,34 @@ object Effects {
     )
 
     /**
+     * "[guesser] guesses whether [condition] is true", storing 1 (right) or 0 (wrong) under
+     * [storeGuessedRightAs] instead of branching (Liar's Pendulum).
+     *
+     * [OpponentGuessesTopCardKind]'s open sibling: the proposition is any resolution-time condition
+     * and the outcome is a pipeline number, so the card composes what happens next — including steps
+     * that sit *between* the guess and the payoff, which a branch-carrying guess can't express. The
+     * condition is evaluated only after the answer is in, and nothing is revealed unless the card
+     * says so.
+     *
+     * `{name}` in [prompt] is replaced by the card name stored under [promptNameVariable], so a guess
+     * about a named card can name it in the question.
+     */
+    fun PlayerGuessesCondition(
+        condition: com.wingedsheep.sdk.scripting.conditions.Condition,
+        prompt: String,
+        storeGuessedRightAs: String = "guessedRight",
+        guesser: com.wingedsheep.sdk.scripting.effects.Chooser =
+            com.wingedsheep.sdk.scripting.effects.Chooser.Opponent,
+        promptNameVariable: String? = null,
+    ): Effect = com.wingedsheep.sdk.scripting.effects.PlayerGuessesConditionEffect(
+        condition = condition,
+        prompt = prompt,
+        storeGuessedRightAs = storeGuessedRightAs,
+        guesser = guesser,
+        promptNameVariable = promptNameVariable,
+    )
+
+    /**
      * Let a creature attack this turn as though it didn't have defender (Krotiq Nestguard).
      * The activated/temporary counterpart to the static [com.wingedsheep.sdk.scripting.CanAttackDespiteDefender].
      */

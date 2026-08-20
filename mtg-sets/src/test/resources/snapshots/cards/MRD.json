@@ -3196,6 +3196,166 @@
     "colorIdentityOverride": []
 }
 
+// Fiery Gambit
+{
+    "name": "Fiery Gambit",
+    "manaCost": "{2}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Flip a coin until you lose a flip or choose to stop flipping. If you lose a flip, Fiery Gambit has no effect. If you win one or more flips, Fiery Gambit deals 3 damage to target creature. If you win two or more flips, Fiery Gambit deals 6 damage to each opponent. If you win three or more flips, draw nine cards and untap all lands you control.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "FlipCoinsUntilLoss",
+                    "storeWinsAs": "fieryGambitWins"
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "VariableReference",
+                                "variableName": "fieryGambitWins"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    },
+                    "descriptionOverride": "If you win one or more flips, Fiery Gambit deals 3 damage to target creature."
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "VariableReference",
+                                "variableName": "fieryGambitWins"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 6
+                        },
+                        "target": {
+                            "type": "PlayerRef",
+                            "player": "EachOpponent"
+                        }
+                    },
+                    "descriptionOverride": "If you win two or more flips, Fiery Gambit deals 6 damage to each opponent."
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "VariableReference",
+                                "variableName": "fieryGambitWins"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 3
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 9
+                                }
+                            },
+                            {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "land ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "TapUntap",
+                                    "target": "Self",
+                                    "tap": false
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "If you win three or more flips, draw nine cards and untap all lands you control."
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "90",
+        "rarity": "RARE",
+        "artist": "Scott M. Fischer",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/9/a91376ed-5868-4887-8389-5ef5b9471786.jpg?1783944541",
+        "rulings": [
+            {
+                "date": "2004-12-01",
+                "text": "You must choose a target creature when you cast Fiery Gambit. If that target isn't legal on resolution, Fiery Gambit has no effect and you don't even flip a coin."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "You can flip any number of coins (you can even flip more than three), but Fiery Gambit has no effect if you lose any of the flips. You can't continue flipping if you lose a flip."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "If you win three flips, Fiery Gambit deals 3 damage to the target creature and 6 damage to each opponent, and you draw nine cards and untap all lands you control."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "After each flip, you choose whether to continue flipping."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Fireshrieker
 {
     "name": "Fireshrieker",
@@ -5884,6 +6044,137 @@
             {
                 "date": "2021-03-19",
                 "text": "You won't lose the game until you try to draw from the empty library."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
+// Liar's Pendulum
+{
+    "name": "Liar's Pendulum",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "{2}, {T}: Choose a card name. Target opponent guesses whether a card with that name is in your hand. You may reveal your hand. If you do and your opponent guessed wrong, draw a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ChooseOption",
+                            "optionType": "CARD_NAME",
+                            "storeAs": "pendulumName",
+                            "prompt": "Choose a card name"
+                        },
+                        {
+                            "type": "PlayerGuessesConditionEffect",
+                            "condition": {
+                                "type": "Exists",
+                                "player": "You",
+                                "zone": "Hand",
+                                "filter": {
+                                    "cardPredicates": [
+                                        {
+                                            "type": "NameEqualsChosen",
+                                            "variableName": "pendulumName"
+                                        }
+                                    ]
+                                }
+                            },
+                            "prompt": "Is a card named \"{name}\" in your opponent's hand?",
+                            "storeGuessedRightAs": "pendulumGuessedRight",
+                            "guesser": "TargetPlayer",
+                            "promptNameVariable": "pendulumName"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": "Gate.MayDecide",
+                            "then": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "RevealHand",
+                                        "target": "Controller"
+                                    },
+                                    {
+                                        "type": "Gated",
+                                        "gate": {
+                                            "type": "Gate.WhenCondition",
+                                            "condition": {
+                                                "type": "Compare",
+                                                "left": {
+                                                    "type": "VariableReference",
+                                                    "variableName": "pendulumGuessedRight"
+                                                },
+                                                "operator": "EQ",
+                                                "right": {
+                                                    "type": "Fixed",
+                                                    "amount": 0
+                                                }
+                                            }
+                                        },
+                                        "then": {
+                                            "type": "DrawCards",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "descriptionOverride": "If your opponent guessed wrong, draw a card."
+                                    }
+                                ]
+                            },
+                            "descriptionOverride": "reveal your hand"
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetOpponent",
+                        "id": "target opponent"
+                    }
+                ],
+                "descriptionOverride": "Choose a card name. Target opponent guesses whether a card with that name is in your hand. You may reveal your hand. If you do and your opponent guessed wrong, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "196",
+        "rarity": "RARE",
+        "artist": "Christopher Moeller",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/66372597-c182-4850-a630-231737b1482b.jpg?1783944515",
+        "rulings": [
+            {
+                "date": "2004-12-01",
+                "text": "First you name a card. Then the targeted opponent guesses whether the card is in your hand."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "After the opponent has guessed, you may reveal your hand. If your opponent was wrong, you draw a card. If your opponent was right, you don't draw a card."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "You reveal your hand only if you choose to, regardless of whether your opponent guessed right or wrong."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "You can't draw a card if you don't reveal your hand."
             }
         ]
     },
@@ -10509,6 +10800,99 @@
         "artist": "Heather Hudson",
         "flavorText": "An artificer once dropped one in a vault full of coins. She has yet to find it.",
         "imageUri": "https://cards.scryfall.io/normal/front/3/a/3aac5f6f-97c1-4546-94ed-016292e98c9d.jpg?1783944505"
+    },
+    "colorIdentityOverride": []
+}
+
+// Scythe of the Wretched
+{
+    "name": "Scythe of the Wretched",
+    "manaCost": "{2}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature gets +2/+2.\nWhenever a creature dealt damage by equipped creature this turn dies, return that card to the battlefield under your control. Attach this Equipment to that creature.\nEquip {4}",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CreatureDealtDamageBySourceDiesEvent",
+                "binding": "ATTACHED",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "TriggeringEntity",
+                            "destination": "Battlefield",
+                            "controllerOverride": "Controller",
+                            "fromZone": "Graveyard"
+                        },
+                        {
+                            "type": "AttachEquipment",
+                            "target": "TriggeringEntity"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever a creature dealt damage by equipped creature this turn dies, return that card to the battlefield under your control. Attach this Equipment to that creature."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2
+            }
+        ]
+    },
+    "equipCost": "{4}",
+    "metadata": {
+        "collectorNumber": "239",
+        "rarity": "RARE",
+        "artist": "Matt Cavotta",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/4/143e7a81-fb3d-4bad-854a-b24138ca7415.jpg?1783944505",
+        "rulings": [
+            {
+                "date": "2004-12-01",
+                "text": "The Scythe's ability triggers even if something other than the damage dealt by the equipped creature causes the creature to be put into a graveyard that turn."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "Scythe of the Wretched needs to equip your creature when the other creature goes to the graveyard for the ability to trigger, but it doesn't matter whether the Scythe equipped your creature when the damage was actually dealt."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "If the card isn't a creature when it comes back onto the battlefield, then Scythe of the Wretched won't move onto it."
+            }
+        ]
     },
     "colorIdentityOverride": []
 }

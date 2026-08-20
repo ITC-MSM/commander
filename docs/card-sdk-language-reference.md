@@ -1907,6 +1907,20 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   Both branch effects resolve in the source's original context, so `EffectTarget.Self` inside them
   refers to the ability's source. Empty library → no top card → guess can never be right, so the
   "wrong" branch runs. `chooser`/`guesser` reuse the shared `Chooser` enum (see `ChoosePileEffect`).
+- `Effects.PlayerGuessesCondition(condition, prompt, storeGuessedRightAs = "guessedRight", guesser = Opponent, promptNameVariable = null)`
+  (`PlayerGuessesConditionEffect`) — "[guesser] guesses whether [condition] is true", storing `1`
+  (right) or `0` (wrong) under `storeGuessedRightAs` instead of branching (Liar's Pendulum). The
+  **open** sibling of `OpponentGuessesTopCardKind`: that one owns its proposition, its reveal and both
+  branches; this one owns none of them, so the card can put its own steps *between* the guess and the
+  payoff — Liar's Pendulum's optional hand reveal sits there, and folding it into branches would
+  duplicate it and let the two prompts tell the guesser whether they were right. `condition` is any
+  resolution-time `Condition`, evaluated only *after* the answer is in and never shown to the guesser;
+  nothing is revealed unless the card says so. Gate the payoff with
+  `Compare(VariableReference(storeGuessedRightAs), EQ, Fixed(0))` for "guessed wrong" / `Fixed(1)` for
+  "guessed right"; a consumer that runs with no guess having happened reads 0, so order the guess
+  first. `promptNameVariable` substitutes `{name}` in `prompt` from `chosenValues`, so a guess about a
+  card named a step earlier can put that name in the question. `guesser` is the shared `Chooser` enum —
+  a printed "target opponent" is `Chooser.TargetPlayer`.
 - `Effects.CanAttackDespiteDefenderThisTurn(target = Self)` (`CanAttackDespiteDefenderThisTurnEffect`) — target can attack this
   turn as though it didn't have defender. Adds a transient `CanAttackDespiteDefenderThisTurnComponent`
   honored by the defender attack-restriction rule and cleaned up at end of turn. The
