@@ -153,6 +153,55 @@
     ]
 }
 
+// Blood Moon
+{
+    "name": "Blood Moon",
+    "manaCost": "{2}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "Nonbasic lands are Mountains.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "SetLandTypesForGroup",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsLand",
+                            {
+                                "type": "Not",
+                                "predicate": "IsBasicLand"
+                            }
+                        ]
+                    }
+                },
+                "landTypes": [
+                    "Mountain"
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "58",
+        "rarity": "RARE",
+        "artist": "Tom Wänerstrand",
+        "flavorText": "Heavy light flooded across the landscape, cloaking everything in deep crimson.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/8/78373616-e2d6-4ccf-998f-09f02bea45b4.jpg?1783947937",
+        "rulings": [
+            {
+                "date": "2020-08-07",
+                "text": "Nonbasic lands lose their other land types and abilities, gain the Mountain land type, and gain the ability \"{T}: Add {R}.\""
+            },
+            {
+                "date": "2020-08-07",
+                "text": "The effect doesn't change a land's name or supertypes, so it doesn't make a land basic or remove the legendary supertype."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Bog Imp
 {
     "name": "Bog Imp",
