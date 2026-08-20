@@ -13155,6 +13155,129 @@
     ]
 }
 
+// Thought Prison
+{
+    "name": "Thought Prison",
+    "manaCost": "{5}",
+    "typeLine": "Artifact",
+    "oracleText": "Imprint — When this artifact enters, you may have target player reveal their hand. If you do, choose a nonland card from it and exile that card.\nWhenever a player casts a spell that shares a color or mana value with the exiled card, this artifact deals 2 damage to that player.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "RevealHand",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target player"
+                                }
+                            },
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    },
+                                    "filter": "nonland"
+                                },
+                                "storeAs": "thoughtPrisonImprintCandidates"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "thoughtPrisonImprintCandidates",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "thoughtPrisonImprint",
+                                "prompt": "Choose a nonland card to exile with Thought Prison"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "thoughtPrisonImprint",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "linkToSource": true
+                            }
+                        ]
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target player"
+                },
+                "descriptionOverride": "Imprint — When this artifact enters, you may have target player reveal their hand. If you do, choose a nonland card from it and exile that card."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "SharesColorWith",
+                                        "entity": "LinkedExiledCard"
+                                    },
+                                    {
+                                        "type": "SharesManaValueWith",
+                                        "entity": "LinkedExiledCard"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                },
+                "descriptionOverride": "Whenever a player casts a spell that shares a color or mana value with the exiled card, this artifact deals 2 damage to that player."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "261",
+        "rarity": "UNCOMMON",
+        "artist": "Glen Angus",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/0/409087ef-8232-489c-8b98-b601bb0a47a4.jpg?1783944499"
+    },
+    "colorIdentityOverride": []
+}
+
 // Thoughtcast
 {
     "name": "Thoughtcast",
