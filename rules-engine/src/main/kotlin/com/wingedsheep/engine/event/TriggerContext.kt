@@ -382,6 +382,10 @@ data class TriggerContext(
                     triggeringPlayerId = event.targetEntityId.takeIf { event.targetIsPlayer },
                     targetingSourceEntityId = event.sourceEntityId
                 )
+                is com.wingedsheep.engine.core.LibraryShuffledEvent -> TriggerContext(
+                    // "…deals 2 damage to that player" — the shuffler is the triggering player.
+                    triggeringPlayerId = event.playerId
+                )
                 is com.wingedsheep.engine.core.TargetsChosenEvent -> TriggerContext(
                     triggeringEntityId = event.stackObjectId,
                     triggeringPlayerId = event.chooserId

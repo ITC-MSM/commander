@@ -9245,6 +9245,48 @@
     ]
 }
 
+// Psychogenic Probe
+{
+    "name": "Psychogenic Probe",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever a spell or ability causes a player to shuffle their library, this artifact deals 2 damage to that player.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "ShuffleLibraryEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "231",
+        "rarity": "RARE",
+        "artist": "Jeremy Jarvis",
+        "flavorText": "The same devices sold as surgeons' tools in Lumengrid are sold as implements of torture in Mephidross.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/8/e83d1ed5-3a49-4cfa-bad2-e342ef28649e.jpg?1783944507",
+        "rulings": [
+            {
+                "date": "2009-02-01",
+                "text": "This ability will trigger even if the player's library is empty at the time they are supposed to shuffle it."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Pyrite Spellbomb
 {
     "name": "Pyrite Spellbomb",

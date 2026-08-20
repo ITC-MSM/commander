@@ -2550,6 +2550,28 @@ object Triggers {
     )
 
     // =========================================================================
+    // Library Shuffle Triggers (CR 701.24)
+    // =========================================================================
+
+    /**
+     * Whenever a spell or ability causes a player to shuffle their library (CR 701.24) — the
+     * shuffle twin of [WheneverYouSearchYourLibrary], used by Psychogenic Probe. Emitted by every
+     * shuffle the engine performs on behalf of an effect, so tutors, fetches, "shuffle it into its
+     * owner's library" replacement effects, and bare `Effects.ShuffleLibrary` all drive it.
+     *
+     * Scope it with [Player.You] / [Player.EachOpponent]; the default [Player.Any] is the printed
+     * "a player", which includes the ability's own controller. `Player.TriggeringPlayer` inside the
+     * effect resolves to the player who shuffled, so "that player" is reachable.
+     *
+     * The game-rules shuffles — setting up the game (CR 103.2) and mulliganing (CR 103.5) — are
+     * caused by neither a spell nor an ability and never fire this.
+     */
+    val WheneverAPlayerShufflesTheirLibrary: TriggerSpec = TriggerSpec(
+        event = ShuffleLibraryEvent(Player.Any),
+        binding = TriggerBinding.ANY
+    )
+
+    // =========================================================================
     // Manifest Dread Triggers (CR 701.60)
     // =========================================================================
 

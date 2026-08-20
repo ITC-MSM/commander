@@ -5222,6 +5222,27 @@ Triggers.youCastSpell(
   variant is used by **Wan Shi Tong, Librarian** ("Whenever an opponent searches their library, put a
   +1/+1 counter on him and draw a card").
 
+### Library shuffle (CR 701.24)
+
+- `WheneverAPlayerShufflesTheirLibrary` — the shuffle twin of the search trigger, backed by the
+  `ShuffleLibraryEvent(player)` pattern + the engine `LibraryShuffledEvent`. Fires once per shuffle,
+  so every shuffle the engine performs on behalf of an effect drives it: `Effects.ShuffleLibrary`,
+  the shuffle leg of every search pipeline, `ZonePlacement.Shuffled` moves, and the
+  shuffle-into-library replacement effects (Darksteel Colossus). Used by **Psychogenic Probe**
+  ("Whenever a spell or ability causes a player to shuffle their library, this artifact deals 2
+  damage to that player"). `Player.TriggeringPlayer` inside the effect resolves to the shuffler, so
+  "that player" is reachable; the default `Player.Any` is the printed "a player" and includes the
+  ability's own controller.
+  - Being one event per shuffle gives three CR 701.24 clauses for free: a search-then-shuffle fires
+    it even though the found cards are held out of the randomization (701.24b), a library holding
+    zero or one cards still fires it (701.24e), and two effects shuffling one library simultaneously
+    fire it twice (701.24f).
+  - **Only spell- and ability-caused shuffles match**, which is the only printed wording. The game
+    rules also shuffle while setting the game up (CR 103.2) and when a player mulligans (CR 103.5);
+    the engine tags those two emission sites with `ShuffleCause.GAME_SETUP` / `ShuffleCause.MULLIGAN`
+    and the matcher drops them. `ShuffleCause.SPELL_OR_ABILITY` is the default, so a new
+    effect-driven shuffle site is picked up without opting in.
+
 ### Manifest Dread
 
 - `WheneverYouManifestDread` — fires once per manifest-dread resolution (CR 701.60), after the
