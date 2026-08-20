@@ -41,13 +41,17 @@ class BloodMoonScenarioTest : FunSpec({
 
     test("turns nonbasic lands into Mountains while leaving basic lands unchanged") {
         val (driver, player) = newGame()
+        val opponent = driver.state.getOpponents(player).single()
         driver.putPermanentOnBattlefield(player, "Blood Moon")
         val tropical = driver.putLandOnBattlefield(player, "Tropical Island")
+        val opponentsTropical = driver.putLandOnBattlefield(opponent, "Tropical Island")
         val basicForest = driver.putLandOnBattlefield(player, "Forest")
 
         driver.state.projectedState.hasSubtype(tropical, "Mountain").shouldBeTrue()
         driver.state.projectedState.hasSubtype(tropical, "Island") shouldBe false
         driver.state.projectedState.hasSubtype(tropical, "Forest") shouldBe false
+        driver.state.projectedState.hasSubtype(opponentsTropical, "Mountain").shouldBeTrue()
+        driver.state.projectedState.hasSubtype(opponentsTropical, "Island") shouldBe false
         driver.state.projectedState.hasSubtype(basicForest, "Forest").shouldBeTrue()
         driver.state.projectedState.hasSubtype(basicForest, "Mountain") shouldBe false
 
