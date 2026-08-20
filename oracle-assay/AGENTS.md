@@ -103,7 +103,7 @@ rule per printed phrase. Five habits keep off it.
 
 **Write the rule *shape*, not the rule.** A family is a private function returning a `Phrase`, and
 the members are rows in a list: `Keywords.costKeyword`, `numericKeyword`, `simple`,
-`Steps.targetedPermanentStep`, `Filters.controlledBy`, `Keywords.qualityRun`. Seventeen numeric
+`Steps.quantifiedPermanentSteps`, `Filters.controlledBy`, `Keywords.qualityRun`. Seventeen numeric
 keywords and twenty-odd cost keywords are two shapes, not thirty-seven rules. Don't pre-abstract —
 write it inline the first time, and factor when the *second* member of the shape appears.
 
@@ -425,7 +425,7 @@ grammar cannot yet produce is a field nothing is checking.
 ## Fail-closed matching — the rule that catches the dangerous bug class
 
 **A `match` half reconstructs what `build` would have produced and compares the whole model.** Not a
-walk over the fields it cares about. See `Steps.targetedPermanentStep`, `Triggers.triggerRule`,
+walk over the fields it cares about. See `Steps.quantifiedPermanentSteps`, `Triggers.triggerRule`,
 `Targets.permanentFilter`: each rebuilds and tests equality, so a script carrying an
 intervening-if, an `elseEffect`, an `excludeSelf`, a non-battlefield zone or a once-per-turn cap
 *refuses to print* rather than printing a sentence that quietly drops it.
