@@ -523,6 +523,12 @@ exist in the cost and charges the life through the shared life-payment service.
   affordability check fails closed on the summed mana value, so the option is never payable and an
   under-total submission is rejected rather than trimmed. For collect evidence as an *effect* rather
   than a cost, use `Effects.CollectEvidence(n)` (§ effects).
+
+  It also serves as the non-mana half of an **alternative** casting cost — Conspiracy Unraveler's
+  "You may collect evidence 10 rather than pay the mana cost for spells you cast", i.e.
+  `GrantAlternativeCastingCost("{0}", listOf(Costs.additional.CollectEvidence(10)))` (§ casting
+  permissions). That path stamps no `ChoiceSlot`, so unlike the linked `card { collectEvidence(n) }`
+  form it does **not** make `Conditions.WasEvidenceCollected` read true on the spell being cast.
 - `Costs.ExileFromGraveyardForTotal(minTotal, measure, filter = Any)` /
   `Costs.ExileFromGraveyardForColoredSymbols(minSymbols, vararg colors)` — the **unnamed, filtered
   generalization of collect evidence**: "exile any number of `<filter>` cards from your graveyard
@@ -1863,14 +1869,23 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `CantBlockEffect(target, unless?)` — target can't block.
 - `CantAttackGroupEffect(filter, condition?)` — group-scoped can't-attack.
 - `CantBlockGroupEffect(filter, condition?)` — group-scoped can't-block.
-- `Effects.Suspect(target)` — target becomes Suspected (MKM keyword). Composite: `SetSuspectedEffect` (named status, CR 701.60d dedup) + `GrantKeywordEffect(MENACE)` + `CantBlockEffect`.
+- `Effects.Suspect(target, duration = Permanent)` (`SuspectEffect`) — target becomes suspected (MKM,
+  CR 701.60): the named designation *plus* the menace and "this creature can't block" it carries
+  while suspected. **One** effect and one executor, not a composite of three, because every gate on
+  becoming suspected has to suppress all three halves together — CR 701.60d's "already suspected"
+  no-op, and `AbilityFlag.CANT_BECOME_SUSPECTED` (Airtight Alibi). Gating only the designation would
+  leave a creature that isn't suspected but still has menace and can't block; gating the riders
+  separately would wrongly suppress menace or can't-block arriving from an unrelated source.
+  `SuspectExecutor` applies the three layer modifications under one shared `(sourceId, timestamp)`
+  — `addFloatingEffect` doesn't tick `state.timestamp` — so Rule 613 still orders them as a single
+  application and `RemoveSuspectedEffect` still lifts them as one bundle.
 - `Effects.NoLongerSuspected(target = ContextTarget(0))` (`RemoveSuspectedEffect`) — "it's no longer
   suspected" (CR 701.60c), the exact inverse of `Effects.Suspect`: it removes the named status
   *together with* the menace grant and the can't-block restriction, since those exist only for as
   long as the creature is suspected. `RemoveSuspectedExecutor` identifies the bundle by the
-  `(sourceId, timestamp)` the three floating effects share — `CompositeEffect` deliberately doesn't
-  tick `state.timestamp` between children so Rule 613 treats them as one application, and that same
-  shared stamp is the bundle's identity here. The match is narrowed to those three modification
+  `(sourceId, timestamp)` the three floating effects share — `SuspectExecutor` creates all three
+  without ticking `state.timestamp`, so Rule 613 treats them as one application and that same shared
+  stamp is the bundle's identity here. The match is narrowed to those three modification
   kinds on an affected set of exactly this one creature, so menace or can't-block from any other
   source survives. A no-op on an unsuspected creature; CR 701.60d guarantees a creature never
   carries two bundles at once. Used by Absolving Lammasu (MKM) — `ForEachInGroup` over
@@ -5929,6 +5944,17 @@ staticAbility {
   activated/triggered transform ability, and the daybound/nightbound day-change flips. The prohibited
   ability still activates/triggers and its other effects still happen — only the flip is skipped.
   (Bound by Moonsilver)
+- `GrantKeyword(AbilityFlag.CANT_BECOME_SUSPECTED.name, filter)` — matching creatures can't become
+  suspected (CR 701.60). Honored in `SuspectExecutor`, the one shared suspect implementation, so it
+  covers *every* source — a spell, an opponent's triggered ability, or the creature's own
+  "when this attacks, suspect it". It suppresses the **whole** designation: the named status, the
+  menace and the can't-block. That is precisely why `Effects.Suspect` is a single effect rather than
+  a composite of three — with three effects there is no one place to ask, and gating the status half
+  alone would leave a creature that isn't suspected but still carries suspect's two downsides.
+  Read via `ProjectedState.canBecomeSuspected(entityId)`. Distinct from `NoLongerSuspected`, which
+  takes an *existing* designation off: this stops one attaching, so no "becomes suspected" trigger
+  fires either, and a creature already suspected when the prohibition arrives stays suspected.
+  (Airtight Alibi, whose enters trigger does both — un-suspect once, then prohibit continuously)
 - `AssignDamageEqualToToughness(filter, onlyWhenToughnessGreaterThanPower)` — static: matching creatures
   assign combat damage equal to their toughness rather than their power (Doran the Siege Tower, Bark of
   Doran). `CombatDamageUtils.getAssignedCombatDamage` consults it. For the **turn-scoped, granted** form
@@ -6958,6 +6984,39 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   sites were collapsible into a single owner, `FlashTypeGrants`: with one implementation behind both,
   teaching *it* to unwrap fixes every gated flash grant at once and none of them can drift. Fold the
   gate into the type only where no such shared owner exists.
+- `GrantAlternativeCastingCost(cost, additionalCosts = emptyList())` — a battlefield permission to
+  substitute a different cost for a spell's mana cost (CR 118.9a): "You may pay {W}{U}{B}{R}{G}
+  rather than pay the mana cost for spells you cast" (**Jodah, Archmage Eternal**; Leyline of
+  Mutation). Scanned on demand by `CostCalculator.findAlternativeCastingCosts` over the caster's
+  battlefield — it is *not* a continuous effect — and surfaced as a `CastWithAlternativeCost`
+  `LegalAction` routed through `CastSpell(useAlternativeCost = true, alternativeCostType = GRANTED)`.
+
+  The grant carries the same **two halves** a card's own `selfAlternativeCost` does: `cost` is the
+  mana half, and `additionalCosts` is the non-mana half. "Rather than pay the mana cost" says nothing
+  about the substitute being mana, so a wholly non-mana grant sets `cost = "{0}"` — the same `{0}`
+  idiom Fireblast and Force of Vigor use for their own alternative costs — and puts the whole price
+  in `additionalCosts`. **Conspiracy Unraveler** ("You may collect evidence 10 rather than pay the
+  mana cost for spells you cast") is
+  `GrantAlternativeCastingCost("{0}", listOf(Costs.additional.CollectEvidence(10)))`.
+
+  Both halves must be payable for the option to be offered, and the non-mana half is paid by the
+  ordinary additional-cost loop in `CastSpellHandler` — the same one the card's own alternative cost,
+  flashback's and warp's bundled costs, and a linked-exile granter's cost all go through — so it
+  validates, surfaces its normal client picker, and (for collect evidence) inherits the CR 701.59b
+  fail-closed gate for free. Affordability and the picker payload come from
+  `SelectionCostPresentation.canPay` / `.costData`, never from counting candidates: a sum-gated cost
+  like collect evidence can have plenty of candidates and still be unreachable.
+
+  Two things the label must keep apart: `LegalAction.manaCostString` stays a **parseable** mana cost
+  (the client substitutes X into it, counts generic pips, and drives its mana-source phase off it),
+  while the action `description` names the non-mana cost — so a `{0}` grant reads
+  "Cast … (collect evidence 10)" rather than "Cast … ({0})".
+
+  Consequences of being an *alternative* cost, not an additional one: it can't be combined with
+  another alternative cost, but additional costs still apply (including a *second* collect evidence,
+  which triggers "whenever you collect evidence" twice); X in the replaced mana cost is 0; and it
+  stamps **no** `ChoiceSlot`, so it does not satisfy a spell's own linked "if evidence was collected"
+  clause (`Conditions.WasEvidenceCollected`). Only the first grant found is offered.
 - `MayCastWithoutPayingManaCost(controllerOnly = false, firstSpellOfTurnOnly = false, spellFilter = Any, oncePerTurn = false, fromExileOnly = false)` — a
   battlefield permission to cast a spell without paying its mana cost (CR 118.9). Composable
   gates: `controllerOnly = true` restricts the benefit to the source's controller ("you" wording);

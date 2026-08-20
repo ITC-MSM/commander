@@ -25,6 +25,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.sdk.core.CounterType
+import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.CostGating
 import com.wingedsheep.sdk.scripting.CostModification
 import com.wingedsheep.sdk.scripting.CostReductionSource
@@ -1438,13 +1439,26 @@ class CostCalculator(
     }
 
     /**
+     * One battlefield-granted alternative casting cost, both halves.
+     *
+     * [manaCost] is what replaces the spell's mana cost (Jodah's `{W}{U}{B}{R}{G}`); it is `{0}`
+     * when the substituted cost is entirely non-mana. [additionalCosts] is the non-mana half
+     * (Conspiracy Unraveler's "collect evidence 10") and is paid alongside it — the two halves are
+     * one cost, so a caller must never take the mana half without the additional half.
+     */
+    data class AlternativeCastingCostGrant(
+        val manaCost: ManaCost,
+        val additionalCosts: List<AdditionalCost> = emptyList()
+    )
+
+    /**
      * Find alternative casting costs available to the caster from battlefield permanents.
      * Scans permanents controlled by the caster for GrantAlternativeCastingCost abilities.
      *
-     * @return List of alternative ManaCosts available (may be empty)
+     * @return List of alternative cost grants available (may be empty)
      */
-    fun findAlternativeCastingCosts(state: GameState, casterId: EntityId): List<ManaCost> {
-        val costs = mutableListOf<ManaCost>()
+    fun findAlternativeCastingCosts(state: GameState, casterId: EntityId): List<AlternativeCastingCostGrant> {
+        val costs = mutableListOf<AlternativeCastingCostGrant>()
         for (entityId in state.getBattlefield(casterId)) {
             val container = state.getEntity(entityId) ?: continue
             val card = container.get<CardComponent>() ?: continue
@@ -1453,7 +1467,12 @@ class CostCalculator(
 
             for (ability in permanentDef.script.effectiveStaticAbilities(classLevel)) {
                 if (ability is GrantAlternativeCastingCost) {
-                    costs.add(ManaCost.parse(ability.cost))
+                    costs.add(
+                        AlternativeCastingCostGrant(
+                            manaCost = ManaCost.parse(ability.cost),
+                            additionalCosts = ability.additionalCosts
+                        )
+                    )
                 }
             }
         }
