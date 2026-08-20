@@ -184,9 +184,12 @@ object TargetResolutionUtils {
             Player.ControllerOfTargetingSource -> context.targetingSourceEntityId
                 ?.let { stackObjectController(state, it) ?: controllerOf(state, it) }
             // Multi-player / list-only references have no single resolution here.
-            // OwnersOfLinkedExile is resolved by ForEachExecutor.resolvePlayers (a player loop).
+            // OwnersOfLinkedExile is resolved by ForEachExecutor.resolvePlayers (a player loop);
+            // EachTargetedPlayer by DynamicAmountEvaluator.resolveUnifiedPlayerIds. Collapsing
+            // either to its first player is exactly the bug they exist to avoid, so neither gets a
+            // single-player arm.
             Player.Each, Player.EachOpponent, Player.ActivePlayerFirst,
-            Player.OwnersOfLinkedExile -> null
+            Player.EachTargetedPlayer, Player.OwnersOfLinkedExile -> null
         }
     }
 

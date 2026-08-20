@@ -486,7 +486,12 @@ class PredicateEvaluator {
             }
 
             // Name predicates
-            is CardPredicate.NameEquals -> card.name == predicate.name
+            // A face-down permanent has no name (CR 708.2a), so it matches no name predicate —
+            // the same masking the subtype/color/mana-value arms above apply. Load-bearing for the
+            // batch combat-damage detector, which relies on this evaluator alone to keep a
+            // face-down creature out of a name-filtered trigger.
+            is CardPredicate.NameEquals ->
+                projectedValues?.isFaceDown != true && card.name == predicate.name
 
             // CR 709 + Central Elevator ruling: a Room card may be found only if none of its
             // door names matches an *unlocked* door name of a Room the searcher controls. A Room
@@ -926,7 +931,8 @@ class PredicateEvaluator {
             // Context-relative predicates (pipeline variable references)
             is CardPredicate.NameEqualsChosen -> {
                 val chosenName = context?.chosenValues?.get(predicate.variableName) ?: return false
-                card.name.equals(chosenName, ignoreCase = true)
+                // Nameless while face down (CR 708.2a) — see [CardPredicate.NameEquals] above.
+                projectedValues?.isFaceDown != true && card.name.equals(chosenName, ignoreCase = true)
             }
 
             // Source-component name reference: the name durably chosen by the source permanent as it

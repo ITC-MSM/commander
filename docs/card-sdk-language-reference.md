@@ -3167,7 +3167,16 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
   aggregations ("creatures your opponents control").
 - `Player.ActivePlayerFirst` — all players in APNAP order.
 - `Player.TargetPlayer` / `Player.TargetOpponent` — the bound player target (resolved from the
-  chosen targets, never from turn order).
+  chosen targets, never from turn order). Both resolve to a **single** player, so on a spell that
+  targets several they silently read only the first — reach for `EachTargetedPlayer` there.
+- `Player.EachTargetedPlayer` — **every** player among the chosen targets: "those players" after
+  "choose any number of target players" (Officious Interrogation). Counting primitives sum over the
+  resolved list, which is what makes "the total number of creatures those players control" a single
+  `DynamicAmount.Count(Player.EachTargetedPlayer, Zone.BATTLEFIELD, Creature)` rather than a
+  per-target loop. Targets that have become illegal are already gone from the resolution context, so
+  they contribute nothing (CR 608.2b). Like `Each` / `EachOpponent` / `OwnersOfLinkedExile` it is a
+  *list-only* reference: the single-player resolver returns null for it deliberately, so a
+  `ForEach`-over-players reads it through its own arm.
 - `Player.DefendingPlayer` — CR 802.2a: the player the ability's source is attacking, read from
   the source's attack assignment (a creature attacking a planeswalker defends against its
   controller); falls back to the trigger's damaged player as last-known information for "deals
@@ -4209,7 +4218,15 @@ work for abilities-on-stack (which carry no `CardComponent`).
   source-relative "paired **with this creature**" — the affected set of a soulbond payoff — use
   `GroupFilter.soulbondPair()` (`Scope.SoulbondPair`) instead; a plain predicate can't express it,
   because group-static projection has no per-recipient source.
-- `IsFaceDown` — currently face-down.
+- `IsFaceDown` / `IsFaceUp` — currently face-down (CR 708). On a **zone-change trigger** off the
+  battlefield both read last-known information (`EntitySnapshot.wasFaceDown`) rather than the live
+  `FaceDownComponent`: a card put into a graveyard is turned face up (CR 708.4) and the battlefield
+  entity is gone by trigger-gating time, so "whenever a face-down creature you control dies" (Yarus,
+  Roar of the Old Gods) is only answerable from the snapshot (CR 608.2h). Note that a `faceDown()`
+  filter already *implies* creature — every face-down permanent is a 2/2 (CR 708.2) — so adding a
+  `Creature` card predicate alongside it on a dies trigger **narrows** it wrongly: the zone-change
+  path evaluates card predicates against the printed type line, which for a cloaked or manifested
+  land card is not a creature.
 - `HasCounter(type)` — has at least one counter of `type`.
 - `IsEquipped` (filter builder `equipped()`) — has at least one Equipment attached.
 - `IsEnchanted` (filter builder `enchanted()`) — has at least one **Aura** attached, i.e. the MTG
@@ -4699,7 +4716,7 @@ Named sugar for the common cases; reach for the factories for any other combinat
 - `DealsDamage` — source deals any damage (SELF binding).
 - `DealsCombatDamageToPlayer` — source deals combat damage to a player (SELF binding).
 - `DealsCombatDamageToCreature` — source deals combat damage to a creature (SELF binding).
-- `OneOrMoreDealCombatDamageToPlayerEvent(sourceFilter = Creature)` — **offensive combat-damage batch trigger** (ANY binding, via `TriggerSpec(OneOrMoreDealCombatDamageToPlayerEvent(sourceFilter = …), TriggerBinding.ANY)`): "whenever one or more [matching creatures] you control deal combat damage to a player" (Kastral, the Windcrested: `Creature.withSubtype("Bird")`; Vaan, Street Thief: `Creature.withAnySubtype("Scout", "Pirate", "Rogue")`). The `sourceFilter`'s "you control" is implied by the observer — don't add `youControl()`. Fires **once per damaged player** (a batch per recipient): multiple matching creatures hitting the same player still fire a single trigger, but two players each dealt damage fire it twice. `Player.TriggeringPlayer` resolves to the damaged player, so effects can reference "that player" (e.g. exile the top card of *that player's* library); `triggeringEntityId` is an arbitrary matching source for that player (batch triggers don't dispatch per source).
+- `OneOrMoreDealCombatDamageToPlayerEvent(sourceFilter = Creature)` — **offensive combat-damage batch trigger** (ANY binding, via `TriggerSpec(OneOrMoreDealCombatDamageToPlayerEvent(sourceFilter = …), TriggerBinding.ANY)`): "whenever one or more [matching creatures] you control deal combat damage to a player" (Kastral, the Windcrested: `Creature.withSubtype("Bird")`; Vaan, Street Thief: `Creature.withAnySubtype("Scout", "Pirate", "Rogue")`). The `sourceFilter`'s "you control" is implied by the observer — don't add `youControl()`. Fires **once per damaged player** (a batch per recipient): multiple matching creatures hitting the same player still fire a single trigger, but two players each dealt damage fire it twice. `Player.TriggeringPlayer` resolves to the damaged player, so effects can reference "that player" (e.g. exile the top card of *that player's* library); `triggeringEntityId` is an arbitrary matching source for that player (batch triggers don't dispatch per source). **Face-down attackers count**: a face-down permanent is a creature (CR 708.2), so it satisfies an unfiltered "creatures you control" batch trigger, and the filtered forms are decided by `PredicateEvaluator`'s face-down masking alone (subtypes, colors, mana value and **name** all read as absent) — which is why Yarus, Roar of the Old Gods can filter *to* `Creature.faceDown()` while Kastral's `Bird` filter still excludes one.
 - `OneOrMoreCreaturesDealCombatDamageToYou(filter = Creature)` — **defensive combat-damage batch trigger** (ANY binding): "whenever one or more creatures deal combat damage to *you*" (Witch-king of Angmar). Fires at most once per combat-damage batch regardless of how many creatures connected with the trigger's controller (the damaged player), unlike per-source `dealsDamage(recipient = You, …)` which fires once per connecting creature. The triggering entity is an arbitrary matching damager. Pair with the `dealtCombatDamageToSourceControllerThisTurn()` filter for "...each opponent sacrifices a creature that dealt combat damage to you this turn".
 - `TakesDamage` — source is dealt damage by any source (SELF binding).
 - `YouAreDealtDamage` — "whenever **you're** dealt damage" (ANY binding, `DealsDamageEvent(recipient = You)` with no source filter): the *player*-recipient sibling of `TakesDamage`, firing for **every** source — a creature in combat, a burn spell, an artifact. Fires once per damage instance; read the amount with `DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT)` for "put that many counters" payoffs (Sun Droplet), and the triggering entity is the damage source.
@@ -6243,7 +6260,13 @@ staticAbility {
   permanent exists; a stack-spell target reduction shows at full cost during enumeration and locks
   in once targets are announced), `IncreaseGeneric(amount)`,
   `IncreaseColored(symbols)` (colored tax — adds colored pips, e.g. the Invasion Leeches'
-  "White spells you cast cost {W} more"), `IncreaseGenericPerOtherSpellThisTurn(amountPerSpell)`,
+  "White spells you cast cost {W} more"),
+  `IncreaseColoredPerUnit(symbols, countSource)` (the exact tax mirror of `ReduceColoredPerUnit`:
+  appends one copy of `symbols` per unit of `countSource`. Unlike the reduction side there is no
+  overflow question — added pips always land. Officious Interrogation's "This spell costs {W}{U}
+  more to cast for each target beyond the first" is
+  `SelfCast` + `IncreaseColoredPerUnit("{W}{U}", ChosenTargetsBeyondTheFirst)`),
+  `IncreaseGenericPerOtherSpellThisTurn(amountPerSpell)`,
   `IncreaseGenericIfAnyTargetMatches(amount, filter)` (target-gated tax — "{N} more if it targets
   a Dragon", Dragon's Prey; the increase analogue of the `FixedIfAnyTargetMatches` reduction;
   applies only once a matching target is chosen, so affordability enumeration treats it as not
@@ -6276,6 +6299,16 @@ staticAbility {
   so nine creature cards shave only {1}; the counting sibling of `CardsInGraveyardMatchingFilter`,
   which totals cards. Same aggregation as `Conditions.Delirium` over the same zone, capped by the
   number of card types — {9} for Emrakul), `FixedIfAnyTargetMatches`,
+  `ChosenTargetsBeyondTheFirst` (the count of the spell's chosen targets minus one — "for each
+  target beyond the first". Only meaningful on a `SelfCast` modifier, since only that path is priced
+  with the caster's own chosen targets; before targets are chosen it reads 0, which is also the right
+  answer for affordability enumeration because one target is the cheapest legal cast. Pair with
+  `IncreaseColoredPerUnit` for a colored tax or `IncreaseGenericBy` for a generic one. Note that a
+  per-target *increase* survives a free cast: "without paying its mana cost" and alternative costs
+  waive the mana cost, not the increases applied to the total cost (CR 601.2f), which
+  Officious Interrogation's 2024-02-02 ruling states outright — the cast pipeline adds
+  `CostCalculator.selfPerTargetTax` on top of exactly those branches. The life-cost sibling for the
+  same wording is `AdditionalCost.PayLifePerTarget`, Phyrexian Purge),
   `FixedIfCreatureDiedThisTurn(amount)` (the morbid discount — "costs {N} less to cast if a creature
   died this turn", Dreaded Bat-Cloud. Reads the same per-player `CreaturesDiedThisTurnComponent`
   tallies as `Conditions.CreatureDiedThisTurn`, summed across the table, so an opponent's creature

@@ -404,6 +404,13 @@ class CostCalculator(
                     .filterIsInstance<ManaSymbol.Colored>()
                     .forEach(addColoredIncrease)
             }
+            is CostModification.IncreaseColoredPerUnit -> {
+                val units =
+                    evaluateReduction(state, modification.countSource, casterId, chosenTargets, abilitySourceId)
+                val coloredSymbols = ManaCost.parse(modification.symbols).symbols
+                    .filterIsInstance<ManaSymbol.Colored>()
+                repeat(units) { coloredSymbols.forEach(addColoredIncrease) }
+            }
             is CostModification.IncreaseGenericPerOtherSpellThisTurn -> {
                 val spellsCast = state.playerSpellsCastThisTurn[casterId] ?: 0
                 addGenericIncrease(spellsCast * modification.amountPerSpell)
@@ -469,6 +476,11 @@ class CostCalculator(
                 else if (anyTargetMatchesFilter(state, playerId, chosenTargets, source.filter)) source.amount
                 else 0
             }
+            // "for each target beyond the first" — 0 while targets are still unchosen, which is
+            // also the right answer for affordability enumeration (one target is the cheapest
+            // legal cast, so the unmodified cost is the true minimum).
+            CostReductionSource.ChosenTargetsBeyondTheFirst ->
+                (chosenTargets.size - 1).coerceAtLeast(0)
             is CostReductionSource.FixedIfCreatureAttackingYou -> {
                 if (isAnyCreatureAttacking(state, playerId)) source.amount else 0
             }
@@ -803,6 +815,47 @@ class CostCalculator(
     private fun sourceFromModification(modification: CostModification): CostReductionSource? = when (modification) {
         is CostModification.ReduceGenericBy -> modification.source
         is CostModification.ReduceColoredPerUnit -> modification.countSource
+        else -> null
+    }
+
+    /**
+     * The per-target tax this card levies on its own cast — the mana owed for
+     * [chosenTargets] beyond the first by every self-cast [ModifySpellCost] whose count source is
+     * [CostReductionSource.ChosenTargetsBeyondTheFirst]. [ManaCost.ZERO] for cards that have none.
+     *
+     * Split out from [calculateEffectiveCost] because it must be charged **even on a free cast**:
+     * "without paying its mana cost" waives the mana cost, not the increases applied to the total
+     * cost (CR 601.2f), and Officious Interrogation's 2024-02-02 ruling says so in as many words —
+     * "you must still pay the additional cost for any targets beyond the first". The free-cast
+     * branches never reach [calculateEffectiveCost] at all, so the cast pipeline adds this on top.
+     */
+    fun selfPerTargetTax(cardDef: CardDefinition, chosenTargets: List<EntityId>): ManaCost {
+        val extraTargets = (chosenTargets.size - 1).coerceAtLeast(0)
+        if (extraTargets == 0) return ManaCost.ZERO
+        var tax = ManaCost.ZERO
+        for (ability in cardDef.script.staticAbilities) {
+            if (ability !is ModifySpellCost) continue
+            if (ability.target != SpellCostTarget.SelfCast) continue
+            val perTarget = perExtraTargetCost(ability.modification) ?: continue
+            repeat(extraTargets) { tax = tax + ManaCost.parse(perTarget) }
+        }
+        return tax
+    }
+
+    /**
+     * The mana [modification] adds for each target the spell has beyond the first, as a cost
+     * string (`"{W}{U}"`, `"{1}"`), or null if it does not price the spell's own chosen targets.
+     *
+     * The enumerator sends this to the client so the mana-source picker can charge the real price
+     * once targets are chosen — the advertised `manaCostString` is priced with no targets and is
+     * therefore only the one-target minimum.
+     */
+    fun perExtraTargetCost(modification: CostModification): String? = when {
+        modification is CostModification.IncreaseColoredPerUnit &&
+            modification.countSource == CostReductionSource.ChosenTargetsBeyondTheFirst ->
+            modification.symbols
+        modification is CostModification.IncreaseGenericBy &&
+            modification.source == CostReductionSource.ChosenTargetsBeyondTheFirst -> "{1}"
         else -> null
     }
 
