@@ -1381,6 +1381,42 @@ class CostCalculator(
     }
 
     /**
+     * The mana a player actually pays to turn a face-down permanent face up: the procedure's
+     * printed cost, plus every global [SpellCostTarget.MorphActivation] increase
+     * ([calculateMorphCostIncrease] — Exiled Doomsayer), minus the procedure's own self-scoped
+     * reduction (Fugitive Codebreaker's "reduced by {1} for each instant and sorcery card in your
+     * graveyard").
+     *
+     * Increases before reductions, per CR 601.2f, which the special action follows the same way a
+     * spell does. Both adjustments are generic-only, so the colored pips of a disguise cost always
+     * survive.
+     *
+     * The three sites that price a turn-up — enumeration, action validation, and payment — all go
+     * through here, so an enumerated price can never disagree with the one charged.
+     *
+     * @param printedCost the procedure's mana cost as printed
+     * @param reduction the procedure's [TurnUpProcedure.costReduction], or null for the ordinary
+     *   morph/disguise/manifest shape
+     * @param controllerId the player taking the special action — whose graveyard, permanents, and
+     *   speed the reduction reads
+     * @param permanentId the face-down permanent, passed as the reduction's ability source
+     */
+    fun calculateTurnFaceUpCost(
+        state: GameState,
+        printedCost: ManaCost,
+        reduction: CostReductionSource?,
+        controllerId: EntityId,
+        permanentId: EntityId
+    ): ManaCost {
+        val increased = increaseGenericCost(printedCost, calculateMorphCostIncrease(state))
+        if (reduction == null) return increased
+        return reduceGenericCost(
+            increased,
+            evaluateReduction(state, reduction, controllerId, abilitySourceId = permanentId)
+        )
+    }
+
+    /**
      * Apply a generic mana increase to an existing ManaCost.
      * Used to increase morph costs by adding generic mana.
      */

@@ -122,6 +122,16 @@ section; do not let SDK additions land without a corresponding doc update.
   Like `morphFaceUpEffect` it rides the *turn-up procedure* (CR 702.37b's megamorph treatment), so
   a card put face down by cloak or manifest and flipped for its mana cost instead of its disguise
   cost does not get it.
+- `disguiseCostReduction: CostReductionSource?` — "Disguise {5}{R}. This cost is reduced by {1} for
+  each instant and sorcery card in your graveyard" (Fugitive Codebreaker). A **self**-scoped generic
+  reduction on this card's own disguise cost, carried on `KeywordAbility.Disguise.costReduction` and
+  travelling with the card into the face-down permanent's turn-up procedure — as distinct from
+  `SpellCostTarget.MorphActivation`, which is the battlefield-scanned modifier that prices *every*
+  player's turn-up (Exiled Doomsayer). Takes the same `CostReductionSource` values a
+  `ModifySpellCost` static does, and obeys the same rules: increases first, then reductions
+  (CR 601.2f), generic mana only, so a disguise cost's colored pips are a floor. Re-read at every
+  price check, so a card that hits the graveyard after the permanent came down moves the price. The
+  enumerated turn-up action quotes the reduced cost, so the button matches what is charged.
 - `warp: String?` — Warp alt-cost; exiles at end of turn.
 - `dash: String?` — Dash alt-cost (CR 702.109); gains haste and returns to owner's hand at the
   beginning of the next end step.
