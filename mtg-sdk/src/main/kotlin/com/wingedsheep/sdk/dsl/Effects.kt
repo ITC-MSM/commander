@@ -4231,6 +4231,16 @@ object Effects {
         com.wingedsheep.sdk.scripting.effects.FlipCoinsEffect(count, storeHeadsAs)
 
     /**
+     * Flip coins one at a time until you lose a flip or choose to stop, storing the number of flips
+     * won under [storeWinsAs] (Fiery Gambit). [FlipCoins]'s open-ended sibling: the run length is
+     * discovered rather than given, and a lost flip ends it before the "flip again?" choice is
+     * offered. Losing the first flip stores 0, which makes every `GTE 1` payoff gate fall away on its
+     * own — no separate "has no effect" branch needed.
+     */
+    fun FlipCoinsUntilLoss(storeWinsAs: String = "wins"): Effect =
+        com.wingedsheep.sdk.scripting.effects.FlipCoinsUntilLossEffect(storeWinsAs)
+
+    /**
      * Target player skips their next draw step.
      * Used for cards like Elfhame Sanctuary ("you skip your draw step this turn").
      */
