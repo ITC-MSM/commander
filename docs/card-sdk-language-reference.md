@@ -1863,14 +1863,23 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `CantBlockEffect(target, unless?)` — target can't block.
 - `CantAttackGroupEffect(filter, condition?)` — group-scoped can't-attack.
 - `CantBlockGroupEffect(filter, condition?)` — group-scoped can't-block.
-- `Effects.Suspect(target)` — target becomes Suspected (MKM keyword). Composite: `SetSuspectedEffect` (named status, CR 701.60d dedup) + `GrantKeywordEffect(MENACE)` + `CantBlockEffect`.
+- `Effects.Suspect(target, duration = Permanent)` (`SuspectEffect`) — target becomes suspected (MKM,
+  CR 701.60): the named designation *plus* the menace and "this creature can't block" it carries
+  while suspected. **One** effect and one executor, not a composite of three, because every gate on
+  becoming suspected has to suppress all three halves together — CR 701.60d's "already suspected"
+  no-op, and `AbilityFlag.CANT_BECOME_SUSPECTED` (Airtight Alibi). Gating only the designation would
+  leave a creature that isn't suspected but still has menace and can't block; gating the riders
+  separately would wrongly suppress menace or can't-block arriving from an unrelated source.
+  `SuspectExecutor` applies the three layer modifications under one shared `(sourceId, timestamp)`
+  — `addFloatingEffect` doesn't tick `state.timestamp` — so Rule 613 still orders them as a single
+  application and `RemoveSuspectedEffect` still lifts them as one bundle.
 - `Effects.NoLongerSuspected(target = ContextTarget(0))` (`RemoveSuspectedEffect`) — "it's no longer
   suspected" (CR 701.60c), the exact inverse of `Effects.Suspect`: it removes the named status
   *together with* the menace grant and the can't-block restriction, since those exist only for as
   long as the creature is suspected. `RemoveSuspectedExecutor` identifies the bundle by the
-  `(sourceId, timestamp)` the three floating effects share — `CompositeEffect` deliberately doesn't
-  tick `state.timestamp` between children so Rule 613 treats them as one application, and that same
-  shared stamp is the bundle's identity here. The match is narrowed to those three modification
+  `(sourceId, timestamp)` the three floating effects share — `SuspectExecutor` creates all three
+  without ticking `state.timestamp`, so Rule 613 treats them as one application and that same shared
+  stamp is the bundle's identity here. The match is narrowed to those three modification
   kinds on an affected set of exactly this one creature, so menace or can't-block from any other
   source survives. A no-op on an unsuspected creature; CR 701.60d guarantees a creature never
   carries two bundles at once. Used by Absolving Lammasu (MKM) — `ForEachInGroup` over
@@ -5912,6 +5921,17 @@ staticAbility {
   activated/triggered transform ability, and the daybound/nightbound day-change flips. The prohibited
   ability still activates/triggers and its other effects still happen — only the flip is skipped.
   (Bound by Moonsilver)
+- `GrantKeyword(AbilityFlag.CANT_BECOME_SUSPECTED.name, filter)` — matching creatures can't become
+  suspected (CR 701.60). Honored in `SuspectExecutor`, the one shared suspect implementation, so it
+  covers *every* source — a spell, an opponent's triggered ability, or the creature's own
+  "when this attacks, suspect it". It suppresses the **whole** designation: the named status, the
+  menace and the can't-block. That is precisely why `Effects.Suspect` is a single effect rather than
+  a composite of three — with three effects there is no one place to ask, and gating the status half
+  alone would leave a creature that isn't suspected but still carries suspect's two downsides.
+  Read via `ProjectedState.canBecomeSuspected(entityId)`. Distinct from `NoLongerSuspected`, which
+  takes an *existing* designation off: this stops one attaching, so no "becomes suspected" trigger
+  fires either, and a creature already suspected when the prohibition arrives stays suspected.
+  (Airtight Alibi, whose enters trigger does both — un-suspect once, then prohibit continuously)
 - `AssignDamageEqualToToughness(filter, onlyWhenToughnessGreaterThanPower)` — static: matching creatures
   assign combat damage equal to their toughness rather than their power (Doran the Siege Tower, Bark of
   Doran). `CombatDamageUtils.getAssignedCombatDamage` consults it. For the **turn-scoped, granted** form

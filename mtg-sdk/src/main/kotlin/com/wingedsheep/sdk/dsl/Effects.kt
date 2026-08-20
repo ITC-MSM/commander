@@ -67,7 +67,7 @@ import com.wingedsheep.sdk.scripting.effects.GoadEffect
 import com.wingedsheep.sdk.scripting.effects.MarkMustAttackThisTurnEffect
 import com.wingedsheep.sdk.scripting.effects.MarkMustBlockThisTurnEffect
 import com.wingedsheep.sdk.scripting.effects.RemoveSuspectedEffect
-import com.wingedsheep.sdk.scripting.effects.SetSuspectedEffect
+import com.wingedsheep.sdk.scripting.effects.SuspectEffect
 import com.wingedsheep.sdk.scripting.effects.CantBlockGroupEffect
 import com.wingedsheep.sdk.scripting.effects.CantActivateLoyaltyAbilitiesEffect
 import com.wingedsheep.sdk.scripting.effects.CantCastSpellsEffect
@@ -4119,23 +4119,19 @@ object Effects {
         MarkMustBlockThisTurnEffect(target)
 
     /**
-     * Target creature becomes suspected (CR 701.60): atomic composite of the
-     * named "suspected" status, granted menace, and "can't block".
+     * Target creature becomes suspected (CR 701.60) — the named "suspected" designation together
+     * with the menace and "can't block" it carries while it stays suspected.
      *
-     * Sub-effects share a timestamp because [CompositeEffect] doesn't tick
-     * `state.timestamp` between children, so Rule 613 layer ordering treats them
-     * as one application. The named status is carried by [SetSuspectedEffect] so
-     * future cards can still query or react to "becomes suspected" specifically.
+     * One effect, not a composite of three: every gate on becoming suspected — CR 701.60d's
+     * "already suspected" no-op and "can't become suspected"
+     * ([com.wingedsheep.sdk.core.AbilityFlag.CANT_BECOME_SUSPECTED], Airtight Alibi) — has to stop
+     * all three halves or none, and only a single effect gives the engine one place to ask. See
+     * [SuspectEffect] for the full argument; the engine still applies the three layer modifications
+     * under one timestamp, so Rule 613 treats them as a single application and
+     * [NoLongerSuspected] still lifts them as one bundle.
      */
     fun Suspect(target: EffectTarget = EffectTarget.ContextTarget(0), duration: Duration = Duration.Permanent): Effect =
-        CompositeEffect(
-            effects = listOf(
-                SetSuspectedEffect(target, duration),
-                GrantKeywordEffect(Keyword.MENACE, target, duration),
-                CantBlockEffect(target, duration)
-            ),
-            descriptionOverride = "${target.description} becomes suspected"
-        )
+        SuspectEffect(target, duration)
 
     /**
      * Target is no longer suspected (CR 701.60c) — the exact inverse of [Suspect], removing the

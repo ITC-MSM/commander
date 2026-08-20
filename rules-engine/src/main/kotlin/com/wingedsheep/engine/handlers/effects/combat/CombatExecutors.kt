@@ -33,7 +33,7 @@ class CombatExecutors(
         RedirectCombatDamageToControllerExecutor(),
         GrantAttackBlockTaxPerCreatureTypeExecutor(),
         GrantKeywordToAttackersBlockedByExecutor(),
-        SetSuspectedExecutor(),
+        SuspectExecutor(),
         RemoveSuspectedExecutor()
     )
 }
