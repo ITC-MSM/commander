@@ -634,6 +634,17 @@ class DynamicAmountEvaluator(
                             ?.get<com.wingedsheep.engine.state.components.player.CardsDrawnThisTurnComponent>()
                             ?.count ?: 0
                     }
+                    // A snapshot, written for every player in the untap step. Missing only before
+                    // the game's first untap step has run, where a live hand read is the same
+                    // answer — no card can have moved yet.
+                    TurnTracker.CARDS_IN_HAND_AT_TURN_START -> playerIds.sumOf { playerId ->
+                        state.getEntity(playerId)
+                            ?.get<com.wingedsheep.engine.state.components.player.CardsInHandAtTurnStartComponent>()
+                            ?.count
+                            ?: state.getZone(
+                                com.wingedsheep.engine.state.ZoneKey(playerId, Zone.HAND)
+                            ).size
+                    }
                     TurnTracker.CARDS_DISCARDED -> playerIds.sumOf { playerId ->
                         state.getEntity(playerId)
                             ?.get<com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent>()
@@ -675,11 +686,14 @@ class DynamicAmountEvaluator(
                 // excludeSelf drops the resolving spell's own record, matched by the spell's
                 // stack entity id (CastSpellRecord.sourceEntityId == context.sourceId).
                 val selfId = if (amount.excludeSelf) context.sourceId else null
+                // Same reason as the condition form: a cast-history filter may name a value
+                // captured into the pipeline earlier in this resolution.
+                val predicateContext = PredicateContext.fromEffectContext(context)
                 fun matches(record: com.wingedsheep.engine.state.CastSpellRecord) =
                     (selfId == null || record.sourceEntityId != selfId) &&
                         // Zone qualifier is checked independently of the filter (see condition note).
                         (amount.fromZone == null || record.castFromZone == amount.fromZone) &&
-                        predicateEvaluator.matchesFilter(record, amount.filter)
+                        predicateEvaluator.matchesFilter(record, amount.filter, predicateContext)
                 // beforeTriggeringSpell truncates each player's history at the triggering spell's own
                 // cast record ("each other spell you've cast BEFORE IT this turn"), so neither the
                 // triggering spell nor anything cast in response to the trigger is counted. A history
@@ -1162,7 +1176,7 @@ class DynamicAmountEvaluator(
             // controller controls" work (Skulking Killer's "if that opponent controls no other
             // creatures" = AggregateBattlefield(ControllerOf("target"), Creature) == 1).
             is Player.ControllerOf, is Player.OwnerOf, is Player.OwnerOfSource,
-            is Player.ControllerOfSource -> listOfNotNull(
+            is Player.ControllerOfSource, is Player.ControllerOfTargetingSource -> listOfNotNull(
                 TargetResolutionUtils.resolvePlayerRef(player, context, state)
             )
             is Player.TriggeringPlayer -> {

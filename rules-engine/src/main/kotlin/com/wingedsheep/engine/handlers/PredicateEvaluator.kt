@@ -1736,19 +1736,27 @@ class PredicateEvaluator {
      * Face-down spells have no characteristics per CR 708.2, so only filters with
      * no card predicates (i.e. GameObjectFilter.Any) match them.
      */
-    fun matchesFilter(record: CastSpellRecord, filter: GameObjectFilter): Boolean {
+    fun matchesFilter(
+        record: CastSpellRecord,
+        filter: GameObjectFilter,
+        context: PredicateContext? = null
+    ): Boolean {
         if (filter.cardPredicates.isEmpty() && filter.anyOf.isEmpty()) return true
         if (record.isFaceDown) return false
 
         // Conjunction over card predicates; OR lives inside a CardPredicate.Or.
-        if (!filter.cardPredicates.all { matchesRecordPredicate(record, it) }) return false
+        if (!filter.cardPredicates.all { matchesRecordPredicate(record, it, context) }) return false
         // Recursive union (`or` infix): only the card predicates of each branch are
         // meaningful for a cast record; state/controller branches are skipped as above.
-        if (filter.anyOf.isNotEmpty()) return filter.anyOf.any { matchesFilter(record, it) }
+        if (filter.anyOf.isNotEmpty()) return filter.anyOf.any { matchesFilter(record, it, context) }
         return true
     }
 
-    private fun matchesRecordPredicate(record: CastSpellRecord, predicate: CardPredicate): Boolean {
+    private fun matchesRecordPredicate(
+        record: CastSpellRecord,
+        predicate: CardPredicate,
+        context: PredicateContext? = null
+    ): Boolean {
         val typeLine = record.typeLine
         return when (predicate) {
             // Type predicates
@@ -1832,7 +1840,15 @@ class PredicateEvaluator {
             // Name predicates — matched against the record's card name; a record without a
             // name (predating name tracking) is unknown and never equals a given name.
             is CardPredicate.NameEquals -> record.name == predicate.name
-            is CardPredicate.NameEqualsChosen -> false
+            // A name captured into the pipeline earlier in this same resolution — the searched-out
+            // card of Grim Reminder's "each opponent who cast a spell this turn with the same name
+            // as that card". Matched case-insensitively, exactly as the entity-matching path does.
+            // Without a context (a static/projection evaluation, which has no pipeline) there is no
+            // captured name and nothing can match.
+            is CardPredicate.NameEqualsChosen -> {
+                val chosenName = context?.chosenValues?.get(predicate.variableName)
+                chosenName != null && record.name.equals(chosenName, ignoreCase = true)
+            }
             CardPredicate.NameNotSharedWithControlledRoom -> false
             CardPredicate.NameNotSharedWithControlledToken -> false
             CardPredicate.NameNotSharedWithAnotherControlledPermanent -> false

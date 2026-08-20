@@ -112,8 +112,10 @@ import com.wingedsheep.sdk.scripting.effects.SacrificeTargetEffect
 import com.wingedsheep.sdk.scripting.effects.ExchangeControlEffect
 import com.wingedsheep.sdk.scripting.effects.CreatureStat
 import com.wingedsheep.sdk.scripting.effects.ExchangeLifeAndStatEffect
-import com.wingedsheep.sdk.scripting.effects.GainControlByMostEffect
+import com.wingedsheep.sdk.scripting.effects.GainControlByRankEffect
+import com.wingedsheep.sdk.scripting.effects.PlayerRankDirection
 import com.wingedsheep.sdk.scripting.effects.PlayerRankMetric
+import com.wingedsheep.sdk.scripting.effects.RankTieBreak
 import com.wingedsheep.sdk.scripting.effects.GiftGivenEffect
 import com.wingedsheep.sdk.scripting.effects.GrantSpellKeywordEffect
 import com.wingedsheep.sdk.scripting.effects.GrantFlashToSpellsEffect
@@ -3205,14 +3207,32 @@ object Effects {
      * The player who controls the most creatures of the given subtype gains control of the target.
      */
     fun GainControlByMostOfSubtype(subtype: Subtype, target: EffectTarget = EffectTarget.Self): Effect =
-        GainControlByMostEffect(PlayerRankMetric.CreaturesOfSubtype(subtype), target)
+        GainControlByRankEffect(PlayerRankMetric.CreaturesOfSubtype(subtype), target)
 
     /**
      * The player with strictly more life than every other player gains control of the
      * target. On a tie for highest life, nothing happens. (Ghazbán Ogre.)
      */
     fun GainControlByMostLife(target: EffectTarget = EffectTarget.Self): Effect =
-        GainControlByMostEffect(PlayerRankMetric.LifeTotal, target)
+        GainControlByRankEffect(PlayerRankMetric.LifeTotal, target)
+
+    /**
+     * The player with the lowest life total gains control of the target. The mirror of
+     * [GainControlByMostLife] — and, unlike it, a tie is the ordinary case rather than an edge one
+     * (two players both on 20), so [tieBreak] defaults to letting the ability's controller pick
+     * from the tied players. That is Loxodon Peacekeeper's printed wording: "If two or more players
+     * are tied for lowest life total, you choose one of them, and that player gains control of this
+     * creature." Pass [RankTieBreak.NONE] for a card that instead does nothing on a tie.
+     */
+    fun GainControlByLowestLife(
+        target: EffectTarget = EffectTarget.Self,
+        tieBreak: RankTieBreak = RankTieBreak.CONTROLLER_CHOOSES
+    ): Effect = GainControlByRankEffect(
+        metric = PlayerRankMetric.LifeTotal,
+        target = target,
+        direction = PlayerRankDirection.LEAST,
+        tieBreak = tieBreak
+    )
 
     /**
      * Choose a creature type. If you control more creatures of that type than each
