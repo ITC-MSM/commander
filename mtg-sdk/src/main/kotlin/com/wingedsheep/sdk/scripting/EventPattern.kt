@@ -1125,6 +1125,11 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * - [sourceFilter] == null → the Soul Collector shape, bound SELF: "whenever a creature dealt
      *   damage by this creature this turn dies". Detection uses the
      *   DamageDealtToCreaturesThisTurnComponent on the source (this) entity.
+     * - [sourceFilter] == null, bound ATTACHED → the Scythe of the Wretched shape: "whenever a creature
+     *   dealt damage by *equipped* creature this turn dies". Same tracker, read off the attachment
+     *   target instead of off the permanent bearing the trigger. The attachment is resolved when the
+     *   creature dies, so the Equipment may have moved since the damage was dealt (its own ruling), and
+     *   an unattached Equipment never fires.
      * - [sourceFilter] != null → an observer shape (binding ANY): "whenever a creature dealt damage
      *   this turn by [a source matching the filter] dies" (Shelob, Child of Ungoliant: "by a Spider
      *   you controlled"). The damaging sources are evaluated against the filter using last-known

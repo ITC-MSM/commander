@@ -1440,9 +1440,23 @@ object Effects {
      * card has left the graveyard by resolution. 92 hand-written cards spell that guard by hand and
      * 3 omit it; naming it here is what stops the next card having to choose. Argentum Assay builds
      * this for the sentence, so a card that omits the guard shows up in the differential.
+     *
+     * [underYourControl] adds the "*under your control*" half — the card enters under the effect's
+     * controller rather than under its owner (Scythe of the Wretched: "return that card to the
+     * battlefield under your control"). It sets the same `controllerOverride` that
+     * [PutOntoBattlefieldUnderYourControl] does; the two axes are independent, so a card wanting both
+     * the graveyard guard and the control override says so here rather than reaching past the facade
+     * for a raw `MoveToZoneEffect`.
      */
-    fun PutOntoBattlefieldFromGraveyard(target: EffectTarget): Effect =
-        MoveToZoneEffect(target, Zone.BATTLEFIELD, fromZone = Zone.GRAVEYARD)
+    fun PutOntoBattlefieldFromGraveyard(
+        target: EffectTarget,
+        underYourControl: Boolean = false
+    ): Effect = MoveToZoneEffect(
+        target,
+        Zone.BATTLEFIELD,
+        fromZone = Zone.GRAVEYARD,
+        controllerOverride = if (underYourControl) EffectTarget.Controller else null
+    )
 
     /**
      * Put onto the battlefield under your control (the effect controller's control).
@@ -4217,6 +4231,16 @@ object Effects {
         com.wingedsheep.sdk.scripting.effects.FlipCoinsEffect(count, storeHeadsAs)
 
     /**
+     * Flip coins one at a time until you lose a flip or choose to stop, storing the number of flips
+     * won under [storeWinsAs] (Fiery Gambit). [FlipCoins]'s open-ended sibling: the run length is
+     * discovered rather than given, and a lost flip ends it before the "flip again?" choice is
+     * offered. Losing the first flip stores 0, which makes every `GTE 1` payoff gate fall away on its
+     * own — no separate "has no effect" branch needed.
+     */
+    fun FlipCoinsUntilLoss(storeWinsAs: String = "wins"): Effect =
+        com.wingedsheep.sdk.scripting.effects.FlipCoinsUntilLossEffect(storeWinsAs)
+
+    /**
      * Target player skips their next draw step.
      * Used for cards like Elfhame Sanctuary ("you skip your draw step this turn").
      */
@@ -4668,6 +4692,34 @@ object Effects {
         onGuessedWrong = onGuessedWrong,
         chooser = chooser,
         guesser = guesser,
+    )
+
+    /**
+     * "[guesser] guesses whether [condition] is true", storing 1 (right) or 0 (wrong) under
+     * [storeGuessedRightAs] instead of branching (Liar's Pendulum).
+     *
+     * [OpponentGuessesTopCardKind]'s open sibling: the proposition is any resolution-time condition
+     * and the outcome is a pipeline number, so the card composes what happens next — including steps
+     * that sit *between* the guess and the payoff, which a branch-carrying guess can't express. The
+     * condition is evaluated only after the answer is in, and nothing is revealed unless the card
+     * says so.
+     *
+     * `{name}` in [prompt] is replaced by the card name stored under [promptNameVariable], so a guess
+     * about a named card can name it in the question.
+     */
+    fun PlayerGuessesCondition(
+        condition: com.wingedsheep.sdk.scripting.conditions.Condition,
+        prompt: String,
+        storeGuessedRightAs: String = "guessedRight",
+        guesser: com.wingedsheep.sdk.scripting.effects.Chooser =
+            com.wingedsheep.sdk.scripting.effects.Chooser.Opponent,
+        promptNameVariable: String? = null,
+    ): Effect = com.wingedsheep.sdk.scripting.effects.PlayerGuessesConditionEffect(
+        condition = condition,
+        prompt = prompt,
+        storeGuessedRightAs = storeGuessedRightAs,
+        guesser = guesser,
+        promptNameVariable = promptNameVariable,
     )
 
     /**
