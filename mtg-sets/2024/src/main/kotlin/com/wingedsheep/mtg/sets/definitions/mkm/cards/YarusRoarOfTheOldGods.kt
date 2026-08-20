@@ -2,6 +2,7 @@ package com.wingedsheep.mtg.sets.definitions.mkm.cards
 
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
@@ -11,7 +12,6 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantKeyword
 import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.scripting.TriggerSpec
-import com.wingedsheep.sdk.scripting.conditions.EntityMatches
 import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.effects.FaceDownMode
 import com.wingedsheep.sdk.scripting.effects.TurnFaceUpEffect
@@ -107,7 +107,10 @@ val YarusRoarOfTheOldGods = card("Yarus, Roar of the Old Gods") {
             binding = TriggerBinding.ANY
         )
         effect = ConditionalEffect(
-            condition = EntityMatches(EffectTarget.TriggeringEntity, GameObjectFilter.Permanent),
+            condition = Conditions.EntityMatches(
+                EffectTarget.TriggeringEntity,
+                GameObjectFilter.Permanent
+            ),
             effect = Effects.Move(
                 target = EffectTarget.TriggeringEntity,
                 destination = Zone.BATTLEFIELD,
