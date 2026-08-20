@@ -1676,13 +1676,23 @@ export interface MatchCompleteMessage {
   readonly nextRoundHasBye?: boolean
   /** True if the tournament is complete (no more rounds) */
   readonly isTournamentComplete?: boolean
+  /**
+   * True when every match in `round` is finished. False means we finished early and `round` is still
+   * running, so the overlay must keep naming it instead of advertising the next one; a `roundComplete`
+   * message for the same round still follows. Named for `round`, not for the tournament's current
+   * round — eager starting lets a later round's match finish while an earlier one is still current.
+   */
+  readonly roundComplete?: boolean
 }
 
 export interface PlayerReadyForRoundMessage {
   readonly type: 'playerReadyForRound'
   readonly lobbyId: string
-  readonly playerId: string
-  readonly playerName: string
+  /** The player whose ready flag just went up; absent when this is a plain snapshot re-broadcast. */
+  readonly playerId?: string | null
+  /** Name of `playerId`; absent on a snapshot re-broadcast. */
+  readonly playerName?: string | null
+  /** The authoritative ready set — replace the local copy with this, never merge into it. */
   readonly readyPlayerIds: readonly string[]
   readonly totalConnectedPlayers: number
 }
