@@ -74,19 +74,22 @@ class ManaAbilitySideEffectExecutor(
             event?.let(events::add)
 
             val production = solution.manaProduced[source.entityId]
+            // Resolved once and shared: both the activation event and the side effects want the
+            // same ability, and this loop runs for every auto-tapped source of every payment.
+            val ability = matchingManaAbility(currentState, source.entityId, production?.color)
+
             // Auto-tapping a source *is* the player activating its mana ability — the fast path is
             // a UI shortcut, not a different game action (CR 605.3). Emit the activation event the
             // manual path emits so "whenever you activate an ability" triggers see it (Elrond,
             // Moon-Reader off an auto-tapped Llanowar Elves). Emitted after the TappedEvent: the
             // tap is the cost, and the ability is activated once its costs are paid.
-            activationEvent(currentState, source.entityId, production?.color, controllerId)
-                ?.let(events::add)
+            activationEvent(currentState, source.entityId, controllerId, ability)?.let(events::add)
 
             val (after, sideEvents) = runSideEffects(
                 state = currentState,
                 sourceId = source.entityId,
-                producedColor = production?.color,
                 controllerId = controllerId,
+                matchingAbility = ability,
             )
             currentState = after
             events.addAll(sideEvents)
@@ -108,9 +111,17 @@ class ManaAbilitySideEffectExecutor(
         sourceId: EntityId,
         producedColor: Color?,
         controllerId: EntityId,
+    ): AbilityActivatedEvent? = activationEvent(
+        state, sourceId, controllerId, matchingManaAbility(state, sourceId, producedColor)
+    )
+
+    private fun activationEvent(
+        state: GameState,
+        sourceId: EntityId,
+        controllerId: EntityId,
+        matchingAbility: ActivatedAbility?,
     ): AbilityActivatedEvent? {
         val card = state.getEntity(sourceId)?.get<CardComponent>() ?: return null
-        val matchingAbility = matchingManaAbility(state, sourceId, producedColor)
         return AbilityActivatedEvent(
             sourceId = sourceId,
             sourceName = card.name,
@@ -140,9 +151,17 @@ class ManaAbilitySideEffectExecutor(
         sourceId: EntityId,
         producedColor: Color?,
         controllerId: EntityId,
+    ): Pair<GameState, List<GameEvent>> = runSideEffects(
+        state, sourceId, controllerId, matchingManaAbility(state, sourceId, producedColor)
+    )
+
+    private fun runSideEffects(
+        state: GameState,
+        sourceId: EntityId,
+        controllerId: EntityId,
+        matchingAbility: ActivatedAbility?,
     ): Pair<GameState, List<GameEvent>> {
-        val matchingAbility = matchingManaAbility(state, sourceId, producedColor)
-            ?: return state to emptyList()
+        if (matchingAbility == null) return state to emptyList()
 
         var currentState = state
         val events = mutableListOf<GameEvent>()
