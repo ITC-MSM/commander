@@ -113,6 +113,14 @@ section; do not let SDK additions land without a corresponding doc update.
 - `disguise: String?` — disguise mana cost (CR 702.168): cast face down for `{3}` as a 2/2 **with
   ward {2}**, flip for this cost.
 - `disguiseCost: PayCost?` — non-mana disguise cost.
+- **`{X}` in a turn-up cost** — `Disguise {X}{3}{W}` (Aurelia's Vindicator) is legal, and the chosen X
+  is readable by the card's `Triggers.TurnedFaceUp` ability as **`DynamicAmount.XValue`** — carried
+  `TurnFaceUp.xValue` → `TurnFaceUpEvent.xValue` → `TriggerContext.xValue` → the trigger's stack
+  object → `EffectContext.xValue`. It is **not `DynamicAmount.CastX`**, which is the X paid to cast a
+  *spell*: a disguised card was cast face down for `{3}`, with no X anywhere in that cost, so `CastX`
+  reads 0 here. The same `XValue` feeds a `dynamicMaxCount` target cap ("exile up to X other target
+  creatures"), snapshotted when the trigger goes on the stack. Turn-up X applies to morph costs
+  identically; disguise is simply where it is printed.
 - `disguiseFaceUpEffect: Effect?` — the disguise-side sibling of `morphFaceUpEffect`, for the
   "As this creature is turned face up, …" replacement clause (Bubble Smuggler = "put four +1/+1
   counters on it" → `Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 4, EffectTarget.Self)`). It is
