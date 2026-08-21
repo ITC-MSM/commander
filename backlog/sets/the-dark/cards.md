@@ -85,7 +85,7 @@
 - [x] Blood Moon
 - [x] Brothers of Fire
 - [x] Cave People
-- [ ] Eternal Flame
+- [x] Eternal Flame
 - [x] Fire Drake
 - [x] Fissure
 - [x] Goblin Caves
