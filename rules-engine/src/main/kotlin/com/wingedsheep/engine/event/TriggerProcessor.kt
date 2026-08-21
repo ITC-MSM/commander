@@ -716,7 +716,9 @@ class TriggerProcessor(
                 maxTargets = maxTargets,
                 sameOwner = (req as? com.wingedsheep.sdk.scripting.targets.TargetObject)?.sameOwner == true,
                 totalManaValueAtMost = resolveTotalManaValueAtMost(state, trigger, req),
-                differentNames = (req as? com.wingedsheep.sdk.scripting.targets.TargetObject)?.differentNames == true
+                differentNames = (req as? com.wingedsheep.sdk.scripting.targets.TargetObject)?.differentNames == true,
+                differentControllers =
+                    (req as? com.wingedsheep.sdk.scripting.targets.TargetObject)?.differentControllers == true
             )
         }
 
@@ -816,6 +818,7 @@ class TriggerProcessor(
             triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
             xValue = trigger.triggerContext.xValue,
             carriedPipeline = trigger.carriedPipeline,
+            capturedEntityIds = trigger.triggerContext.capturedEntityIds ?: emptyList(),
             interveningIf = ability.interveningIf
         )
 

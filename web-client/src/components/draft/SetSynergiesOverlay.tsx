@@ -529,6 +529,83 @@ const SET_SYNERGIES: Record<string, SetSynergies> = {
       },
     ],
   },
+  MKM: {
+    setCode: 'MKM',
+    setName: 'Murders at Karlov Manor',
+    archetypes: [
+      {
+        name: 'Detectives',
+        colors: ['W', 'U'],
+        creatureTypes: ['Detective'],
+        keyCard: 'Private Eye',
+        description:
+          "Field a squad of Detectives, turn Clues into cards, and ride the format's best evasive bodies. A tempo-value deck that never runs out of gas.",
+      },
+      {
+        name: 'Surveil',
+        colors: ['U', 'B'],
+        keyCard: 'Curious Cadaver',
+        description:
+          'Surveil to fix your draws and stock your graveyard, then take over with cheap interaction and recursive threats. A grindy control deck that wins the long game.',
+      },
+      {
+        name: 'Sacrifice',
+        colors: ['B', 'R'],
+        keyCard: 'Rune-Brand Juggler',
+        description:
+          'Suspect your own creatures to push damage, then sacrifice them for value before the drawback bites. An aggressive deck that turns every body into reach.',
+      },
+      {
+        name: 'Disguise',
+        colors: ['R', 'G'],
+        keyCard: 'Tin Street Gossip',
+        description:
+          'Deploy face-down 2/2s early and flip them at the perfect moment for a blowout. A midrange deck that turns every attack into a guessing game.',
+      },
+      {
+        name: 'Face-Down Counters',
+        colors: ['G', 'W'],
+        keyCard: 'Sumala Sentry',
+        description:
+          'Cloak and disguise creatures, then cash in the turn-up triggers for +1/+1 counters. A go-tall midrange deck that snowballs off every flip.',
+      },
+      {
+        name: 'Small Creatures',
+        colors: ['W', 'B'],
+        keyCard: 'Wispdrinker Vampire',
+        description:
+          'Flood the board with cheap creatures with power 2 or less and drain the opponent with the payoffs that count them. A wide, incremental aggro deck.',
+      },
+      {
+        name: 'Artifacts',
+        colors: ['U', 'R'],
+        keyCard: 'Gleaming Geardrake',
+        description:
+          'Investigate for Clues, then sacrifice artifacts to trigger payoffs and refuel. An artifact-fueled tempo deck that converts leftovers into damage.',
+      },
+      {
+        name: 'Graveyard',
+        colors: ['B', 'G'],
+        keyCard: 'Insidious Roots',
+        description:
+          'Fill your graveyard and spend it — collect evidence, recur creature cards, and out-attrition the table. A resilient midrange deck with a deep back end.',
+      },
+      {
+        name: 'Go Wide Aggro',
+        colors: ['R', 'W'],
+        keyCard: 'Meddling Youths',
+        description:
+          "Attack with three or more creatures every turn to switch on the format's go-wide payoffs. The fastest deck in the format, backed by burn.",
+      },
+      {
+        name: 'Collect Evidence',
+        colors: ['G', 'U'],
+        keyCard: 'Evidence Examiner',
+        description:
+          'Bank cards in your graveyard, collect evidence to unlock discounted spells, and grow a threat with +1/+1 counters. A ramp-value deck that plays the biggest spells.',
+      },
+    ],
+  },
   OTJ: {
     setCode: 'OTJ',
     setName: 'Outlaws of Thunder Junction',

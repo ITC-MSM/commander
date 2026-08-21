@@ -2409,8 +2409,24 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * to a single player's zone: "from graveyards and/or the battlefield" means *any* graveyard and
      * *any* player's permanents, so every controller with this trigger sees the same batch.
      *
-     * Only cards fire it — tokens are not cards (CR 111.6), so a token exiled from the battlefield
-     * never satisfies it even though it briefly occupies the exile zone before CR 111.7 sweeps it.
+     * By default only cards fire it — tokens are not cards (CR 111.6), so a token exiled from the
+     * battlefield never satisfies it even though it briefly occupies the exile zone before CR 111.7
+     * sweeps it. [includeTokens] flips that for the wordings whose battlefield noun is *permanents*
+     * rather than *cards*; see its own doc.
+     *
+     * [filter]'s **controller predicate is honored**, so the batch can be narrowed to one player's
+     * objects: `GameObjectFilter.Creature.youControl()` reads as "creatures you control and/or
+     * creature cards in your graveyard", because ownership is what "your graveyard" means and
+     * control is what "you control" means. The detector tests the *last known* controller for a
+     * battlefield exit (the permanent is already in exile by then, CR 603.10) and the owner for a
+     * card leaving any other zone — a graveyard/hand/library card has no controller.
+     *
+     * The matching exiled objects are handed to the resolving ability as its captured collection
+     * ([com.wingedsheep.sdk.scripting.effects.IterationSpace.TRIGGER_CAPTURED_COLLECTION]), so a
+     * payoff can say "from among **them**". Note CR 111.7 has already swept any token out of that
+     * collection by the time the ability resolves, and a card that has since left exile is likewise
+     * no longer choosable (Kaya, Spirits' Justice's ruling) — filter the collection with
+     * `CollectionFilter.InZone(Zone.EXILE)` when the payoff must still find the card in exile.
      *
      * The common "during your turn" timing restriction is expressed on the card via
      * `triggerRestriction = Conditions.IsYourTurn` rather than baked into the event.
@@ -2419,12 +2435,23 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * - "Whenever one or more cards are put into exile from graveyards and/or the battlefield
      *   during your turn, …" → `CardsPutIntoExileEvent()` + `triggerRestriction = Conditions.IsYourTurn`
      *   (Ketramose, the New Dawn)
+     * - "Whenever one or more creatures you control and/or creature cards in your graveyard are put
+     *   into exile, …" → `CardsPutIntoExileEvent(filter = GameObjectFilter.Creature.youControl(),
+     *   includeTokens = true)` (Kaya, Spirits' Justice)
+     *
+     * @param includeTokens When true, a **token** put into exile satisfies the trigger too. The axis
+     *   is the printed noun, not a convenience: "one or more **cards** are put into exile" excludes
+     *   tokens outright (CR 111.6), while "one or more **creatures you control** … are put into
+     *   exile" counts a token creature like any other creature. CR 111.7's "applicable triggered
+     *   abilities will trigger before the token ceases to exist" is what makes the token-inclusive
+     *   reading detectable at all.
      */
     @SerialName("CardsPutIntoExileEvent")
     @Serializable
     data class CardsPutIntoExileEvent(
         val fromZones: Set<Zone> = setOf(Zone.GRAVEYARD, Zone.BATTLEFIELD),
-        val filter: GameObjectFilter = GameObjectFilter.Any
+        val filter: GameObjectFilter = GameObjectFilter.Any,
+        val includeTokens: Boolean = false
     ) : EventPattern {
         override val description: String = buildString {
             append("one or more ")
@@ -2432,7 +2459,13 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
                 append(filter.cardPredicates.joinToString(" ") { it.description })
                 append(" ")
             }
-            append("cards are put into exile from ")
+            append(if (includeTokens) "permanents" else "cards")
+            val controllerClause = filter.controllerPredicate?.description.orEmpty()
+            if (controllerClause.isNotEmpty()) {
+                append(" ")
+                append(controllerClause)
+            }
+            append(" are put into exile from ")
             append(
                 fromZones.sortedBy { it.ordinal }.joinToString(" and/or ") { zone ->
                     when (zone) {
