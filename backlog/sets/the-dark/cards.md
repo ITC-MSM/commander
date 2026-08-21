@@ -145,7 +145,7 @@
 - [x] Tormod's Crypt
 - [x] Tower of Coireall
 - [ ] Wand of Ith
-- [ ] War Barge
+- [x] War Barge
 
 ### Land
 - [ ] City of Shadows
