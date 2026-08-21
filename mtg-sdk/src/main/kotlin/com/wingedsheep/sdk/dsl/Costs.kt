@@ -625,6 +625,21 @@ object Costs {
             AdditionalCost.Atom(CostAtom.CollectEvidence(amount))
 
         /**
+         * "Collect evidence X, where X is the total mana value of the permanents this spell
+         * targets" — Urgent Necropsy, the one printed collect-evidence cost whose threshold is
+         * derived rather than literal.
+         *
+         * X is determined once the targets are announced and before the cost is paid (CR 601.2c →
+         * 601.2f → 601.2h), and the ruling that follows from CR 701.59b is that a caster who
+         * cannot exile that much **can't choose to collect evidence at all** — so a target set the
+         * graveyard can't pay for is an illegal cast (CR 601.2e), not a discounted one. The client
+         * therefore runs its evidence picker *after* targeting for this cost, priced on what was
+         * actually chosen.
+         */
+        val CollectEvidenceForTargetsTotalManaValue: AdditionalCost =
+            AdditionalCost.Atom(CostAtom.CollectEvidence(CostAtom.CollectEvidence.TARGET_SUM))
+
+        /**
          * Cost-vs-cost — the caster pays exactly one of [options] ("discard a card **or** sacrifice a
          * permanent"; Souls of the Lost). For options that are each independently payable non-mana
          * costs; use the `*OrPay` family instead when one branch pays extra *mana*. See

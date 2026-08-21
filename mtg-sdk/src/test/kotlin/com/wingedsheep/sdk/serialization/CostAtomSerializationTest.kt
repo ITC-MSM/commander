@@ -45,6 +45,9 @@ class CostAtomSerializationTest : FunSpec({
         CostAtom.RemoveCounters(counterType = null, filter = GameObjectFilter.Creature),
         CostAtom.PutCountersOnSelf(Counters.PAGE, count = 1),
         CostAtom.CollectEvidence(amount = 6),
+        // Urgent Necropsy's derived threshold — the shape that made `amount` a DynamicAmount, and
+        // so the one whose round-trip is worth pinning separately from the literal.
+        CostAtom.CollectEvidence(CostAtom.CollectEvidence.TARGET_SUM),
         CostAtom.RevealNotedCreatureType,
         CostAtom.ExileFromGraveyardForTotal(
             filter = GameObjectFilter.Any.withColor(Color.BLACK),

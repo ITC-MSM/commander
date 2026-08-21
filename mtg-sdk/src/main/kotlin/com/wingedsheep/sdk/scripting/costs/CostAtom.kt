@@ -411,6 +411,20 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
      * option must be *hidden*, not offered and refused. Every affordability check therefore fails
      * closed on "sum of available mana values < [amount]".
      *
+     * **[amount] is a [DynamicAmount], not an [Int]**, because one printed card prices the
+     * threshold off the spell it is paying for: Urgent Necropsy's "collect evidence X, where X is
+     * the total mana value of the permanents this spell targets". That X is a *derived* quantity —
+     * unlike [com.wingedsheep.sdk.scripting.effects.CollectEvidenceChosenAmountEffect]'s X, which
+     * is a player *decision* and so is deliberately its own effect rather than a `DynamicAmount`.
+     * The atom accepts only the three shapes the corpus prints, enforced below, so a cost can
+     * never carry an amount the cost-time evaluator has no context to read:
+     *
+     *  - [DynamicAmount.Fixed] — every literal "collect evidence 3";
+     *  - [DynamicAmount.XValue] — the cast's chosen X;
+     *  - [DynamicAmount.ContextProperty] of
+     *    [com.wingedsheep.sdk.scripting.values.ContextPropertyKey.TARGETS_TOTAL_MANA_VALUE] — the
+     *    summed mana value of the targets, read from the announced targets at CR 601.2f.
+     *
      * @property amount The mana-value floor N — the total the exiled cards must meet or exceed.
      * @property linkToSource When true, the cards exiled to pay this cost join the *source
      *   permanent's* linked-exile pile
@@ -424,13 +438,41 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
     @SerialName("AtomCollectEvidence")
     @Serializable
     data class CollectEvidence(
-        val amount: Int,
+        val amount: DynamicAmount,
         val linkToSource: Boolean = false,
     ) : CostAtom {
+        init {
+            require(amount is DynamicAmount.Fixed || amount is DynamicAmount.XValue || amount == TARGET_SUM) {
+                "CollectEvidence's amount must be a literal, XValue, or the summed mana value of " +
+                    "the spell's targets — the three shapes a cost can be priced from before it " +
+                    "is paid. Got ${amount::class.simpleName}: ${amount.description}"
+            }
+        }
+
+        /** Convenience for the overwhelmingly common literal "collect evidence N". */
+        constructor(amount: Int, linkToSource: Boolean = false) :
+            this(DynamicAmount.Fixed(amount), linkToSource)
+
         // Variable count: at least one card must be exiled, but the binding constraint is the
         // total mana value, carried separately to the picker.
         override val selectionCount: Int get() = 1
-        override val description: String get() = "collect evidence $amount"
+
+        // "Collect evidence 3" for a literal; "collect evidence X" for either derived shape —
+        // which is how both printed cards word it.
+        override val description: String get() =
+            if (amount is DynamicAmount.Fixed) "collect evidence ${amount.amount}"
+            else "collect evidence X"
+
+        companion object {
+            /**
+             * "X, where X is the total mana value of the permanents this spell targets" — the one
+             * derived threshold in print (Urgent Necropsy). Named here so a card never has to
+             * spell the `ContextProperty` out and the `init` guard has one thing to compare to.
+             */
+            val TARGET_SUM: DynamicAmount = DynamicAmount.ContextProperty(
+                com.wingedsheep.sdk.scripting.values.ContextPropertyKey.TARGETS_TOTAL_MANA_VALUE
+            )
+        }
     }
 
     /**

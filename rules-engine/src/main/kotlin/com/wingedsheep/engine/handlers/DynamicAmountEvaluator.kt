@@ -857,6 +857,13 @@ class DynamicAmountEvaluator(
 
         ContextPropertyKey.TARGET_COUNT -> context.targets.size
 
+        // The summing sibling of TARGET_COUNT, over the same list. A cost carrying this key is
+        // priced before resolution by CostAtomAmounts instead — both read the announced targets,
+        // so the two paths agree by construction.
+        ContextPropertyKey.TARGETS_TOTAL_MANA_VALUE ->
+            com.wingedsheep.engine.handlers.costs.CostAtomAmounts
+                .totalManaValueOf(state, context.targets)
+
         ContextPropertyKey.MODES_CHOSEN_ON_TRIGGERING_SPELL -> context.triggerModesChosenCount ?: 0
 
         ContextPropertyKey.MANA_SPENT_ON_TRIGGERING_SPELL -> context.triggerManaSpentOnTriggeringSpell ?: 0
