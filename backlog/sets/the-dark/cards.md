@@ -54,7 +54,7 @@
 - [x] Mana Vortex
 - [x] Merfolk Assassin
 - [x] Mind Bomb
-- [ ] Psychic Allergy
+- [x] Psychic Allergy
 - [x] Riptide
 - [x] Sunken City
 - [ ] Tangle Kelp
