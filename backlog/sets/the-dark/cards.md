@@ -53,7 +53,7 @@
 - [ ] Leviathan
 - [x] Mana Vortex
 - [x] Merfolk Assassin
-- [ ] Mind Bomb
+- [x] Mind Bomb
 - [ ] Psychic Allergy
 - [x] Riptide
 - [x] Sunken City
