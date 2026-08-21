@@ -1735,6 +1735,67 @@
     ]
 }
 
+// Miracle Worker
+{
+    "name": "Miracle Worker",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "{T}: Destroy target Aura attached to a creature you control.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsEnchantment",
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Aura"
+                                    }
+                                ],
+                                "statePredicates": [
+                                    {
+                                        "type": "IsAttachedTo",
+                                        "filter": "creature ctrl:you"
+                                    }
+                                ]
+                            }
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "13",
+        "artist": "Ron Spencer",
+        "flavorText": "\"Those blessed hands could bring surcease to even the most tainted soul.\"\n—Sister Betje, *Miracles of the Saints*",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/35d29bda-096c-44d4-b45e-c2c507f8efbe.jpg?1783947946"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Morale
 {
     "name": "Morale",
@@ -1772,6 +1833,54 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Murk Dwellers
+{
+    "name": "Murk Dwellers",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Zombie",
+    "oracleText": "Whenever this creature attacks and isn't blocked, it gets +2/+0 until end of combat.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "BecomesUnblockedEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self",
+                    "duration": "EndOfCombat"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "49",
+        "artist": "Drew Tucker",
+        "flavorText": "When Raganorn unsealed the catacombs, he found more than the dead and their treasures.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/2/a213450f-02f4-4c08-8da8-891ebfa8e237.jpg?1783947938",
+        "rulings": [
+            {
+                "date": "2013-04-15",
+                "text": "An ability that triggers when something \"attacks and isn't blocked\" triggers in the declare blockers step after blockers are declared if (1) that creature is attacking and (2) no creatures are declared to block it. It will trigger even if that creature was put onto the battlefield attacking rather than having been declared as an attacker in the declare attackers step."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -1915,6 +2024,79 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Savaen Elves
+{
+    "name": "Savaen Elves",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Elf",
+    "oracleText": "{G}{G}, {T}: Destroy target Aura attached to a land.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{G}{G}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsEnchantment",
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Aura"
+                                    }
+                                ],
+                                "statePredicates": [
+                                    {
+                                        "type": "IsAttachedToCardType",
+                                        "cardType": "LAND"
+                                    }
+                                ]
+                            }
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "84",
+        "artist": "Ron Spencer",
+        "flavorText": "\"Purity of magic can only come from purity of the land. How can a meal nourish if the ingredients are spoiled?\" —Sidaine of Savaen",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/8/38fb3014-f631-4a75-92cd-7e626b13a4c3.jpg?1783947930"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
