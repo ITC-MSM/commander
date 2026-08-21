@@ -30,7 +30,7 @@
 - [x] Fire and Brimstone
 - [x] Holy Light
 - [x] Knights of Thorn
-- [ ] Martyr's Cry
+- [x] Martyr's Cry
 - [x] Miracle Worker
 - [x] Morale
 - [x] Pikemen
