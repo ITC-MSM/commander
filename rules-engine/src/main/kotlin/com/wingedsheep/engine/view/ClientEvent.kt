@@ -578,10 +578,17 @@ sealed interface ClientEvent {
         val sourceId: EntityId,
         val sourceName: String,
         val isYours: Boolean? = null,
-        override val description: String = when (isYours) {
-            true -> "You flipped a coin ($sourceName) — ${if (won) "you won" else "you lost"}"
-            false -> "Opponent flipped a coin ($sourceName) — ${if (won) "they won" else "they lost"}"
-            null -> "Flipped a coin ($sourceName) — ${if (won) "won" else "lost"}"
+        /** True when a "flip N coins and ignore all but one" replacement discarded this flip
+         *  (Krark's Thumb). The coin was really flipped, so it is shown, but its result was not
+         *  used — the log says so rather than reporting a win the player never got. */
+        val ignored: Boolean = false,
+        override val description: String = when {
+            ignored && isYours == true -> "You flipped a coin ($sourceName) — ${if (won) "heads" else "tails"}, ignored"
+            ignored && isYours == false -> "Opponent flipped a coin ($sourceName) — ${if (won) "heads" else "tails"}, ignored"
+            ignored -> "Flipped a coin ($sourceName) — ${if (won) "heads" else "tails"}, ignored"
+            isYours == true -> "You flipped a coin ($sourceName) — ${if (won) "you won" else "you lost"}"
+            isYours == false -> "Opponent flipped a coin ($sourceName) — ${if (won) "they won" else "they lost"}"
+            else -> "Flipped a coin ($sourceName) — ${if (won) "won" else "lost"}"
         }
     ) : ClientEvent
 
@@ -1225,7 +1232,8 @@ object ClientEventTransformer {
                 won = event.won,
                 sourceId = event.sourceId,
                 sourceName = event.sourceName,
-                isYours = event.playerId == viewingPlayerId
+                isYours = event.playerId == viewingPlayerId,
+                ignored = event.ignored
             )
 
             is TurnFaceUpEvent -> ClientEvent.TurnedFaceUp(

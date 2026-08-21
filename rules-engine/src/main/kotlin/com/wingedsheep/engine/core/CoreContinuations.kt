@@ -473,6 +473,38 @@ data class FlipCoinsUntilLossContinuation(
 ) : ContinuationFrame
 
 /**
+ * Resume a coin flip after the flipper says which of the coins to keep — the pause a
+ * [com.wingedsheep.sdk.scripting.FlipAdditionalCoins] replacement (Krark's Thumb) introduces into
+ * every coin-flip executor.
+ *
+ * One frame serves all four flip effects because the *only* thing the pause interrupts is producing
+ * the results; what each effect does with them afterwards is decided from [effect] on resume. That
+ * is why [effect] and [effectContext] are carried whole rather than the four executors each getting
+ * a frame of their own: the sub-effect a [com.wingedsheep.sdk.scripting.effects.FlipCoinEffect]
+ * runs on a win needs the original context's targets, and re-deriving them field by field is how
+ * continuations lose them.
+ *
+ * A batch can owe several answers (one per coin whose replacement came up mixed), so resuming may
+ * push this same frame again — [pending] carries how far the batch got.
+ *
+ * @property effect The flip effect that was executing; decides what happens once the coins settle.
+ * @property effectContext The context that effect was running under, restored verbatim on resume.
+ * @property pending The batch part-way through being resolved (see
+ *   [com.wingedsheep.engine.handlers.effects.CoinFlipService.PendingCoinFlipChoice]).
+ * @property winsSoFar Only meaningful for
+ *   [com.wingedsheep.sdk.scripting.effects.FlipCoinsUntilLossEffect]: flips won before this one, so
+ *   the run's tally survives the extra pause exactly as it survives the "flip again?" one.
+ */
+@Serializable
+data class CoinFlipChoiceContinuation(
+    override val decisionId: String,
+    val effect: Effect,
+    val effectContext: EffectContext,
+    val pending: com.wingedsheep.engine.handlers.effects.CoinFlipService.PendingCoinFlipChoice,
+    val winsSoFar: Int = 0
+) : ContinuationFrame
+
+/**
  * Phase discriminator for RepeatWhileContinuation.
  */
 @Serializable

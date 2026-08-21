@@ -1941,10 +1941,19 @@ data class GiftGivenEvent(
 /**
  * A player flipped a coin.
  *
+ * One event per coin that was actually flipped. Under a
+ * [com.wingedsheep.sdk.scripting.FlipAdditionalCoins] replacement (Krark's Thumb) a single coin the
+ * game asked for becomes several real flips, all of which are reported — only one of them decides
+ * the outcome and the rest carry [ignored].
+ *
  * @property playerId The player who flipped the coin
  * @property won Whether the player won the flip
  * @property sourceId The entity that caused the coin flip
  * @property sourceName The name of the card/ability that caused the coin flip
+ * @property ignored True when this coin was flipped but then discarded by a "flip N coins and
+ *   ignore all but one" replacement, so its result had no effect. The flip still happened — it is
+ *   reported so the log and the animation show what was really flipped — but nothing reads its
+ *   [won] value.
  */
 @Serializable
 @SerialName("CoinFlipEvent")
@@ -1952,7 +1961,8 @@ data class CoinFlipEvent(
     val playerId: EntityId,
     val won: Boolean,
     val sourceId: EntityId,
-    val sourceName: String
+    val sourceName: String,
+    val ignored: Boolean = false
 ) : GameEvent
 
 /**
