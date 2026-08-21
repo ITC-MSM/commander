@@ -1448,16 +1448,38 @@ object Effects {
      * [PutOntoBattlefieldUnderYourControl] does; the two axes are independent, so a card wanting both
      * the graveyard guard and the control override says so here rather than reaching past the facade
      * for a raw `MoveToZoneEffect`.
+     *
+     * [tapped] is the third independent axis, and it was missing until Assay's recursion band went
+     * looking: "Return this card from your graveyard to the battlefield **tapped**" (Reassembling
+     * Skeleton, Haunted Dead, Persistent Specimen, Tunnel Rats, Teacher's Pest) had no way to say
+     * *both*, so five cards reached for [PutOntoBattlefield] and silently dropped the guard this
+     * facade exists to carry. A frozen parameter on a facade is a card's missing word.
      */
     fun PutOntoBattlefieldFromGraveyard(
         target: EffectTarget,
-        underYourControl: Boolean = false
+        underYourControl: Boolean = false,
+        tapped: Boolean = false
     ): Effect = MoveToZoneEffect(
         target,
         Zone.BATTLEFIELD,
+        placement = if (tapped) ZonePlacement.Tapped else ZonePlacement.Default,
         fromZone = Zone.GRAVEYARD,
         controllerOverride = if (underYourControl) EffectTarget.Controller else null
     )
+
+    /**
+     * "Return this card from your graveyard to your hand." — [ReturnToHand] with the graveyard guard,
+     * and [PutOntoBattlefieldFromGraveyard]'s sibling one destination over.
+     *
+     * The same `fromZone` and the same reason for it: the move is skipped if the card has left the
+     * graveyard by the time the ability resolves. `ActivateAbilityHandler` checks an ability's
+     * `activateFromZone` when it is *activated* and nothing re-checks it on resolution, so without
+     * the guard a card exiled from the graveyard in response to its own ability still comes back —
+     * from exile. Every card whose printed line names the graveyard should say so here; Argentum
+     * Assay builds this for the sentence, so one that does not shows up in the differential.
+     */
+    fun ReturnToHandFromGraveyard(target: EffectTarget): Effect =
+        MoveToZoneEffect(target, Zone.HAND, fromZone = Zone.GRAVEYARD)
 
     /**
      * Put onto the battlefield under your control (the effect controller's control).

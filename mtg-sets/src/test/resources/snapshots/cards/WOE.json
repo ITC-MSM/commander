@@ -1990,7 +1990,8 @@
                 "effect": {
                     "type": "MoveToZone",
                     "target": "Self",
-                    "destination": "Hand"
+                    "destination": "Hand",
+                    "fromZone": "Graveyard"
                 },
                 "activateFromZone": "Graveyard"
             }
@@ -4332,7 +4333,8 @@
                 "effect": {
                     "type": "MoveToZone",
                     "target": "Self",
-                    "destination": "Hand"
+                    "destination": "Hand",
+                    "fromZone": "Graveyard"
                 },
                 "activateFromZone": "Graveyard"
             }
