@@ -143,7 +143,7 @@
 - [x] Standing Stones
 - [x] Stone Calendar
 - [x] Tormod's Crypt
-- [ ] Tower of Coireall
+- [x] Tower of Coireall
 - [ ] Wand of Ith
 - [ ] War Barge
 
