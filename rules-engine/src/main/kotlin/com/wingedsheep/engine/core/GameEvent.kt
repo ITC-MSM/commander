@@ -549,6 +549,22 @@ data class CreatureTypeChosenEvent(
 ) : GameEvent
 
 /**
+ * A creature type that had been chosen secretly is now public information — "Reveal the creature
+ * type you chose" (A Killer Among Us), the reveal half of the hidden-agenda pair (CR 702.106c).
+ *
+ * Distinct from [CreatureTypeChosenEvent], which announces that a choice happened; this one
+ * announces *what* the choice was, and fires once, when the reveal cost is paid.
+ */
+@Serializable
+@SerialName("CreatureTypeRevealedEvent")
+data class CreatureTypeRevealedEvent(
+    val playerId: EntityId,
+    val sourceId: EntityId,
+    val sourceName: String,
+    val revealedType: String
+) : GameEvent
+
+/**
  * A creature's type was changed (e.g., "becomes a Goblin until end of turn").
  */
 @Serializable

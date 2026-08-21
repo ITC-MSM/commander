@@ -45,6 +45,7 @@ class CostAtomSerializationTest : FunSpec({
         CostAtom.RemoveCounters(counterType = null, filter = GameObjectFilter.Creature),
         CostAtom.PutCountersOnSelf(Counters.PAGE, count = 1),
         CostAtom.CollectEvidence(amount = 6),
+        CostAtom.RevealNotedCreatureType,
         CostAtom.ExileFromGraveyardForTotal(
             filter = GameObjectFilter.Any.withColor(Color.BLACK),
             measure = CardMeasure.ColoredManaSymbols(listOf(Color.BLACK)),

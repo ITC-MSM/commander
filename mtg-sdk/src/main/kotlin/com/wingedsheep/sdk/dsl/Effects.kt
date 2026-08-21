@@ -5224,8 +5224,23 @@ object Effects {
      */
     fun NoteCreatureType(
         storeAs: String = "notedType",
+        prompt: String? = null,
+        options: List<String> = emptyList()
+    ): Effect = NoteCreatureTypeEffect(storeAs, prompt, options)
+
+    /**
+     * "Secretly choose Human, Merfolk, or Goblin." (A Killer Among Us)
+     *
+     * The hidden-information sibling of [NoteCreatureType]: the chosen type is noted on the source
+     * permanent the same way, but only the player who chose it can see it, and only they can later
+     * publish it by paying [Costs.RevealNotedCreatureType]. Pass [options] to narrow the choice to
+     * a named handful; leave it empty for "secretly choose a creature type".
+     */
+    fun SecretlyChooseCreatureType(
+        options: List<String> = emptyList(),
+        storeAs: String = "notedType",
         prompt: String? = null
-    ): Effect = NoteCreatureTypeEffect(storeAs, prompt)
+    ): Effect = NoteCreatureTypeEffect(storeAs, prompt, options, secret = true)
 
     /** The five basic land card names, excluded by "name a card other than a basic land card name" effects. */
     private val BASIC_LAND_CARD_NAMES = listOf("Plains", "Island", "Swamp", "Mountain", "Forest")

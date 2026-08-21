@@ -196,6 +196,17 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 // restricted to abilities of artifact sources).
                 val abilityContext = com.wingedsheep.engine.mechanics.mana.buildAbilityPaymentContext(cardComponent, projected, entityId, ability)
 
+                // "Reveal the creature type you chose" is payable only by the player who made the
+                // secret note (A Killer Among Us's ruling: a player who gains control of it "will
+                // be unable to activate its last ability"). That is never a matter of affordability
+                // — no amount of mana or board state makes it payable for anyone else — so the
+                // ability is dropped outright rather than offered greyed out. Checked here, once,
+                // because the cost reaches the `when` below as either a bare atom or a composite.
+                if (costRevealsNotedCreatureType(effectiveCost) &&
+                    container.get<NotedCreatureTypesComponent>()
+                        ?.let { it.secretTo == playerId && it.types.isNotEmpty() } != true
+                ) continue
+
                 // Check cost requirements and gather sacrifice/tap/bounce targets if needed
                 var sacrificeTargets: List<EntityId>? = null
                 var sacrificeCost: CostAtom.Sacrifice? = null
@@ -339,6 +350,9 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         // fall-through behavior for these costs). Putting counters on the source
                         // costs nothing the player must have, so it never gates enumeration either.
                         is CostAtom.PayLife, is CostAtom.RevealFromHand, is CostAtom.PutCountersOnSelf -> {}
+                        // Gated above, before this `when` — only the chooser is offered the
+                        // ability at all — and it takes no enumeration-time selection.
+                        is CostAtom.RevealNotedCreatureType -> {}
                         // CR 701.17b — a mill cost is unpayable when the library holds fewer cards.
                         // No selection: the milled cards are the top of the library.
                         is CostAtom.Mill -> {
@@ -550,6 +564,8 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                     // gate here (matching the prior else fall-through for these sub-costs).
                                     is CostAtom.PayLife, is CostAtom.RevealFromHand,
                                     is CostAtom.PutCountersOnSelf -> {}
+                                    // See the top-level branch: gated before the `when`.
+                                    is CostAtom.RevealNotedCreatureType -> {}
                                     // CR 701.17b — a mill cost is unpayable when the library holds
                                     // fewer cards. No selection: the milled cards are the top.
                                     is CostAtom.Mill -> {
@@ -1380,6 +1396,17 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
      * also excluded.
      */
     /** True when [cost] contains a [CostAtom.VariablePermanents] atom (top-level or in a Composite). */
+    /**
+     * Whether [cost] includes "Reveal the creature type you chose" — the cost only the player who
+     * made the source's secret note can pay. Mirrors `ActivateAbilityHandler`'s helper of the same
+     * name, which decides when to capture the note as last-known information.
+     */
+    private fun costRevealsNotedCreatureType(cost: AbilityCost): Boolean = when (cost) {
+        is AbilityCost.Atom -> cost.atom is CostAtom.RevealNotedCreatureType
+        is AbilityCost.Composite -> cost.costs.any { costRevealsNotedCreatureType(it) }
+        else -> false
+    }
+
     private fun costContainsVariablePermanents(cost: AbilityCost): Boolean = when (cost) {
         is AbilityCost.Atom -> cost.atom is CostAtom.VariablePermanents
         is AbilityCost.Composite -> cost.costs.any { costContainsVariablePermanents(it) }

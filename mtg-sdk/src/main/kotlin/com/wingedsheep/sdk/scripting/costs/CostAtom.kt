@@ -494,6 +494,35 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
         }
     }
 
+    /**
+     * "Reveal the creature type you chose" — turn the source permanent's *secret* noted creature
+     * type (see [com.wingedsheep.sdk.scripting.effects.NoteCreatureTypeEffect] with `secret = true`)
+     * into public information, and carry it into the resolution of the ability whose cost this is.
+     *
+     * This is the reveal half of the hidden-agenda pair (CR 702.106c-d — turning the face-down
+     * conspiracy face up reveals the chosen name, and the two abilities are linked per CR 607.2d).
+     * A Killer Among Us's "Sacrifice this enchantment, Reveal the creature type you chose:" is the
+     * shape it is named for.
+     *
+     * **Only the player who made the note can pay it.** A player who gained control of the
+     * permanent never saw the choice, so the cost is unpayable for them and the ability is not
+     * offered at all — the ruling that card spells out. A permanent with no secret note (nothing
+     * chosen, or already revealed) likewise can't pay.
+     *
+     * Paying it costs nothing material: it publishes the note and emits a `CreatureTypeRevealedEvent`.
+     * The revealed type reaches the ability's effect as
+     * `EffectContext.chosenValues["chosenCreatureType"]`, so a condition can test the ability's
+     * target against it with
+     * [com.wingedsheep.sdk.scripting.predicates.CardPredicate.HasSubtypeFromVariable] — the same
+     * read path a mid-pipeline `ChooseOption` write uses. The type is captured when the cost is
+     * paid, so a cost that also sacrifices the source (CR 113.7a) still resolves against it.
+     */
+    @SerialName("AtomRevealNotedCreatureType")
+    @Serializable
+    data object RevealNotedCreatureType : CostAtom {
+        override val description: String get() = "reveal the creature type you chose"
+    }
+
     /** Reveal [count] cards matching [filter] from your hand (the cards stay in hand). */
     @SerialName("AtomRevealFromHand")
     @Serializable

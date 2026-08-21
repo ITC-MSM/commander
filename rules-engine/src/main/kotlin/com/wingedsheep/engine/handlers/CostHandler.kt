@@ -626,6 +626,13 @@ class CostHandler {
             val handZone = ZoneKey(controllerId, Zone.HAND)
             findMatchingCardsUnified(state, state.getZone(handZone), atom.filter, controllerId).size >= atom.count
         }
+        // You can only reveal a choice you made. A player who gained control of the permanent
+        // never saw it, so the cost is unpayable for them and the ability is never offered
+        // (A Killer Among Us's ruling); so is a permanent with nothing secretly noted on it.
+        is CostAtom.RevealNotedCreatureType ->
+            state.getEntity(sourceId)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.NotedCreatureTypesComponent>()
+                ?.let { it.secretTo == controllerId && it.types.isNotEmpty() } == true
         // Adding counters takes nothing away, so there is never a reason it can't be paid — this
         // is what keeps Mazemind Tome activatable on the very activation that exiles it.
         is CostAtom.PutCountersOnSelf -> true
@@ -769,6 +776,31 @@ class CostHandler {
             // is a no-op success kept for atom exhaustiveness (the PayCost reveal path emits the
             // CardsRevealedEvent through CostPaymentService).
             CostPaymentResult.success(state, manaPool)
+        is CostAtom.RevealNotedCreatureType -> {
+            // Publishing the note is the whole payment: the types stay where they are and simply
+            // stop being secret (CR 702.106c's "doing so will reveal the chosen name"). The
+            // affordability gate above already established that this player made the note, so a
+            // missing component here means the source left the battlefield between the two checks.
+            val noted = state.getEntity(sourceId)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.NotedCreatureTypesComponent>()
+            if (noted == null || noted.types.isEmpty()) {
+                CostPaymentResult.success(state, manaPool)
+            } else {
+                val sourceName = state.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Unknown"
+                CostPaymentResult.success(
+                    state.updateEntity(sourceId) { c -> c.with(noted.copy(secretTo = null)) },
+                    manaPool,
+                    events = noted.types.map { type ->
+                        CreatureTypeRevealedEvent(
+                            playerId = controllerId,
+                            sourceId = sourceId,
+                            sourceName = sourceName,
+                            revealedType = type
+                        )
+                    }
+                )
+            }
+        }
         is CostAtom.PutCountersOnSelf -> {
             // Counters put on as a cost are an ordinary counter placement (CR 121.6), so they run
             // through the same chokepoint as the AddCounters effect: the "can't have counters put
@@ -1240,10 +1272,12 @@ class CostHandler {
                 is CostAtom.VariablePermanents ->
                     com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost.canPay(state, controllerId, atom)
                 // Mana / return-to-hand / reveal / put-counters-on-self / mill are not produced as
-                // spell additional costs today (put-counters-on-self is inherently ability-scoped —
-                // a spell on the stack has no permanent to put the counters on).
+                // spell additional costs today (put-counters-on-self and reveal-the-noted-type are
+                // inherently ability-scoped — a spell on the stack has no permanent to put the
+                // counters on, nor one carrying a secret note).
                 is CostAtom.Mana, is CostAtom.ReturnToHand, is CostAtom.RevealFromHand,
                 is CostAtom.PutCountersOnSelf, is CostAtom.Mill,
+                is CostAtom.RevealNotedCreatureType,
                 is CostAtom.ExileTopOfLibrary -> false
             }
             is AdditionalCost.PayLifePerTarget -> {

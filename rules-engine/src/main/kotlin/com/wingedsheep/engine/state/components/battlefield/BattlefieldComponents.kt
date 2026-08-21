@@ -359,10 +359,28 @@ data class SagaComponent(
  */
 @Serializable
 data class NotedCreatureTypesComponent(
-    val types: Set<String> = emptySet()
+    val types: Set<String> = emptySet(),
+    /**
+     * The player who made these notes secretly, or null when they are public information.
+     *
+     * Set by `NoteCreatureTypeEffect(secret = true)` — the hidden-agenda shape (CR 702.106a-b)
+     * applied to a permanent: A Killer Among Us's "Then secretly choose Human, Merfolk, or Goblin".
+     * Two things key off it and nothing else does:
+     *  - the client view shows the noted types only to this player (`ClientStateTransformer`); and
+     *  - only this player can pay [com.wingedsheep.sdk.scripting.costs.CostAtom.RevealNotedCreatureType],
+     *    so a player who gains control of the permanent can't activate an ability that reveals a
+     *    choice they never saw.
+     *
+     * Paying that cost publishes the note by clearing this field; the types themselves don't move.
+     * It holds the *chooser*, not the controller, exactly because those two can come apart.
+     */
+    val secretTo: EntityId? = null
 ) : Component {
     fun withAdded(type: String): NotedCreatureTypesComponent =
         copy(types = types + type)
+
+    /** Whether [playerId] may see these notes — everyone, unless they were made secretly. */
+    fun isVisibleTo(playerId: EntityId): Boolean = secretTo == null || secretTo == playerId
 }
 
 /**

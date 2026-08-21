@@ -494,6 +494,24 @@ sealed interface ClientEvent {
     // Player Choice Events
     // =========================================================================
 
+    /**
+     * A creature type chosen secretly earlier is now public — "Reveal the creature type you chose".
+     * The sibling of [CreatureTypeChosen], which announces only that a choice was made.
+     */
+    @Serializable
+    @SerialName("creatureTypeRevealed")
+    data class CreatureTypeRevealed(
+        val playerId: EntityId,
+        val sourceId: EntityId,
+        val sourceName: String,
+        val revealedType: String,
+        val isYours: Boolean? = null,
+        override val description: String = when (isYours) {
+            true -> "You revealed $revealedType ($sourceName)"
+            else -> "Opponent revealed $revealedType ($sourceName)"
+        }
+    ) : ClientEvent
+
     @Serializable
     @SerialName("creatureTypeChosen")
     data class CreatureTypeChosen(
@@ -1250,6 +1268,14 @@ is PermanentsSacrificedEvent -> {
                 permanentName = event.permanentName,
                 newControllerId = event.newControllerId,
                 isYours = event.newControllerId == viewingPlayerId
+            )
+
+            is CreatureTypeRevealedEvent -> ClientEvent.CreatureTypeRevealed(
+                playerId = event.playerId,
+                sourceId = event.sourceId,
+                sourceName = event.sourceName,
+                revealedType = event.revealedType,
+                isYours = event.playerId == viewingPlayerId
             )
 
             is CreatureTypeChosenEvent -> ClientEvent.CreatureTypeChosen(

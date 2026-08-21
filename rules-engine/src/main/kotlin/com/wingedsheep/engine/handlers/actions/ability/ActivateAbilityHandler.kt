@@ -1361,6 +1361,19 @@ class ActivateAbilityHandler(
                     ?: emptyList()
             } else emptyList()
 
+        // Snapshot the creature type this permanent's controller secretly noted, before the same
+        // cost's self-sacrifice takes the permanent — and the note with it — off the battlefield
+        // (CR 113.7a). Read at resolution as chosenValues["chosenCreatureType"], which is what lets
+        // A Killer Among Us still ask "is the target the chosen type?" after it is in the graveyard.
+        // Mirrors lastKnownSourceCounters above.
+        val revealedNotedCreatureType: String? =
+            if (costRevealsNotedCreatureType(effectiveCost)) {
+                currentState.getEntity(action.sourceId)
+                    ?.get<com.wingedsheep.engine.state.components.battlefield.NotedCreatureTypesComponent>()
+                    ?.types
+                    ?.firstOrNull()
+            } else null
+
         // When using Explicit payment, mana sources were already tapped above —
         // strip the Mana portion so payAbilityCost doesn't try to deduct from the pool.
         // When convoke was applied, replace the mana portion with the reduced cost.
@@ -1819,6 +1832,7 @@ class ActivateAbilityHandler(
             lastKnownSourceCounters = lastKnownSourceCounters,
             lastKnownSourceSnapshot = lastKnownSourceSnapshot,
             lastKnownSourceAttachments = lastKnownSourceAttachments,
+            revealedNotedCreatureType = revealedNotedCreatureType,
             descriptionOverride = ability.descriptionOverride,
             abilityIdentity = com.wingedsheep.sdk.scripting.AbilityIdentity(
                 cardComponent.cardDefinitionId, ability.id
@@ -2184,6 +2198,18 @@ class ActivateAbilityHandler(
     private fun costExilesOrSacrificesSelf(cost: AbilityCost): Boolean = when (cost) {
         is AbilityCost.ExileSelf, is AbilityCost.SacrificeSelf, is AbilityCost.ReturnSelfToHand -> true
         is AbilityCost.Composite -> cost.costs.any { costExilesOrSacrificesSelf(it) }
+        else -> false
+    }
+
+    /**
+     * Whether [cost] includes "Reveal the creature type you chose" — the signal to capture the
+     * source's noted type before the cost is paid. The same activation typically sacrifices the
+     * source (A Killer Among Us), so by resolution the permanent and its note are gone; this is
+     * the CR 113.7a capture that keeps the ability's "if the target is the chosen type" answerable.
+     */
+    private fun costRevealsNotedCreatureType(cost: AbilityCost): Boolean = when (cost) {
+        is AbilityCost.Atom -> cost.atom is CostAtom.RevealNotedCreatureType
+        is AbilityCost.Composite -> cost.costs.any { costRevealsNotedCreatureType(it) }
         else -> false
     }
 
