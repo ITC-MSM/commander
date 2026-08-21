@@ -134,7 +134,7 @@
 - [x] Diabolic Machine
 - [ ] Fellwar Stone
 - [x] Fountain of Youth
-- [ ] Living Armor
+- [x] Living Armor
 - [ ] Necropolis
 - [ ] Reflecting Mirror
 - [ ] Runesword
