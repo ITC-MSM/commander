@@ -290,6 +290,7 @@ val engineSerializersModule = SerializersModule {
         subclass(DrawUpToContinuation::class)
         subclass(RepeatWhileContinuation::class)
         subclass(FlipCoinsUntilLossContinuation::class)
+        subclass(CoinFlipChoiceContinuation::class)
         subclass(SelectFromCollectionContinuation::class)
         subclass(MoveCollectionOrderContinuation::class)
         subclass(ChooseOptionPipelineContinuation::class)

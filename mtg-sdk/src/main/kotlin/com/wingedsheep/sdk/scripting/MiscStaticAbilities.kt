@@ -1090,6 +1090,48 @@ data class WinCoinFlips(
 }
 
 /**
+ * Each coin the controller would flip is replaced by [coinsPerFlip] coins, all but one of which the
+ * controller ignores — Krark's Thumb's "If you would flip a coin, instead flip two coins and ignore
+ * one" (CR 614.1a — an "instead" effect is a replacement effect; this one changes *how a flip's
+ * result is produced*, and the flip itself still
+ * happens, so a "whenever you flip a coin" ability sees exactly one flip per replaced coin).
+ *
+ * Queried by the coin-flip executors (`FlipCoinExecutor` / `FlipTwoCoinsExecutor` /
+ * `FlipCoinsExecutor` / `FlipCoinsUntilLossExecutor`) via `CoinFlipModifiers`, exactly like
+ * [WinCoinFlips]; it is not a Rule 613 continuous effect, so it maps to no layer (classified as
+ * no-op in `StaticAbilityHandler`).
+ *
+ * Three consequences of the Krark's Thumb rulings are load-bearing and are what make this a
+ * *per-coin* replacement rather than a per-flip-event one:
+ *
+ * - **It replaces each individual coin, not the instruction.** "If an effect tells you to flip two
+ *   coins, you don't flip four coins and ignore any two; you flip two coins, flip two coins, and
+ *   then ignore one flip from each pair." So a `FlipCoinsEffect(5)` under one Thumb flips ten coins
+ *   as five pairs and keeps one from each.
+ * - **All the coins are flipped before any is ignored** — "You will know the results of all
+ *   simultaneous flips before choosing which to ignore." The engine therefore flips the whole batch
+ *   up front and only then asks, so the flipper always chooses with complete information.
+ * - **Instances multiply.** A second Thumb replaces each of the first Thumb's coins in turn, so two
+ *   Thumbs flip four coins per original flip and ignore three. `CoinFlipModifiers` multiplies
+ *   [coinsPerFlip] across every source the flipper controls rather than summing them.
+ *
+ * A [WinCoinFlips] replacement that also applies makes every coin in the batch heads, which leaves
+ * the flipper nothing to choose — the engine skips the prompt whenever a batch is unanimous.
+ *
+ * @property coinsPerFlip How many coins are flipped in place of each single coin. Two is the printed
+ *   value (Krark's Thumb, and its silver-bordered twin Krark's Other Thumb); the parameter exists so
+ *   a future "flip three coins and ignore two" needs no new type. Values below two leave flips alone.
+ */
+@SerialName("FlipAdditionalCoins")
+@Serializable
+data class FlipAdditionalCoins(
+    val coinsPerFlip: Int = 2,
+) : StaticAbility {
+    override val description: String =
+        "If you would flip a coin, instead flip $coinsPerFlip coins and ignore all but one"
+}
+
+/**
  * Replaces land mana production when a land would produce two or more mana.
  * Used for Damping Sphere: "If a land is tapped for two or more mana, it produces {C} instead
  * of any other type and amount."

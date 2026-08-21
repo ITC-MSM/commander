@@ -6776,6 +6776,22 @@ staticAbility {
   every coin flip the controller makes. Heads is modeled as a won flip, so this forces the win. Not a
   Rule 613 continuous effect — the coin-flip executors query it via `CoinFlipModifiers`, and a
   per-player `FlippedCoinsThisTurnComponent` (cleared at cleanup) tracks the "first each turn" gate.
+- `FlipAdditionalCoins(coinsPerFlip = 2)` — the other coin-flip replacement (CR 614.1a — an "instead" effect is a replacement effect): each coin the
+  controller would flip becomes `coinsPerFlip` real coins, all but one of which they ignore
+  (**Krark's Thumb** — "If you would flip a coin, instead flip two coins and ignore one"). Applies
+  **per coin, not per instruction**: "flip five coins" is five *pairs* with one kept from each, not
+  ten coins with any five ignored. Every coin of a batch is rolled *before* any is ignored, so the
+  flipper always chooses knowing all the results; a batch whose coins agree offers no choice and
+  raises no prompt. Instances **multiply** — two Thumbs flip four coins per flip and ignore three —
+  so `CoinFlipModifiers.coinsPerFlip` takes the product across the flipper's sources. Composing with
+  `WinCoinFlips` needs no special case: a forced win makes every coin heads, leaving nothing to
+  choose. All four flip effects (`FlipCoinEffect`, `FlipTwoCoinsEffect`, `FlipCoinsEffect`,
+  `FlipCoinsUntilLossEffect`) get their coins from the single `CoinFlipService` seam, so the
+  replacement reaches every flip in the game; the choice pauses on a `CoinFlipChoiceContinuation`,
+  which carries the flip effect and its `EffectContext` whole so the branch run afterwards keeps its
+  targets. Each coin really flipped emits a `CoinFlipEvent`, with the discarded ones carrying
+  `ignored = true` so the log and the client animation show what was flipped without reporting a win
+  nobody got. Not a Rule 613 continuous effect.
 - `RestrictSpellsCastPerTurn(maxPerTurn, eachPlayer = false)` — a per-turn cap on spells cast.
   `eachPlayer = false` (default) limits only the source's controller (Yawgmoth's Agenda: "You can't
   cast more than one spell each turn."); `eachPlayer = true` is a *global* restriction binding every

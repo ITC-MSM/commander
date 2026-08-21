@@ -5787,6 +5787,26 @@
     ]
 }
 
+// Krark's Thumb
+{
+    "name": "Krark's Thumb",
+    "manaCost": "{2}",
+    "typeLine": "Legendary Artifact",
+    "oracleText": "If you would flip a coin, instead flip two coins and ignore one.",
+    "script": {
+        "staticAbilities": [
+            "FlipAdditionalCoins"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "190",
+        "rarity": "RARE",
+        "artist": "Ron Spencer",
+        "flavorText": "\"I can think of one goblin it ain't so lucky for.\"\n—Slobad, goblin tinkerer",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/8/78a5d49a-747e-4ec8-a20a-ca917c315774.jpg?1783944517"
+    }
+}
+
 // Krark-Clan Grunt
 {
     "name": "Krark-Clan Grunt",

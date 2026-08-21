@@ -1059,9 +1059,11 @@ class StaticAbilityHandler(
             is RevealFirstDrawEachTurn,
             is RevealTopOfLibrary,
 
-            // Coin-flip result replacement (CR 705.3), queried by the coin-flip executors via
-            // CoinFlipModifiers — not a Rule 613 continuous effect:
+            // Coin-flip replacements, queried by CoinFlipService via CoinFlipModifiers — the
+            // result-dictating one (CR 705.3) and the flip-more-coins one (CR 614). Neither is a
+            // Rule 613 continuous effect:
             is WinCoinFlips,
+            is com.wingedsheep.sdk.scripting.FlipAdditionalCoins,
 
             // Stamped as marker components by addContinuousEffectComponent in this
             // handler and read from those components by their subsystems:
