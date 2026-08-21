@@ -1557,6 +1557,139 @@
     ]
 }
 
+// Aurelia's Vindicator
+{
+    "name": "Aurelia's Vindicator",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Creature — Angel",
+    "oracleText": "Flying, lifelink, ward {2}\nDisguise {X}{3}{W} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nWhen this creature is turned face up, exile up to X other target creatures from the battlefield and/or creature cards from graveyards.\nWhen this creature leaves the battlefield, return the exiled cards to their owners' hands.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "LIFELINK",
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{2}"
+            }
+        },
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{X}{3}{W}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TurnFaceUpEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "ChosenTargets",
+                            "storeAs": "vindicated"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "vindicated",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature",
+                        "excludeSelf": true,
+                        "alternatives": [
+                            {
+                                "baseFilter": "creature",
+                                "zone": "Graveyard"
+                            }
+                        ]
+                    },
+                    "id": "up to X other target creatures from the battlefield and/or creature cards from graveyards",
+                    "dynamicMaxCount": "XValue"
+                },
+                "descriptionOverride": "When this creature is turned face up, exile up to X other target creatures from the battlefield and/or creature cards from graveyards."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return_hand"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return_hand",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature leaves the battlefield, return the exiled cards to their owners' hands."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "4",
+        "rarity": "MYTHIC",
+        "artist": "Victor Adame Minguez",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/9/5901dff4-e09b-4747-9297-797a1a057cd5.jpg?1783912930",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If Aurelia's Vindicator leaves the battlefield before its \"turned face up\" ability has resolved, its leaves the battlefield ability will trigger and do nothing. Then the \"turned face up\" ability will resolve and exile the targeted creatures and/or creature cards indefinitely."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a creature targeted by the \"turned face up\" ability dies before that ability resolves, it will become an illegal target even though it may be a creature card in a graveyard when the ability resolves. It won't be exiled."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Because the permanent is on the battlefield both before and after it's turned face up, turning a permanent face up doesn't cause any enters-the-battlefield abilities to trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Aurelia, the Law Above
 {
     "name": "Aurelia, the Law Above",
