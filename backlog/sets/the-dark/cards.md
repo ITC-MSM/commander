@@ -2,7 +2,7 @@
 
 **Set Size:** 119 cards
 **Release Date:** August 1, 1994
-**Implemented:** 54 / 119
+**Implemented:** 56 / 119
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 19    | 8    |
@@ -31,7 +31,7 @@
 - [x] Holy Light
 - [x] Knights of Thorn
 - [ ] Martyr's Cry
-- [ ] Miracle Worker
+- [x] Miracle Worker
 - [x] Morale
 - [x] Pikemen
 - [ ] Preacher
@@ -110,7 +110,7 @@
 - [ ] Marsh Viper
 - [x] Niall Silvain
 - [x] People of the Woods
-- [ ] Savaen Elves
+- [x] Savaen Elves
 - [ ] Scarwood Bandits
 - [ ] Scarwood Hag
 - [x] Scavenger Folk
