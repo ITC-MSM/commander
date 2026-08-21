@@ -111,7 +111,7 @@
 - [x] Niall Silvain
 - [x] People of the Woods
 - [x] Savaen Elves
-- [ ] Scarwood Bandits
+- [x] Scarwood Bandits
 - [x] Scarwood Hag
 - [x] Scavenger Folk
 - [ ] Spitting Slug
