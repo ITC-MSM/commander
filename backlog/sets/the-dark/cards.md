@@ -51,7 +51,7 @@
 - [x] Ghost Ship
 - [x] Giant Shark
 - [ ] Leviathan
-- [ ] Mana Vortex
+- [x] Mana Vortex
 - [x] Merfolk Assassin
 - [ ] Mind Bomb
 - [ ] Psychic Allergy

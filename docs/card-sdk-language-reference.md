@@ -8851,6 +8851,8 @@ answer it and would silently return `false`.
 - `NoCreaturesOnBattlefield` — there are no creatures anywhere on the battlefield (global, either player;
   `Exists(Player.Each, …, negate = true)`). Used by Drop of Honey's "when there are no creatures on the
   battlefield, sacrifice this enchantment" state trigger.
+- `NoLandsOnBattlefield` — the land sibling of `NoCreaturesOnBattlefield`, same global shape. Used by
+  Mana Vortex's "when there are no lands on the battlefield, sacrifice this enchantment" state trigger.
 - `ControlMoreCreatures` — you control more creatures than each opponent.
 - `OpponentControlsCreature` — at least one opponent has a creature.
 - `OpponentControls(filter, negate = false)` — at least one opponent controls a permanent matching
