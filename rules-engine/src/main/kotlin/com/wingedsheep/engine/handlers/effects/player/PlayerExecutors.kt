@@ -81,6 +81,7 @@ class PlayerExecutors(
         SetDayNightExecutor(cardRegistry),
         SkipCombatPhasesExecutor(),
         SkipNextDrawStepExecutor(),
+        SkipStepOrPhaseThisTurnExecutor(),
         SkipNextTurnExecutor(),
         SkipUntapExecutor(),
         TakeExtraTurnExecutor(),

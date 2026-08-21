@@ -1037,6 +1037,19 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `ExileGroupAndLink(filter, storeAs?)` — exile all matching permanents into source's linked exile pile.
 - `ExileFromTopRepeating(count, repeatCondition)` — keep exiling top cards while a condition holds.
 - `ExileLibraryUntilManaValue(manaValue)` — exile from library until mana value ≤ N.
+- `Effects.ExileTopCardContest(storeWinnerAs, players = Player.Each, storeExiledAs = "contestExiledCards")`
+  (`ExileTopCardContestEffect`) — each player exiles the top card of their library face up; the one who
+  exiled the **greatest mana value** is published as the single entry of the pipeline collection
+  `storeWinnerAs`, and ties repeat among the **tied players only** until one is alone at the top. Fully
+  deterministic — no player ever chooses anything — so it resolves in a single pass with no decision or
+  continuation. **Open by design**: it answers "who won" and stops, so the payoff is composed off
+  `EffectTarget.PipelineTarget(storeWinnerAs)` rather than being owned by a library primitive. **The
+  contest can end with no winner** (a player with an empty library exiles nothing and so can never have
+  exiled the greatest mana value; if no contender can exile at all the tie stands), so gate the payoff on
+  `Conditions.CompareAmounts(DynamicAmount.DistinctEntitiesInCollections(listOf(storeWinnerAs)), GTE,
+  Fixed(1))` — an unresolved `PipelineTarget` otherwise falls back to the ability's controller. Every card
+  exiled, in every round, stays in exile and is published under `storeExiledAs`. Used by **Timesifter**
+  (`ExileTopCardContest` then a gated `TakeExtraTurn` on the winner).
 
 ### Return / placement
 
@@ -1968,6 +1981,23 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `Effects.FlipCoins(count, storeHeadsAs = "heads")` (`FlipCoinsEffect`) — flip `count` coins and store the number of heads under `storeHeadsAs` in the pipeline (`storedNumbers`) so a later sub-effect in the same composite can scale off it via `DynamicAmount.VariableReference`. The general "flip N coins, count heads" primitive (CR 705); unlike `FlipCoinEffect` (branch on win/lose) and `FlipTwoCoinsEffect` (branch on combined outcome) it only tallies. Each flip emits a `CoinFlipEvent`. **Ral Zarek, Guest Lecturer**'s ultimate composes `FlipCoins(5, "heads")` then `SkipNextTurn(target, count = VariableReference("heads"))`.
 - `Effects.FlipCoinsUntilLoss(storeWinsAs = "wins")` (`FlipCoinsUntilLossEffect`) — `FlipCoins`'s open-ended sibling: flip one coin at a time until the flipper *loses* a flip or answers "stop flipping", then store how many flips they won under `storeWinsAs`. The run length is discovered rather than given, and the order within an iteration is flip → check → ask, so the stop question only ever follows a *won* flip ("after each flip, you choose whether to continue flipping"). Losing the first flip stores 0, and since an unread pipeline number reads as 0, a card gating payoffs on "if you win one or more flips" needs no separate "this has no effect" branch — that sentence *is* the absence of every payoff. Deliberately **not** a `RepeatWhile` over `FlipCoinEffect`: a repeat condition is asked unconditionally after each body (so it can't stop *because* a flip was lost) and the repeat loop restarts each iteration from the pristine pre-loop context (so a running tally couldn't survive the prompt). The tally rides `FlipCoinsUntilLossContinuation` instead and is published once, when the run ends. Unlike `FlipCoins`, where the whole batch is one flip event, each coin here is its own flip — so a "the first time you flip one or more coins each turn" replacement (Edgar, King of Figaro) covers only the first coin. Bounded by `GameLimits.MAX_COIN_FLIPS_PER_EFFECT` as a backstop against a forced-win static plus an always-continue automated answer. **Fiery Gambit** composes `FlipCoinsUntilLoss("fieryGambitWins")` with three cumulative `Gate.WhenCondition(Compare(VariableReference("fieryGambitWins"), GTE, Fixed(n)))` tiers.
 - `Effects.SkipNextDrawStep(target = Controller)` (`SkipNextDrawStepEffect`) — target skips their next draw step. Adds a one-shot `SkipDrawStepComponent` marker consumed by `DrawPhaseManager.performDrawStep` (Elfhame Sanctuary's "you skip your draw step this turn").
+- `Effects.SkipStepOrPhaseThisTurn(part, target)` (`SkipStepOrPhaseThisTurnEffect`, `part` = `TurnPart.DRAW_STEP` |
+  `MAIN_PHASE` | `COMBAT_PHASE`) — the target skips **every** instance of that part of the turn for the rest of
+  this turn. The **duration** is what separates it from the one-shot `SkipNextDrawStep` / `SkipCombatPhases`
+  markers above, which are consumed by the first occurrence: this one stands until end-of-turn cleanup drops
+  its `SkippedTurnPartsComponent`, so a second main phase or an additional combat phase created later in the
+  turn is skipped too. `TurnPart` is the granularity printed cards use — one value covers both main phases
+  (CR 505.1: the precombat and postcombat main phases are individually and collectively "the main phase") and
+  one covers all five combat steps. The skip is read in `TurnManager.advanceStepFromEndedStep` *before* the
+  step's `StepChangedEvent` is built, which is what makes it faithful to CR 500.11 / 614.10 — the step is
+  proceeded past as though it didn't exist, so no player receives priority in it and no "at the beginning of
+  ..." ability triggers for it (that event is what `PassPriorityHandler` feeds to `detectPhaseStepTriggers`).
+  Skipping the postcombat main phase still runs the deferred end-of-combat bookkeeping that phase owns, or
+  creatures would stay in combat for the rest of the turn, and the additional-phase queue
+  (`AdditionalPhasesComponent`, drained on a separate path) consults the same marker — so an Aggravated
+  Assault combat phase created later in the turn is discarded rather than sailing through while the natural
+  one is skipped. Per CR 614.10 a step already under way can no longer be skipped. Used by **Fatespinner**, whose upkeep trigger routes a three-option `ChooseAction` to
+  `Player.TriggeringPlayer` and applies the chosen part to that same player.
 - `Effects.HijackNextTurn(target)` / `Effects.HijackNextCombatPhase(target)` (`HijackNextTurnEffect(target, scope)`, `scope` = `HijackScope.NextTurn` | `NextCombatPhase`) — Mindslaver-style: you make all decisions for the target player during their next whole turn, or during their next combat phase only. Moves *input authority* only (resource/permanent/spell ownership stays with the affected player); reuses `PlayerTurnHijackedComponent` + `GameState.actorFor`, so hand visibility and legal-action routing follow automatically. A scheduled hijack waits through skipped turns/combat phases and engages on the next one the player actually takes. Turn scope engages at turn start and clears at end-of-turn cleanup (**The Dominion Bracelet**); combat scope engages at beginning of combat and clears when that one combat phase ends — extra combat phases are not controlled (**Secret of Bloodbending**, whose optional waterbend upgrades combat→turn via `ConditionalEffect(Conditions.WaterbendWasPaid, HijackNextTurn, elseEffect = HijackNextCombatPhase)`).
 - `GrantCantBeBlockedByChosenColorEffect(target, duration)` — unblockable except by chosen color.
 - `Effects.GrantCantBeBlockedExceptBy(target, blockerFilter, duration = EndOfTurn)` (`GrantCantBeBlockedExceptByEffect`) —
