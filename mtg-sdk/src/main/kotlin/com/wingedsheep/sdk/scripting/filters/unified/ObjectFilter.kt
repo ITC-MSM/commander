@@ -659,9 +659,28 @@ data class GameObjectFilter(
         cardPredicates = cardPredicates + CardPredicate.SharesCreatureTypeWith(entity)
     )
 
+    /**
+     * Must share a **card type** with the referenced entity (Confusion in the Ranks: "target
+     * permanent another player controls that shares a card type with it"). The card-type sibling
+     * of [sharingCreatureTypeWith] — see [CardPredicate.SharesCardTypeWith] for why the two axes
+     * stay apart.
+     */
+    fun sharingCardTypeWith(entity: EntityReference) = copy(
+        cardPredicates = cardPredicates + CardPredicate.SharesCardTypeWith(entity)
+    )
+
     /** Must share a color with the referenced entity */
     fun sharingColorWith(entity: EntityReference) = copy(
         cardPredicates = cardPredicates + CardPredicate.SharesColorWith(entity)
+    )
+
+    /**
+     * Must have the same name as the referenced entity (Extraplanar Lens: "a land with the same
+     * name as the exiled card"). The entity-referencing counterpart of
+     * [sharingNameWithPermanentYouControl].
+     */
+    fun sharingNameWith(entity: EntityReference) = copy(
+        cardPredicates = cardPredicates + CardPredicate.SharesNameWith(entity)
     )
 
     /** Must have the same mana value as the referenced entity */

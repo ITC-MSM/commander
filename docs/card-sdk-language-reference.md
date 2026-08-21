@@ -3486,11 +3486,31 @@ Every `TargetRequirement` carries count semantics (defaults shown):
   object/player it is (the controller chooses *which* opponent in multiplayer per CR 601.6a/602.3a, and
   that pick follows the controller's own choices per CR 601.6b/602.3b). Orthogonal to legality: target-finding and
   validation ignore `chooser` (always relative to the controller); only the announcement layer reads it
-  to route the selection decision. Honored for **activated abilities** today; list the opponent-chosen
-  requirement after the controller-chosen ones. `Targets.AnyChosenByOpponent` is the ready-made
-  "any target of an opponent's choice". `CardLinter` (§21) fails any card that puts a
-  `TargetChooser.Opponent` target outside an activated ability — a spell or triggered ability would
-  silently let the *controller* choose it instead.
+  to route the selection decision. `TargetChooser.Opponent` is honored for **activated abilities**; list
+  the opponent-chosen requirement after the controller-chosen ones. `Targets.AnyChosenByOpponent` is the
+  ready-made "any target of an opponent's choice".
+
+  Two further cases are honored for **triggered abilities**, for a trigger whose printed text hands the
+  choice to somebody other than the ability's controller. They are two cases rather than one because a
+  trigger names its player in two different ways — exactly as `EffectTarget` splits `TriggeringEntity`
+  from `ControllerOfTriggeringEntity`:
+  - `TargetChooser.TriggeringPlayer` — "**that player** … of their choice" (Quicksilver Fountain:
+    "At the beginning of each player's upkeep, that player puts a flood counter on target non-Island land
+    they control of their choice"). Resolves the way every other reader of the triggering player does
+    (`triggeringPlayerId ?: triggeringEntityId`), so a step trigger's active player lands here. Pair it
+    with `.controlledByTriggeringPlayer()` on the filter so the decision can't offer a land the chooser
+    doesn't control.
+  - `TargetChooser.ControllerOfTriggeringEntity` — "**its controller** chooses target …" (Confusion in
+    the Ranks). An enters trigger's triggering entity is the *permanent*, so the deciding player is read
+    off it.
+
+  A chooser that resolves to nobody falls back to the controller rather than dropping the trigger: a
+  legal target was already found, so somebody has to pick it. Choosers must agree across a trigger's whole
+  requirement list — no printed card splits one trigger's targets between two deciders.
+
+  `CardLinter` (§21) fails any card that puts a chooser in a context the engine doesn't route:
+  `Opponent` outside an activated ability, `TriggeringPlayer` / `ControllerOfTriggeringEntity` outside a
+  triggered one. In the wrong context the *controller* would silently choose the target instead.
 
 ### Player-target restrictions (`TargetPlayer.restriction` / `TargetOpponent.restriction`)
 
@@ -3672,6 +3692,15 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   `AggregateBattlefield(Player.Each, GameObjectFilter.Creature.sharingCreatureTypeWith(EntityReference.AffectedEntity), excludeSelf = true)`
   for "+X/+X for each OTHER creature that shares a creature type with it" (Alpha Status). In a granted
   context `excludeSelf` excludes the affected (enchanted) creature, not the granting source.
+- `.sharingCardTypeWith(entity)` — `CardPredicate.SharesCardTypeWith(entity)`: shares ≥1 (projected)
+  **card type** with a referenced entity. The card-type sibling of `.sharingCreatureTypeWith(entity)`, one
+  band up the type line — Confusion in the Ranks ("target permanent another player controls that shares a
+  card type with it") with `EntityReference.Triggering`. Both sides read projected types, so an animated
+  artifact land shares "Creature" with an entering creature. **Card types only**: supertypes are sieved
+  out, so two *legendary* permanents don't share a card type by being legendary, and subtypes belong to
+  `.sharingCreatureTypeWith`. A reference that resolves to nothing matches nothing. Evaluated for real in
+  targeting/search/count contexts; inert (false) in static-projection, permissive (true) in
+  cost-calculation.
 - `.sharingColorWith(entity)` — `CardPredicate.SharesColorWith(entity)`: shares ≥1 (projected) color with
   a referenced entity (e.g. `EntityReference.Triggering`). Mirror of `.sharingCreatureTypeWith(entity)`.
   Colorless entities share no color (never match). Used by Spreading Plague ("destroy all other creatures
@@ -3684,6 +3713,15 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   `EntityReference.LinkedExiledCard()`. Both sides read base card data (no layer changes a mana value),
   which is what lets the reference be a card outside the battlefield. Mana value 0 is a real value that
   matches; a reference that resolves to nothing matches nothing.
+- `.sharingNameWith(entity)` — `CardPredicate.SharesNameWith(entity)`: has the **same name** as a
+  referenced entity. The name sibling of `.sharingManaValueWith(entity)` over the same `EntityReference`
+  vocabulary, and the entity-referencing counterpart of `.sharingNameWithPermanentYouControl(filter)`
+  (which searches your battlefield instead of naming one object) — Extraplanar Lens ("a land with the same
+  name as the exiled card") with `EntityReference.LinkedExiledCard()`. Names read from *projected* state
+  with a fall back to base card data, so a renamed permanent (Layer 3, CR 613.1c) compares under its new
+  name while a reference outside the battlefield — an Imprint pile's exiled card, which has no projection
+  entry — compares under its printed one. A reference that resolves to nothing matches nothing (this is
+  what keeps an un-imprinted Extraplanar Lens inert), and a blank name never matches.
 - `.sharingColorWithPermanentYouControl(filter)` — `CardPredicate.SharesColorWithPermanentYouControl`:
   shares ≥1 (projected) color with at least one permanent the evaluating player controls matching
   `filter`. Used by Ringsight ("search your library for a card that shares a color with a legendary
