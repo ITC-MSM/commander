@@ -96,7 +96,7 @@
 - [ ] Goblin Wizard
 - [x] Goblins of the Flarg
 - [x] Inferno
-- [ ] Mana Clash
+- [x] Mana Clash
 - [x] Orc General
 - [x] Sisters of the Flame
 
