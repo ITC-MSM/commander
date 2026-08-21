@@ -414,7 +414,7 @@ val engineSerializersModule = SerializersModule {
         subclass(CommanderZoneChoiceAskedComponent::class)
         subclass(CommanderRegistryComponent::class)
         subclass(VanguardAvatarComponent::class)
-        subclass(ExileAfterResolveComponent::class)
+        subclass(AfterResolveDestinationComponent::class)
         subclass(HasMorphAbilityComponent::class)
         subclass(com.wingedsheep.engine.state.components.identity.HasDisguiseAbilityComponent::class)
         subclass(PlayWithAdditionalCostComponent::class)

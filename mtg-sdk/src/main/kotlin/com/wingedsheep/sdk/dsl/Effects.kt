@@ -82,6 +82,7 @@ import com.wingedsheep.sdk.scripting.effects.ForEachInGroupEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachPlayerEffect
 import com.wingedsheep.sdk.scripting.effects.CopyCardIntoCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.CopyCollectionIntoCollectionEffect
+import com.wingedsheep.sdk.scripting.effects.AfterResolveDestination
 import com.wingedsheep.sdk.scripting.effects.CastFromCollectionWithoutPayingCostEffect
 import com.wingedsheep.sdk.scripting.effects.PlayFromCollectionWithoutPayingCostEffect
 import com.wingedsheep.sdk.scripting.effects.CastAnyNumberFromCollectionWithoutPayingCostEffect
@@ -3398,8 +3399,18 @@ object Effects {
      * so an enclosing [IfYouDo] with [SuccessCriterion.CollectionNonEmpty] can gate the
      * "if you don't, …" branch (Kellan, the Kid).
      */
-    fun CastFromCollectionWithoutPayingCost(from: String, storeCastTo: String? = null): Effect =
-        CastFromCollectionWithoutPayingCostEffect(from = from, storeCastTo = storeCastTo)
+    fun CastFromCollectionWithoutPayingCost(
+        from: String,
+        storeCastTo: String? = null,
+        insteadOfGraveyard: AfterResolveDestination? = null,
+        caster: com.wingedsheep.sdk.scripting.effects.Chooser =
+            com.wingedsheep.sdk.scripting.effects.Chooser.Controller,
+    ): Effect = CastFromCollectionWithoutPayingCostEffect(
+        from = from,
+        storeCastTo = storeCastTo,
+        insteadOfGraveyard = insteadOfGraveyard,
+        caster = caster,
+    )
 
     /**
      * Play the (0..1) card stored under [from] immediately during resolution without paying its
@@ -3418,8 +3429,19 @@ object Effects {
      * [com.wingedsheep.sdk.scripting.effects.SuccessCriterion.CollectionNonEmpty] can gate a
      * follow-up ("If you do, …").
      */
-    fun CastFromCollection(from: String, storeCastTo: String? = null): Effect =
-        CastFromCollectionWithoutPayingCostEffect(from = from, payManaCost = true, storeCastTo = storeCastTo)
+    fun CastFromCollection(
+        from: String,
+        storeCastTo: String? = null,
+        insteadOfGraveyard: AfterResolveDestination? = null,
+        caster: com.wingedsheep.sdk.scripting.effects.Chooser =
+            com.wingedsheep.sdk.scripting.effects.Chooser.Controller,
+    ): Effect = CastFromCollectionWithoutPayingCostEffect(
+        from = from,
+        payManaCost = true,
+        storeCastTo = storeCastTo,
+        insteadOfGraveyard = insteadOfGraveyard,
+        caster = caster,
+    )
 
     /**
      * Suspend an already-exiled [target] with [timeCounters] time counters (CR 702.62) — a
