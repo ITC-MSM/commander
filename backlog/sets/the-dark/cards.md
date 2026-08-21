@@ -65,7 +65,7 @@
 - [x] Banshee
 - [x] Bog Imp
 - [x] Bog Rats
-- [ ] Curse Artifact
+- [x] Curse Artifact
 - [x] Eater of the Dead
 - [ ] Frankenstein's Monster
 - [x] Grave Robbers
