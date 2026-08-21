@@ -97,7 +97,7 @@
 - [x] Goblins of the Flarg
 - [x] Inferno
 - [ ] Mana Clash
-- [ ] Orc General
+- [x] Orc General
 - [x] Sisters of the Flame
 
 ### Green
