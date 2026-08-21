@@ -2,7 +2,7 @@
 
 **Set Size:** 119 cards
 **Release Date:** August 1, 1994
-**Implemented:** 56 / 119
+**Implemented:** 58 / 119
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 19    | 8    |
@@ -94,7 +94,7 @@
 - [ ] Goblin Rock Sled
 - [ ] Goblin Shrine
 - [ ] Goblin Wizard
-- [ ] Goblins of the Flarg
+- [x] Goblins of the Flarg
 - [x] Inferno
 - [ ] Mana Clash
 - [ ] Orc General
@@ -107,7 +107,7 @@
 - [x] Hidden Path
 - [x] Land Leeches
 - [ ] Lurker
-- [ ] Marsh Viper
+- [x] Marsh Viper
 - [x] Niall Silvain
 - [x] People of the Woods
 - [x] Savaen Elves
