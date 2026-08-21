@@ -132,7 +132,7 @@
 - [x] Coal Golem
 - [ ] Dark Sphere
 - [x] Diabolic Machine
-- [ ] Fellwar Stone
+- [x] Fellwar Stone
 - [x] Fountain of Youth
 - [x] Living Armor
 - [ ] Necropolis
