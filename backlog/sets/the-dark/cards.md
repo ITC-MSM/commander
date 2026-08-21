@@ -58,7 +58,7 @@
 - [x] Psychic Allergy
 - [x] Riptide
 - [x] Sunken City
-- [ ] Tangle Kelp
+- [x] Tangle Kelp
 - [x] Water Wurm
 
 ### Black
