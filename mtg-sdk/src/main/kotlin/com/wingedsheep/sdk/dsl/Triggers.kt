@@ -866,17 +866,31 @@ object Triggers {
     /**
      * Whenever one or more cards matching [filter] are put into exile from [fromZones].
      * Batching trigger — fires at most once per event batch regardless of how many cards were
-     * exiled or which of the watched zones each came from, and it is *not* scoped to one player's
-     * zones ("graveyards", plural, and anyone's battlefield permanents).
+     * exiled or which of the watched zones each came from. Unfiltered it is *not* scoped to one
+     * player's zones ("graveyards", plural, and anyone's battlefield permanents); give [filter] a
+     * controller predicate to narrow it ("creatures **you control** and/or creature cards in
+     * **your** graveyard" — Kaya, Spirits' Justice).
+     *
+     * The matching objects reach the payoff as the ability's captured collection
+     * ([com.wingedsheep.sdk.scripting.effects.IterationSpace.TRIGGER_CAPTURED_COLLECTION]), which is
+     * what "from among them" refers to.
+     *
+     * Pass [includeTokens] for a wording whose battlefield noun is *permanents* rather than *cards*
+     * — see [CardsPutIntoExileEvent.includeTokens].
      *
      * Pair with `triggerRestriction = Conditions.IsYourTurn` for the common "during your turn"
      * wording (Ketramose, the New Dawn).
      */
     fun CardsPutIntoExile(
         fromZones: Set<Zone> = setOf(Zone.GRAVEYARD, Zone.BATTLEFIELD),
-        filter: GameObjectFilter = GameObjectFilter.Any
+        filter: GameObjectFilter = GameObjectFilter.Any,
+        includeTokens: Boolean = false
     ): TriggerSpec = TriggerSpec(
-        event = CardsPutIntoExileEvent(fromZones = fromZones, filter = filter),
+        event = CardsPutIntoExileEvent(
+            fromZones = fromZones,
+            filter = filter,
+            includeTokens = includeTokens
+        ),
         binding = TriggerBinding.ANY
     )
 

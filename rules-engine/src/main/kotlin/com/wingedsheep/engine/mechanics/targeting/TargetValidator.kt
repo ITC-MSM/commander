@@ -260,6 +260,21 @@ class TargetValidator {
                     return "Targets must have different names"
                 }
             }
+
+            // "For each other player, ... up to one target creature that player controls" — no two
+            // chosen targets for this requirement may share a controller (Kaya, Spirits' Justice).
+            // CR 601.2c. Read from projected state so a control-change effect is respected.
+            if (requirement is TargetObject && requirement.differentControllers && targetsForReq.size > 1) {
+                val controllers = targetsForReq.map { target ->
+                    (target as? ChosenTarget.Permanent)?.entityId?.let { id ->
+                        state.projectedState.getController(id)
+                            ?: state.getEntity(id)?.get<ControllerComponent>()?.playerId
+                    }
+                }
+                if (controllers.size != controllers.toSet().size) {
+                    return "Targets must be controlled by different players"
+                }
+            }
         }
 
         return null

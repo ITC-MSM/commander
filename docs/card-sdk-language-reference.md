@@ -3108,6 +3108,7 @@ with cards):
 
 | Builder verb | Serializes to |
 |---|---|
+| `triggerCaptured` (a slot, not a step — the collection the engine already seeded for a batch trigger; see below) | — |
 | `gather(source)` / `gather(filter, player?, …)` (battlefield shorthand) | `GatherCardsEffect` |
 | `gatherUntilMatch(filter, …)` → `(match, revealed)` | `GatherUntilMatchEffect` |
 | `chooseExactly(n, from)` / `chooseUpTo` / `chooseAnyNumber` / `chooseRandom` / `selectAll` (+ `…Split` variants returning `(selected, remainder)`) | `SelectFromCollectionEffect` |
@@ -3127,6 +3128,30 @@ with cards):
 | `ifNotEmpty(slot, filter?, minSize?) { … } orElse { … }` | `ConditionalOnCollectionEffect` |
 | `whenMatches(slot, filter)` (returns a `Condition`, adds no step) | `CollectionContainsMatch` |
 | `run(effect)` | any other `Effect`, verbatim |
+
+**`triggerCaptured`** — the collection a **batch trigger** already seeded for this resolution: the
+objects that caused it to fire, i.e. a printed "them" / "those creatures" / "that many". It is
+produced by the engine, not by a step in this pipeline, so it takes no slot index and is read
+directly — `filter(triggerCaptured, GameObjectFilter.Creature)`. (The same collection an untargeted
+batch payoff reaches as `IterationSpace.TRIGGER_CAPTURED_COLLECTION`; this is the typed handle for
+it.) Empty when the trigger captured nothing, which every downstream step treats as "no cards".
+
+```kotlin
+// Kaya, Spirits' Justice: "…are put into exile, you may choose a creature card from among them.
+// Until end of turn, target token you control becomes a copy of it, except it has flying."
+effect = Effects.Pipeline {
+    val creatureCards = filter(triggerCaptured, GameObjectFilter.Creature.nontoken())
+    val stillExiled = filter(creatureCards, CollectionFilter.InZone(Zone.EXILE))
+    val chosen = chooseUpTo(1, from = stillExiled, prompt = "You may choose a creature card …")
+    run(Effects.EachPermanentBecomesCopyOfTarget(
+        target = EffectTarget.PipelineTarget(chosen.key),
+        affected = EffectTarget.ContextTarget(0),
+        duration = Duration.EndOfTurn,
+        sourceFromAnyZone = true,
+        exceptions = CopyExceptions(addedKeywords = setOf(Keyword.FLYING)),
+    ))
+}
+```
 
 **`chooseOnePerCategory(from, categories)`** — "…chooses a permanent they control of each permanent
 type…". Each *controller* represented in `from` picks one of their own members for every filter in
@@ -3433,6 +3458,7 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
 - `Targets.Planeswalker` — any planeswalker.
 - `Targets.Permanent` — any permanent.
 - `Targets.PermanentYouControl` / `PermanentOpponentControls` — controller-restricted permanent ("target permanent you control gains protection …" — Razor Barrier).
+- `Targets.TokenYouControl` — any **token** permanent you control, not just a creature token: "target token you control becomes a copy of it" (Kaya, Spirits' Justice) is deliberately wide enough to turn a Clue or a Treasure into a creature.
 - `Targets.PermanentOrPlayer` — "target permanent or player" (Powerful Broker). The general member of
   the "object or player" family: `TargetPermanentOrPlayer(permanentFilter = …)` narrows the permanent
   half ("target artifact or player") while each half keeps the legality checks of its single-kind
@@ -3609,6 +3635,19 @@ Every `TargetRequirement` carries count semantics (defaults shown):
   interactive target decision, `DecisionValidators` (via `TargetRequirementInfo.differentNames`),
   grouping by projected name (battlefield) / base card name (other zones). E.g.
   `TargetObject(count = 6, optional = true, filter = TargetFilter.CreatureInYourGraveyard, differentNames = true)`.
+- `differentControllers = false` — on `TargetObject` / `TargetCreature(...)`; the exact inverse of
+  `sameController`. When `true` and more than one target is chosen, no two may share a **controller**,
+  read from *projected* state so a control-change effect is respected. Enforced cross-target by
+  `TargetValidator` (authoritative) and, on the interactive target decision, `DecisionValidators` (via
+  `TargetRequirementInfo.differentControllers`). This is the **"one per player" distribution** wording,
+  and it is spelled by composing three orthogonal knobs rather than a bespoke requirement type: the
+  scope (`dynamicMaxCount = DynamicAmount.PlayerCount(Player.EachOpponent)` — how many players may be
+  hit), the cap (`differentControllers = true` — at most one each), and the "up to" (`optional = true`).
+  "**For each other player, exile up to one target creature that player controls**" (Kaya, Spirits'
+  Justice) is `TargetCreature(filter = TargetFilter.CreatureOpponentControls, optional = true,
+  dynamicMaxCount = DynamicAmount.PlayerCount(Player.EachOpponent), differentControllers = true,
+  id = "one target creature each other player controls")`. Give it an `id` — the generated description
+  reads "controlled by different players", which is the constraint, not the printed sentence.
 - `chooser = TargetChooser.Controller` — **who selects this requirement's target(s)**. Set to
   `TargetChooser.Opponent` for "**… of an opponent's choice**" wording (Cuombajj Witches). The chosen
   target is still a real target of *your* spell/ability — announced together with your own targets,
@@ -5013,13 +5052,29 @@ in the repo today):
   **during your turn**" wording, add `triggerRestriction = Conditions.IsYourTurn`; for "this
   ability triggers only once each turn", add `oncePerTurn = true`. (Attuned Hunter, Kishla
   Skimmer, Kheru Goldkeeper.)
-- `CardsPutIntoExile(fromZones?, filter?)` — batching trigger; fires once per event batch when one
-  or more matching **cards** are put into exile from any of `fromZones` (default: graveyard and
-  battlefield). Unlike the graveyard batches above it is **not** scoped to one player's zones —
+- `CardsPutIntoExile(fromZones?, filter?, includeTokens?)` — batching trigger; fires once per event
+  batch when one or more matching **cards** are put into exile from any of `fromZones` (default:
+  graveyard and battlefield). Left unfiltered it is **not** scoped to one player's zones —
   "graveyards and/or the battlefield" means any graveyard and anyone's permanents, so every
-  controller of the trigger sees the same batch. Tokens never satisfy it (CR 111.6). Add
+  controller of the trigger sees the same batch (Ketramose, the New Dawn). Add
   `triggerRestriction = Conditions.IsYourTurn` for the "during your turn" wording.
-  (Ketramose, the New Dawn.)
+  - **Ownership scoping.** `filter`'s controller predicate is honored, and it reads *per zone*: a
+    battlefield exit is tested against the permanent's **last known controller** (CR 603.10 — it is
+    already in exile by detection time), every other zone against the card's **owner**, because a
+    card in a graveyard/hand/library has no controller. One filter therefore spells both arms of
+    "creatures **you control** and/or creature cards in **your** graveyard" —
+    `GameObjectFilter.Creature.youControl()` (Kaya, Spirits' Justice).
+  - **`includeTokens = true`** makes a token satisfy it. The axis is the printed noun, not a
+    convenience: "one or more **cards** are put into exile" excludes tokens outright (CR 111.6),
+    while "one or more **creatures you control** … are put into exile" counts a token creature like
+    any other. CR 111.7 ("applicable triggered abilities will trigger before the token ceases to
+    exist") is what makes the token-inclusive reading detectable at all — and also why the token is
+    gone from the captured collection by the time the ability resolves.
+  - **The batch is captured.** The matching objects reach the payoff as
+    `IterationSpace.TRIGGER_CAPTURED_COLLECTION` (the `triggerCaptured` slot in an
+    `Effects.Pipeline { }`), which is what a printed "from among **them**" refers to. Narrow it with
+    `CollectionFilter.InZone(Zone.EXILE)` when the payoff must still find the card *in exile* — a
+    card pulled back out of exile before the ability resolves is no longer choosable (Kaya's ruling).
 
 ### Discard
 
@@ -9548,6 +9603,18 @@ Numbers computed at resolution time.
 - `Min(a, b)` — minimum.
 - `Max(a, b)` — maximum.
 - `Absolute(a)` — `|a|`.
+
+### Player counting
+
+- `PlayerCount(scope = Player.EachOpponent)` — how many players the `scope` names, counting only
+  players still in the game (a player who has lost drops out, so a shrinking pod reports the live
+  number). `Player.EachOpponent` is "for each opponent" and, outside team play, also "for each other
+  player"; `Player.Each` counts the whole table including you. The unconditional sibling of
+  `CountPlayersWith` — reach for that one when the count is qualified ("each opponent **who has one
+  or fewer cards in hand**"). Its other home is `TargetObject.dynamicMaxCount`, where paired with
+  `optional = true` and `differentControllers = true` it spells "for each other player, exile up to
+  one target creature that player controls" (Kaya, Spirits' Justice) — see `differentControllers`
+  in the targeting section.
 
 ### Battlefield aggregation
 

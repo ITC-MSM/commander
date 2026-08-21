@@ -431,6 +431,11 @@ class DynamicAmountEvaluator(
                 else evaluate(state, amount.ifFalse, context, projectedState)
             }
 
+            // "For each opponent" / "for each other player" — how many players the scope names.
+            // resolveUnifiedPlayerIds already yields only players still in the game, so a pod that
+            // has lost a player reports the live number (CR 800.4a).
+            is DynamicAmount.PlayerCount -> resolveUnifiedPlayerIds(state, amount.scope, context).size
+
             is DynamicAmount.CountPlayersWith -> {
                 val eval = conditionEvaluator ?: ConditionEvaluator()
                 val playerIds = resolveUnifiedPlayerIds(state, amount.scope, context)

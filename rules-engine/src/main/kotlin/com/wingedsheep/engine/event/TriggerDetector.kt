@@ -51,6 +51,7 @@ import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
 import com.wingedsheep.sdk.scripting.*
 import com.wingedsheep.sdk.scripting.predicates.evaluateWith
 import com.wingedsheep.sdk.scripting.events.DamageType
@@ -2120,11 +2121,21 @@ class TriggerDetector(
                 val trigger = ability.trigger
                 if (trigger !is EventPattern.CardsPutIntoExileEvent) continue
 
-                val hasMatch = exiled.any { event ->
+                // The objects that caused this firing. They are handed to the payoff as the
+                // ability's captured collection so "choose a creature card from among them" has a
+                // referent (Kaya, Spirits' Justice); an unfiltered Ketramose-style trigger simply
+                // ignores it.
+                val matchingIds = exiled.filter { event ->
                     event.fromZone in trigger.fromZones &&
-                        cardMatchesGraveyardBatchFilter(state, event.entityId, trigger.filter)
-                }
-                if (!hasMatch) continue
+                        exileBatchOwnershipMatches(event, trigger.filter, entry.controllerId) &&
+                        cardMatchesGraveyardBatchFilter(
+                            state = state,
+                            entityId = event.entityId,
+                            filter = trigger.filter,
+                            includeTokens = trigger.includeTokens
+                        )
+                }.map { it.entityId }
+                if (matchingIds.isEmpty()) continue
 
                 triggers.add(
                     PendingTrigger(
@@ -2132,10 +2143,38 @@ class TriggerDetector(
                         sourceId = entry.entityId,
                         sourceName = entry.cardComponent.name,
                         controllerId = entry.controllerId,
-                        triggerContext = TriggerContext()
+                        triggerContext = TriggerContext(capturedEntityIds = matchingIds)
                     )
                 )
             }
+        }
+    }
+
+    /**
+     * Whether the object this [event] moved into exile satisfies [filter]'s controller predicate for
+     * a trigger controlled by [observerId].
+     *
+     * The object is already in exile when this runs, so control is read from last-known information
+     * (CR 603.10) for a battlefield exit and from ownership for every other zone — a card in a
+     * graveyard, hand or library has no controller, and "creature cards in **your** graveyard" is a
+     * statement about whose graveyard it is. Predicates the exile batch can't meaningfully answer
+     * (the target-relative ones, which have no target at detection time) fall through as matching,
+     * the same way [cardMatchesGraveyardBatchFilter] treats card predicates it doesn't model.
+     */
+    private fun exileBatchOwnershipMatches(
+        event: ZoneChangeEvent,
+        filter: GameObjectFilter,
+        observerId: EntityId
+    ): Boolean {
+        val holderId = if (event.fromZone == Zone.BATTLEFIELD) {
+            event.lastKnown?.controllerId ?: event.ownerId
+        } else {
+            event.ownerId
+        }
+        return when (filter.controllerPredicate) {
+            ControllerPredicate.ControlledByYou -> holderId == observerId
+            ControllerPredicate.ControlledByOpponent -> holderId != observerId
+            else -> true
         }
     }
 
@@ -2147,14 +2186,17 @@ class TriggerDetector(
     private fun cardMatchesGraveyardBatchFilter(
         state: GameState,
         entityId: EntityId,
-        filter: GameObjectFilter
+        filter: GameObjectFilter,
+        includeTokens: Boolean = false
     ): Boolean {
         // Tokens aren't cards (CR 111.6), so a token put into a graveyard never satisfies a
         // "one or more [permanent] cards are put into your graveyard" trigger — even though it
         // momentarily occupies the graveyard zone before CR 704.5s/111.7 sweeps it away (which
-        // is also why it can still be present here at trigger-detection time).
+        // is also why it can still be present here at trigger-detection time). [includeTokens]
+        // is the opposite reading, for a trigger whose printed noun is permanents rather than
+        // cards ("one or more creatures you control … are put into exile").
         val entity = state.getEntity(entityId) ?: return false
-        if (entity.has<TokenComponent>()) return false
+        if (!includeTokens && entity.has<TokenComponent>()) return false
         if (filter == GameObjectFilter.Any) return true
         val cardComponent = entity.get<CardComponent>() ?: return false
         return filter.cardPredicates.all { predicate ->

@@ -989,6 +989,27 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     /**
+     * How many players are in [scope] — "for each opponent", "for each other player", "the number
+     * of players in the game". Counts only players still in the game (CR 800.4a: a player who
+     * leaves is no longer a player), so a pod that shrinks mid-game reports the live number.
+     *
+     * The unconditional sibling of [CountPlayersWith]; reach for that one when the count is
+     * qualified ("each opponent **who has one or fewer cards in hand**"). Its main use is as a
+     * [com.wingedsheep.sdk.scripting.targets.TargetObject.dynamicMaxCount]: paired with
+     * `optional = true` and `differentControllers = true` it spells "for each other player, ... up
+     * to one target creature that player controls" (Kaya, Spirits' Justice), where the scope names
+     * how many players may be hit and the other two flags cap it at one each.
+     *
+     * [Player.EachOpponent] (the default) is the "each other player" reading in every free-for-all
+     * game; [Player.Each] counts the whole table including you.
+     */
+    @SerialName("PlayerCount")
+    @Serializable
+    data class PlayerCount(val scope: Player = Player.EachOpponent) : DynamicAmount {
+        override val description: String = "the number of ${scope.description}"
+    }
+
+    /**
      * Count of players in [scope] for whom [condition] evaluates to true.
      *
      * The condition is evaluated with the context's controllerId rebound to each candidate
