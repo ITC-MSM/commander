@@ -3668,7 +3668,10 @@ Every `TargetRequirement` carries count semantics (defaults shown):
   validation ignore `chooser` (always relative to the controller); only the announcement layer reads it
   to route the selection decision. `TargetChooser.Opponent` is honored for **activated abilities**; list
   the opponent-chosen requirement after the controller-chosen ones. `Targets.AnyChosenByOpponent` is the
-  ready-made "any target of an opponent's choice".
+  ready-made "any target of an opponent's choice"; `TargetObject` (and so the `TargetCreature` factory)
+  carries `chooser` too, for opponent-chosen *permanent* targets — Preacher's "gain control of target
+  creature of an opponent's choice they control" is `TargetCreature(filter =
+  TargetFilter.CreatureOpponentControls, chooser = TargetChooser.Opponent)`.
 
   Two further cases are honored for **triggered abilities**, for a trigger whose printed text hands the
   choice to somebody other than the ability's controller. They are two cases rather than one because a

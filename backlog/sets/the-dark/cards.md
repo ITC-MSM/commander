@@ -34,7 +34,7 @@
 - [x] Miracle Worker
 - [x] Morale
 - [x] Pikemen
-- [ ] Preacher
+- [x] Preacher
 - [x] Squire
 - [x] Tivadar's Crusade
 - [x] Witch Hunter
