@@ -116,7 +116,7 @@
 - [x] Scavenger Folk
 - [ ] Spitting Slug
 - [x] Tracker
-- [ ] Venom
+- [x] Venom
 - [ ] Whippoorwill
 - [x] Wormwood Treefolk
 
