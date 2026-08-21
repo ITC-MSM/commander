@@ -1350,8 +1350,10 @@ The report is two documents at once, and the second one is about `mtg-sdk`:
   `Reminders.gloss` takes the noun as a parameter for exactly that reason.
 - **~40 keyword abilities have no `Keyword` enum constant at all** — Exalted, Infect, Echo,
   Soulshift, Bloodthirst, Scavenge, Backup, Megamorph, Unleash, Extort, Evolve, Myriad, Unearth,
-  Mentor, Afterlife, Enlist, Champion, Eternalize, Skulk, Melee, Battle cry, Reinforce, Devoid,
+  Mentor, Afterlife, Enlist, Champion, Eternalize, Skulk, Melee, Battle cry, Reinforce,
   Dethrone, Phasing, Cumulative upkeep, … — ranked by cards blocked in the report's bottom table.
+  Devoid was one of them until `Keyword.DEVOID` landed; it is now a plain `simple(…)` row in
+  `Keywords.SIMPLE_KEYWORDS`, which is what closing any of these costs.
 
 ## The prevention band
 
