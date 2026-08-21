@@ -35,6 +35,7 @@ import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.CopyOfComponent
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.handlers.effects.FaceDownTurnUp
+import com.wingedsheep.engine.handlers.effects.library.ChooseCreatureTypePipelineExecutor
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownModeComponent
 import com.wingedsheep.engine.state.components.identity.HasMorphAbilityComponent
@@ -2854,7 +2855,15 @@ class StackResolver(
             lastKnownSourceSnapshot = abilityComponent.lastKnownSourceSnapshot,
             lastKnownSourceAttachments = abilityComponent.lastKnownSourceAttachments,
             damageDistribution = abilityComponent.damageDistribution,
-            pipeline = PipelineState(namedTargets = EffectContext.buildNamedTargets(activatedReqs, alignedActivatedTargets))
+            pipeline = PipelineState(
+                namedTargets = EffectContext.buildNamedTargets(activatedReqs, alignedActivatedTargets),
+                // A "Reveal the creature type you chose" cost hands its type to the effect under the
+                // same key a mid-pipeline ChooseOption write uses, so CardPredicate
+                // .HasSubtypeFromVariable reads it without knowing where it came from.
+                chosenValues = abilityComponent.revealedNotedCreatureType
+                    ?.let { mapOf(ChooseCreatureTypePipelineExecutor.CHOSEN_CREATURE_TYPE_KEY to it) }
+                    ?: emptyMap()
+            )
         )
 
         val effectResult = effectHandler.execute(state, abilityComponent.effect, context)

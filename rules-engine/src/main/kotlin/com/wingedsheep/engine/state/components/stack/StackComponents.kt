@@ -339,6 +339,16 @@ data class ActivatedAbilityOnStackComponent(
      * re-attach "an Equipment that was attached to it" (Zack Fair).
      */
     val lastKnownSourceAttachments: List<EntityId> = emptyList(),
+    /**
+     * The creature type published by a [com.wingedsheep.sdk.scripting.costs.CostAtom.RevealNotedCreatureType]
+     * cost, captured at activation because the same cost usually sacrifices the source and takes
+     * the note with it (CR 113.7a). Surfaced to the effect as
+     * `EffectContext.chosenValues["chosenCreatureType"]`, the key
+     * [com.wingedsheep.sdk.scripting.predicates.CardPredicate.HasSubtypeFromVariable] reads — so
+     * "if target attacking creature token is the chosen type" is an ordinary filter test.
+     * Null for every ability without that cost. Mirrors [lastKnownSourceCounters].
+     */
+    val revealedNotedCreatureType: String? = null,
     /** Optional human-readable description from `ActivatedAbility.descriptionOverride`,
      *  used when displaying the ability on the stack instead of the auto-generated effect text. */
     val descriptionOverride: String? = null,

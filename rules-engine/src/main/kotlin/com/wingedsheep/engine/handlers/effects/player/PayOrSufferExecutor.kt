@@ -87,6 +87,8 @@ class PayOrSufferExecutor(
                 is CostAtom.ReturnToHand -> EffectResult.error(state, "ReturnToHand payment for PayOrSuffer not yet implemented")
                 is CostAtom.RevealFromHand -> EffectResult.error(state, "RevealCard payment for PayOrSuffer not yet implemented")
                 is CostAtom.PutCountersOnSelf -> EffectResult.error(state, "PutCountersOnSelf is an activated-ability cost, not a PayOrSuffer cost")
+                is CostAtom.RevealNotedCreatureType ->
+                    EffectResult.error(state, "RevealNotedCreatureType is an activated-ability cost, not a PayOrSuffer cost")
                 is CostAtom.Mill -> EffectResult.error(state, "Mill payment for PayOrSuffer not yet implemented")
                 is CostAtom.ExileTopOfLibrary ->
                     EffectResult.error(state, "ExileTopOfLibrary is an activated-ability cost, not a PayOrSuffer cost")
@@ -729,6 +731,7 @@ class PayOrSufferExecutor(
                 is CostAtom.ReturnToHand -> false
                 is CostAtom.RevealFromHand -> false
                 is CostAtom.PutCountersOnSelf -> false
+                is CostAtom.RevealNotedCreatureType -> false
                 is CostAtom.VariablePermanents -> false
                 // No printed PayOrSuffer cost mills, and the execute branch above has no handler,
                 // so report it unpayable rather than offering a prompt that would error out.

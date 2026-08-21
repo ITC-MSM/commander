@@ -1959,6 +1959,7 @@ class CastSpellHandler(
                     // spell additional costs (canPayAdditionalCost already reports both unpayable).
                     is CostAtom.Mana, is CostAtom.RevealFromHand,
                     is CostAtom.PutCountersOnSelf,
+                    is CostAtom.RevealNotedCreatureType,
                     is CostAtom.ExileFromGraveyardForTotal,
                     is CostAtom.ExileTopOfLibrary,
                     is CostAtom.Mill -> {}
@@ -2803,6 +2804,7 @@ class CastSpellHandler(
                         // unpayable), so this branch is unreachable for the same reason Mill's is.
                         is CostAtom.PayLife, is CostAtom.Mana, is CostAtom.RevealFromHand,
                         is CostAtom.PutCountersOnSelf,
+                        is CostAtom.RevealNotedCreatureType,
                         is CostAtom.ExileFromGraveyardForTotal,
                         is CostAtom.ExileTopOfLibrary,
                         is CostAtom.Mill -> {}

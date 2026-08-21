@@ -1268,17 +1268,43 @@ data class ChooseOptionEffect(
  * The source permanent's `NotedCreatureTypesComponent` is permanent-scoped state, so it disappears
  * with the permanent when it leaves play — no explicit cleanup needed.
  *
+ * **Secret notes.** With [secret] set the note is hidden information: only the player who made it
+ * may see it, and only they may later reveal it with
+ * [com.wingedsheep.sdk.scripting.costs.CostAtom.RevealNotedCreatureType]. This is the
+ * hidden-agenda shape (CR 702.106a-b — "secretly choose", noted on a piece of paper kept with the
+ * object) applied to a permanent: A Killer Among Us's "Then secretly choose Human, Merfolk, or
+ * Goblin". The secrecy rides the *note*, not the permanent, so a change of control does not hand
+ * the new controller the answer — and, per that card's ruling, does not let them reveal it either.
+ *
  * @property storeAs Key under which the chosen type is stored in `EffectContext.chosenValues`.
  *   Default `"notedType"`.
  * @property prompt Custom prompt text. Defaults to `"Note a creature type"`.
+ * @property options The creature types offered. Empty (the default) offers every creature type;
+ *   a non-empty list narrows the choice to exactly those ("secretly choose Human, Merfolk, or
+ *   Goblin"). Already-noted types are excluded from whichever set this names.
+ * @property secret Hide the note from every player but the one who made it, and restrict the
+ *   reveal cost to that player. Default false — an ordinary note is public information.
  */
 @SerialName("NoteCreatureType")
 @Serializable
 data class NoteCreatureTypeEffect(
     val storeAs: String = "notedType",
-    val prompt: String? = null
+    val prompt: String? = null,
+    val options: List<String> = emptyList(),
+    val secret: Boolean = false
 ) : Effect {
-    override val description: String = "Note a creature type"
+    override val description: String = when {
+        options.isEmpty() && !secret -> "Note a creature type"
+        options.isEmpty() -> "Secretly choose a creature type"
+        else -> {
+            val verb = if (secret) "Secretly choose " else "Note "
+            verb + when (options.size) {
+                1 -> options.single()
+                2 -> "${options[0]} or ${options[1]}"
+                else -> options.dropLast(1).joinToString(", ") + ", or " + options.last()
+            }
+        }
+    }
 }
 
 /**

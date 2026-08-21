@@ -249,6 +249,14 @@ object Costs {
      */
     val TapAttachedCreature: AbilityCost = AbilityCost.TapAttachedCreature
 
+    /**
+     * "Reveal the creature type you chose" — publish the secret creature type this permanent's
+     * controller noted with `Effects.SecretlyChooseCreatureType(...)`, and hand it to the ability's
+     * effect as `chosenValues["chosenCreatureType"]` (A Killer Among Us). Only the player who made
+     * the note can pay it; see [CostAtom.RevealNotedCreatureType].
+     */
+    val RevealNotedCreatureType: AbilityCost = AbilityCost.Atom(CostAtom.RevealNotedCreatureType)
+
     // =========================================================================
     // Exile Costs
     // =========================================================================

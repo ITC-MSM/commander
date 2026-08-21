@@ -1211,7 +1211,8 @@ class ClientStateTransformer(
         }
 
         // Build active effects from floating effects
-        val activeEffects = buildCardActiveEffects(state, entityId, projectedState)
+        val activeEffects = buildCardActiveEffects(state, entityId, projectedState) +
+            notedCreatureTypeBadges(container, viewingPlayerId, isSpectator)
 
         // Check if this card is playable from exile (impulse draw like Mind's Desire,
         // or cast-from-linked-exile like Rona / Dawnhand Dissident).
@@ -2527,6 +2528,39 @@ class ClientStateTransformer(
         }
 
         return effects
+    }
+
+    /**
+     * Badge the creature types this permanent has noted — Long List of the Ents' running list, and
+     * A Killer Among Us's single secret choice.
+     *
+     * A *secret* note (`NotedCreatureTypesComponent.secretTo`) is hidden information: only the
+     * player who made it gets the badge, so an opponent's view of the permanent looks exactly the
+     * same whichever type was chosen. A spectator sees neither, since they'd otherwise leak the
+     * answer to anyone watching. Paying the reveal cost clears `secretTo`, and the badge becomes
+     * public in the same update.
+     *
+     * Without this the chooser has no way to remember what they picked — the whole point of the
+     * note is that the *engine* keeps track of the piece of paper (CR 702.106b) for them.
+     */
+    private fun notedCreatureTypeBadges(
+        container: com.wingedsheep.engine.state.ComponentContainer,
+        viewingPlayerId: EntityId,
+        isSpectator: Boolean
+    ): List<ClientCardEffect> {
+        val noted = container.get<NotedCreatureTypesComponent>() ?: return emptyList()
+        if (noted.types.isEmpty()) return emptyList()
+        val secret = noted.secretTo != null
+        if (secret && (isSpectator || !noted.isVisibleTo(viewingPlayerId))) return emptyList()
+        return listOf(
+            ClientCardEffect(
+                effectId = "noted_creature_types_${noted.types.sorted().joinToString("_")}",
+                name = if (secret) "Chosen (secret)" else "Noted",
+                description = noted.types.sorted().joinToString(", ") +
+                    if (secret) " — only you can see this" else "",
+                icon = "creature-type"
+            )
+        )
     }
 
     /**
