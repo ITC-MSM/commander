@@ -115,7 +115,7 @@
 - [x] Scarwood Hag
 - [x] Scavenger Folk
 - [ ] Spitting Slug
-- [ ] Tracker
+- [x] Tracker
 - [ ] Venom
 - [ ] Whippoorwill
 - [x] Wormwood Treefolk
