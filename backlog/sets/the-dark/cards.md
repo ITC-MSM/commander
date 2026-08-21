@@ -19,7 +19,7 @@
 ---
 
 ### White
-- [ ] Angry Mob
+- [x] Angry Mob
 - [ ] Blood of the Martyr
 - [ ] Brainwash
 - [ ] Cleansing
