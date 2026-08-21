@@ -51,8 +51,13 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
             val container = state.getEntity(entityId) ?: continue
             val cardComponent = container.get<CardComponent>() ?: continue
 
-            // Face-down creatures have no abilities (Rule 708.2)
-            if (container.has<FaceDownComponent>()) continue
+            // A face-down permanent has no characteristics beyond those the rules that made it face
+            // down list (CR 708.2), so none of its *card's* abilities are offered. Abilities another
+            // effect grants it still are — those apply in Layer 6 to the object on the battlefield,
+            // not to the hidden card (Etrata, Deadly Fugitive grants face-down creatures you control
+            // a turn-up ability). Handled below by folding face-down into the same own-vs-granted
+            // split the lost-all-abilities case uses, so this is not an early `continue`.
+            val isFaceDown = container.has<FaceDownComponent>()
 
             // Activated abilities of permanents matching a PreventActivatedAbilities filter
             // (Cursed Totem etc.) can't be activated — applies to both mana and non-mana
@@ -103,12 +108,12 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
             val classLevelComponent = container.get<ClassLevelComponent>()
             val classLevel = classLevelComponent?.currentLevel
 
-            // If entity lost all abilities, suppress its own non-mana abilities
-            val ownNonManaAbilities = if (cardDef == null || projected.hasLostAllAbilities(entityId)) emptyList()
+            // If entity lost all abilities — or is face down — suppress its own non-mana abilities
+            val ownNonManaAbilities = if (cardDef == null || isFaceDown || projected.hasLostAllAbilities(entityId)) emptyList()
             else cardDef.script.effectiveActivatedAbilities(classLevel).filter { !it.isManaAbility && it.activateFromZone == Zone.BATTLEFIELD }
 
             // Generate level-up abilities for Class enchantments
-            val levelUpAbilities = if (cardDef != null && classLevelComponent != null && !projected.hasLostAllAbilities(entityId)) {
+            val levelUpAbilities = if (cardDef != null && classLevelComponent != null && !isFaceDown && !projected.hasLostAllAbilities(entityId)) {
                 generateClassLevelUpAbilities(cardDef, classLevelComponent)
             } else emptyList()
 

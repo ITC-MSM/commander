@@ -5762,6 +5762,155 @@
     ]
 }
 
+// Coveted Falcon
+{
+    "name": "Coveted Falcon",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Artifact Creature — Bird",
+    "oracleText": "Flying\nWhenever this creature attacks, gain control of target permanent you own but don't control.\nDisguise {1}{U} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nWhen this creature is turned face up, target opponent gains control of any number of target permanents you control. Draw a card for each one they gained control of this way.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{1}{U}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "GainControl",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target permanent you own but don't control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsPermanent"
+                            ],
+                            "controllerPredicate": {
+                                "type": "ControllerAnd",
+                                "predicates": [
+                                    "OwnedByYou",
+                                    {
+                                        "type": "ControllerNot",
+                                        "predicate": "ControlledByYou"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "id": "target permanent you own but don't control"
+                },
+                "descriptionOverride": "Whenever this creature attacks, gain control of target permanent you own but don't control."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "TurnFaceUpEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "ChosenTargets",
+                            "storeAs": "falconGifts"
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Collection",
+                                "collection": "falconGifts"
+                            },
+                            "body": {
+                                "type": "Gated",
+                                "gate": {
+                                    "type": "Gate.DoAction",
+                                    "action": {
+                                        "type": "GiveControlToTargetPlayer",
+                                        "permanent": "Self",
+                                        "newController": {
+                                            "type": "BoundVariable",
+                                            "name": "target opponent"
+                                        }
+                                    },
+                                    "successCriterion": "SuccessCriterion.ControlChanged"
+                                },
+                                "then": {
+                                    "type": "DrawCards",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "additionalTargetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "unlimited": true,
+                        "filter": {
+                            "baseFilter": "permanent ctrl:you"
+                        },
+                        "id": "any number of target permanents you control"
+                    }
+                ],
+                "descriptionOverride": "When this creature is turned face up, target opponent gains control of any number of target permanents you control. Draw a card for each one they gained control of this way."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "rarity": "RARE",
+        "artist": "Madeline Boni",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/c/bc936987-d58b-4e7c-870f-379bcae77727.jpg?1783912913",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "A token's owner is the player who created it."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to. Only a face-down permanent can be turned face up this way; a face-down spell cannot."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Because the permanent is on the battlefield both before and after it's turned face up, turning a permanent face up doesn't cause any enters-the-battlefield abilities to trigger."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "A permanent that turns face up or face down changes characteristics but is otherwise the same permanent. Spells and abilities that were targeting that permanent and Auras and Equipment that were attached to that permanent aren't affected unless the new characteristics of the object change the legality of those targets or attachments."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Crime Novelist
 {
     "name": "Crime Novelist",
@@ -7616,6 +7765,166 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Etrata, Deadly Fugitive
+{
+    "name": "Etrata, Deadly Fugitive",
+    "manaCost": "{1}{U}{B}",
+    "typeLine": "Legendary Creature — Vampire Assassin",
+    "oracleText": "Deathtouch\nFace-down creatures you control have \"{2}{U}{B}: Turn this creature face up. If you can't, exile it, then you may cast the exiled card without paying its mana cost.\"\nWhenever an Assassin you control deals combat damage to an opponent, cloak the top card of that player's library. (To cloak a card, put it onto the battlefield face down as a 2/2 creature with ward {2}. Turn it face up any time for its mana cost if it's a creature card.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "keywords": [
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "RecipientOpponent",
+                    "sourceFilter": "creature Assassin ctrl:you"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "player": "TriggeringPlayer"
+                            },
+                            "storeAs": "etrataCloaked",
+                            "lookAudience": "None"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "etrataCloaked",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "faceDown": "CLOAK"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever an Assassin you control deals combat damage to an opponent, cloak the top card of that player's library."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_2",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{2}{U}{B}"
+                        }
+                    },
+                    "effect": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.DoAction",
+                            "action": {
+                                "type": "TurnFaceUp",
+                                "target": "Self"
+                            },
+                            "successCriterion": "SuccessCriterion.TurnedFaceUp"
+                        },
+                        "then": {
+                            "type": "Composite",
+                            "effects": []
+                        },
+                        "otherwise": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": "Self",
+                                    "storeAs": "gathered0"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "gathered0",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Exile"
+                                    },
+                                    "storeMovedAs": "etrataExiled"
+                                },
+                                {
+                                    "type": "Gated",
+                                    "gate": "Gate.MayDecide",
+                                    "then": {
+                                        "type": "CastFromCollectionWithoutPayingCost",
+                                        "from": "etrataExiled"
+                                    },
+                                    "descriptionOverride": "You may cast the exiled card without paying its mana cost."
+                                }
+                            ]
+                        },
+                        "descriptionOverride": "Turn this creature face up. If you can't, exile it, then you may cast the exiled card without paying its mana cost."
+                    },
+                    "descriptionOverride": "Turn this creature face up. If you can't, exile it, then you may cast the exiled card without paying its mana cost."
+                },
+                "filter": {
+                    "baseFilter": "creature facedown ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "200",
+        "rarity": "MYTHIC",
+        "artist": "Livia Prima",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/4410db5a-62af-43ac-979d-88a7c975f7bd.jpg?1783912850",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "You might be unable to turn a face-down creature face up because it's an instant or sorcery. Alternatively, abilities such as that of Karlov Watchdog might prevent you from turning face-down creatures face up altogether. In those cases, you'll exile that creature, and then you'll choose whether or not to cast that card without paying its mana cost."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you cast a spell \"without paying its mana cost\", you can't choose to cast it for any alternative costs. You can, however, pay additional costs, such as kicker costs. If the card has any mandatory additional costs, such as that of Demand Answers, those must be paid to cast the spell."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If the spell you cast has {X} in its mana cost, you must choose 0 as the value of X when casting it without paying its mana cost."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Your opponents can't look at cards they own that you cloaked."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "In a multiplayer game, if an opponent leaves the game, all of the cards they own that you cloaked leave as well. If you leave the game, the creatures you cloaked with Etrata, Deadly Fugitive's triggered ability are exiled."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "To cloak a card, put it onto the battlefield face down. It becomes a 2/2 face-down creature card with ward {2} and no name, mana cost, or creature types. It's colorless and has a mana value of 0. Other effects that apply to the permanent can still grant it any characteristics it doesn't have or change the characteristics it does have."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If something tries to turn a face-down instant or sorcery card on the battlefield face up, reveal that card to show all players it's an instant or sorcery card. The permanent remains on the battlefield face down. Abilities that trigger when a permanent turns face up won't trigger, because even though you revealed the card, it never turned face up."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
     ]
 }
 
@@ -12978,6 +13287,144 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Lazav, Wearer of Faces
+{
+    "name": "Lazav, Wearer of Faces",
+    "manaCost": "{U}{B}",
+    "typeLine": "Legendary Creature — Shapeshifter Detective",
+    "oracleText": "Whenever Lazav attacks, exile target card from a graveyard, then investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")\nWhenever you sacrifice a Clue, you may have Lazav become a copy of a creature card exiled with it until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target card from a graveyard"
+                            },
+                            "destination": "Exile",
+                            "linkToSource": true
+                        },
+                        {
+                            "type": "CreatePredefinedToken",
+                            "tokenType": "Clue"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {},
+                        "zone": "Graveyard"
+                    },
+                    "id": "target card from a graveyard"
+                },
+                "descriptionOverride": "Whenever Lazav attacks, exile target card from a graveyard, then investigate."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "PermanentsSacrificedEvent",
+                    "filter": "artifact Clue",
+                    "perPermanent": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "gathered0",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "creature"
+                            },
+                            "storeMatching": "lazavCreatureCards"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "lazavCreatureCards",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "lazavCopySource",
+                            "prompt": "You may have Lazav become a copy of a creature card exiled with it",
+                            "selectedLabel": "Become a copy"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "CollectionContainsMatch",
+                                    "collection": "lazavCopySource"
+                                }
+                            },
+                            "then": {
+                                "type": "EachPermanentBecomesCopyOfTarget",
+                                "target": {
+                                    "type": "PipelineTarget",
+                                    "collectionName": "lazavCopySource"
+                                },
+                                "duration": "EndOfTurn",
+                                "affected": "Self",
+                                "sourceFromAnyZone": true
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever you sacrifice a Clue, you may have Lazav become a copy of a creature card exiled with it until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "216",
+        "rarity": "RARE",
+        "artist": "Wisnu Tan",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cc264d1d-689d-41ac-b624-3fc7bb890e58.jpg?1783912843",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If the target of Lazav, Wearer of Faces's first ability is illegal as the ability tries to resolve, it won't resolve and none of its effects will happen. You won't investigate."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Some abilities trigger \"whenever you sacrifice a Clue\". Those abilities trigger whenever you sacrifice a Clue for any reason, not just to activate a Clue's activated ability."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If an effect refers to a Clue, it means any Clue artifact, not just a Clue artifact token. For example, you can sacrifice Wrench to pay for Alquist Proft, Master Sleuth's activated ability."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "You can't sacrifice a Clue to pay multiple costs. For example, you can't sacrifice a Clue token to activate its own ability and also to activate Alquist Proft, Master Sleuth's ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
     ]
 }
 

@@ -539,6 +539,27 @@ sealed interface SuccessCriterion {
     @SerialName("SuccessCriterion.PermanentsSacrificed")
     @Serializable
     data object PermanentsSacrificed : SuccessCriterion
+
+    /**
+     * Action succeeded iff the gated action actually *turned a permanent face up* — a
+     * `TurnFaceUpEvent` was emitted during the action. Turning face up is not a zone move, so
+     * [Auto] can't infer it, and [Always] would wrongly report success for the cases the rules
+     * single out as failures.
+     *
+     * A `TurnFaceUpEffect` deliberately produces no such event when it can't do its work:
+     * a manifested or cloaked permanent represented by an instant or sorcery card is revealed and
+     * left face down (CR 701.40g / 701.58g), and a permanent that is already face up has nothing
+     * to turn. Both are exactly the "you can't" the gate must catch.
+     *
+     * Etrata, Deadly Fugitive grants face-down creatures "{2}{U}{B}: Turn this creature face up.
+     * **If you can't**, exile it, then you may cast the exiled card without paying its mana cost."
+     * — the fallback lives in [GatedEffect.otherwise], so the primary instruction stays the gated
+     * action rather than being re-encoded as a condition that would have to re-derive the engine's
+     * own turn-up legality.
+     */
+    @SerialName("SuccessCriterion.TurnedFaceUp")
+    @Serializable
+    data object TurnedFaceUp : SuccessCriterion
 }
 
 /**

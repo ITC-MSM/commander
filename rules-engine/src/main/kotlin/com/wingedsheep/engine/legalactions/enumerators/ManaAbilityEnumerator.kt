@@ -55,8 +55,13 @@ class ManaAbilityEnumerator : ActionEnumerator {
             val container = state.getEntity(entityId) ?: continue
             val cardComponent = container.get<CardComponent>() ?: continue
 
-            // Face-down creatures have no abilities (Rule 708.2)
-            if (container.has<FaceDownComponent>()) continue
+            // A face-down permanent has no characteristics beyond those the rules that made it
+            // face down list (CR 708.2), so none of its *card's* mana abilities are offered — but
+            // a mana ability another effect grants it applies in Layer 6 to the object on the
+            // battlefield, not to the hidden card, and stays activatable. Folded into
+            // `ownManaAbilities` below rather than skipping the permanent outright, so this
+            // enumerator and `ActivatedAbilityEnumerator` answer the same rule the same way.
+            val isFaceDown = container.has<FaceDownComponent>()
 
             // PreventActivatedAbilities (Cursed Totem etc.) blocks mana abilities too —
             // per ruling, "Cursed Totem stops players from activating mana abilities of
@@ -94,6 +99,7 @@ class ManaAbilityEnumerator : ActionEnumerator {
 
             // If no card definition (e.g., tokens) and no granted/static/intrinsic mana abilities, skip
             if (cardDef == null && grantedManaAbilities.isEmpty() && staticManaAbilities.isEmpty() && intrinsicManaAbilities.isEmpty()) continue
+            if (isFaceDown && grantedManaAbilities.isEmpty() && staticManaAbilities.isEmpty()) continue
 
             // If entity lost all abilities, only granted/static abilities remain (own abilities
             // suppressed) — this includes intrinsic basic-land-subtype abilities: a Plains hit by
@@ -103,6 +109,7 @@ class ManaAbilityEnumerator : ActionEnumerator {
             // back to the intrinsic-subtype inference.
             val classLevel = container.get<com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent>()?.currentLevel
             val ownManaAbilities = when {
+                isFaceDown -> emptyList()
                 // Blood Moon / Zhao ("nonbasic lands are Mountains"): an effect that SET this
                 // land's basic types also grants the type's intrinsic mana ability (CR 305.7),
                 // which survives the same effect's ability removal — so the land still taps for

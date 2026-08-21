@@ -208,9 +208,20 @@ class ActivateAbilityHandler(
                 }
             }
 
-            // Face-down creatures have no abilities (Rule 708.2)
+            // A face-down permanent has no characteristics beyond those the rules that made it face
+            // down list (CR 708.2), so none of its *card's* abilities are activatable. Abilities
+            // another effect grants it are a different thing entirely — they apply in Layer 6 to the
+            // object on the battlefield, not to the hidden card — so they stay activatable
+            // (Etrata, Deadly Fugitive: "Face-down creatures you control have '{2}{U}{B}: Turn this
+            // creature face up …'"). Same own-vs-granted split as the lost-all-abilities check below.
             if (container.has<FaceDownComponent>()) {
-                return "Face-down creatures have no abilities"
+                val isOwnAbility =
+                    cardDef?.script?.effectiveActivatedAbilities(classLevel)?.any { it.id == action.abilityId } == true ||
+                        action.abilityId.value.startsWith("class_level_up_") ||
+                        IntrinsicManaAbilities.lookup(action.abilityId) != null
+                if (isOwnAbility) {
+                    return "Face-down creatures have no abilities"
+                }
             }
 
             // PreventActivatedAbilities (Cursed Totem etc.) blocks activated abilities of
