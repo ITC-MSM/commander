@@ -69,7 +69,7 @@
 - [x] Eater of the Dead
 - [ ] Frankenstein's Monster
 - [x] Grave Robbers
-- [ ] Inquisition
+- [x] Inquisition
 - [x] Marsh Gas
 - [x] Murk Dwellers
 - [ ] Nameless Race
