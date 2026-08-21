@@ -12672,6 +12672,244 @@
     ]
 }
 
+// Kaya, Spirits' Justice
+{
+    "name": "Kaya, Spirits' Justice",
+    "manaCost": "{2}{W}{B}",
+    "typeLine": "Legendary Planeswalker — Kaya",
+    "oracleText": "Whenever one or more creatures you control and/or creature cards in your graveyard are put into exile, you may choose a creature card from among them. Until end of turn, target token you control becomes a copy of it, except it has flying.\n+2: Surveil 2, then exile a card from a graveyard.\n+1: Create a 1/1 white and black Spirit creature token with flying.\n−2: Exile target creature you control. For each other player, exile up to one target creature that player controls.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "CardsPutIntoExileEvent",
+                    "filter": "creature ctrl:you",
+                    "includeTokens": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "FilterCollection",
+                            "from": "trigger.captured",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "creature nontoken"
+                            },
+                            "storeMatching": "kayaExiledCreatures"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "kayaExiledCreatures",
+                            "filter": {
+                                "type": "InZone",
+                                "zone": "Exile"
+                            },
+                            "storeMatching": "kayaChoosable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "kayaChoosable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "kayaCopySource",
+                            "prompt": "You may choose a creature card from among the exiled cards",
+                            "selectedLabel": "Copy"
+                        },
+                        {
+                            "type": "EachPermanentBecomesCopyOfTarget",
+                            "target": {
+                                "type": "PipelineTarget",
+                                "collectionName": "kayaCopySource"
+                            },
+                            "duration": "EndOfTurn",
+                            "affected": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "sourceFromAnyZone": true,
+                            "exceptions": {
+                                "addedKeywords": [
+                                    "FLYING"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent token ctrl:you"
+                    },
+                    "id": "token you control"
+                },
+                "descriptionOverride": "Whenever one or more creatures you control and/or creature cards in your graveyard are put into exile, you may choose a creature card from among them. Until end of turn, target token you control becomes a copy of it, except it has flying."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 2
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Surveil",
+                            "count": 2
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "player": "Each"
+                            },
+                            "storeAs": "gathered1"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered1",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "kayaGraveyardExile",
+                            "prompt": "Exile a card from a graveyard",
+                            "selectedLabel": "Exile",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "kayaGraveyardExile",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Surveil 2, then exile a card from a graveyard."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE",
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Spirit"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "name": "Spirit",
+                    "imageUri": "https://cards.scryfall.io/normal/front/f/4/f4588570-bde4-4c2f-8469-81a3e15fb57b.jpg?1783912607"
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_4",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -2
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "destination": "Exile"
+                        },
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 1
+                            },
+                            "destination": "Exile"
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    },
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature ctrl:opponent"
+                        },
+                        "id": "creature that player controls",
+                        "dynamicMaxCount": "PlayerCount",
+                        "differentControllers": true
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Exile target creature you control. For each other player, exile up to one target creature that player controls."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "211",
+        "rarity": "MYTHIC",
+        "artist": "Magali Villeneuve",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/2/a2827593-4951-4ba7-b73e-c27de56f2606.jpg?1783912848",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "The target token copies the printed values of the card in exile, with the noted exception. It doesn't matter if that card was a copy of something else when it was on the battlefield."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a creature card that was exiled is no longer in exile when Kaya, Spirits' Justice's first ability resolves (perhaps because of Pull from Eternity or a similar effect), you can't choose that creature card with that ability."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "You choose all targets for Kaya, Spirits' Justice's last ability."
+            }
+        ]
+    },
+    "startingLoyalty": 3,
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
+}
+
 // Kellan, Inquisitive Prodigy
 {
     "name": "Kellan, Inquisitive Prodigy",
