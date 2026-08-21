@@ -112,7 +112,7 @@
 - [x] People of the Woods
 - [x] Savaen Elves
 - [ ] Scarwood Bandits
-- [ ] Scarwood Hag
+- [x] Scarwood Hag
 - [x] Scavenger Folk
 - [ ] Spitting Slug
 - [ ] Tracker
