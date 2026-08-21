@@ -2,7 +2,7 @@
 
 **Set Size:** 119 cards
 **Release Date:** August 1, 1994
-**Implemented:** 58 / 119
+**Implemented:** 60 / 119
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 19    | 8    |
@@ -76,7 +76,7 @@
 - [ ] Rag Man
 - [ ] Season of the Witch
 - [ ] The Fallen
-- [ ] Uncle Istvan
+- [x] Uncle Istvan
 - [ ] Word of Binding
 - [ ] Worms of the Earth
 
@@ -138,7 +138,7 @@
 - [ ] Necropolis
 - [ ] Reflecting Mirror
 - [ ] Runesword
-- [ ] Scarecrow
+- [x] Scarecrow
 - [x] Skull of Orm
 - [x] Standing Stones
 - [x] Stone Calendar
