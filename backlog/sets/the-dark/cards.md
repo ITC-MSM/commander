@@ -27,7 +27,7 @@
 - [x] Exorcist
 - [ ] Fasting
 - [x] Festival
-- [ ] Fire and Brimstone
+- [x] Fire and Brimstone
 - [x] Holy Light
 - [x] Knights of Thorn
 - [ ] Martyr's Cry
