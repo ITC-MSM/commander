@@ -3320,6 +3320,83 @@
     "colorIdentityOverride": []
 }
 
+// Fatespinner
+{
+    "name": "Fatespinner",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "At the beginning of each opponent's upkeep, that player chooses draw step, main phase, or combat phase. The player skips each instance of the chosen step or phase this turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ChooseAction",
+                    "choices": [
+                        {
+                            "label": "Draw step",
+                            "effect": {
+                                "type": "SkipStepOrPhaseThisTurn",
+                                "part": "DRAW_STEP",
+                                "target": {
+                                    "type": "PlayerRef",
+                                    "player": "TriggeringPlayer"
+                                }
+                            }
+                        },
+                        {
+                            "label": "Main phase",
+                            "effect": {
+                                "type": "SkipStepOrPhaseThisTurn",
+                                "part": "MAIN_PHASE",
+                                "target": {
+                                    "type": "PlayerRef",
+                                    "player": "TriggeringPlayer"
+                                }
+                            }
+                        },
+                        {
+                            "label": "Combat phase",
+                            "effect": {
+                                "type": "SkipStepOrPhaseThisTurn",
+                                "part": "COMBAT_PHASE",
+                                "target": {
+                                    "type": "PlayerRef",
+                                    "player": "TriggeringPlayer"
+                                }
+                            }
+                        }
+                    ],
+                    "player": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                },
+                "descriptionOverride": "At the beginning of each opponent's upkeep, that player chooses draw step, main phase, or combat phase. The player skips each instance of the chosen step or phase this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "36",
+        "rarity": "RARE",
+        "artist": "rk post",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/7/5780f4e0-dcfb-4d1f-8ae1-762b98970abb.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Fiery Gambit
 {
     "name": "Fiery Gambit",
@@ -13926,6 +14003,71 @@
     "colorIdentityOverride": [
         "BLUE"
     ]
+}
+
+// Timesifter
+{
+    "name": "Timesifter",
+    "manaCost": "{5}",
+    "typeLine": "Artifact",
+    "oracleText": "At the beginning of each upkeep, each player exiles the top card of their library. The player who exiled the card with the greatest mana value takes an extra turn after this one. If two or more players' cards are tied for greatest, the tied players repeat this process until the tie is broken.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ExileTopCardContest",
+                            "storeWinnerAs": "timesifterWinner"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": {
+                                        "type": "DistinctEntitiesInCollections",
+                                        "collections": [
+                                            "timesifterWinner"
+                                        ]
+                                    },
+                                    "operator": "GTE",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "TakeExtraTurn",
+                                "target": {
+                                    "type": "PipelineTarget",
+                                    "collectionName": "timesifterWinner"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of each upkeep, each player exiles the top card of their library. The player who exiled the card with the greatest mana value takes an extra turn after this one. If two or more players' cards are tied for greatest, the tied players repeat this process until the tie is broken."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "262",
+        "rarity": "RARE",
+        "artist": "Dany Orizio",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/561cab0e-8874-4534-bf79-0c1488a9f0a5.jpg"
+    },
+    "colorIdentityOverride": []
 }
 
 // Titanium Golem
