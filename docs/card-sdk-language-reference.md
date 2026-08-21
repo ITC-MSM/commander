@@ -6601,15 +6601,42 @@ staticAbility {
   gainer. The dynamic, copy-from-other-permanents sibling of `GrantActivatedAbility`. Mana abilities
   are excluded unless `includeManaAbilities = true`. (Sharkey, Tyrant of the Shire — "Sharkey has all
   activated abilities of lands your opponents control except mana abilities")
-- `SpendAnyManaTypeForActivatedAbilities(filter)` — mana of any type can be spent to pay the mana
-  portion of the activated-ability costs of permanents matching `filter` (a `GroupFilter`; use
-  `GroupFilter.source()` for "this permanent's abilities"). Relaxes colored/hybrid/Phyrexian/colorless
-  pips to generic per CR 118.14 / 609.4b; non-mana cost components are untouched. Honored by both
-  affordability checks and the mana solver. `filter` is matched against the permanent whose ability
-  is being activated, so a battlefield filter scopes the permission to a class of permanents —
-  `GroupFilter.AllCreaturesYouControl` for "spend mana as though it were mana of any color to activate
-  abilities of creatures you control" (Agatha's Soul Cauldron). (Sharkey, Tyrant of the Shire — "Mana
-  of any type can be spent to activate Sharkey's abilities" → `GroupFilter.source()`.)
+- `SpendAnyManaTypeForActivatedAbilities(filter, substituteColor = null)` — relaxes the mana portion
+  of the activated-ability costs of permanents matching `filter` (a `GroupFilter`; use
+  `GroupFilter.source()` for "this permanent's abilities") per CR 118.14 / 609.4b. Non-mana cost
+  components are untouched, and both affordability checks and the mana solver honor it through the
+  single `relaxAbilityCostColorsIfAny` seam. `filter` is matched against the permanent whose ability
+  is being activated, so a battlefield filter scopes the permission to a class of permanents.
+  **Two strengths, chosen by `substituteColor`:**
+    - `null` (default) — "**mana of any type can be spent**": colored/hybrid/Phyrexian/colorless pips
+      all become generic. (Sharkey, Tyrant of the Shire → `GroupFilter.source()`; Agatha's Soul
+      Cauldron → `GroupFilter.AllCreaturesYouControl`.)
+    - a `Color` — "**you may spend [color] mana as though it were mana of any color**": only that
+      color gains the substitution, and only for *colored* requirements. Lowered by rewriting each
+      foreign colored pip into a hybrid with the substitute (`ManaCost.relaxColorsTo`), reusing the
+      existing hybrid payment path — so a gained `{2}{G}` still needs two generic and one mana that
+      is green **or** blue, and a red mana still can't pay it. Generic and `{C}` pips are untouched
+      (they aren't colored). (Quicksilver Elemental — "You may spend blue mana as though it were mana
+      of any color to pay the activation costs of this creature's abilities" →
+      `SpendAnyManaTypeForActivatedAbilities(GroupFilter.source(), Color.BLUE)`.)
+- `Effects.GainAllActivatedAbilitiesOf(donor, target = EffectTarget.Self, duration = EndOfTurn)` —
+  the **one-shot, resolution-time sibling** of `GainActivatedAbilitiesOfPermanents`: `target` gains
+  all activated abilities of the object `donor` names, for `duration`. Reach for it when the donor is
+  *picked as the ability resolves* (a target) rather than described by a filter the projector re-reads.
+  The set of abilities is **snapshotted on resolution** — the Havengul Lich ruling, "gains the
+  activated abilities of the card as it existed in the graveyard" — so the donor later changing,
+  gaining abilities, or leaving the battlefield does not change what the receiver has. Each gained
+  ability is granted with the **receiver** as its source (CR 113.7), which is the printed reminder
+  "(If any of the abilities use that creature's name, use this creature's name instead.)": a copied
+  `{T}` taps the receiver and a copied "deals damage equal to its power" reads the receiver's power.
+  Only abilities activatable from the battlefield are copied, **mana abilities included** (the printed
+  wording is "all activated abilities", with no "except mana abilities" clause) — they land in
+  `GameState.grantedActivatedAbilities`, which the enumerator, `ActivateAbilityHandler`, the land mana
+  inspector and the end-of-turn cleanup all already read. Repeated activations accumulate, and each
+  gained ability is re-stamped with a donor-derived `AbilityId` so two donors sharing a card definition
+  don't collapse into one (and a once-per-turn ability gained twice gets two budgets, per the ruling).
+  (Quicksilver Elemental — "{U}: This creature gains all activated abilities of target creature until
+  end of turn" → `Effects.GainAllActivatedAbilitiesOf(donor)`.)
 - `SpendAnyManaTypeForSpells(filter)` — the **spell-side sibling** of the above: the controller may
   spend mana of any type on the mana cost of spells matching `filter` (a `GameObjectFilter`), relaxing
   colored/hybrid/Phyrexian/colorless pips to generic per CR 118.14 / 609.4b. Scoped to spells cast by

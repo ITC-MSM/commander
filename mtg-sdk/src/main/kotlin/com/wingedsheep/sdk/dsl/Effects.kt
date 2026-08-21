@@ -1654,6 +1654,24 @@ object Effects {
     ): Effect = GrantStaticAbilityEffect(ability, target, duration)
 
     /**
+     * "[target] gains all activated abilities of [donor] until end of turn" — Quicksilver Elemental.
+     *
+     * The abilities are **snapshotted as this resolves** and granted with [target] as their source
+     * (CR 113.7), so `{T}` and self-references inside a copied ability bind to the permanent that
+     * gained it. Only activated abilities activatable from the battlefield are copied, mana
+     * abilities included. Use the static
+     * [com.wingedsheep.sdk.scripting.GainActivatedAbilitiesOfPermanents] instead when the donors are
+     * a *filter* re-read continuously (Sharkey, Marvin) rather than a target picked on resolution.
+     */
+    fun GainAllActivatedAbilitiesOf(
+        donor: EffectTarget,
+        target: EffectTarget = EffectTarget.Self,
+        duration: Duration = Duration.EndOfTurn
+    ): Effect = com.wingedsheep.sdk.scripting.effects.GainAllActivatedAbilitiesOfEffect(
+        donor = donor, target = target, duration = duration
+    )
+
+    /**
      * Grant a replacement effect to a target for a duration — the runtime sibling of a printed
      * [com.wingedsheep.sdk.scripting.ReplacementEffect]. Anchored to [target] (defaults to the
      * resolving source); the grant's controller is the target's controller. Currently honored by
