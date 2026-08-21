@@ -150,5 +150,5 @@
 ### Land
 - [ ] City of Shadows
 - [x] Maze of Ith
-- [ ] Safe Haven
+- [x] Safe Haven
 - [ ] Sorrow's Path
