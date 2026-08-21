@@ -1826,6 +1826,7 @@ object Steps {
             CreatureTypes.clauses +
             Tokens.clauses +
             Prevention.clauses +
+            Recursion.clauses +
             SelfSteps.clauses
 
     /**
