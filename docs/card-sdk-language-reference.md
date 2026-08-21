@@ -2436,6 +2436,18 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     count = 1, target = PlayerRef(Player.You)), Patterns.Library.searchLibrary(Creature, HAND,
     reveal = true), successCriterion = PermanentsSacrificed)` — the ability doesn't target, and an
     empty board means no sacrifice and no search.
+    `SuccessCriterion.TurnedFaceUp` gates on whether the action **actually turned a permanent face
+    up** (a `TurnFaceUpEvent`). Turning face up is not a zone move, so `Auto` can't infer it, and
+    `Always` would report success for the two cases the rules call failures: a manifested or cloaked
+    permanent represented by an instant or sorcery card is revealed and left face down (CR 701.40g /
+    701.58g), and an already-face-up permanent has nothing to turn. Use for the "Turn this face up.
+    **If you can't**, …" shape, where the fallback rides `ifYouDont` and the primary instruction stays
+    the gated action rather than being re-encoded as a condition that would have to re-derive the
+    engine's own turn-up legality. **Etrata, Deadly Fugitive** grants face-down creatures
+    "{2}{U}{B}: Turn this creature face up. If you can't, exile it, then you may cast the exiled card
+    without paying its mana cost" → `IfYouDoEffect(TurnFaceUpEffect(Self), Effects.Composite(emptyList()),
+    ifYouDont = <exile + may cast>, successCriterion = TurnedFaceUp)` — the empty `ifYouDo` is the
+    house spelling for a gate that only has a failure branch (Kellan, the Kid uses the same shape).
     `CollectionNonEmpty` gates on the action's actual pipeline collection
     (`storedCollections[name].size >= min` after the action runs) — the collections propagate onto
     the gate frame via `exposeCollectionsToNextFrame`, in both the synchronous and the
@@ -3219,6 +3231,15 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
     "this artifact" / "this land" / … ) when it renders the ability on the stack (and planeswalker
     loyalty lines). `descriptionTemplate` and `description` are computed (non-constructor)
     properties, so neither is serialized — the card snapshot is unaffected.
+  - **A face-down permanent can hold a granted ability.** CR 708.2 strips a face-down permanent of
+    every characteristic except the ones the rules that turned it face down list, so none of its
+    *card's* abilities are activatable — but an ability another effect grants it applies in Layer 6
+    to the object on the battlefield, not to the hidden card, and stays activatable. Both ability
+    enumerators and `ActivateAbilityHandler` therefore fold face-down into the same own-vs-granted
+    split they already use for "has lost all abilities" rather than skipping the permanent outright.
+    Etrata, Deadly Fugitive is the card that needs it: "Face-down creatures you control have
+    '{2}{U}{B}: Turn this creature face up. …'".
+
 - `EffectTarget.GrantingSource` — the permanent whose static ability granted the currently-resolving
   ability: the Equipment/Aura/permanent bearing the `GrantActivatedAbility` static, as the counterpart
   to `Self` (the host). Use when a granted ability names the *granting object* — e.g. Trusty
