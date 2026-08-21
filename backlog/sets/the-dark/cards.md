@@ -62,7 +62,7 @@
 
 ### Black
 - [x] Ashes to Ashes
-- [ ] Banshee
+- [x] Banshee
 - [x] Bog Imp
 - [x] Bog Rats
 - [ ] Curse Artifact
