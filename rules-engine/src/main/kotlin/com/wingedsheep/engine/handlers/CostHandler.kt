@@ -600,7 +600,11 @@ class CostHandler {
         // never its card count.
         is CostAtom.CollectEvidence ->
             com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
-                .canCollect(state, controllerId, atom.amount)
+                .canCollect(
+                    state, controllerId,
+                    com.wingedsheep.engine.handlers.costs.CostAtomAmounts
+                        .evaluate(state, atom.amount),
+                )
         // Same fail-closed gate collect evidence gets, over the filtered pool and the atom's own
         // measure: the ability isn't activatable unless the matching graveyard cards can reach the
         // floor. Card count is never the question — the summed measure is.
@@ -720,7 +724,10 @@ class CostHandler {
         is CostAtom.CollectEvidence ->
             when (
                 val result = com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver.collect(
-                    state, controllerId, atom.amount, choices.exileChoices,
+                    state, controllerId,
+                    com.wingedsheep.engine.handlers.costs.CostAtomAmounts
+                        .evaluate(state, atom.amount, choices.xValue),
+                    choices.exileChoices,
                     state.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Collect evidence",
                     // "Cards exiled with it": an atom that asked to link hands the payment the
                     // permanent whose ability is being activated, so the exiles land in its pile.
@@ -1234,9 +1241,20 @@ class CostHandler {
                     findMatchingCardsUnified(state, state.getZone(ZoneKey(controllerId, atom.zone)), atom.filter, controllerId).size >= atom.count
                 // CR 701.59b — see canPayAtom. An optional collect-evidence cast cost that can't be
                 // reached simply isn't offered as a second cast action.
+                //
+                // A *target-derived* threshold has no price yet: this check runs before the caster
+                // announces targets (CR 601.2c), and the cost isn't determined until 601.2f. It
+                // therefore withholds judgement rather than guessing — the cast is offered, and an
+                // unreachable one is caught when the submitted targets are validated, which is
+                // exactly the 601.2e/733 rewind the printed ruling describes.
                 is CostAtom.CollectEvidence ->
-                    com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
-                        .canCollect(state, controllerId, atom.amount)
+                    com.wingedsheep.engine.handlers.costs.CostAtomAmounts
+                        .dependsOnTargets(atom.amount) ||
+                        com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver.canCollect(
+                            state, controllerId,
+                            com.wingedsheep.engine.handlers.costs.CostAtomAmounts
+                                .evaluate(state, atom.amount),
+                        )
                 // Not payable as a *spell's* additional cost today: nothing offers this atom in a
                 // cast context, and the cast-time picker has no sum-gated exile mode to raise, so
                 // an unreachable one would be offered and then fail at payment. Fails closed until

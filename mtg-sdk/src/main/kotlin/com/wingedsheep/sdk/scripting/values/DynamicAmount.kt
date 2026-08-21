@@ -302,6 +302,22 @@ enum class ContextPropertyKey(val description: String) {
     ADDITIONAL_COST_EXILED_COUNT("the number of cards exiled"),
     /** Number of (still-legal) targets in the current effect context. */
     TARGET_COUNT("the number of targets"),
+    /**
+     * Combined mana value of the objects the current spell or ability targets — Urgent Necropsy's
+     * "collect evidence X, where X is the total mana value of the permanents this spell targets".
+     *
+     * The summing sibling of [TARGET_COUNT], and read from the same target list. Player targets
+     * have no mana value and contribute nothing, so a mixed "target creature and target player"
+     * requirement measures only the objects.
+     *
+     * **Also readable while a spell is being cast**, which is the shape it exists for: an
+     * additional cost priced off the targets is determined at CR 601.2f, *after* the targets are
+     * announced at 601.2c and before the cost is paid at 601.2h, so a cost carrying this key reads
+     * the targets the caster just chose (`CastSpell.targets`) rather than a resolution context. In
+     * any context that has no targets at all it reads 0 — which for collect evidence is a real
+     * threshold, not a failure: collecting evidence 0 exiles nothing and is legal.
+     */
+    TARGETS_TOTAL_MANA_VALUE("the total mana value of the permanents this spell targets"),
     /** Number of +1/+1 counters on the source as it last existed on the battlefield (Hooded Hydra). */
     LAST_KNOWN_PLUS_ONE_COUNTER_COUNT("the number of +1/+1 counters on it"),
     /**

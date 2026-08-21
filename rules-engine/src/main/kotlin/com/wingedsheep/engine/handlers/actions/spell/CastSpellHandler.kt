@@ -1806,11 +1806,18 @@ class CastSpellHandler(
                     // A GameAction is client-supplied: never trust the submitted selection.
                     is CostAtom.CollectEvidence -> {
                         val exiled = action.additionalCostPayment?.exiledCards ?: emptyList()
+                        // CR 601.2f — the threshold is determined here, from the targets announced
+                        // at 601.2c, and then locked in. Urgent Necropsy's ruling spells the
+                        // consequence out: if the graveyard can't reach it, the caster can't
+                        // choose to collect evidence at all, so this rejection *is* the 601.2e
+                        // illegal-cast rewind rather than a discount.
+                        val required = com.wingedsheep.engine.handlers.costs.CostAtomAmounts
+                            .evaluate(state, atom.amount, action.xValue, action.targets)
                         if (!com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
-                                .isLegalSelection(state, action.playerId, atom.amount, exiled)
+                                .isLegalSelection(state, action.playerId, required, exiled)
                         ) {
-                            return "You must exile cards with total mana value ${atom.amount} or " +
-                                "greater from your graveyard to collect evidence ${atom.amount}"
+                            return "You must exile cards with total mana value $required or " +
+                                "greater from your graveyard to collect evidence $required"
                         }
                     }
                     is CostAtom.ExileFrom -> {
@@ -2687,7 +2694,10 @@ class CastSpellHandler(
                                 .CollectEvidenceResolver.collect(
                                     state = currentState,
                                     playerId = action.playerId,
-                                    amount = atom.amount,
+                                    // Priced from the same targets validateAdditionalCosts read,
+                                    // so the payment can't drift from the check that allowed it.
+                                    amount = com.wingedsheep.engine.handlers.costs.CostAtomAmounts
+                                        .evaluate(currentState, atom.amount, action.xValue, action.targets),
                                     chosenCards = action.additionalCostPayment.exiledCards,
                                     sourceName = cardDef?.name ?: "Collect evidence",
                                 )

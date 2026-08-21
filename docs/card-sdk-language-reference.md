@@ -533,6 +533,27 @@ exist in the cost and charges the life through the shared life-payment service.
   under-total submission is rejected rather than trimmed. For collect evidence as an *effect* rather
   than a cost, use `Effects.CollectEvidence(n)` (§ effects).
 
+  `Costs.additional.CollectEvidenceForTargetsTotalManaValue` is the one shape whose threshold isn't
+  printed — **Urgent Necropsy**'s "collect evidence X, where X is the total mana value of the
+  permanents this spell targets". `CostAtom.CollectEvidence.amount` is a `DynamicAmount` for it, and
+  accepts exactly the three shapes a cost can be priced from before it is paid: a literal, the
+  cast's `XValue`, and `ContextPropertyKey.TARGETS_TOTAL_MANA_VALUE` (an `init` guard rejects the
+  rest, so a cost can never carry an amount the cost-time evaluator has no context to read). This is
+  the opposite call from `Effects.CollectEvidenceChosenAmount` (§ effects), which stayed a separate
+  effect precisely because a player-*chosen* X isn't a `DynamicAmount` at all — a derived one is.
+
+  Two consequences worth knowing, both from the card's own rulings. **X is locked in after targets,
+  before payment** (CR 601.2c → 601.2f → 601.2h): the engine prices it from `CastSpell.targets`, so
+  it counts what the caster actually chose, not what they could have. And a graveyard that can't
+  reach it makes the cast **illegal, not cheaper** (CR 601.2e) — the reachability gate has nowhere to
+  fail closed at enumeration time, since the price doesn't exist yet, so the check moves to cast-time
+  validation. Client-side that is why the evidence picker runs **after** the targeting step for this
+  cost: the enumerator ships `AdditionalCostData.exileWeightPerTarget` (what each legal target would
+  add), whose presence is both the per-target price list and the instruction to defer — the same
+  deferral `manaCostPerExtraTarget` already does for mana-source selection. With no targets chosen X
+  is 0, which collects evidence 0: legal, exiles nothing, and still counts as having collected
+  evidence per the 2024-02-02 ruling.
+
   `Costs.CollectEvidence(n, linkToSource = true)` tethers the cards this payment exiles to the
   *source permanent's* `LinkedExileComponent`, so a later ability on that same permanent can name
   them — "cards exiled **with it**". That is the only thing the flag does: it grants no permission
@@ -9935,6 +9956,14 @@ Army just amassed by a sibling/action effect, or any cost-chosen entity. The plu
   - `ADDITIONAL_COST_EXILED_COUNT` — cost-step accumulator. (The blight-X amount moved to
     `DynamicAmount.CastChoice(ChoiceSlot.BLIGHT_AMOUNT)`.)
   - `TARGET_COUNT` — still-legal targets in the current effect context.
+  - `TARGETS_TOTAL_MANA_VALUE` — the summed mana value of the objects targeted (CR 202.3); the
+    summing sibling of `TARGET_COUNT`, read from the same target list. Player targets have no mana
+    value and contribute nothing. Unusually for a context key it is also readable **while a spell is
+    being cast**, which is what it exists for: an additional cost priced off the targets is
+    determined at CR 601.2f, after the targets are announced at 601.2c and before it is paid at
+    601.2h, so a cost carrying this key reads `CastSpell.targets`. See
+    `Costs.additional.CollectEvidenceForTargetsTotalManaValue` (§ additional costs) — Urgent
+    Necropsy. In a context with no targets it reads `0`.
   - `LINKED_EXILE_CARD_COUNT` / `LINKED_EXILE_DISTINCT_CARD_TYPE_COUNT` — cards / distinct
     types in the source's linked exile pile (Veteran Survivor / Keen-Eyed Curator).
   - `MODES_CHOSEN_ON_TRIGGERING_SPELL` — number of mode picks recorded on the cast that fired

@@ -997,7 +997,10 @@
                 "type": "AdditionalAtom",
                 "atom": {
                     "type": "AtomCollectEvidence",
-                    "amount": 8
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 8
+                    }
                 }
             },
             "declaredSlot": "EVIDENCE_COLLECTED"
@@ -2073,7 +2076,10 @@
                 "type": "AdditionalAtom",
                 "atom": {
                     "type": "AtomCollectEvidence",
-                    "amount": 6
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 6
+                    }
                 }
             },
             "declaredSlot": "EVIDENCE_COLLECTED"
@@ -2241,7 +2247,10 @@
                 "type": "AdditionalAtom",
                 "atom": {
                     "type": "AtomCollectEvidence",
-                    "amount": 6
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 6
+                    }
                 }
             },
             "declaredSlot": "EVIDENCE_COLLECTED"
@@ -5854,7 +5863,10 @@
                         "type": "AdditionalAtom",
                         "atom": {
                             "type": "AtomCollectEvidence",
-                            "amount": 10
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 10
+                            }
                         }
                     }
                 ]
@@ -6281,7 +6293,10 @@
                 "type": "AdditionalAtom",
                 "atom": {
                     "type": "AtomCollectEvidence",
-                    "amount": 6
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 6
+                    }
                 }
             },
             "declaredSlot": "EVIDENCE_COLLECTED"
@@ -6435,7 +6450,10 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomCollectEvidence",
-                                "amount": 3
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                }
                             }
                         }
                     ]
@@ -6914,7 +6932,10 @@
                 "type": "AdditionalAtom",
                 "atom": {
                     "type": "AtomCollectEvidence",
-                    "amount": 6
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 6
+                    }
                 }
             },
             "declaredSlot": "EVIDENCE_COLLECTED"
@@ -8583,7 +8604,10 @@
                 "type": "AdditionalAtom",
                 "atom": {
                     "type": "AtomCollectEvidence",
-                    "amount": 6
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 6
+                    }
                 }
             },
             "declaredSlot": "EVIDENCE_COLLECTED"
@@ -9552,7 +9576,10 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomCollectEvidence",
-                                "amount": 3
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                }
                             }
                         }
                     ]
@@ -11064,7 +11091,10 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomCollectEvidence",
-                                "amount": 4
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                }
                             }
                         }
                     ]
@@ -13363,7 +13393,10 @@
                     "type": "CostAtomWrapper",
                     "atom": {
                         "type": "AtomCollectEvidence",
-                        "amount": 6,
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 6
+                        },
                         "linkToSource": true
                     }
                 },
@@ -16302,7 +16335,10 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomCollectEvidence",
-                                "amount": 3
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                }
                             }
                         }
                     ]
@@ -19873,7 +19909,10 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomCollectEvidence",
-                                "amount": 2
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
                             }
                         }
                     ]
@@ -19915,7 +19954,10 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomCollectEvidence",
-                                "amount": 4
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                }
                             }
                         }
                     ]
@@ -21594,6 +21636,92 @@
     ]
 }
 
+// Urgent Necropsy
+{
+    "name": "Urgent Necropsy",
+    "manaCost": "{2}{B}{G}",
+    "typeLine": "Instant",
+    "oracleText": "As an additional cost to cast this spell, collect evidence X, where X is the total mana value of the permanents this spell targets.\nDestroy up to one target artifact, up to one target creature, up to one target enchantment, and up to one target planeswalker.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": "ChosenTargets",
+                    "storeAs": "gathered0"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "gathered0",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    },
+                    "moveType": "Destroy"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "artifact"
+                },
+                "id": "up to one target artifact"
+            },
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "up to one target creature"
+            },
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "enchantment"
+                },
+                "id": "up to one target enchantment"
+            },
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "planeswalker"
+                },
+                "id": "up to one target planeswalker"
+            }
+        ],
+        "additionalCosts": [
+            {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomCollectEvidence",
+                    "amount": {
+                        "type": "ContextProperty",
+                        "key": "TARGETS_TOTAL_MANA_VALUE"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "240",
+        "rarity": "MYTHIC",
+        "artist": "Uriah Voth",
+        "flavorText": "\"The Golgari can read the dead like a newspaper.\"\n—Taboro of the Foundway Associates",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/2/d2ac346a-fc46-4023-aa60-4d55170697dc.jpg?1783912833"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Vannifar, Evolved Enigma
 {
     "name": "Vannifar, Evolved Enigma",
@@ -21890,7 +22018,10 @@
                 "type": "AdditionalAtom",
                 "atom": {
                     "type": "AtomCollectEvidence",
-                    "amount": 6
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 6
+                    }
                 }
             },
             "declaredSlot": "EVIDENCE_COLLECTED"

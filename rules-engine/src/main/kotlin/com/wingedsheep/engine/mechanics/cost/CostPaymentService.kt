@@ -138,10 +138,17 @@ class CostPaymentService(private val services: EngineServices) {
                     selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, candidates, atom.count, useTargetingUI = atom.zone == Zone.BATTLEFIELD)
                 // Collect evidence N (CR 701.59a) — the whole graveyard is selectable and the gate
                 // is the summed mana value, so the count cap is simply "all of them".
+                //
+                // This is the resolution-time `PayCost` rail (ward, "unless you …"): it has no
+                // target list of its own, so a target-derived threshold would read 0 here. Nothing
+                // prints one on this rail — the derived shape is a cast-time additional cost, where
+                // `CastSpellHandler` prices it from the announced targets.
                 is CostAtom.CollectEvidence ->
                     selectionPrompt(
                         state, payerId, resolved, sourceId, sourceName, ctx, candidates, candidates.size,
-                        useTargetingUI = false, minTotalManaValue = atom.amount
+                        useTargetingUI = false,
+                        minTotalManaValue = com.wingedsheep.engine.handlers.costs.CostAtomAmounts
+                            .evaluate(state, atom.amount),
                     )
                 // Milling takes no selection — the cards are the top of the library — so this is a
                 // plain yes/no like paying life.
@@ -343,7 +350,10 @@ class CostPaymentService(private val services: EngineServices) {
             is CostAtom.CollectEvidence ->
                 when (
                     val result = com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver.collect(
-                        state, payerId, atom.amount, selected.keys.toList(),
+                        state, payerId,
+                        com.wingedsheep.engine.handlers.costs.CostAtomAmounts
+                            .evaluate(state, atom.amount),
+                        selected.keys.toList(),
                         state.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Collect evidence",
                         linkToSourceId = sourceId.takeIf { atom.linkToSource },
                     )
@@ -691,7 +701,11 @@ class CostPaymentService(private val services: EngineServices) {
                     // Card count says nothing here: five lands total 0 and pay nothing.
                     is CostAtom.CollectEvidence ->
                         com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
-                            .canCollect(state, payerId, atom.amount)
+                            .canCollect(
+                                state, payerId,
+                                com.wingedsheep.engine.handlers.costs.CostAtomAmounts
+                                    .evaluate(state, atom.amount),
+                            )
                     // Activated-ability-only; nothing prompts or pays it as a PayCost, so it is
                     // reported unaffordable rather than offered into a dead payment path.
                     is CostAtom.ExileFromGraveyardForTotal -> false

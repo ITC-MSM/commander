@@ -334,7 +334,11 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         // entirely rather than surfacing an unpayable one.
                         is CostAtom.CollectEvidence -> {
                             prebuiltCostInfo = com.wingedsheep.engine.handlers.costs
-                                .CollectEvidenceResolver.costInfo(state, playerId, atom.amount)
+                                .CollectEvidenceResolver.costInfo(
+                                    state, playerId,
+                                    com.wingedsheep.engine.handlers.costs.CostAtomAmounts
+                                        .evaluate(state, atom.amount),
+                                )
                                 ?: continue
                         }
                         // Same fail-closed shape as collect evidence over a filtered pool: when the
@@ -515,7 +519,11 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                     is CostAtom.CollectEvidence -> {
                                         prebuiltCostInfo = com.wingedsheep.engine.handlers.costs
                                             .CollectEvidenceResolver
-                                            .costInfo(state, playerId, atom.amount)
+                                            .costInfo(
+                                                state, playerId,
+                                                com.wingedsheep.engine.handlers.costs
+                                                    .CostAtomAmounts.evaluate(state, atom.amount),
+                                            )
                                         if (prebuiltCostInfo == null) {
                                             costCanBePaid = false
                                             break
