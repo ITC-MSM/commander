@@ -9167,9 +9167,8 @@
                     "scope": "Self"
                 },
                 "powerBonus": {
-                    "type": "Count",
+                    "type": "AggregateBattlefield",
                     "player": "You",
-                    "zone": "Battlefield",
                     "filter": "artifact"
                 },
                 "toughnessBonus": {

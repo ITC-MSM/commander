@@ -829,7 +829,7 @@
                 "type": "TargetObject",
                 "optional": true,
                 "filter": {
-                    "baseFilter": "creature Zombie ctrl:you"
+                    "baseFilter": "permanent Zombie ctrl:you"
                 },
                 "id": "Zombie you control"
             }
