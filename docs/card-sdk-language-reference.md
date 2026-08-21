@@ -7526,6 +7526,34 @@ The X-choice decision clamps its lower bound to this value, the enumerated `Lega
 it to the client's X picker, and the handler rejects an engine-direct activation with a smaller X.
 Defaults to 0.
 
+**`xDefinedAs` — "X is …", an activation cost's X the card defines itself.** Set
+`xDefinedAs = <DynamicAmount>` in the `activatedAbility { }` block for an ability printed with `{X}`
+in its cost whose X is **defined by the ability's own text** (CR 107.3c) rather than announced by its
+controller (CR 107.3a) — **Soul Foundry** ("{X}, {T}: Create a token that's a copy of the exiled
+card. X is the mana value of that card." → `DynamicAmount.EntityProperty(EntityReference
+.LinkedExiledCard(), EntityNumericProperty.ManaValue)`), and the same template on Elite Arcanist,
+Prototype Portal and Caller of the Untamed.
+
+Write the cost as it is printed — `Costs.Mana("{X}")` — and let `xDefinedAs` say what X is. The
+engine evaluates the amount against the source permanent and substitutes it into the cost's `{X}`
+symbols (`ManaCost.withXAs`) at the head of the shared effective-cost pipeline, before the generic
+reductions and before enumeration, validation or payment read the cost. Four consequences:
+
+- the ability is **offered and displayed at its resolved price** ("{3}, {T}: …" for an imprinted
+  three-drop) while the card's oracle text keeps saying `{X}`;
+- there is **no X picker** — `LegalAction.hasXCost` is false and `maxAffordableX` is null;
+  `minimumXValue` does not apply, since a defined X is not a choice to clamp;
+- affordability, validation and payment all charge that number, because all three read the same
+  substituted cost. A cost-increasing static (`IncreaseActivatedAbilityCost`) taxes the *resolved*
+  total (CR 602.2b routes an activation cost through the same 601.2f total-cost step a spell uses);
+- the number is bound as the activation's X value, so the X-linked non-mana costs
+  (`Costs.PayXLife`, `Costs.ExileXFromGraveyard`, `CostAtom.RemoveCounters(count = XValue)`) and any
+  `DynamicAmount.XValue` read in the effect see it too (CR 107.3i, 107.3k).
+
+An amount that resolves to nothing is X = 0 — a Soul Foundry with no imprint offers a legal, and
+entirely pointless, "{0}, {T}", which is exactly what the printed card does. Don't set a
+`description` override on such an ability: the generated label is what carries the resolved cost.
+
 **`cantBeCopied` — "This ability can't be copied".** Set `cantBeCopied = true` in the
 `activatedAbility { }` block so the ability instance on the stack is tagged with the shared
 `CantBeCopiedComponent` marker; a copy-ability effect (`Effects.CopyTargetSpellOrAbility`) makes no

@@ -140,6 +140,34 @@ data class ActivatedAbility(
      */
     val minimumXValue: Int = 0,
     /**
+     * The value of the `{X}` in this ability's activation cost, **defined by the ability's own
+     * text** (CR 107.3c) instead of chosen by its controller (CR 107.3a).
+     *
+     * Soul Foundry's "{X}, {T}: Create a token that's a copy of the exiled card. X is the mana
+     * value of that card." is the shape: the cost is printed as `{X}`, but the player never picks
+     * a number — the imprinted card decides it. Elite Arcanist, Prototype Portal and Caller of the
+     * Untamed are the same template, and any "X is …" clause attached to an activation cost fits.
+     *
+     * Mechanically this is a *substitution*, not a cost reduction and not a new mana atom: the
+     * amount is evaluated against the source permanent and folded into the cost's `{X}` symbols
+     * with [com.wingedsheep.sdk.core.ManaCost.withXAs] before affordability, the X-choice pause,
+     * or payment ever look at it. Three consequences fall out of that and are the contract here:
+     *  - the ability is offered at its *resolved* price (`{3}, {T}` for an imprinted three-drop),
+     *    while its oracle text keeps saying `{X}`;
+     *  - there is no "choose X" prompt, and [minimumXValue] does not apply — a defined X is not a
+     *    choice to clamp;
+     *  - the same number is bound as the activation's X value, so every other X-linked cost
+     *    ([AbilityCost.PayXLife], [AbilityCost.ExileXFromGraveyard],
+     *    `CostAtom.RemoveCounters(count = XValue)`) and any `DynamicAmount.XValue` read in the
+     *    effect see it too (CR 107.3i, 107.3k).
+     *
+     * X is fixed as the ability is activated, which is when it is paid; an amount that resolves to
+     * nothing (Soul Foundry with no imprint, because the controller declined or the card left
+     * exile) evaluates to 0, leaving a `{0}, {T}` ability that is legal to activate and simply
+     * does nothing — the printed behaviour.
+     */
+    val xDefinedAs: DynamicAmount? = null,
+    /**
      * When true, this activated ability can't be copied by effects that copy abilities (CR 707.10e).
      * The engine tags the ability instance on the stack with a can't-be-copied marker so a
      * copy-ability effect (e.g. another Gogo, Master of Mimicry) produces no copy of it. Models

@@ -270,17 +270,21 @@ class ActivateAbilityHandler(
         } else {
             ability.cost
         }
-        // Apply ability-specific generic cost reduction (e.g., The Dominion Bracelet's
+        // Resolve a *defined* {X} (CR 107.3c) before anything else reads the cost, so validation
+        // sees the same fixed cost enumeration offered and payment will charge. Then apply
+        // ability-specific generic cost reduction (e.g., The Dominion Bracelet's
         // "{X} less, where X is this creature's power"). Per Scryfall ruling, the reduced
         // cost is locked in here, before costs are paid. Then apply generic equip-cost reduction
         // (Éowyn) and finally Forge Anew's free-first-equip.
         val equipTargetIdForCost = action.targets.filterIsInstance<ChosenTarget.Permanent>().firstOrNull()?.entityId
+        val costWithDefinedX =
+            castPermissionUtils.applyDefinedXValue(rawCost, ability, state, action.sourceId, action.playerId)
         val effectiveCost = castPermissionUtils.relaxAbilityCostColorsIfAny(
             state, action.sourceId,
             castPermissionUtils.applyFreeFirstEquipDiscount(
                 castPermissionUtils.applyEquipCostReduction(
                     castPermissionUtils.applyActivatedAbilityCostReduction(
-                        applyGenericCostReduction(rawCost, ability, state, action.sourceId, action.playerId, action.targets),
+                        applyGenericCostReduction(costWithDefinedX, ability, state, action.sourceId, action.playerId, action.targets),
                         state, action.sourceId, ability.isExhaust, ability.isPowerUp
                     ),
                     ability, state, action.playerId, equipTargetIdForCost,
@@ -641,17 +645,22 @@ class ActivateAbilityHandler(
         } else {
             ability.cost
         }
-        // Apply ability-specific generic cost reduction (e.g., The Dominion Bracelet's
+        // Resolve a *defined* {X} (CR 107.3c) before the reductions, matching validate() and the
+        // enumerator so all three paths charge the same number. Then apply ability-specific generic
+        // cost reduction (e.g., The Dominion Bracelet's
         // "{X} less, where X is this creature's power"). Locked in before payment. Then apply
         // generic equip-cost reduction (Éowyn) and Forge Anew's free-first-equip discount.
         // Finally relax colored requirements when "mana of any type can be spent" applies (Sharkey).
         val equipTargetIdForCost = action.targets.filterIsInstance<ChosenTarget.Permanent>().firstOrNull()?.entityId
+        val definedXValue = castPermissionUtils.definedXValue(state, ability, action.sourceId, action.playerId)
+        val costWithDefinedX =
+            castPermissionUtils.applyDefinedXValue(rawCost, ability, state, action.sourceId, action.playerId)
         val effectiveCost = castPermissionUtils.relaxAbilityCostColorsIfAny(
             state, action.sourceId,
             castPermissionUtils.applyFreeFirstEquipDiscount(
                 castPermissionUtils.applyEquipCostReduction(
                     castPermissionUtils.applyActivatedAbilityCostReduction(
-                        applyGenericCostReduction(rawCost, ability, state, action.sourceId, action.playerId, action.targets),
+                        applyGenericCostReduction(costWithDefinedX, ability, state, action.sourceId, action.playerId, action.targets),
                         state, action.sourceId, ability.isExhaust, ability.isPowerUp
                     ),
                     ability, state, action.playerId, equipTargetIdForCost,
@@ -669,8 +678,11 @@ class ActivateAbilityHandler(
         // the cost is being paid, the chosen set already rides on the action's costPayment.
         val variablePermanentsCost = extractVariablePermanentsCost(effectiveCost)
         val chosenForCost = action.costPayment?.variableCostPermanents ?: emptyList()
-        val effectiveXValue: Int? =
-            if (variablePermanentsCost != null && chosenForCost.isNotEmpty())
+        // An X the ability's own text defines (CR 107.3c) outranks both: it is not the payer's to
+        // choose, and it is the value every other instance of X on this activation uses (CR 107.3i)
+        // — the X-linked non-mana costs and any `DynamicAmount.XValue` read at resolution.
+        val effectiveXValue: Int? = definedXValue
+            ?: if (variablePermanentsCost != null && chosenForCost.isNotEmpty())
                 variableCostX(state, variablePermanentsCost, chosenForCost)
             else action.xValue
 

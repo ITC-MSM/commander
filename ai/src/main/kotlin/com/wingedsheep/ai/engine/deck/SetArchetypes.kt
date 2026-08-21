@@ -110,6 +110,29 @@ object SetArchetypes {
                     "Ramp into large green creatures, then leverage their high mana cost for powerful draw spells. Bury opponents in card advantage."),
             )
         ),
+        "MRD" to SetSynergies(
+            setCode = "MRD",
+            setName = "Mirrodin",
+            archetypes = listOf(
+                Archetype("Affinity", listOf(Color.BLUE),
+                    "Flood the board with cheap artifacts, then cast Frogmite, Myr Enforcer and Somber Hoverguard for a fraction of their printed cost. The format's defining deck — count artifacts, not lands."),
+                Archetype("Equipment Aggro", listOf(Color.WHITE),
+                    "Cheap Leonin bodies plus Bonesplitter and Leonin Scimitar. Equipment survives removal and moves on to the next creature, so trades never cost you the beatdown.",
+                    creatureTypes = listOf("Cat")),
+                Archetype("Skyhunter Skies", listOf(Color.WHITE, Color.BLUE),
+                    "Evasive fliers wearing Equipment. Nothing on the ground matters once a Leonin Skyhunter is carrying a Bonesplitter and blue is holding the board back.",
+                    creatureTypes = listOf("Cat", "Drone")),
+                Archetype("Nim Sacrifice", listOf(Color.BLACK, Color.RED),
+                    "Nim creatures grow with every artifact you control, and Disciple of the Vault turns each one you sacrifice into damage. Your own artifacts dying is the payoff, not the cost.",
+                    creatureTypes = listOf("Zombie")),
+                Archetype("Artifact Demolition", listOf(Color.RED, Color.GREEN),
+                    "Shatter effects and Tel-Jilad hate punish a format built out of artifacts, while red removal clears the way for green's oversized bodies.",
+                    creatureTypes = listOf("Elf", "Beast")),
+                Archetype("Myr Ramp", listOf(Color.GREEN),
+                    "Myr and Talismans accelerate you past the aggro decks and fix a splash, then dump the set's biggest artifacts a turn or two early.",
+                    creatureTypes = listOf("Myr")),
+            )
+        ),
         "DOM" to SetSynergies(
             setCode = "DOM",
             setName = "Dominaria",

@@ -158,16 +158,21 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 } else {
                     ability.cost
                 }
-                // Apply ability-specific generic cost reduction so payability is checked against
-                // the locked-in cost (e.g., The Dominion Bracelet — "{X} less, where X is this
-                // creature's power"). Then apply Forge Anew's free-first-equip discount, so the
-                // displayed cost and affordability reflect the {0} the player will actually pay.
+                // Resolve a *defined* {X} (CR 107.3c — Soul Foundry's "X is the mana value of that
+                // card") first, so the ability is offered at the price the player will actually pay
+                // and never flagged as an X-picker cost. Then apply ability-specific generic cost
+                // reduction so payability is checked against the locked-in cost (e.g., The Dominion
+                // Bracelet — "{X} less, where X is this creature's power"). Then apply Forge Anew's
+                // free-first-equip discount, so the displayed cost and affordability reflect the {0}
+                // the player will actually pay.
+                val costWithDefinedX =
+                    context.castPermissionUtils.applyDefinedXValue(rawCost, ability, state, entityId, playerId)
                 val effectiveCost = context.castPermissionUtils.relaxAbilityCostColorsIfAny(
                     state, entityId,
                     context.castPermissionUtils.applyFreeFirstEquipDiscount(
                         context.castPermissionUtils.applyEquipCostReduction(
                             context.castPermissionUtils.applyActivatedAbilityCostReduction(
-                                applyAbilityGenericCostReduction(rawCost, ability, state, entityId, playerId, context),
+                                applyAbilityGenericCostReduction(costWithDefinedX, ability, state, entityId, playerId, context),
                                 state, entityId, ability.isExhaust, ability.isPowerUp
                             ),
                             ability, state, playerId, abilitySourceId = entityId
