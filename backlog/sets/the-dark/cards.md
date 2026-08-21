@@ -40,7 +40,7 @@
 - [x] Witch Hunter
 
 ### Blue
-- [ ] Amnesia
+- [x] Amnesia
 - [x] Apprentice Wizard
 - [ ] Dance of Many
 - [ ] Deep Water
