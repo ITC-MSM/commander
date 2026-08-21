@@ -20,7 +20,22 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is **the final period** — the top family of the tail ranking, and the one that
+The most recent work is **the functional zone** — "Return ~ from your graveyard to your hand.", the
+tail ranking's number-two family at **131 cards, 74 of them solely, over 131 lines** (**+94 whole
+cards**, 8,234 → 8,328), and the band where a printed phrase turned out to fill two SDK fields at
+once. "From your graveyard" is a resolution guard on the effect *and* the zone the ability functions
+in, and it was the second one that blocked every line: an ability whose activation zone was not the
+battlefield could not print, whatever its effect clause said. Carrying the zone up from the clause
+does not work — the trigger members print the move inside a gate — so **CR 113.6m** derives it
+instead, off the cost and the effect, with its "unless the trigger condition put it there" clause
+implemented because that clause is the Ojer cycle. The rest is one SDK type's product: a move table
+whose rows spell the whole verb-to-destination span (English agrees on the *pair*), a placement rider
+and a counter rider, each with a genuinely empty row. Its differential half is the sharper half —
+eighteen shipped cards were missing the guard, and five of them could not have written it: the facade
+that exists to carry it had a frozen `tapped` parameter, so "…to the battlefield **tapped**" had to
+reach past it. See [the functional zone](#the-functional-zone).
+
+Before it came **the final period** — the top family of the tail ranking, and the one that
 turned out not to be a construct at all. Keyed on the parse's tail, `.` blocked **179 cards, 87 of
 them solely, over 181 lines**: complete Oracle sentences that died on their own full stop because a
 rule had written something *omissible* into its template as required text. Three different causes,
@@ -2322,6 +2337,181 @@ moved with it. Fixing the card alone would have left the next render wrong.
 The two worth taking next are the top two, and they are opposites: "Exile ~." is 32 lines of one
 missing rule, and the bare subtypes are 19 lines of a vocabulary migration that has already been done
 once for a different noun.
+
+## The functional zone
+
+`~ from your …` — the tail ranking's number-two family, **131 cards, 74 sole-blocked, 131 lines**, and
+the sentence behind almost all of them is one of three:
+
+```
+{2}{B}: Return ~ from your graveyard to your hand.                       63 lines
+{1}{B}: Return ~ from your graveyard to the battlefield.                 19
+{1}{B}: Return ~ from your graveyard to the battlefield tapped.          19
+```
+
+The decline sits on `~`, immediately after `Return`, which reads like a missing verb and is not one.
+The grammar has moved the source to a named zone since the first `SelfSteps` rules ("exile it",
+"return it to its owner's hand", "put it on top of its owner's library"). What it had never read is a
+sentence that **prints where the card is coming from** — and that phrase is the family, because of
+where the second half of it lands in the model.
+
+Whole-corpus coverage 8,234 → **8,328 cards** (+94); the baked ledger 8,015 → **8,109 whole**, with
+**none lost**. MISMATCH, AMBIGUOUS, non-invertible normalization and redundant readings all stay at
+**0**. The family falls to **10 cards / 0 sole / 10 lines** — every one of them "Remove ~ from your
+deck before playing if you're not playing for ante", which is a different construct wearing the same
+first three words.
+
+### One printed phrase, two SDK fields, and CR 113.6m decides which is derived
+
+"From your graveyard" says two things:
+
+- **at resolution**, that the move happens only if the card is still there — `MoveToZoneEffect.fromZone`,
+  the guard whose absence [the graveyard rules](src/main/kotlin/com/wingedsheep/assay/grammar/Graveyard.kt)
+  already record as tried-and-kept;
+- **at activation**, that the ability can be used while the card sits in the graveyard —
+  `ActivatedAbility.activateFromZone`, `TriggeredAbility.activeZones`.
+
+Only the second was blocking. `Activated.abilityFor` reconstructs the whole ability and compares it,
+so an activation zone the sentence could not spell made *every* one of these lines refuse to print,
+whatever its effect clause said. That is what 74 sole-blocked cards were waiting on, and it is why the
+family's headline is a verb and its content is a field.
+
+The obvious fix is to carry the zone up from the clause to the ability — a value threaded through
+`Steps`. It does not survive contact with the corpus: the trigger members of this family print the
+move **inside a gate** ("Whenever a land you control enters, you may return ~ from your graveyard to
+the battlefield." — Bloodghast; "…you may pay {B}. If you do, return ~ from your graveyard to your
+hand." — Lingering Phantom, Shambling Cie'th, Killian's Confidence), so the carrier would have to
+thread through every wrapper in the cascade and change the type of the slot ten rules take.
+
+The rules text says not to carry it at all:
+
+> **CR 113.6m** An ability whose cost or effect specifies that it moves the object it's on out of a
+> particular zone functions only in that zone, unless its trigger condition or a previous part of its
+> cost or effect specifies that the object is put into that zone…
+
+So `Recursion.functionsIn` **derives** it, exactly as `Activated.producesMana` derives mana-ability-ness
+from CR 605.1a — this module's "a value the SDK carries twice is derived, not spelled" with the
+derivation written down in the Comprehensive Rules. One function, called from both `abilityFor`s, and
+the trigger half came free with the activated one because a derivation walks *down* into the gate
+instead of asking the gate to hand something up.
+
+Two properties worth naming. It **cannot change an existing reading**: no rule the grammar had ever
+built a `fromZone`, so before this band the derivation returns `BATTLEFIELD` on every line in the
+corpus. And its "unless" clause is load-bearing rather than decorative — it is the Ojer cycle. "When
+Ojer Taq dies, return it to the battlefield transformed" carries the same graveyard source and
+functions on the **battlefield**, because the dies trigger is what put the card in the graveyard; a
+derivation that read only the effect would make the ability wait in a zone it can only reach by having
+already fired. Both halves of the exception are implemented — the trigger event, and a cost that
+sacrifices or exiles the source.
+
+### The product: one SDK type, reached through two frozen constants
+
+`MoveToZoneEffect` is a destination, a `ZonePlacement`, a library position, a counter to land with and
+the guard. [`Recursion`](src/main/kotlin/com/wingedsheep/assay/grammar/Recursion.kt) is its product
+with the printed source zone: a **move table** and two riders.
+
+The table's rows spell the whole span from the verb to the destination noun, and the verb is part of
+the row rather than a word in front of a destination slot — English agrees on the *pair*. A card comes
+back "from your graveyard **to** the battlefield" and goes "from your hand **onto** the battlefield",
+and the same destination takes both spellings depending on which verb opens the clause, so a slotted
+destination would leave the verb and its preposition undetermined by the model. That is [the target
+quantifier](#the-target-quantifier)'s argument one axis over. Where two spellings do denote one model
+— "Put ~ from your graveyard onto the battlefield" against "Return ~ from your graveyard to the
+battlefield", 1 printed line against 48 — the minority is an `alternate`: it parses and never prints.
+
+The riders are rows with a genuinely **empty** surface, which is the whole point of making them rows:
+`ZonePlacement.Default` is what Oracle says by saying nothing, and a rule that had spelled " tapped"
+as required template text is precisely the shape that put 19 bare "…to the battlefield." lines in
+[the final period](#the-final-period). The counter rider is the corpus's spelling and not the SDK's
+shorter one — eight cards write `Composite(move, AddCounters(…, Self))` and none writes
+`MoveToZoneEffect.addCounterType`, which holds one counter where the sentence can print several.
+
+And a row **declares which riders it takes**. "To your hand" is never printed tapped and never lands
+with counters, so it is offered neither; the library row fixes its own `ZonePlacement.Top` instead.
+Offering every rider to every row would print sentences Oracle does not have.
+
+### The restriction sentence the family ends on, and the join it does not
+
+The probe is what said to write this second half. Substituting a known-good clause for the move
+measured **66 of 131 lines and 36 whole cards**; extending the substitution to swallow the trailing
+`Activate only …` sentence measured **92 lines and 59 cards**. `Restrictions.oneActivation` had four
+rows, and two were missing:
+
+- **"during your upkeep"** — one printed phrase and *two* model restrictions, so it is an
+  `ActivationRestriction.All` rather than two rows of the comma-joined run. Spelling it as two rows
+  would print "Activate only during your turn, during your upkeep."; the corpus is 6–2 for the `All`,
+  and the two are fixed here.
+- **"if {cond}"** — which is the whole `Conditions` vocabulary, reached the way the casting line's
+  twin already reaches it.
+
+What is deliberately **not** in is the `" and only "` join — "Activate only if there are four or more
+card types among cards in your graveyard **and only** as a sorcery." It is not a missing row. The
+sentence joins its restrictions two ways, `", "` and `" and only "`, and nothing in a two-element
+restriction list says which one to print: "Activate only during your turn, before attackers are
+declared." and "Activate only during your upkeep and only if X." are both lists of two. That is a hard
+ambiguity, and this grammar does not resolve one by ordering an alternation. It needs the separator to
+become a property of something in the model, which is a piece of design rather than a row.
+
+### What the differential found: 18 cards missing a guard, and four other bugs
+
+Divergences went 43 → 63 the moment these lines became comparable, and every new row was the same
+thing: a golden with `activateFromZone = Graveyard` and **no `fromZone` on its effect**. Six cards
+write the guard, eighteen did not, and the eighteen have a live bug rather than a shorter model —
+`ActivateAbilityHandler` checks the activation zone when the ability is *activated* and nothing
+re-checks it on resolution, so a Reassembling Skeleton exiled from the graveyard in response to its
+own ability came back anyway. From exile.
+
+Two of them could not have written it: `Effects.PutOntoBattlefieldFromGraveyard` — the facade that
+exists to carry this guard, and whose own KDoc says so — had no `tapped` parameter. So the five cards
+printing "return this card from your graveyard to the battlefield **tapped**" reached past it, four
+for plain `PutOntoBattlefield` and one for a raw `Effects.Move`, and lost the guard on the way. A frozen facade parameter is a card's missing
+word, the same finding [the top-of-library band](#the-top-of-library-band) made about a different one.
+`Effects.ReturnToHandFromGraveyard` is new beside it, for the destination that had no guarded facade
+at all.
+
+Four card bugs came with them, each of a class the module has seen before:
+
+| card | what the golden said | what the text says |
+|---|---|---|
+| Nim Devourer | `ForceSacrifice(PlayerRef(You))` | the bare imperative is `SacrificeEffect` — `Effects.SacrificeOwn`, whose KDoc already records this split |
+| Nim Devourer | `[DuringStep(UPKEEP), OnlyDuringYourTurn]` | the flat pair against the corpus's 6–2 `All` |
+| Gangrenous Goliath | `Creature.withSubtype("Cleric")` | "three untapped **Clerics** you control" is any permanent — the bare-tribal-noun reading again |
+| Mox Jasper | `ControlCreatureOfType(DRAGON)` | "if you control a **Dragon**" is any permanent; `ControlPermanentOfType` is the facade |
+| Killian's Confidence | `sourceFilter = Creature.youControl()` | `OneOrMoreDealCombatDamageToPlayerEvent` reads "…**you control** deal combat damage", so the predicate said it twice |
+
+The list ends at **44**: the standing 43, unchanged by name, plus one.
+
+### The one divergence left, and why it stays
+
+**Urban Retreat** prints "Put this card from your hand onto the battlefield." and its golden carries
+`ZonePlacement.Tapped`. Not a card bug: the land's own "This land enters tapped." is an `EntersTapped`
+self-replacement, and the engine's *effect-based* entry path does not re-apply a permanent's own
+self-replacement — removing the explicit placement fails `UrbanRetreatScenarioTest:148`, which is how
+that was checked rather than assumed. So the card compensates, the grammar reads what the line says,
+and the two disagree for a reason that lives in the engine's replacement path.
+
+That is worth its own change and not this one: making an effect-based battlefield entry apply the
+card's self-replacements touches every `MoveToZone(→ BATTLEFIELD)` in the engine, and the
+replacements that would then double-apply are not all idempotent the way "tapped" is.
+
+### What is left, and what it names
+
+52 of the family's 131 cards are read whole — against 74 sole-blocked, the 1.4× overstatement the ranking notes predict — and the residue is almost all one thing:
+
+| lines | example | what it needs |
+|---|---|---|
+| 13 | "Activate only if you attacked this turn.", "…and only as a sorcery." | the restriction separator above, plus four `Conditions` rows (attacked this turn, gained life this turn, an opponent lost life this turn, you control a legendary creature) |
+| 9 | "Remove ~ from your deck before playing if you're not playing for ante." | the ante rules, which the engine does not model |
+| 3 | "Put ~ from your graveyard into your library third from the top." | an ordinal leaf for `positionFromTop`; the table's row is written and its number is not spellable |
+| 3 | "…to the battlefield attached to target creature you control." | the aura return — a second effect type, and a target declared inside the move |
+| 2 | "…tapped. It gains "If ~ would leave the battlefield, exile it instead…"" | a quoted grant after the move, and a cost reduction on the ability |
+
+And the cheapest thing this band named is not in the family at all. CR 113.6m reads the **cost** as
+well as the effect, and `from your graveyard: …` still sits on the ranking at **64 cards / 50 sole-blocked**: "Exile ~ from your graveyard: Create two 1/1 red Elemental creature tokens."
+(Seasoned Pyromancer). The derivation is already written for it; what is missing is one word in the
+SDK — `AbilityCost.ExileSelf` is a `data object` with no zone on it, so a rule cannot yet say *which*
+zone the source is exiled from. That makes it the rare band whose grammar half is a single `Costs` row
+behind a one-field SDK change.
 
 ## The differential gate
 
