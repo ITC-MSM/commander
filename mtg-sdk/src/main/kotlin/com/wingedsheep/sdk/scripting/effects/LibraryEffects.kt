@@ -318,6 +318,20 @@ data class ExileLibraryUntilManaValueEffect(
  * .CollectionNonEmpty(storeCastTo))` for "you may cast … . If you do, [then]" — the follow-up is
  * skipped when the player declines or the cast can't be paid for (Kaervek's "If you do, you lose
  * 2 life"). The collection is left empty when nothing was cast.
+ *
+ * **Where the spell goes afterwards.** [insteadOfGraveyard] is the cast-this-way rider: the card
+ * is stamped so that when the spell would leave the stack for its owner's graveyard it goes to
+ * that destination instead. `EXILE` is the common "exile it instead" clause (Jetsam);
+ * `BOTTOM_OF_LIBRARY` is Kylox's Voltstrider's "put it on the bottom of its owner's library
+ * instead". The stamp is applied only to the card actually being cast, and only when the cast
+ * initiates — a declined or impossible cast leaves nothing behind on cards still in the
+ * collection.
+ *
+ * **Who casts it.** [caster] answers the one question a per-player iteration raises: inside
+ * `ForEachPlayerEffect` the context's controller is rebound to the iterated player, so a spell
+ * cast from *each opponent's* graveyard by *you* (Jetsam) needs [Chooser.SourceController] to
+ * name the spell's own controller instead. The default [Chooser.Controller] is the ordinary case
+ * and is what every non-iterated card wants.
  */
 @SerialName("CastFromCollectionWithoutPayingCost")
 @Serializable
@@ -337,11 +351,28 @@ data class CastFromCollectionWithoutPayingCostEffect(
      * hold single-faced cards.
      */
     val castTransformed: Boolean = false,
+    /**
+     * Where the spell goes instead of its owner's graveyard when it leaves the stack, or null
+     * (the default) to leave the ordinary destination alone.
+     */
+    val insteadOfGraveyard: AfterResolveDestination? = null,
+    /** Who casts the card. Only matters inside a per-player iteration — see the class KDoc. */
+    val caster: Chooser = Chooser.Controller,
 ) : Effect {
     override val description: String = buildString {
         append("Cast that card")
         if (castTransformed) append(" transformed")
         if (!payManaCost) append(" without paying its mana cost")
+        when (insteadOfGraveyard) {
+            AfterResolveDestination.EXILE ->
+                append(". If that spell would be put into a graveyard, exile it instead")
+            AfterResolveDestination.BOTTOM_OF_LIBRARY ->
+                append(
+                    ". If that spell would be put into a graveyard, put it on the bottom of " +
+                        "its owner's library instead"
+                )
+            null -> Unit
+        }
     }
 }
 

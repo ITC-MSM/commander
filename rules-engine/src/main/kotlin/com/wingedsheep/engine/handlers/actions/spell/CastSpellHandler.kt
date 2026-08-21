@@ -3669,7 +3669,7 @@ class CastSpellHandler(
         ) {
             currentCastState = currentCastState.updateEntity(action.cardId) { c ->
                 c.with(
-                    com.wingedsheep.engine.state.components.identity.ExileAfterResolveComponent(
+                    com.wingedsheep.engine.state.components.identity.AfterResolveDestinationComponent(
                         onlyIfResolved = false
                     )
                 )
