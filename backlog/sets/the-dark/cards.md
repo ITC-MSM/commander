@@ -2,7 +2,7 @@
 
 **Set Size:** 119 cards
 **Release Date:** August 1, 1994
-**Implemented:** 60 / 119
+**Implemented:** 62 / 119
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 19    | 8    |
@@ -77,7 +77,7 @@
 - [ ] Season of the Witch
 - [ ] The Fallen
 - [x] Uncle Istvan
-- [ ] Word of Binding
+- [x] Word of Binding
 - [ ] Worms of the Earth
 
 ### Red
@@ -118,7 +118,7 @@
 - [ ] Tracker
 - [ ] Venom
 - [ ] Whippoorwill
-- [ ] Wormwood Treefolk
+- [x] Wormwood Treefolk
 
 ### Multicolor
 - [x] Dark Heart of the Wood
