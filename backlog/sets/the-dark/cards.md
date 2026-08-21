@@ -126,7 +126,7 @@
 - [x] Scarwood Goblins
 
 ### Artifact
-- [ ] Barl's Cage
+- [x] Barl's Cage
 - [x] Bone Flute
 - [x] Book of Rass
 - [x] Coal Golem
