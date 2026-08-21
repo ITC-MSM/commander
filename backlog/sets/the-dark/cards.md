@@ -2,7 +2,7 @@
 
 **Set Size:** 119 cards
 **Release Date:** August 1, 1994
-**Implemented:** 53 / 119
+**Implemented:** 54 / 119
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 19    | 8    |
@@ -71,7 +71,7 @@
 - [x] Grave Robbers
 - [ ] Inquisition
 - [x] Marsh Gas
-- [ ] Murk Dwellers
+- [x] Murk Dwellers
 - [ ] Nameless Race
 - [ ] Rag Man
 - [ ] Season of the Witch
