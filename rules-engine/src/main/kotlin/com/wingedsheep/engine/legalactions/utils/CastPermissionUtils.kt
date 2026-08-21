@@ -729,6 +729,52 @@ class CastPermissionUtils(
     }
 
     /**
+     * The value of an ability's `{X}` when its own text defines it (CR 107.3c) — Soul Foundry's
+     * "X is the mana value of that card." — or null when X is the controller's choice (CR 107.3a),
+     * which is every other ability.
+     *
+     * Evaluated against the source permanent, so a [DynamicAmount] that reads the source's
+     * linked-exile pile, its counters, or the board resolves the way it would inside the ability's
+     * effect. A negative amount is clamped to 0: `{X}` can never be a refund.
+     */
+    fun definedXValue(
+        state: GameState,
+        ability: ActivatedAbility,
+        sourceId: EntityId?,
+        controllerId: EntityId
+    ): Int? {
+        val amount = ability.xDefinedAs ?: return null
+        val context = EffectContext(sourceId = sourceId, controllerId = controllerId)
+        return DynamicAmountEvaluator().evaluate(state, amount, context).coerceAtLeast(0)
+    }
+
+    /**
+     * Substitute an ability's *defined* X (CR 107.3c) into the `{X}` symbols of its [cost], turning
+     * `{X}, {T}` into `{3}, {T}` for an imprinted three-drop.
+     *
+     * This is the first step of the shared effective-cost pipeline — before the generic reductions,
+     * the equip discounts and the colour relaxation — for two reasons. It has to run before them so
+     * a reduction or a tax applies to the *resolved* total the way CR 601.2f expects (CR 602.2b
+     * routes an activation cost through that same total-cost step), and it has to
+     * run before anything reads the cost so that the X-choice pause, the affordability check and
+     * the payment all see an ordinary fixed cost. That is what keeps a defined X out of the ~70
+     * `CostAtom.Mana` read sites: none of them ever meets one.
+     *
+     * A cost with no mana component is returned unchanged — there are no `{X}` symbols to define,
+     * and unlike a tax ([applyActivatedAbilityCostReduction]) a definition has nothing to add.
+     */
+    fun applyDefinedXValue(
+        cost: AbilityCost,
+        ability: ActivatedAbility,
+        state: GameState,
+        sourceId: EntityId?,
+        controllerId: EntityId
+    ): AbilityCost {
+        val x = definedXValue(state, ability, sourceId, controllerId) ?: return cost
+        return mapFirstManaComponent(cost) { it.withXAs(x) } ?: cost
+    }
+
+    /**
      * Reduce the generic portion of an activated ability's [cost] by any [ReduceActivatedAbilityCost]
      * static on the battlefield whose [filter] matches the ability's source ([sourceId]) — e.g.
      * Power Artifact reducing the enchanted artifact's activated abilities by {2} (floored so the

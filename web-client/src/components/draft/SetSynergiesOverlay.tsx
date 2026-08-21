@@ -198,6 +198,53 @@ const SET_SYNERGIES: Record<string, SetSynergies> = {
       },
     ],
   },
+  MRD: {
+    setCode: 'MRD',
+    setName: 'Mirrodin',
+    archetypes: [
+      {
+        name: 'Affinity',
+        colors: ['U'],
+        keyCard: 'Somber Hoverguard',
+        description: 'Flood the board with cheap artifacts, then cast Frogmite, Myr Enforcer and Somber Hoverguard for a fraction of their printed cost. The format\'s defining deck — count artifacts, not lands.',
+      },
+      {
+        name: 'Equipment Aggro',
+        colors: ['W'],
+        creatureTypes: ['Cat'],
+        keyCard: 'Bonesplitter',
+        description: 'Cheap Leonin bodies plus Bonesplitter and Leonin Scimitar. Equipment survives removal and moves on to the next creature, so trades never cost you the beatdown.',
+      },
+      {
+        name: 'Skyhunter Skies',
+        colors: ['W', 'U'],
+        creatureTypes: ['Cat', 'Drone'],
+        keyCard: 'Leonin Skyhunter',
+        description: 'Evasive fliers wearing Equipment. Nothing on the ground matters once a Leonin Skyhunter is carrying a Bonesplitter and blue is holding the board back.',
+      },
+      {
+        name: 'Nim Sacrifice',
+        colors: ['B', 'R'],
+        creatureTypes: ['Zombie'],
+        keyCard: 'Disciple of the Vault',
+        description: 'Nim creatures grow with every artifact you control, and Disciple of the Vault turns each one you sacrifice into damage. Your own artifacts dying is the payoff, not the cost.',
+      },
+      {
+        name: 'Artifact Demolition',
+        colors: ['R', 'G'],
+        creatureTypes: ['Elf', 'Beast'],
+        keyCard: 'Electrostatic Bolt',
+        description: 'Shatter effects and Tel-Jilad hate punish a format built out of artifacts, while red removal clears the way for green\'s oversized bodies.',
+      },
+      {
+        name: 'Myr Ramp',
+        colors: ['G'],
+        creatureTypes: ['Myr'],
+        keyCard: 'Copper Myr',
+        description: 'Myr and Talismans accelerate you past the aggro decks and fix a splash, then dump the set\'s biggest artifacts a turn or two early.',
+      },
+    ],
+  },
   DOM: {
     setCode: 'DOM',
     setName: 'Dominaria',

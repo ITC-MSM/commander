@@ -1698,6 +1698,12 @@ class ActivatedAbilityBuilder {
     var xManaRestriction: Set<Color> = emptySet()
     /** Minimum legal value for `{X}` in this ability's cost (set to 1 for "X can't be 0"). */
     var minimumXValue: Int = 0
+    /**
+     * Defines the `{X}` in this ability's cost from game state instead of asking the controller
+     * for a number (CR 107.3c) — Soul Foundry's "X is the mana value of that card."
+     * See [ActivatedAbility.xDefinedAs].
+     */
+    var xDefinedAs: DynamicAmount? = null
     /** When true, this ability can't be copied by copy-ability effects (CR 707.10e). */
     var cantBeCopied: Boolean = false
 
@@ -1767,6 +1773,7 @@ class ActivatedAbilityBuilder {
             genericCostReduction = genericCostReduction,
             xManaRestriction = xManaRestriction,
             minimumXValue = minimumXValue,
+            xDefinedAs = xDefinedAs,
             cantBeCopied = cantBeCopied
         )
     }

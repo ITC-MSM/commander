@@ -12499,6 +12499,132 @@
     ]
 }
 
+// Soul Foundry
+{
+    "name": "Soul Foundry",
+    "manaCost": "{4}",
+    "typeLine": "Artifact",
+    "oracleText": "Imprint — When this artifact enters, you may exile a creature card from your hand.\n{X}, {T}: Create a token that's a copy of the exiled card. X is the mana value of that card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "filter": "creature"
+                                },
+                                "storeAs": "foundryImprintCandidates"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "foundryImprintCandidates",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "foundryImprint",
+                                "prompt": "Choose a creature card to exile"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "foundryImprint",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                },
+                                "linkToSource": true
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "You may exile a creature card from your hand."
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{X}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "foundryImprinted"
+                        },
+                        {
+                            "type": "CreateTokenCopyOfTarget",
+                            "target": {
+                                "type": "PipelineTarget",
+                                "collectionName": "foundryImprinted"
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Create a token that's a copy of the exiled card."
+                },
+                "xDefinedAs": {
+                    "type": "EntityProperty",
+                    "entity": "LinkedExiledCard",
+                    "numericProperty": "ManaValue"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "246",
+        "rarity": "RARE",
+        "artist": "Arnie Swekel",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/1/11b4983a-2a95-4322-a315-27b4bd430d39.jpg?1783944502",
+        "rulings": [
+            {
+                "date": "2004-12-01",
+                "text": "Soul Foundry puts a token copy of the imprinted card onto the battlefield. The token is put onto the battlefield, not cast."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "The token is an exact copy in every way, except that it's a token, not a card."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "Most creature tokens have no mana cost and a mana value of 0, but a creature token put onto the battlefield by Soul Foundry has the same mana cost and mana value as the card it copies."
+            },
+            {
+                "date": "2004-10-04",
+                "text": "You do not get a chance to pay any optional costs, such as Kicker, on the imprinted card."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Soul Nova
 {
     "name": "Soul Nova",
