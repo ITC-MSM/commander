@@ -49,7 +49,7 @@
 - [ ] Erosion
 - [x] Flood
 - [x] Ghost Ship
-- [ ] Giant Shark
+- [x] Giant Shark
 - [ ] Leviathan
 - [ ] Mana Vortex
 - [x] Merfolk Assassin
