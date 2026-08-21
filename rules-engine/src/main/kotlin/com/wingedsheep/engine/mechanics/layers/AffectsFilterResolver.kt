@@ -20,6 +20,7 @@ import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.combat.BlockedThisCombatComponent
 import com.wingedsheep.engine.state.components.combat.BlockingComponent
 import com.wingedsheep.engine.state.components.combat.PlayerAttackersThisTurnComponent
+import com.wingedsheep.engine.state.components.combat.PlayerAttackersLastTurnComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
@@ -511,6 +512,17 @@ internal class AffectsFilterResolver {
             val attackerSet = controllerId?.let {
                 state.getEntity(it)
                     ?.get<PlayerAttackersThisTurnComponent>()
+                    ?.attackerIds
+            } ?: emptySet()
+            entityId in attackerSet
+        }
+        // The same read one turn back — see PlayerAttackersLastTurnComponent. Kept in step with
+        // PredicateEvaluator's branch so projection and resolution agree.
+        StatePredicate.AttackedLastTurn -> {
+            val controllerId = container.get<ControllerComponent>()?.playerId
+            val attackerSet = controllerId?.let {
+                state.getEntity(it)
+                    ?.get<PlayerAttackersLastTurnComponent>()
                     ?.attackerIds
             } ?: emptySet()
             entityId in attackerSet

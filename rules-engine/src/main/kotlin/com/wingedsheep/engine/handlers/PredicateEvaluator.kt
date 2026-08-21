@@ -26,6 +26,7 @@ import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.combat.BlockedThisCombatComponent
 import com.wingedsheep.engine.state.components.combat.BlockingComponent
 import com.wingedsheep.engine.state.components.combat.PlayerAttackersThisTurnComponent
+import com.wingedsheep.engine.state.components.combat.PlayerAttackersLastTurnComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
@@ -1493,6 +1494,17 @@ class PredicateEvaluator {
                     ?: return false
                 val attackerSet = state.getEntity(controllerId)
                     ?.get<PlayerAttackersThisTurnComponent>()
+                    ?.attackerIds ?: emptySet()
+                entityId in attackerSet
+            }
+
+            // The same read one turn back: PlayerAttackersLastTurnComponent is the this-turn set as
+            // it stood at the end of the controller's own most recent turn.
+            StatePredicate.AttackedLastTurn -> {
+                val controllerId = container.get<ControllerComponent>()?.playerId
+                    ?: return false
+                val attackerSet = state.getEntity(controllerId)
+                    ?.get<PlayerAttackersLastTurnComponent>()
                     ?.attackerIds ?: emptySet()
                 entityId in attackerSet
             }

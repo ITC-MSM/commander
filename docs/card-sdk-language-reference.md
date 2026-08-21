@@ -8903,6 +8903,18 @@ answer it and would silently return `false`.
   battlefield, sacrifice this enchantment" state trigger.
 - `NoLandsOnBattlefield` — the land sibling of `NoCreaturesOnBattlefield`, same global shape. Used by
   Mana Vortex's "when there are no lands on the battlefield, sacrifice this enchantment" state trigger.
+- `SourceAttackedLastTurn` — this permanent was declared as an attacker during its controller's
+  **most recent own turn**. The one-turn-back sibling of `SourceAttackedThisTurn`: false on the turn
+  it attacked, true on the next. Backed by `PlayerAttackersLastTurnComponent`, rolled over in the
+  cleanup step of that player's *own* turn only, so an intervening opponent's turn can't blank it.
+  Gates the untap step for **Goblin Rock Sled** ("doesn't untap during your untap step if it
+  attacked during your last turn") as `ConditionalStaticAbility(GrantKeyword(DOESNT_UNTAP,
+  GroupFilter.source()), SourceAttackedLastTurn)` — a *conditional* static rather than the bare
+  flag, so the permanent untaps normally on a turn it didn't attack. An Aura granting the same
+  clause to its host (**Tangle Kelp**) must use
+  `EnchantedPermanentMatches(GameObjectFilter.Any.attackedLastTurn())` instead: the Aura is the
+  source and an Aura never attacks, so a source-scoped condition would always read false.
+  The filter-side helper is `GameObjectFilter.attackedLastTurn()`.
 - `ControlMoreCreatures` — you control more creatures than each opponent.
 - `OpponentControlsCreature` — at least one opponent has a creature.
 - `OpponentControls(filter, negate = false)` — at least one opponent controls a permanent matching

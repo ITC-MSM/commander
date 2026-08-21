@@ -535,6 +535,7 @@ val engineSerializersModule = SerializersModule {
         subclass(CanAttackDespiteDefenderThisTurnComponent::class)
         subclass(PlayerAttackedThisTurnComponent::class)
         subclass(PlayerAttackersThisTurnComponent::class)
+        subclass(PlayerAttackersLastTurnComponent::class)
         subclass(PlayerAttackedPlayersThisTurnComponent::class)
 
         // Player components

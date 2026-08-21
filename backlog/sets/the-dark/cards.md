@@ -92,7 +92,7 @@
 - [x] Goblin Caves
 - [x] Goblin Digging Team
 - [x] Goblin Hero
-- [ ] Goblin Rock Sled
+- [x] Goblin Rock Sled
 - [x] Goblin Shrine
 - [x] Goblin Wizard
 - [x] Goblins of the Flarg

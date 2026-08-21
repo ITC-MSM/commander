@@ -403,6 +403,24 @@ sealed interface StatePredicate {
     }
 
     /**
+     * Was declared as an attacker during its controller's **most recent own turn** — "it attacked
+     * during your last turn". Backed by `PlayerAttackersLastTurnComponent`, which the cleanup step
+     * rolls over from the this-turn set on that player's own turn only, so an intervening
+     * opponent's turn can't blank it.
+     *
+     * Distinct from [AttackedThisTurn] in both direction and lifetime: this one is false on the
+     * turn the creature actually attacked and true on the next one. It is what gates the untap step
+     * for Goblin Rock Sled and Tangle Kelp ("doesn't untap during your untap step if it attacked
+     * during your last turn") — the untap step runs before that turn's cleanup, so the record it
+     * reads is genuinely the previous turn's.
+     */
+    @SerialName("AttackedLastTurn")
+    @Serializable
+    data object AttackedLastTurn : History {
+        override val description: String = "attacked during its controller's last turn"
+    }
+
+    /**
      * Was declared as an attacker at least once during the current combat (CR 508.1). Backed by the
      * per-entity `AttackedThisCombatComponent` marker, stamped at attacker-declaration time and
      * cleared when the combat phase ends. Resets between multiple combats in one turn, and survives

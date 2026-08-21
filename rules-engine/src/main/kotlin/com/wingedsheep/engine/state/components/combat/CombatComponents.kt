@@ -210,6 +210,24 @@ data class PlayerAttackersThisTurnComponent(
 ) : Component
 
 /**
+ * The [PlayerAttackersThisTurnComponent] set as it stood at the end of this player's **own most
+ * recent turn** — "creatures that attacked during your last turn".
+ *
+ * Rolled over in the cleanup step of that player's turn, immediately before the this-turn set is
+ * cleared, and *only* on their own turn: cleanup runs at the end of every turn, so rolling
+ * unconditionally would let an intervening opponent's turn (during which this player declared no
+ * attackers) blank the record and make "your last turn" mean "the previous turn in the game".
+ *
+ * Backs `StatePredicate.AttackedLastTurn` — Goblin Rock Sled and Tangle Kelp's "doesn't untap
+ * during your untap step if it attacked during your last turn". Note the untap step it gates runs
+ * *before* that turn's cleanup, so the record read there is genuinely the previous turn's.
+ */
+@Serializable
+data class PlayerAttackersLastTurnComponent(
+    val attackerIds: Set<EntityId>
+) : Component
+
+/**
  * Records which players this player has "attacked" this turn (CR 508.6): the set of
  * defending players against whom they declared one or more attackers. A creature's
  * defending player is the player it's attacking, or the controller of the planeswalker /

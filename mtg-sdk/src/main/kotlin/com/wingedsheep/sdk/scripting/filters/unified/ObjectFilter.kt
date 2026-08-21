@@ -797,6 +797,14 @@ data class GameObjectFilter(
     )
 
     /**
+     * Was declared as an attacker during its controller's **most recent own turn** — the one-turn-back
+     * sibling of [attackedThisTurn]. False on the turn it actually attacked, true on the next one.
+     */
+    fun attackedLastTurn() = copy(
+        statePredicates = statePredicates + StatePredicate.AttackedLastTurn
+    )
+
+    /**
      * Was declared as an attacker at least once during the current combat (CR 508.1). Backed by a
      * per-entity marker stamped at attacker-declaration time; cleared when the combat phase ends.
      * Survives removal from combat. Pair with [blockedThisCombat] for "attacked or blocked this combat".
