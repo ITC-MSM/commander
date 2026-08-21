@@ -1418,13 +1418,18 @@ class CastPermissionUtils(
     }
 
     /**
-     * True when a [com.wingedsheep.sdk.scripting.SpendAnyManaTypeForActivatedAbilities] static on
-     * the battlefield applies to [sourceId] — i.e. mana of any type may be spent to pay the mana
-     * portion of [sourceId]'s activated-ability costs (Sharkey, Tyrant of the Shire). Callers
-     * relax the colored/colorless requirements of the ability's mana cost via
-     * [com.wingedsheep.sdk.core.ManaCost.relaxColors] when this returns true (CR 118.14 / 609.4b).
+     * Every [com.wingedsheep.sdk.scripting.SpendAnyManaTypeForActivatedAbilities] static on the
+     * battlefield that applies to [sourceId] — i.e. that relaxes the mana portion of [sourceId]'s
+     * activated-ability costs (CR 118.14 / 609.4b). The list, rather than a boolean, because the
+     * static has two strengths: `substituteColor == null` is Sharkey's "mana of any type can be
+     * spent", and a color is Quicksilver Elemental's narrower "you may spend blue mana as though it
+     * were mana of any color". [relaxAbilityCostColorsIfAny] picks the strongest that applies.
      */
-    fun canSpendAnyManaTypeForAbilities(state: GameState, sourceId: EntityId): Boolean {
+    fun spendRelaxationsForAbilities(
+        state: GameState,
+        sourceId: EntityId
+    ): List<com.wingedsheep.sdk.scripting.SpendAnyManaTypeForActivatedAbilities> {
+        val result = mutableListOf<com.wingedsheep.sdk.scripting.SpendAnyManaTypeForActivatedAbilities>()
         val projected = state.projectedState
         for (granterId in state.getBattlefield()) {
             val granter = state.getEntity(granterId) ?: continue
@@ -1450,32 +1455,43 @@ class CastPermissionUtils(
                         )
                     }
                 }
-                if (applies) return true
+                if (applies) result.add(any)
             }
         }
-        return false
+        return result
     }
 
     /**
      * If [sourceId] is under a [com.wingedsheep.sdk.scripting.SpendAnyManaTypeForActivatedAbilities]
-     * static, return [cost] with the colored/hybrid/Phyrexian/colorless requirements of its mana
-     * portion relaxed to generic ("mana of any type"); otherwise return [cost] unchanged. Non-mana
-     * cost components (tap, sacrifice, …) are left intact.
+     * static, return [cost] with the mana portion relaxed accordingly; otherwise return [cost]
+     * unchanged. Non-mana cost components (tap, sacrifice, …) are left intact.
+     *
+     * When several statics apply, the strongest wins: one "mana of any type" static relaxes
+     * everything to generic ([com.wingedsheep.sdk.core.ManaCost.relaxColors]) and there is nothing a
+     * single-color substitution could add on top. Otherwise each substitute color is applied in turn
+     * ([com.wingedsheep.sdk.core.ManaCost.relaxColorsTo]), which composes correctly because each
+     * pass only widens colored pips into hybrids.
      */
     fun relaxAbilityCostColorsIfAny(
         state: GameState,
         sourceId: EntityId,
         cost: AbilityCost
     ): AbilityCost {
-        if (!canSpendAnyManaTypeForAbilities(state, sourceId)) return cost
+        val relaxations = spendRelaxationsForAbilities(state, sourceId)
+        if (relaxations.isEmpty()) return cost
+        val anyType = relaxations.any { it.substituteColor == null }
+        val substitutes = relaxations.mapNotNull { it.substituteColor }.distinct()
+        fun relax(mana: com.wingedsheep.sdk.core.ManaCost): com.wingedsheep.sdk.core.ManaCost =
+            if (anyType) mana.relaxColors()
+            else substitutes.fold(mana) { acc, color -> acc.relaxColorsTo(color) }
         return when (cost) {
             is AbilityCost.Atom -> {
                 val mana = cost.manaCostOrNull ?: return cost
-                AbilityCost.Atom(CostAtom.Mana(mana.relaxColors()))
+                AbilityCost.Atom(CostAtom.Mana(relax(mana)))
             }
             is AbilityCost.Composite -> AbilityCost.Composite(cost.costs.map { sub ->
                 val mana = sub.manaCostOrNull
-                if (mana != null) AbilityCost.Atom(CostAtom.Mana(mana.relaxColors())) else sub
+                if (mana != null) AbilityCost.Atom(CostAtom.Mana(relax(mana))) else sub
             })
             else -> cost
         }

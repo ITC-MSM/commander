@@ -189,6 +189,43 @@ internal class EffectApplicator(
                     values.subtypes.addAll(mod.subtypes)
                     values.types.addAll(mod.subtypes)
                 }
+                is Modification.SetCreatureSubtypesFrom -> {
+                    // "Has the creature types of [that object]" (Duplicant). Same replace-only-the-
+                    // creature-types semantics as SetCreatureSubtypes above (CR 205.1b — non-creature
+                    // subtypes are untouched), but the set is read from the referenced object on every
+                    // projection pass instead of being baked in at conversion time.
+                    //
+                    // The reference is resolved against a bare EffectContext rooted at the *effect's*
+                    // source, which is all LinkedExiledCard needs — see ProjectionScopedAmounts for
+                    // why the context-scoped references can't be used here. The referenced card is in
+                    // exile and has no projection entry, so its printed creature types are the right
+                    // (and only) read.
+                    val creatureTypes = com.wingedsheep.sdk.core.Subtype.ALL_CREATURE_TYPES.toSet()
+                    val controllerId = projectedValues[effect.sourceId]?.controllerId
+                        ?: state.getEntity(effect.sourceId)?.get<ControllerComponent>()?.playerId
+                        ?: effect.controllerId
+                    val donorId = controllerId?.let {
+                        com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.resolveEntityReference(
+                            mod.source,
+                            EffectContext(
+                                sourceId = effect.sourceId,
+                                controllerId = it,
+                                affectedEntityId = entityId
+                            ),
+                            state
+                        )
+                    }
+                    val donorTypes = donorId
+                        ?.let { state.getEntity(it)?.get<CardComponent>() }
+                        ?.typeLine?.subtypes.orEmpty()
+                        .map { it.value }
+                        .filter { it in creatureTypes }
+                    val newTypes = donorTypes.toSet() + mod.retainedTypes
+                    values.subtypes.removeAll { it in creatureTypes }
+                    values.types.removeAll { it in creatureTypes }
+                    values.subtypes.addAll(newTypes)
+                    values.types.addAll(newTypes)
+                }
                 is Modification.SetBasicLandTypes -> {
                     val basicLandTypes = com.wingedsheep.sdk.core.Subtype.ALL_BASIC_LAND_TYPES
                     values.subtypes.removeAll { it in basicLandTypes }

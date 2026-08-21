@@ -2881,6 +2881,95 @@
     "colorIdentityOverride": []
 }
 
+// Duplicant
+{
+    "name": "Duplicant",
+    "manaCost": "{6}",
+    "typeLine": "Artifact Creature — Shapeshifter",
+    "oracleText": "Imprint — When this creature enters, you may exile target nontoken creature.\nAs long as a card exiled with this creature is a creature card, this creature has the power, toughness, and creature types of the last creature card exiled with it. It's still a Shapeshifter.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target nontoken creature"
+                        },
+                        "destination": "Exile",
+                        "linkToSource": true
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature nontoken"
+                    },
+                    "id": "target nontoken creature"
+                },
+                "descriptionOverride": "Imprint — When this creature enters, you may exile target nontoken creature."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "HasCreatureTypesOf",
+                    "source": "LinkedExiledCard",
+                    "retainedTypes": [
+                        "Shapeshifter"
+                    ]
+                },
+                "condition": {
+                    "type": "EntityMatches",
+                    "entity": "LinkedExiledCard",
+                    "filter": "creature"
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "SetBasePowerToughnessDynamicStatic",
+                    "power": {
+                        "type": "EntityProperty",
+                        "entity": "LinkedExiledCard",
+                        "numericProperty": "Power"
+                    },
+                    "toughness": {
+                        "type": "EntityProperty",
+                        "entity": "LinkedExiledCard",
+                        "numericProperty": "Toughness"
+                    }
+                },
+                "condition": {
+                    "type": "EntityMatches",
+                    "entity": "LinkedExiledCard",
+                    "filter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "165",
+        "rarity": "RARE",
+        "artist": "Thomas M. Baxa",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/4/d48a96f2-738f-433f-bfae-fbf378832a3b.jpg?1783944522"
+    },
+    "colorIdentityOverride": []
+}
+
 // Duskworker
 {
     "name": "Duskworker",
@@ -10271,6 +10360,68 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Quicksilver Elemental
+{
+    "name": "Quicksilver Elemental",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "{U}: This creature gains all activated abilities of target creature until end of turn. (If any of the abilities use that creature's name, use this creature's name instead.)\nYou may spend blue mana as though it were mana of any color to pay the activation costs of this creature's abilities.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{U}"
+                    }
+                },
+                "effect": {
+                    "type": "GainAllActivatedAbilitiesOf",
+                    "donor": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "{U}: This creature gains all activated abilities of target creature until end of turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "SpendAnyManaTypeForActivatedAbilities",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                },
+                "substituteColor": "BLUE"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "47",
+        "rarity": "RARE",
+        "artist": "Tony Szczudlo",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/9/2905f6ac-d054-454b-8e1a-9c32db13a581.jpg?1783944552"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

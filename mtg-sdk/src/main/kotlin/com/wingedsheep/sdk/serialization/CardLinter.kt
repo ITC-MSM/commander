@@ -1168,6 +1168,7 @@ object CardLinter {
         "ContextTarget",
         "TriggeringEntity",
         "DiscardedAsCost",
+        "LinkedExiledCard",
     )
 
     /** Records this node's dataflow accesses and target references (not its children). */

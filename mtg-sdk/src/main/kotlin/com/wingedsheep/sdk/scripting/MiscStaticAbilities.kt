@@ -793,25 +793,43 @@ data class GainActivatedAbilitiesOfPermanents(
 }
 
 /**
- * Mana of any type can be spent to activate the activated abilities of permanents matching
- * [filter] (CR 118.14 / 609.4b — colored, hybrid, Phyrexian, and colorless requirements in the
- * ability's cost may be paid with mana of any color or colorless).
+ * The mana requirements in the activated-ability costs of permanents matching [filter] are relaxed
+ * (CR 118.14 / 609.4b). Two printed strengths, chosen by [substituteColor]:
  *
- * Models Sharkey, Tyrant of the Shire ("Mana of any type can be spent to activate Sharkey's
- * abilities") with `filter = GroupFilter.source()`. The relaxation is applied to the mana
- * portion of the ability's cost only — non-mana cost components (tap, sacrifice, …) are
- * untouched — and is honored by both affordability checks and the mana solver at payment time.
+ *  - `substituteColor = null` — **"mana of any type can be spent"**: every colored, hybrid,
+ *    Phyrexian and colorless requirement may be paid with any mana at all. Sharkey, Tyrant of the
+ *    Shire ("Mana of any type can be spent to activate Sharkey's abilities") and Agatha's Soul
+ *    Cauldron, both with `filter = GroupFilter.source()` / a battlefield filter.
+ *  - a color — **"you may spend [color] mana as though it were mana of any color"**: only that one
+ *    color gains the substitution, and only for *colored* requirements. Quicksilver Elemental
+ *    ("You may spend blue mana as though it were mana of any color to pay the activation costs of
+ *    this creature's abilities") with `filter = GroupFilter.source(), substituteColor = Color.BLUE`.
+ *    Lowered by rewriting each foreign colored pip into a hybrid with the substitute
+ *    ([com.wingedsheep.sdk.core.ManaCost.relaxColorsTo]), so it reuses the existing hybrid payment
+ *    path rather than adding a second one. Generic and `{C}` requirements are untouched — they are
+ *    not colored.
  *
- * @property filter Which permanents' activated-ability mana costs may be paid with any mana
- *   type (use [GroupFilter.source] for "this permanent's abilities").
+ * Either way the relaxation applies to the mana portion of the ability's cost only — non-mana
+ * components (tap, sacrifice, …) are untouched — and is honored by both affordability checks and
+ * the mana solver at payment time, through the single `relaxAbilityCostColorsIfAny` seam.
+ *
+ * @property filter Which permanents' activated-ability mana costs are relaxed (use
+ *   [GroupFilter.source] for "this permanent's abilities").
+ * @property substituteColor When set, only mana of this color may be spent as though it were mana
+ *   of any color. Null (the default) is the stronger "mana of any type can be spent".
  */
 @SerialName("SpendAnyManaTypeForActivatedAbilities")
 @Serializable
 data class SpendAnyManaTypeForActivatedAbilities(
-    val filter: GroupFilter
+    val filter: GroupFilter,
+    val substituteColor: com.wingedsheep.sdk.core.Color? = null
 ) : StaticAbility {
     override val description: String =
-        "Mana of any type can be spent to activate ${filter.description}'s abilities"
+        if (substituteColor == null)
+            "Mana of any type can be spent to activate ${filter.description}'s abilities"
+        else
+            "You may spend ${substituteColor.name.lowercase()} mana as though it were mana of any " +
+                "color to pay the activation costs of ${filter.description}'s abilities"
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
         val newFilter = filter.applyTextReplacement(replacer)
         return if (newFilter !== filter) copy(filter = newFilter) else this
