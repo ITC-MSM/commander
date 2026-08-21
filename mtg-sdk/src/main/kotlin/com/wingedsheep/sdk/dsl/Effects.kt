@@ -4248,6 +4248,35 @@ object Effects {
         SkipNextDrawStepEffect(target)
 
     /**
+     * The target player skips **every** instance of [part] for the rest of this turn — the
+     * until-end-of-turn sibling of the one-shot [SkipNextDrawStep] / `SkipCombatPhases` markers.
+     * A skipped step or phase is proceeded past as though it didn't exist (CR 500.11 / 614.10): no
+     * priority in it, and no "at the beginning of ..." trigger for it. Used by Fatespinner.
+     */
+    fun SkipStepOrPhaseThisTurn(
+        part: com.wingedsheep.sdk.core.TurnPart,
+        target: EffectTarget = EffectTarget.PlayerRef(com.wingedsheep.sdk.scripting.references.Player.TargetPlayer)
+    ): Effect = com.wingedsheep.sdk.scripting.effects.SkipStepOrPhaseThisTurnEffect(part, target)
+
+    /**
+     * Each player exiles the top card of their library; the player who exiled the greatest mana
+     * value is published as the single entry of the pipeline collection [storeWinnerAs], with ties
+     * repeating among the tied players only. Open by design — compose the payoff off
+     * `EffectTarget.PipelineTarget(storeWinnerAs)`, and gate it on the collection being non-empty
+     * because the contest can end with no winner. Used by Timesifter.
+     */
+    fun ExileTopCardContest(
+        storeWinnerAs: String,
+        players: com.wingedsheep.sdk.scripting.references.Player =
+            com.wingedsheep.sdk.scripting.references.Player.Each,
+        storeExiledAs: String = "contestExiledCards"
+    ): Effect = com.wingedsheep.sdk.scripting.effects.ExileTopCardContestEffect(
+        players = players,
+        storeWinnerAs = storeWinnerAs,
+        storeExiledAs = storeExiledAs
+    )
+
+    /**
      * Controller controls the target player during that player's next **turn**
      * (Mindslaver-style). Used by The Dominion Bracelet.
      */

@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.core.BendType
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.TurnPart
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.effects.HijackScope
 import com.wingedsheep.sdk.scripting.effects.ManaExpiry
@@ -514,6 +515,20 @@ data class SkipUntapComponent(
     val affectsCreatures: Boolean = true,
     val affectsLands: Boolean = true
 ) : Component
+
+/**
+ * The parts of the *current* turn this player skips every instance of — Fatespinner's "the player
+ * skips each instance of the chosen step or phase this turn".
+ *
+ * Unlike the one-shot [SkipCombatPhasesComponent] / [SkipDrawStepComponent] markers, this is not
+ * consumed by the first occurrence: it stands until end-of-turn cleanup removes it, so a second
+ * main phase or an additional combat phase created later in the turn is skipped too.
+ * `TurnManager.advanceStepFromEndedStep` reads it *before* emitting the step's `StepChangedEvent`,
+ * which is what makes the skip faithful to CR 500.11 — no priority, and no "at the beginning of"
+ * trigger for a step that never happened.
+ */
+@Serializable
+data class SkippedTurnPartsComponent(val parts: Set<TurnPart>) : Component
 
 /**
  * Marker component indicating that a player should skip their next draw step.

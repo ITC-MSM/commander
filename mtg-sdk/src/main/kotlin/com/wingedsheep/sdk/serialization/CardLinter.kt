@@ -583,6 +583,10 @@ object CardLinter {
         put("FilterCollection" to "storeMatching", write(Space.COLLECTION))
         put("FilterCollection" to "storeNonMatching", write(Space.COLLECTION))
         put("ExileLibraryUntilManaValue" to "storeAs", write(Space.COLLECTION))
+        // The contest publishes the winning *player* as a one-entry collection and every card it
+        // exiled, in every round, as another.
+        put("ExileTopCardContest" to "storeWinnerAs", write(Space.COLLECTION))
+        put("ExileTopCardContest" to "storeExiledAs", write(Space.COLLECTION))
         put("Discover" to "storeDiscoveredAs", write(Space.COLLECTION))
         put("CopyCardIntoCollection" to "storeAs", write(Space.COLLECTION))
         put("CopyCollectionIntoCollection" to "storeAs", write(Space.COLLECTION))
