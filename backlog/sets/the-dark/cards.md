@@ -46,7 +46,7 @@
 - [ ] Deep Water
 - [x] Drowned
 - [x] Electric Eel
-- [ ] Erosion
+- [x] Erosion
 - [x] Flood
 - [x] Ghost Ship
 - [x] Giant Shark
