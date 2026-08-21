@@ -73,7 +73,7 @@
 - [x] Marsh Gas
 - [x] Murk Dwellers
 - [ ] Nameless Race
-- [ ] Rag Man
+- [x] Rag Man
 - [ ] Season of the Witch
 - [ ] The Fallen
 - [x] Uncle Istvan
