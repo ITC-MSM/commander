@@ -103,7 +103,7 @@
 ### Green
 - [x] Carnivorous Plant
 - [x] Elves of Deep Shadow
-- [ ] Gaea's Touch
+- [x] Gaea's Touch
 - [x] Hidden Path
 - [x] Land Leeches
 - [ ] Lurker
