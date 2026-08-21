@@ -197,6 +197,7 @@ export enum Keyword {
   PROWESS = 'PROWESS',
   FLURRY = 'FLURRY',
   CHANGELING = 'CHANGELING',
+  DEVOID = 'DEVOID',
   CRAFT = 'CRAFT',
   // Cost reduction
   CONVOKE = 'CONVOKE',
@@ -295,6 +296,7 @@ export const KeywordDisplayNames: Record<Keyword, string> = {
   [Keyword.PROWESS]: 'Prowess',
   [Keyword.FLURRY]: 'Flurry',
   [Keyword.CHANGELING]: 'Changeling',
+  [Keyword.DEVOID]: 'Devoid',
   [Keyword.CRAFT]: 'Craft',
   [Keyword.CONVOKE]: 'Convoke',
   [Keyword.DELVE]: 'Delve',
