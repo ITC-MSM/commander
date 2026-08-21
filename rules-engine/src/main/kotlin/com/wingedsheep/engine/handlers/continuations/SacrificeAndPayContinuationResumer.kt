@@ -705,7 +705,13 @@ class SacrificeAndPayContinuationResumer(
         val context = EffectContext(
             sourceId = continuation.sourceId,
             controllerId = continuation.controllerId,
-            pipeline = PipelineState(storedCollections = continuation.storedCollections),
+            pipeline = PipelineState(
+                storedCollections = continuation.storedCollections,
+                // The enclosing per-permanent loop's current entity, so a consequence written as
+                // `EffectTarget.Self` still means that permanent after the pay-or-decline pause
+                // (Cleansing: "for each land, destroy that land unless any player pays 1 life").
+                iterationTarget = continuation.iterationTarget
+            ),
             triggeringEntityId = continuation.triggeringEntityId,
             triggeringPlayerId = continuation.triggeringPlayerId
         )

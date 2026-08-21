@@ -197,6 +197,11 @@ data class PayOrSufferChoiceContinuation(
  *   referencing [com.wingedsheep.sdk.scripting.references.Player.TriggeringPlayer] still resolves
  *   after the async pay-or-decline round-trip (mirrors [PayOrSufferContinuation]).
  * @property triggeringPlayerId See [triggeringEntityId].
+ * @property iterationTarget The permanent the enclosing `ForEachInGroup` / `ForEachInCollection`
+ *   loop is currently on, preserved across the pay-or-decline round-trip so a consequence written
+ *   as `EffectTarget.Self` still means *that* permanent. Cleansing ("for each land, destroy that
+ *   land unless any player pays 1 life") is the shape that needs it: without this the consequence
+ *   resolves `Self` to the resolving spell and destroys nothing.
  */
 @Serializable
 data class AnyPlayerMayPayContinuation(
@@ -213,7 +218,8 @@ data class AnyPlayerMayPayContinuation(
     val filter: GameObjectFilter,
     val storedCollections: Map<String, List<EntityId>> = emptyMap(),
     val triggeringEntityId: EntityId? = null,
-    val triggeringPlayerId: EntityId? = null
+    val triggeringPlayerId: EntityId? = null,
+    val iterationTarget: EntityId? = null
 ) : ContinuationFrame
 
 /**

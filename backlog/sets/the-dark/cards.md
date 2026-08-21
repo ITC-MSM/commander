@@ -23,7 +23,7 @@
 - [x] Angry Mob
 - [ ] Blood of the Martyr
 - [ ] Brainwash
-- [ ] Cleansing
+- [x] Cleansing
 - [x] Dust to Dust
 - [x] Exorcist
 - [x] Fasting
