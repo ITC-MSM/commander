@@ -148,7 +148,7 @@
 - [x] War Barge
 
 ### Land
-- [ ] City of Shadows
+- [x] City of Shadows
 - [x] Maze of Ith
 - [x] Safe Haven
 - [ ] Sorrow's Path

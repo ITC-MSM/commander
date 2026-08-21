@@ -458,6 +458,13 @@ exist in the cost and charges the life through the shared life-payment service.
   ("{X}, {T}, Exile X cards from your graveyard") pays X in mana too, so the mana-X picker fixes the
   count first and the selection is pinned to exactly that many. Selecting nothing is legal and
   settles as X = 0.
+- `Costs.ExilePermanentsFixed(count = 1, filter = Any)` — **fixed-count** "exile N permanents you
+  control matching `filter`" activated-ability cost (City of Shadows: "{T}, Exile a creature you
+  control:"). The counted sibling of the variable-count `Costs.ExilePermanents` below — reach for
+  this whenever the card names a specific number and nothing downstream reads an X. Pass a
+  controller-scoped filter (`.youControl()`): the battlefield zone map is keyed by **owner**, so the
+  filter is what enforces "you control". Its selection is recorded, so a resolving effect can name
+  the exiled cards via `CardSource.ExiledAsCost`.
 - `Costs.ExilePermanents(filter = Any, minCount = 1, excludeSelf = true, xMeasure = TOTAL_MANA_VALUE)`
   / `Costs.SacrificePermanents(filter = Any, minCount = 1, excludeSelf = false, xMeasure = COUNT)` —
   **variable-count** "exile/sacrifice one or more permanents you control matching `filter`"
@@ -11472,6 +11479,10 @@ substitution.
   not regeneration (no tap, no removal from combat, marked damage untouched) and it is not a keyword counter, so
   losing all abilities doesn't switch it off. Unpreventable damage (Leyline of Punishment) is still dealt — but
   still removes a counter. An indestructible permanent never "would be destroyed", so its counter stays unspent.
+- `storage` — a passive counter with no inherent rule, like `loot` and `nest`: the card that places
+  them is the only thing that reads them. City of Shadows exiles a creature to add one
+  (`AddCounters(Counters.STORAGE, 1, Self)`) and taps to add {C} for each
+  (`AddColorlessMana(EntityProperty(Source, CounterCount(Named(Counters.STORAGE))))`).
 - `hone` — CR 122.1j, a built-in Layer 7c pump aimed at a *different* object: "A hone counter on an Equipment
   gives +1/+0 to any creature that Equipment is attached to." Add via `AddCounters(Counters.HONE, n, target)`
   or `AddDynamicCounters(Counters.HONE, amount, target)` — and that is **all** a hone card does; the bonus is

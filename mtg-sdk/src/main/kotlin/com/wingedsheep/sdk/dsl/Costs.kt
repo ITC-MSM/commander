@@ -268,6 +268,20 @@ object Costs {
         AbilityCost.Atom(CostAtom.ExileFrom(Zone.GRAVEYARD, filter, count))
 
     /**
+     * Exile exactly [count] permanents matching [filter] from the battlefield as a cost —
+     * "Exile a creature you control:" (City of Shadows).
+     *
+     * The fixed-count sibling of [ExilePermanents], which is variable-count and derives the
+     * ability's X from what was exiled. Use this one whenever the card names a specific number and
+     * nothing downstream reads an X.
+     *
+     * Pass a controller-scoped [filter] (`.youControl()`): the battlefield zone map is keyed by
+     * **owner**, so the filter is what actually enforces "you control".
+     */
+    fun ExilePermanentsFixed(count: Int = 1, filter: GameObjectFilter = GameObjectFilter.Any): AbilityCost =
+        AbilityCost.Atom(CostAtom.ExileFrom(Zone.BATTLEFIELD, filter, count))
+
+    /**
      * Exile X cards from graveyard, where X is the ability's X value.
      */
     fun ExileXFromGraveyard(filter: GameObjectFilter = GameObjectFilter.Any): AbilityCost =
