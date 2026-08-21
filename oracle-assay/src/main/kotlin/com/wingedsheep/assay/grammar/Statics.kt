@@ -522,39 +522,83 @@ object Statics {
     }
 
     /**
-     * "This creature gets +2/+2 for each face-down creature on the battlefield." — Primal Whisperer.
+     * "This creature gets +2/+2 for each face-down creature on the battlefield." — Primal Whisperer;
+     * "~ gets +1/+0 for each artifact you control." — Nim Lasher, and twenty more.
      *
      * The dynamic sibling of [attachedPump]: the bonus is a multiple of a battlefield count rather
-     * than a number, which the SDK spells as a different static type. The multiplier and the count
-     * are both in the text — "+2/+2" is `Multiply(count, 2)` — and the rule refuses a pair whose two
-     * components disagree, since `GrantDynamicStatsEffect` carries them separately and the printed
-     * pair can only spell one multiplier.
+     * than a number, which the SDK spells as a different static type. Both numbers are in the text —
+     * "+2/+2" is a `Multiply(count, 2)` in each half, "+1/+0" is the bare tally beside a `Fixed(0)` —
+     * and `GrantDynamicStatsEffect` carries the halves separately, so [scaled] lowers each one on its
+     * own. The rule used to require the two to *agree*, on the reasoning that a printed pair can only
+     * spell one multiplier; "+1/+0" spells two, and eleven of the family's twenty-one lines are
+     * asymmetric, so it read none of them.
+     *
+     * The clause after the noun phrase is [Amounts.scopes] rather than the literal it used to be.
+     * Nim Lasher is what that literal cost: its line is this sentence with the *other* row of the
+     * layer on the end, and it died on the full stop where the frozen " on the battlefield" was
+     * expected. Note that the filter is scope-free here for [Amounts.Scope.narrowing]'s reason —
+     * "for each artifact you control" says who controls them once, in the row, and the noun phrase
+     * must not say it again.
      */
-    private val selfPumpPerCount: Phrase<StaticAbility> = run {
-        fun abilityFor(multiplier: Int, counted: GameObjectFilter): StaticAbility {
-            val amount = DynamicAmount.Multiply(DynamicAmount.AggregateBattlefield(Player.Each, counted), multiplier)
-            return GrantDynamicStatsEffect(GroupFilter.source(), amount, amount)
+    private fun selfPumpPerCount(scope: Amounts.Scope): Phrase<StaticAbility> {
+        fun abilityFor(mod: Pair<Int, Int>, counted: GameObjectFilter): StaticAbility {
+            val count = DynamicAmount.AggregateBattlefield(scope.player, counted)
+            return GrantDynamicStatsEffect(GroupFilter.source(), scaled(count, mod.first), scaled(count, mod.second))
         }
-        phrase(
-            "${Normalizer.SELF} gets {mod} for each {counted} on the battlefield.",
-            name = "the source gets a multiple of a battlefield count",
+        return phrase(
+            "${Normalizer.SELF} gets {mod} for each {counted}${scope.surface}.",
+            name = "the source gets a multiple of a count of ${scope.where}",
         ) {
             slot("mod", Primitives.statModifiers)
             slot("counted", Filters.filter)
             build { bindings ->
-                val (power, toughness) = bindings.value<Pair<Int, Int>>("mod")
-                if (power != toughness) return@build null
-                abilityFor(power, bindings.value("counted"))
+                val counted = scope.narrowing(bindings.value("counted")) ?: return@build null
+                val mod = bindings.value<Pair<Int, Int>>("mod")
+                if (mod.first == 0 && mod.second == 0) return@build null
+                abilityFor(mod, counted)
             }
             match { value ->
                 val stats = value as? GrantDynamicStatsEffect ?: return@match null
-                val product = stats.powerBonus as? DynamicAmount.Multiply ?: return@match null
-                val aggregate = product.amount as? DynamicAmount.AggregateBattlefield ?: return@match null
-                if (aggregate.player != Player.Each) return@match null
-                if (value != abilityFor(product.multiplier, aggregate.filter)) return@match null
-                bind("mod" to (product.multiplier to product.multiplier), "counted" to aggregate.filter)
+                val aggregate = countedIn(stats.powerBonus) ?: countedIn(stats.toughnessBonus) ?: return@match null
+                if (aggregate.player != scope.player) return@match null
+                val power = multiplierOf(stats.powerBonus, aggregate) ?: return@match null
+                val toughness = multiplierOf(stats.toughnessBonus, aggregate) ?: return@match null
+                val mod = power to toughness
+                if (value != abilityFor(mod, aggregate.filter)) return@match null
+                val counted = scope.narrowing(aggregate.filter) ?: return@match null
+                bind("mod" to mod, "counted" to counted)
             }
         }
+    }
+
+    /**
+     * One half of a printed modifier pair as a [DynamicAmount] over [count].
+     *
+     * Three cases and not one, because the SDK spells the three numbers three ways and the corpus is
+     * unanimous about which: "+1/+0" is the bare aggregate beside a `Fixed(0)` — Nim Lasher's golden,
+     * and every other card in the family — while "+2/+2" is a `Multiply`. Writing `Multiply(count, 1)`
+     * for the common half would be a model no hand-written card carries, which the differential would
+     * report on every card this rule reads.
+     */
+    private fun scaled(count: DynamicAmount, multiplier: Int): DynamicAmount = when (multiplier) {
+        0 -> DynamicAmount.Fixed(0)
+        1 -> count
+        else -> DynamicAmount.Multiply(count, multiplier)
+    }
+
+    /** The battlefield tally inside one half of a modifier pair, or null when that half is a constant. */
+    private fun countedIn(amount: DynamicAmount): DynamicAmount.AggregateBattlefield? = when (amount) {
+        is DynamicAmount.AggregateBattlefield -> amount
+        is DynamicAmount.Multiply -> amount.amount as? DynamicAmount.AggregateBattlefield
+        else -> null
+    }
+
+    /** [scaled]'s inverse against a known tally; null when this half is not that tally scaled at all. */
+    private fun multiplierOf(amount: DynamicAmount, count: DynamicAmount.AggregateBattlefield): Int? = when {
+        amount == DynamicAmount.Fixed(0) -> 0
+        amount == count -> 1
+        amount is DynamicAmount.Multiply && amount.amount == count -> amount.multiplier
+        else -> null
     }
 
     val all: List<Phrase<StaticAbility>> = listOf(
@@ -566,7 +610,6 @@ object Statics {
         spellsCantBeCountered,
         spellsHaveFlash,
         attackTax,
-        selfPumpPerCount,
         chosenColourProtection("", canonicalForm = true),
         chosenColourProtection("all ", canonicalForm = false),
         // "Untap all permanents you control during each other player's untap step." — Seedborn Muse.
@@ -606,7 +649,7 @@ object Statics {
             "${Normalizer.SELF} can block only {blockers}.",
             "can block only",
         ) { CanOnlyBlockCreaturesWith(blockerFilter = it) },
-    ) + SpellCosts.all + lordStatic(
+    ) + Amounts.perScope(::selfPumpPerCount) + SpellCosts.all + lordStatic(
         "get", "a group gets",
         parameter = Primitives.statModifiers,
         ability = { (power, toughness), group -> ModifyStats(power, toughness, group) },

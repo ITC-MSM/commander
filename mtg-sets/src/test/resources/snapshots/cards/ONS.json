@@ -149,7 +149,7 @@
             "count": {
                 "type": "AggregateBattlefield",
                 "player": "Each",
-                "filter": "creature Bird"
+                "filter": "permanent Bird"
             }
         }
     },

@@ -1,6 +1,7 @@
 package com.wingedsheep.assay.grammar
 
 import com.wingedsheep.assay.syntax.Phrase
+import com.wingedsheep.assay.syntax.alternate
 import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.constant
 import com.wingedsheep.assay.syntax.oneOf
@@ -211,6 +212,17 @@ object SpellCosts {
         countedRule("{filter} on the battlefield", "permanents on the battlefield") { filter ->
             CostReductionSource.PermanentsOnBattlefieldMatching(filter)
         },
+        // "This spell costs {1} less to cast for each attacking creature." — Stone Idol Trap. The
+        // same source with the clause left off, which is [Amounts.Scope]'s empty row: English omits
+        // "on the battlefield" and means it, so this spelling parses and the row above prints. It is
+        // kept apart from the "you control" row above by the noun phrase alone — that one requires a
+        // controller predicate and `countedRule`'s `scopeFree` here refuses one — so one text still
+        // has one reading.
+        alternate(
+            countedRule("{filter}", "permanents on the battlefield (unqualified)") { filter ->
+                CostReductionSource.PermanentsOnBattlefieldMatching(filter)
+            }
+        ),
         countedRule("{filter} card in your graveyard", "cards in your graveyard") { filter ->
             CostReductionSource.CardsInGraveyardMatchingFilter(filter, 1)
         },

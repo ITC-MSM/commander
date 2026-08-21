@@ -308,6 +308,30 @@ object SelfSteps {
     }
 
     /**
+     * "Sacrifice ~." — Ball Lightning's end step, and every other creature that pays for its
+     * statistics by leaving.
+     *
+     * The bare sentence, and it declined until now because the four [sacrificeUnless] rules had the
+     * *rider* written into their templates: "sacrifice ~" was only ever readable as the front of
+     * "sacrifice ~ unless you pay {2}", so a card that printed the clause and stopped died on its
+     * own full stop. An "unless" clause is something English adds to this sentence, not something
+     * the sentence is made of, and a rule that cannot be read without its modifier is the shape
+     * that puts a line in the `.` decline family.
+     *
+     * The model is the sacrifice with no cost in front of it — [SacrificeSelfEffect] alone rather
+     * than the `PayOrSufferEffect` the riders build — so the two spellings denote different values
+     * and neither can print the other's sentence.
+     */
+    private val sacrificeSelf: Phrase<CardScript> = run {
+        val script = CardScript(spellEffect = SacrificeSelfEffect)
+        phrase("sacrifice {self}", name = "sacrifice the source") {
+            slot("self", Primitives.self)
+            build { script }
+            match { if (it == script) bind("self" to Unit) else null }
+        }
+    }
+
+    /**
      * "Sacrifice ~ unless you pay {G}{G}." — Krosan Cloudscraper's upkeep tax.
      *
      * A row of the [sacrificeUnless] shape over a *mana* cost rather than a permanent one, which is
@@ -429,6 +453,7 @@ object SelfSteps {
      * this" needs an effect the SDK does not have, so it declines and is counted.
      */
     private val sacrificesSource: List<Phrase<CardScript>> = listOf(
+        sacrificeSelf,
         sacrificeUnlessPay,
         sacrificeUnlessCounted,
         sacrificeUnlessRandomDiscard,

@@ -142,6 +142,18 @@ suffix owns `controllerPredicate` and strips precisely that field before delegat
 dimension (power/toughness, colour, subtype, tapped-ness) adds one layer that owns one field — not a
 combinator that can also print the others.
 
+**An omissible modifier is a row, not template text.** The `.` decline family — the tail ranking's
+number one at 179 cards — was one defect shape repeated: a rule whose template spelled a clause
+English can leave off, so the *bare* sentence died on its own full stop. "sacrifice ~ unless you pay
+{2}" could not read "Sacrifice ~."; "~ gets +1/+1 for each {counted} on the battlefield." could not
+read "for each artifact you control." Two tests before you freeze a word into a template: does Oracle
+print the sentence without it, and does the SDK have a distinct value for the version that has it? If
+the answer is *yes, no*, the clause is a row of a shared layer and the absent spelling is a row too —
+`Amounts.scopes` is the worked example, published once because five families had each frozen a
+different subset of the same three rows. If it is *yes, yes*, the bare form is a separate rule over a
+separate value, which is what "Sacrifice ~." needed. Watch the ranking for it: a decline whose tail is
+a bare `.` is always this, never a construct.
+
 **Generalize the axis when the rules define one.** `qualityRun` started as a colour-join fix and
 generalized in the same change to any quality, to the Oxford-comma three-way, and to hexproof under
 CR 702.11f, because the Comprehensive Rules define the join over *qualities*. Reach for the rule the

@@ -1669,6 +1669,7 @@ object Steps {
         surface: String,
         player: Player,
         requirements: List<TargetRequirement>,
+        narrowing: (GameObjectFilter) -> GameObjectFilter? = { it },
     ): List<Phrase<CardScript>> {
         fun scriptFor(amount: DynamicAmount) = CardScript(
             spellEffect = Effects.GainLife(amount),
@@ -1682,22 +1683,23 @@ object Steps {
             (amount as? DynamicAmount.AggregateBattlefield)
                 ?.takeIf { it == count(it.filter) }
 
-        val one = phrase("you gain 1 life for each {filter} $surface", name = "gain one life for each") {
+        val one = phrase("you gain 1 life for each {filter}$surface", name = "gain one life for each") {
             slot("filter", Filters.filter)
-            build { scriptFor(count(it.value("filter"))) }
+            build { scriptFor(count(narrowing(it.value("filter")) ?: return@build null)) }
             match { script ->
                 val total = aggregate((script.spellEffect as? GainLifeEffect)?.amount) ?: return@match null
                 if (script != scriptFor(total)) return@match null
-                bind("filter" to total.filter)
+                bind("filter" to (narrowing(total.filter) ?: return@match null))
             }
         }
-        val many = phrase("you gain {n} life for each {filter} $surface", name = "gain life for each") {
+        val many = phrase("you gain {n} life for each {filter}$surface", name = "gain life for each") {
             slot("n", Primitives.cardinal)
             slot("filter", Filters.filter)
             build { bindings ->
                 val multiplier = bindings.int("n")
                 if (multiplier < 2) return@build null
-                scriptFor(DynamicAmount.Multiply(count(bindings.value("filter")), multiplier))
+                val filter = narrowing(bindings.value("filter")) ?: return@build null
+                scriptFor(DynamicAmount.Multiply(count(filter), multiplier))
             }
             match { script ->
                 val product = (script.spellEffect as? GainLifeEffect)?.amount as? DynamicAmount.Multiply
@@ -1705,11 +1707,29 @@ object Steps {
                 val total = aggregate(product.amount) ?: return@match null
                 if (product.multiplier < 2) return@match null
                 if (script != scriptFor(product)) return@match null
-                bind("n" to product.multiplier, "filter" to total.filter)
+                bind("n" to product.multiplier, "filter" to (narrowing(total.filter) ?: return@match null))
             }
         }
         return listOf(one, many)
     }
+
+    /**
+     * The same pair over every row of [Amounts.scopes] — "you gain 1 life for each creature you
+     * control." (Conclave Phalanx) and "for each attacking creature." (Respite) alongside the
+     * battlefield spelling the rule was born with.
+     *
+     * The targeted row below is *not* a member of the layer, and that is the layer's own boundary:
+     * "target opponent controls" puts a `TargetRequirement` beside the aggregate's `Player`, so the
+     * clause changes the script in a second place and is a row this family owns rather than one it
+     * borrows.
+     */
+    private val gainLifeForEachScope: List<Phrase<CardScript>> =
+        Amounts.perScope { scope ->
+            oneOf(
+                "gain life for each of ${scope.where}",
+                gainLifeForEach(scope.surface, scope.player, emptyList(), scope::narrowing),
+            )
+        }
 
     // ---------------------------------------------------------------------------------------
     // The sentence, the sequence, and the line
@@ -1788,8 +1808,8 @@ object Steps {
             groupSteps +
             drawForEach +
             gainLifePerAttacker +
-            gainLifeForEach("on the battlefield", Player.Each, emptyList()) +
-            gainLifeForEach("target opponent controls", Player.TargetOpponent, listOf(Targets.opponent())) +
+            gainLifeForEachScope +
+            gainLifeForEach(" target opponent controls", Player.TargetOpponent, listOf(Targets.opponent())) +
             turnSteps +
             sentenceClauses +
             exchangeControl +
@@ -1892,11 +1912,9 @@ object Steps {
             val composite = script.spellEffect as? CompositeEffect ?: return@match null
             if (composite.effects.size < 2) return@match null
             if (composite != CompositeEffect(composite.effects)) return@match null
-            val owner = composite.effects.indices.firstOrNull { index ->
-                val candidate = clauseParts(composite.effects, script.targetRequirements, index)
+            val parts = split(composite.effects, script.targetRequirements) { candidate ->
                 merge(candidate) == script && printable(candidate, first, later)
             } ?: return@match null
-            val parts = clauseParts(composite.effects, script.targetRequirements, owner)
             bind("first" to parts.first(), "rest" to parts.drop(1))
         }
     }
@@ -1908,16 +1926,58 @@ object Steps {
         return CardScript(spellEffect = wrapper(effect), targetRequirements = inner.targetRequirements)
     }
 
-    /** The line's clauses, with the whole line's requirements attached to clause [owner]. */
+    /**
+     * The line's clauses, with requirement `k` attached to the clause `owners[k]` names and renamed
+     * back to the [Targets.SLOT] the clause's own rule minted.
+     *
+     * Null when a requirement cannot be given back its clause-local name — see [Slots.rename], which
+     * fails closed rather than guessing.
+     */
     private fun clauseParts(
         effects: List<Effect>,
         requirements: List<TargetRequirement>,
-        owner: Int,
-    ): List<CardScript> = effects.mapIndexed { index, effect ->
-        CardScript(
+        owners: List<Int>,
+    ): List<CardScript>? = effects.mapIndexed { index, effect ->
+        val mine = requirements.indices.filter { owners[it] == index }
+        val part = CardScript(
             spellEffect = effect,
-            targetRequirements = if (index == owner) requirements else emptyList(),
+            targetRequirements = mine.map { requirements[it] },
         )
+        val slot = mine.singleOrNull() ?: return@mapIndexed if (mine.isEmpty()) part else null
+        Slots.rename(part, Targets.slot(slot), Targets.SLOT) ?: return null
+    }.map { it ?: return null }
+
+    /**
+     * Find the split of [effects] whose clauses [accept]s, by trying every way the line's
+     * requirements could have been introduced.
+     *
+     * **A target is declared at its first mention**, so a distribution is a strictly increasing list
+     * of clause indices — requirement `k` is introduced no earlier than requirement `k-1`, and no
+     * clause introduces two, because no rule in this grammar declares two. Within that, the split is
+     * decided by *printability* rather than by preference, exactly as the one-requirement version
+     * was: a clause that needs a requirement cannot print without it and one that does not cannot
+     * print with it, so at most one distribution satisfies [accept] and a model no distribution can
+     * print declines rather than being guessed at.
+     *
+     * The search is bounded by the line: two requirements over four clauses is six candidates, and
+     * the corpus's longest is two.
+     */
+    private fun split(
+        effects: List<Effect>,
+        requirements: List<TargetRequirement>,
+        accept: (List<CardScript>) -> Boolean,
+    ): List<CardScript>? {
+        fun search(next: Int, from: Int, chosen: List<Int>): List<CardScript>? {
+            if (next == requirements.size) {
+                val parts = clauseParts(effects, requirements, chosen) ?: return null
+                return parts.takeIf(accept)
+            }
+            for (clause in from until effects.size) {
+                search(next + 1, clause + 1, chosen + clause)?.let { return it }
+            }
+            return null
+        }
+        return search(0, 0, emptyList())
     }
 
     /** True when every clause of a split can be printed from the position it sits in. */
@@ -1933,27 +1993,62 @@ object Steps {
      * A clause may contribute a spell effect and the targets it declared and nothing else; anything
      * more is content this fold would silently drop, so it refuses instead.
      *
-     * ### Two clauses that each declare a target refuse to fold
+     * ### Two clauses that each declare a target are numbered, not refused
      *
-     * [Targets.SLOT] is a single fixed name, which is enough while every rule takes at most one
-     * target — and stops being enough exactly here. "Destroy target land. ~ deals 13 damage to
-     * target creature." would fold into a script with *two* requirements both called `target` and
-     * two effects both reading that name, which is not the card: it is a model in which the second
-     * slot has no way to be referred to. Refusing is the fail-closed answer, and the gap it names is
-     * a slot-name **generator** in [Targets] rather than anything about this fold. Until that
-     * exists, those lines decline and are counted.
+     * "Destroy target land. ~ deals 13 damage to target creature." is two clauses that each parse on
+     * their own and each call their slot [Targets.SLOT], because that is the only name any rule in
+     * this grammar mints. Folding them unchanged would give one script two requirements with one
+     * name and two effects reading it — a model in which the second target cannot be referred to —
+     * and this fold used to refuse rather than invent a name, naming a slot-name **generator** in
+     * [Targets] as the gap. The generator has been there since the Legions band; [renumbered] is its
+     * first caller.
+     *
+     * The numbering is positional and the first declarer keeps the bare name, so a line with one
+     * target — every line the grammar read before this — folds through exactly the code it did.
+     *
+     * ### A pronoun and a second target cannot be read together
+     *
+     * A clause that declares nothing and still reads [Targets.SLOT] is a [Continuations] clause: "…
+     * **Untap that creature**." means the target an earlier clause introduced, and this grammar
+     * reads it as the *first* slot. With a second declared target English resolves the pronoun to
+     * the most recent mention instead, so the two readings come apart and nothing in the printed
+     * line decides between them. The fold refuses, which is the same fail-closed answer it gave
+     * before — narrowed from every second target to the one case that is genuinely undetermined.
      */
     private fun merge(parts: List<CardScript>): CardScript? {
-        if (parts.count { it.targetRequirements.isNotEmpty() } > 1) return null
-        val effects = parts.map { part ->
+        val numbered = renumbered(parts) ?: return null
+        val effects = numbered.map { part ->
             val effect = part.spellEffect ?: return null
             if (part != CardScript(spellEffect = effect, targetRequirements = part.targetRequirements)) return null
             effect
         }
         return CardScript(
             spellEffect = if (effects.size == 1) effects.single() else Effects.Composite(effects),
-            targetRequirements = parts.flatMap { it.targetRequirements },
+            targetRequirements = numbered.flatMap { it.targetRequirements },
         )
+    }
+
+    /**
+     * Give each declaring clause the slot name its position in the line implies — [merge]'s first
+     * step, and [clauseParts]' inverse.
+     *
+     * See [merge] for why the numbering exists and why a pronoun clause beside a second target
+     * refuses. No rule declares two targets in one clause, so a clause carrying more than one is a
+     * shape this fold has never seen and declines rather than numbers.
+     */
+    private fun renumbered(parts: List<CardScript>): List<CardScript>? {
+        val declarers = parts.count { it.targetRequirements.isNotEmpty() }
+        if (declarers > 1 &&
+            parts.any { it.targetRequirements.isEmpty() && Slots.references(it, Targets.SLOT) }
+        ) {
+            return null
+        }
+        var index = 0
+        return parts.map { part ->
+            if (part.targetRequirements.isEmpty()) return@map part
+            if (part.targetRequirements.size > 1) return null
+            Slots.rename(part, Targets.SLOT, Targets.slot(index++)) ?: return null
+        }
     }
 
     /**
@@ -1963,8 +2058,13 @@ object Steps {
      *
      * Flat, never nested: a card carries `Composite[A, B, gated]`, and a `Composite[Composite[A, B],
      * gated]` is a model no card holds and nothing else could print. The guards are [merge]'s own —
-     * a clause contributes an effect and the targets it declared and nothing else, and two clauses
-     * that each declared a target refuse to fold, for the reason [merge] states.
+     * a clause contributes an effect and the targets it declared and nothing else.
+     *
+     * **This one keeps the one-declarer restriction [merge] no longer has**, and it is not an
+     * oversight: a scoped clause takes the whole rest of the sentence as its consequence, so a
+     * target declared on the other side of the join has two readings — inside the condition's scope
+     * or outside it — and no word in the printed line chooses. The numbering [merge] introduces is
+     * about *naming* two targets, not about deciding what a condition covers.
      */
     private fun appendClause(head: CardScript, last: CardScript): CardScript? {
         val headEffect = head.spellEffect ?: return null
@@ -2197,18 +2297,22 @@ object Steps {
                     if (effects.size < 2) return@match null
                     if (composite != CompositeEffect(effects)) return@match null
                     // Which clause declared the line's targets is decided by printability, exactly
-                    // as in [clauseRun]: at most one split can print from both positions.
-                    for (owner in effects.indices) {
-                        val parts = clauseParts(effects, script.targetRequirements, owner)
-                        if (merge(parts) != script) continue
-                        val scoped = parts.last()
-                        if (conditionalClause.unparse(scoped) == null) continue
-                        val head = merge(parts.dropLast(1)) ?: continue
-                        if (appendClause(head, scoped) != script) continue
-                        if (simpleClause.unparse(head) == null && sequenceClause.unparse(head) == null) continue
-                        return@match bind("head" to head, "scoped" to scoped)
-                    }
-                    null
+                    // as in [clauseRun]: at most one split can print from both positions. A split
+                    // that hands out two requirements never gets past [appendClause], which keeps
+                    // its one-declarer guard — a scoped clause takes the rest of the sentence, and
+                    // whether its own target is inside or outside that scope is not in the text.
+                    val parts = split(effects, script.targetRequirements) { candidate ->
+                        val scoped = candidate.last()
+                        merge(candidate) == script &&
+                            conditionalClause.unparse(scoped) != null &&
+                            merge(candidate.dropLast(1))?.let { head ->
+                                appendClause(head, scoped) == script &&
+                                    (simpleClause.unparse(head) != null || sequenceClause.unparse(head) != null)
+                            } == true
+                    } ?: return@match null
+                    val scoped = parts.last()
+                    val head = merge(parts.dropLast(1)) ?: return@match null
+                    bind("head" to head, "scoped" to scoped)
                 }
             }
 
