@@ -204,11 +204,16 @@ def main() -> int:
     written = 0
     skipped_exists = 0
     skipped_nocache = 0
+    stale: list[str] = []
     by_set: dict[str, int] = defaultdict(int)
 
     for name in sorted(canonical):
         printings = load_card_printings(name)
         if printings is None:
+            # No per-card cache, or one past the 30-day TTL. Counted and named rather than skipped
+            # quietly: a stale entry drops a card that genuinely owes rows, and a silent drop reads
+            # as "this card needed nothing" — 40 of Jumpstart's 79 missing rows vanished this way.
+            stale.append(name)
             continue
         canon_set = canonical[name]
         expected = expected_canonical(printings)
@@ -249,6 +254,12 @@ def main() -> int:
     print(f"{'(dry-run) would write' if args.dry_run else 'wrote'} {written} reprint files "
           f"across {len(by_set)} sets")
     print(f"skipped: {skipped_exists} already exist, {skipped_nocache} missing ids in cache")
+    if stale:
+        shown = ", ".join(stale[:8]) + (" …" if len(stale) > 8 else "")
+        print(
+            f"WARNING: {len(stale)} cards had no fresh printing cache and were NOT considered: {shown}\n"
+            f"         re-run scripts/missing-reprints.py (or fetch_printings per name) first"
+        )
     for sc in sorted(by_set, key=lambda s: (-by_set[s], s)):
         print(f"  {sc.upper():<6} {by_set[sc]}")
     return 0
