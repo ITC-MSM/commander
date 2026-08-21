@@ -1,3 +1,10 @@
+# Original Project Wishlist
+
+> **Archived — historical.** The original day-one project vision (Feb 2026), kept for provenance.
+> Much of it was superseded or never taken: auth is magic-link, not Keycloak (see
+> [`docs/accounts-and-persistence.md`](../../docs/accounts-and-persistence.md)); the client is React/DOM, not WebGL.
+> Current architecture lives in [`AGENTS.md`](../../AGENTS.md) and [`docs/`](../../docs/).
+
 I'd like to create a magic the gathering game engine, and a graphical user interface so that I can play online against my friends.
 
 # General

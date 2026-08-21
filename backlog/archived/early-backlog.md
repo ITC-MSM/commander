@@ -1,5 +1,10 @@
 # Backlog
 
+> **Archived — historical.** The first flat bug/feature list (Feb 2026), 28 of 33 items done.
+> Superseded by the per-topic docs in [`backlog/`](../). Five items were still open when this
+> was archived: auto-pass priority, card movement with an empty hand, a turn/phase timeline,
+> a pass-to-next-phase button, and matchmaking.
+
 ## Bugs 
 
 - [x] Ancestral memories doesn't do anything
