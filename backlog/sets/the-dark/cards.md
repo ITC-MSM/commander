@@ -93,7 +93,7 @@
 - [x] Goblin Hero
 - [ ] Goblin Rock Sled
 - [x] Goblin Shrine
-- [ ] Goblin Wizard
+- [x] Goblin Wizard
 - [x] Goblins of the Flarg
 - [x] Inferno
 - [x] Mana Clash
