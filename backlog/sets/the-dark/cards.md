@@ -136,7 +136,7 @@
 - [x] Fellwar Stone
 - [x] Fountain of Youth
 - [x] Living Armor
-- [ ] Necropolis
+- [x] Necropolis
 - [ ] Reflecting Mirror
 - [ ] Runesword
 - [x] Scarecrow

@@ -133,6 +133,22 @@ class ActivateAbilityHandler(
             else -> null
         }
 
+    /**
+     * Whether this cost exiles anything at all — either the sum-gated
+     * [CostAtom.ExileFromGraveyardForTotal] or a plain counted [CostAtom.ExileFrom].
+     *
+     * Both feed the same flat `exileChoices` channel, and both produce cards the resolving effect
+     * may need to name via `CardSource.ExiledAsCost` — Necropolis reads the mana value of the very
+     * creature card its "Exile a creature card from your graveyard:" cost just exiled. Gating the
+     * record on the *sum-gated* atom alone left the plain counted form with an empty list, so an
+     * effect reading it back saw nothing.
+     */
+    private fun AbilityCost.hasExileAtom(): Boolean = when (this) {
+        is AbilityCost.Atom -> atom is CostAtom.ExileFrom || atom is CostAtom.ExileFromGraveyardForTotal
+        is AbilityCost.Composite -> costs.any { it.hasExileAtom() }
+        else -> false
+    }
+
     override fun validate(state: GameState, action: ActivateAbility): String? {
         // `opponentTargetsChosen` is an internal resume marker for "… of an opponent's choice"
         // targets (Cuombajj Witches). Only the engine's resumer sets it, and the resumer re-enters
@@ -1837,10 +1853,11 @@ class ActivateAbilityHandler(
             xValue = effectiveXValue,
             tappedPermanents = firstTapSlice,
             tappedEntitySnapshots = tappedSnapshots,
-            // Only the sum-gated exile cost records its selection: it is the one whose effect can
-            // refer back to the cards it exiled (`CardSource.ExiledAsCost`). Empty for every other
-            // ability, so nothing else changes.
-            exiledAsCostCards = if (totalExileAtom != null) exileChoices else emptyList(),
+            // An exile cost records its selection so the resolving effect can refer back to the
+            // cards it exiled (`CardSource.ExiledAsCost`) — the sum-gated form (Baron Helmut Zemo)
+            // and the plain counted form (Necropolis) alike. Empty for an ability whose cost exiles
+            // nothing, so nothing else changes.
+            exiledAsCostCards = if (effectiveCost.hasExileAtom()) exileChoices else emptyList(),
             lastKnownSourceCounters = lastKnownSourceCounters,
             lastKnownSourceSnapshot = lastKnownSourceSnapshot,
             lastKnownSourceAttachments = lastKnownSourceAttachments,

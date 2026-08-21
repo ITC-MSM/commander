@@ -3266,7 +3266,12 @@ effect = Effects.Pipeline {
   before the ability resolves), carried on the stack object, and filtered at resolution to the cards
   still in exile. This is what "those exiled cards" means in an ability whose *cost* did the exiling
   — **Baron Helmut Zemo**'s "Exile any number of black cards from your graveyard …: **Copy those
-  exiled cards.**" Deliberately **not** `FromLinkedExile`, which is the pile a permanent has
+  exiled cards.**" Both exile-cost shapes feed it: the sum-gated
+  `Costs.ExileFromGraveyardForTotal` (Zemo) and the plain counted `Costs.ExileFromGraveyard`
+  (**Necropolis**: "Exile a creature card from your graveyard: Put X +0/+1 counters on this
+  creature, where X is the exiled card's mana value" — gather `ExiledAsCost`, then read
+  `DynamicAmount.ManaValueSumOfCollection` over the one-card collection). Deliberately **not**
+  `FromLinkedExile`, which is the pile a permanent has
   accumulated over its lifetime and would hand a second activation the first one's cards; this gather
   is scoped to the one payment that put the ability on the stack.
 - `CardSource.AttachedTo(host, filter?)` — the permanents attached to the `host` entity (any
