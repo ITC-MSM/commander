@@ -2150,6 +2150,26 @@ object Conditions {
         EntityMatches(EffectTarget.DiscardedAsCost(index), filter)
 
     /**
+     * If the card exiled *with* this permanent — its imprint / "exiled with this" pile — matches
+     * [filter]. The card is in exile, so the filter is checked against its printed characteristics.
+     *
+     * **Dual-mode**: it answers the same at resolution and during static-ability projection, so it
+     * is the gate for a [com.wingedsheep.sdk.scripting.ConditionalStaticAbility] whose payoff reads
+     * the imprinted card — Duplicant's "as long as a card exiled with this creature is a creature
+     * card, this creature has the power, toughness, and creature types of it".
+     *
+     * False when nothing is exiled at [index]: the imprint was declined, or the card has since left
+     * exile. A gated static therefore stops applying on its own, with no card-level bookkeeping.
+     *
+     * @param index Which exiled card to test (defaults to the first/only one — Imprint exiles one).
+     */
+    fun LinkedExiledCardMatches(
+        filter: com.wingedsheep.sdk.scripting.GameObjectFilter,
+        index: Int = 0
+    ): ConditionInterface =
+        EntityMatches(EffectTarget.LinkedExiledCard(index), filter)
+
+    /**
      * If the spell that triggered this ability is the first spell matching [filter] you've cast
      * this turn. True iff the triggering spell matches [filter] and no second matching spell has
      * been cast yet. Composed from [TriggeringSpellMatches] + the [YouCastSpellsThisTurn] count

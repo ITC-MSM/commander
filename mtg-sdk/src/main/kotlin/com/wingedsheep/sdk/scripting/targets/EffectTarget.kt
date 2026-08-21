@@ -264,6 +264,33 @@ sealed interface EffectTarget {
     }
 
     /**
+     * LINKED EXILED CARD: a card exiled *with* the source permanent — its `LinkedExileComponent`,
+     * the pile every imprint / "exiled with this" mechanic writes. This is the [EffectTarget] role
+     * counterpart of [com.wingedsheep.sdk.scripting.values.EntityReference.LinkedExiledCard], which
+     * is the *value-read* spelling of the same object (`EntityProperty(LinkedExiledCard(), Power)`).
+     *
+     * **Dual-mode** — resolvable at resolution *and* during static-ability projection, because it
+     * is anchored to the source permanent exactly like [Self] and needs no resolution context. That
+     * is what makes it usable as the entity of an
+     * [com.wingedsheep.sdk.scripting.conditions.EntityMatches] gating a
+     * [com.wingedsheep.sdk.scripting.ConditionalStaticAbility] — Duplicant's "as long as a card
+     * exiled with this creature is a creature card", built via
+     * `Conditions.LinkedExiledCardMatches(filter)`.
+     *
+     * Resolves to nothing when the source has no linked-exile pile (the imprint was declined, or
+     * the card has since left exile), so a condition over it reads false and the gated static
+     * simply stops applying.
+     *
+     * @property index Which exiled card to reference. Imprint exiles exactly one card, so this is a
+     *   completeness parameter rather than something Mirrodin's cards need.
+     */
+    @SerialName("LinkedExiledCard")
+    @Serializable
+    data class LinkedExiledCard(val index: Int = 0) : EffectTarget {
+        override val description: String = "the exiled card"
+    }
+
+    /**
      * CONTROLLER OF DAMAGE SOURCE: the controller of the source dealing the damage
      * currently being processed. Only meaningful inside a damage replacement
      * (e.g. [com.wingedsheep.sdk.scripting.RedirectDamage]); resolved by the damage

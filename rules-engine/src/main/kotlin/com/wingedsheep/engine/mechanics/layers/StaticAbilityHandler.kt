@@ -874,6 +874,15 @@ class StaticAbilityHandler(
                     affectsFilter = convertGroupFilter(ability.filter)
                 )
             }
+            is com.wingedsheep.sdk.scripting.HasCreatureTypesOf -> {
+                // "has the creature types of [that object]" — Layer 4 (TYPE). The referenced object
+                // is resolved on every projection pass by the applicator, not here, so the gainer's
+                // types track it live (Duplicant).
+                ContinuousEffectData(
+                    modification = Modification.SetCreatureSubtypesFrom(ability.source, ability.retainedTypes),
+                    affectsFilter = convertGroupFilter(ability.filter)
+                )
+            }
             is SetBaseToughnessForCreatureGroup -> {
                 ContinuousEffectData(
                     modification = Modification.SetToughness(ability.toughness),

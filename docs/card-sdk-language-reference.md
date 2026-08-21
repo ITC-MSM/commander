@@ -3204,6 +3204,15 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
   `Conditions.DiscardedCardMatches(filter)`) to test the discarded card's graveyard characteristics —
   the cost-referencing sibling of `EntityReference.Sacrificed` / `TappedAsCost`. Resolution-only. Used
   by Grab the Prize ("if the discarded card wasn't a land card, …").
+- `EffectTarget.LinkedExiledCard(index = 0)` — a card exiled *with* the source permanent (its
+  imprint / "exiled with this" pile, the same object `EntityReference.LinkedExiledCard` reads as a
+  value). **Dual-mode**: it resolves at resolution *and* during static-ability projection, because it
+  hangs off the source exactly like `Self`. That is what lets it gate a `ConditionalStaticAbility` on
+  the imprinted card — pair it with an `EntityMatches` (facade
+  `Conditions.LinkedExiledCardMatches(filter)`) for "as long as a card exiled with this creature is a
+  creature card, …" (Duplicant). The card is in exile, so the filter reads its printed
+  characteristics; an empty pile (imprint declined, or the card has left exile) reads false and the
+  gated static simply stops applying.
 - `EffectTarget.PlayerRef(...)` — a player slot; see the `Player` reference list below.
 
 **`Player` references** (multiplayer-safe vocabulary — there is deliberately no bare
@@ -5949,6 +5958,19 @@ staticAbility {
   **`filter` defaults to the source, not the attached creature** — unlike `ModifyStats` / `GrantKeyword`, which
   default to `attachedCreature()`. An Aura must pass `Filters.EnchantedCreature` explicitly or it silently makes
   *itself* the Knight and leaves the enchanted creature alone.
+- `HasCreatureTypesOf(source, retainedTypes = emptySet(), filter = GroupFilter.source())` — Layer 4
+  type-changing static that gives the group **the creature types of the object `source` names**,
+  replacing their own and leaving non-creature subtypes alone (CR 205.1b). `source` is an ordinary
+  `EntityReference`, so the same static reads a card exiled with this permanent
+  (`EntityReference.LinkedExiledCard()`) or anything else the evaluator can resolve; the set is
+  re-read on every projection pass, so the gainer's types track the referenced object live. Pair it
+  with `SetBasePowerToughnessDynamicStatic` fed `DynamicAmount.EntityProperty(source, Power/Toughness)`
+  for the full "has the power, toughness, and creature types of X" sentence, and gate both on
+  `Conditions.LinkedExiledCardMatches(...)` when the printed text does (Duplicant). `retainedTypes` is
+  the printed "It's still a Shapeshifter." rider — types the gainer keeps *in addition* to what it
+  copies; it is a field rather than a separate `GrantSubtype` because both would land in Layer 4 with
+  the same timestamp and the type set could silently wipe the add. When `source` resolves to nothing,
+  only `retainedTypes` remains.
 - `GrantChosenSubtype(filter, includeControlledSpells = false, includeOwnedCardsOutsideBattlefield = false)` — Layer 4
   type-changing static that adds the creature type **chosen as the source entered** (read from the source's
   `CastChoicesComponent`) to the group, in addition to their other types. Chosen-value counterpart to `GrantSubtype`,
