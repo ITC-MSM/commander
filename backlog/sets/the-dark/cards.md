@@ -88,7 +88,7 @@
 - [ ] Eternal Flame
 - [x] Fire Drake
 - [x] Fissure
-- [ ] Goblin Caves
+- [x] Goblin Caves
 - [x] Goblin Digging Team
 - [x] Goblin Hero
 - [ ] Goblin Rock Sled
