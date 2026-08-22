@@ -186,7 +186,8 @@ fun TargetCreature(
     dynamicMaxCount: DynamicAmount? = null,
     sameController: Boolean = false,
     differentControllers: Boolean = false,
-    sameCreatureType: Boolean = false
+    sameCreatureType: Boolean = false,
+    chooser: TargetChooser = TargetChooser.Controller
 ): TargetObject = TargetObject(
     count = count,
     minCount = minCount,
@@ -197,7 +198,8 @@ fun TargetCreature(
     dynamicMaxCount = dynamicMaxCount,
     sameController = sameController,
     differentControllers = differentControllers,
-    sameCreatureType = sameCreatureType
+    sameCreatureType = sameCreatureType,
+    chooser = chooser
 )
 
 // =============================================================================

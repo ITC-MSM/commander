@@ -458,6 +458,13 @@ exist in the cost and charges the life through the shared life-payment service.
   ("{X}, {T}, Exile X cards from your graveyard") pays X in mana too, so the mana-X picker fixes the
   count first and the selection is pinned to exactly that many. Selecting nothing is legal and
   settles as X = 0.
+- `Costs.ExilePermanentsFixed(count = 1, filter = Any)` — **fixed-count** "exile N permanents you
+  control matching `filter`" activated-ability cost (City of Shadows: "{T}, Exile a creature you
+  control:"). The counted sibling of the variable-count `Costs.ExilePermanents` below — reach for
+  this whenever the card names a specific number and nothing downstream reads an X. Pass a
+  controller-scoped filter (`.youControl()`): the battlefield zone map is keyed by **owner**, so the
+  filter is what enforces "you control". Its selection is recorded, so a resolving effect can name
+  the exiled cards via `CardSource.ExiledAsCost`.
 - `Costs.ExilePermanents(filter = Any, minCount = 1, excludeSelf = true, xMeasure = TOTAL_MANA_VALUE)`
   / `Costs.SacrificePermanents(filter = Any, minCount = 1, excludeSelf = false, xMeasure = COUNT)` —
   **variable-count** "exile/sacrifice one or more permanents you control matching `filter`"
@@ -810,6 +817,18 @@ controller** (not the payer), so `EffectTarget.Controller` inside it means *you*
 "whenever a creature an opponent controls dies, *they* may pay 3 life. If they don't, return that card
 under *your* control" is `PayOrSufferEffect(player = PlayerRef(TriggeringPlayer), cost = Costs.pay.PayLife(3),
 suffer = Composite(Move(TriggeringEntity → battlefield, controllerOverride = Controller), AddCounters(finality)))`.
+
+**`consequenceDescription`** is the prompt's words for what happens if the cost isn't paid ("Pay {2}
+or **…**?"), and every `Costs.pay` variant's prompt renders it. Null generates the clause from
+`suffer`, which is right while the payer is the ability's controller. It stops being right the moment
+`player` routes the question elsewhere: an effect description is an imperative fragment addressed to
+*the controller*, so `GainControlEffect`'s "gain control of target" asked of an opponent offers them
+the theft they are the subject of — Scarwood Bandits asked its victim "Pay {2} or gain control of
+target for as long as this creature remains on the battlefield?". The unresolved `target` and `this
+creature` are the same fragment's other half: placeholders that read as the card's text rather than
+as this game's board. **Write it out whenever `player` isn't the controller**, or whenever the
+generated clause would name a placeholder the player can't resolve. (Same defect and same remedy as
+an optional trigger's `description` becoming its "may" prompt, above.)
 
 Non-mana `morphCost` payment is routed through the shared engine `CostPaymentService`, so **every
 `Costs.pay` variant below works as a morph cost** (including `Tap` / `Choice` / `OwnManaCost`): turning
@@ -2533,6 +2552,17 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   for a "may" ability that *also* targets, the yes/no is asked *before* target selection (Invigorating
   Boon) — recognizes the lowered shape via the `Effect.asMayDecide()` matcher (a bare `Gate.MayDecide`
   with no `otherwise`).
+  - **The prompt is the ability's authored `description` when it has one.** A generated effect
+    description is assembled bottom-up from the effect tree, so a composed effect reads as its own
+    plumbing rather than as the card — Safe Haven's `optional = true` upkeep trigger asked "You may
+    sacrifice this creature. If you do, look at cards exiled by this permanent. Put those cards onto
+    the battlefield" instead of its printed text. Lowering `optional = true` therefore passes the
+    `triggeredAbility { }` block's `description` into the gate as `MayEffect(descriptionOverride =
+    …)`, which is what both prompt sites render — `GatedEffectExecutor` when the trigger resolves,
+    and `TriggerProcessor` for a "may" that is asked *before* target selection. **Write the
+    `description` out on any optional trigger whose effect is a composition** — it is player-facing
+    text, not just catalog documentation. A trigger with no `description` still falls back to the
+    generated "You may …".
   - **Dynamic hints — `dynamicHint = DynamicHint(template, amount)`.** A printed "you may … *that
     much* damage / *that many* cards" renders the same sentence on every instance. When one event
     puts **several instances of the same ability on the stack at once**, the prompts become
@@ -3287,8 +3317,9 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
   not the granting object (CR 113.7).
   - **Self-noun rendering (type-aware text).** `EffectTarget.Self.description` is "this creature"
     (most self-referential effects live on creatures). Effects that also apply to *non-creature*
-    permanents — `TransformEffect` / `ExileAndReturnTransformedEffect`, and the ability grants
-    `GrantTriggeredAbility` / `GrantActivatedAbility` / `GrantStaticAbility` /
+    permanents — `TransformEffect` / `ExileAndReturnTransformedEffect`, `SacrificeTargetEffect`
+    (`Effects.SacrificeTarget`, which a land or artifact uses to sacrifice itself), and the ability
+    grants `GrantTriggeredAbility` / `GrantActivatedAbility` / `GrantStaticAbility` /
     `GrantReplacementEffect` — must not hard-code either noun, so they implement
     `SelfReferentialDescription` (a standalone mixin, **not** a subtype of the sealed `@Serializable`
     `Effect`) and build a `descriptionTemplate` using `EffectTarget.selfNounToken` — which renders
@@ -3668,7 +3699,10 @@ Every `TargetRequirement` carries count semantics (defaults shown):
   validation ignore `chooser` (always relative to the controller); only the announcement layer reads it
   to route the selection decision. `TargetChooser.Opponent` is honored for **activated abilities**; list
   the opponent-chosen requirement after the controller-chosen ones. `Targets.AnyChosenByOpponent` is the
-  ready-made "any target of an opponent's choice".
+  ready-made "any target of an opponent's choice"; `TargetObject` (and so the `TargetCreature` factory)
+  carries `chooser` too, for opponent-chosen *permanent* targets — Preacher's "gain control of target
+  creature of an opponent's choice they control" is `TargetCreature(filter =
+  TargetFilter.CreatureOpponentControls, chooser = TargetChooser.Opponent)`.
 
   Two further cases are honored for **triggered abilities**, for a trigger whose printed text hands the
   choice to somebody other than the ability's controller. They are two cases rather than one because a
@@ -8851,6 +8885,8 @@ answer it and would silently return `false`.
 - `NoCreaturesOnBattlefield` — there are no creatures anywhere on the battlefield (global, either player;
   `Exists(Player.Each, …, negate = true)`). Used by Drop of Honey's "when there are no creatures on the
   battlefield, sacrifice this enchantment" state trigger.
+- `NoLandsOnBattlefield` — the land sibling of `NoCreaturesOnBattlefield`, same global shape. Used by
+  Mana Vortex's "when there are no lands on the battlefield, sacrifice this enchantment" state trigger.
 - `ControlMoreCreatures` — you control more creatures than each opponent.
 - `OpponentControlsCreature` — at least one opponent has a creature.
 - `OpponentControls(filter, negate = false)` — at least one opponent controls a permanent matching
@@ -11467,6 +11503,14 @@ substitution.
   not regeneration (no tap, no removal from combat, marked damage untouched) and it is not a keyword counter, so
   losing all abilities doesn't switch it off. Unpreventable damage (Leyline of Punishment) is still dealt — but
   still removes a counter. An indestructible permanent never "would be destroyed", so its counter stays unspent.
+- `storage` — a passive counter with no inherent rule, like `loot` and `nest`: the card that places
+  them is the only thing that reads them. City of Shadows exiles a creature to add one
+  (`AddCounters(Counters.STORAGE, 1, Self)`) and taps to add {C} for each
+  (`AddColorlessMana(EntityProperty(Source, CounterCount(Named(Counters.STORAGE))))`).
+- `hunger` — a pure bookkeeping counter, same no-inherent-rule shape as `storage`: the card counts
+  its own pile and acts on the total. Fasting adds one each upkeep
+  (`AddCounters(Counters.HUNGER, 1, Self)`) and destroys itself at five, reading the count back
+  through `Conditions.SourceCounterCountAtLeast(Counters.HUNGER, 5)`.
 - `hone` — CR 122.1j, a built-in Layer 7c pump aimed at a *different* object: "A hone counter on an Equipment
   gives +1/+0 to any creature that Equipment is attached to." Add via `AddCounters(Counters.HONE, n, target)`
   or `AddDynamicCounters(Counters.HONE, amount, target)` — and that is **all** a hone card does; the bonus is

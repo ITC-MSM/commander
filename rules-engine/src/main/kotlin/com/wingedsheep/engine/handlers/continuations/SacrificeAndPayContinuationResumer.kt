@@ -214,7 +214,8 @@ class SacrificeAndPayContinuationResumer(
         val chosenCost = continuation.options[chosenIndex]
         val singleCostEffect = PayOrSufferEffect(
             cost = chosenCost,
-            suffer = continuation.sufferEffect
+            suffer = continuation.sufferEffect,
+            consequenceDescription = continuation.consequenceDescription
         )
         val context = EffectContext(
             sourceId = continuation.sourceId,
@@ -279,7 +280,8 @@ class SacrificeAndPayContinuationResumer(
             state,
             continuation.playerId,
             continuation.filter,
-            continuation.requiredCount
+            continuation.requiredCount,
+            continuation.sourceId
         )
         return checkForMore(result.state, result.events.toList())
     }

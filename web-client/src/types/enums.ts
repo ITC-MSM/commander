@@ -485,6 +485,19 @@ export enum CounterType {
   INVASION = 'INVASION',
   UNLOCK = 'UNLOCK',
   HONE = 'HONE',
+  // Mirrored from CounterType.kt; see CounterTypeClientMirrorTest.kt (mtg-sdk), which reads this
+  // file and fails when the two drift.
+  DEFENSE = 'DEFENSE',
+  SILVER = 'SILVER',
+  FATE = 'FATE',
+  AIM = 'AIM',
+  DOOM = 'DOOM',
+  FIRE = 'FIRE',
+  CONQUEROR = 'CONQUEROR',
+  NET = 'NET',
+  SPORE = 'SPORE',
+  STORAGE = 'STORAGE',
+  HUNGER = 'HUNGER',
 }
 
 export const CounterTypeDisplayNames: Record<CounterType, string> = {
@@ -565,6 +578,17 @@ export const CounterTypeDisplayNames: Record<CounterType, string> = {
   [CounterType.INVASION]: 'Invasion',
   [CounterType.UNLOCK]: 'Unlock',
   [CounterType.HONE]: 'Hone',
+  [CounterType.DEFENSE]: 'Defense',
+  [CounterType.SILVER]: 'Silver',
+  [CounterType.FATE]: 'Fate',
+  [CounterType.AIM]: 'Aim',
+  [CounterType.DOOM]: 'Doom',
+  [CounterType.FIRE]: 'Fire',
+  [CounterType.CONQUEROR]: 'Conqueror',
+  [CounterType.NET]: 'Net',
+  [CounterType.SPORE]: 'Spore',
+  [CounterType.STORAGE]: 'Storage',
+  [CounterType.HUNGER]: 'Hunger',
 }
 
 /**

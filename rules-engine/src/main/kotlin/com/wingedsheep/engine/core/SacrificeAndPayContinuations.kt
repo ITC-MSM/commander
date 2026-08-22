@@ -166,7 +166,13 @@ data class PayOrSufferChoiceContinuation(
     /** Mirror of [PayOrSufferContinuation.triggeringPlayerId] for the multi-option path. */
     val triggeringPlayerId: EntityId? = null,
     /** Mirror of [PayOrSufferContinuation.abilityControllerId] for the multi-option path. */
-    val abilityControllerId: EntityId? = null
+    val abilityControllerId: EntityId? = null,
+    /**
+     * The effect's authored consequence clause, carried so the second prompt — the one for the
+     * cost option the player picked — asks in the same words as the first. Rebuilding a
+     * single-cost effect without it would silently fall back to the generated description.
+     */
+    val consequenceDescription: String? = null
 ) : ContinuationFrame
 
 /**

@@ -2910,7 +2910,8 @@
                         },
                         "destination": "Exile",
                         "linkToSource": true
-                    }
+                    },
+                    "descriptionOverride": "Imprint — When this creature enters, you may exile target nontoken creature."
                 },
                 "targetRequirement": {
                     "type": "TargetObject",
@@ -3232,7 +3233,8 @@
                         },
                         "destination": "Exile",
                         "linkToSource": true
-                    }
+                    },
+                    "descriptionOverride": "Imprint — When this artifact enters, you may exile target land you control."
                 },
                 "targetRequirement": {
                     "type": "TargetObject",
@@ -7925,7 +7927,8 @@
                         },
                         "destination": "Exile",
                         "linkToSource": true
-                    }
+                    },
+                    "descriptionOverride": "Imprint — When this creature enters, you may exile target card from a graveyard."
                 },
                 "targetRequirement": {
                     "type": "TargetObject",
@@ -8099,7 +8102,8 @@
                             "name": "card"
                         },
                         "destination": "Hand"
-                    }
+                    },
+                    "descriptionOverride": "When this creature enters, you may return target artifact creature card from your graveyard to your hand."
                 },
                 "targetRequirement": {
                     "type": "TargetObject",
@@ -8149,7 +8153,8 @@
                         },
                         "destination": "Exile",
                         "linkToSource": true
-                    }
+                    },
+                    "descriptionOverride": "Imprint — When this artifact enters, you may exile target card from a graveyard."
                 },
                 "targetRequirement": {
                     "type": "TargetObject",
@@ -12724,7 +12729,8 @@
                                 "linkToSource": true
                             }
                         ]
-                    }
+                    },
+                    "descriptionOverride": "Imprint — When this artifact enters, you may exile two target sorcery cards from a single graveyard."
                 },
                 "targetRequirement": {
                     "type": "TargetObject",
@@ -14494,7 +14500,8 @@
                                 "linkToSource": true
                             }
                         ]
-                    }
+                    },
+                    "descriptionOverride": "Imprint — When this artifact enters, you may have target player reveal their hand. If you do, choose a nonland card from it and exile that card."
                 },
                 "targetRequirement": {
                     "type": "TargetPlayer",
@@ -16216,7 +16223,8 @@
                             "name": "target creature card"
                         },
                         "destination": "Hand"
-                    }
+                    },
+                    "descriptionOverride": "Whenever this creature deals combat damage to a player, you may return target creature card from your graveyard to your hand."
                 },
                 "targetRequirement": {
                     "type": "TargetObject",

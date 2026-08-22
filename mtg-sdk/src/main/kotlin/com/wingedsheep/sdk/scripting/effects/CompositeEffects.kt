@@ -670,13 +670,31 @@ data class ReflexiveTriggerEffect(
  * @property cost The cost that can be paid to avoid the consequence
  * @property suffer The consequence if the cost is not paid
  * @property player Who must make the choice (defaults to controller)
+ * @property consequenceDescription The prompt's words for what happens if the cost isn't paid
  */
 @SerialName("PayOrSuffer")
 @Serializable
 data class PayOrSufferEffect(
     val cost: PayCost,
     val suffer: Effect,
-    val player: EffectTarget = EffectTarget.Controller
+    val player: EffectTarget = EffectTarget.Controller,
+    /**
+     * The consequence clause of the player-facing prompt ("Pay {2} or **…**?"), in the card's own
+     * words. Null generates it from [suffer], which is right for the common case where the payer is
+     * the ability's controller.
+     *
+     * It stops being right as soon as [player] routes the question elsewhere. An effect description
+     * is an imperative fragment addressed to the ability's controller — [GainControlEffect] renders
+     * "gain control of target" — so asking an *opponent* that question inverts who does what:
+     * Scarwood Bandits asked its victim "Pay {2} or gain control of target for as long as this
+     * creature remains on the battlefield?", offering them the theft they were the subject of.
+     * The unresolved "target" and "this creature" are the same fragment's other half — placeholders
+     * that read as the card's text, not as this game's board.
+     *
+     * Write this out whenever [player] is not the controller, and whenever the generated text would
+     * name a placeholder the player can't resolve.
+     */
+    val consequenceDescription: String? = null
 ) : Effect {
     override val description: String = "${suffer.description} unless you ${cost.description}"
 

@@ -2,124 +2,124 @@
 
 **Set Size:** 119 cards
 **Release Date:** August 1, 1994
-**Implemented:** 46 / 119
+**Implemented:** 97 / 119
 
 | Section    | Total | Done |
 |------------|-------|------|
-| White      | 19    | 8    |
-| Blue       | 19    | 8    |
-| Black      | 18    | 4    |
-| Red        | 18    | 8    |
-| Green      | 18    | 6    |
+| White      | 19    | 16   |
+| Blue       | 19    | 15   |
+| Black      | 18    | 13   |
+| Red        | 18    | 17   |
+| Green      | 18    | 15   |
 | Multicolor | 3     | 3    |
-| Artifact   | 20    | 8    |
-| Land       | 4     | 1    |
+| Artifact   | 20    | 15   |
+| Land       | 4     | 3    |
 
 > Verify status anytime with `scripts/card-status --set DRK` (and `--list`). That command's count is authoritative — keep this file's `Implemented:` line in sync (`just fix-backlog`) as boxes are checked. The set's mechanics are catalogued in [`mechanics.md`](mechanics.md).
 
 ---
 
 ### White
-- [ ] Angry Mob
+- [x] Angry Mob
 - [ ] Blood of the Martyr
 - [ ] Brainwash
 - [ ] Cleansing
-- [ ] Dust to Dust
+- [x] Dust to Dust
 - [x] Exorcist
-- [ ] Fasting
-- [ ] Festival
-- [ ] Fire and Brimstone
+- [x] Fasting
+- [x] Festival
+- [x] Fire and Brimstone
 - [x] Holy Light
 - [x] Knights of Thorn
-- [ ] Martyr's Cry
-- [ ] Miracle Worker
+- [x] Martyr's Cry
+- [x] Miracle Worker
 - [x] Morale
 - [x] Pikemen
-- [ ] Preacher
+- [x] Preacher
 - [x] Squire
 - [x] Tivadar's Crusade
 - [x] Witch Hunter
 
 ### Blue
-- [ ] Amnesia
+- [x] Amnesia
 - [x] Apprentice Wizard
 - [ ] Dance of Many
 - [ ] Deep Water
 - [x] Drowned
-- [ ] Electric Eel
-- [ ] Erosion
+- [x] Electric Eel
+- [x] Erosion
 - [x] Flood
 - [x] Ghost Ship
-- [ ] Giant Shark
+- [x] Giant Shark
 - [ ] Leviathan
-- [ ] Mana Vortex
+- [x] Mana Vortex
 - [x] Merfolk Assassin
-- [ ] Mind Bomb
-- [ ] Psychic Allergy
+- [x] Mind Bomb
+- [x] Psychic Allergy
 - [x] Riptide
 - [x] Sunken City
 - [ ] Tangle Kelp
 - [x] Water Wurm
 
 ### Black
-- [ ] Ashes to Ashes
-- [ ] Banshee
+- [x] Ashes to Ashes
+- [x] Banshee
 - [x] Bog Imp
 - [x] Bog Rats
-- [ ] Curse Artifact
-- [ ] Eater of the Dead
+- [x] Curse Artifact
+- [x] Eater of the Dead
 - [ ] Frankenstein's Monster
 - [x] Grave Robbers
-- [ ] Inquisition
+- [x] Inquisition
 - [x] Marsh Gas
-- [ ] Murk Dwellers
+- [x] Murk Dwellers
 - [ ] Nameless Race
-- [ ] Rag Man
+- [x] Rag Man
 - [ ] Season of the Witch
 - [ ] The Fallen
-- [ ] Uncle Istvan
-- [ ] Word of Binding
+- [x] Uncle Istvan
+- [x] Word of Binding
 - [ ] Worms of the Earth
 
 ### Red
 - [x] Ball Lightning
-- [ ] Blood Moon
-- [ ] Brothers of Fire
+- [x] Blood Moon
+- [x] Brothers of Fire
 - [x] Cave People
-- [ ] Eternal Flame
+- [x] Eternal Flame
 - [x] Fire Drake
 - [x] Fissure
-- [ ] Goblin Caves
+- [x] Goblin Caves
 - [x] Goblin Digging Team
 - [x] Goblin Hero
 - [ ] Goblin Rock Sled
-- [ ] Goblin Shrine
-- [ ] Goblin Wizard
-- [ ] Goblins of the Flarg
+- [x] Goblin Shrine
+- [x] Goblin Wizard
+- [x] Goblins of the Flarg
 - [x] Inferno
-- [ ] Mana Clash
-- [ ] Orc General
+- [x] Mana Clash
+- [x] Orc General
 - [x] Sisters of the Flame
 
 ### Green
 - [x] Carnivorous Plant
-- [ ] Elves of Deep Shadow
-- [ ] Gaea's Touch
+- [x] Elves of Deep Shadow
+- [x] Gaea's Touch
 - [x] Hidden Path
 - [x] Land Leeches
 - [ ] Lurker
-- [ ] Marsh Viper
+- [x] Marsh Viper
 - [x] Niall Silvain
 - [x] People of the Woods
-- [ ] Savaen Elves
-- [ ] Scarwood Bandits
-- [ ] Scarwood Hag
+- [x] Savaen Elves
+- [x] Scarwood Bandits
+- [x] Scarwood Hag
 - [x] Scavenger Folk
 - [ ] Spitting Slug
-- [ ] Tracker
-- [ ] Venom
+- [x] Tracker
+- [x] Venom
 - [ ] Whippoorwill
-- [ ] Wormwood Treefolk
+- [x] Wormwood Treefolk
 
 ### Multicolor
 - [x] Dark Heart of the Wood
@@ -127,29 +127,29 @@
 - [x] Scarwood Goblins
 
 ### Artifact
-- [ ] Barl's Cage
+- [x] Barl's Cage
 - [x] Bone Flute
 - [x] Book of Rass
 - [x] Coal Golem
 - [ ] Dark Sphere
 - [x] Diabolic Machine
-- [ ] Fellwar Stone
+- [x] Fellwar Stone
 - [x] Fountain of Youth
-- [ ] Living Armor
+- [x] Living Armor
 - [ ] Necropolis
 - [ ] Reflecting Mirror
 - [ ] Runesword
-- [ ] Scarecrow
+- [x] Scarecrow
 - [x] Skull of Orm
 - [x] Standing Stones
 - [x] Stone Calendar
-- [ ] Tormod's Crypt
-- [ ] Tower of Coireall
+- [x] Tormod's Crypt
+- [x] Tower of Coireall
 - [ ] Wand of Ith
-- [ ] War Barge
+- [x] War Barge
 
 ### Land
-- [ ] City of Shadows
+- [x] City of Shadows
 - [x] Maze of Ith
-- [ ] Safe Haven
+- [x] Safe Haven
 - [ ] Sorrow's Path

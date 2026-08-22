@@ -649,7 +649,8 @@
                             "ShuffleLibrary",
                             "EmitLibrarySearchedEvent"
                         ]
-                    }
+                    },
+                    "descriptionOverride": "When this creature enters, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle."
                 },
                 "descriptionOverride": "When this creature enters, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle."
             }

@@ -260,6 +260,15 @@ object Conditions {
         Exists(Player.Each, Zone.BATTLEFIELD, GameObjectFilter.Creature, negate = true)
 
     /**
+     * If there are no lands anywhere on the battlefield (either player). The land sibling of
+     * [NoCreaturesOnBattlefield], same global `Player.Each` + negate shape. Used by Mana Vortex's
+     * "when there are no lands on the battlefield, sacrifice this enchantment" — the clause that
+     * ends the card once it has eaten every land in play.
+     */
+    val NoLandsOnBattlefield: ConditionInterface =
+        Exists(Player.Each, Zone.BATTLEFIELD, GameObjectFilter.Land, negate = true)
+
+    /**
      * If you control at least one permanent matching [filter].
      * General-purpose battlefield existence check — pass any [GameObjectFilter]
      * (e.g. `GameObjectFilter.Creature.copy(statePredicates = listOf(StatePredicate.HasAnyCounter))`

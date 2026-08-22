@@ -1175,6 +1175,10 @@ data class MoveCollectionEffect(
         // `from` is an internal pipeline-collection key — never surface it to players.
         append(if ((destination as? CardDestination.ToZone)?.zone == Zone.BATTLEFIELD) "onto " else "into ")
         append(destination.description)
+        // "under its owner's control" is a printed clause on every card that sets this flag
+        // (Safe Haven, Oblivion Ring's cousins). Dropping it from the generated text loses the
+        // one detail that distinguishes it from a plain return to the battlefield.
+        if (underOwnersControl) append(" under its owner's control")
     }
 }
 

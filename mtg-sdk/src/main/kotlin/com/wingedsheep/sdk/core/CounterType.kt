@@ -124,7 +124,21 @@ enum class CounterType {
      * so it is absent from `StateProjector.KEYWORD_COUNTER_MAP`: it grants the Equipment nothing and
      * modifies a *different* object than the one it sits on.
      */
-    HONE;
+    HONE,
+
+    /**
+     * Storage counter (The Dark — City of Shadows; the later storage-land cycles). A passive
+     * counter with no inherent rule of its own, exactly like [LOOT] and [NEST]: the card that
+     * places them is also the only thing that reads them. City of Shadows exiles a creature to add
+     * one, then taps to add {C} for each.
+     */
+    STORAGE,
+
+    /**
+     * Hunger counter (Fasting). A pure bookkeeping counter: it modifies nothing on its own, and the
+     * card that uses it reads its own count back through `Conditions.SourceCounterCountAtLeast`.
+     */
+    HUNGER;
 
     companion object {
         /**
@@ -477,6 +491,8 @@ object Counters {
      * [CounterType.HONE] for the full contract and where the engine realizes it.
      */
     const val HONE = "hone"
+    const val STORAGE = "storage"
+    const val HUNGER = "hunger"
 
     /**
      * Skewer counter (WOE — Rotisserie Elemental). A tally counter with no inherent rule: the

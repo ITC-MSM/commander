@@ -2552,7 +2552,8 @@
                             "type": "Fixed",
                             "amount": 1
                         }
-                    }
+                    },
+                    "descriptionOverride": "Whenever another nontoken creature you control enters, you may draw a card."
                 },
                 "descriptionOverride": "Whenever another nontoken creature you control enters, you may draw a card."
             }

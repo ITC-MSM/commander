@@ -1582,7 +1582,32 @@ class TriggeredAbilityBuilder {
         return TriggeredAbility.create(
             trigger = trigger.event,
             binding = trigger.binding,
-            effect = if (optional) MayEffect(declared, otherwise = elseEffect) else declared,
+            // The authored `description` is the "may" prompt too, not just catalog text. A gate
+            // whose prompt is derived from the effect tree reads as pipeline plumbing once the
+            // effect is a composition — Safe Haven asked "You may sacrifice this permanent. If you
+            // do, look at cards exiled by this permanent. Put those cards onto the battlefield"
+            // where the card says "you may sacrifice this land. If you do, return each card exiled
+            // with this land to the battlefield under its owner's control".
+            //
+            // It is deliberately stamped in **two** places — here on the gate, and below on the
+            // ability — because two layers read it and neither can reach the other's copy:
+            //
+            //  - `GatedEffectExecutor` renders the yes/no from `effect.description` and is handed
+            //    only the effect, so the gate must carry its own copy. Scoping it to the gate is
+            //    also what keeps a *nested* "you may" inside the same trigger asking its own
+            //    question instead of inheriting the whole trigger's sentence.
+            //  - `ClientStateTransformer` and `TriggerProcessor` read
+            //    `TriggeredAbility.descriptionOverride` for the ability list and the stack item.
+            //
+            // The two are never equal — the gate's own fallback is "You may <effect>", with no
+            // trigger clause — so this is not a value that can be derived from one side at
+            // runtime. Removing either copy silently degrades that layer's text rather than
+            // failing a build; if you are here to de-duplicate, that is the trap.
+            effect = if (optional) {
+                MayEffect(declared, descriptionOverride = description, otherwise = elseEffect)
+            } else {
+                declared
+            },
             targetRequirement = primaryTarget,
             additionalTargetRequirements = additionalTargets,
             elseEffect = if (optional) null else elseEffect,
