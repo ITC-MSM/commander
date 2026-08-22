@@ -9,7 +9,6 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TimingRule
-import com.wingedsheep.sdk.scripting.effects.ZonePlacement
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.ManaColorSet
 
@@ -30,14 +29,9 @@ import com.wingedsheep.sdk.scripting.values.ManaColorSet
  * [activateFromZone] once the ability is on the stack, so without it a card that left the hand in
  * response would still be put onto the battlefield — from wherever it now is.
  *
- * "This land enters tapped" is the [EntersTapped] self-replacement, which the normal land-play
- * path honors. The engine's effect-based entry path does **not** re-apply a card's own
- * self-replacement — removing the explicit placement here fails
- * `UrbanRetreatScenarioTest:148` — so the from-hand put also spells [ZonePlacement.Tapped]; both
- * routes make it enter tapped, and an "enters untapped" replacement still overrides either. That
- * duplication is why Argentum Assay's differential reports this card: the printed line says nothing
- * about tapped, and the grammar reads what the line says. Sorcery-speed via
- * [TimingRule.SorcerySpeed].
+ * "This land enters tapped" is the [EntersTapped] self-replacement, and it is the *only* place
+ * this card says tapped: the from-hand put spells no placement, because the effect-based entry
+ * path applies the entering card's own clause too. Sorcery-speed via [TimingRule.SorcerySpeed].
  */
 val UrbanRetreat = card("Urban Retreat") {
     manaCost = ""
@@ -71,7 +65,6 @@ val UrbanRetreat = card("Urban Retreat") {
         effect = Effects.Move(
             EffectTarget.Self,
             Zone.BATTLEFIELD,
-            placement = ZonePlacement.Tapped,
             fromZone = Zone.HAND
         )
         timing = TimingRule.SorcerySpeed
