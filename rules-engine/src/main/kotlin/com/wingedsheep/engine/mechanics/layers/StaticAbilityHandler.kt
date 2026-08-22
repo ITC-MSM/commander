@@ -968,6 +968,7 @@ class StaticAbilityHandler(
             is CrewSaddleContribution,
 
             // Combat: damage assignment (CombatDamageManager / CombatDamageUtils / DamageUtils):
+            is com.wingedsheep.sdk.scripting.CreaturesDamagedBySourceAreDoomed,
             is AssignCombatDamageAsUnblocked,
             is AssignDamageEqualToToughness,
             is DivideCombatDamageFreely,

@@ -14,6 +14,7 @@ import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.state.GameState
@@ -46,7 +47,9 @@ import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
 import com.wingedsheep.engine.state.components.player.DamageBonusComponent
+import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
+import com.wingedsheep.engine.mechanics.layers.addFloatingEffect
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.sdk.scripting.NoncombatDamageBonus
@@ -442,6 +445,7 @@ object DamageUtils {
             if (sourceId != null) {
                 newState = trackDamageDealtToCreature(newState, sourceId, targetId)
                 newState = trackDamageSourceLki(newState, sourceId, targetId)
+                newState = applyDoomedRidersToDamagedCreature(newState, sourceId, targetId)
             }
             // Track per-player damage dealt to this entity this turn (Grothama LTB).
             if (sourceId != null) {
@@ -1016,6 +1020,61 @@ object DamageUtils {
                 ?: DamagedBySourcesThisTurnComponent()
             container.with(existing.adding(snapshot))
         }
+    }
+
+    /**
+     * Apply the damage-time riders of [com.wingedsheep.sdk.scripting.CreaturesDamagedBySourceAreDoomed]
+     * carried by [sourceId] to the creature it just damaged — "can't be regenerated" and "if it
+     * would die this turn, exile it instead" (Runesword).
+     *
+     * This runs *inside* damage application rather than from a trigger because a trigger for
+     * "whenever this deals damage to a creature" resolves only after state-based actions have
+     * already binned the dying creature (CR 704.3), far too late to change where it went. The marks
+     * themselves are the same floating effects `MarkExileOnDeathExecutor` and
+     * `CantBeRegeneratedExecutor` place.
+     *
+     * Reads **granted** statics only ([GameState.grantedStaticAbilities]), the point-of-use shape
+     * `CombatDamageUtils` documents. No card prints this ability — Runesword grants it for a turn —
+     * and reading printed ones here would need a `CardRegistry` this helper doesn't have. Give this
+     * reader a registry when a card prints it.
+     */
+    fun applyDoomedRidersToDamagedCreature(
+        state: GameState,
+        sourceId: EntityId,
+        targetCreatureId: EntityId
+    ): GameState {
+        if (targetCreatureId !in state.getBattlefield()) return state
+        val riders = state.grantedStaticAbilities
+            .filter { it.entityId == sourceId }
+            .mapNotNull { it.ability as? com.wingedsheep.sdk.scripting.CreaturesDamagedBySourceAreDoomed }
+        if (riders.isEmpty()) return state
+
+        val controllerId = state.projectedState.getController(sourceId)
+            ?: state.getEntity(sourceId)?.get<ControllerComponent>()?.playerId
+            ?: state.getEntity(sourceId)?.get<CardComponent>()?.ownerId
+            ?: return state
+        val context = EffectContext(sourceId = sourceId, controllerId = controllerId)
+
+        var newState = state
+        if (riders.any { it.cantBeRegenerated }) {
+            newState = newState.addFloatingEffect(
+                layer = Layer.ABILITY,
+                modification = SerializableModification.CantBeRegenerated,
+                affectedEntities = setOf(targetCreatureId),
+                duration = Duration.EndOfTurn,
+                context = context
+            )
+        }
+        if (riders.any { it.exileInsteadOfDying }) {
+            newState = newState.addFloatingEffect(
+                layer = Layer.ABILITY,
+                modification = SerializableModification.ExileOnDeath,
+                affectedEntities = setOf(targetCreatureId),
+                duration = Duration.EndOfTurn,
+                context = context
+            )
+        }
+        return newState
     }
 
     /**

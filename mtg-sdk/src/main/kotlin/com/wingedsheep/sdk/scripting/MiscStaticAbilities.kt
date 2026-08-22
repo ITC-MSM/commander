@@ -306,6 +306,38 @@ enum class TappedForManaType {
  *   state from the land controller's perspective, so `youControl()` means "you, the controller of
  *   this static, control the land").
  */
+/**
+ * Creatures dealt damage by this permanent are doomed for the rest of the turn: they can't be
+ * regenerated, and if they would die they are exiled instead. Runesword's two riders, which the
+ * printed card states as separate sentences but which key off the same event and name the same
+ * creature.
+ *
+ * This has to be a static consulted **at damage time**, not a triggered ability. A trigger for
+ * "whenever this deals damage to a creature" only resolves after state-based actions have already
+ * put the dying creature into its graveyard (CR 704.3), so marking it then is too late to change
+ * where it went. Both marks are the same floating effects `Effects.CantBeRegenerated` and
+ * `Effects.MarkExileOnDeath` place — Carbonize can compose those after its own damage because that
+ * all happens in one resolution; combat damage gives no such window.
+ *
+ * The two clauses are flags on one ability rather than two abilities because they are one printed
+ * rider on one card; a future card wanting only half sets only that half.
+ */
+@SerialName("CreaturesDamagedBySourceAreDoomed")
+@Serializable
+data class CreaturesDamagedBySourceAreDoomed(
+    val cantBeRegenerated: Boolean = true,
+    val exileInsteadOfDying: Boolean = true
+) : StaticAbility {
+    override val description: String = buildString {
+        append("creatures dealt damage by this ")
+        val clauses = buildList {
+            if (cantBeRegenerated) add("can't be regenerated this turn")
+            if (exileInsteadOfDying) add("are exiled instead of dying this turn")
+        }
+        append(clauses.joinToString(" and "))
+    }
+}
+
 @SerialName("ReplaceLandManaColor")
 @Serializable
 data class ReplaceLandManaColor(

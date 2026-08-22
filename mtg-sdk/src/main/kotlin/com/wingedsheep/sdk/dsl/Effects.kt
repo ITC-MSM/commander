@@ -1643,6 +1643,22 @@ object Effects {
         GrantKeywordEffect(keyword.name, target, duration, condition)
 
     /**
+     * Mark a permanent as unable to regenerate. Composed *before* a destroy for the "destroy it, it
+     * can't be regenerated" wording (see [Destroy]'s `noRegenerate`), but also useful on its own as
+     * a standing rider on a creature that was merely damaged — Runesword.
+     */
+    fun CantBeRegenerated(target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
+        CantBeRegeneratedEffect(target)
+
+    /**
+     * "If it would die this turn, exile it instead." Marks a creature so its death is replaced by
+     * exile; a no-op on a non-creature. Composed after damage (Carbonize) or granted as a rider
+     * on a creature that deals damage (Runesword).
+     */
+    fun MarkExileOnDeath(target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
+        com.wingedsheep.sdk.scripting.effects.MarkExileOnDeathEffect(target)
+
+    /**
      * Grant an ability flag to a target.
      */
     fun GrantKeyword(

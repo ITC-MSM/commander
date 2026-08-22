@@ -7107,6 +7107,16 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   per-source provenance survive and the `ManaAddedEvent` reports the real total. Wired on all three read
   sites: `ActivateAbilityHandler` (manual tap), `ManaSolver` via `ManaStaticsIndex.sourceTapMultipliers`
   (auto-pay budgeting), and `ManaAbilityEnumerator` (the button reads "{T}: Add {G}{G}{G}").
+- `CreaturesDamagedBySourceAreDoomed(cantBeRegenerated = true, exileInsteadOfDying = true)` —
+  creatures this permanent damages are, for the rest of the turn, unable to regenerate and exiled
+  instead of dying. Runesword's two riders, granted to the pumped creature for a turn via
+  `Effects.GrantStaticAbility`. **It must be a static, not a triggered ability:** a trigger for
+  "whenever this deals damage to a creature" resolves only after state-based actions have already
+  put the dying creature into its graveyard (CR 704.3), so marking it then changes nothing. Carbonize
+  can compose the same two marks (`Effects.CantBeRegenerated`, `Effects.MarkExileOnDeath`) after its
+  own damage because that is one resolution; combat damage gives no such window. Applied inside
+  damage application by `DamageUtils.applyDoomedRidersToDamagedCreature`, which reads *granted*
+  statics only — no card prints this one.
 - `ReplaceLandManaColor(filter)` — global: lands matching `filter` produce one mana of a color of their
   controller's choice instead of their normal mana. Implemented by swapping the land's base mana effect
   for "add one mana of any color", so the choice flows through the normal any-color machinery (manual tap

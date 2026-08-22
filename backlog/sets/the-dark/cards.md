@@ -138,7 +138,7 @@
 - [x] Living Armor
 - [x] Necropolis
 - [ ] Reflecting Mirror
-- [ ] Runesword
+- [x] Runesword
 - [x] Scarecrow
 - [x] Skull of Orm
 - [x] Standing Stones
