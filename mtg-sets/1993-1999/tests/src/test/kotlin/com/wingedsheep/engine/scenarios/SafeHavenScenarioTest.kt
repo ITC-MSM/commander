@@ -116,4 +116,32 @@ class SafeHavenScenarioTest : FunSpec({
             driver.getExileCardNames(me) shouldBe listOf("Grizzly Bears")
         }
     }
+
+    test("the upkeep trigger asks using the card's printed text") {
+        // The "may" question used to be rendered from the effect tree, which reads bottom-up off
+        // the pipeline steps: "You may sacrifice this creature. If you do, look at cards exiled by
+        // this permanent. Put those cards onto the battlefield" — wrong noun for a land, a gather
+        // described as a look, and no mention of whose control the cards return under. The prompt
+        // is the authored ability text whenever the card supplies one.
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Forest" to 40), startingLife = 20)
+
+        val me = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        driver.putPermanentOnBattlefield(me, "Safe Haven")
+
+        driver.passPriorityUntil(Step.END)
+        driver.passPriorityUntil(Step.UPKEEP)
+        driver.passPriorityUntil(Step.END)
+        driver.passPriorityUntil(Step.UPKEEP)
+
+        var guard = 0
+        while (guard++ < 12 && driver.pendingDecision == null) {
+            driver.bothPass()
+        }
+
+        driver.pendingDecision?.prompt shouldBe
+            "At the beginning of your upkeep, you may sacrifice this land. If you do, return each " +
+            "card exiled with this land to the battlefield under its owner's control."
+    }
 })

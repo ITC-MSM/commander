@@ -1582,7 +1582,17 @@ class TriggeredAbilityBuilder {
         return TriggeredAbility.create(
             trigger = trigger.event,
             binding = trigger.binding,
-            effect = if (optional) MayEffect(declared, otherwise = elseEffect) else declared,
+            // The authored `description` is the "may" prompt too, not just catalog text. A gate
+            // whose prompt is derived from the effect tree reads as pipeline plumbing once the
+            // effect is a composition — Safe Haven asked "You may sacrifice this permanent. If you
+            // do, look at cards exiled by this permanent. Put those cards onto the battlefield"
+            // where the card says "you may sacrifice this land. If you do, return each card exiled
+            // with this land to the battlefield under its owner's control".
+            effect = if (optional) {
+                MayEffect(declared, descriptionOverride = description, otherwise = elseEffect)
+            } else {
+                declared
+            },
             targetRequirement = primaryTarget,
             additionalTargetRequirements = additionalTargets,
             elseEffect = if (optional) null else elseEffect,

@@ -463,13 +463,19 @@ class TriggerProcessor(
             return result.copy(events = listOf(note) + result.events)
         }
 
-        // Create yes/no decision
+        // Create yes/no decision.
+        //
+        // The card's own `description` wins over the generated effect text. A generated description
+        // is assembled bottom-up from pipeline steps, so a composed effect reads like plumbing —
+        // Safe Haven's upkeep trigger rendered as "You may sacrifice this creature. If you do, look
+        // at cards exiled by this permanent. Put those cards onto the battlefield" instead of its
+        // printed text. Whenever an author wrote the clause out, that is the prompt.
         val decisionResult = decisionHandler.createYesNoDecision(
             state = state,
             playerId = trigger.controllerId,
             sourceId = trigger.sourceId,
             sourceName = sourceName,
-            prompt = ability.effect.description,
+            prompt = ability.descriptionOverride ?: ability.effect.description,
             phase = DecisionPhase.RESOLUTION,
             abilityIdentity = abilityIdentity
         )

@@ -2540,6 +2540,17 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   for a "may" ability that *also* targets, the yes/no is asked *before* target selection (Invigorating
   Boon) — recognizes the lowered shape via the `Effect.asMayDecide()` matcher (a bare `Gate.MayDecide`
   with no `otherwise`).
+  - **The prompt is the ability's authored `description` when it has one.** A generated effect
+    description is assembled bottom-up from the effect tree, so a composed effect reads as its own
+    plumbing rather than as the card — Safe Haven's `optional = true` upkeep trigger asked "You may
+    sacrifice this creature. If you do, look at cards exiled by this permanent. Put those cards onto
+    the battlefield" instead of its printed text. Lowering `optional = true` therefore passes the
+    `triggeredAbility { }` block's `description` into the gate as `MayEffect(descriptionOverride =
+    …)`, which is what both prompt sites render — `GatedEffectExecutor` when the trigger resolves,
+    and `TriggerProcessor` for a "may" that is asked *before* target selection. **Write the
+    `description` out on any optional trigger whose effect is a composition** — it is player-facing
+    text, not just catalog documentation. A trigger with no `description` still falls back to the
+    generated "You may …".
   - **Dynamic hints — `dynamicHint = DynamicHint(template, amount)`.** A printed "you may … *that
     much* damage / *that many* cards" renders the same sentence on every instance. When one event
     puts **several instances of the same ability on the stack at once**, the prompts become
@@ -3294,8 +3305,9 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
   not the granting object (CR 113.7).
   - **Self-noun rendering (type-aware text).** `EffectTarget.Self.description` is "this creature"
     (most self-referential effects live on creatures). Effects that also apply to *non-creature*
-    permanents — `TransformEffect` / `ExileAndReturnTransformedEffect`, and the ability grants
-    `GrantTriggeredAbility` / `GrantActivatedAbility` / `GrantStaticAbility` /
+    permanents — `TransformEffect` / `ExileAndReturnTransformedEffect`, `SacrificeTargetEffect`
+    (`Effects.SacrificeTarget`, which a land or artifact uses to sacrifice itself), and the ability
+    grants `GrantTriggeredAbility` / `GrantActivatedAbility` / `GrantStaticAbility` /
     `GrantReplacementEffect` — must not hard-code either noun, so they implement
     `SelfReferentialDescription` (a standalone mixin, **not** a subtype of the sealed `@Serializable`
     `Effect`) and build a `descriptionTemplate` using `EffectTarget.selfNounToken` — which renders
