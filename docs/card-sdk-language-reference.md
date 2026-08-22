@@ -6547,6 +6547,17 @@ staticAbility {
   it has an `AttachedToComponent`. The restriction is checked only as attackers are declared, so
   attaching the source after it is already being attacked doesn't remove it from combat. Used by
   The Aetherspark.
+- `CantAttackUnlessSacrifice(sacrificeFilter, count = 1)` — a **non-mana** attack cost, paid as
+  attackers are declared (CR 508.1e–g): Leviathan's "this creature can't attack unless you sacrifice
+  two Islands". Distinct from `CantAttackUnless`, which takes a *condition* — controlling two Islands
+  is not the same as spending them — and from `CantAttackOrBlockUnlessPay`, which is generic mana only
+  and carries a blocking half this deliberately lacks. Enforced in two places that share
+  `AttackSacrificeCosts` so they cannot drift: `CantAttackUnlessSacrificeRule` makes the declaration
+  illegal up front when the controller can't pay, and `AttackPhaseManager.pauseForAttackSacrifice`
+  then asks which permanents to sacrifice, in the same window the mana tax is paid. The cost is per
+  *creature* — two Leviathans owe two Islands each, asked one at a time so each choice is made
+  knowing the last. The sacrifice runs through `ForceSacrificeExecutor.sacrificePermanents`, so it
+  emits `PermanentsSacrificedEvent` and fires dies triggers rather than being a silent zone move.
 - `CantAttackUnlessCoAttacker(coAttackerFilter, filter = source)` — "This creature can't attack
   unless [a creature matching coAttackerFilter] also attacks" (Scarred Puma). Unlike
   `CantAttackUnless` (which is defender-relative), this depends on the whole proposed attacker

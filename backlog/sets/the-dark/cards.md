@@ -51,7 +51,7 @@
 - [x] Flood
 - [x] Ghost Ship
 - [x] Giant Shark
-- [ ] Leviathan
+- [x] Leviathan
 - [x] Mana Vortex
 - [x] Merfolk Assassin
 - [x] Mind Bomb

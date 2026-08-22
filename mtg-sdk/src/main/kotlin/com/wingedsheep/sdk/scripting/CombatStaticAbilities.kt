@@ -218,6 +218,35 @@ data class AssignCombatDamageAsUnblocked(
  * @property condition The condition that must be met for the creature to attack
  * @property filter What this ability applies to
  */
+/**
+ * This creature can't attack unless its controller sacrifices [count] permanents matching
+ * [sacrificeFilter], paid as attackers are declared (CR 508.1e-g) — Leviathan's "this creature
+ * can't attack unless you sacrifice two Islands".
+ *
+ * A **cost**, not a condition, which is why it is not [CantAttackUnless]: merely controlling two
+ * Islands is not enough, they have to go. The declaration is illegal up front when the controller
+ * doesn't control enough matching permanents to pay (a cost you can't pay can't be paid), and
+ * otherwise the declare-attackers step pauses for the choice of which to sacrifice, in the same
+ * window the generic-mana [AttackTax] pauses to be paid.
+ *
+ * Unlike [CantAttackOrBlockUnlessPay] this has no blocking half: the printed line is attack-only,
+ * and a blocking sibling would need its own pause in the blocker step.
+ */
+@SerialName("CantAttackUnlessSacrifice")
+@Serializable
+data class CantAttackUnlessSacrifice(
+    val sacrificeFilter: GameObjectFilter,
+    val count: Int = 1,
+) : StaticAbility {
+    override val description: String =
+        "can't attack unless you sacrifice $count ${sacrificeFilter.description}"
+
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = sacrificeFilter.applyTextReplacement(replacer)
+        return if (newFilter !== sacrificeFilter) copy(sacrificeFilter = newFilter) else this
+    }
+}
+
 @SerialName("CantAttackUnless")
 @Serializable
 data class CantAttackUnless(

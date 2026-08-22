@@ -155,6 +155,14 @@ internal class AttackPhaseManager(
             return pauseForAttackTaxConfirmation(state, attackingPlayer, attackers, totalTax, bands)
         }
 
+        // Non-mana attack costs (CR 508.1e–g): "can't attack unless you sacrifice two Islands"
+        // (Leviathan). Affordability was already enforced by CantAttackUnlessSacrificeRule, so
+        // reaching here means the cost *can* be paid; what remains is choosing what to sacrifice.
+        val sacrificeCosts = AttackSacrificeCosts.requirementsFor(state, attackers.keys, cardRegistry)
+        if (sacrificeCosts.isNotEmpty()) {
+            return pauseForAttackSacrifice(state, attackingPlayer, attackers, sacrificeCosts, bands)
+        }
+
         return commitAttackDeclaration(state, attackingPlayer, attackers, projected, taxEvents = emptyList(), bands = bands)
     }
 
@@ -317,6 +325,109 @@ internal class AttackPhaseManager(
         return ExecutionResult.paused(
             state.withPendingDecision(decision).pushContinuation(continuation),
             decision,
+        )
+    }
+
+    /**
+     * Pause the declare-attackers step for the first unpaid sacrifice cost, queueing the rest.
+     *
+     * One decision per paying attacker rather than one combined pile: the costs are separate (two
+     * Leviathans owe two Islands each, not four between them), and a combined prompt could not say
+     * which creature a given Island was paying for.
+     */
+    private fun pauseForAttackSacrifice(
+        state: GameState,
+        attackingPlayer: EntityId,
+        attackers: Map<EntityId, EntityId>,
+        costs: List<Pair<EntityId, com.wingedsheep.sdk.scripting.CantAttackUnlessSacrifice>>,
+        bands: List<Set<EntityId>>,
+    ): ExecutionResult {
+        val (payingAttacker, requirement) = costs.first()
+        val eligible = AttackSacrificeCosts.eligiblePermanents(
+            state, attackingPlayer, payingAttacker, requirement
+        )
+        val attackerName = state.getEntity(payingAttacker)?.get<CardComponent>()?.name ?: "your attacker"
+        val decisionId = java.util.UUID.randomUUID().toString()
+        val decision = com.wingedsheep.engine.core.SelectCardsDecision(
+            id = decisionId,
+            playerId = attackingPlayer,
+            prompt = "Sacrifice ${requirement.count} ${requirement.sacrificeFilter.description} to attack with $attackerName",
+            context = com.wingedsheep.engine.core.DecisionContext(
+                sourceId = payingAttacker,
+                sourceName = attackerName,
+                phase = com.wingedsheep.engine.core.DecisionPhase.COMBAT,
+            ),
+            options = eligible,
+            minSelections = requirement.count,
+            maxSelections = requirement.count,
+        )
+        val continuation = com.wingedsheep.engine.core.AttackSacrificeSelectionContinuation(
+            decisionId = decisionId,
+            attackingPlayer = attackingPlayer,
+            attackers = attackers,
+            payingAttacker = payingAttacker,
+            count = requirement.count,
+            remaining = costs.drop(1).map { (id, req) ->
+                com.wingedsheep.engine.core.PendingAttackSacrifice(id, req.count)
+            },
+            bands = bands,
+        )
+        return ExecutionResult.paused(
+            state.withPendingDecision(decision).pushContinuation(continuation),
+            decision,
+        )
+    }
+
+    /**
+     * Ask for the next queued attack sacrifice after a previous one was paid. Same decision as
+     * [pauseForAttackSacrifice], but carrying the earlier payment's events forward so the
+     * sacrifices are all reported even though only the last resume commits the declaration.
+     */
+    internal fun pauseForNextAttackSacrifice(
+        state: GameState,
+        attackingPlayer: EntityId,
+        attackers: Map<EntityId, EntityId>,
+        payingAttacker: EntityId,
+        count: Int,
+        remaining: List<com.wingedsheep.engine.core.PendingAttackSacrifice>,
+        bands: List<Set<EntityId>>,
+        carryEvents: List<com.wingedsheep.engine.core.GameEvent>,
+    ): ExecutionResult {
+        val requirement = AttackSacrificeCosts.requirementFor(state, payingAttacker, cardRegistry)
+            ?: return commitAttackDeclaration(
+                state, attackingPlayer, attackers, state.projectedState, carryEvents, bands
+            )
+        val eligible = AttackSacrificeCosts.eligiblePermanents(
+            state, attackingPlayer, payingAttacker, requirement
+        )
+        val attackerName = state.getEntity(payingAttacker)?.get<CardComponent>()?.name ?: "your attacker"
+        val decisionId = java.util.UUID.randomUUID().toString()
+        val decision = com.wingedsheep.engine.core.SelectCardsDecision(
+            id = decisionId,
+            playerId = attackingPlayer,
+            prompt = "Sacrifice $count ${requirement.sacrificeFilter.description} to attack with $attackerName",
+            context = com.wingedsheep.engine.core.DecisionContext(
+                sourceId = payingAttacker,
+                sourceName = attackerName,
+                phase = com.wingedsheep.engine.core.DecisionPhase.COMBAT,
+            ),
+            options = eligible,
+            minSelections = count,
+            maxSelections = count,
+        )
+        val continuation = com.wingedsheep.engine.core.AttackSacrificeSelectionContinuation(
+            decisionId = decisionId,
+            attackingPlayer = attackingPlayer,
+            attackers = attackers,
+            payingAttacker = payingAttacker,
+            count = count,
+            remaining = remaining,
+            bands = bands,
+        )
+        return ExecutionResult.paused(
+            state.withPendingDecision(decision).pushContinuation(continuation),
+            decision,
+            carryEvents,
         )
     }
 
