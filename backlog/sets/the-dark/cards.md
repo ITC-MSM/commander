@@ -25,7 +25,7 @@
 - [ ] Cleansing
 - [x] Dust to Dust
 - [x] Exorcist
-- [ ] Fasting
+- [x] Fasting
 - [x] Festival
 - [x] Fire and Brimstone
 - [x] Holy Light

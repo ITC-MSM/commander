@@ -132,7 +132,13 @@ enum class CounterType {
      * places them is also the only thing that reads them. City of Shadows exiles a creature to add
      * one, then taps to add {C} for each.
      */
-    STORAGE;
+    STORAGE,
+
+    /**
+     * Hunger counter (Fasting). A pure bookkeeping counter: it modifies nothing on its own, and the
+     * card that uses it reads its own count back through `Conditions.SourceCounterCountAtLeast`.
+     */
+    HUNGER;
 
     companion object {
         /**
@@ -486,6 +492,7 @@ object Counters {
      */
     const val HONE = "hone"
     const val STORAGE = "storage"
+    const val HUNGER = "hunger"
 
     /**
      * Skewer counter (WOE — Rotisserie Elemental). A tally counter with no inherent rule: the
