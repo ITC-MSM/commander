@@ -3792,8 +3792,10 @@ object Effects {
     /**
      * Change the target of target spell or ability with a single target.
      */
-    fun ChangeTarget(): Effect =
-        ChangeTargetEffect
+    fun ChangeTarget(
+        newTargetMustBePlayer: Boolean = false,
+        onlyIfCurrentTargetIsController: Boolean = false,
+    ): Effect = ChangeTargetEffect(newTargetMustBePlayer, onlyIfCurrentTargetIsController)
 
     /**
      * Reselect the target of the triggering spell or ability at random.

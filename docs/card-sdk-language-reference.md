@@ -6547,6 +6547,12 @@ staticAbility {
   it has an `AttachedToComponent`. The restriction is checked only as attackers are declared, so
   attaching the source after it is already being attacked doesn't remove it from combat. Used by
   The Aetherspark.
+- `ChangeTargetEffect(newTargetMustBePlayer = false, onlyIfCurrentTargetIsController = false)` —
+  "change the target of target spell or ability with a single target" (Willbender). The two knobs
+  are Reflecting Mirror's printed restrictions: fire only when the spell's single target is *you*,
+  and restrict the replacement to a **player**. The new-target filter narrows the spell's *own*
+  legal-target list rather than replacing it, so a redirect can never make an otherwise-illegal
+  choice legal. Both default false, which is the unrestricted Willbender behaviour.
 - `RedirectNextDamageEffect(protectedTargets, redirectTo, amount, scope, creaturesOnly = false)` —
   **`creaturesOnly`** protects the *class* of creatures rather than a fixed list of entities: Blood
   of the Martyr's "if damage would be dealt to any creature". Checked against projected state at

@@ -137,7 +137,7 @@
 - [x] Fountain of Youth
 - [x] Living Armor
 - [x] Necropolis
-- [ ] Reflecting Mirror
+- [x] Reflecting Mirror
 - [x] Runesword
 - [x] Scarecrow
 - [x] Skull of Orm
