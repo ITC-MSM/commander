@@ -6,6 +6,7 @@ import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.effects.SuccessCriterion
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
@@ -48,6 +49,10 @@ val SafeHaven = card("Safe Haven") {
         effect = Effects.IfYouDo(
             action = Effects.SacrificeTarget(EffectTarget.Self),
             ifYouDo = Effects.ReturnLinkedExileUnderOwnersControl(),
+            // "If you do" gates on the sacrifice actually happening. A sacrifice is a zone move,
+            // but Auto can't infer it from the action's shape, and Always would fail open — a
+            // Safe Haven that has already left the battlefield would still return its exiles.
+            successCriterion = SuccessCriterion.PermanentsSacrificed,
         )
         description = "At the beginning of your upkeep, you may sacrifice this land. If you do, " +
             "return each card exiled with this land to the battlefield under its owner's control."
