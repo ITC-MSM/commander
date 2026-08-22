@@ -515,7 +515,9 @@ class CleanupPhaseManager(
             when (floatingEffect.duration) {
                 is Duration.EndOfTurn -> false  // Remove it
                 is Duration.NextUse -> false  // Consumed on use or expired at end of turn
-                is Duration.EndOfCombat -> false  // Should already be removed, but clean up
+                // Swept when the combat phase ends (CR 511.2, CombatManager.endCombat). Kept here
+                // as a safety net for an effect created after the last combat phase of the turn.
+                is Duration.EndOfCombat -> false
                 is Duration.UntilYourNextTurn -> true  // Keep until that player's next turn
                 is Duration.EndOfYourNextTurn -> {
                     // Ends at the cleanup of the controller's next turn (CR 514.2) — see the
