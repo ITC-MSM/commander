@@ -610,8 +610,10 @@ class PayOrSufferExecutor(
             }
         }
 
-        // Always add the suffer option
-        val sufferDescription = effect.suffer.description.replaceFirstChar { it.uppercase() }
+        // Always add the suffer option. Routed through describeConsequence so the authored
+        // consequenceDescription wins here too — this list is the *first* thing the payer reads,
+        // and an effect description written from the controller's side reads backwards to them.
+        val sufferDescription = describeConsequence(effect, sourceName).replaceFirstChar { it.uppercase() }
 
         val optionLabels = availableOptions.map { it.second } + sufferDescription
 
@@ -646,7 +648,11 @@ class PayOrSufferExecutor(
             namedTargets = context.pipeline.namedTargets,
             triggeringEntityId = context.triggeringEntityId,
             triggeringPlayerId = context.triggeringPlayerId,
-            abilityControllerId = context.controllerId
+            abilityControllerId = context.controllerId,
+            // Carried so the follow-up prompt for the chosen cost asks in the same words as this
+            // one. Dropping it here is invisible until a card routes `player` elsewhere, and then
+            // the second question silently reverts to the controller's-side phrasing.
+            consequenceDescription = effect.consequenceDescription
         )
 
         val stateWithDecision = state.withPendingDecision(decision)
