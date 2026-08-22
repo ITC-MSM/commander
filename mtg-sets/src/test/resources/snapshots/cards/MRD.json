@@ -8973,24 +8973,26 @@
                         {
                             "type": "MoveToZone",
                             "target": "Self",
-                            "destination": "Battlefield"
+                            "destination": "Battlefield",
+                            "fromZone": "Graveyard"
                         },
                         {
-                            "type": "ForceSacrifice",
-                            "filter": "creature",
-                            "target": {
-                                "type": "PlayerRef",
-                                "player": "You"
-                            }
+                            "type": "Sacrifice",
+                            "filter": "creature"
                         }
                     ]
                 },
                 "restrictions": [
                     {
-                        "type": "DuringStep",
-                        "step": "UPKEEP"
-                    },
-                    "OnlyDuringYourTurn"
+                        "type": "ActivationAll",
+                        "restrictions": [
+                            "OnlyDuringYourTurn",
+                            {
+                                "type": "DuringStep",
+                                "step": "UPKEEP"
+                            }
+                        ]
+                    }
                 ],
                 "activateFromZone": "Graveyard"
             }

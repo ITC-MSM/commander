@@ -13153,7 +13153,8 @@
                     "type": "MoveToZone",
                     "target": "Self",
                     "destination": "Battlefield",
-                    "placement": "Tapped"
+                    "placement": "Tapped",
+                    "fromZone": "Hand"
                 },
                 "timing": "SorcerySpeed",
                 "activateFromZone": "Hand"

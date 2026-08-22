@@ -1097,6 +1097,14 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 ### Return / placement
 
 - `ReturnToHand(target)` — bounce to hand.
+- `ReturnToHandFromGraveyard(target)` — the *guarded* bounce, `PutOntoBattlefieldFromGraveyard`'s
+  sibling one destination over: `MoveToZone(…, Zone.HAND, fromZone = GRAVEYARD)`, so the move is
+  skipped if the card has left the graveyard by resolution. Use this for "Return this card from your
+  graveyard to your hand" (Sanitarium Skeleton, Eternal Dragon, Dutiful Griffin) and for any
+  graveyard→hand return whose printed line names the zone. It matters on a self-return in particular:
+  `ActivateAbilityHandler` checks an ability's `activateFromZone` when the ability is *activated* and
+  nothing re-checks it on resolution, so without the guard a card exiled from the graveyard in
+  response to its own ability comes back from exile.
 - `PutOnTopOfLibrary(target)` — place target on top of its owner's library.
 - `PutOnBottomOfLibrary(target)` — place target on the bottom of its owner's library (forced, no choice).
 - `PutOnTopOrBottomOfLibrary(target)` — player chooses top or bottom.
@@ -1105,14 +1113,17 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `PutIntoLibraryNthFromTop(target, positionFromTop)` — place N from the top.
 - `PutOntoBattlefield(target, tapped?)` — put target on the battlefield.
 - `PutOntoBattlefieldUnderYourControl(target)` — under controller's control.
-- `PutOntoBattlefieldFromGraveyard(target, underYourControl = false)` — the *guarded* return:
+- `PutOntoBattlefieldFromGraveyard(target, underYourControl = false, tapped = false)` — the *guarded* return:
   `MoveToZone(…, fromZone = GRAVEYARD)`, so the move is skipped if the card has left the graveyard by
   resolution. Use this for "Return target creature card from your graveyard to the battlefield"
   (Zombify, Reya Dawnbringer); plain `PutOntoBattlefield` is for a card whose zone the effect already
   fixed. `underYourControl = true` adds the `controllerOverride` that
   `PutOntoBattlefieldUnderYourControl` sets, for "return that card to the battlefield **under your
   control**" where the guard is wanted too (Scythe of the Wretched) — the two axes are independent, so
-  reach for this rather than a raw `MoveToZoneEffect`.
+  reach for this rather than a raw `MoveToZoneEffect`. `tapped = true` is the third independent axis,
+  for "Return this card from your graveyard to the battlefield **tapped**" (Reassembling Skeleton,
+  Haunted Dead, Tunnel Rats) — before it existed those cards used plain `PutOntoBattlefield` and
+  silently dropped the guard, which is what a frozen facade parameter costs.
 - `PutOntoBattlefieldFaceDown(count, target?)` — enter face-down (2/2 morph shape).
 - `RevealFaceDownPermanent(target?)` — reveal a face-down permanent (make its hidden card public,
   CR 708.2). Informational only — does **not** turn it face up. Pair with
