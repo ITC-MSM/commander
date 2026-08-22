@@ -451,6 +451,31 @@ The same discipline covers values the text does not determine — target slot na
 Mint one fixed constant (`Targets.SLOT`, `Triggers.ID`); the differential normalizes both sides by
 position. A rule that tried to reproduce a generated id would be reading a counter, not a card.
 
+The **chosen count** band is the one to read before assuming a *word* can be a slot. "any number of"
+stands where a number word stands, reads like one, and is a different SDK **value** in every position
+it appears in: `TargetRequirement.unlimited` on a target, `CostAtom.VariablePermanents` in a cost,
+`SacrificeEffect.any` in an effect, `SelectionMode.ChooseAnyNumber` in a pipeline. Slotting the
+phrase into the counted rules would have made one model printable by two rules. Ask of any word that
+looks slottable whether the SDK gives it the same *type* everywhere it is printed; if it does not, it
+is a family per position and the word is a row inside each.
+
+Three of its lessons transfer. **A band can be worth writing when its probe returns zero.** The
+substitution finished three of 123 lines and no whole cards, and that is a measurement of the
+*payload*, not a verdict on the count — the ranking fell from 123 cards to 77 and off the top of the
+table because 46 lines started declining on what actually blocks them. A position band's product is
+the ranking it leaves behind, which the fronted-duration band said about a clause and this says about a
+word. **Two printed forms of one value is an `alsoSpelled`, and the reach can be larger than the
+band.** "Remove any number of charge counters from ~" is the same `RemoveCounters(XValue, self)` as
+"Remove X charge counters from ~"; one line moved seventeen lands onto a single remaining sentence,
+where the whole `VariablePermanents` product delivered one card. And **a spelling that is ambiguous
+by position must not be registered until the position can be seen.** CR 601.2b makes a variable
+cost's count the ability's X, so "for each storage counter removed this way" *is* `XValue` — after a
+cost. After an effect (Coalition Relic) the identical clause is a collection count. The grammar has
+no way to scope a leaf inside `Steps.step` to the cost above it, so the spelling stays unwritten and
+the write-off names its own fix: a fail-closed guard where an ability is assembled, refusing a script
+that reads `XValue` under a cost that declares none. Registering it unscoped would have round-tripped
+and meant something else — the reversible-but-wrong class, in one clause.
+
 **Three anaphors, three positions.** Oracle's "it" means the source in a first clause ("Whenever this
 creature attacks, **it** gets +2/+0"), the target in a later one ("Untap target creature. **It**
 gets +2/+4"), and — inside a trigger whose event names a **filter** — the object that matched

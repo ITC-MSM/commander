@@ -454,6 +454,33 @@ object SelfSteps {
         }
     }
 
+    /**
+     * "Sacrifice it unless you sacrifice any number of creatures with total power 12 or greater." —
+     * Phyrexian Dreadnought, and the third context `CostAtom` names.
+     *
+     * The whole of [VariableCosts] rather than a row of its own: a payable cost is the same payable
+     * thing as an activation cost and an additional cost, so this slots the family the other two
+     * slot. That is [Costs]' own argument one context further along, and it is why a verb this
+     * sentence has never printed ("unless you tap any number of …") costs nothing to have — the
+     * family is the type's product, and a context that can pay it can pay all of it.
+     */
+    private val sacrificeUnlessVariable: Phrase<CardScript> = run {
+        fun scriptFor(atom: CostAtom) = CardScript(
+            spellEffect = PayOrSufferEffect(cost = Costs.pay.Atom(atom), suffer = SacrificeSelfEffect)
+        )
+        phrase("sacrifice it unless you {atom}", name = "sacrifice the source unless you pay a chosen count") {
+            slot("atom", VariableCosts.payAtoms)
+            build { scriptFor(it.value("atom")) }
+            match { script ->
+                val effect = script.spellEffect as? PayOrSufferEffect ?: return@match null
+                val atom = (effect.cost as? PayCost.Atom)?.atom as? CostAtom.VariablePermanents
+                    ?: return@match null
+                if (script != scriptFor(atom)) return@match null
+                bind("atom" to atom)
+            }
+        }
+    }
+
     /** "Sacrifice it unless you discard a card at random." — Pillaging Horde. */
     private val sacrificeUnlessRandomDiscard: Phrase<CardScript> = run {
         val script = CardScript(
@@ -484,6 +511,7 @@ object SelfSteps {
         sacrificeSelf,
         sacrificeUnlessPay,
         sacrificeUnlessCounted,
+        sacrificeUnlessVariable,
         sacrificeUnlessRandomDiscard,
         sacrificeUnless(
             "sacrifice it unless you discard {filter} card",

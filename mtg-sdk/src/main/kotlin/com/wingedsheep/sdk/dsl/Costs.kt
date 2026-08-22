@@ -364,9 +364,12 @@ object Costs {
         filter: GameObjectFilter = GameObjectFilter.Any,
         minCount: Int = 1,
         excludeSelf: Boolean = true,
-        xMeasure: VariableCostMeasure = VariableCostMeasure.TOTAL_MANA_VALUE
+        xMeasure: VariableCostMeasure = VariableCostMeasure.TOTAL_MANA_VALUE,
+        minMeasure: Int = 0
     ): AbilityCost = AbilityCost.Atom(
-        CostAtom.VariablePermanents(filter, minCount, excludeSelf, PermanentCostAction.EXILE, xMeasure)
+        CostAtom.VariablePermanents(
+            filter, minCount, excludeSelf, PermanentCostAction.EXILE, xMeasure, minMeasure
+        )
     )
 
     /**
@@ -383,9 +386,35 @@ object Costs {
         filter: GameObjectFilter = GameObjectFilter.Any,
         minCount: Int = 1,
         excludeSelf: Boolean = false,
-        xMeasure: VariableCostMeasure = VariableCostMeasure.COUNT
+        xMeasure: VariableCostMeasure = VariableCostMeasure.COUNT,
+        minMeasure: Int = 0
     ): AbilityCost = AbilityCost.Atom(
-        CostAtom.VariablePermanents(filter, minCount, excludeSelf, PermanentCostAction.SACRIFICE, xMeasure)
+        CostAtom.VariablePermanents(
+            filter, minCount, excludeSelf, PermanentCostAction.SACRIFICE, xMeasure, minMeasure
+        )
+    )
+
+    /**
+     * Tap one or more untapped permanents matching [filter] you control (variable count, at least
+     * [minCount]) — the tapping twin of [ExilePermanents] and [SacrificePermanents], and the third
+     * value of [PermanentCostAction] the other two already name.
+     *
+     * Tapping this way is a cost rather than the `{T}` symbol, so summoning sickness (CR 302.6)
+     * does not apply and only untapped permanents may be chosen (CR 701.26a). Pass [minMeasure]
+     * with [VariableCostMeasure.TOTAL_POWER] for Mossbridge Troll's "tap any number of untapped
+     * creatures you control other than this creature with total power 10 or greater"; the
+     * additional-cost twin of that shape is [Additional.TapForTotalPower].
+     */
+    fun TapPermanentsVariable(
+        filter: GameObjectFilter = GameObjectFilter.Creature,
+        minCount: Int = 1,
+        excludeSelf: Boolean = false,
+        xMeasure: VariableCostMeasure = VariableCostMeasure.COUNT,
+        minMeasure: Int = 0
+    ): AbilityCost = AbilityCost.Atom(
+        CostAtom.VariablePermanents(
+            filter, minCount, excludeSelf, PermanentCostAction.TAP, xMeasure, minMeasure
+        )
     )
 
     // =========================================================================
@@ -788,6 +817,15 @@ object Costs {
      * mechanics, and player-choice costs. Prefer these factories over raw `PayCost.*`.
      */
     object pay {
+
+        /**
+         * Any shared payable thing, lifted into this context — the generic wrapper the other two
+         * cost contexts already publish (`AbilityCost.Atom`, `AdditionalCost.Atom`). Reach for a
+         * named factory below where one exists; this is what a caller holding a [CostAtom] it did
+         * not construct itself needs, and what keeps [CostAtom]'s "one cost language" reachable
+         * from "unless you …" without a factory per atom.
+         */
+        fun Atom(atom: CostAtom): PayCost = PayCost.Atom(atom)
 
         /** Pay a mana cost. */
         fun Mana(cost: ManaCost): PayCost = PayCost.Atom(CostAtom.Mana(cost))

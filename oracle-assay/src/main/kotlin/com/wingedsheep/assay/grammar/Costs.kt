@@ -384,11 +384,34 @@ object Costs {
             }
         }
 
-        /** "Remove X storage counters from ~" — Calciform Pools. The count is the ability's X. */
+        /**
+         * "Remove X charge counters from ~" — Calciform Pools. The count is the ability's X.
+         *
+         * ### Two printed forms, one cost value — a finding, and why it is an [alsoSpelled]
+         *
+         * "Remove **any number of** charge counters from ~" (the mana batteries, the storage lands,
+         * Geistflame Reservoir) is the *same* `CostAtom.RemoveCounters(count = XValue, self = true)`
+         * as "Remove **X** …": both are CR 601.2b counts announced by the payer as the ability is
+         * activated, and the SDK has one value for them. What differs is only how the rest of the
+         * ability refers back to the number — "Add X mana …" against "…for each charge counter
+         * removed this way" — and that is a property of the *effect*, which is a different slot of
+         * the script.
+         *
+         * So this is one rule with two surfaces rather than two rules: registering a sibling would
+         * be a second printer for one model, which invariant 2 forbids and the ambiguity gate
+         * catches. "Remove X" stays canonical because it is the majority and because it is the form
+         * whose payoff sentence the grammar can already read; the batteries' spelling parses and is
+         * reported as a normalized alternate, which is the honest verdict for a form the model
+         * cannot distinguish.
+         */
         val removeXCountersFromSelf = phrase(
             "${lead("remove")} X {kind} counters from ${Normalizer.SELF}",
             name = "remove X counters from this permanent",
         ) {
+            alsoSpelled(
+                "${lead("remove")} any number of {kind} counters from ${Normalizer.SELF}",
+                name = "remove a chosen number of counters from this permanent",
+            )
             slot("kind", Primitives.counterKind)
             build { atomOf(SdkCosts.RemoveXCounters(counterType = it.text("kind"), self = true)) }
             match { atom ->
@@ -413,6 +436,7 @@ object Costs {
 
         return oneOf(
             "a cost atom",
+            *VariableCosts.rows(lead).toTypedArray(),
             sacrificeFiltered,
             sacrificeAnother,
             sacrificeSeveral,

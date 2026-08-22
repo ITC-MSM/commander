@@ -1241,6 +1241,43 @@ object Steps {
     }
 
     /**
+     * "Sacrifice any number of creatures." — the effect-position sibling of [VariableCosts], and a
+     * *third* SDK spelling of the same English.
+     *
+     * `SacrificeEffect.any` is the field, and it is not `VariablePermanents`: a cost is paid on
+     * announcement and publishes its count as X (CR 601.2b), while this happens on resolution and
+     * publishes nothing — which is exactly why the payoff clauses differ. "Sacrifice any number of
+     * creatures**:** …" names X; "Sacrifice any number of creatures**.** You gain 3 life for each
+     * creature sacrificed this way." names a *collection*, and that collection is the vocabulary
+     * this grammar still has no reading for. So this row is the sentence's first half and the
+     * second half declines, which is the honest split rather than reading one as the other.
+     *
+     * "other" is the row [Costs] spells the same way, and the noun is [Filters.pluralSubject]
+     * because `SacrificeEffect` holds no controller predicate — CR 701.17a already restricts a
+     * sacrifice to what you control.
+     */
+    private fun sacrificeAnyNumber(excludeSource: Boolean): Phrase<CardScript> {
+        fun scriptFor(filter: GameObjectFilter) = CardScript(
+            spellEffect = SacrificeEffect(filter, any = true, excludeSource = excludeSource)
+        )
+        val other = if (excludeSource) "other " else ""
+        val otherName = if (excludeSource) " excluding the source" else ""
+        return phrase(
+            "sacrifice any number of $other{filter}",
+            name = "sacrifice a chosen number of permanents$otherName",
+        ) {
+            slot("filter", Filters.pluralSubject)
+            build { scriptFor(it.value("filter")) }
+            match { script ->
+                val effect = script.spellEffect as? SacrificeEffect ?: return@match null
+                if (!effect.any || effect.excludeSource != excludeSource) return@match null
+                if (script != scriptFor(effect.filter)) return@match null
+                bind("filter" to effect.filter)
+            }
+        }
+    }
+
+    /**
      * "Target creature can't be blocked this turn." — Cephalid Pathmage.
      *
      * The SDK grants the *flag* rather than a keyword here, which is the same two-places-for-one-
@@ -1310,6 +1347,8 @@ object Steps {
         destroyTargetNoRegenerate,
         destroyTriggeringNoRegenerate,
         sacrificeFiltered,
+        sacrificeAnyNumber(excludeSource = false),
+        sacrificeAnyNumber(excludeSource = true),
         targetCantBeBlocked,
         losesTheGame("you lose the game", "you lose the game", EffectTarget.Controller),
         losesTheGame(

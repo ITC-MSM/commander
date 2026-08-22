@@ -465,9 +465,10 @@ exist in the cost and charges the life through the shared life-payment service.
   controller-scoped filter (`.youControl()`): the battlefield zone map is keyed by **owner**, so the
   filter is what enforces "you control". Its selection is recorded, so a resolving effect can name
   the exiled cards via `CardSource.ExiledAsCost`.
-- `Costs.ExilePermanents(filter = Any, minCount = 1, excludeSelf = true, xMeasure = TOTAL_MANA_VALUE)`
-  / `Costs.SacrificePermanents(filter = Any, minCount = 1, excludeSelf = false, xMeasure = COUNT)` —
-  **variable-count** "exile/sacrifice one or more permanents you control matching `filter`"
+- `Costs.ExilePermanents(filter = Any, minCount = 1, excludeSelf = true, xMeasure = TOTAL_MANA_VALUE, minMeasure = 0)`
+  / `Costs.SacrificePermanents(filter = Any, minCount = 1, excludeSelf = false, xMeasure = COUNT, minMeasure = 0)`
+  / `Costs.TapPermanentsVariable(filter = Creature, minCount = 1, excludeSelf = false, xMeasure = COUNT, minMeasure = 0)` —
+  **variable-count** "exile/sacrifice/tap one or more permanents you control matching `filter`"
   activated-ability cost (CR 601.2b — the player chooses how many, at least `minCount`, as the
   ability is activated). One atom, `CostAtom.VariablePermanents`, with three orthogonal axes; the two
   facades are the named entry points to it. With `excludeSelf` the ability's own source is excluded
@@ -477,7 +478,9 @@ exist in the cost and charges the life through the shared life-payment service.
     path a fixed-count sacrifice cost uses, so "whenever you sacrifice" triggers and Food tracking
     fire. Either way Auras fall off, tokens cease to exist, and leaves-the-battlefield triggers fire.
     `TAP` taps them in place, leaving them on the battlefield — the Teamwork N shape, reached through
-    `Costs.additional.TapForTotalPower(n)`. Only untapped permanents are candidates (CR 701.26a) and
+    `Costs.additional.TapForTotalPower(n)` as a spell's additional cost and through
+    `Costs.TapPermanentsVariable(...)` as an activated-ability cost (Mossbridge Troll: "Tap any number
+    of untapped creatures you control other than this creature with total power 10 or greater:"). Only untapped permanents are candidates (CR 701.26a) and
     summoning sickness never applies (CR 302.6 is about the `{T}` symbol, not a tap paid as a cost).
   - **`xMeasure`** — how the choice is measured, both as the ability's **X** (read with
     `DynamicAmount.XValue`) and as the quantity a `minMeasure` floor is compared against.
@@ -836,6 +839,11 @@ the creature face up pauses for the cost-specific decision and only flips once t
 (Mana morph costs keep their own up-front payment — explicit mana-source selection, X, auto-tap
 preview — in the turn-face-up handler.)
 
+- `Costs.pay.Atom(CostAtom)` — the generic lift of any shared payable thing into this context, the
+  mirror of `AbilityCost.Atom` / `AdditionalCost.Atom`. Reach for a named factory below where one
+  exists; this is what a caller holding a `CostAtom` it did not build itself needs, and it is what
+  makes the variable-count costs above payable ("…sacrifice this creature unless you sacrifice any
+  number of creatures with total power 12 or greater" — Phyrexian Dreadnought).
 - `Costs.pay.Mana(ManaCost)` — pay mana (auto-taps lands via the solver). "...unless you pay {U}{U}"
   (Vaporous Djinn).
 - `Costs.pay.OwnManaCost` — pay the mana cost of the permanent the cost applies to (its *own* mana
