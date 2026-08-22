@@ -351,10 +351,13 @@ data class ReplaceLandManaColor(
     val color: Color? = null
 ) : StaticAbility {
     override val description: String =
+        // describeObjectForEvent, not filter.description: it renders the article and puts the
+        // controller clause *after* the noun ("a land you control"), where the raw filter
+        // description would prefix it ("a you control land").
         if (color != null) {
-            "If a ${filter.description} is tapped for mana, it produces {${color.symbol}} instead of any other type"
+            "If ${describeObjectForEvent(filter)} is tapped for mana, it produces {${color.symbol}} instead of any other type"
         } else {
-            "If a ${filter.description} is tapped for mana, it produces mana of a color of its controller's choice instead of any other type"
+            "If ${describeObjectForEvent(filter)} is tapped for mana, it produces mana of a color of its controller's choice instead of any other type"
         }
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
         val newFilter = filter.applyTextReplacement(replacer)
@@ -400,7 +403,8 @@ data class MultiplyManaOnSourceTap(
     val multiplier: Int
 ) : StaticAbility {
     override val description: String =
-        "If you tap a ${sourceFilter.description} for mana, it produces $multiplier times as much of that mana instead"
+        // See ReplaceLandManaColor: the describer keeps "you control" a suffix, not a prefix.
+        "If you tap ${describeObjectForEvent(sourceFilter)} for mana, it produces $multiplier times as much of that mana instead"
 
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
         val newFilter = sourceFilter.applyTextReplacement(replacer)
