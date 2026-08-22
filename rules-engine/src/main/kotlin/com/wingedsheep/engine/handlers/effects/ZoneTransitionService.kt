@@ -192,6 +192,7 @@ object ZoneTransitionService {
         var lastKnownBlockingOrBlockedByIds: List<EntityId> = emptyList()
         var lastKnownWasAttacking = false
         var lastKnownWasToken = false
+        var lastKnownCreatedBy: EntityId? = null
         var lastKnownDamageDealtByPlayers: Map<EntityId, Int> = emptyMap()
         var lastKnownDamageSources: Set<com.wingedsheep.engine.state.components.battlefield.DamageSourceLki> = emptySet()
         // The {X} this permanent was cast with (DynamicAmount.CastX), captured before the
@@ -239,6 +240,11 @@ object ZoneTransitionService {
             // last known information (CR 608.2h).
             lastKnownWasAttacking = container.has<AttackingComponent>()
             lastKnownWasToken = container.has<TokenComponent>()
+            // Which permanent minted this one — a token is gone from state by the time a
+            // leaves-the-battlefield trigger gates (CR 704.5d), so "when the token leaves the
+            // battlefield" (Dance of Many) can only recognise *its own* token from here.
+            lastKnownCreatedBy = container
+                .get<com.wingedsheep.engine.state.components.identity.CreatedByComponent>()?.creatorId
             lastKnownDamageDealtByPlayers =
                 container.get<DamageDealtByPlayersThisTurnComponent>()?.perPlayer ?: emptyMap()
             lastKnownDamageSources =
@@ -337,6 +343,7 @@ object ZoneTransitionService {
                 blockingOrBlockedByIds = lastKnownBlockingOrBlockedByIds,
                 wasAttacking = lastKnownWasAttacking,
                 wasToken = lastKnownWasToken,
+                createdBy = lastKnownCreatedBy,
                 damageDealtByPlayers = lastKnownDamageDealtByPlayers,
                 damageSources = lastKnownDamageSources,
                 wasFaceDown = lastKnownWasFaceDown,

@@ -117,6 +117,52 @@ class DanceOfManyScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("a permanent that isn't the token leaves and the enchantment stays put") {
+                // The provenance gate, from the other side: "when *the token* leaves the
+                // battlefield" must not fire for any other permanent going to the graveyard —
+                // not the creature the token copied, and not a land.
+                val game = scenario()
+                    .withPlayers("Dancer", "Opponent")
+                    .withCardInHand(1, "Dance of Many")
+                    .withCardInHand(1, "Lightning Bolt")
+                    .withCardInHand(1, "Stone Rain")
+                    .withLandsOnBattlefield(1, "Island", 4)
+                    .withLandsOnBattlefield(1, "Mountain", 4)
+                    .withLandsOnBattlefield(1, "Forest", 1)
+                    .withCardOnBattlefield(2, "Grizzly Bears")
+                    .withLandsOnBattlefield(2, "Plains", 1)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val original = game.findPermanent("Grizzly Bears")!!
+                game.castSpell(1, "Dance of Many").error shouldBe null
+                game.resolveStack()
+                game.selectTargets(listOf(original))
+                game.resolveStack()
+                game.findPermanents("Grizzly Bears").size shouldBe 2
+
+                // Kill the creature the token was copied from — a nontoken permanent leaving.
+                game.castSpell(1, "Lightning Bolt", targetId = original).error shouldBe null
+                game.resolveStack()
+
+                withClue("the original died, the token did not") {
+                    game.findPermanents("Grizzly Bears").size shouldBe 1
+                }
+                withClue("and the enchantment was not sacrificed — that wasn't its token") {
+                    game.findPermanent("Dance of Many").shouldNotBeNull()
+                }
+
+                // And a land leaving is no different (the playtest report that surfaced this).
+                game.castSpell(1, "Stone Rain", targetId = game.findPermanent("Plains")!!).error shouldBe null
+                game.resolveStack()
+
+                withClue("a land going to the graveyard is still not the token") {
+                    game.findPermanent("Dance of Many").shouldNotBeNull()
+                    game.findPermanents("Grizzly Bears").size shouldBe 1
+                }
+            }
+
             test("declining the upkeep {U}{U} sacrifices the enchantment and takes the token with it") {
                 val game = scenario()
                     .withPlayers("Dancer", "Opponent")

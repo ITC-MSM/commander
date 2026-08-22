@@ -4452,7 +4452,12 @@ work for abilities-on-stack (which carry no `CardComponent`).
   token *created by the source permanent*. Stamped at creation by a `CreateTokenEffect` with
   `stampCreator = true`. Backs "tokens created with this creature" (Tetravus reabsorbing its own Tetravite
   tokens), which `"{filter} tokens you control"` can't express when several sources mint the same token.
-  Yields false for non-tokens / unstamped tokens / no source context.
+  Yields false for non-tokens / unstamped tokens / no source context. Also gates a **trigger filter**:
+  `Triggers.leavesBattlefield(filter = GameObjectFilter.Any.createdBySource(), binding = ANY)` is
+  "when *the token* leaves the battlefield" (Dance of Many), where the permanent that leaves is the
+  token rather than the ability's own source. There the stamp is read from the leaving permanent's
+  last-known information (`EntitySnapshot.createdBy`), because a token is swept out of existence
+  before the trigger gates (CR 704.5d).
 - `NotTargetedByAbilityFromSameNamedSource` (filter builder
   `notTargetedByAbilityFromSameNamedSource()`) — source-relative + stack-aware: the candidate object
   (a spell or permanent) is **not** currently the target of an *ability* on the stack whose source is

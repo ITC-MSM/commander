@@ -1126,7 +1126,7 @@ class TriggerMatcher(
             }
             // Check state predicates (face-down, tapped, etc.)
             for (predicate in trigger.filter.statePredicates) {
-                if (!matchesStatePredicateForZoneChangeTrigger(predicate, state, event)) return false
+                if (!matchesStatePredicateForZoneChangeTrigger(predicate, state, event, sourceId)) return false
             }
             // Check controller predicate. Control predicates (youControl) prefer the dying
             // creature's last-known controller over its owner so stolen creatures (Threaten /
@@ -2008,8 +2008,21 @@ class TriggerMatcher(
     private fun matchesStatePredicateForZoneChangeTrigger(
         predicate: com.wingedsheep.sdk.scripting.predicates.StatePredicate,
         state: GameState,
-        event: ZoneChangeEvent
+        event: ZoneChangeEvent,
+        /** The permanent whose triggered ability is being gated — the "source" of `createdBySource()`. */
+        sourceId: EntityId
     ): Boolean = when (predicate) {
+        // "the token" — this source's own token, not any token (Dance of Many, Tetravus). A token is
+        // swept out of existence before this gate runs (CR 704.5d), so the creator stamp is read
+        // from the event's last-known info, with a live read for a permanent that is still around
+        // (a nontoken permanent minted by an effect, or a non-battlefield zone change).
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.CreatedBySource -> {
+            val stamped = event.lastKnown?.createdBy
+                ?: state.getEntity(event.entityId)
+                    ?.get<com.wingedsheep.engine.state.components.identity.CreatedByComponent>()
+                    ?.creatorId
+            stamped == sourceId
+        }
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasGreatestPower -> {
             // For permanents leaving the battlefield we need the dying entity's power +
             // controller from the event's last-known info (the entity is no longer on the
@@ -2093,11 +2106,11 @@ class TriggerMatcher(
             else hasAttachmentOfKind(state, event.entityId, equipment = false)
         }
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.Or ->
-            predicate.predicates.any { matchesStatePredicateForZoneChangeTrigger(it, state, event) }
+            predicate.predicates.any { matchesStatePredicateForZoneChangeTrigger(it, state, event, sourceId) }
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.And ->
-            predicate.predicates.all { matchesStatePredicateForZoneChangeTrigger(it, state, event) }
+            predicate.predicates.all { matchesStatePredicateForZoneChangeTrigger(it, state, event, sourceId) }
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.Not ->
-            !matchesStatePredicateForZoneChangeTrigger(predicate.predicate, state, event)
+            !matchesStatePredicateForZoneChangeTrigger(predicate.predicate, state, event, sourceId)
         else -> matchesStatePredicateForTrigger(predicate, state, event.entityId)
     }
 
@@ -2189,6 +2202,9 @@ class TriggerMatcher(
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.InSameBandAsSource,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsBlockingSource,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsCombatPairedWithSource,
+        // CreatedBySource stays in the fail-open bucket only for the paths that reach here without a
+        // source: the zone-change gate — the one path any card uses it from — intercepts it above
+        // and answers exactly.
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.CreatedBySource,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.EnteredThisTurn,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.WasDealtDamageThisTurn,
