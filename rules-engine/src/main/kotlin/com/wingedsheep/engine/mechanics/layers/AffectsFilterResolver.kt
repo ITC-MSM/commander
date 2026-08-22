@@ -519,6 +519,18 @@ internal class AffectsFilterResolver {
             } ?: emptySet()
             entityId in attackerSet
         }
+        // "Couldn't attack" — defender, or summoning sick (entered this turn without haste).
+        // Keywords come from the in-progress projection when this entity already has one, falling
+        // back to base keywords + flags, the same read line 340 uses for card predicates; that
+        // keeps this branch in step with PredicateEvaluator's without re-entering the projector.
+        StatePredicate.CouldNotHaveAttackedThisTurn -> {
+            val card = container.get<CardComponent>()
+            val keywords = projectedValues[entityId]?.keywords
+                ?: card?.let { (it.baseKeywords.map { k -> k.name } + it.baseFlags.map { f -> f.name }).toSet() }
+                ?: emptySet()
+            Keyword.DEFENDER.name in keywords ||
+                (container.has<EnteredThisTurnComponent>() && Keyword.HASTE.name !in keywords)
+        }
         // The same read one turn back — see PlayerAttackersLastTurnComponent. Kept in step with
         // PredicateEvaluator's branch so projection and resolution agree.
         StatePredicate.AttackedLastTurn -> {

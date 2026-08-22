@@ -75,7 +75,7 @@
 - [x] Murk Dwellers
 - [ ] Nameless Race
 - [x] Rag Man
-- [ ] Season of the Witch
+- [x] Season of the Witch
 - [ ] The Fallen
 - [x] Uncle Istvan
 - [x] Word of Binding

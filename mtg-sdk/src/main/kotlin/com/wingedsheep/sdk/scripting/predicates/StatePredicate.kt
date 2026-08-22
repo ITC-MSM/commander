@@ -419,6 +419,25 @@ sealed interface StatePredicate {
     }
 
     /**
+     * The creature **couldn't have been declared as an attacker** this turn — the "except for
+     * creatures that couldn't attack" clause of Season of the Witch, which spares a creature that
+     * had no choice in the matter rather than punishing it for staying home.
+     *
+     * Two reasons a creature had no choice, both read from projected state so granted/removed
+     * keywords count: it has **defender**, or it is **summoning sick** (entered this turn without
+     * haste). It deliberately does *not* re-run the full declare-attackers legality check — that
+     * needs a chosen defender and a `CardRestrictionsError`-style card registry, neither of which
+     * exists in predicate evaluation — so a creature kept home only by a card-specific "can't
+     * attack unless …" restriction is not spared. Pair with [AttackedThisTurn] negated to get
+     * "didn't attack and could have".
+     */
+    @SerialName("CouldNotHaveAttackedThisTurn")
+    @Serializable
+    data object CouldNotHaveAttackedThisTurn : History {
+        override val description: String = "couldn't attack"
+    }
+
+    /**
      * Was declared as an attacker during its controller's **most recent own turn** — "it attacked
      * during your last turn". Backed by `PlayerAttackersLastTurnComponent`, which the cleanup step
      * rolls over from the this-turn set on that player's own turn only, so an intervening

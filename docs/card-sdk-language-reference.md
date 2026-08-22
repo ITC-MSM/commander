@@ -8951,6 +8951,16 @@ answer it and would silently return `false`.
   battlefield, sacrifice this enchantment" state trigger.
 - `NoLandsOnBattlefield` — the land sibling of `NoCreaturesOnBattlefield`, same global shape. Used by
   Mana Vortex's "when there are no lands on the battlefield, sacrifice this enchantment" state trigger.
+- `CouldNotHaveAttackedThisTurn` (filter builders `couldNotHaveAttackedThisTurn()` /
+  `couldHaveAttackedThisTurn()`, and the plain negation `didntAttackThisTurn()`) — the "except for
+  creatures that couldn't attack" exemption of **Season of the Witch**
+  (`DestroyAll(Creature.untapped().didntAttackThisTurn().couldHaveAttackedThisTurn())`). Covers the
+  two reasons a creature had no say in staying home, both read from projected keywords: it has
+  **defender**, or it is **summoning sick** (entered this turn without haste). It is deliberately
+  *not* the full declare-attackers legality check — that needs a chosen defender and a card
+  registry, neither of which predicate evaluation has — so a creature kept home only by a
+  card-specific "can't attack unless …" restriction is not exempt. Implemented identically in
+  `PredicateEvaluator` and `AffectsFilterResolver` so resolution and projection agree.
 - `SourceBlockedThisTurn` — this permanent was declared as a blocker at least once **this turn**
   (CR 509.1). The turn-scoped sibling of `SourceBlockedThisCombat`: backed by
   `BlockedThisTurnComponent`, stamped beside the per-combat marker at blocker declaration but

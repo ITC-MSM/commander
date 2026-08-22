@@ -796,6 +796,25 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.AttackedThisTurn
     )
 
+    /** Was **not** declared as an attacker at any point this turn. Negation of [attackedThisTurn]. */
+    fun didntAttackThisTurn() = copy(
+        statePredicates = statePredicates + StatePredicate.Not(StatePredicate.AttackedThisTurn)
+    )
+
+    /**
+     * Could **not** have been declared as an attacker this turn — it has defender or is summoning
+     * sick. "Except for creatures that couldn't attack" (Season of the Witch). See
+     * [StatePredicate.CouldNotHaveAttackedThisTurn] for exactly what it covers.
+     */
+    fun couldNotHaveAttackedThisTurn() = copy(
+        statePredicates = statePredicates + StatePredicate.CouldNotHaveAttackedThisTurn
+    )
+
+    /** The complement: the creature *could* have been declared as an attacker this turn. */
+    fun couldHaveAttackedThisTurn() = copy(
+        statePredicates = statePredicates + StatePredicate.Not(StatePredicate.CouldNotHaveAttackedThisTurn)
+    )
+
     /**
      * Was declared as an attacker during its controller's **most recent own turn** — the one-turn-back
      * sibling of [attackedThisTurn]. False on the turn it actually attacked, true on the next one.

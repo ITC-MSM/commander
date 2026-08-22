@@ -1511,6 +1511,19 @@ class PredicateEvaluator {
                 entityId in attackerSet
             }
 
+            // "Creatures that couldn't attack" (Season of the Witch). Two reasons a creature had no
+            // choice about staying home, both read from projection so granted/removed keywords
+            // count: defender, or summoning sickness (entered this turn without haste). Not the
+            // full declare-attackers legality check — that needs a chosen defender and a card
+            // registry, neither of which predicate evaluation has.
+            StatePredicate.CouldNotHaveAttackedThisTurn -> {
+                projected.hasKeyword(entityId, Keyword.DEFENDER) ||
+                    (
+                        container.has<EnteredThisTurnComponent>() &&
+                            !projected.hasKeyword(entityId, Keyword.HASTE)
+                        )
+            }
+
             // The same read one turn back: PlayerAttackersLastTurnComponent is the this-turn set as
             // it stood at the end of the controller's own most recent turn.
             StatePredicate.AttackedLastTurn -> {
