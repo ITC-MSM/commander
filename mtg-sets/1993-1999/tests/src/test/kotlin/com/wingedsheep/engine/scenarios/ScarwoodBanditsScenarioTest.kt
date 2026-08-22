@@ -107,6 +107,11 @@ class ScarwoodBanditsScenarioTest : FunSpec({
         withClue("the printed \"unless an opponent pays\" bills the opponent, not the activator") {
             driver.pendingDecision?.playerId shouldBe opponent
         }
+        withClue("and the question is phrased from their side, not the thief's") {
+            driver.pendingDecision?.prompt shouldBe
+                "Pay {2} or Scarwood Bandits' controller gains control of that artifact " +
+                "for as long as Scarwood Bandits remains on the battlefield?"
+        }
 
         settle(driver, opponent, pay = true)
 

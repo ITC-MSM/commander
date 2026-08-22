@@ -1623,7 +1623,8 @@
                                 }
                             }
                         ]
-                    }
+                    },
+                    "descriptionOverride": "If you would begin your draw step, you may skip that step instead. If you do, you gain 2 life."
                 },
                 "descriptionOverride": "If you would begin your draw step, you may skip that step instead. If you do, you gain 2 life."
             },
@@ -4105,7 +4106,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "descriptionOverride": "At the beginning of your upkeep, you may sacrifice this land. If you do, return each card exiled with this land to the battlefield under its owner's control."
                 },
                 "descriptionOverride": "At the beginning of your upkeep, you may sacrifice this land. If you do, return each card exiled with this land to the battlefield under its owner's control."
             }
@@ -4331,7 +4333,8 @@
                     "player": {
                         "type": "PlayerRef",
                         "player": "AnOpponent"
-                    }
+                    },
+                    "consequenceDescription": "Scarwood Bandits' controller gains control of that artifact for as long as Scarwood Bandits remains on the battlefield"
                 },
                 "targetRequirements": [
                     {

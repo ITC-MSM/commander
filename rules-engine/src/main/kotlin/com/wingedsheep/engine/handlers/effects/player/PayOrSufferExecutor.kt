@@ -140,7 +140,7 @@ class PayOrSufferExecutor(
         }
 
         // Player has at least enough valid cards - present the decision
-        val prompt = buildDiscardPrompt(cost, sourceName, effect.suffer)
+        val prompt = buildDiscardPrompt(cost, sourceName, effect)
 
         val decisionResult = decisionHandler.createCardSelectionDecision(
             state = state,
@@ -276,7 +276,7 @@ class PayOrSufferExecutor(
         }
 
         // Player has enough - present the decision
-        val prompt = buildSacrificePrompt(cost, sourceName, effect.suffer)
+        val prompt = buildSacrificePrompt(cost, sourceName, effect)
 
         val decisionResult = decisionHandler.createCardSelectionDecision(
             state = state,
@@ -345,7 +345,7 @@ class PayOrSufferExecutor(
             return executeSufferEffect(state, effect.suffer, context)
         }
 
-        val prompt = buildTapPrompt(cost, sourceName, effect.suffer)
+        val prompt = buildTapPrompt(cost, sourceName, effect)
 
         val decisionResult = decisionHandler.createCardSelectionDecision(
             state = state,
@@ -410,7 +410,7 @@ class PayOrSufferExecutor(
 
         // Create a yes/no decision
         val decisionId = UUID.randomUUID().toString()
-        val prompt = "Pay ${cost.amount} life to avoid ${effect.suffer.description}?"
+        val prompt = "Pay ${cost.amount} life to avoid ${describeConsequence(effect, sourceName)}?"
 
         val decision = YesNoDecision(
             id = decisionId,
@@ -477,7 +477,7 @@ class PayOrSufferExecutor(
             return executeSufferEffect(state, effect.suffer, context)
         }
 
-        val prompt = buildExilePrompt(cost, sourceName, effect.suffer)
+        val prompt = buildExilePrompt(cost, sourceName, effect)
 
         val decisionResult = decisionHandler.createCardSelectionDecision(
             state = state,
@@ -539,7 +539,7 @@ class PayOrSufferExecutor(
 
         // Create a yes/no decision
         val decisionId = UUID.randomUUID().toString()
-        val consequence = describeConsequence(effect.suffer, sourceName)
+        val consequence = describeConsequence(effect, sourceName)
         val prompt = "Pay ${cost.cost} or $consequence?"
 
         val decision = YesNoDecision(
@@ -954,7 +954,7 @@ class PayOrSufferExecutor(
     /**
      * Build prompt for discard cost.
      */
-    private fun buildDiscardPrompt(cost: CostAtom.Discard, sourceName: String, sufferEffect: Effect): String {
+    private fun buildDiscardPrompt(cost: CostAtom.Discard, sourceName: String, effect: PayOrSufferEffect): String {
         val desc = cost.filter.description
         val typeText = if (cost.count == 1) {
             val article = if (desc == "card") "a" else if (desc.first().lowercaseChar() in "aeiou") "an" else "a"
@@ -962,28 +962,28 @@ class PayOrSufferExecutor(
         } else {
             "${cost.count} ${desc}s"
         }
-        val consequence = describeConsequence(sufferEffect, sourceName)
+        val consequence = describeConsequence(effect, sourceName)
         return "Discard $typeText or $consequence"
     }
 
     /**
      * Build prompt for sacrifice cost.
      */
-    private fun buildSacrificePrompt(cost: CostAtom.Sacrifice, sourceName: String, sufferEffect: Effect): String {
+    private fun buildSacrificePrompt(cost: CostAtom.Sacrifice, sourceName: String, effect: PayOrSufferEffect): String {
         val desc = cost.filter.description
         val typeText = if (cost.count == 1) {
             "${if (desc.first().lowercaseChar() in "aeiou") "an" else "a"} $desc"
         } else {
             "${cost.count} ${desc}s"
         }
-        val consequence = describeConsequence(sufferEffect, sourceName)
+        val consequence = describeConsequence(effect, sourceName)
         return "Sacrifice $typeText or $consequence"
     }
 
     /**
      * Build prompt for tap cost.
      */
-    private fun buildTapPrompt(cost: CostAtom.TapPermanents, sourceName: String, sufferEffect: Effect): String {
+    private fun buildTapPrompt(cost: CostAtom.TapPermanents, sourceName: String, effect: PayOrSufferEffect): String {
         val desc = cost.filter.description
         val typeText = if (cost.count == 1) {
             // The article always precedes "untapped", so it is always "an".
@@ -991,14 +991,14 @@ class PayOrSufferExecutor(
         } else {
             "${cost.count} untapped ${desc}s you control"
         }
-        val consequence = describeConsequence(sufferEffect, sourceName)
+        val consequence = describeConsequence(effect, sourceName)
         return "Tap $typeText or $consequence"
     }
 
     /**
      * Build prompt for exile cost.
      */
-    private fun buildExilePrompt(cost: CostAtom.ExileFrom, sourceName: String, sufferEffect: Effect): String {
+    private fun buildExilePrompt(cost: CostAtom.ExileFrom, sourceName: String, effect: PayOrSufferEffect): String {
         val desc = cost.filter.description
         val typeText = if (cost.count == 1) {
             "${if (desc.first().lowercaseChar() in "aeiou") "an" else "a"} $desc"
@@ -1006,15 +1006,16 @@ class PayOrSufferExecutor(
             "${cost.count} ${desc}s"
         }
         val zoneName = cost.zone.name.lowercase()
-        val consequence = describeConsequence(sufferEffect, sourceName)
+        val consequence = describeConsequence(effect, sourceName)
         return "Exile $typeText from your $zoneName or $consequence"
     }
 
     /**
      * Describe the consequence of not paying the cost.
      */
-    private fun describeConsequence(sufferEffect: Effect, sourceName: String): String {
-        return when (sufferEffect) {
+    private fun describeConsequence(effect: PayOrSufferEffect, sourceName: String): String {
+        effect.consequenceDescription?.let { return it }
+        return when (val sufferEffect = effect.suffer) {
             is SacrificeSelfEffect,
             is SacrificeEffect -> "sacrifice $sourceName"
             else -> sufferEffect.description

@@ -55,6 +55,12 @@ val ScarwoodBandits = card("Scarwood Bandits") {
                 Duration.WhileSourceOnBattlefield("this creature"),
             ),
             player = EffectTarget.PlayerRef(Player.AnOpponent),
+            // The question goes to the victim, so it can't be phrased from the thief's side. The
+            // generated text is `GainControlEffect`'s own words — "gain control of target for as
+            // long as this creature remains on the battlefield" — which offers the opponent the
+            // theft they are the subject of, and leaves both placeholders unresolved.
+            consequenceDescription = "Scarwood Bandits' controller gains control of that artifact " +
+                "for as long as Scarwood Bandits remains on the battlefield",
         )
         description = "{2}{G}, {T}: Unless an opponent pays {2}, gain control of target artifact " +
             "for as long as this creature remains on the battlefield."

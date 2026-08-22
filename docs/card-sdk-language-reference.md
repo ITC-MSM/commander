@@ -818,6 +818,18 @@ controller** (not the payer), so `EffectTarget.Controller` inside it means *you*
 under *your* control" is `PayOrSufferEffect(player = PlayerRef(TriggeringPlayer), cost = Costs.pay.PayLife(3),
 suffer = Composite(Move(TriggeringEntity → battlefield, controllerOverride = Controller), AddCounters(finality)))`.
 
+**`consequenceDescription`** is the prompt's words for what happens if the cost isn't paid ("Pay {2}
+or **…**?"), and every `Costs.pay` variant's prompt renders it. Null generates the clause from
+`suffer`, which is right while the payer is the ability's controller. It stops being right the moment
+`player` routes the question elsewhere: an effect description is an imperative fragment addressed to
+*the controller*, so `GainControlEffect`'s "gain control of target" asked of an opponent offers them
+the theft they are the subject of — Scarwood Bandits asked its victim "Pay {2} or gain control of
+target for as long as this creature remains on the battlefield?". The unresolved `target` and `this
+creature` are the same fragment's other half: placeholders that read as the card's text rather than
+as this game's board. **Write it out whenever `player` isn't the controller**, or whenever the
+generated clause would name a placeholder the player can't resolve. (Same defect and same remedy as
+an optional trigger's `description` becoming its "may" prompt, above.)
+
 Non-mana `morphCost` payment is routed through the shared engine `CostPaymentService`, so **every
 `Costs.pay` variant below works as a morph cost** (including `Tap` / `Choice` / `OwnManaCost`): turning
 the creature face up pauses for the cost-specific decision and only flips once the cost is paid.
