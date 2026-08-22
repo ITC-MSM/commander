@@ -3631,15 +3631,11 @@ class StackResolver(
 
     /**
      * Which face-down mechanic lets [cardDef] be cast face down for {3} — morph (CR 702.37a) or
-     * disguise (CR 702.168a) — or null when it can't be cast face down at all. A card never prints
-     * both; morph wins if one somehow did.
+     * disguise (CR 702.168a) — or null when it can't be cast face down at all. Delegates to
+     * [FaceDownTurnUp.castMode], which owns the keyword-to-mode mapping.
      */
-    fun faceDownCastMode(cardDef: com.wingedsheep.sdk.model.CardDefinition?): FaceDownMode? = when {
-        cardDef == null -> null
-        cardDef.keywordAbilities.any { it is KeywordAbility.Morph } -> FaceDownMode.MORPH
-        cardDef.keywordAbilities.any { it is KeywordAbility.Disguise } -> FaceDownMode.DISGUISE
-        else -> null
-    }
+    fun faceDownCastMode(cardDef: com.wingedsheep.sdk.model.CardDefinition?): FaceDownMode? =
+        FaceDownTurnUp.castMode(cardDef)
 
     /**
      * Once a player casts a card face down, opponents can no longer know whether any previously
