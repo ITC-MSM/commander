@@ -45,6 +45,18 @@ export const keywordManaClass: Record<string, string> = {
   PROWESS: 'ability-prowess',
   WARD: 'ability-ward',
   INTIMIDATE: 'ability-intimidate',
+  // Landwalk (CR 702.14). Evasion the player has to be able to see: it decides whether an attacker
+  // can be blocked at all, and cards grant and strip it (Scarwood Hag does both), so a badge that
+  // appears and disappears is the only on-card signal that anything happened.
+  SWAMPWALK: 'ability-swampwalk',
+  FORESTWALK: 'ability-forestwalk',
+  ISLANDWALK: 'ability-islandwalk',
+  MOUNTAINWALK: 'ability-mountainwalk',
+  PLAINSWALK: 'ability-plainswalk',
+  // mana-font has no glyph for these two, so they share the generic land symbol; the badge's
+  // tooltip names which landwalk it is.
+  DESERTWALK: 'land',
+  NONBASIC_LANDWALK: 'land',
   INFECT: 'ability-infect',
   MORPH: 'ability-morph',
   PROTECTION: 'ability-protection',
@@ -69,6 +81,8 @@ export const displayableKeywords = new Set([
   'LIFELINK', 'VIGILANCE', 'HASTE', 'HEXPROOF',
   'SHROUD', 'INDESTRUCTIBLE', 'DEFENDER', 'MENACE', 'FEAR',
   'PROWESS', 'WARD', 'INTIMIDATE', 'INFECT',
+  'SWAMPWALK', 'FORESTWALK', 'ISLANDWALK', 'MOUNTAINWALK', 'PLAINSWALK',
+  'DESERTWALK', 'NONBASIC_LANDWALK',
   'WITHER', 'TOXIC', 'CANT_BE_BLOCKED', 'CHANGELING',
   'PERSIST', 'BANDING', 'FLANKING', 'EXPLOIT', 'TRAINING',
 ])
