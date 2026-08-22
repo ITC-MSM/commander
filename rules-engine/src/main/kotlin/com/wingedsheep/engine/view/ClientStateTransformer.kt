@@ -37,11 +37,13 @@ import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.handlers.effects.composite.asConditional
 import com.wingedsheep.sdk.scripting.events.DamageType
 import com.wingedsheep.engine.state.permissions.hasMayPlayFor
+import com.wingedsheep.engine.handlers.effects.FaceDownTurnUp
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.GiftGivenEffect
 import com.wingedsheep.sdk.scripting.effects.GatedEffect
 import com.wingedsheep.sdk.scripting.effects.ModalEffect
+import com.wingedsheep.sdk.scripting.effects.MORPH_HELPER_CARD_IMAGE_URI
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.imageOverrideFor
@@ -777,6 +779,16 @@ class ClientStateTransformer(
             ?.mapNotNull { try { Color.valueOf(it.removePrefix(protectionPrefix)) } catch (_: Exception) { null } }
             ?: emptyList()
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
+        // Which face-down mechanic this object is *drawn* as: it decides the helper card every
+        // surface shows in place of the hidden art (morph's helmet, the Manifest token, "A
+        // Mysterious Creature" for disguise/cloak). A permanent carries the mode as a component
+        // from the moment it enters, but a spell still on the stack does not — it is stamped when
+        // it resolves — so derive that one from the keyword it was cast under. Without the
+        // fallback a creature *being cast* with disguise would be drawn as a morph.
+        val faceDownDisplayMode = container.get<FaceDownModeComponent>()?.mode
+            ?: if (spellOnStack?.castFaceDown == true) FaceDownTurnUp.castMode(cardDef) else null
+        val faceDownHelperCardImageUri =
+            faceDownDisplayMode?.helperCardImageUri ?: MORPH_HELPER_CARD_IMAGE_URI
         val staticProtections = cardDef?.keywordAbilities
             ?.filterIsInstance<KeywordAbility.Protection>()
             ?.mapNotNull { (it.scope as? ProtectionScope.Color)?.color }
@@ -872,8 +884,9 @@ class ClientStateTransformer(
                     attachedTo = null,
                     attachments = emptyList(),
                     isFaceDown = true,
+                    faceDownMode = faceDownDisplayMode?.name,
                     morphCost = null,
-                    imageUri = "https://cards.scryfall.io/normal/front/e/9/e9375cbe-93c0-41a5-a6e3-fb4416f54a69.jpg",
+                    imageUri = faceDownHelperCardImageUri,
                     activeEffects = emptyList(),
                     revealedName = if (isRevealedToViewer) cardComponent.name else null,
                     revealedImageUri = if (isRevealedToViewer) (cardComponent.imageUri ?: cardDef?.metadata?.imageUri) else null
@@ -938,9 +951,9 @@ class ClientStateTransformer(
                 },
                 linkedExile = container.get<LinkedExileComponent>()?.exiledIds ?: emptyList(),
                 isFaceDown = true,
-                faceDownMode = container.get<FaceDownModeComponent>()?.mode?.name,
+                faceDownMode = faceDownDisplayMode?.name,
                 morphCost = null, // Opponent can't see morph cost
-                imageUri = "https://cards.scryfall.io/normal/front/e/9/e9375cbe-93c0-41a5-a6e3-fb4416f54a69.jpg", // Morph token from Commander 2019
+                imageUri = faceDownHelperCardImageUri,
                 activeEffects = buildCardActiveEffects(state, entityId),
                 revealedName = if (isRevealedToViewer) cardComponent.name else null,
                 revealedImageUri = if (isRevealedToViewer) (cardComponent.imageUri ?: cardDef?.metadata?.imageUri) else null
@@ -1367,7 +1380,7 @@ class ClientStateTransformer(
             attachments = attachments,
             linkedExile = linkedExile,
             isFaceDown = isFaceDown,
-            faceDownMode = if (isFaceDown) container.get<FaceDownModeComponent>()?.mode?.name else null,
+            faceDownMode = if (isFaceDown) faceDownDisplayMode?.name else null,
             isSuspected = projectedValues?.isSuspected == true,
             isSolved = container.has<com.wingedsheep.engine.state.components.battlefield.SolvedComponent>(),
             saddleRequirement = saddleRequirement,
