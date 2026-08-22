@@ -73,7 +73,7 @@
 - [x] Inquisition
 - [x] Marsh Gas
 - [x] Murk Dwellers
-- [ ] Nameless Race
+- [x] Nameless Race
 - [x] Rag Man
 - [x] Season of the Witch
 - [x] The Fallen

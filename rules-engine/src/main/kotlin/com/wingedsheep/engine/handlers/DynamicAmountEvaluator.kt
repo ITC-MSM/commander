@@ -1316,6 +1316,14 @@ class DynamicAmountEvaluator(
             is EntityNumericProperty.CounterCount ->
                 counterCountOf(state, entityId, property.counterType)
 
+            // The number chosen as the permanent entered (Nameless Race). Plain per-entity state
+            // with no projection dependency, so a CDA reading it resolves the same during layer
+            // projection as at resolution time.
+            is EntityNumericProperty.ValueChosenAsEntered ->
+                state.getEntity(entityId)
+                    ?.get<com.wingedsheep.engine.state.components.battlefield.EnteredWithValueComponent>()
+                    ?.value ?: 0
+
             is EntityNumericProperty.AttachmentCount -> {
                 val attachedIds = state.getEntity(entityId)?.get<AttachmentsComponent>()?.attachedIds ?: emptyList()
                 // Attachments live on the battlefield, so narrow by *projected* subtype (a continuous

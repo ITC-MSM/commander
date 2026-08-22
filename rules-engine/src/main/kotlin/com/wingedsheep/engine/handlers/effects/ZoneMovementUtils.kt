@@ -485,6 +485,9 @@ object ZoneMovementUtils {
             .without<DamageDealtToCreaturesThisTurnComponent>()
             .without<WasDealtDamageThisTurnComponent>()
             .without<HasDealtDamageComponent>()
+            // The number chosen as it entered (Nameless Race) belongs to *this* object; one
+            // that leaves and returns chooses afresh as it enters (CR 400.7).
+            .without<com.wingedsheep.engine.state.components.battlefield.EnteredWithValueComponent>()
             // Likewise the accumulating "dealt damage to these players/planeswalkers this
             // game" memory (The Fallen): what comes back is a new object (CR 400.7).
             .without<com.wingedsheep.engine.state.components.battlefield.DealtDamageToThisGameComponent>()

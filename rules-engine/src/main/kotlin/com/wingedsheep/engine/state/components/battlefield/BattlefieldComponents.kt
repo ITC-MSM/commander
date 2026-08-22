@@ -1300,6 +1300,23 @@ data class DealtDamageToThisGameComponent(
 ) : Component
 
 /**
+ * A number the controller chose as this permanent entered the battlefield, kept for as long as the
+ * permanent exists — Nameless Race's "pay any amount of life" and the characteristic-defining power
+ * and toughness that read it back.
+ *
+ * A characteristic-defining ability needs this value during *projection*, long after the resolution
+ * that chose it has gone, so it cannot live in the effect pipeline (`VariableReference` dies with
+ * the resolution) and it must not be a counter (counters are visible, removable game state; this is
+ * a fixed fact about how the permanent entered).
+ *
+ * Not cleared at cleanup — it is not a per-turn marker. Stripped on a zone change with the rest of
+ * the battlefield state, because a permanent that leaves and returns is a new object that re-chooses
+ * as it enters (CR 400.7).
+ */
+@Serializable
+data class EnteredWithValueComponent(val value: Int) : Component
+
+/**
  * Counts how many times a permanent has *become tapped* (CR 701.26a — a transition from untapped to
  * tapped, which is what emits a `TappedEvent`) during the turn named by [lastBecameTappedTurn].
  *

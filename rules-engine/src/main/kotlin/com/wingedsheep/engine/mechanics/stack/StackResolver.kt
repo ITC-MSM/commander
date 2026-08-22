@@ -1322,13 +1322,38 @@ class StackResolver(
         }
 
         // Normal permanent entry
-        val (newState, enterEvents) = enterPermanentOnBattlefield(state, spellId, spellComponent, cardComponent, cardDef)
+        val (enteredState, enterEvents) = enterPermanentOnBattlefield(state, spellId, spellComponent, cardComponent, cardDef)
         val sagaEvents = if (cardDef != null && !spellComponent.castFaceDown && cardDef.isSaga) {
             listOf(CountersAddedEvent(spellId, "LORE", 1, cardDef.name))
         } else {
             emptyList()
         }
-        return ExecutionResult.success(newState, enterEvents + sagaEvents)
+
+        // The generic "as this permanent enters, …" replacement ([OnEnterRunEffect]). The move path
+        // (MoveToZoneEffectExecutor) and the land path (PlayLandHandler) already run it; a permanent
+        // *cast as a spell* did not, which made the replacement silently inert on every creature and
+        // enchantment carrying it — Nameless Race's "as this creature enters, pay any amount of
+        // life". Runs after entry, like the move path, so the effect sees a real permanent.
+        //
+        // The effect may pause for a decision; the paused result carries the entry events with it so
+        // the ETB triggers are deferred to the resume path rather than lost, exactly as the move
+        // path documents. Skipped for a face-down entry (CR 708.2 — no abilities).
+        if (cardDef != null && !spellComponent.castFaceDown) {
+            val onEnterResult = com.wingedsheep.engine.handlers.effects.PermanentEntryReplacements
+                .runOnEnterRunEffect(
+                    enteredState, spellId, controllerId, cardRegistry,
+                    { s, e, ctx -> effectHandler.execute(s, e, ctx) }
+                )
+            if (onEnterResult != null) {
+                return ExecutionResult(
+                    state = onEnterResult.state,
+                    events = enterEvents + sagaEvents + onEnterResult.events,
+                    pendingDecision = onEnterResult.pendingDecision,
+                )
+            }
+        }
+
+        return ExecutionResult.success(enteredState, enterEvents + sagaEvents)
     }
 
     /**

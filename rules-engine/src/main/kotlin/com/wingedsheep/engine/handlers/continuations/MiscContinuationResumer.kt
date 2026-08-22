@@ -43,6 +43,7 @@ class MiscContinuationResumer(
         resumer(DistributeCountersContinuation::class, ::resumeDistributeCounters),
         resumer(RemoveAnyNumberOfCountersContinuation::class, ::resumeRemoveAnyNumberOfCounters),
         resumer(AddCountersUpToContinuation::class, ::resumeAddCountersUpTo),
+        resumer(com.wingedsheep.engine.core.PayAnyAmountOfLifeAsEntersContinuation::class, ::resumePayAnyAmountOfLifeAsEnters),
         resumer(PayCountersContinuation::class, ::resumePayCounters),
         resumer(ConvertCountersToTokensContinuation::class, ::resumeConvertCountersToTokens),
         resumer(MoveChosenCountersToTargetContinuation::class, ::resumeMoveChosenCountersToTarget),
@@ -209,6 +210,40 @@ class MiscContinuationResumer(
         }
 
         return checkForMore(result.state, result.events.toList())
+    }
+
+    /**
+     * Pay the chosen amount of life and stamp it on the entering permanent (Nameless Race). The
+     * stamp happens even when the player chose 0, because "entered having paid 0" is a real answer
+     * its characteristic-defining P/T has to read as 0/0 rather than as "no record".
+     */
+    private fun resumePayAnyAmountOfLifeAsEnters(
+        state: GameState,
+        continuation: com.wingedsheep.engine.core.PayAnyAmountOfLifeAsEntersContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is NumberChosenResponse) {
+            return ExecutionResult.error(state, "Expected number response for pay-any-amount-of-life")
+        }
+        val chosen = response.number.coerceAtLeast(0)
+
+        var newState = com.wingedsheep.engine.handlers.effects.player
+            .PayAnyAmountOfLifeAsEntersExecutor.recordValue(state, continuation.permanentId, chosen)
+
+        if (chosen > 0) {
+            val payEffect = com.wingedsheep.sdk.scripting.effects.PayLifeEffect(amount = chosen)
+            val payContext = EffectContext(
+                sourceId = continuation.permanentId,
+                controllerId = continuation.controllerId,
+            )
+            val result = services.effectExecutorRegistry.execute(newState, payEffect, payContext)
+                .toExecutionResult()
+            if (result.isPaused) return result
+            return checkForMore(result.state, result.events.toList())
+        }
+
+        return checkForMore(newState, emptyList())
     }
 
     private fun resumePayCounters(

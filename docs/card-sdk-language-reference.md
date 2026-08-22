@@ -8982,6 +8982,17 @@ answer it and would silently return `false`.
   battlefield, sacrifice this enchantment" state trigger.
 - `NoLandsOnBattlefield` — the land sibling of `NoCreaturesOnBattlefield`, same global shape. Used by
   Mana Vortex's "when there are no lands on the battlefield, sacrifice this enchantment" state trigger.
+- `EntityNumericProperty.ValueChosenAsEntered` (via `DynamicAmount.EntityProperty(EntityReference.Source, …)`)
+  — the number the controller chose as this permanent entered, kept for the permanent's whole life.
+  Written by `PayAnyAmountOfLifeAsEntersEffect`, which is the ETB half of **Nameless Race**
+  (`replacementEffect(OnEnterRunEffect(PayAnyAmountOfLifeAsEntersEffect(maxAmount)))`), and read back
+  by its characteristic-defining power and toughness via `dynamicStats(...)`.
+  **Why not a pipeline variable or a counter:** `VariableReference` dies with the resolution that set
+  it, and a CDA is consulted during layer projection long afterwards; a counter is visible, removable
+  game state, while this is a fixed fact about how the permanent entered. It is stored as its own
+  `EnteredWithValueComponent`, not cleared at cleanup, and stripped on a zone change — a permanent
+  that leaves and returns chooses afresh (CR 400.7). The effect bounds the choice by the controller's
+  life total as well as by `maxAmount`, and a ceiling of 0 records 0 without prompting.
 - `CouldNotHaveAttackedThisTurn` (filter builders `couldNotHaveAttackedThisTurn()` /
   `couldHaveAttackedThisTurn()`, and the plain negation `didntAttackThisTurn()`) — the "except for
   creatures that couldn't attack" exemption of **Season of the Witch**

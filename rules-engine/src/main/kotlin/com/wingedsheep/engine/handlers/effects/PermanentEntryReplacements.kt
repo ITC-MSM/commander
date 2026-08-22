@@ -53,6 +53,10 @@ import com.wingedsheep.sdk.scripting.references.Player
  *  - [com.wingedsheep.engine.handlers.effects.zones.MoveToZoneEffectExecutor] — a card put onto
  *    the battlefield by an effect (reanimation, a blink or earthbend return from exile).
  *    [runOnEnterRunEffect] only.
+ *  - [com.wingedsheep.engine.mechanics.stack.StackResolver] — a permanent *cast as a spell*, run
+ *    just after `enterPermanentOnBattlefield`. [runOnEnterRunEffect] only. Added for Nameless
+ *    Race; until then [OnEnterRunEffect] was silently inert on every cast permanent, which went
+ *    unnoticed because its only two users were lands (played, not cast).
  *
  * Those omissions are real gaps, not deliberate exclusions. The next one worth closing is
  * [EntersWithChoice] on the move path: a reanimated Shapeshifter or Sorcerous Spyglass currently

@@ -82,6 +82,7 @@ class PlayerExecutors(
         SkipCombatPhasesExecutor(),
         SkipNextDrawStepExecutor(),
         SkipStepOrPhaseThisTurnExecutor(),
+        PayAnyAmountOfLifeAsEntersExecutor(),
         SkipNextTurnExecutor(),
         SkipUntapExecutor(),
         TakeExtraTurnExecutor(),
