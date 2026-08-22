@@ -118,7 +118,7 @@
 - [ ] Spitting Slug
 - [x] Tracker
 - [x] Venom
-- [ ] Whippoorwill
+- [x] Whippoorwill
 - [x] Wormwood Treefolk
 
 ### Multicolor

@@ -894,12 +894,13 @@ internal class CombatDamageManager(
         val preventedTargets = mutableSetOf<EntityId>()
         // Unpreventable damage (Leyline of Punishment) is still dealt, but per the official rulings
         // the shield counter is still removed.
-        val cantBePrevented = DamageUtils.isDamagePreventionDisabled(state)
-
         for (targetId in assignments.map { it.targetId }.distinct()) {
             val container = state.getEntity(targetId) ?: continue
             val isPlayer = container.get<LifeTotalComponent>() != null && container.get<CardComponent>() == null
             if (isPlayer) continue
+            // Per-recipient, so it is read inside the loop: a creature marked unpreventable
+            // (Whippoorwill) takes damage in full while its neighbours keep their shields.
+            val cantBePrevented = DamageUtils.isDamagePreventionDisabled(state, targetId)
             val shielded = applyShieldCounterToDamage(newState, targetId, cantBePrevented) ?: continue
             newState = shielded.state
             events.add(shielded.event)
@@ -1538,7 +1539,7 @@ internal class CombatDamageManager(
                         incomingDamage.getOrPut(targetId) { mutableMapOf() }
                             .merge(attackerId, amplified) { a, b -> a + b }
                     } else {
-                        val damageCantBePrevented = DamageUtils.isDamagePreventionDisabled(state)
+                        val damageCantBePrevented = DamageUtils.isDamagePreventionDisabled(state, targetId)
                         val attackerColors = projected.getColors(attackerId)
                         val attackerSubtypes = projected.getSubtypes(attackerId)
                         val attackerTypes = projected.getTypes(attackerId)

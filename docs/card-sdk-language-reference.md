@@ -955,6 +955,19 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   prevention clause are ignored (CR 615.6). The static, permanent-hosted equivalent is the
   `DamageCantBePrevented` replacement effect (Sunspine Lynx); use this effect when a spell/ability needs
   the shutoff without a permanent on the battlefield (Fear, Fire, Foes!).
+- `DamageToTargetCantBePreventedThisTurnEffect(target)` — the **per-recipient** form: "Damage that
+  would be dealt to that creature this turn can't be prevented **or dealt instead to another
+  permanent or player**" (Whippoorwill). Stamps a turn-scoped marker on the recipient, cleared at
+  cleanup. One marker covers both halves of the clause: `DamageUtils.isDamagePreventionDisabled(state,
+  recipientId)` consults it wherever prevention is applied (shields, prevention replacements, and —
+  checked per assignment, not as an early-out — protection's prevention clause), and the redirection
+  check is skipped for a marked recipient.
+  - Reach for this rather than the global `DamageCantBePreventedThisTurn()` whenever the card names a
+    creature: the global form blanks every prevention effect in the game for the turn, which is a
+    very different card.
+  - It is a marker rather than a replacement effect on purpose — "can't be prevented" is a rules
+    modification (CR 615.9), not itself a replacement, so it cannot compete in the replacement-effect
+    gather and has to be read where prevention is *applied*.
 
 ### Life
 

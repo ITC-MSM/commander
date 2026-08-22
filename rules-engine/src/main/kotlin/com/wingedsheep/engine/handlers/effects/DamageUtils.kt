@@ -26,6 +26,7 @@ import com.wingedsheep.engine.state.components.battlefield.DamageDealtByPlayersT
 import com.wingedsheep.engine.state.components.battlefield.DamageDealtToCreaturesThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageSourceLki
 import com.wingedsheep.engine.state.components.battlefield.DamagedBySourcesThisTurnComponent
+import com.wingedsheep.engine.state.components.battlefield.DamageUnpreventableThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.HasDealtDamageComponent
 import com.wingedsheep.engine.state.components.battlefield.WasDealtDamageThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSourceComponent
@@ -157,10 +158,17 @@ object DamageUtils {
 
         // Check for global "damage can't be prevented" effects (Sunspine Lynx, Leyline of Punishment)
         @Suppress("NAME_SHADOWING")
-        val cantBePrevented = cantBePrevented || isDamagePreventionDisabled(state)
+        val cantBePrevented = cantBePrevented || isDamagePreventionDisabled(state, targetId)
 
-        // Check for damage redirection (Glarecaster, Zealous Inquisitor)
-        val (redirectState, redirectTargetId, redirectAmount) = checkDamageRedirection(state, targetId, amount)
+        // Check for damage redirection (Glarecaster, Zealous Inquisitor). Whippoorwill's clause
+        // shuts this half off too — "…or dealt instead to another permanent or player" — so a
+        // recipient marked unpreventable is never redirected away from.
+        val (redirectState, redirectTargetId, redirectAmount) =
+            if (state.getEntity(targetId)?.has<DamageUnpreventableThisTurnComponent>() == true) {
+                Triple(state, null, 0)
+            } else {
+                checkDamageRedirection(state, targetId, amount)
+            }
         if (redirectTargetId != null) {
             val redirectResult = dealDamageToTarget(redirectState, redirectTargetId, redirectAmount, sourceId, cantBePrevented, isCombatDamage, appliedRedirects)
             val remainingDamage = amount - redirectAmount
@@ -1056,9 +1064,17 @@ object DamageUtils {
      * Check if damage prevention is globally disabled by any DamageCantBePrevented replacement effect
      * on the battlefield (e.g., Sunspine Lynx, Leyline of Punishment).
      */
-    fun isDamagePreventionDisabled(state: GameState): Boolean {
+    fun isDamagePreventionDisabled(state: GameState, recipientId: EntityId? = null): Boolean {
         // Turn-scoped "Damage can't be prevented this turn" (Fear, Fire, Foes!).
         if (state.damageCantBePreventedThisTurn) return true
+        // Per-recipient: "damage that would be dealt to that creature this turn can't be prevented"
+        // (Whippoorwill). Callers that know who is being damaged pass it; those that don't fall back
+        // to the global-only answer they gave before.
+        if (recipientId != null &&
+            state.getEntity(recipientId)?.has<DamageUnpreventableThisTurnComponent>() == true
+        ) {
+            return true
+        }
         for (entityId in state.getBattlefield()) {
             val container = state.getEntity(entityId) ?: continue
             val replacementComponent = container.get<ReplacementEffectSourceComponent>() ?: continue
@@ -1091,7 +1107,7 @@ object DamageUtils {
         // CR 615.12 — when damage can't be prevented, prevention shields aren't reduced and prevent
         // nothing. When any battlefield "damage can't be prevented" (Spider-Punk) or the "this turn"
         // one-shot (Fear, Fire, Foes!) is active, no shield applies and the damage passes through in full.
-        if (isDamagePreventionDisabled(state)) return state to amount
+        if (isDamagePreventionDisabled(state, targetId)) return state to amount
 
         var remainingDamage = amount
         val updatedEffects = state.floatingEffects.toMutableList()

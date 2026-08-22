@@ -1245,6 +1245,23 @@ data class CraftedFromExiledComponent(
 data object WasDealtDamageThisTurnComponent : Component
 
 /**
+ * Damage dealt to this permanent for the rest of the turn can't be prevented, and can't be dealt to
+ * another permanent or player instead — Whippoorwill's "Damage that would be dealt to that creature
+ * this turn can't be prevented or dealt instead to another permanent or player."
+ *
+ * The *per-recipient* counterpart of `GameState.damageCantBePreventedThisTurn`, which is global
+ * (Fear, Fire, Foes!). Read by `DamageUtils.isDamagePreventionDisabled(state, recipientId)` and by
+ * the `RedirectDamage` finder, so it shuts off both halves of the printed clause. Cleared at end of
+ * turn by `CleanupPhaseManager`.
+ *
+ * Deliberately a marker on the *recipient* rather than a replacement effect: "can't be prevented" is
+ * a rules modification (CR 615.9), not itself a replacement, so it has to be consulted where
+ * prevention is applied rather than competing in the replacement-effect gather.
+ */
+@Serializable
+data object DamageUnpreventableThisTurnComponent : Component
+
+/**
  * Marks a permanent as having dealt damage, and records the turn it last did so.
  *
  * One marker answers both windows of `StatePredicate.HasDealtDamage`: its presence means "has dealt
