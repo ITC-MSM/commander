@@ -7,10 +7,12 @@
       "Flood",
       "Mind Bomb",
       "Riptide",
-      "Water Wurm",
-      "Merfolk Assassin"
+      "Water Wurm"
     ],
     "battlefield": [
+      {
+        "name": "Merfolk Assassin"
+      },
       {
         "name": "Island"
       },
@@ -55,10 +57,10 @@
     "hand": [],
     "battlefield": [
       {
-        "name": "Grizzly Bears"
+        "name": "Shorecomber Crab"
       },
       {
-        "name": "Hill Giant"
+        "name": "Inkfathom Divers"
       },
       {
         "name": "Serra Angel"

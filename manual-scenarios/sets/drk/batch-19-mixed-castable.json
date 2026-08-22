@@ -76,7 +76,13 @@
   },
   "player2": {
     "lifeTotal": 20,
-    "hand": [],
+    "hand": [
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Plains"
+    ],
     "battlefield": [
       {
         "name": "Grizzly Bears"
@@ -88,10 +94,7 @@
         "name": "Serra Angel"
       },
       {
-        "name": "Feldon's Cane"
-      },
-      {
-        "name": "Feldon's Cane"
+        "name": "Sol Ring"
       },
       {
         "name": "Plains"

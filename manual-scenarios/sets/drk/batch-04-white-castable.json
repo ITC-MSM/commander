@@ -6,9 +6,8 @@
     "hand": [
       "Fasting",
       "Festival",
-      "Miracle Worker",
-      "Exorcist",
-      "Martyr's Cry"
+      "Martyr's Cry",
+      "Ethereal Armor"
     ],
     "battlefield": [
       {
@@ -31,6 +30,12 @@
       },
       {
         "name": "Plains"
+      },
+      {
+        "name": "Exorcist"
+      },
+      {
+        "name": "Miracle Worker"
       },
       {
         "name": "Grizzly Bears"
@@ -58,10 +63,10 @@
         "name": "Grizzly Bears"
       },
       {
-        "name": "Hill Giant"
+        "name": "Bog Rats"
       },
       {
-        "name": "Serra Angel"
+        "name": "Savannah Lions"
       },
       {
         "name": "Feldon's Cane"

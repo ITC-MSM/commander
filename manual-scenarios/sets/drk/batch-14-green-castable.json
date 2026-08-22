@@ -4,13 +4,20 @@
   "player1": {
     "lifeTotal": 20,
     "hand": [
-      "Savaen Elves",
-      "Scavenger Folk",
       "Gaea's Touch",
       "People of the Woods",
-      "Scarwood Hag"
+      "Shimmerwilds Growth"
     ],
     "battlefield": [
+      {
+        "name": "Savaen Elves"
+      },
+      {
+        "name": "Scavenger Folk"
+      },
+      {
+        "name": "Scarwood Hag"
+      },
       {
         "name": "Forest"
       },
@@ -58,16 +65,13 @@
         "name": "Grizzly Bears"
       },
       {
-        "name": "Hill Giant"
+        "name": "Jukai Messenger"
       },
       {
         "name": "Serra Angel"
       },
       {
-        "name": "Feldon's Cane"
-      },
-      {
-        "name": "Feldon's Cane"
+        "name": "Sol Ring"
       },
       {
         "name": "Plains"

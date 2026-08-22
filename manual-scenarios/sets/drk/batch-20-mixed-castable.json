@@ -4,12 +4,22 @@
   "player1": {
     "lifeTotal": 20,
     "hand": [
-      "Giant Shark",
+      "Fissure",
+      "Psychic Allergy",
       "Fire and Brimstone"
     ],
     "battlefield": [
       {
-        "name": "Plains"
+        "name": "Prodigal Sorcerer"
+      },
+      {
+        "name": "Giant Shark"
+      },
+      {
+        "name": "Mountain"
+      },
+      {
+        "name": "Mountain"
       },
       {
         "name": "Plains"
@@ -22,12 +32,6 @@
       },
       {
         "name": "Plains"
-      },
-      {
-        "name": "Plains"
-      },
-      {
-        "name": "Island"
       },
       {
         "name": "Island"
@@ -113,5 +117,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "AI"
+  "mode": "SELF"
 }

@@ -5,12 +5,16 @@
     "lifeTotal": 20,
     "hand": [
       "Land Leeches",
-      "Niall Silvain",
-      "Tracker",
       "Venom",
       "Carnivorous Plant"
     ],
     "battlefield": [
+      {
+        "name": "Niall Silvain"
+      },
+      {
+        "name": "Tracker"
+      },
       {
         "name": "Forest"
       },
@@ -61,7 +65,7 @@
     "hand": [],
     "battlefield": [
       {
-        "name": "Grizzly Bears"
+        "name": "Wall of Stone"
       },
       {
         "name": "Hill Giant"
@@ -70,10 +74,7 @@
         "name": "Serra Angel"
       },
       {
-        "name": "Feldon's Cane"
-      },
-      {
-        "name": "Feldon's Cane"
+        "name": "Sol Ring"
       },
       {
         "name": "Plains"

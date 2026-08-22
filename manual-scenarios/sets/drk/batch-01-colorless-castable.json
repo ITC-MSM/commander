@@ -4,18 +4,20 @@
   "player1": {
     "lifeTotal": 20,
     "hand": [
-      "City of Shadows",
-      "Fountain of Youth",
-      "Maze of Ith",
-      "Safe Haven",
       "Tormod's Crypt"
     ],
     "battlefield": [
       {
-        "name": "Plains"
+        "name": "City of Shadows"
       },
       {
-        "name": "Plains"
+        "name": "Fountain of Youth"
+      },
+      {
+        "name": "Maze of Ith"
+      },
+      {
+        "name": "Safe Haven"
       },
       {
         "name": "Island"
@@ -43,6 +45,12 @@
       },
       {
         "name": "Grizzly Bears"
+      },
+      {
+        "name": "Hill Giant"
+      },
+      {
+        "name": "Serra Angel"
       }
     ],
     "graveyard": [

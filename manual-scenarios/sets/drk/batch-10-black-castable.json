@@ -4,15 +4,18 @@
   "player1": {
     "lifeTotal": 20,
     "hand": [
-      "Grave Robbers",
       "Inquisition",
-      "Banshee",
-      "Curse Artifact",
-      "Murk Dwellers"
+      "Curse Artifact"
     ],
     "battlefield": [
       {
-        "name": "Swamp"
+        "name": "Murk Dwellers"
+      },
+      {
+        "name": "Grave Robbers"
+      },
+      {
+        "name": "Banshee"
       },
       {
         "name": "Swamp"
@@ -37,6 +40,12 @@
       },
       {
         "name": "Swamp"
+      },
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Sol Ring"
       },
       {
         "name": "Grizzly Bears"
@@ -58,7 +67,11 @@
   },
   "player2": {
     "lifeTotal": 20,
-    "hand": [],
+    "hand": [
+      "Serra Angel",
+      "Serra Angel",
+      "Serra Angel"
+    ],
     "battlefield": [
       {
         "name": "Grizzly Bears"
@@ -67,13 +80,7 @@
         "name": "Hill Giant"
       },
       {
-        "name": "Serra Angel"
-      },
-      {
-        "name": "Feldon's Cane"
-      },
-      {
-        "name": "Feldon's Cane"
+        "name": "Sol Ring"
       },
       {
         "name": "Plains"
@@ -93,13 +100,14 @@
     ],
     "graveyard": [
       "Grizzly Bears",
+      "Feldon's Cane",
       "Crusade"
     ],
     "library": [
-      "Plains",
       "Island",
       "Swamp",
       "Mountain",
+      "Plains",
       "Forest"
     ]
   },

@@ -5,12 +5,23 @@
     "lifeTotal": 20,
     "hand": [
       "Goblin Shrine",
-      "Orc General",
-      "Sisters of the Flame",
       "Eternal Flame",
+      "Goblin Hero",
       "Goblin Wizard"
     ],
     "battlefield": [
+      {
+        "name": "Orc General"
+      },
+      {
+        "name": "Orc General"
+      },
+      {
+        "name": "Sisters of the Flame"
+      },
+      {
+        "name": "Goblin Wizard"
+      },
       {
         "name": "Mountain"
       },
@@ -58,7 +69,9 @@
   },
   "player2": {
     "lifeTotal": 20,
-    "hand": [],
+    "hand": [
+      "Disenchant"
+    ],
     "battlefield": [
       {
         "name": "Grizzly Bears"

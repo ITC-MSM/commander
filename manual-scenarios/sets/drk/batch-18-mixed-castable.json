@@ -4,14 +4,20 @@
   "player1": {
     "lifeTotal": 20,
     "hand": [
-      "Marsh Viper",
-      "Scarwood Bandits",
-      "Wormwood Treefolk",
       "Hidden Path",
       "Coal Golem"
     ],
     "battlefield": [
       {
+        "name": "Marsh Viper"
+      },
+      {
+        "name": "Scarwood Bandits"
+      },
+      {
+        "name": "Wormwood Treefolk"
+      },
+      {
         "name": "Mountain"
       },
       {
@@ -30,7 +36,10 @@
         "name": "Forest"
       },
       {
-        "name": "Forest"
+        "name": "Swamp"
+      },
+      {
+        "name": "Swamp"
       },
       {
         "name": "Forest"
@@ -64,22 +73,12 @@
   },
   "player2": {
     "lifeTotal": 20,
-    "hand": [],
+    "hand": [
+      "Terror"
+    ],
     "battlefield": [
       {
-        "name": "Grizzly Bears"
-      },
-      {
-        "name": "Hill Giant"
-      },
-      {
-        "name": "Serra Angel"
-      },
-      {
-        "name": "Feldon's Cane"
-      },
-      {
-        "name": "Feldon's Cane"
+        "name": "Sol Ring"
       },
       {
         "name": "Plains"
@@ -116,5 +115,5 @@
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "AI"
+  "mode": "SELF"
 }

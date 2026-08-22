@@ -4,7 +4,6 @@
   "player1": {
     "lifeTotal": 20,
     "hand": [
-      "Goblin Digging Team",
       "Goblins of the Flarg",
       "Mana Clash",
       "Ball Lightning",
@@ -12,7 +11,7 @@
     ],
     "battlefield": [
       {
-        "name": "Mountain"
+        "name": "Goblin Digging Team"
       },
       {
         "name": "Mountain"
@@ -33,7 +32,10 @@
         "name": "Mountain"
       },
       {
-        "name": "Mountain"
+        "name": "Temple Garden"
+      },
+      {
+        "name": "Godless Shrine"
       },
       {
         "name": "Grizzly Bears"
@@ -64,22 +66,19 @@
         "name": "Hill Giant"
       },
       {
-        "name": "Serra Angel"
+        "name": "Wall of Stone"
       },
       {
-        "name": "Feldon's Cane"
+        "name": "Sol Ring"
       },
       {
-        "name": "Feldon's Cane"
+        "name": "Godless Shrine"
       },
       {
-        "name": "Plains"
+        "name": "Overgrown Tomb"
       },
       {
-        "name": "Island"
-      },
-      {
-        "name": "Swamp"
+        "name": "Temple Garden"
       },
       {
         "name": "Mountain"

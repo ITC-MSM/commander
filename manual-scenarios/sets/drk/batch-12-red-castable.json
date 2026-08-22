@@ -4,13 +4,19 @@
   "player1": {
     "lifeTotal": 20,
     "hand": [
-      "Brothers of Fire",
-      "Cave People",
-      "Fire Drake",
       "Goblin Caves",
       "Goblin Hero"
     ],
     "battlefield": [
+      {
+        "name": "Brothers of Fire"
+      },
+      {
+        "name": "Cave People"
+      },
+      {
+        "name": "Fire Drake"
+      },
       {
         "name": "Mountain"
       },

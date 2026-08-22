@@ -4,13 +4,21 @@
   "player1": {
     "lifeTotal": 20,
     "hand": [
-      "Preacher",
       "Tivadar's Crusade",
       "Angry Mob",
       "Knights of Thorn",
       "Witch Hunter"
     ],
     "battlefield": [
+      {
+        "name": "Witch Hunter"
+      },
+      {
+        "name": "Goblin Hero"
+      },
+      {
+        "name": "Preacher"
+      },
       {
         "name": "Plains"
       },
@@ -64,7 +72,7 @@
         "name": "Grizzly Bears"
       },
       {
-        "name": "Hill Giant"
+        "name": "Goblin Hero"
       },
       {
         "name": "Serra Angel"

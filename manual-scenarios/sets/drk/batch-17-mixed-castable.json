@@ -5,12 +5,18 @@
     "lifeTotal": 20,
     "hand": [
       "Book of Rass",
-      "Diabolic Machine",
-      "Rag Man",
-      "Uncle Istvan",
-      "Eater of the Dead"
+      "Diabolic Machine"
     ],
     "battlefield": [
+      {
+        "name": "Uncle Istvan"
+      },
+      {
+        "name": "Rag Man"
+      },
+      {
+        "name": "Eater of the Dead"
+      },
       {
         "name": "Swamp"
       },
@@ -67,22 +73,17 @@
   },
   "player2": {
     "lifeTotal": 20,
-    "hand": [],
+    "hand": [
+      "Serra Angel",
+      "Grizzly Bears",
+      "Hill Giant"
+    ],
     "battlefield": [
       {
-        "name": "Grizzly Bears"
+        "name": "Llanowar Elves"
       },
       {
-        "name": "Hill Giant"
-      },
-      {
-        "name": "Serra Angel"
-      },
-      {
-        "name": "Feldon's Cane"
-      },
-      {
-        "name": "Feldon's Cane"
+        "name": "Sol Ring"
       },
       {
         "name": "Plains"

@@ -5,12 +5,14 @@
     "lifeTotal": 20,
     "hand": [
       "Electric Eel",
-      "Elves of Deep Shadow",
       "Dark Heart of the Wood",
       "Drowned",
       "Marsh Goblins"
     ],
     "battlefield": [
+      {
+        "name": "Elves of Deep Shadow"
+      },
       {
         "name": "Island"
       },
@@ -103,10 +105,7 @@
         "name": "Serra Angel"
       },
       {
-        "name": "Feldon's Cane"
-      },
-      {
-        "name": "Feldon's Cane"
+        "name": "Sol Ring"
       },
       {
         "name": "Plains"

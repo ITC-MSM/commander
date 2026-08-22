@@ -5,12 +5,14 @@
     "lifeTotal": 20,
     "hand": [
       "Sunken City",
-      "Apprentice Wizard",
       "Erosion",
       "Mana Vortex",
       "Ghost Ship"
     ],
     "battlefield": [
+      {
+        "name": "Apprentice Wizard"
+      },
       {
         "name": "Island"
       },
@@ -51,6 +53,28 @@
       "Plains",
       "Island",
       "Swamp",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
       "Mountain",
       "Forest",
       "Grizzly Bears"
@@ -61,19 +85,7 @@
     "hand": [],
     "battlefield": [
       {
-        "name": "Grizzly Bears"
-      },
-      {
-        "name": "Hill Giant"
-      },
-      {
-        "name": "Serra Angel"
-      },
-      {
-        "name": "Feldon's Cane"
-      },
-      {
-        "name": "Feldon's Cane"
+        "name": "Shorecomber Crab"
       },
       {
         "name": "Plains"
@@ -100,6 +112,26 @@
       "Island",
       "Swamp",
       "Mountain",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
+      "Grizzly Bears",
       "Forest"
     ]
   },

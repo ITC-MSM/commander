@@ -7,10 +7,19 @@
       "Barl's Cage",
       "Living Armor",
       "War Barge",
-      "Scarecrow",
+      "Flight",
       "Stone Calendar"
     ],
     "battlefield": [
+      {
+        "name": "Prodigal Sorcerer"
+      },
+      {
+        "name": "Scarecrow"
+      },
+      {
+        "name": "Plains"
+      },
       {
         "name": "Plains"
       },
