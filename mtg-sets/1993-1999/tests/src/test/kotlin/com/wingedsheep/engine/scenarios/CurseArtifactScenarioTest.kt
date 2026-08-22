@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import com.wingedsheep.engine.support.GameTestDriver
@@ -33,14 +34,24 @@ class CurseArtifactScenarioTest : FunSpec({
         driver.addComponent(hostId, AttachmentsComponent(existing + auraId))
     }
 
+    /**
+     * Drive the upkeep trigger to the end, paying the cost or declining it.
+     *
+     * A sacrifice cost asks with a [SelectCardsDecision] whose `minSelections` is 0 — declining is
+     * "select nothing" — so neither `autoResolveDecision` (which takes `minSelections` options, i.e.
+     * none, and therefore always declines) nor `submitYesNo` can express *paying*. The selection has
+     * to be made explicitly.
+     */
     fun settle(driver: GameTestDriver, payer: EntityId, pay: Boolean) {
         var guard = 0
         while (guard++ < 16 && (driver.state.stack.isNotEmpty() || driver.pendingDecision != null)) {
-            val decision = driver.pendingDecision
-            when {
-                decision != null && pay -> driver.autoResolveDecision()
-                decision != null -> driver.submitYesNo(payer, false)
-                else -> driver.bothPass()
+            when (val decision = driver.pendingDecision) {
+                null -> driver.bothPass()
+                is SelectCardsDecision -> driver.submitCardSelection(
+                    payer,
+                    if (pay) decision.options.take(decision.maxSelections) else emptyList()
+                )
+                else -> driver.submitYesNo(payer, pay)
             }
         }
     }
@@ -72,7 +83,49 @@ class CurseArtifactScenarioTest : FunSpec({
             driver.getLifeTotal(me) shouldBe 20
         }
         withClue("declining keeps both artifacts") {
-            (driver.state.getEntity(spare) != null) shouldBe true
+            driver.getGraveyard(victim) shouldBe emptyList()
+        }
+    }
+
+    test("the artifact's controller is actually offered the choice, and paying it saves the life") {
+        // The declining case above passes whether or not a prompt ever appeared — taking 2 damage
+        // is the outcome either way — which is how this shipped broken: the cost filter is
+        // `attachedToBySource()`, and PayOrSuffer looked its candidates up with no source in the
+        // predicate context, so the filter matched nothing, the cost read as unpayable, and the
+        // damage was dealt with no question asked. Assert the decision exists, then take it.
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Swamp" to 40), startingLife = 20)
+
+        val me = driver.activePlayer!!
+        val victim = driver.getOpponent(me)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val cursed = driver.putPermanentOnBattlefield(victim, "Fountain of Youth")
+        val spare = driver.putPermanentOnBattlefield(victim, "Fountain of Youth")
+        val curse = driver.putPermanentOnBattlefield(me, "Curse Artifact")
+        attach(driver, curse, cursed)
+
+        driver.passPriorityUntil(Step.END)
+        driver.passPriorityUntil(Step.UPKEEP)
+        driver.activePlayer shouldBe victim
+
+        var guard = 0
+        while (guard++ < 16 && driver.pendingDecision == null && driver.state.stack.isNotEmpty()) {
+            driver.bothPass()
+        }
+
+        withClue("the trigger asks rather than silently dealing the damage") {
+            (driver.pendingDecision != null) shouldBe true
+        }
+
+        settle(driver, victim, pay = true)
+
+        withClue("paying the cost sacrifices the cursed artifact and costs no life") {
+            driver.getLifeTotal(victim) shouldBe 20
+            driver.getGraveyard(victim) shouldBe listOf(cursed)
+        }
+        withClue("the uncursed artifact is not what got sacrificed") {
+            (spare in driver.getGraveyard(victim)) shouldBe false
         }
     }
 })

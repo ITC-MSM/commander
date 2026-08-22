@@ -279,7 +279,8 @@ class SacrificeAndPayContinuationResumer(
             state,
             continuation.playerId,
             continuation.filter,
-            continuation.requiredCount
+            continuation.requiredCount,
+            continuation.sourceId
         )
         return checkForMore(result.state, result.events.toList())
     }

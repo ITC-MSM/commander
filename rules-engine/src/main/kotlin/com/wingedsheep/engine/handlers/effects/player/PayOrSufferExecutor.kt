@@ -126,7 +126,7 @@ class PayOrSufferExecutor(
         }
 
         // Find all valid cards in hand that match the filter
-        val validCards = findValidCardsInHand(state, controllerId, cost.filter)
+        val validCards = findValidCardsInHand(state, controllerId, cost.filter, sourceId)
 
         // If the player doesn't have enough matching cards, automatically execute suffer effect
         if (validCards.size < cost.count) {
@@ -189,7 +189,7 @@ class PayOrSufferExecutor(
         sourceName: String,
         controllerId: EntityId
     ): EffectResult {
-        val validCards = findValidCardsInHand(state, controllerId, cost.filter)
+        val validCards = findValidCardsInHand(state, controllerId, cost.filter, sourceId)
 
         // If no valid cards, execute suffer effect automatically
         if (validCards.size < cost.count) {
@@ -261,7 +261,7 @@ class PayOrSufferExecutor(
     ): EffectResult {
         // Find all valid permanents on the battlefield that the player controls
         val validPermanents = findValidPermanentsOnBattlefield(
-            state, controllerId, cost.filter, selfExclusion(cost.excludeSelf, sourceId)
+            state, controllerId, cost.filter, selfExclusion(cost.excludeSelf, sourceId), sourceId
         )
 
         // If the player doesn't have enough permanents, automatically execute suffer effect
@@ -331,7 +331,7 @@ class PayOrSufferExecutor(
     ): EffectResult {
         // Untapped permanents the player controls that match the filter.
         val validPermanents = findValidUntappedPermanentsOnBattlefield(
-            state, controllerId, cost.filter, selfExclusion(cost.excludeSelf, sourceId)
+            state, controllerId, cost.filter, selfExclusion(cost.excludeSelf, sourceId), sourceId
         )
 
         // If the player doesn't have enough untapped permanents, automatically suffer.
@@ -465,7 +465,7 @@ class PayOrSufferExecutor(
         sourceName: String,
         controllerId: EntityId
     ): EffectResult {
-        val validCards = findValidCardsInZone(state, controllerId, cost.filter, cost.zone)
+        val validCards = findValidCardsInZone(state, controllerId, cost.filter, cost.zone, sourceId)
 
         if (validCards.size < cost.count) {
             return executeSufferEffect(state, effect.suffer, context)
@@ -715,18 +715,18 @@ class PayOrSufferExecutor(
             }
             is PayCost.Choice -> cost.options.any { canPayCost(state, playerId, it, sourceId) }
             is PayCost.Atom -> when (val atom = cost.atom) {
-                is CostAtom.Discard -> findValidCardsInHand(state, playerId, atom.filter).size >= atom.count
+                is CostAtom.Discard -> findValidCardsInHand(state, playerId, atom.filter, sourceId).size >= atom.count
                 is CostAtom.Sacrifice -> findValidPermanentsOnBattlefield(
-                    state, playerId, atom.filter, selfExclusion(atom.excludeSelf, sourceId)
+                    state, playerId, atom.filter, selfExclusion(atom.excludeSelf, sourceId), sourceId
                 ).size >= atom.count
                 is CostAtom.PayLife -> {
                     val life = state.lifeTotal(playerId) // CR 810.9a — team's shared total
                     life > atom.amount
                 }
                 is CostAtom.Mana -> ManaSolver(cardRegistry).canPay(state, playerId, atom.cost)
-                is CostAtom.ExileFrom -> findValidCardsInZone(state, playerId, atom.filter, atom.zone).size >= atom.count
+                is CostAtom.ExileFrom -> findValidCardsInZone(state, playerId, atom.filter, atom.zone, sourceId).size >= atom.count
                 is CostAtom.TapPermanents -> findValidUntappedPermanentsOnBattlefield(
-                    state, playerId, atom.filter, selfExclusion(atom.excludeSelf, sourceId)
+                    state, playerId, atom.filter, selfExclusion(atom.excludeSelf, sourceId), sourceId
                 ).size >= atom.count
                 is CostAtom.ReturnToHand -> false
                 is CostAtom.RevealFromHand -> false
@@ -748,7 +748,8 @@ class PayOrSufferExecutor(
                     // legitimate payment, matching the logic in handleRemoveCountersCost.
                     val candidates = if (atom.self) listOf(sourceId)
                     else BattlefieldFilterUtils.findMatchingOnBattlefield(
-                        state, atom.filter.youControl(), PredicateContext(controllerId = playerId)
+                        state, atom.filter.youControl(),
+                        PredicateContext(controllerId = playerId, sourceId = sourceId)
                     )
                     val counterType = atom.counterType?.let {
                         com.wingedsheep.engine.handlers.effects.permanent.counters.resolveCounterType(it)
@@ -771,11 +772,12 @@ class PayOrSufferExecutor(
     private fun findValidCardsInHand(
         state: GameState,
         playerId: EntityId,
-        filter: GameObjectFilter
+        filter: GameObjectFilter,
+        sourceId: EntityId?
     ): List<EntityId> {
         val handZone = ZoneKey(playerId, Zone.HAND)
         val hand = state.getZone(handZone)
-        val context = PredicateContext(controllerId = playerId)
+        val context = PredicateContext(controllerId = playerId, sourceId = sourceId)
 
         return hand.filter { cardId ->
             predicateEvaluator.matches(state, state.projectedState, cardId, filter, context)
@@ -789,16 +791,17 @@ class PayOrSufferExecutor(
         state: GameState,
         playerId: EntityId,
         filter: GameObjectFilter,
-        zone: Zone
+        zone: Zone,
+        sourceId: EntityId?
     ): List<EntityId> {
         if (zone == Zone.BATTLEFIELD) {
             return BattlefieldFilterUtils.findMatchingOnBattlefield(
-                state, filter.youControl(), PredicateContext(controllerId = playerId)
+                state, filter.youControl(), PredicateContext(controllerId = playerId, sourceId = sourceId)
             )
         }
         val zoneKey = ZoneKey(playerId, zone)
         val cards = state.getZone(zoneKey)
-        val context = PredicateContext(controllerId = playerId)
+        val context = PredicateContext(controllerId = playerId, sourceId = sourceId)
         return cards.filter { cardId ->
             predicateEvaluator.matches(state, state.projectedState, cardId, filter, context)
         }
@@ -828,15 +831,25 @@ class PayOrSufferExecutor(
      *
      * [excludeSelfId] is the source only when the cost atom asks for it — see
      * [selfExclusion] for why this can't be hardcoded.
+     *
+     * [sourceId] goes into the [PredicateContext] because a cost filter may be *source-relative*:
+     * `attachedToBySource()` (Curse Artifact's "sacrifice **that** artifact"), `ExiledWithSource`,
+     * `NotOfSourceChosenType`. Those predicates return `false` outright with no source in context,
+     * so leaving it out doesn't merely widen the candidate set — it empties it, the cost reads as
+     * unpayable, and the executor runs the suffer effect **without ever prompting**. The player
+     * silently loses a choice the card gives them, which is the worst shape this bug can take.
      */
     private fun findValidPermanentsOnBattlefield(
         state: GameState,
         playerId: EntityId,
         filter: GameObjectFilter,
-        excludeSelfId: EntityId?
+        excludeSelfId: EntityId?,
+        sourceId: EntityId?
     ): List<EntityId> {
         return BattlefieldFilterUtils.findMatchingOnBattlefield(
-            state, filter.youControl(), PredicateContext(controllerId = playerId), excludeSelfId = excludeSelfId
+            state, filter.youControl(),
+            PredicateContext(controllerId = playerId, sourceId = sourceId),
+            excludeSelfId = excludeSelfId
         )
     }
 
@@ -849,11 +862,12 @@ class PayOrSufferExecutor(
         state: GameState,
         playerId: EntityId,
         filter: GameObjectFilter,
-        excludeSelfId: EntityId?
+        excludeSelfId: EntityId?,
+        sourceId: EntityId?
     ): List<EntityId> {
         return BattlefieldFilterUtils.findMatchingOnBattlefield(
             state, filter.youControl().untapped(),
-            PredicateContext(controllerId = playerId),
+            PredicateContext(controllerId = playerId, sourceId = sourceId),
             excludeSelfId = excludeSelfId
         )
     }
@@ -1011,11 +1025,12 @@ class PayOrSufferExecutor(
             state: GameState,
             playerId: EntityId,
             filter: GameObjectFilter,
-            count: Int
+            count: Int,
+            sourceId: EntityId?
         ): EffectResult {
             val handZone = ZoneKey(playerId, Zone.HAND)
             val hand = state.getZone(handZone)
-            val context = PredicateContext(controllerId = playerId)
+            val context = PredicateContext(controllerId = playerId, sourceId = sourceId)
 
             // Filter valid cards
             val validCards = hand.filter { cardId ->
