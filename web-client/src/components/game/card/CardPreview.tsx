@@ -4,7 +4,7 @@ import { useGameStore } from '@/store/gameStore.ts'
 import { selectGameState, selectViewingPlayerId, useCardLegalActions } from '@/store/selectors.ts'
 import { AbilityFlagDisplayNames, ZoneType, zoneIdEquals } from '@/types'
 import { getCardImageUrl } from '@/utils/cardImages.ts'
-import { useResponsiveContext, handleImageError, getCounterStatModifier, hasStatCounters, getTokenFrameGradient, getTokenFrameTextColor, getPTColor } from '../board/shared'
+import { useResponsiveContext, handleImageError, getCounterStatModifier, hasStatCounters, listCardCounters, getTokenFrameGradient, getTokenFrameTextColor, getPTColor } from '../board/shared'
 import { styles } from '../board/styles'
 import { counterManaClass } from '@/assets/icons/keywords'
 import { HoverCardPreview } from '../../ui/HoverCardPreview'
@@ -126,6 +126,10 @@ export function CardPreview() {
 
   const counterModifier = getCounterStatModifier(card)
   const hasCounters = hasStatCounters(card)
+  // Every counter type on the card, not just the ones that move P/T. The stats box below is gated
+  // on the card having power/toughness at all, so a land's counters (City of Shadows' storage)
+  // could never appear there — this panel is independent of it.
+  const allCounters = listCardCounters(card)
   const effectPowerMod = card.power !== null && card.basePower !== null
     ? (card.power - card.basePower) - counterModifier : 0
   const effectToughnessMod = card.toughness !== null && card.baseToughness !== null
@@ -375,6 +379,24 @@ export function CardPreview() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Counters panel — the card's full counter inventory, whatever its card type. */}
+      {allCounters.length > 0 && (
+        <div style={styles.cardPreviewCounters}>
+          <div style={styles.cardPreviewCountersHeading}>Counters</div>
+          {allCounters.map(({ type, label, count }) => (
+            <div key={type} style={styles.cardPreviewCounterRow}>
+              <span style={styles.cardPreviewCounterLabel}>
+                {counterManaClass[type] && (
+                  <i className={`ms ms-${counterManaClass[type]}`} style={{ fontSize: 11 }} />
+                )}
+                {label}
+              </span>
+              <span style={styles.cardPreviewCounterValue}>{count}</span>
+            </div>
+          ))}
         </div>
       )}
 
