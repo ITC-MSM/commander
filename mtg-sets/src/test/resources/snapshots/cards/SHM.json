@@ -1365,7 +1365,8 @@
                             "type": "Fixed",
                             "amount": 4
                         }
-                    }
+                    },
+                    "descriptionOverride": "Whenever this creature blocks, you may gain 4 life."
                 },
                 "descriptionOverride": "Whenever this creature blocks, you may gain 4 life."
             }
@@ -3234,7 +3235,8 @@
                             "type": "BoundVariable",
                             "name": "target"
                         }
-                    }
+                    },
+                    "descriptionOverride": "When this creature enters, you may tap target creature."
                 },
                 "targetRequirement": {
                     "type": "TargetObject",

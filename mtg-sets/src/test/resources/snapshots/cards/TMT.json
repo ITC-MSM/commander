@@ -8686,7 +8686,8 @@
                     "then": {
                         "type": "AttachEquipment",
                         "target": "TriggeringEntity"
-                    }
+                    },
+                    "descriptionOverride": "Whenever a Ninja you control enters, you may attach this Equipment to it."
                 },
                 "descriptionOverride": "Whenever a Ninja you control enters, you may attach this Equipment to it."
             }

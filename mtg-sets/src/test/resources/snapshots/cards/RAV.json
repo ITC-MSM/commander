@@ -2983,7 +2983,8 @@
                             "type": "Fixed",
                             "amount": 1
                         }
-                    }
+                    },
+                    "descriptionOverride": "Whenever you cast a creature spell, you may draw a card."
                 },
                 "descriptionOverride": "Whenever you cast a creature spell, you may draw a card."
             }

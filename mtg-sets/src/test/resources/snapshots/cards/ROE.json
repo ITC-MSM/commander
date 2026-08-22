@@ -220,7 +220,8 @@
                             "name": "target creature card in your graveyard"
                         },
                         "destination": "Hand"
-                    }
+                    },
+                    "descriptionOverride": "When this creature enters, you may return target creature card from your graveyard to your hand."
                 },
                 "targetRequirement": {
                     "type": "TargetObject",
