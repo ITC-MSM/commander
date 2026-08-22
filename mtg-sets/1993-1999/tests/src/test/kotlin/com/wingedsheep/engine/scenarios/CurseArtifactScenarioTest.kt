@@ -65,7 +65,8 @@ class CurseArtifactScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val cursed = driver.putPermanentOnBattlefield(victim, "Fountain of Youth")
-        val spare = driver.putPermanentOnBattlefield(victim, "Fountain of Youth")
+        // A second, uncursed artifact: an over-broad cost filter would have something else to eat.
+        driver.putPermanentOnBattlefield(victim, "Fountain of Youth")
         val curse = driver.putPermanentOnBattlefield(me, "Curse Artifact")
         attach(driver, curse, cursed)
 

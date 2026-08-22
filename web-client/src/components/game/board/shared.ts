@@ -801,7 +801,8 @@ export interface CardCounterEntry {
  *
  * A type missing from `CounterTypeDisplayNames` still renders — its enum name is title-cased —
  * so a counter added to the engine before the client mirror catches up degrades to a readable
- * label instead of disappearing. `counterTypeParity.test.ts` keeps the mirror honest separately.
+ * label instead of disappearing. `CounterTypeClientMirrorTest.kt` (mtg-sdk) keeps the mirror honest
+ * separately — it reads `enums.ts` and fails when it drifts from the engine enum.
  *
  * Sorted by count descending, then label, so the biggest pile reads first and the order is stable.
  */
@@ -861,7 +862,13 @@ export const PASSIVE_COUNTER_TYPES: readonly CounterType[] = [
   CounterType.UNLOCK,
   CounterType.HONE,
   // Counter types with live cards that rendered no badge at all until now: storage (City of
-  // Shadows), hunger (Fasting), doom, fire, conqueror, net, silver, fate (Oblivion Stone), aim.
+  // Shadows), hunger (Fasting), doom, fire, conqueror, net, silver, fate (Oblivion Stone), aim,
+  // spore (the Fungus/Thallid mechanic).
+  //
+  // CounterType.DEFENSE is deliberately absent. It is the battle analogue of loyalty (CR 310.4c) —
+  // a number the permanent is defined by, not a marker sitting on it — so it belongs with the
+  // loyalty-style display battles will need, not in this marker-badge allowlist. Until that exists
+  // it still shows in the card preview's counter panel, which lists whatever the server sent.
   CounterType.STORAGE,
   CounterType.HUNGER,
   CounterType.DOOM,
@@ -871,6 +878,7 @@ export const PASSIVE_COUNTER_TYPES: readonly CounterType[] = [
   CounterType.SILVER,
   CounterType.FATE,
   CounterType.AIM,
+  CounterType.SPORE,
   CounterType.PLUS_ONE_PLUS_ZERO,
   CounterType.PLUS_ZERO_PLUS_ONE,
   CounterType.MINUS_ONE_MINUS_ZERO,

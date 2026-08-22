@@ -2324,6 +2324,7 @@ const passiveCounterPalette: Record<string, CounterBadgePalette> = {
   SILVER: { bg: 'rgba(42, 46, 52, 0.95)', border: 'rgba(200, 210, 220, 0.75)', color: '#e4ecf4', glow: 'rgba(200, 210, 220, 0.6)' },
   FATE: { bg: 'rgba(24, 34, 54, 0.95)', border: 'rgba(130, 165, 225, 0.7)', color: '#b0c8ee', glow: 'rgba(130, 165, 225, 0.55)' },
   AIM: { bg: 'rgba(46, 20, 24, 0.95)', border: 'rgba(220, 110, 110, 0.7)', color: '#eea0a0', glow: 'rgba(220, 110, 110, 0.55)' },
+  SPORE: { bg: 'rgba(26, 44, 26, 0.95)', border: 'rgba(140, 195, 130, 0.7)', color: '#b4dcaa', glow: 'rgba(140, 195, 130, 0.55)' },
   PLUS_ONE_PLUS_ZERO: { bg: 'rgba(20, 60, 25, 0.95)', border: 'rgba(120, 220, 130, 0.7)', color: '#9ce0a8' },
   PLUS_ZERO_PLUS_ONE: { bg: 'rgba(20, 60, 25, 0.95)', border: 'rgba(120, 220, 130, 0.7)', color: '#9ce0a8' },
   MINUS_ONE_MINUS_ZERO: { bg: 'rgba(60, 20, 20, 0.95)', border: 'rgba(220, 120, 120, 0.7)', color: '#e09c9c' },

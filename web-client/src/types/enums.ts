@@ -485,7 +485,8 @@ export enum CounterType {
   INVASION = 'INVASION',
   UNLOCK = 'UNLOCK',
   HONE = 'HONE',
-  // Mirrored from CounterType.kt; see counterTypeParity.test.ts, which fails when the two drift.
+  // Mirrored from CounterType.kt; see CounterTypeClientMirrorTest.kt (mtg-sdk), which reads this
+  // file and fails when the two drift.
   DEFENSE = 'DEFENSE',
   SILVER = 'SILVER',
   FATE = 'FATE',

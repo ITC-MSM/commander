@@ -3,6 +3,7 @@
 **Set Size:** 119 cards
 **Release Date:** August 1, 1994
 **Implemented:** 97 / 119
+
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 19    | 16   |

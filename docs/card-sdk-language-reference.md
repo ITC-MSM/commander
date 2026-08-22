@@ -11507,6 +11507,10 @@ substitution.
   them is the only thing that reads them. City of Shadows exiles a creature to add one
   (`AddCounters(Counters.STORAGE, 1, Self)`) and taps to add {C} for each
   (`AddColorlessMana(EntityProperty(Source, CounterCount(Named(Counters.STORAGE))))`).
+- `hunger` — a pure bookkeeping counter, same no-inherent-rule shape as `storage`: the card counts
+  its own pile and acts on the total. Fasting adds one each upkeep
+  (`AddCounters(Counters.HUNGER, 1, Self)`) and destroys itself at five, reading the count back
+  through `Conditions.SourceCounterCountAtLeast(Counters.HUNGER, 5)`.
 - `hone` — CR 122.1j, a built-in Layer 7c pump aimed at a *different* object: "A hone counter on an Equipment
   gives +1/+0 to any creature that Equipment is attached to." Add via `AddCounters(Counters.HONE, n, target)`
   or `AddDynamicCounters(Counters.HONE, amount, target)` — and that is **all** a hone card does; the bonus is
