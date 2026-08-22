@@ -2,18 +2,17 @@
 
 **Set Size:** 119 cards
 **Release Date:** August 1, 1994
-**Implemented:** 97 / 119
-
+**Implemented:** 119 / 119
 | Section    | Total | Done |
 |------------|-------|------|
-| White      | 19    | 16   |
-| Blue       | 19    | 15   |
-| Black      | 18    | 13   |
-| Red        | 18    | 17   |
-| Green      | 18    | 15   |
+| White      | 19    | 19   |
+| Blue       | 19    | 19   |
+| Black      | 18    | 18   |
+| Red        | 18    | 18   |
+| Green      | 18    | 18   |
 | Multicolor | 3     | 3    |
-| Artifact   | 20    | 15   |
-| Land       | 4     | 3    |
+| Artifact   | 20    | 20   |
+| Land       | 4     | 4    |
 
 > Verify status anytime with `scripts/card-status --set DRK` (and `--list`). That command's count is authoritative — keep this file's `Implemented:` line in sync (`just fix-backlog`) as boxes are checked. The set's mechanics are catalogued in [`mechanics.md`](mechanics.md).
 
