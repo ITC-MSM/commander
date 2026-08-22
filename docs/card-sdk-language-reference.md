@@ -6450,17 +6450,25 @@ staticAbility {
   declaration pauses for the same mana-source confirmation as the attack tax. The pre-existing
   per-creature-type block tax (Whipgrass Entangler) uses `AttackBlockTaxPerCreatureType` floating
   effects instead.
-- `CantAttackOrBlockUnlessPay(amount: DynamicAmount)` — the **self-scoped** tax: this permanent
-  can't attack or block unless its controller pays `amount` generic mana *for it* (Myr Prototype,
-  "can't attack or block unless you pay {1} for each +1/+1 counter on it"). Where `AttackTax` /
-  `BlockTax` tax other players' creatures from the side of the board they are aimed at, here the
-  taxing permanent and the taxed creature are the same object — so there is no filter and no
+- `CantAttackOrBlockUnlessPay(amount: DynamicAmount, appliesToBlocking: Boolean = true)` — the
+  **self-scoped** tax: this creature can't attack (or block) unless its controller pays `amount`
+  generic mana *for it* (Myr Prototype, "can't attack or block unless you pay {1} for each +1/+1
+  counter on it"). Where `AttackTax` / `BlockTax` tax other players' creatures from the side of the
+  board they are aimed at, here the taxed creature is the one being charged for — so there is no
   per-attacker multiplier, and the amount is evaluated with the declared creature as the source
   (`DynamicAmounts.countersOnSelf(…)` reads *its* counters, not a board aggregate). Priced through
-  the same `CombatTaxes` entry point as the other two, so it stacks with them, pauses declaration
-  for the same `SelectManaSourcesDecision`, and stays monotone in the declared set. Attacking and
-  blocking are charged separately; a card taxing only one half wants its own variant rather than a
-  boolean here.
+  the same `CombatTaxes` entry point as the other two, so it stacks with them and pauses declaration
+  for the same `SelectManaSourcesDecision`.
+  - `appliesToBlocking = false` gives the attack-only wording — **Brainwash**'s "Enchanted creature
+    can't attack unless its controller pays {3}". One flag rather than a second ability, because the
+    two wordings differ in exactly that clause and share every other rule.
+  - `CombatTaxes.selfTax` reads the ability off the declared creature's own printed statics **and
+    off the Auras/Equipment attached to it**, which is what lets an Aura charge for its host. It
+    walks that creature's *own* attachments rather than scanning the battlefield, so the tax stays
+    monotone in the declared set: the charge still depends only on the creature being declared, and
+    dropping a creature drops exactly its own charge.
+  - Because a non-zero tax *pauses* declaration rather than rejecting it, a scenario test proves the
+    charge by asserting a pending decision — not by expecting an error.
 - `CantBeAttackedBy(attackerFilter)` — the general **defender-side** attack restriction (CR
   508.1c): creatures matching `attackerFilter` can't attack the controller of the permanent carrying
   it. Resolved by `CantBeAttackedByDefenderRule`, which scans the *defending* player's projected

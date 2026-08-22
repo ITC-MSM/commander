@@ -22,7 +22,7 @@
 ### White
 - [x] Angry Mob
 - [ ] Blood of the Martyr
-- [ ] Brainwash
+- [x] Brainwash
 - [x] Cleansing
 - [x] Dust to Dust
 - [x] Exorcist

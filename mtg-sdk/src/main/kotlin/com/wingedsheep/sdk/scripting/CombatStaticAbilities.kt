@@ -369,9 +369,22 @@ data class AttackTax(
 @Serializable
 data class CantAttackOrBlockUnlessPay(
     val amount: DynamicAmount,
+    /**
+     * Whether the tax also applies to declaring this creature as a *blocker*. True (the default) is
+     * the printed "can't attack or block unless …" of Myr Prototype; set false for the attack-only
+     * wording — Brainwash's "Enchanted creature can't attack unless its controller pays {3}".
+     *
+     * A separate flag rather than a separate ability because the two wordings differ in exactly one
+     * clause and share every other rule: same per-creature charge, same payment step, same
+     * evaluation source.
+     */
+    val appliesToBlocking: Boolean = true,
 ) : StaticAbility {
-    override val description: String =
-        "can't attack or block unless you pay {${amount.description}}"
+    override val description: String = buildString {
+        append("can't attack")
+        if (appliesToBlocking) append(" or block")
+        append(" unless you pay {${amount.description}}")
+    }
 }
 
 /**
