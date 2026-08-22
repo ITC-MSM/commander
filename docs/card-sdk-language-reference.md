@@ -6547,6 +6547,17 @@ staticAbility {
   it has an `AttachedToComponent`. The restriction is checked only as attackers are declared, so
   attaching the source after it is already being attacked doesn't remove it from combat. Used by
   The Aetherspark.
+- `PlayersCantPlayLands(affected = Player.Each, condition = null)` — the land-play sibling of
+  `PlayersCantCastSpells` (Worms of the Earth). Playing a land is a *special action*, not casting a
+  spell, so a card stopping one says nothing about the other. Enforced in **both** `PlayLandHandler`
+  (rejecting the action) and `EnumerationContext.canPlayLand` (never advertising it) via
+  `LandDropUtils.playerCantPlayLands`, which also unwraps a `ConditionalStaticAbility` so an
+  "as long as …" gate is honored rather than locking forever.
+- `LandsCantEnterTheBattlefield` — the other half of the same lock, and genuinely separate: this one
+  catches a land arriving by an *effect* (a fetch, a reanimation, a blink), which the play-side
+  restriction never sees. A card printing only one of the two leaves the other route open, which is
+  why Worms of the Earth prints both lines. Checked by `LandEntryLocks.landsCantEnter` on the
+  move-to-battlefield path; the land simply does not enter and stays where it was.
 - `CantAttackUnlessSacrifice(sacrificeFilter, count = 1)` — a **non-mana** attack cost, paid as
   attackers are declared (CR 508.1e–g): Leviathan's "this creature can't attack unless you sacrifice
   two Islands". Distinct from `CantAttackUnless`, which takes a *condition* — controlling two Islands

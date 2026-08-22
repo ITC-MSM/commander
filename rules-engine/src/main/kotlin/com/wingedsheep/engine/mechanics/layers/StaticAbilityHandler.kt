@@ -1007,6 +1007,8 @@ class StaticAbilityHandler(
             is PlayLandsAndCastFilteredFromTopOfLibrary,
             is PlotFromTopOfLibrary,
             is PlayersCantCastSpells,
+            is com.wingedsheep.sdk.scripting.PlayersCantPlayLands,
+            is com.wingedsheep.sdk.scripting.LandsCantEnterTheBattlefield,
             is RestrictSpellsCastPerTurn,
 
             // Spell costs (CostCalculator):

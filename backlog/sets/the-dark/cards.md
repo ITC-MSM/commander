@@ -79,7 +79,7 @@
 - [x] The Fallen
 - [x] Uncle Istvan
 - [x] Word of Binding
-- [ ] Worms of the Earth
+- [x] Worms of the Earth
 
 ### Red
 - [x] Ball Lightning
