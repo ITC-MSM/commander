@@ -68,7 +68,7 @@
 - [x] Bog Rats
 - [x] Curse Artifact
 - [x] Eater of the Dead
-- [ ] Frankenstein's Monster
+- [x] Frankenstein's Monster
 - [x] Grave Robbers
 - [x] Inquisition
 - [x] Marsh Gas

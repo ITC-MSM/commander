@@ -156,6 +156,14 @@ object PermanentEntryReplacements {
         cardRegistry: CardRegistry,
         effectExecutor: (GameState, Effect, EffectContext) -> EffectResult,
         resolutionDepth: Int = 0,
+        /**
+         * The X chosen for the spell that is entering, when there was one. An as-enters clause on
+         * an {X} permanent reads it (Frankenstein's Monster: "exile X creature cards"), and without
+         * it `DynamicAmount.XValue` silently evaluates to 0 — the clause then does nothing at all
+         * rather than failing. Null on the paths where nothing was cast (a land played, a permanent
+         * put onto the battlefield by an effect).
+         */
+        xValue: Int? = null,
     ): EffectResult? {
         val cardDefinitionId = state.getEntity(entityId)?.get<CardComponent>()?.cardDefinitionId ?: return null
         val onEnter = onEnterRunEffectFor(cardRegistry.getCard(cardDefinitionId)) ?: return null
@@ -166,6 +174,7 @@ object PermanentEntryReplacements {
                 sourceId = entityId,
                 controllerId = controllerId,
                 resolutionDepth = resolutionDepth,
+                xValue = xValue,
             ),
         )
     }

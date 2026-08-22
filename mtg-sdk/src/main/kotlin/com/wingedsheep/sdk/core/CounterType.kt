@@ -11,6 +11,14 @@ enum class CounterType {
     MINUS_ONE_MINUS_ONE,
     PLUS_ONE_PLUS_ZERO,
     PLUS_ZERO_PLUS_ONE,
+
+    /**
+     * +2/+0 and +0/+2 counters (CR 122.1a — a +X/+Y counter adds X to power and Y to toughness).
+     * Distinct kinds from two +1/+0 counters, which matters for anything that counts counters.
+     * Frankenstein's Monster enters with a +2/+0, +1/+1, or +0/+2 counter per creature card exiled.
+     */
+    PLUS_TWO_PLUS_ZERO,
+    PLUS_ZERO_PLUS_TWO,
     MINUS_ONE_MINUS_ZERO,
     MINUS_ZERO_MINUS_ONE,
     LOYALTY,
@@ -184,6 +192,8 @@ object Counters {
     const val MINUS_ONE_MINUS_ONE = "-1/-1"
     const val PLUS_ONE_PLUS_ZERO = "+1/+0"
     const val PLUS_ZERO_PLUS_ONE = "+0/+1"
+    const val PLUS_TWO_PLUS_ZERO = "+2/+0"
+    const val PLUS_ZERO_PLUS_TWO = "+0/+2"
     const val MINUS_ONE_MINUS_ZERO = "-1/-0"
     const val MINUS_ZERO_MINUS_ONE = "-0/-1"
     const val LOYALTY = "loyalty"

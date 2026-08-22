@@ -1342,7 +1342,8 @@ class StackResolver(
             val onEnterResult = com.wingedsheep.engine.handlers.effects.PermanentEntryReplacements
                 .runOnEnterRunEffect(
                     enteredState, spellId, controllerId, cardRegistry,
-                    { s, e, ctx -> effectHandler.execute(s, e, ctx) }
+                    { s, e, ctx -> effectHandler.execute(s, e, ctx) },
+                    xValue = spellComponent.xValue,
                 )
             if (onEnterResult != null) {
                 return ExecutionResult(

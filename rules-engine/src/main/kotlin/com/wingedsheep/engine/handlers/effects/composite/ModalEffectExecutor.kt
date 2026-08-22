@@ -143,6 +143,7 @@ class ModalEffectExecutor(
             minChooseCount = effectiveMinChooseCount,
             selectedModeIndices = emptyList(),
             availableIndices = availableIndices,
+            allowRepeat = effect.allowRepeat,
             outerTargets = context.targets,
             outerNamedTargets = context.pipeline.namedTargets,
             recordChosenModesOnSource = effect.excludePreviouslyChosenModes,

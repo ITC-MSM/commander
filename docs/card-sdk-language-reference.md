@@ -10884,6 +10884,13 @@ exactly that, deriving "both" from the modes declared.
 > so the enumerator drops a variant when fewer than `min` modes are available, unless `allowRepeat`
 > lets one mode fill every pick (CR 700.2d).
 
+> **`allowRepeat` applies at resolution time too.** The resolution-time picker (a modal reached with
+> `chosenModes` empty — e.g. one inside an `OnEnterRunEffect`) narrows its option list after each
+> pick so "choose two" means two *different* modes. With `allowRepeat` it does not: every mode stays
+> on the menu for every pick, which is what "for each card exiled this way, put a +2/+0, +1/+1, or
+> +0/+2 counter on it" (Frankenstein's Monster) needs — X independent choices among the same three.
+> Without it the picks silently collapse once they outnumber the distinct modes.
+
 **Modal triggered abilities (CR 603.3c / 700.2b).** *Every* modal triggered ability picks its
 mode — and each chosen mode's targets, CR 603.3d — as the ability is put onto the stack, the same
 moment a modal spell's caster does, never while it resolves. Two things depend on that timing:

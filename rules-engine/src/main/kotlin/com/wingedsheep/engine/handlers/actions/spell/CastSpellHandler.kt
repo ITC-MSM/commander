@@ -1630,6 +1630,8 @@ class CastSpellHandler(
         CounterType.MINUS_ONE_MINUS_ONE -> Counters.MINUS_ONE_MINUS_ONE
         CounterType.PLUS_ONE_PLUS_ZERO -> Counters.PLUS_ONE_PLUS_ZERO
         CounterType.PLUS_ZERO_PLUS_ONE -> Counters.PLUS_ZERO_PLUS_ONE
+        CounterType.PLUS_TWO_PLUS_ZERO -> Counters.PLUS_TWO_PLUS_ZERO
+        CounterType.PLUS_ZERO_PLUS_TWO -> Counters.PLUS_ZERO_PLUS_TWO
         CounterType.MINUS_ONE_MINUS_ZERO -> Counters.MINUS_ONE_MINUS_ZERO
         CounterType.MINUS_ZERO_MINUS_ONE -> Counters.MINUS_ZERO_MINUS_ONE
         else -> type.name.lowercase()

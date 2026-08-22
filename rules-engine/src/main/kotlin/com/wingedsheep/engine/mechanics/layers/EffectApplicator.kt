@@ -395,9 +395,14 @@ internal class EffectApplicator(
             val plusZeroPlusOne = counters.getCount(CounterType.PLUS_ZERO_PLUS_ONE)
             val minusOneMinusZero = counters.getCount(CounterType.MINUS_ONE_MINUS_ZERO)
             val minusZeroMinusOne = counters.getCount(CounterType.MINUS_ZERO_MINUS_ONE)
+            // Frankenstein's Monster's +2/+0 and +0/+2 — a distinct counter kind, not two +1/+0s.
+            val plusTwoPlusZero = counters.getCount(CounterType.PLUS_TWO_PLUS_ZERO)
+            val plusZeroPlusTwo = counters.getCount(CounterType.PLUS_ZERO_PLUS_TWO)
 
-            val powerMod = (plusOneCounters - minusOneCounters) + plusOnePlusZero - minusOneMinusZero
-            val toughnessMod = (plusOneCounters - minusOneCounters) + plusZeroPlusOne - minusZeroMinusOne
+            val powerMod = (plusOneCounters - minusOneCounters) + plusOnePlusZero - minusOneMinusZero +
+                (2 * plusTwoPlusZero)
+            val toughnessMod = (plusOneCounters - minusOneCounters) + plusZeroPlusOne - minusZeroMinusOne +
+                (2 * plusZeroPlusTwo)
 
             if (powerMod != 0) {
                 values.power = (values.power ?: 0) + powerMod
