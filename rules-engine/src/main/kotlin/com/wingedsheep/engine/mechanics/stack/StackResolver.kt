@@ -1,4 +1,5 @@
 package com.wingedsheep.engine.mechanics.stack
+import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.dsl.Patterns
 
 import com.wingedsheep.engine.core.*
@@ -2816,6 +2817,7 @@ class StackResolver(
                 abilityComponent.controllerId, targetsComponent.targetRequirements,
                 sourceId = abilityComponent.sourceId,
                 xValue = abilityComponent.xValue,
+                targetingSourceType = TargetingSourceType.ABILITY,
                 targetEntryStamps = targetsComponent.targetEntryStamps
             )
             if (validTargets.isEmpty()) {
@@ -3354,6 +3356,16 @@ class StackResolver(
 
                     // Check shroud — can't be targeted by anyone (Rule 702.18)
                     if (projected.hasKeyword(target.entityId, "SHROUD")) return@filterIndexed false
+
+                    // "Can't be the target of spells" (Lurker) — spells only, so an ability
+                    // resolving against the same permanent is unaffected. Mirrors the cast-time
+                    // check in TargetValidator so CR 608.2b re-validation agrees with it: a
+                    // permanent that gained the restriction after being targeted is dropped here.
+                    if (targetingSourceType == TargetingSourceType.SPELL &&
+                        projected.hasKeyword(target.entityId, AbilityFlag.CANT_BE_TARGETED_BY_SPELLS)
+                    ) {
+                        return@filterIndexed false
+                    }
 
                     // Check hexproof — can't be targeted by opponents (Rule 702.11)
                     val entityController = projected.getController(target.entityId)

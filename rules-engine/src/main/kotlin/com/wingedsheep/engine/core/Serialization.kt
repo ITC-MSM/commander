@@ -523,6 +523,7 @@ val engineSerializersModule = SerializersModule {
         subclass(BlockedOrWasBlockedByLegendaryThisTurnComponent::class)
         subclass(AttackedThisCombatComponent::class)
         subclass(BlockedThisCombatComponent::class)
+        subclass(BlockedThisTurnComponent::class)
         subclass(DamageAssignmentComponent::class)
         subclass(DamageAssignmentOrderComponent::class)
         subclass(AttackerOrderComponent::class)

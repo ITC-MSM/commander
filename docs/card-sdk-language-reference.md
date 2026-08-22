@@ -8924,6 +8924,12 @@ answer it and would silently return `false`.
   battlefield, sacrifice this enchantment" state trigger.
 - `NoLandsOnBattlefield` — the land sibling of `NoCreaturesOnBattlefield`, same global shape. Used by
   Mana Vortex's "when there are no lands on the battlefield, sacrifice this enchantment" state trigger.
+- `SourceBlockedThisTurn` — this permanent was declared as a blocker at least once **this turn**
+  (CR 509.1). The turn-scoped sibling of `SourceBlockedThisCombat`: backed by
+  `BlockedThisTurnComponent`, stamped beside the per-combat marker at blocker declaration but
+  cleared at cleanup, so it survives into the postcombat main phase and across a second combat in
+  the same turn. `SourceAttackedOrBlockedThisTurn` is the pair (the attack half needs no new
+  marker — `AttackedThisTurn` already reads the controller's per-turn attacker set).
 - `SourceAttackedLastTurn` — this permanent was declared as an attacker during its controller's
   **most recent own turn**. The one-turn-back sibling of `SourceAttackedThisTurn`: false on the turn
   it attacked, true on the next. Backed by `PlayerAttackersLastTurnComponent`, rolled over in the

@@ -107,7 +107,7 @@
 - [x] Gaea's Touch
 - [x] Hidden Path
 - [x] Land Leeches
-- [ ] Lurker
+- [x] Lurker
 - [x] Marsh Viper
 - [x] Niall Silvain
 - [x] People of the Woods

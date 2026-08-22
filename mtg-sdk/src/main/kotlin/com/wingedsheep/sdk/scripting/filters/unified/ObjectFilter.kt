@@ -804,6 +804,11 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.AttackedLastTurn
     )
 
+    /** Was declared as a blocker at least once this turn (CR 509.1). */
+    fun blockedThisTurn() = copy(
+        statePredicates = statePredicates + StatePredicate.BlockedThisTurn
+    )
+
     /**
      * Was declared as an attacker at least once during the current combat (CR 508.1). Backed by a
      * per-entity marker stamped at attacker-declaration time; cleared when the combat phase ends.

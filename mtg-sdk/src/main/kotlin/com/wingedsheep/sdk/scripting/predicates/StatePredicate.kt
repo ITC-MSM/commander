@@ -446,6 +446,20 @@ sealed interface StatePredicate {
     }
 
     /**
+     * Was declared as a blocker at least once **this turn** (CR 509.1). Backed by the per-entity
+     * `BlockedThisTurnComponent`, stamped at blocker declaration and cleared at end of turn — so,
+     * unlike [BlockedThisCombat], it survives into the postcombat main phase and across a second
+     * combat in the same turn.
+     *
+     * Pairs with [AttackedThisTurn] for "unless it attacked or blocked this turn" (Lurker).
+     */
+    @SerialName("BlockedThisTurn")
+    @Serializable
+    data object BlockedThisTurn : History {
+        override val description: String = "blocked this turn"
+    }
+
+    /**
      * This card is currently in a graveyard *and* was put there during the current turn,
      * from any zone — the battlefield, but equally the library (mill), the hand (discard),
      * or the stack (a countered or resolved spell). Used as a target predicate on

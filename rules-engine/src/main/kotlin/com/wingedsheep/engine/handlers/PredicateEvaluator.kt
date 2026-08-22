@@ -24,6 +24,7 @@ import com.wingedsheep.engine.state.components.battlefield.SolvedComponent
 import com.wingedsheep.engine.state.components.combat.AttackedThisCombatComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.combat.BlockedThisCombatComponent
+import com.wingedsheep.engine.state.components.combat.BlockedThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.BlockingComponent
 import com.wingedsheep.engine.state.components.combat.PlayerAttackersThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.PlayerAttackersLastTurnComponent
@@ -1515,6 +1516,10 @@ class PredicateEvaluator {
             // removal-from-combat that clear the live AttackingComponent/BlockingComponent).
             StatePredicate.AttackedThisCombat -> {
                 container.has<AttackedThisCombatComponent>()
+            }
+
+            StatePredicate.BlockedThisTurn -> {
+                container.has<BlockedThisTurnComponent>()
             }
 
             StatePredicate.BlockedThisCombat -> {

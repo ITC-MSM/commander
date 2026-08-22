@@ -18,6 +18,7 @@ import com.wingedsheep.engine.state.components.battlefield.WasDealtDamageThisTur
 import com.wingedsheep.engine.state.components.combat.AttackedThisCombatComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.combat.BlockedThisCombatComponent
+import com.wingedsheep.engine.state.components.combat.BlockedThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.BlockingComponent
 import com.wingedsheep.engine.state.components.combat.PlayerAttackersThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.PlayerAttackersLastTurnComponent
@@ -529,6 +530,8 @@ internal class AffectsFilterResolver {
         }
         StatePredicate.AttackedThisCombat ->
             container.has<AttackedThisCombatComponent>()
+        StatePredicate.BlockedThisTurn ->
+            container.has<BlockedThisTurnComponent>()
         StatePredicate.BlockedThisCombat ->
             container.has<BlockedThisCombatComponent>()
         // Graveyard-zone-only predicates (Abyssal Harvester; Samwise/Lobelia). Battlefield

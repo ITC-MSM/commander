@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.handlers.effects.composite
 
+import com.wingedsheep.engine.handlers.TargetingSourceType
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PipelineState
@@ -280,7 +281,12 @@ internal fun processPreTargetedEffectQueue(
             casterId = ctx.controllerId,
             sourceColors = sourceColors,
             sourceSubtypes = sourceSubtypes,
-            sourceId = ctx.sourceId
+            sourceId = ctx.sourceId,
+            // This path re-validates a mode whose targets were already chosen and already checked
+            // at cast/activation time, and the effect context does not record whether the modal
+            // came from a spell or an ability — so it declares ANY rather than guessing. A
+            // spell-only restriction is therefore enforced on the way in, not re-enforced here.
+            targetingSourceType = TargetingSourceType.ANY
         )
     } else null
 

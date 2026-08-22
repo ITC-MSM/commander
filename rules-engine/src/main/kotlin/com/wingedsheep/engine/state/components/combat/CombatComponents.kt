@@ -65,6 +65,20 @@ data object AttackedThisCombatComponent : Component
 data object BlockedThisCombatComponent : Component
 
 /**
+ * Marker: this creature was declared as a blocker at least once **this turn** (CR 509.1).
+ *
+ * Stamped alongside [BlockedThisCombatComponent] at blocker declaration, but cleared at end of turn
+ * rather than at end of combat — so, unlike its per-combat sibling, it survives into the postcombat
+ * main phase and across a second combat in the same turn.
+ *
+ * The blocking half of "unless it attacked or blocked this turn" (Lurker). The attacking half needs
+ * no equivalent: it is already answered by the controller's `PlayerAttackersThisTurnComponent`,
+ * which is turn-scoped for the same reason.
+ */
+@Serializable
+data object BlockedThisTurnComponent : Component
+
+/**
  * Combat damage assignment for a creature.
  */
 @Serializable

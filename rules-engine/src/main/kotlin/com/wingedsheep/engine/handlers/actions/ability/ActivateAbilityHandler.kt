@@ -1,4 +1,5 @@
 package com.wingedsheep.engine.handlers.actions.ability
+import com.wingedsheep.engine.handlers.TargetingSourceType
 import com.wingedsheep.engine.state.components.battlefield.chosenColor
 
 import com.wingedsheep.engine.core.ActivateAbility
@@ -533,7 +534,8 @@ class ActivateAbilityHandler(
                 // X-clamped target counts (e.g. Rot-Curse Rakshasa's Renew "X target creatures")
                 // and X-bounded "mana value X or less" reanimation targets (Fabrication Foundry)
                 // need the chosen X to validate — mirror the spell path.
-                xValue = effectiveXValue
+                xValue = effectiveXValue,
+                targetingSourceType = TargetingSourceType.ABILITY
             )
             if (targetError != null) {
                 return targetError

@@ -32,6 +32,19 @@ enum class AbilityFlag(val displayName: String) {
      */
     CANT_BECOME_UNTAPPED("Can't become untapped"),
 
+    /**
+     * "Can't be the target of spells" — spells only, so abilities may still target this permanent.
+     * That is what separates it from [com.wingedsheep.sdk.core.Keyword.SHROUD], which locks out
+     * both. Read by `TargetValidator`, which is told whether the targeting object is a spell or an
+     * ability via `TargetingSourceType`.
+     *
+     * For the conditional wording — Lurker's "can't be the target of spells **unless** it attacked
+     * or blocked this turn" — grant this through a `ConditionalStaticAbility`, exactly as Goblin
+     * Rock Sled gates `DOESNT_UNTAP`: the projector re-evaluates the gate continuously, so the
+     * creature becomes targetable the moment it attacks or blocks.
+     */
+    CANT_BE_TARGETED_BY_SPELLS("Can't be the target of spells"),
+
     MAY_NOT_UNTAP("You may choose not to untap"),
 
     /**
