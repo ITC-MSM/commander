@@ -152,4 +152,4 @@
 - [x] City of Shadows
 - [x] Maze of Ith
 - [x] Safe Haven
-- [ ] Sorrow's Path
+- [x] Sorrow's Path

@@ -6547,6 +6547,13 @@ staticAbility {
   it has an `AttachedToComponent`. The restriction is checked only as attackers are declared, so
   attaching the source after it is already being attacked doesn't remove it from combat. Used by
   The Aetherspark.
+- `SwapBlockingAssignmentsEffect` — Sorrow's Path's blocker swap. Reads the ability's two chosen
+  targets, re-checks at resolution (CR 608.2b) that both are still blocking creatures under the same
+  controller, and applies the printed gate: the swap happens only if **each** creature could legally
+  block **every** attacker the other is currently blocking, run through the same
+  `defaultBlockEvasionRules` a declared block goes through. A creature that couldn't have blocked a
+  flier by declaring can't be handed one here either. If either direction is illegal the effect does
+  nothing at all — not a partial swap.
 - `PlayersCantPlayLands(affected = Player.Each, condition = null)` — the land-play sibling of
   `PlayersCantCastSpells` (Worms of the Earth). Playing a land is a *special action*, not casting a
   spell, so a card stopping one says nothing about the other. Enforced in **both** `PlayLandHandler`
