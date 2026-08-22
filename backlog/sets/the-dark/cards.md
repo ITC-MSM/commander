@@ -21,7 +21,7 @@
 
 ### White
 - [x] Angry Mob
-- [ ] Blood of the Martyr
+- [x] Blood of the Martyr
 - [x] Brainwash
 - [x] Cleansing
 - [x] Dust to Dust

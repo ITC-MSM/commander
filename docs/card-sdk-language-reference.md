@@ -6547,6 +6547,15 @@ staticAbility {
   it has an `AttachedToComponent`. The restriction is checked only as attackers are declared, so
   attaching the source after it is already being attacked doesn't remove it from combat. Used by
   The Aetherspark.
+- `RedirectNextDamageEffect(protectedTargets, redirectTo, amount, scope, creaturesOnly = false)` —
+  **`creaturesOnly`** protects the *class* of creatures rather than a fixed list of entities: Blood
+  of the Martyr's "if damage would be dealt to any creature". Checked against projected state at
+  damage time, so a creature that entered after the shield resolved is covered and a player never
+  is — an empty `protectedTargets` otherwise means "anything", players included. Pair it with
+  `RedirectScope.CONTINUOUS` for the turn-long form. **The redirect is mandatory:** an optional
+  ("you may") replacement would need the damage pipeline to stop and ask mid-application, which it
+  cannot do for combat damage — the batch is one simultaneous moment (CR 510.2) with no decision
+  point inside it. Blood of the Martyr documents that divergence on the card.
 - `SwapBlockingAssignmentsEffect` — Sorrow's Path's blocker swap. Reads the ability's two chosen
   targets, re-checks at resolution (CR 608.2b) that both are still blocking creatures under the same
   controller, and applies the printed gate: the swap happens only if **each** creature could legally

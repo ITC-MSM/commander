@@ -1359,8 +1359,16 @@ object DamageUtils {
         inBatch: Boolean = false
     ): Triple<GameState, EntityId?, Int> {
         val shieldIndex = state.floatingEffects.indexOfFirst { effect ->
-            effect.effect.modification is SerializableModification.RedirectNextDamage &&
-                (effect.effect.affectedEntities.isEmpty() || targetId in effect.effect.affectedEntities)
+            val modification = effect.effect.modification
+            modification is SerializableModification.RedirectNextDamage &&
+                if (modification.creaturesOnly) {
+                    // "…dealt to any creature" (Blood of the Martyr): every creature, and only a
+                    // creature. Read from projection so a creature that entered after the shield
+                    // was created is covered and an animated land counts while it is one.
+                    state.projectedState.isCreature(targetId)
+                } else {
+                    effect.effect.affectedEntities.isEmpty() || targetId in effect.effect.affectedEntities
+                }
         }
         if (shieldIndex == -1) return Triple(state, null, 0)
 

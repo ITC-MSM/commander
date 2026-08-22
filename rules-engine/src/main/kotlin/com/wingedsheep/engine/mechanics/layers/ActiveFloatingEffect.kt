@@ -480,7 +480,15 @@ sealed interface SerializableModification {
         val redirectToId: EntityId,
         /** If set, only redirect up to this many damage. Null = redirect all (Glarecaster). */
         val amount: Int? = null,
-        val scope: RedirectScope = RedirectScope.NEXT_INSTANCE
+        val scope: RedirectScope = RedirectScope.NEXT_INSTANCE,
+        /**
+         * When true the shield protects **every creature** rather than a fixed list of entities —
+         * Blood of the Martyr's "if damage would be dealt to any creature". Checked against
+         * projected state at damage time, so a creature that entered after the shield was created
+         * is covered and a player never is. An empty `affectedEntities` otherwise means "anything",
+         * players included, which is not what this wants.
+         */
+        val creaturesOnly: Boolean = false
     ) : SerializableModification
 
     /**

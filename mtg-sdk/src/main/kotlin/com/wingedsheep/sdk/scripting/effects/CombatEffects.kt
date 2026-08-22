@@ -673,7 +673,13 @@ data class RedirectNextDamageEffect(
     val protectedTargets: List<EffectTarget>,
     val redirectTo: EffectTarget,
     val amount: Int? = null,
-    val scope: RedirectScope = RedirectScope.NEXT_INSTANCE
+    val scope: RedirectScope = RedirectScope.NEXT_INSTANCE,
+    /**
+     * Protect **every creature** instead of a fixed [protectedTargets] list — Blood of the Martyr's
+     * "if damage would be dealt to any creature". Evaluated against projected state at damage time,
+     * so creatures that arrive later are covered and players never are.
+     */
+    val creaturesOnly: Boolean = false
 ) : Effect {
     override val description: String = buildString {
         append(if (scope == RedirectScope.CONTINUOUS) "All " else "The next ")
