@@ -4674,6 +4674,23 @@ object Effects {
         )
 
     /**
+     * The next time a source of your choice would deal damage to [target] this turn, prevent **half**
+     * that damage, rounded down (Dark Sphere). Single-instance shield like the Circle of Protection
+     * family: the unprevented half is still dealt, and the shield is spent either way — a 1-damage
+     * instance halves to 0 prevented and consumes it.
+     */
+    fun PreventHalfNextDamageFromChosenSource(
+        target: EffectTarget = EffectTarget.Controller
+    ): Effect =
+        PreventDamageEffect(
+            target = target,
+            amount = null,
+            sourceFilter = PreventionSourceFilter.ChosenSource,
+            nextInstanceOnly = true,
+            halvePreventedDamage = true
+        )
+
+    /**
      * Prevent all damage that would be dealt to a target this turn by a source of your choice.
      * If [gainLifeFromColors] is non-empty, whenever damage from a source of one of those colors is
      * prevented this way, the controller gains that much life (Samite Ministration).

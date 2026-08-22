@@ -150,7 +150,13 @@ data class PreventDamageEffect(
      * [duration] (Samite Ministration). This is orthogonal to which sources are eligible
      * ([sourceFilter]) — set it explicitly rather than inferring it from the filter.
      */
-    val nextInstanceOnly: Boolean = false
+    val nextInstanceOnly: Boolean = false,
+    /**
+     * With [nextInstanceOnly], prevent only **half** the instance, rounded down, instead of all of
+     * it — Dark Sphere's "prevent half that damage, rounded down". The rest is dealt and the shield
+     * is consumed either way, so a 1-damage instance halves to 0 prevented and still spends it.
+     */
+    val halvePreventedDamage: Boolean = false
 ) : Effect {
     override val description: String = buildString {
         append("Prevent ")

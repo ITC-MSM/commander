@@ -659,10 +659,15 @@ sealed interface SerializableModification {
      * (persists all turn) and from [PreventNextDamage] (caps a fixed amount across instances).
      *
      * @property damageSourceId The chosen source whose next damage instance is prevented
+     * @property halveRoundedDown When true, only *half* the instance is prevented, rounded down
+     *   (Dark Sphere: "prevent half that damage, rounded down") — the rest is dealt, and the shield
+     *   is consumed either way. A 1-damage instance therefore prevents nothing and still spends the
+     *   shield, which is what the printed card does.
      */
     @Serializable
     data class PreventNextDamageInstanceFromSource(
-        val damageSourceId: EntityId
+        val damageSourceId: EntityId,
+        val halveRoundedDown: Boolean = false
     ) : SerializableModification
 
     /**

@@ -131,7 +131,7 @@
 - [x] Bone Flute
 - [x] Book of Rass
 - [x] Coal Golem
-- [ ] Dark Sphere
+- [x] Dark Sphere
 - [x] Diabolic Machine
 - [x] Fellwar Stone
 - [x] Fountain of Youth

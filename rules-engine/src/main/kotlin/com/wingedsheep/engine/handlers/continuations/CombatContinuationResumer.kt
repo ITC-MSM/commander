@@ -316,7 +316,8 @@ class CombatContinuationResumer(
             // "The next time that source would deal damage to you this turn, prevent that damage"
             // (Circle of Protection family) — single instance, then consumed.
             SerializableModification.PreventNextDamageInstanceFromSource(
-                damageSourceId = chosenSourceId
+                damageSourceId = chosenSourceId,
+                halveRoundedDown = continuation.halvePreventedDamage
             )
         } else if (continuation.amount == null) {
             // Prevent all damage from the chosen source for the rest of the turn (Samite Ministration)

@@ -1221,7 +1221,11 @@ object DamageUtils {
                     targetId in effect.effect.affectedEntities &&
                     mod.damageSourceId == sourceId
                 ) {
-                    remainingDamage = 0
+                    // Dark Sphere prevents only half the instance, rounded down; the Circle of
+                    // Protection family prevents all of it. Either way this is a *next instance*
+                    // shield, so it is consumed even when it prevents nothing (a 1-damage hit
+                    // halves to 0 and still spends the Sphere).
+                    remainingDamage = if (mod.halveRoundedDown) remainingDamage - remainingDamage / 2 else 0
                     toRemove.add(i)
                 }
             }

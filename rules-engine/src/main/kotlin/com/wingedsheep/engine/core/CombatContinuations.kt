@@ -155,5 +155,10 @@ data class PreventDamageFromChosenSourceContinuation(
      * be dealt this turn by a source of your choice" with no recipient clause (Mourner's Shield).
      * [targetId] is unused in that case, since the shield is keyed to the source instead.
      */
-    val silenceChosenSource: Boolean = false
+    val silenceChosenSource: Boolean = false,
+    /**
+     * When true (with [nextInstanceOnly]), the single-instance shield prevents only *half* the
+     * damage, rounded down — Dark Sphere. Ignored otherwise.
+     */
+    val halvePreventedDamage: Boolean = false
 ) : ContinuationFrame
