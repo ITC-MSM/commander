@@ -148,15 +148,30 @@ enum class CounterType {
          * `-1/-1`) and otherwise upper-cases and swaps spaces for underscores to match the
          * enum constant. Mirrors the inline parse used by `StatePredicate.HasCounter`.
          */
-        fun fromName(name: String): CounterType? = when (name) {
-            "+1/+1" -> PLUS_ONE_PLUS_ONE
-            "-1/-1" -> MINUS_ONE_MINUS_ONE
-            else -> try {
-                valueOf(name.uppercase().replace(' ', '_'))
-            } catch (_: IllegalArgumentException) {
-                null
-            }
+        fun fromName(name: String): CounterType? = STAT_COUNTERS[name] ?: try {
+            valueOf(name.uppercase().replace(' ', '_'))
+        } catch (_: IllegalArgumentException) {
+            null
         }
+
+        /**
+         * The kinds whose printed name is a stat modifier rather than a word, so `valueOf` cannot
+         * reach them — `"+1/+0".uppercase()` is still `"+1/+0"`.
+         *
+         * All six exist in this enum and all six are declared in [Counters]; only `+1/+1` and
+         * `-1/-1` used to be listed here, so [fromName] answered null for a `+1/+0` counter whose
+         * name [Counters.PLUS_ONE_PLUS_ZERO] spells and whose filter
+         * `CounterTypeFilter.PlusOnePlusZero` names. Every entry is derived from [Counters] rather
+         * than re-spelled, so a seventh stat kind cannot be added to one and missed here.
+         */
+        private val STAT_COUNTERS: Map<String, CounterType> = mapOf(
+            Counters.PLUS_ONE_PLUS_ONE to PLUS_ONE_PLUS_ONE,
+            Counters.MINUS_ONE_MINUS_ONE to MINUS_ONE_MINUS_ONE,
+            Counters.PLUS_ONE_PLUS_ZERO to PLUS_ONE_PLUS_ZERO,
+            Counters.PLUS_ZERO_PLUS_ONE to PLUS_ZERO_PLUS_ONE,
+            Counters.MINUS_ONE_MINUS_ZERO to MINUS_ONE_MINUS_ZERO,
+            Counters.MINUS_ZERO_MINUS_ONE to MINUS_ZERO_MINUS_ONE,
+        )
     }
 }
 
