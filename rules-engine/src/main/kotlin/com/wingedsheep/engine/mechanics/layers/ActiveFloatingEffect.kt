@@ -488,7 +488,16 @@ sealed interface SerializableModification {
          * is covered and a player never is. An empty `affectedEntities` otherwise means "anything",
          * players included, which is not what this wants.
          */
-        val creaturesOnly: Boolean = false
+        val creaturesOnly: Boolean = false,
+        /**
+         * "**you may** have that damage dealt to you instead" (Blood of the Martyr). The shield's
+         * controller is asked per damage instance before that damage is dealt; the answers live in
+         * [com.wingedsheep.engine.state.GameState.optionalDamageRedirectChoices] and are consumed by
+         * [com.wingedsheep.engine.handlers.effects.DamageUtils.checkDamageRedirection]. An
+         * unanswered instance is treated as **declined**, so a damage path that hasn't run the
+         * choice pre-pass never redirects on the controller's behalf.
+         */
+        val optional: Boolean = false
     ) : SerializableModification
 
     /**

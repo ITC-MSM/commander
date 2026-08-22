@@ -679,13 +679,33 @@ data class RedirectNextDamageEffect(
      * "if damage would be dealt to any creature". Evaluated against projected state at damage time,
      * so creatures that arrive later are covered and players never are.
      */
-    val creaturesOnly: Boolean = false
+    val creaturesOnly: Boolean = false,
+    /**
+     * Make the redirection a **"you may"** (Blood of the Martyr) instead of a mandatory replacement.
+     * The shield's controller is asked once per damage instance the shield could catch, before any
+     * of that damage is dealt, and answers for each instance separately — so a board-wide sweep can
+     * be soaked up for one creature and declined for the next.
+     *
+     * A path that deals damage without going through the choice pre-pass treats the shield as
+     * **declined** rather than redirecting silently; see
+     * `com.wingedsheep.engine.handlers.effects.damage.OptionalDamageRedirect`.
+     */
+    val optional: Boolean = false
 ) : Effect {
     override val description: String = buildString {
         append(if (scope == RedirectScope.CONTINUOUS) "All " else "The next ")
         if (amount != null) append("$amount ")
-        append("damage that would be dealt to ${protectedTargets.joinToString(" and/or ") { it.description }} this turn")
-        append(" is dealt to ${redirectTo.description} instead")
+        val recipients = if (creaturesOnly) {
+            "any creature"
+        } else {
+            protectedTargets.joinToString(" and/or ") { it.description }
+        }
+        append("damage that would be dealt to $recipients this turn")
+        if (optional) {
+            append(" may be dealt to ${redirectTo.description} instead")
+        } else {
+            append(" is dealt to ${redirectTo.description} instead")
+        }
     }
 }
 

@@ -17,15 +17,14 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * use and expires only with the turn, and `creaturesOnly` so it protects *every* creature rather
  * than a fixed list — including creatures that arrive after it resolves, and never a player.
  *
- * **Known divergence, and it is the printed "you may".** The redirect is applied automatically
- * rather than offered per damage instance. Making it optional needs the damage pipeline to stop
- * and ask mid-application, which it cannot currently do for combat damage — the batch is applied
- * as one simultaneous moment (CR 510.2), and there is no decision point inside it. The mandatory
- * form is strictly the aggressive reading: every point of damage that would have hit a creature
- * hits you instead, so a board-wide sweep can kill a caster who would have declined.
- *
- * If a second card ever wants a genuinely optional replacement, the fix is a decision point in the
- * damage pipeline, not a special case here.
+ * `optional = true` is the printed "you may": before any damage that the shield could catch is
+ * dealt, the caster is asked about **each instance separately** — so a sweeper that hits four
+ * creatures asks four times, and the caster can soak the damage aimed at their own blocker while
+ * letting the damage aimed at an opponent's creature through. The whole simultaneous batch of a
+ * combat damage step (CR 510.2) is settled question by question before any of it is dealt — which is
+ * where the rules put the choice anyway, since a replacement effect applies as the event *would*
+ * happen rather than after it (CR 614.1). An instance that was never asked about counts as
+ * declined, so the shield never redirects onto the caster behind their back.
  */
 val BloodOfTheMartyr = card("Blood of the Martyr") {
     manaCost = "{W}{W}{W}"
@@ -39,6 +38,7 @@ val BloodOfTheMartyr = card("Blood of the Martyr") {
             redirectTo = EffectTarget.Controller,
             scope = RedirectScope.CONTINUOUS,
             creaturesOnly = true,
+            optional = true,
         )
     }
 

@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.damage.OptionalDamageRedirect
 import com.wingedsheep.engine.mechanics.battle.Battles
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
@@ -255,10 +256,32 @@ internal class CombatDamageManager(
             finalAssignments = modifier.modify(state, projected, finalAssignments)
         }
 
+        // Pre-check: the "you may" of an optional redirection shield (Blood of the Martyr). Asked off
+        // the final assignments — one question per damage instance the shield covers — and answered
+        // before any of the simultaneous batch is dealt (CR 510.2). Phases 1 and 2 above are pure
+        // computations over `state`, so re-running the step after each answer re-derives exactly the
+        // same assignments; nothing has been applied yet that the re-run would repeat.
+        val redirectChoice = OptionalDamageRedirect.check(
+            state,
+            finalAssignments.map { OptionalDamageRedirect.Instance(it.sourceId, it.targetId, it.amount) }
+        )
+        var newState = when (redirectChoice) {
+            is OptionalDamageRedirect.Check.Ask -> {
+                val pausedState = redirectChoice.state.pushContinuation(
+                    CombatOptionalRedirectContinuation(
+                        decisionId = redirectChoice.decision.id,
+                        choiceKey = redirectChoice.choiceKey,
+                        firstStrike = firstStrike
+                    )
+                )
+                return ExecutionResult.paused(pausedState, redirectChoice.decision)
+            }
+            is OptionalDamageRedirect.Check.Ready -> redirectChoice.state
+        }
+
         // Phase 2b: Shield counters (CR 122.1c). Consumes one counter per shielded permanent for
         // the whole simultaneous batch and drops the assignments whose damage it prevents, so the
         // downstream steps (redirect consumption, lifelink) never see prevented damage.
-        var newState = state
         val events = mutableListOf<GameEvent>()
         val shieldResult = applyShieldCountersToCombatDamage(newState, finalAssignments)
         newState = shieldResult.first
@@ -975,7 +998,7 @@ internal class CombatDamageManager(
         // simultaneous combat-damage step (CR 510.2); it is consumed once afterwards by
         // consumeBatchRedirectShields.
         val (redirectState, redirectTargetId, redirectAmount) = DamageUtils.checkDamageRedirection(
-            newState, targetId, effectiveAmount, inBatch = true
+            newState, targetId, effectiveAmount, inBatch = true, sourceId = sourceId
         )
         newState = redirectState
         if (redirectTargetId != null && redirectAmount > 0) {
@@ -1179,7 +1202,7 @@ internal class CombatDamageManager(
         // inBatch=true — a Glarecaster shield protects its controller's creatures too, so a blocked
         // attacker's damage to a protected blocker is redirected as part of the same batch.
         val (redirectState, redirectTargetId, redirectAmount) = DamageUtils.checkDamageRedirection(
-            newState, targetId, effectiveAmount, inBatch = true
+            newState, targetId, effectiveAmount, inBatch = true, sourceId = sourceId
         )
         newState = redirectState
         if (redirectTargetId != null && redirectAmount > 0) {

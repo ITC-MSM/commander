@@ -52,7 +52,14 @@ class DealDamageExecutor(
         // Empty is a legal no-op, not an error — a Fallen that has damaged nobody yet does nothing.
         if (effect.target is EffectTarget.EachDamagedBySourceThisGame) {
             val recipients = resolveDamagedThisGame(state, sourceId, context)
-            var newState = state
+            val (readyState, pause) = OptionalDamageRedirect.beforeDealing(
+                state,
+                recipients.map { OptionalDamageRedirect.Instance(sourceId, it, amount) },
+                effect,
+                context
+            )
+            if (pause != null) return pause
+            var newState = readyState
             val events = mutableListOf<EngineGameEvent>()
             for (recipientId in recipients) {
                 val result = dealDamageToTarget(newState, recipientId, amount, sourceId, effect.cantBePrevented)
@@ -69,7 +76,14 @@ class DealDamageExecutor(
                 return EffectResult.error(state, "No valid target for damage")
             }
 
-            var newState = state
+            val (readyState, pause) = OptionalDamageRedirect.beforeDealing(
+                state,
+                playerIds.map { OptionalDamageRedirect.Instance(sourceId, it, amount) },
+                effect,
+                context
+            )
+            if (pause != null) return pause
+            var newState = readyState
             val events = mutableListOf<EngineGameEvent>()
             for (playerId in playerIds) {
                 val result = dealDamageToTarget(newState, playerId, amount, sourceId, effect.cantBePrevented)
@@ -83,8 +97,17 @@ class DealDamageExecutor(
         val targetId = context.resolveTarget(effect.target, state)
             ?: return EffectResult.error(state, "No valid target for damage")
 
+        // "You may have that damage dealt to you instead" (Blood of the Martyr) — ask before dealing.
+        val (readyState, pause) = OptionalDamageRedirect.beforeDealing(
+            state,
+            listOf(OptionalDamageRedirect.Instance(sourceId, targetId, amount)),
+            effect,
+            context
+        )
+        if (pause != null) return pause
+
         return dealDamageToTarget(
-            state, targetId, amount, sourceId, effect.cantBePrevented,
+            readyState, targetId, amount, sourceId, effect.cantBePrevented,
             excessToController = effect.excessToController
         )
     }

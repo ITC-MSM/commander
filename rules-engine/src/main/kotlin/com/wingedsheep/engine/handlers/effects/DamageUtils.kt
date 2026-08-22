@@ -33,6 +33,7 @@ import com.wingedsheep.engine.state.components.battlefield.HasDealtDamageCompone
 import com.wingedsheep.engine.state.components.battlefield.WasDealtDamageThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSourceComponent
 import com.wingedsheep.engine.state.components.stack.SpellGrantedKeywordsComponent
+import com.wingedsheep.engine.handlers.effects.damage.OptionalDamageRedirect
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.state.components.stack.TargetsComponent
@@ -171,7 +172,7 @@ object DamageUtils {
             if (state.getEntity(targetId)?.has<DamageUnpreventableThisTurnComponent>() == true) {
                 Triple(state, null, 0)
             } else {
-                checkDamageRedirection(state, targetId, amount)
+                checkDamageRedirection(state, targetId, amount, sourceId = sourceId)
             }
         if (redirectTargetId != null) {
             val redirectResult = dealDamageToTarget(redirectState, redirectTargetId, redirectAmount, sourceId, cantBePrevented, isCombatDamage, appliedRedirects)
@@ -1341,43 +1342,62 @@ object DamageUtils {
     }
 
     /**
-     * Check for damage redirection shields (Glarecaster, Zealous Inquisitor).
+     * Check for damage redirection shields (Glarecaster, Zealous Inquisitor, Blood of the Martyr).
      *
-     * Scans floating effects for RedirectNextDamage targeting the entity.
+     * Scans floating effects for RedirectNextDamage covering the entity.
      * If found, consumes (or decrements) the shield and returns the redirect target ID
      * and the amount to redirect.
+     *
+     * An **optional** shield ("you may have that damage dealt to you instead") only applies when its
+     * controller has already said yes to *this* damage instance — the answer is recorded by
+     * [OptionalDamageRedirect]'s pre-pass and consumed here. A declined or never-asked instance falls
+     * through to the next covering shield, so declining Blood of the Martyr doesn't shut off a
+     * mandatory Glarecaster underneath it.
      *
      * @param state The current game state
      * @param targetId The entity about to receive damage
      * @param damageAmount The amount of damage about to be dealt
+     * @param sourceId The source of the damage — identifies the instance an optional shield was
+     *   answered for; a null source can never match a recorded answer
      * @return Triple of (updated state with consumed/decremented shield, redirect target ID or null, amount to redirect)
      */
     fun checkDamageRedirection(
         state: GameState,
         targetId: EntityId,
         damageAmount: Int,
-        inBatch: Boolean = false
+        inBatch: Boolean = false,
+        sourceId: EntityId? = null
     ): Triple<GameState, EntityId?, Int> {
-        val shieldIndex = state.floatingEffects.indexOfFirst { effect ->
+        var workingState = state
+        var shieldIndex = -1
+        for ((index, effect) in state.floatingEffects.withIndex()) {
             val modification = effect.effect.modification
-            modification is SerializableModification.RedirectNextDamage &&
-                if (modification.creaturesOnly) {
-                    // "…dealt to any creature" (Blood of the Martyr): every creature, and only a
-                    // creature. Read from projection so a creature that entered after the shield
-                    // was created is covered and an animated land counts while it is one.
-                    state.projectedState.isCreature(targetId)
-                } else {
-                    effect.effect.affectedEntities.isEmpty() || targetId in effect.effect.affectedEntities
-                }
+            if (modification !is SerializableModification.RedirectNextDamage) continue
+            if (!OptionalDamageRedirect.redirectShieldCovers(workingState, effect, modification, targetId)) continue
+            if (!modification.optional) {
+                shieldIndex = index
+                break
+            }
+            // "You may…" — this instance redirects only if its controller already said so. The
+            // answer is spent either way, so the same shield asks again for the next instance.
+            val (consumedState, choice) = OptionalDamageRedirect.consume(
+                workingState,
+                OptionalDamageRedirect.choiceKey(effect.id, sourceId, targetId)
+            )
+            workingState = consumedState
+            if (choice == true) {
+                shieldIndex = index
+                break
+            }
         }
-        if (shieldIndex == -1) return Triple(state, null, 0)
+        if (shieldIndex == -1) return Triple(workingState, null, 0)
 
-        val shield = state.floatingEffects[shieldIndex]
+        val shield = workingState.floatingEffects[shieldIndex]
         val mod = shield.effect.modification as SerializableModification.RedirectNextDamage
 
         val redirectAmount = if (mod.amount != null) minOf(mod.amount, damageAmount) else damageAmount
 
-        val updatedEffects = state.floatingEffects.toMutableList()
+        val updatedEffects = workingState.floatingEffects.toMutableList()
         if (mod.amount != null) {
             // Capacity shield (CR 615.7) — decrement; remove once the capacity is used up.
             val remaining = mod.amount - redirectAmount
@@ -1403,7 +1423,7 @@ object DamageUtils {
             }
         }
 
-        return Triple(state.copy(floatingEffects = updatedEffects), mod.redirectToId, redirectAmount)
+        return Triple(workingState.copy(floatingEffects = updatedEffects), mod.redirectToId, redirectAmount)
     }
 
     /**

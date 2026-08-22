@@ -282,6 +282,8 @@ val engineSerializersModule = SerializersModule {
         subclass(ChainCopyCostContinuation::class)
         subclass(ChainCopyTargetContinuation::class)
         subclass(DamagePreventionContinuation::class)
+        subclass(CombatOptionalRedirectContinuation::class)
+        subclass(OptionalRedirectEffectContinuation::class)
         subclass(EachPlayerChoosesCreatureTypeContinuation::class)
         subclass(ChangeSpellTargetContinuation::class)
         subclass(SecretBidContinuation::class)

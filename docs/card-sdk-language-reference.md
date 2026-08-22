@@ -6553,15 +6553,22 @@ staticAbility {
   and restrict the replacement to a **player**. The new-target filter narrows the spell's *own*
   legal-target list rather than replacing it, so a redirect can never make an otherwise-illegal
   choice legal. Both default false, which is the unrestricted Willbender behaviour.
-- `RedirectNextDamageEffect(protectedTargets, redirectTo, amount, scope, creaturesOnly = false)` —
+- `RedirectNextDamageEffect(protectedTargets, redirectTo, amount, scope, creaturesOnly = false, optional = false)` —
   **`creaturesOnly`** protects the *class* of creatures rather than a fixed list of entities: Blood
   of the Martyr's "if damage would be dealt to any creature". Checked against projected state at
   damage time, so a creature that entered after the shield resolved is covered and a player never
   is — an empty `protectedTargets` otherwise means "anything", players included. Pair it with
-  `RedirectScope.CONTINUOUS` for the turn-long form. **The redirect is mandatory:** an optional
-  ("you may") replacement would need the damage pipeline to stop and ask mid-application, which it
-  cannot do for combat damage — the batch is one simultaneous moment (CR 510.2) with no decision
-  point inside it. Blood of the Martyr documents that divergence on the card.
+  `RedirectScope.CONTINUOUS` for the turn-long form. **`optional`** makes it a printed "you may"
+  (Blood of the Martyr): the shield's controller is asked **once per damage instance** the shield
+  covers, *before* any of that damage is dealt, so a sweeper hitting four creatures asks four times
+  and each answer stands on its own. The question is raised by `OptionalDamageRedirect`'s pre-pass —
+  in combat off the final damage assignments, before the simultaneous batch is applied (CR 510.2),
+  and in the damage executors (`DealDamage`, `DividedDamage`, `Fight`, `DealDamagePerEntityInZone`)
+  before they deal anything; each answer is recorded on
+  `GameState.optionalDamageRedirectChoices` and the caller re-runs to ask about the next instance.
+  An instance that was never asked about counts as **declined**, so a damage path outside that set
+  (e.g. the legacy `DistributeDecision` resumption path) deals its damage normally instead of
+  redirecting onto a controller who was never asked.
 - `SwapBlockingAssignmentsEffect` — Sorrow's Path's blocker swap. Reads the ability's two chosen
   targets, re-checks at resolution (CR 608.2b) that both are still blocking creatures under the same
   controller, and applies the printed gate: the swap happens only if **each** creature could legally

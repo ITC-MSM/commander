@@ -162,3 +162,39 @@ data class PreventDamageFromChosenSourceContinuation(
      */
     val halvePreventedDamage: Boolean = false
 ) : ContinuationFrame
+
+/**
+ * Resume the combat damage step after the controller of an optional damage-redirection shield has
+ * answered one "you may have that damage dealt to you instead" question (Blood of the Martyr).
+ *
+ * The answer is recorded under [choiceKey] and the whole step is re-run: it re-proposes the same
+ * assignments, finds this instance already answered, and asks about the next one — so a batch that
+ * covers several creatures is settled question by question before any of its damage is dealt
+ * (CR 510.2).
+ *
+ * @property choiceKey Identity of the (shield, damage instance) pair being answered — see
+ *   [com.wingedsheep.engine.handlers.effects.damage.OptionalDamageRedirect.choiceKey].
+ * @property firstStrike Whether this is the first-strike combat damage step.
+ */
+@Serializable
+data class CombatOptionalRedirectContinuation(
+    override val decisionId: String,
+    val choiceKey: String,
+    val firstStrike: Boolean = false
+) : ContinuationFrame
+
+/**
+ * The non-combat counterpart of [CombatOptionalRedirectContinuation]: record the answer, then re-run
+ * the damage [effect] that asked.
+ *
+ * Re-running is safe because the question is raised *before* the effect deals any damage, so nothing
+ * has happened yet that the re-run would repeat. Each pass answers one more instance until the effect
+ * runs to completion.
+ */
+@Serializable
+data class OptionalRedirectEffectContinuation(
+    override val decisionId: String,
+    val choiceKey: String,
+    val effect: Effect,
+    val effectContext: com.wingedsheep.engine.handlers.EffectContext
+) : ContinuationFrame
