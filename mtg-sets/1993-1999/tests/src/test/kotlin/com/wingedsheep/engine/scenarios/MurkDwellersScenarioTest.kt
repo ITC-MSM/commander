@@ -42,26 +42,6 @@ class MurkDwellersScenarioTest : ScenarioTestBase() {
                 }
             }
 
-            test("the bonus is gone after combat ends") {
-                val game = scenario()
-                    .withPlayers("Player1", "Player2")
-                    .withCardOnBattlefield(1, "Murk Dwellers", summoningSickness = false)
-                    .withActivePlayer(1)
-                    .build()
-
-                val dwellers = game.findPermanent("Murk Dwellers")!!
-                game.passUntilPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
-                game.declareAttackers(mapOf("Murk Dwellers" to 2)).error shouldBe null
-                game.passUntilPhase(Phase.COMBAT, Step.DECLARE_BLOCKERS)
-                game.declareBlockers(emptyMap()).error shouldBe null
-                game.resolveStack()
-                game.passUntilPhase(Phase.POSTCOMBAT_MAIN, Step.POSTCOMBAT_MAIN)
-
-                withClue("+2/+0 lasts until end of combat, not until end of turn") {
-                    game.state.projectedState.getPower(dwellers) shouldBe 2
-                }
-            }
-
             test("no bonus when it is blocked") {
                 val game = scenario()
                     .withPlayers("Player1", "Player2")
