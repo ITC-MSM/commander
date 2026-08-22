@@ -465,6 +465,30 @@
     ]
 }
 
+// Blood of the Martyr
+{
+    "name": "Blood of the Martyr",
+    "manaCost": "{W}{W}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Until end of turn, if damage would be dealt to any creature, you may have that damage dealt to you instead.",
+    "script": {
+        "spellEffect": {
+            "type": "RedirectNextDamage",
+            "protectedTargets": [],
+            "redirectTo": "Controller",
+            "scope": "CONTINUOUS",
+            "creaturesOnly": true,
+            "optional": true
+        }
+    },
+    "metadata": {
+        "collectorNumber": "2",
+        "rarity": "UNCOMMON",
+        "artist": "Christopher Rush",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/2/22d4761d-acf2-4cb3-86a8-a3f30420a92e.jpg?1783947950"
+    }
+}
+
 // Bog Imp
 {
     "name": "Bog Imp",
@@ -640,6 +664,41 @@
         ]
     },
     "colorIdentityOverride": []
+}
+
+// Brainwash
+{
+    "name": "Brainwash",
+    "manaCost": "{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature can't attack unless its controller pays {3}.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CantAttackOrBlockUnlessPay",
+                "amount": {
+                    "type": "Fixed",
+                    "amount": 3
+                },
+                "appliesToBlocking": false
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "3",
+        "artist": "Pete Venters",
+        "flavorText": "\"They're not your friends; they despise you. I'm the only one you can count on. Trust me.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/d/6da4fb5a-0d24-4bee-b3f5-535ba9fe6850.jpg?1783947949"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }
 
 // Brothers of Fire
@@ -874,6 +933,50 @@
     }
 }
 
+// Cleansing
+{
+    "name": "Cleansing",
+    "manaCost": "{W}{W}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "For each land, destroy that land unless any player pays 1 life.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "land"
+                }
+            },
+            "body": {
+                "type": "AnyPlayerMayPay",
+                "cost": {
+                    "type": "PayAtom",
+                    "atom": {
+                        "type": "AtomPayLife",
+                        "amount": 1
+                    }
+                },
+                "consequenceIfNonePaid": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                }
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "4",
+        "rarity": "RARE",
+        "artist": "Pete Venters",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/c/fc1973a3-1410-4c6d-9b09-bd9d18646a1e.jpg?1783947949"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Coal Golem
 {
     "name": "Coal Golem",
@@ -988,6 +1091,114 @@
     ]
 }
 
+// Dance of Many
+{
+    "name": "Dance of Many",
+    "manaCost": "{U}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, create a token that's a copy of target nontoken creature.\nWhen this enchantment leaves the battlefield, exile the token.\nWhen the token leaves the battlefield, sacrifice this enchantment.\nAt the beginning of your upkeep, sacrifice this enchantment unless you pay {U}{U}.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateTokenCopyOfTarget",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    },
+                    "stampCreator": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature nontoken"
+                    }
+                },
+                "descriptionOverride": "When this enchantment enters, create a token that's a copy of target nontoken creature."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": {
+                                    "statePredicates": [
+                                        "CreatedBySource"
+                                    ]
+                                }
+                            },
+                            "storeAs": "danceToken"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "danceToken",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this enchantment leaves the battlefield, exile the token."
+            },
+            {
+                "id": "ability_3",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": {
+                        "statePredicates": [
+                            "CreatedBySource"
+                        ]
+                    },
+                    "from": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": "SacrificeSelf",
+                "descriptionOverride": "When the token leaves the battlefield, sacrifice this enchantment."
+            },
+            {
+                "id": "ability_4",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "PayOrSuffer",
+                    "cost": {
+                        "type": "PayAtom",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{U}{U}"
+                        }
+                    },
+                    "suffer": "SacrificeSelf"
+                },
+                "descriptionOverride": "At the beginning of your upkeep, sacrifice this enchantment unless you pay {U}{U}."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "22",
+        "rarity": "RARE",
+        "artist": "Sandra Everingham",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/13453abe-3f05-4956-8493-382d7d2af699.jpg?1783947944"
+    }
+}
+
 // Dark Heart of the Wood
 {
     "name": "Dark Heart of the Wood",
@@ -1025,6 +1236,78 @@
         "BLACK",
         "GREEN"
     ]
+}
+
+// Dark Sphere
+{
+    "name": "Dark Sphere",
+    "manaCost": "{0}",
+    "typeLine": "Artifact",
+    "oracleText": "{T}, Sacrifice this artifact: The next time a source of your choice would deal damage to you this turn, prevent half that damage, rounded down.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "PreventDamageShield",
+                    "sourceFilter": "ChosenSource",
+                    "nextInstanceOnly": true,
+                    "halvePreventedDamage": true
+                },
+                "descriptionOverride": "{T}, Sacrifice this artifact: The next time a source of your choice would deal damage to you this turn, prevent half that damage, rounded down."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "100",
+        "rarity": "UNCOMMON",
+        "artist": "Mark Tedin",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/2/72cfe9b9-677d-4ecb-83ab-67fb6481371d.jpg?1783947927"
+    }
+}
+
+// Deep Water
+{
+    "name": "Deep Water",
+    "manaCost": "{U}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "{U}: Until end of turn, if you tap a land you control for mana, it produces {U} instead of any other type.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{U}"
+                    }
+                },
+                "effect": {
+                    "type": "GrantStaticAbility",
+                    "ability": {
+                        "type": "ReplaceLandManaColor",
+                        "filter": "land ctrl:you",
+                        "color": "BLUE"
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{U}: Until end of turn, if you tap a land you control for mana, it produces {U} instead of any other type."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "23",
+        "artist": "Jeff A. Menges",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/d/9dd6a230-6bc0-499c-b7fd-4aaa2569f98f.jpg?1783947945"
+    }
 }
 
 // Diabolic Machine
@@ -1978,6 +2261,98 @@
     "colorIdentityOverride": []
 }
 
+// Frankenstein's Monster
+{
+    "name": "Frankenstein's Monster",
+    "manaCost": "{X}{B}{B}",
+    "typeLine": "Creature — Zombie",
+    "oracleText": "As this creature enters, exile X creature cards from your graveyard. If you can't, put this creature into its owner's graveyard instead of onto the battlefield.\nFor each creature card exiled this way, this creature enters with a +2/+0, +1/+1, or +0/+2 counter on it.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 1
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "OnEnterRunEffect",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "filter": "creature"
+                            },
+                            "storeAs": "fmCandidates"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "fmCandidates",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": "XValue"
+                            },
+                            "storeSelected": "fmExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "fmExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "Modal",
+                            "modes": [
+                                {
+                                    "effect": {
+                                        "type": "AddCounters",
+                                        "counterType": "+2/+0",
+                                        "count": 1,
+                                        "target": "Self"
+                                    },
+                                    "description": "Put a +2/+0 counter on this creature"
+                                },
+                                {
+                                    "effect": {
+                                        "type": "AddCounters",
+                                        "counterType": "+1/+1",
+                                        "count": 1,
+                                        "target": "Self"
+                                    },
+                                    "description": "Put a +1/+1 counter on this creature"
+                                },
+                                {
+                                    "effect": {
+                                        "type": "AddCounters",
+                                        "counterType": "+0/+2",
+                                        "count": 1,
+                                        "target": "Self"
+                                    },
+                                    "description": "Put a +0/+2 counter on this creature"
+                                }
+                            ],
+                            "allowRepeat": true,
+                            "dynamicChooseCount": "XValue",
+                            "dynamicMinChooseCount": "XValue",
+                            "countsAsModalSpell": false
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "rarity": "RARE",
+        "artist": "Anson Maddocks",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/f/8f99894d-5ece-44f1-acce-474494ae2084.jpg?1783947939"
+    }
+}
+
 // Gaea's Touch
 {
     "name": "Gaea's Touch",
@@ -2298,6 +2673,62 @@
         "artist": "Mark Tedin",
         "flavorText": "They attacked in an orgy of rage and madness, but only one seemed as focused on killing us as on the sheer joy of battle.",
         "imageUri": "https://cards.scryfall.io/normal/front/7/1/7135a569-e5d3-4a1f-924b-bdb86926b4e1.jpg?1783947934"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Goblin Rock Sled
+{
+    "name": "Goblin Rock Sled",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Goblin",
+    "oracleText": "Trample\nThis creature doesn't untap during your untap step if it attacked during your last turn.\nThis creature can't attack unless defending player controls a Mountain.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "DOESNT_UNTAP",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            "AttackedLastTurn"
+                        ]
+                    }
+                }
+            },
+            {
+                "type": "CantAttackUnless",
+                "condition": {
+                    "type": "Exists",
+                    "player": "DefendingPlayer",
+                    "zone": "Battlefield",
+                    "filter": "land Mountain"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "67",
+        "artist": "Dennis Detwiller",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/1/91e0b59d-8f9b-4a76-9845-bcb0dc32523d.jpg?1783947935"
     },
     "colorIdentityOverride": [
         "RED"
@@ -2835,6 +3266,101 @@
     ]
 }
 
+// Leviathan
+{
+    "name": "Leviathan",
+    "manaCost": "{5}{U}{U}{U}{U}",
+    "typeLine": "Creature — Leviathan",
+    "oracleText": "Trample\nThis creature enters tapped and doesn't untap during your untap step.\nAt the beginning of your upkeep, you may sacrifice two Islands. If you do, untap this creature.\nThis creature can't attack unless you sacrifice two Islands.",
+    "creatureStats": {
+        "power": 10,
+        "toughness": 10
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "flags": [
+        "DOESNT_UNTAP"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.WhenCondition",
+                            "condition": {
+                                "type": "Compare",
+                                "left": {
+                                    "type": "AggregateBattlefield",
+                                    "player": "You",
+                                    "filter": "land Island"
+                                },
+                                "operator": "GTE",
+                                "right": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            }
+                        },
+                        "then": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ForceSacrifice",
+                                    "filter": "land Island",
+                                    "count": 2,
+                                    "target": "Controller"
+                                },
+                                {
+                                    "type": "TapUntap",
+                                    "target": "Self",
+                                    "tap": false
+                                }
+                            ]
+                        }
+                    },
+                    "descriptionOverride": "At the beginning of your upkeep, you may sacrifice two Islands. If you do, untap this creature."
+                },
+                "descriptionOverride": "At the beginning of your upkeep, you may sacrifice two Islands. If you do, untap this creature."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CantAttackUnlessSacrifice",
+                "sacrificeFilter": {
+                    "cardPredicates": [
+                        "IsLand",
+                        {
+                            "type": "HasSubtype",
+                            "subtype": "Island"
+                        }
+                    ]
+                },
+                "count": 2
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "30",
+        "rarity": "RARE",
+        "artist": "Mark Tedin",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b638d9be-c533-45c3-92f9-fabf56edc2df.jpg?1783947942"
+    }
+}
+
 // Living Armor
 {
     "name": "Living Armor",
@@ -2883,6 +3409,69 @@
         "flavorText": "Though it affords excellent protection, few don this armor. The process is uncomfortable and not easily reversed.",
         "imageUri": "https://cards.scryfall.io/normal/front/3/c/3c31a957-ad1e-40cc-b3c4-2f4caa492b77.jpg?1783947925"
     }
+}
+
+// Lurker
+{
+    "name": "Lurker",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "This creature can't be the target of spells unless it attacked or blocked this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "CANT_BE_TARGETED_BY_SPELLS",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Not",
+                    "condition": {
+                        "type": "Any",
+                        "conditions": [
+                            {
+                                "type": "EntityMatches",
+                                "entity": "Self",
+                                "filter": {
+                                    "statePredicates": [
+                                        "AttackedThisTurn"
+                                    ]
+                                }
+                            },
+                            {
+                                "type": "EntityMatches",
+                                "entity": "Self",
+                                "filter": {
+                                    "statePredicates": [
+                                        "BlockedThisTurn"
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "80",
+        "rarity": "RARE",
+        "artist": "Anson Maddocks",
+        "flavorText": "\"Each night we felt it watching us from the darkness beyond our fire. We only had one pack horse left.\"\n—Maeveen O'Donagh, *Memoirs of a Soldier*",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/3/b39eb671-e17e-4c5a-8913-1e3be7faedfb.jpg?1783947931"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
 }
 
 // Mana Clash
@@ -3616,6 +4205,122 @@
     ]
 }
 
+// Nameless Race
+{
+    "name": "Nameless Race",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature",
+    "oracleText": "Trample\nAs this creature enters, pay any amount of life. The amount you pay can't be more than the total number of white nontoken permanents your opponents control plus the total number of white cards in their graveyards.\nNameless Race's power and toughness are each equal to the life paid as it entered.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "EntityProperty",
+                "entity": "Source",
+                "numericProperty": "ValueChosenAsEntered"
+            }
+        },
+        "toughness": {
+            "type": "Dynamic",
+            "source": {
+                "type": "EntityProperty",
+                "entity": "Source",
+                "numericProperty": "ValueChosenAsEntered"
+            }
+        }
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "OnEnterRunEffect",
+                "effect": {
+                    "type": "PayAnyAmountOfLifeAsEnters",
+                    "maxAmount": {
+                        "type": "Add",
+                        "left": {
+                            "type": "Count",
+                            "player": "EachOpponent",
+                            "zone": "Battlefield",
+                            "filter": "permanent white nontoken"
+                        },
+                        "right": {
+                            "type": "Count",
+                            "player": "EachOpponent",
+                            "zone": "Graveyard",
+                            "filter": "white"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "50",
+        "rarity": "RARE",
+        "artist": "Quinton Hoover",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/4/348a467a-4661-4fdb-af1d-9171a1a930d9.jpg?1783947938"
+    }
+}
+
+// Necropolis
+{
+    "name": "Necropolis",
+    "manaCost": "{5}",
+    "typeLine": "Artifact Creature — Wall",
+    "oracleText": "Defender (This creature can't attack.)\nExile a creature card from your graveyard: Put X +0/+1 counters on this creature, where X is the exiled card's mana value.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 1
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomExileFrom",
+                        "zone": "Graveyard",
+                        "filter": "creature"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "ExiledAsCost",
+                            "storeAs": "necropolisFuel"
+                        },
+                        {
+                            "type": "AddDynamicCounters",
+                            "counterType": "+0/+1",
+                            "amount": {
+                                "type": "ManaValueSumOfCollection",
+                                "collectionName": "necropolisFuel"
+                            },
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Exile a creature card from your graveyard: Put X +0/+1 counters on this creature, where X is the exiled card's mana value."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "105",
+        "rarity": "UNCOMMON",
+        "artist": "NéNé Thomas",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/9/893e8e9c-983e-4db1-8d93-10637025a559.jpg?1783947925"
+    }
+}
+
 // Niall Silvain
 {
     "name": "Niall Silvain",
@@ -4028,6 +4733,75 @@
     ]
 }
 
+// Reflecting Mirror
+{
+    "name": "Reflecting Mirror",
+    "manaCost": "{4}",
+    "typeLine": "Artifact",
+    "oracleText": "{X}, {T}: Change the target of target spell with a single target if that target is you. The new target must be a player. X is twice the mana value of that spell.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{X}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": "XValue",
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Multiply",
+                                "amount": {
+                                    "type": "EntityProperty",
+                                    "entity": "Target",
+                                    "numericProperty": "ManaValue"
+                                },
+                                "multiplier": 2
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "ChangeTarget",
+                        "newTargetMustBePlayer": true,
+                        "onlyIfCurrentTargetIsController": true
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {},
+                            "zone": "Stack"
+                        }
+                    }
+                ],
+                "descriptionOverride": "{X}, {T}: Change the target of target spell with a single target if that target is you. The new target must be a player. X is twice the mana value of that spell."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "106",
+        "rarity": "UNCOMMON",
+        "artist": "Mark Poole",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/5/d551ff93-d8da-4c21-bc3c-6451c0dde07e.jpg?1783947925"
+    }
+}
+
 // Riptide
 {
     "name": "Riptide",
@@ -4057,6 +4831,91 @@
     "colorIdentityOverride": [
         "BLUE"
     ]
+}
+
+// Runesword
+{
+    "name": "Runesword",
+    "manaCost": "{6}",
+    "typeLine": "Artifact",
+    "oracleText": "{3}, {T}: Target attacking creature gets +2/+0 until end of turn. When that creature leaves the battlefield this turn, sacrifice this artifact. If the creature deals damage to a creature this turn, the creature dealt damage can't be regenerated this turn. If a creature dealt damage by the targeted creature would die this turn, exile that creature instead.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        {
+                            "type": "GrantStaticAbility",
+                            "ability": "CreaturesDamagedBySourceAreDoomed",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "effect": "SacrificeSelf",
+                            "trigger": {
+                                "event": {
+                                    "type": "ZoneChangeEvent",
+                                    "from": "Battlefield"
+                                }
+                            },
+                            "watchedTarget": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature attacking"
+                        }
+                    }
+                ],
+                "descriptionOverride": "{3}, {T}: Target attacking creature gets +2/+0 until end of turn. When that creature leaves the battlefield this turn, sacrifice this artifact."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "107",
+        "rarity": "UNCOMMON",
+        "artist": "Christopher Rush",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/4/741dbcf2-3372-45a8-b66f-d2ae12b4aac6.jpg?1783947924"
+    }
 }
 
 // Safe Haven
@@ -4519,6 +5378,91 @@
     ]
 }
 
+// Season of the Witch
+{
+    "name": "Season of the Witch",
+    "manaCost": "{B}{B}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "At the beginning of your upkeep, sacrifice this enchantment unless you pay 2 life.\nAt the beginning of the end step, destroy all untapped creatures that didn't attack this turn, except for creatures that couldn't attack.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "PayOrSuffer",
+                    "cost": {
+                        "type": "PayAtom",
+                        "atom": {
+                            "type": "AtomPayLife",
+                            "amount": 2
+                        }
+                    },
+                    "suffer": "SacrificeSelf"
+                },
+                "descriptionOverride": "At the beginning of your upkeep, sacrifice this enchantment unless you pay 2 life."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsCreature"
+                                    ],
+                                    "statePredicates": [
+                                        "IsUntapped",
+                                        {
+                                            "type": "StateNot",
+                                            "predicate": "AttackedThisTurn"
+                                        },
+                                        {
+                                            "type": "StateNot",
+                                            "predicate": "CouldNotHaveAttackedThisTurn"
+                                        }
+                                    ]
+                                }
+                            },
+                            "storeAs": "destroyAll_gathered"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "destroyAll_gathered",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Destroy"
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of the end step, destroy all untapped creatures that didn't attack this turn, except for creatures that couldn't attack."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "52",
+        "rarity": "RARE",
+        "artist": "Jesper Myrfors",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/6/06900a71-34ca-48c6-94ac-fca744356829.jpg?1783947938"
+    }
+}
+
 // Sisters of the Flame
 {
     "name": "Sisters of the Flame",
@@ -4607,6 +5551,164 @@
         "imageUri": "https://cards.scryfall.io/normal/front/a/a/aa1d9bb5-972a-4705-bf22-0fa1e974dd26.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Sorrow's Path
+{
+    "name": "Sorrow's Path",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Choose two target blocking creatures controlled by the same opponent. If each of those creatures could block all creatures that the other is blocking, remove both of them from combat. Each one then blocks all creatures the other was blocking.\nWhenever this land becomes tapped, it deals 2 damage to you and each creature you control.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TapEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": "Controller"
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever this land becomes tapped, it deals 2 damage to you and each creature you control."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": "SwapBlockingAssignments",
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature blocking"
+                        },
+                        "id": "first blocker"
+                    },
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature blocking"
+                        },
+                        "id": "second blocker"
+                    }
+                ],
+                "descriptionOverride": "{T}: Choose two target blocking creatures controlled by the same opponent. If each of those creatures could block all creatures that the other is blocking, remove both of them from combat. Each one then blocks all creatures the other was blocking."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "119",
+        "rarity": "RARE",
+        "artist": "Randy Asplund-Faith",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/f/6f75946b-1690-43cc-993c-d4e451a1a41c.jpg?1783947922"
+    }
+}
+
+// Spitting Slug
+{
+    "name": "Spitting Slug",
+    "manaCost": "{1}{G}{G}",
+    "typeLine": "Creature — Slug",
+    "oracleText": "Whenever this creature blocks or becomes blocked, you may pay {1}{G}. If you do, this creature gains first strike until end of turn. Otherwise, each creature blocking or blocked by this creature gains first strike until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "BlocksOrBecomesBlockedByEvent",
+                    "oncePerCombat": true
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FIRST_STRIKE",
+                            "target": "Self"
+                        },
+                        {
+                            "type": "PayOrSuffer",
+                            "cost": {
+                                "type": "PayAtom",
+                                "atom": {
+                                    "type": "AtomMana",
+                                    "cost": "{1}{G}"
+                                }
+                            },
+                            "suffer": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "RemoveKeyword",
+                                        "keyword": "FIRST_STRIKE",
+                                        "target": "Self"
+                                    },
+                                    {
+                                        "type": "ForEach",
+                                        "space": {
+                                            "type": "IterationSpace.Group",
+                                            "filter": {
+                                                "baseFilter": {
+                                                    "cardPredicates": [
+                                                        "IsCreature"
+                                                    ],
+                                                    "statePredicates": [
+                                                        "IsCombatPairedWithSource"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "body": {
+                                            "type": "GrantKeyword",
+                                            "keyword": "FIRST_STRIKE",
+                                            "target": "Self"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever this creature blocks or becomes blocked, you may pay {1}{G}. If you do, this creature gains first strike until end of turn. Otherwise, each creature blocking or blocked by this creature gains first strike until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "88",
+        "rarity": "UNCOMMON",
+        "artist": "Anson Maddocks",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/0/7011356e-7516-4ca0-ac54-d30af7ce03a2.jpg?1783947929"
+    }
 }
 
 // Squire
@@ -4762,6 +5864,102 @@
     "colorIdentityOverride": [
         "BLUE"
     ]
+}
+
+// Tangle Kelp
+{
+    "name": "Tangle Kelp",
+    "manaCost": "{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nWhen this Aura enters, tap enchanted creature.\nEnchanted creature doesn't untap during its controller's untap step if it attacked during its controller's last turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": "EnchantedCreature"
+                },
+                "descriptionOverride": "When this Aura enters, tap enchanted creature."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "DOESNT_UNTAP"
+                },
+                "condition": {
+                    "type": "EntityMatches",
+                    "entity": "EnchantedPermanent",
+                    "filter": {
+                        "statePredicates": [
+                            "AttackedLastTurn"
+                        ]
+                    }
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "37",
+        "rarity": "UNCOMMON",
+        "artist": "Rob Alexander",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/9/497bc42d-ab81-4d84-bdf7-e3a05a7c984d.jpg?1783947941"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// The Fallen
+{
+    "name": "The Fallen",
+    "manaCost": "{1}{B}{B}{B}",
+    "typeLine": "Creature — Zombie",
+    "oracleText": "At the beginning of your upkeep, this creature deals 1 damage to each opponent and planeswalker it has dealt damage to this game.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "EachDamagedBySourceThisGame"
+                },
+                "descriptionOverride": "At the beginning of your upkeep, this creature deals 1 damage to each opponent and planeswalker it has dealt damage to this game."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "53",
+        "rarity": "UNCOMMON",
+        "artist": "Jesper Myrfors",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/4/f4a176e1-b22b-4f36-ba7b-c506cb4e1bed.jpg?1783947938"
+    }
 }
 
 // Tivadar's Crusade
@@ -5092,6 +6290,155 @@
     ]
 }
 
+// Wand of Ith
+{
+    "name": "Wand of Ith",
+    "manaCost": "{4}",
+    "typeLine": "Artifact",
+    "oracleText": "{3}, {T}: Target player reveals a card at random from their hand. If it's a land card, that player discards it unless they pay 1 life. If it isn't a land card, the player discards it unless they pay life equal to its mana value. Activate only during your turn.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "ithCandidates"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "ithCandidates",
+                            "selection": {
+                                "type": "Random",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "ithRevealed"
+                        },
+                        {
+                            "type": "RevealCollection",
+                            "from": "ithRevealed"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "ithRevealed",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "land"
+                            },
+                            "storeMatching": "ithLand",
+                            "storeNonMatching": "ithNonland"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "ithLand",
+                            "ifNotEmpty": {
+                                "type": "PayOrSuffer",
+                                "cost": {
+                                    "type": "PayAtom",
+                                    "atom": {
+                                        "type": "AtomPayLife",
+                                        "amount": 1
+                                    }
+                                },
+                                "suffer": {
+                                    "type": "MoveCollection",
+                                    "from": "ithLand",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard",
+                                        "player": {
+                                            "type": "ContextPlayer",
+                                            "index": 0
+                                        }
+                                    },
+                                    "moveType": "Discard"
+                                },
+                                "player": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            }
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "ithNonland",
+                            "ifNotEmpty": {
+                                "type": "PayOrSuffer",
+                                "cost": {
+                                    "type": "PayDynamicLife",
+                                    "amount": {
+                                        "type": "ManaValueSumOfCollection",
+                                        "collectionName": "ithNonland"
+                                    }
+                                },
+                                "suffer": {
+                                    "type": "MoveCollection",
+                                    "from": "ithNonland",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard",
+                                        "player": {
+                                            "type": "ContextPlayer",
+                                            "index": 0
+                                        }
+                                    },
+                                    "moveType": "Discard"
+                                },
+                                "player": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "restrictions": [
+                    "OnlyDuringYourTurn"
+                ],
+                "descriptionOverride": "{3}, {T}: Target player reveals a card at random from their hand. If it's a land card, that player discards it unless they pay 1 life. If it isn't a land card, the player discards it unless they pay life equal to its mana value."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "114",
+        "rarity": "UNCOMMON",
+        "artist": "Quinton Hoover",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/0/80c9070a-8c70-480e-a476-e00f8e2c71b9.jpg?1783947923"
+    }
+}
+
 // War Barge
 {
     "name": "War Barge",
@@ -5221,6 +6568,87 @@
     ]
 }
 
+// Whippoorwill
+{
+    "name": "Whippoorwill",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Bird",
+    "oracleText": "{G}{G}, {T}: Target creature can't be regenerated this turn. Damage that would be dealt to that creature this turn can't be prevented or dealt instead to another permanent or player. When the creature dies this turn, exile the creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{G}{G}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CantBeRegenerated",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        "DamageToTargetCantBePreventedThisTurn",
+                        {
+                            "type": "GrantReplacementEffect",
+                            "replacement": {
+                                "type": "RedirectZoneChange",
+                                "newDestination": "Exile",
+                                "appliesTo": {
+                                    "type": "ZoneChangeEvent",
+                                    "filter": "creature",
+                                    "from": "Battlefield",
+                                    "to": "Graveyard"
+                                }
+                            },
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        }
+                    }
+                ],
+                "descriptionOverride": "{G}{G}, {T}: Target creature can't be regenerated this turn. Damage that would be dealt to that creature this turn can't be prevented or dealt instead to another permanent or player. When the creature dies this turn, exile the creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "91",
+        "rarity": "UNCOMMON",
+        "artist": "Douglas Shuler",
+        "flavorText": "If the Whippoorwill remains silent, the soul has not reached its reward.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/5/e56146bf-5db0-4bef-83bb-efa5ebec6684.jpg?1783947929"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Witch Hunter
 {
     "name": "Witch Hunter",
@@ -5338,6 +6766,101 @@
     "colorIdentityOverride": [
         "BLACK"
     ]
+}
+
+// Worms of the Earth
+{
+    "name": "Worms of the Earth",
+    "manaCost": "{2}{B}{B}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "Players can't play lands.\nLands can't enter the battlefield.\nAt the beginning of each upkeep, any player may sacrifice two lands of their choice or have this enchantment deal 5 damage to that player. If a player does either, destroy this enchantment.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "ActivePlayerFirst"
+                    },
+                    "body": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.MayDecide",
+                            "prompt": "Buy your way out of Worms of the Earth?"
+                        },
+                        "then": {
+                            "type": "Modal",
+                            "modes": [
+                                {
+                                    "effect": {
+                                        "type": "Composite",
+                                        "effects": [
+                                            {
+                                                "type": "ForceSacrifice",
+                                                "filter": "land",
+                                                "count": 2,
+                                                "target": "Controller"
+                                            },
+                                            {
+                                                "type": "MoveToZone",
+                                                "target": "Self",
+                                                "destination": "Graveyard",
+                                                "byDestruction": true
+                                            }
+                                        ]
+                                    },
+                                    "description": "Sacrifice two lands"
+                                },
+                                {
+                                    "effect": {
+                                        "type": "Composite",
+                                        "effects": [
+                                            {
+                                                "type": "DealDamage",
+                                                "amount": {
+                                                    "type": "Fixed",
+                                                    "amount": 5
+                                                },
+                                                "target": "Controller"
+                                            },
+                                            {
+                                                "type": "MoveToZone",
+                                                "target": "Self",
+                                                "destination": "Graveyard",
+                                                "byDestruction": true
+                                            }
+                                        ]
+                                    },
+                                    "description": "Take 5 damage from Worms of the Earth"
+                                }
+                            ],
+                            "countsAsModalSpell": false
+                        },
+                        "decisionMaker": "Controller"
+                    }
+                },
+                "descriptionOverride": "At the beginning of each upkeep, any player may sacrifice two lands of their choice or have this enchantment deal 5 damage to that player. If a player does either, destroy this enchantment."
+            }
+        ],
+        "staticAbilities": [
+            "PlayersCantPlayLands",
+            "LandsCantEnterTheBattlefield"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "56",
+        "rarity": "RARE",
+        "artist": "Anson Maddocks",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/5/65a97821-ca5b-46fb-af08-86de81d0daac.jpg?1783947937"
+    }
 }
 
 // Wormwood Treefolk
