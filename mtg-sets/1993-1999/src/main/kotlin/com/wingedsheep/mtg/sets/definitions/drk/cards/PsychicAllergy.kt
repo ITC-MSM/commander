@@ -49,10 +49,15 @@ val PsychicAllergy = card("Psychic Allergy") {
     triggeredAbility {
         trigger = Triggers.EachOpponentUpkeep
         effect = Effects.DealDamage(
-            DynamicAmount.AggregateZone(
-                player = Player.TriggeringPlayer,
-                zone = Zone.BATTLEFIELD,
-                filter = GameObjectFilter.Permanent.sharingChosenColorWithSource().nontoken(),
+            // `Count`, not `AggregateZone`: only `Count` special-cases the battlefield. It scans
+            // `state.getBattlefield()` and keeps what the upkeep player *controls* (read off
+            // projection), where `AggregateZone` looks up `ZoneKey(player, BATTLEFIELD)` — keyed by
+            // **owner** — against an empty projection. That would miscount a stolen permanent on
+            // both halves at once, and read printed colours rather than projected ones.
+            DynamicAmount.Count(
+                Player.TriggeringPlayer,
+                Zone.BATTLEFIELD,
+                GameObjectFilter.Permanent.sharingChosenColorWithSource().nontoken(),
             ),
             EffectTarget.PlayerRef(Player.TriggeringPlayer),
         )

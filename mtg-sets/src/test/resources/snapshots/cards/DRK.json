@@ -3259,7 +3259,7 @@
         "collectorNumber": "12",
         "rarity": "RARE",
         "artist": "Jeff A. Menges",
-        "flavorText": "\"It is only fitting that one such as I should die in pursuit of knowledge.\" —Vervamon the Elder",
+        "flavorText": "\"It is only fitting that one such as I should die in pursuit of knowledge.\"\n—Vervamon the Elder",
         "imageUri": "https://cards.scryfall.io/normal/front/e/2/e2c9f463-d1cc-4f11-aad2-d4a4520aa978.jpg?1783947947"
     },
     "colorIdentityOverride": [
@@ -3863,7 +3863,7 @@
                 "effect": {
                     "type": "DealDamage",
                     "amount": {
-                        "type": "AggregateZone",
+                        "type": "Count",
                         "player": "TriggeringPlayer",
                         "zone": "Battlefield",
                         "filter": {
@@ -5161,7 +5161,7 @@
                         }
                     }
                 ],
-                "descriptionOverride": "{3}: Target creature gains islandwalk until end of turn. When this artifact leaves the battlefield this turn, destroy that creature."
+                "descriptionOverride": "{3}: Target creature gains islandwalk until end of turn. When this artifact leaves the battlefield this turn, destroy that creature. A creature destroyed this way can't be regenerated."
             }
         ]
     },
@@ -5423,6 +5423,7 @@
         "imageUri": "https://cards.scryfall.io/normal/front/2/f/2fa20173-e88a-4b14-9c54-14567ca5571c.jpg?1783947928"
     },
     "colorIdentityOverride": [
+        "BLACK",
         "GREEN"
     ]
 }

@@ -50,7 +50,8 @@ val WarBarge = card("War Barge") {
             ),
         )
         description = "{3}: Target creature gains islandwalk until end of turn. When this " +
-            "artifact leaves the battlefield this turn, destroy that creature."
+            "artifact leaves the battlefield this turn, destroy that creature. A creature " +
+            "destroyed this way can't be regenerated."
     }
 
     metadata {

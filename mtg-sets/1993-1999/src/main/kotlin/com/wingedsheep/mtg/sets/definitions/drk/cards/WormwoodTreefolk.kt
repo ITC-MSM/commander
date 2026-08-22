@@ -24,7 +24,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  */
 val WormwoodTreefolk = card("Wormwood Treefolk") {
     manaCost = "{3}{G}{G}"
-    colorIdentity = "G"
+    colorIdentity = "BG"
     typeLine = "Creature — Treefolk"
     power = 4
     toughness = 4

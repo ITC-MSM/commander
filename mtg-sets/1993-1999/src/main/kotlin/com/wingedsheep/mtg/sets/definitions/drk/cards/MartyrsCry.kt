@@ -71,7 +71,7 @@ val MartyrsCry = card("Martyr's Cry") {
         rarity = Rarity.RARE
         collectorNumber = "12"
         artist = "Jeff A. Menges"
-        flavorText = "\"It is only fitting that one such as I should die in pursuit of knowledge.\" " +
+        flavorText = "\"It is only fitting that one such as I should die in pursuit of knowledge.\"\n" +
             "—Vervamon the Elder"
         imageUri = "https://cards.scryfall.io/normal/front/e/2/e2c9f463-d1cc-4f11-aad2-d4a4520aa978.jpg?1783947947"
     }

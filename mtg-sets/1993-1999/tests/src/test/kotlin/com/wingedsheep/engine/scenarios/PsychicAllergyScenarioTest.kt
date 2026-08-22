@@ -59,6 +59,49 @@ class PsychicAllergyScenarioTest : ScenarioTestBase() {
                     game.getLifeTotal(1) shouldBe 20
                 }
             }
+
+            test("counts what the upkeep player controls, not what they own") {
+                // The printed clause is "permanents ... they control". The battlefield zone map is
+                // keyed by owner, so a count that reads the zone directly gets this backwards on
+                // both halves: it misses the creature they stole from me and would credit me with
+                // a creature of mine they now control. Control Magic makes exactly that board.
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Psychic Allergy")
+                    .withLandsOnBattlefield(1, "Island", 5)
+                    // Mine by ownership, theirs by control — this is the one an owner-keyed
+                    // count drops.
+                    .withCardOnBattlefield(1, "Grizzly Bears")
+                    .withCardAttachedTo(2, "Control Magic", "Grizzly Bears")
+                    // And one green permanent that is theirs outright.
+                    .withCardOnBattlefield(2, "Craw Wurm")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.castSpell(1, "Psychic Allergy").error shouldBe null
+                game.resolveStack()
+
+                val colorDecision = game.getPendingDecision()
+                game.submitDecision(ColorChosenResponse(colorDecision!!.id, Color.GREEN))
+                game.resolveStack()
+
+                withClue("the stolen Bears is controlled by Player2, whatever the zone map says") {
+                    val bears = game.findPermanent("Grizzly Bears")!!
+                    game.state.projectedState.getController(bears) shouldBe game.player2Id
+                }
+
+                game.passUntilPhase(Phase.ENDING, Step.END)
+                game.passUntilPhase(Phase.BEGINNING, Step.UPKEEP)
+                game.resolveStack()
+
+                withClue("the Wurm they own plus the Bears they stole -> 2 damage, not 1") {
+                    game.getLifeTotal(2) shouldBe 18
+                }
+                withClue("Control Magic is blue, so the Aura itself never counts") {
+                    game.getLifeTotal(1) shouldBe 20
+                }
+            }
         }
     }
 }

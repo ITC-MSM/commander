@@ -18,7 +18,7 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
  * {G}{G}, {T}: This creature deals damage equal to its power to target creature. That creature
  * deals damage equal to its power to this creature.
  *
- * This is a fight in all but name, and deliberately **not** `Effects.Fight`. CR 701.12c makes a
+ * This is a fight in all but name, and deliberately **not** `Effects.Fight`. CR 701.14b makes a
  * fight all-or-nothing: if either creature has left the battlefield when the ability resolves,
  * neither deals damage. Tracker's printed text is two ordinary sentences, so each half stands on
  * its own — if the Tracker is gone the target still takes nothing from it, but the target's own
