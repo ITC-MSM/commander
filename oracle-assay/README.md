@@ -20,7 +20,23 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is **the functional zone** — "Return ~ from your graveyard to your hand.", the
+The most recent work is **the chosen count** — "sacrifice **any number of** creatures", the tail
+ranking's fourth family at **123 cards, 83 of them solely, over 123 lines**, and the first band
+picked off that ranking whose probe came back *empty*: substitute a known-good cardinal for the
+family's own span and **three of 123 lines get further, and no whole card does**. That is the
+product. A family that is a *position* measures its payload, and the payload here is one construct
+printed in every line the substitution failed on — "then draw **that many** cards", "for each
+creature sacrificed **this way**", "~ deals **that much** damage", **1,118 declined lines** of it
+corpus-wide. So what shipped is the count itself, in each position the SDK has a distinct value for
+it — never a slot in the counted rules, because it is `TargetRequirement.unlimited` in one,
+`CostAtom.VariablePermanents` in another and `SacrificeEffect.any` in a third — and the family fell
+to **77 cards / 52 sole / 77 lines** and off the top of the table, because 46 lines stopped dying on
+the count and started dying on what is actually blocking them. Its own finding is one line long:
+"Remove any number of charge counters from ~" is the *same* cost value as "Remove X charge counters
+from ~", so it is a second surface on one rule rather than a second rule, and that `alsoSpelled`
+moved seventeen lands onto a single remaining sentence. See [the chosen count](#the-chosen-count).
+
+Before it came **the functional zone** — "Return ~ from your graveyard to your hand.", the
 tail ranking's biggest family by the column that decides work — **131 cards, 74 of them solely, over
 131 lines** (**+94 whole cards**, 8,250 → 8,344), and the band where a printed phrase turned out to fill two SDK fields at
 once. "From your graveyard" is a resolution guard on the effect *and* the zone the ability functions
@@ -2516,6 +2532,155 @@ well as the effect, and `from your graveyard: …` still sits on the ranking at 
 SDK — `AbilityCost.ExileSelf` is a `data object` with no zone on it, so a rule cannot yet say *which*
 zone the source is exiled from. That makes it the rare band whose grammar half is a single `Costs` row
 behind a one-field SDK change.
+
+## The chosen count
+
+`any number of …` — **123 cards, 83 sole-blocked, 123 lines** at the head of this work, fourth on
+the tail ranking. It is the first band picked off that ranking whose probe came back *empty*, and
+that is the finding rather than a reason not to write it.
+
+### The measurement: the count finishes nothing on its own
+
+Substitute a known-good cardinal for the family's own span — "any number of" → "three" — and re-parse
+every declined line behind it. Three of 123 lines get further. **Zero whole cards.**
+
+```
+Look at the top five cards of your library. Put any number of permanent cards from among them …
+Look at the top five cards of your library. Put three         permanent cards from among them …   still declines
+When ~ dies, discard any number of cards, then draw that many cards plus one.
+When ~ dies, discard three         cards, then draw that many cards plus one.                      still declines
+```
+
+This is [the fronted duration](#the-fronted-duration)'s lesson on a *word* rather than on a clause:
+a family that is a **position** measures its payload, not itself. And the payload here is not a
+scattering of unrelated sentences — it is one construct, printed in every line the substitution
+failed on. "…then draw **that many** cards", "for each creature sacrificed **this way**", "~ deals
+**that much** damage". Whatever verb chose the set, the next clause counts it. **1,118 declined lines
+in the corpus carry "this way" and 644 carry "that many" or "that much"** — the collection
+vocabulary [the batch-trigger band](#the-batch-trigger-band) named and did not write, reached from a
+fourth direction.
+
+So what this band ships is the **count**, in every position the SDK has a value for it, and what it
+delivers is not whole cards. It is the ranking: the family fell to **77 cards / 52 sole / 77 lines**
+and off the top of the table, because 46 lines stopped dying on the count and started dying on the
+clause that is actually blocking them.
+
+### "any number of" is never a slot — it is a different value in every position
+
+The word looks like it should slot wherever a number word slots. It is the one thing it must never
+be. `Cardinals.word` is a `Phrase<Int>` over numbers a card *fixes*; a count the player chooses is a
+different SDK **value** each time, and reading the phrase into the counted rules would have printed
+one model out of two rules:
+
+| position | SDK value | before |
+|---|---|---|
+| target | `TargetRequirement.unlimited` | already a [target quantifier](#the-target-quantifier) row |
+| activation / additional / payable cost | `CostAtom.VariablePermanents(minCount = 0, …)` | **the type was referenced nowhere in the grammar** |
+| a counter cost | `CostAtom.RemoveCounters(count = XValue, self = true)` | reachable — see the finding below |
+| an effect | `SacrificeEffect(any = true)` | not written |
+| a pipeline selection | `SelectionMode.ChooseAnyNumber` | not written |
+
+The cost row is [the cost band](#the-cost-band)'s frozen-facade finding a sixth time and in its
+strongest form. `CostAtom.VariablePermanents`' own KDoc calls `action`, `xMeasure` and `minMeasure`
+"three orthogonal axes [that] cover the printed shapes"; the grammar had never called it at all, so
+"sacrifice one or more creatures" was a sentence nobody had written rather than a *word* nobody had
+slotted. [`VariableCosts`](src/main/kotlin/com/wingedsheep/assay/grammar/VariableCosts.kt) is the
+type's product, and `Costs` lifts it into all three contexts `CostAtom` names — which is how
+Phyrexian Dreadnought's "sacrifice it unless you sacrifice any number of creatures with total power
+12 or greater" costs one `PayCost` lift rather than a rule.
+
+Which axis is a row and which is a slot is decided the way [the entry band](#the-entry-band) states
+— by how Oracle spells it:
+
+- **The verb is a row**, because it is not one word. A sacrifice names no controller (CR 701.17a
+  lets you sacrifice only what you control, so the clause would be redundant); an exile and a tap
+  both name one; only a tap says "untapped" (CR 701.26a). Three frames, not one template with a
+  verb in it.
+- **The count is a slot**, because it *is* one word position and the noun beside it does not move:
+  "any number of creatures" and "one or more creatures" agree in number. That is exactly the test
+  the target quantifier's six-row table *fails*, and it is why that one is a table and this one is
+  not.
+- **The measure is a layer**, one row per printed clause, each owning `xMeasure` and `minMeasure`
+  together. Not two axes: the value space is not their product. An absent clause is `COUNT` with no
+  floor, and a floor is only ever printed by a measure that names itself — splitting them would make
+  `TOTAL_POWER`-with-no-floor spellable, and that rule would then print bare, a second printer for
+  the bare form.
+
+And `excludeSelf` is spelled in **two places** — "one or more **other** artifacts you control" in
+front of the noun, "untapped creatures you control **other than ~**" behind the controller clause —
+decided by the verb. So it belongs to the frame rather than to a layer of its own; a shared "other"
+layer would have printed the wrong one for one of the two.
+
+### The finding: two printed forms of one cost value
+
+"Remove **any number of** charge counters from ~" (the mana batteries, the storage lands, Geistflame
+Reservoir) is the *same* `CostAtom.RemoveCounters(count = XValue, self = true)` the grammar already
+prints as "Remove **X** charge counters from ~". Both are CR 601.2b counts announced by the payer as
+the ability is activated, and the SDK has one value for them.
+
+What differs is only how the *rest of the ability* refers back to the number — "Add X mana …"
+against "…for each charge counter removed this way" — and that is a property of the effect, a
+different slot of the script. So it is one rule with a second surface (`alsoSpelled`), not a sibling
+that could print it: registering two printers for one model is what invariant 2 forbids and what the
+ambiguity gate catches. "Remove X" stays canonical because it is the majority *and* because it is
+the form whose payoff sentence the grammar can already read.
+
+That one line is worth more than the rest of the band put together in ranking terms. It moved
+**17 lands** — eleven storage lands and six mana batteries — from "blocked on the cost" to blocked on
+exactly one sentence:
+
+```
+{T}, Remove any number of storage counters from ~: Add {W} for each storage counter removed this way.
+{T}, Remove any number of charge counters from ~: Add {B}, then add an additional {B} for each charge counter removed this way.
+```
+
+**18 lines, and they are the cheapest cards left in the whole family** — see below for why they are
+not in this band.
+
+### What declines, and why each one is the honest answer
+
+Four variable-count costs the corpus prints that no SDK field can hold, reported rather than
+approximated into the nearest one:
+
+| lines | printed | what it would need |
+|---|---|---|
+| ~24 | "exile any number of cards from your graveyard" | `CostAtom.ExileFrom.count` is an `Int`; `CollectEvidence` is this sentence with a total-mana-value floor but carries **no filter**, so The Capitoline Triad's "historic cards … with total mana value 30 or greater" has nowhere to go either |
+| 6 | "exile any number of red cards from your hand" (the Adversary cycle) | the same shape one zone further; there is no variable-count hand cost at all |
+| ~10 | "discard any number of cards" | `CostAtom.Discard.count` is an `Int` |
+| 6 | "you may pay {1}{G} **any number of times**" (the Adversary cycle again) | a repeated cost, which is not a count of objects and has no value anywhere |
+
+### What is left, and the band it names
+
+77 cards, and the residue is one thing wearing five verbs:
+
+| what blocks it | example |
+|---|---|
+| the "…this way" / "that many" collection | "Tap any number of untapped creatures you control. You gain 4 life for each creature tapped this way." |
+| the counted mana add (18 lines) | "Add {W} for each storage counter removed this way." |
+| the plural library search | "Search your library for any number of Goblin cards, reveal them, then shuffle and put those cards on top in any order." |
+| `SearchDestination` has no exile | "Search your library for any number of land cards, exile them, then shuffle." |
+| phasing, which the grammar has no verb for | "…any number of other target creatures you control phase out." |
+
+The first two are one band and it has a **name and a shape**: X is *announced*, not spelled. CR
+601.2b makes a variable cost's chosen number the ability's X, so "for each storage counter removed
+this way" is `DynamicAmount.XValue` — but only inside an ability whose cost announced one. Coalition
+Relic prints the identical clause after an *effect* ("At the beginning of your first main phase,
+remove all charge counters from ~. Add one mana of any color for each charge counter removed this
+way."), where the same words mean a collection count instead. Registering the spelling unscoped would
+read one as the other, silently, in the class of bug this module exists to make impossible — so it is
+**deliberately not in this band**. What it needs is a fail-closed guard where an ability is
+assembled: a script that reads `XValue` and a cost that declares none refuses to build. That is one
+capability, three guard sites, and it is what turns those 17 lands and the 6 batteries into whole
+cards.
+
+The third is the other cheap one and it is the frozen-facade lesson again:
+`Patterns.Library.searchLibrary` builds `SelectionMode.ChooseUpTo(count)` with no way to reach
+`ChooseAnyNumber`, and the *plural* search sentence is unwritten at any count — "search your library
+for three creature cards, put them onto the battlefield, then shuffle" declines exactly where "any
+number of" does. Seven sole-blocked cards sit behind it (both Recruiters, Iname, Scouting Trek and
+the three "cards named ~" tutors), and the band is the count slot plus five destination rows. Note
+that Scouting Trek is *implemented* and does not use the recipe, so writing it will produce a
+differential divergence to classify before it produces a card.
 
 ## The differential gate
 
