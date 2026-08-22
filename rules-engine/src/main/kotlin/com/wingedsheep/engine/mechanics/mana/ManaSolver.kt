@@ -1671,7 +1671,10 @@ class ManaSolver(
                     state, state.projectedState, landId, replacement.static.filter, filterContext
                 )
             ) {
-                return true
+                // A fixed-colour replacement (Deep Water) does *not* make the land a five-colour
+                // source — it makes it a source of exactly that colour, which the land's own
+                // production already covers or doesn't. Only the free-choice form widens it.
+                if (replacement.static.color == null) return true
             }
         }
         return false

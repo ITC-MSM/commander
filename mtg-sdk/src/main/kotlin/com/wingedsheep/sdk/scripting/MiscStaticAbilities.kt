@@ -341,10 +341,21 @@ data class CreaturesDamagedBySourceAreDoomed(
 @SerialName("ReplaceLandManaColor")
 @Serializable
 data class ReplaceLandManaColor(
-    val filter: GameObjectFilter
+    val filter: GameObjectFilter,
+    /**
+     * When set, matched lands produce *this* color rather than one of the controller's choice —
+     * Deep Water's "it produces {U} instead of any other type". Null (the default) keeps Pulse of
+     * Llanowar's free choice, which the engine implements by swapping in an add-one-mana-of-any-color
+     * ability.
+     */
+    val color: Color? = null
 ) : StaticAbility {
     override val description: String =
-        "If a ${filter.description} is tapped for mana, it produces mana of a color of its controller's choice instead of any other type"
+        if (color != null) {
+            "If a ${filter.description} is tapped for mana, it produces {${color.symbol}} instead of any other type"
+        } else {
+            "If a ${filter.description} is tapped for mana, it produces mana of a color of its controller's choice instead of any other type"
+        }
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
         val newFilter = filter.applyTextReplacement(replacer)
         return if (newFilter !== filter) copy(filter = newFilter) else this

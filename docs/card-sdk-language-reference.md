@@ -7117,11 +7117,18 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   own damage because that is one resolution; combat damage gives no such window. Applied inside
   damage application by `DamageUtils.applyDoomedRidersToDamagedCreature`, which reads *granted*
   statics only — no card prints this one.
-- `ReplaceLandManaColor(filter)` — global: lands matching `filter` produce one mana of a color of their
+- `ReplaceLandManaColor(filter, color = null)` — global: lands matching `filter` produce one mana of a color of their
   controller's choice instead of their normal mana. Implemented by swapping the land's base mana effect
   for "add one mana of any color", so the choice flows through the normal any-color machinery (manual tap
   prompts; solver treats a matched basic as a five-color source). (**Pulse of Llanowar** =
   `GameObjectFilter.BasicLand.youControl()`)
+  **`color`** pins the produced colour instead of offering a choice — Deep Water's "it produces
+  {U} instead of any other type". With a fixed colour the mana ability's produced mana is rewritten
+  directly rather than routed through the any-colour machinery, and the mana solver does *not* treat
+  the land as a five-colour source (only the free-choice form widens it). The index and the
+  activation-time reader both consult **granted** statics alongside printed ones, so a durational
+  `{U}: … until end of turn` mana rule granted via `Effects.GrantStaticAbility` reaches the mana
+  path at all — the layer projector does not carry granted statics.
 - `OverrideEnchantedLandManaColor(color)` — aura: replaces the enchanted land's *own* produced color with
   a fixed/aura-chosen `color` (vs. `ReplaceLandManaColor`'s filter-based, free-choice form). (Shimmerwilds Growth)
 

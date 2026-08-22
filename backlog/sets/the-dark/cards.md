@@ -44,7 +44,7 @@
 - [x] Amnesia
 - [x] Apprentice Wizard
 - [x] Dance of Many
-- [ ] Deep Water
+- [x] Deep Water
 - [x] Drowned
 - [x] Electric Eel
 - [x] Erosion
