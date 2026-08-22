@@ -50,6 +50,7 @@ class PayOrSufferExecutor(
     override val effectType: KClass<PayOrSufferEffect> = PayOrSufferEffect::class
 
     private val predicateEvaluator = PredicateEvaluator()
+    private val dynamicAmountEvaluator = com.wingedsheep.engine.handlers.DynamicAmountEvaluator()
     private val costPaymentService by lazy { CostPaymentService(EngineServices(cardRegistry)) }
 
     override fun execute(
@@ -83,6 +84,18 @@ class PayOrSufferExecutor(
             // and is trivially payable, so such a permanent is always kept.
             is PayCost.OwnManaCost ->
                 handleManaCost(state, effect, context, CostAtom.Mana(sourceCard.manaCost), sourceId, sourceCard.name, payingPlayerId)
+            // "...pay life equal to <rule>": the amount is computed here, where the EffectContext
+            // is in hand, then handed to the ordinary life-payment path as a concrete number. This
+            // is the only place that can do it — a pipeline-scoped amount (Wand of Ith reads the
+            // mana value of the card it just revealed) is unreadable outside the resolution.
+            // Floored at 0 so a negative or missing amount is a free "payment" rather than a
+            // nonsensical prompt.
+            is PayCost.DynamicLife -> {
+                val amount = maxOf(0, dynamicAmountEvaluator.evaluate(state, cost.amount, context, state.projectedState))
+                handlePayLifeCost(
+                    state, effect, context, CostAtom.PayLife(amount), sourceId, sourceCard.name, payingPlayerId
+                )
+            }
             is PayCost.Atom -> when (val atom = cost.atom) {
                 is CostAtom.Discard -> handleDiscardCost(state, effect, context, atom, sourceId, sourceCard.name, payingPlayerId)
                 is CostAtom.Sacrifice -> handleSacrificeCost(state, effect, context, atom, sourceId, sourceCard.name, payingPlayerId)
@@ -170,7 +183,8 @@ class PayOrSufferExecutor(
             namedTargets = context.pipeline.namedTargets,
             triggeringEntityId = context.triggeringEntityId,
             triggeringPlayerId = context.triggeringPlayerId,
-            abilityControllerId = context.controllerId
+            abilityControllerId = context.controllerId,
+            storedCollections = context.pipeline.storedCollections
         )
 
         val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
@@ -233,7 +247,8 @@ class PayOrSufferExecutor(
             namedTargets = context.pipeline.namedTargets,
             triggeringEntityId = context.triggeringEntityId,
             triggeringPlayerId = context.triggeringPlayerId,
-            abilityControllerId = context.controllerId
+            abilityControllerId = context.controllerId,
+            storedCollections = context.pipeline.storedCollections
         )
 
         val stateWithDecision = state.withPendingDecision(decision)
@@ -307,7 +322,8 @@ class PayOrSufferExecutor(
             namedTargets = context.pipeline.namedTargets,
             triggeringEntityId = context.triggeringEntityId,
             triggeringPlayerId = context.triggeringPlayerId,
-            abilityControllerId = context.controllerId
+            abilityControllerId = context.controllerId,
+            storedCollections = context.pipeline.storedCollections
         )
 
         val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
@@ -375,7 +391,8 @@ class PayOrSufferExecutor(
             namedTargets = context.pipeline.namedTargets,
             triggeringEntityId = context.triggeringEntityId,
             triggeringPlayerId = context.triggeringPlayerId,
-            abilityControllerId = context.controllerId
+            abilityControllerId = context.controllerId,
+            storedCollections = context.pipeline.storedCollections
         )
 
         val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
@@ -439,7 +456,8 @@ class PayOrSufferExecutor(
             namedTargets = context.pipeline.namedTargets,
             triggeringEntityId = context.triggeringEntityId,
             triggeringPlayerId = context.triggeringPlayerId,
-            abilityControllerId = context.controllerId
+            abilityControllerId = context.controllerId,
+            storedCollections = context.pipeline.storedCollections
         )
 
         val stateWithDecision = state.withPendingDecision(decision)
@@ -652,7 +670,8 @@ class PayOrSufferExecutor(
             // Carried so the follow-up prompt for the chosen cost asks in the same words as this
             // one. Dropping it here is invisible until a card routes `player` elsewhere, and then
             // the second question silently reverts to the controller's-side phrasing.
-            consequenceDescription = effect.consequenceDescription
+            consequenceDescription = effect.consequenceDescription,
+            storedCollections = context.pipeline.storedCollections
         )
 
         val stateWithDecision = state.withPendingDecision(decision)
@@ -725,6 +744,10 @@ class PayOrSufferExecutor(
                 val ownCost = state.getEntity(sourceId)?.get<CardComponent>()?.manaCost
                 ownCost != null && ManaSolver(cardRegistry).canPay(state, playerId, ownCost)
             }
+            // Offered rather than filtered out: the amount can only be evaluated in the
+            // resolving context, and handlePayLifeCost re-checks affordability for real before
+            // charging anyone. Filtering here would silently hide a payable option.
+            is PayCost.DynamicLife -> true
             is PayCost.Choice -> cost.options.any { canPayCost(state, playerId, it, sourceId) }
             is PayCost.Atom -> when (val atom = cost.atom) {
                 is CostAtom.Discard -> findValidCardsInHand(state, playerId, atom.filter, sourceId).size >= atom.count

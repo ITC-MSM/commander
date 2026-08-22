@@ -812,6 +812,13 @@ unless you Y") and by `morphCost` (non-mana face-up cost). Distinct from `Abilit
 which model an ability's activation cost; `PayCost` models a single cost the engine prompts the
 player to pay against an alternative consequence.
 
+**`PayOrSufferEffect` prompts unconditionally** — it does not check whether its `suffer` effect would
+actually do anything. A branch whose suffer reads a collection that may be empty must therefore be
+wrapped in a `ConditionalOnCollectionEffect`, or the player is asked to pay for a consequence that
+would be a no-op (Wand of Ith splits the revealed card into a land pile and a nonland pile and gates
+each ransom on its own pile). The resolving pipeline's collections *are* carried across the
+pay-or-decline pause, so a suffer effect can name them on either answer.
+
 `PayOrSufferEffect(cost, suffer, player = EffectTarget.Controller)` defaults to charging the ability's
 controller, but **`player` may route the decision *and* the payment to any other player** — most
 usefully `EffectTarget.PlayerRef(Player.TriggeringPlayer)` on a death trigger, which resolves to the
@@ -852,6 +859,13 @@ preview — in the turn-face-up handler.)
   permanent — not a fixed cost — owns the mana cost. The engine resolves it into a concrete
   `Costs.pay.Mana` against that permanent before prompting.
 - `Costs.pay.PayLife(amount)` — pay N life; offered only when the player's life total is at least N
+- `Costs.pay.PayDynamicLife(amount: DynamicAmount)` — "pay life equal to **&lt;rule&gt;**", where the
+  card names a rule rather than a number (**Wand of Ith**: "…unless they pay life equal to its mana
+  value"). Lowered to a concrete `PayLife` inside `PayOrSufferExecutor`, the one place holding the
+  `EffectContext` the amount may need — a pipeline-scoped amount such as `ManaValueSumOfCollection`
+  is unreadable anywhere else. Consequently it is **PayOrSuffer-only**: used as a spell or ability
+  cost it reports unaffordable, because affordability there has to be known before any context
+  exists. Same idea as `PayCost.OwnManaCost`, which is likewise resolved at payment time.
   (CR 119.4). "...unless you pay 3 life."
 - `Costs.pay.Discard(filter = Any, count = 1, random = false)` — discard cards matching `filter`.
   Random variant prompts a yes/no and the engine picks the discards (Pillaging Horde).

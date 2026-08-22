@@ -202,7 +202,10 @@ class SacrificeAndPayContinuationResumer(
                 sourceId = continuation.sourceId,
                 controllerId = continuation.abilityControllerId ?: continuation.playerId,
                 targets = continuation.targets,
-                pipeline = PipelineState(namedTargets = continuation.namedTargets),
+                pipeline = PipelineState(
+                    namedTargets = continuation.namedTargets,
+                    storedCollections = continuation.storedCollections,
+                ),
                 triggeringEntityId = continuation.triggeringEntityId,
                 triggeringPlayerId = continuation.triggeringPlayerId
             )
@@ -221,7 +224,10 @@ class SacrificeAndPayContinuationResumer(
             sourceId = continuation.sourceId,
             controllerId = continuation.playerId,
             targets = continuation.targets,
-            pipeline = PipelineState(namedTargets = continuation.namedTargets),
+            pipeline = PipelineState(
+                namedTargets = continuation.namedTargets,
+                storedCollections = continuation.storedCollections,
+            ),
             triggeringEntityId = continuation.triggeringEntityId,
             triggeringPlayerId = continuation.triggeringPlayerId
         )
@@ -612,7 +618,12 @@ class SacrificeAndPayContinuationResumer(
             sourceId = sourceId,
             controllerId = continuation.abilityControllerId ?: continuation.playerId,
             targets = continuation.targets,
-            pipeline = PipelineState(namedTargets = continuation.namedTargets),
+            pipeline = PipelineState(
+                namedTargets = continuation.namedTargets,
+                // Carried across the pause so a collection-reading suffer effect still resolves —
+                // Wand of Ith discards "the card revealed this way".
+                storedCollections = continuation.storedCollections,
+            ),
             triggeringEntityId = continuation.triggeringEntityId,
             triggeringPlayerId = continuation.triggeringPlayerId
         )

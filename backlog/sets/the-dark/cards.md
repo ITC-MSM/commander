@@ -145,7 +145,7 @@
 - [x] Stone Calendar
 - [x] Tormod's Crypt
 - [x] Tower of Coireall
-- [ ] Wand of Ith
+- [x] Wand of Ith
 - [x] War Barge
 
 ### Land

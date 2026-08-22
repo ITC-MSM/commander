@@ -124,7 +124,16 @@ data class PayOrSufferContinuation(
      * controller (you steal the card), not the player who declined to pay. Falls back to [playerId]
      * for the common case where the payer *is* the controller.
      */
-    val abilityControllerId: EntityId? = null
+    val abilityControllerId: EntityId? = null,
+    /**
+     * The resolving pipeline's collections, carried across the pay-or-decline pause so a suffer
+     * effect can still name them. Wand of Ith's suffer is "discard the card revealed this way" — a
+     * `MoveCollection` over a collection built earlier in the same resolution — and without this it
+     * resumes against an empty pipeline and silently discards nothing.
+     *
+     * Mirrors the same field on [AnyPlayerMayPayContinuation], for the same reason.
+     */
+    val storedCollections: Map<String, List<EntityId>> = emptyMap()
 ) : ContinuationFrame
 
 /**
@@ -172,7 +181,9 @@ data class PayOrSufferChoiceContinuation(
      * cost option the player picked — asks in the same words as the first. Rebuilding a
      * single-cost effect without it would silently fall back to the generated description.
      */
-    val consequenceDescription: String? = null
+    val consequenceDescription: String? = null,
+    /** Mirror of [PayOrSufferContinuation.storedCollections] for the multi-option path. */
+    val storedCollections: Map<String, List<EntityId>> = emptyMap()
 ) : ContinuationFrame
 
 /**
