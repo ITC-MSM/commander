@@ -3415,6 +3415,17 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
   characteristics; an empty pile (imprint declined, or the card has left exile) reads false and the
   gated static simply stops applying.
 - `EffectTarget.PlayerRef(...)` — a player slot; see the `Player` reference list below.
+- `EffectTarget.EachDamagedBySourceThisGame` — a **multi-entity** slot: every opponent and
+  planeswalker the effect's source has dealt damage to *this game* (The Fallen). Backed by the
+  source permanent's accumulating `DealtDamageToThisGameComponent`, written at the two choke points
+  every damage instance already passes through — `DamageUtils.trackDamageReceivedByPlayer` for
+  players (combat and noncombat alike) and the loyalty-removal sites for planeswalkers. Unlike the
+  per-turn damage markers it is never cleared at cleanup, but it *is* stripped on a zone change with
+  the rest of the damage memory, so a permanent that leaves and returns has damaged nobody
+  (CR 400.7). At resolution it drops recipients no longer in the game and narrows players to the
+  source's opponents, per the printed "each opponent". Like `PlayerRef(Player.EachOpponent)` it
+  resolves to a set, so only an effect that iterates its target can use it — `DealDamageEffect`
+  does: `Effects.DealDamage(1, EffectTarget.EachDamagedBySourceThisGame)`.
 
 **`Player` references** (multiplayer-safe vocabulary — there is deliberately no bare
 `Player.Opponent`; every reference says *which* player it means):

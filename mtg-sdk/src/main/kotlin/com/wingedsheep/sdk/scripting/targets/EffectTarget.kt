@@ -130,6 +130,27 @@ sealed interface EffectTarget {
     }
 
     /**
+     * MULTI-ENTITY REFERENCE: every **opponent and planeswalker the effect's source has dealt
+     * damage to this game** — The Fallen's "each opponent and planeswalker it has dealt damage to
+     * this game".
+     *
+     * Backed by the source's accumulating `DealtDamageToThisGameComponent`, filtered at resolution
+     * to recipients still in the game: players always are, a planeswalker must still be on the
+     * battlefield. Players are narrowed to the source's *opponents* because that is what the
+     * printed line says — a source that somehow damaged its own controller does not come back
+     * around on them.
+     *
+     * Like [PlayerRef] with `Player.EachOpponent`, this resolves to a *set*, so it is only
+     * meaningful to effects that iterate their target; `DealDamageEffect` does.
+     */
+    @SerialName("EachDamagedBySourceThisGame")
+    @Serializable
+    data object EachDamagedBySourceThisGame : EffectTarget {
+        override val description: String =
+            "each opponent and planeswalker it has dealt damage to this game"
+    }
+
+    /**
      * GROUP REFERENCE: Refers to a group of permanents for mass effects.
      *
      * Usage:

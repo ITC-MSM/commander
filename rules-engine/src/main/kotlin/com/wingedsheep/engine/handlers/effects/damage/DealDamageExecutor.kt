@@ -47,6 +47,21 @@ class DealDamageExecutor(
             context.sourceId
         }
 
+        // "Each opponent and planeswalker it has dealt damage to this game" (The Fallen): a set
+        // that mixes players and permanents, read off the damage source's accumulated memory.
+        // Empty is a legal no-op, not an error — a Fallen that has damaged nobody yet does nothing.
+        if (effect.target is EffectTarget.EachDamagedBySourceThisGame) {
+            val recipients = resolveDamagedThisGame(state, sourceId, context)
+            var newState = state
+            val events = mutableListOf<EngineGameEvent>()
+            for (recipientId in recipients) {
+                val result = dealDamageToTarget(newState, recipientId, amount, sourceId, effect.cantBePrevented)
+                newState = result.newState
+                events.addAll(result.events)
+            }
+            return EffectResult.success(newState, events)
+        }
+
         // For PlayerRef targets, resolve to potentially multiple players
         if (effect.target is EffectTarget.PlayerRef) {
             val playerIds = context.resolvePlayerTargets(effect.target, state)
@@ -72,5 +87,27 @@ class DealDamageExecutor(
             state, targetId, amount, sourceId, effect.cantBePrevented,
             excessToController = effect.excessToController
         )
+    }
+
+    /**
+     * The recipients still eligible to be hit again: opponents of the source's controller, plus
+     * planeswalkers still on the battlefield. A recorded player who has since left the game, and a
+     * planeswalker that has since died, are dropped — the memory identifies them, it doesn't
+     * resurrect them. Ordered deterministically by the recorded set's iteration order.
+     */
+    private fun resolveDamagedThisGame(
+        state: GameState,
+        sourceId: com.wingedsheep.sdk.model.EntityId?,
+        context: EffectContext
+    ): List<com.wingedsheep.sdk.model.EntityId> {
+        val sourceEntity = sourceId?.let(state::getEntity) ?: return emptyList()
+        val recorded = sourceEntity
+            .get<com.wingedsheep.engine.state.components.battlefield.DealtDamageToThisGameComponent>()
+            ?.recipientIds
+            ?: return emptyList()
+        val opponents = state.getOpponents(context.controllerId).toSet()
+        val battlefield = state.getBattlefield().toSet()
+        val projected = state.projectedState
+        return recorded.filter { it in opponents || (it in battlefield && projected.isPlaneswalker(it)) }
     }
 }

@@ -1121,6 +1121,11 @@ internal class CombatDamageManager(
         }
         // Combat damage counts toward "sources you controlled dealt damage this turn" too.
         newState = DamageUtils.trackDamageSourceForController(newState, sourceId)
+        // Planeswalkers (not battles) join the source's "dealt damage to this game" memory, the
+        // player half of which is recorded in DamageUtils.trackDamageReceivedByPlayer (The Fallen).
+        if (counterType == com.wingedsheep.sdk.core.CounterType.LOYALTY) {
+            newState = DamageUtils.markDealtDamageToThisGame(newState, sourceId, targetId)
+        }
 
         val sourceName = newState.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Creature"
         val defaultName = if (counterType == com.wingedsheep.sdk.core.CounterType.LOYALTY) "Planeswalker" else "Battle"

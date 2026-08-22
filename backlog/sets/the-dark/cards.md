@@ -76,7 +76,7 @@
 - [ ] Nameless Race
 - [x] Rag Man
 - [x] Season of the Witch
-- [ ] The Fallen
+- [x] The Fallen
 - [x] Uncle Istvan
 - [x] Word of Binding
 - [ ] Worms of the Earth

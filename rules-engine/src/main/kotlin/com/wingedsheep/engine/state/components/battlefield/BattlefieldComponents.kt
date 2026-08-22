@@ -1281,6 +1281,25 @@ data object DamageUnpreventableThisTurnComponent : Component
 data class HasDealtDamageComponent(val lastDealtDamageTurn: Int) : Component
 
 /**
+ * The players and planeswalkers this permanent has dealt damage to **this game** — the memory
+ * behind The Fallen ("this creature deals 1 damage to each opponent and planeswalker it has dealt
+ * damage to this game").
+ *
+ * Unlike [DealtCombatDamageToPlayersThisTurnComponent] this is not a per-turn marker: it is never
+ * cleared by `CleanupPhaseManager`, so it accumulates across every turn the permanent spends on the
+ * battlefield. It *is* stripped on a zone change like the rest of the damage memory, because a
+ * permanent that leaves and returns is a new object with no history (CR 400.7) — which is the
+ * printed behaviour: a Fallen that dies and is reanimated has dealt damage to nobody.
+ *
+ * Both combat and noncombat damage count, and it records planeswalkers alongside players; the
+ * consumer filters to what the card asks for.
+ */
+@Serializable
+data class DealtDamageToThisGameComponent(
+    val recipientIds: Set<EntityId> = emptySet()
+) : Component
+
+/**
  * Counts how many times a permanent has *become tapped* (CR 701.26a — a transition from untapped to
  * tapped, which is what emits a `TappedEvent`) during the turn named by [lastBecameTappedTurn].
  *
