@@ -5,6 +5,8 @@ import com.wingedsheep.engine.core.CardsDiscardedEvent
 import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
+import com.wingedsheep.engine.handlers.ConditionEvaluator
+import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.mechanics.daynight.DayNightService
@@ -52,6 +54,7 @@ import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.TypeLine
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.EntersTapped
 
 
 /**
@@ -138,6 +141,9 @@ object ZoneTransitionService {
      */
     lateinit var staticAbilityHandler: StaticAbilityHandler
     lateinit var cardRegistry: CardRegistry
+
+    /** Evaluates the `unless` clause of an entering card's own [EntersTapped]. */
+    private val conditionEvaluator = ConditionEvaluator()
 
     /**
      * Move one entity between zones with full cleanup + setup.
@@ -1234,15 +1240,29 @@ object ZoneTransitionService {
             entityId,
             controllerId
         )
+        // The entering card's OWN printed "this permanent enters tapped" clause. The cast path
+        // (StackResolver) and the land-play path (PlayLandHandler) read it themselves because
+        // neither routes through this method; every *other* card-based entry — reanimation, a
+        // return from exile, a search-library move — arrives here, and until this call each of
+        // them entered untapped no matter what the card said.
+        val selfEntersTapped = !options.faceDown &&
+            selfEntersTapped(withDayboundEntry, entityId, controllerId)
         val withTapResolved = when {
-            // A tapped entry (ramp/fetch) overridden by "enters untapped" (The Wandering Minstrel).
-            options.tapped && !options.tappedAndAttacking && entersUntapped ->
+            // A tapped entry — asked for by the effect (ramp/fetch) or printed on the card itself
+            // — overridden by "enters untapped" (The Wandering Minstrel). Two applicable entry
+            // replacements leave the order to the permanent's controller (CR 616.1e); the engine
+            // always resolves this pair to untapped, matching the cast path and the token path
+            // (EnterTappedReplacements.applyCreatedTokenEntryTap).
+            (options.tapped || selfEntersTapped) && !options.tappedAndAttacking && entersUntapped ->
                 withDayboundEntry.updateEntity(entityId) { it.without<TappedComponent>() }
-            // An untapped entry forced tapped by a global "[filter] enter tapped" (Zhao, the Moon
-            // Slayer's "Nonbasic lands enter tapped"). Gated on !entersUntapped so an "enters
-            // untapped" replacement still wins (CR 614).
+            // An untapped entry forced tapped by the card's own clause, or by a global
+            // "[filter] enter tapped" (Zhao, the Moon Slayer's "Nonbasic lands enter tapped").
+            // Gated on !entersUntapped so an "enters untapped" replacement still wins (CR 614).
             !options.tapped && !entersUntapped &&
-                EnterTappedReplacements.entersTapped(withDayboundEntry, entityId, controllerId) ->
+                (
+                    selfEntersTapped ||
+                        EnterTappedReplacements.entersTapped(withDayboundEntry, entityId, controllerId)
+                    ) ->
                 withDayboundEntry.updateEntity(entityId) { it.with(TappedComponent) }
             else -> withDayboundEntry
         }
@@ -1256,6 +1276,50 @@ object ZoneTransitionService {
                 ?: PermanentEnteredFaceDownThisTurnComponent()
             playerContainer.with(PermanentEnteredFaceDownThisTurnComponent(existing.count + 1))
         }
+    }
+
+    /**
+     * Whether the entering permanent's **own** printed "[this permanent] enters tapped" clause
+     * applies to this entry — a continuous replacement effect the object carries about itself
+     * (CR 614.1d), applied as it enters (CR 614.12: "Such effects may come from the permanent
+     * itself if they affect only that permanent").
+     *
+     * Three printed shapes, and only two of them can be decided from a pure state transition:
+     *  - **plain** ("This land enters tapped.") — always applies;
+     *  - **`unlessCondition`** ("… unless you control two or more other lands.") — applies when the
+     *    condition evaluates **false**, the same polarity the cast path uses in `StackResolver`;
+     *  - **`payLifeCost`** (shock lands: "… unless you pay 2 life.") — a *player decision*, and
+     *    [moveToZone] has nowhere to pause. It resolves fail-closed to **tapped**: the outcome a
+     *    player who declines to pay gets. Offering the choice needs a continuation in the two
+     *    off-stack executors (`MoveToZoneEffectExecutor`, `MoveCollectionExecutor`) the way
+     *    `StackResolver` offers it for a resolving permanent spell; until then a reanimated or
+     *    fetched shock land enters tapped without being asked, rather than silently untapped as it
+     *    did before this method consulted the clause at all.
+     *
+     * The card definition is re-read from [state] rather than taken from the caller's snapshot so
+     * a double-faced card that reverted to its front face on the way in is asked about the face
+     * that is actually entering. Face-down entries never reach here — a face-down permanent has
+     * no abilities (CR 708.2).
+     */
+    private fun selfEntersTapped(
+        state: GameState,
+        entityId: EntityId,
+        controllerId: EntityId,
+    ): Boolean {
+        if (!::cardRegistry.isInitialized) return false
+        val cardDefinitionId = state.getEntity(entityId)?.get<CardComponent>()?.cardDefinitionId
+            ?: return false
+        val cardDef = cardRegistry.getCard(cardDefinitionId) ?: return false
+        val entersTapped = cardDef.script.replacementEffects
+            .filterIsInstance<EntersTapped>()
+            .firstOrNull()
+            ?: return false
+        val unlessCondition = entersTapped.unlessCondition ?: return true
+        return !conditionEvaluator.evaluate(
+            state,
+            unlessCondition,
+            EffectContext(sourceId = entityId, controllerId = controllerId)
+        )
     }
 
     /**

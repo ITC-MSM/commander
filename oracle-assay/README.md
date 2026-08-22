@@ -36,6 +36,19 @@ the count and started dying on what is actually blocking them. Its own finding i
 from ~", so it is a second surface on one rule rather than a second rule, and that `alsoSpelled`
 moved seventeen lands onto a single remaining sentence. See [the chosen count](#the-chosen-count).
 
+Before it came **the dynamic counter count** — "~ enters with **X** +1/+1 counters on it.",
+the tail ranking's third family at **125 cards, 58 of them solely, over 125 lines** (**+19 whole
+cards**, 8,344 → 8,363), and the band where the finding was which generator a family had never been
+through. `Steps.countedStepPair` gives a quantity its `equal to …` sibling from one call site, and
+every counted verb in the grammar had been through it except the three counter positions — because
+`AddCountersEffect.count` is an `Int`, while `Effects.AddDynamicCounters` sat in the SDK with no caller
+here. So the count became two rows over three surfaces, the two clause spellings are one rule under
+`alsoSpelled`, and the bare `X` is offered to the **enters** position only: a replacement resolves
+inside its own spell so the context is live, while a step is lifted by `Triggers` and cannot know. The
+differential then found the same shape one level down — a dies trigger reading the source's *live*
+counter tally, which is zero by the time it resolves — and it got the same fail-closed answer. See
+[the dynamic counter count](#the-dynamic-counter-count).
+
 Before it came **the functional zone** — "Return ~ from your graveyard to your hand.", the
 tail ranking's biggest family by the column that decides work — **131 cards, 74 of them solely, over
 131 lines** (**+94 whole cards**, 8,250 → 8,344), and the band where a printed phrase turned out to fill two SDK fields at
@@ -2532,6 +2545,132 @@ well as the effect, and `from your graveyard: …` still sits on the ranking at 
 SDK — `AbilityCost.ExileSelf` is a `data object` with no zone on it, so a rule cannot yet say *which*
 zone the source is exiled from. That makes it the rare band whose grammar half is a single `Costs` row
 behind a one-field SDK change.
+
+## The dynamic counter count
+
+`X +#/+# counters …` — **125 cards, 58 sole-blocked, 125 lines**, third on the tail ranking. The
+decline sits on the `X`, which means the grammar had read everything in front of it: "~ enters with ",
+"put ", "{X}, {T}: put up to ". What it could not read was the count itself.
+
+```
+~ enters with X <kind> counters on it.                                        70 lines
+put X <kind> counters on <something>…                                         47   (32 with a where-clause)
+~ enters with X <kind> counters on it, where X is <amount>.                    16
+~ enters with a number of <kind> counters on it equal to <amount>.             15
+```
+
+### The finding: the counter count never got its "equal to" sibling
+
+`Steps.countedStepPair` is this module's own generator for a quantity English writes two ways — a
+numeral template and an `equal to …` sibling from one call site, disjoint by domain so printing stays
+decided by the model. Every counted verb in the grammar has been through it. The three counter
+positions never were:
+
+| position | rule |
+|---|---|
+| a chosen target | `Steps.putCountersOnTargetPermanent` |
+| the source or an anaphor | `SelfSteps.putCounters` |
+| as it enters | `Replacements.entersWithCounters` |
+
+All three took `Cardinals.word` and nothing else, and the reason was the SDK type rather than the
+grammar: `AddCountersEffect.count` and `EntersWithCounters.count` are both plain `Int`. The dynamic
+siblings were already there — `EntersWithDynamicCounters(count: DynamicAmount)`, and
+`AddDynamicCountersEffect` behind `Effects.AddDynamicCounters`, which had **zero callers here**. So
+this is the frozen-facade shape the module keeps finding: the difference between "put two +1/+1
+counters" and "put X +1/+1 counters" was never a rule, only an argument the facade already took.
+
+### Two rows, three surfaces
+
+The two clause spellings are *one rule*, not two, because they are one model with a word in a
+different place — which is exactly what `alsoSpelled` is for, and why the reader and the fail-closed
+reconstruction cannot drift apart between them. `Amounts.equalTo` owns the derivation the way
+`Durations.fronted` owns fronting, and *requires* both markers, so a template it does not apply to
+fails during object initialization rather than quietly registering a spelling no card prints:
+
+```
+{self} enters with X {kind} counters on it, where X is {amount}.     <- canonical
+{self} enters with a number of {kind} counters on it equal to {amount}.   <- parses, never prints
+```
+
+Which of the two prints is a corpus count and nothing deeper — 48 printed lines put the clause behind
+a comma against roughly half that many behind the noun — so a card printing the other comes back as a
+**variant** rather than a decline. `Undergrowth Scavenger` and `Rhizome Lurcher` are what that looks
+like.
+
+The kind stays a slot, which is why the band reached four tail families rather than the one it was
+named for: 18 of the 70 printed "enters with X … counters" lines name a kind other than +1/+1, and
+`charge`, `fire`, `gem` and `ice` sat in their own rows.
+
+### The bare `X` is a position, and only one of the three has it
+
+"~ enters with X +1/+1 counters on it." names no count at all — the X is the one announced for the
+spell. `Targets.upToXTargets` had already written down when that reading is legal (`XValue` needs the
+resolution context live; `CastX` is the durable object-scoped one), and this band adds a fourth case
+to the same rule rather than a new rule:
+
+- **the enters-with replacement, self** — `EntersWithReplacements` builds
+  `EffectContext(xValue = spellComponent.xValue)` during the permanent spell's own resolution, so the
+  context *is* live. `XValue`, and the ten hand-written cards with scenario tests asserting the counts
+  agree.
+- **the same effect's `otherOnly` branch** — builds a context with **no** `xValue` and gates on
+  `if (!effect.otherOnly) continue`. `XValue` there is silently zero; that sentence needs `CastX`.
+- **a step** — `Triggers` and `Activated` lift these clauses, and "whenever ~ attacks, put X +1/+1
+  counters on ~" carries no announced X. There is no `DynamicAmount` at all for the X of an arbitrary
+  activated ability.
+
+So the bare row is the enters position's alone and the two step positions take only the defined
+clauses, whose amount is a board tally and means the same wherever the clause is lifted to. A
+declaration with a criterion, the way `Targets.singularQuantifiers` is — and the tests pin it, because
+the cheap thing to do later is widen it.
+
+### The differential found the same shape one level down
+
+Reading the step clause made **Servant of the Scale** comparable for the first time, and it diverged:
+
+```
+When ~ dies, put X +1/+1 counters on target creature you control,
+where X is the number of +1/+1 counters on ~.
+```
+
+`Amounts.counterCount` reads `EntityProperty(Source, CounterCount)`, and `DynamicAmountEvaluator`
+resolves that from **live** state — `counterCountOf` looks the entity up and answers 0 when it is not
+there. In the position Oracle usually prints this clause the source is already dead, so the grammar's
+model evaluates to nothing. The card knows: it writes `Effects.MoveAllLastKnownCounters` and its own
+KDoc argues the equivalence.
+
+That is the bare-`X` problem again with a different value in it, so it gets the same answer.
+`Amounts.namesX` refuses the live tally rather than emitting a model that reads zero, and the
+translation belongs at the lift in `Triggers`, the one place the position is known — the SDK already
+has `DynamicAmount.LastKnownSourceCounters` waiting for it. The refusal is narrow: every other row of
+`Amounts.count` reads the board or a zone and means the same wherever it lands.
+
+### Results
+
+**+19 whole cards** (8,344 → 8,363), 76 lines, and the family fell from **125 cards / 58 sole / rank
+3** to **4 cards / 0 sole / rank ~1,861** — the four left are `Put up to X +1/+0 counters on ~`, a
+player-chosen number rather than an amount, which is a different SDK shape. Byte-exact readings rose
+73 and normalized variants 19, which is the `equal to` spelling arriving. Ambiguity, redundant
+readings and invertibility all stayed at zero.
+
+The probe had said 33 whole cards for the named family, against 19 delivered — the usual direction,
+and this time the gap has a name: two thirds of the where-clause amounts ("the amount of life you've
+gained this turn", "the total toughness of other creatures you control", "the greatest number of cards
+an opponent has drawn this turn") are rows `Amounts.count` does not have yet. The surface is written,
+so each row added there now reaches all three counter positions without being told.
+
+One fix outside the grammar, in the SDK. `CounterType.fromName` special-cased `+1/+1` and `-1/-1` and
+fell through to `valueOf` for everything else, so the other four stat kinds answered null — `"+1/+0"`
+uppercases to `"+1/+0"`, which is not an enum constant. All six exist in the enum *and* in `Counters`
+*and* in `CounterTypeFilter`; only two were reachable by name. The map is now derived from `Counters`
+so a seventh cannot be added to one and missed in the other. Both engine callers treated null as
+fail-closed (`RemoveAllCountersOfTypeExecutor` no-ops, `StateProjector` empties the affected set), so
+the fix only widens what already worked.
+
+**What it named next.** Six of those 18 non-+1/+1 lines still decline, and on nothing this band owns:
+`oil`, `study`, `echo`, `void`, `scream` and `isolation` are counter kinds `CounterType` does not name,
+so `Primitives.counterKind`'s gate rejects the word. That gate is the right place for it —
+`CounterTypeFilter.Named` fails open to +1/+1 — so the fix is SDK vocabulary, one justified enum entry
+per kind, and six cards behind it.
 
 ## The chosen count
 

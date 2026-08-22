@@ -11049,6 +11049,15 @@ The priority groups are (CR 616.1a–f):
   which is a fact about these twenty cards rather than about the shape. `payLifeCost` renders
   the "you may pay N life; if you don't, it enters tapped" variant. Assay reads every shape of this
   line — the condition is a slot over the whole condition vocabulary, not a rule per land cycle.
+  The clause applies **however the permanent enters** (CR 614.1d / 614.12), so three disjoint paths
+  read it: `PlayLandHandler` (playing a land), `StackResolver` (a resolving permanent spell), and
+  `ZoneTransitionService.moveToZone` (everything else — reanimation, a return from exile, a
+  search-library or collection move). A card put onto the battlefield by an effect that says nothing
+  about tapped therefore needs no `ZonePlacement.Tapped` of its own; spelling one anyway is a
+  divergence Assay's differential reports, because the printed line says nothing about it. Only
+  `PlayLandHandler` and `StackResolver` can pause for the `payLifeCost` prompt; `moveToZone` is a pure
+  state transition, so a reanimated or fetched shock land resolves fail-closed to **tapped** without
+  being asked.
 - `EntersUntapped(appliesTo = ZoneChangeEvent(filter, to = Zone.BATTLEFIELD))` — the inverse of
   `EntersTapped`: "[filter] enter the battlefield untapped" (The Wandering Minstrel — "Lands you
   control enter untapped", `filter = GameObjectFilter.Land.youControl()`). Unlike `EntersTapped`,

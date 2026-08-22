@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.AddCountersEffect
+import com.wingedsheep.sdk.scripting.effects.AddDynamicCountersEffect
 import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
@@ -980,6 +981,10 @@ object Steps {
                 spellEffect = Effects.AddCounters(kind, count, Targets.bound()),
                 targetRequirements = listOf(quantifier.requirement(1, filter)),
             )
+            fun dynamicScriptFor(kind: String, amount: DynamicAmount, filter: GameObjectFilter) = CardScript(
+                spellEffect = Effects.AddDynamicCounters(kind, amount, Targets.bound()),
+                targetRequirements = listOf(quantifier.requirement(1, filter)),
+            )
             fun rule(template: String, name: String, quantity: Phrase<*>?) =
                 phrase(quantifier.splice(template), name = "$name, ${quantifier.name}") {
                     slot("kind", if (quantity == null) Primitives.singularCounterKind else Primitives.counterKind)
@@ -1001,9 +1006,36 @@ object Steps {
             // `{n}` is the counter count and the quantifier spells no count of its own here — these
             // are the singular rows only, for the reason [Targets.singularQuantifiers] gives — so the
             // two numbers never collide in one template.
+            // The count named by a trailing clause instead of by a number word — one rule, both of
+            // Oracle's spellings, over the SDK's dynamic counter effect. The bare "X" row is *not*
+            // here: [Amounts.namesX] says why a lifted clause may not read the announced X.
+            fun definedRule() = phrase<CardScript>(
+                quantifier.splice("put X {kind} counters on {q}target {filter}${Amounts.WHERE_X}"),
+                name = "put a counted number of counters on a target, ${quantifier.name}",
+            ) {
+                definedByCount()
+                slot("kind", Primitives.counterKind)
+                slot("filter", Filters.filter)
+                slot("amount", Amounts.count)
+                build {
+                    val amount = it.value<DynamicAmount>("amount")
+                    if (!Amounts.namesX(amount)) null
+                    else dynamicScriptFor(it.value("kind"), amount, it.value("filter"))
+                }
+                match { script ->
+                    val (kind, amount) =
+                        dynamicCountersAdded(script.spellEffect, Targets.bound()) ?: return@match null
+                    if (!Amounts.namesX(amount)) return@match null
+                    val requirement = script.targetRequirements.singleOrNull() ?: return@match null
+                    val filter = Targets.targetedFilter(requirement) ?: return@match null
+                    if (script != dynamicScriptFor(kind, amount, filter)) return@match null
+                    bind("kind" to kind, "amount" to amount, "filter" to filter)
+                }
+            }
             listOf(
                 rule("put {kind} counter on {q}target {filter}", "put a counter on a target", null),
                 rule("put {n} {kind} counters on {q}target {filter}", "put counters on a target", Cardinals.word),
+                definedRule(),
             )
         }
 
@@ -2467,6 +2499,21 @@ object Steps {
         val add = effect as? AddCountersEffect ?: return null
         if (add.target != target) return null
         return add.counterType to add.count
+    }
+
+    /**
+     * [countersAdded]'s dynamic sibling: the kind and the [DynamicAmount] an `AddDynamicCounters`
+     * effect carries, aimed at [target].
+     *
+     * Two readers rather than one returning a union, because the two SDK types are what partition
+     * the sentence position — a numeral is `AddCountersEffect` and a clause is
+     * `AddDynamicCountersEffect`, and a rule that could read either would be able to print one
+     * model two ways. [Amounts.namesX] is the other half of that split.
+     */
+    internal fun dynamicCountersAdded(effect: Effect?, target: EffectTarget): Pair<String, DynamicAmount>? {
+        val add = effect as? AddDynamicCountersEffect ?: return null
+        if (add.target != target) return null
+        return add.counterType to add.amount
     }
 
     /** The two fixed bonuses a `ModifyStats` effect carries, or null for a dynamic one. */

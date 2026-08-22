@@ -2,6 +2,7 @@ package com.wingedsheep.assay.grammar
 
 import com.wingedsheep.assay.normalize.Normalizer
 import com.wingedsheep.assay.syntax.Phrase
+import com.wingedsheep.assay.syntax.PhraseBuilder
 import com.wingedsheep.assay.syntax.alternate
 import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.constant
@@ -318,6 +319,119 @@ object Amounts {
 
     /** Everything a "where X is …" clause, or an "equal to …" one, can define. */
     val count: Phrase<DynamicAmount> = oneOf("a count", plainCount, doubled)
+
+    // ---------------------------------------------------------------------------------------
+    // A counter count that is not a numeral — the layer the three counter positions share
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * **How many counters, when the answer is not a number word.**
+     *
+     * Oracle spells a counter count three ways and the SDK holds two types for them. A numeral is
+     * `AddCountersEffect.count` / `EntersWithCounters.count`, both plain `Int`, and that is the only
+     * one the three counter positions — [Steps.putCountersOnTargetPermanent],
+     * [SelfSteps.putCounters], [Replacements.entersWithCounters] — could read. The other two are one
+     * value behind two clauses:
+     *
+     * | Surface | Example |
+     * |---|---|
+     * | `, where X is …` | "~ enters with **X** +1/+1 counters on it**, where X is the number of lands you control**." |
+     * | ` equal to …` | "~ enters with **a number of** +1/+1 counters on it **equal to the number of creature cards in all graveyards**." |
+     *
+     * Those are the same model — `AddDynamicCountersEffect` / `EntersWithDynamicCounters`, whose
+     * `amount` is the [DynamicAmount] a numeral cannot hold — so they are one rule with two
+     * spellings rather than two rules, which is what [definedByCount] registers. The counter count
+     * is [Steps.countedStepPair]'s treatment arriving one family late: `Effects.AddDynamicCounters`
+     * has been in the SDK the whole time with no caller here, and the difference between "put two
+     * +1/+1 counters" and "put X +1/+1 counters" was never a rule, only an argument.
+     *
+     * ### `X` on its own is a position, and only one of the three positions has it
+     *
+     * "~ enters with X +1/+1 counters on it." names no count at all: the X is the one announced for
+     * the spell, [DynamicAmount.XValue], and [Targets.upToXTargets] already writes down when that
+     * reading is legal — the resolution context has to be live. It is, in the enters-with
+     * replacement, and provably: `EntersWithReplacements` builds
+     * `EffectContext(xValue = spellComponent.xValue)` on the self path, during the permanent spell's
+     * own resolution, and ten hand-written cards with scenario tests asserting the counts read it
+     * that way. The `otherOnly` branch of the same effect builds a context **without** `xValue` and
+     * needs `CastX`, which is the same three-case rule with a fourth case rather than a new one.
+     *
+     * A *step*, though, does not know its position: [Triggers] and [Activated] lift these clauses,
+     * and "whenever ~ attacks, put X +1/+1 counters on ~" carries no announced X — `XValue` there is
+     * silently zero, and there is no `DynamicAmount` at all for the X of an arbitrary activated
+     * ability. So the bare row is the enters position's alone, and the two positions that cannot
+     * know take only the defined clauses, whose amount is a board tally and therefore reads the same
+     * wherever the clause is lifted to. That is a declaration with a criterion, the way
+     * [Targets.singularQuantifiers] is, not an omission.
+     */
+    const val WHERE_X = ", where X is {amount}"
+
+    /** The quantity the [WHERE_X] spelling puts where a number word would go. */
+    private const val LETTER = " X {kind} counters"
+
+    /** The same counter phrase with the count named behind the noun instead of in front of it. */
+    private const val NOUN_PHRASE = " a number of {kind} counters"
+
+    /** ` equal to …`'s clause, which trails the object rather than following a comma. */
+    private const val EQUAL_TO = " equal to {amount}"
+
+    /**
+     * The `equal to …` spelling of a [WHERE_X] counter template.
+     *
+     * Both markers are *required* rather than optional, so a template this does not apply to fails
+     * at construction — every rule here is built during object initialization, which makes that the
+     * first thing a test run reports. [Durations.fronted] is the same contract.
+     */
+    fun equalTo(template: String): String {
+        require(template.contains(LETTER)) { "\"$template\" has no \"$LETTER\" to move behind the noun" }
+        require(template.contains(WHERE_X)) { "\"$template\" has no \"$WHERE_X\" clause to respell" }
+        return template.replace(LETTER, NOUN_PHRASE).replace(WHERE_X, EQUAL_TO)
+    }
+
+    /**
+     * Whether a [DynamicAmount] is one a defined-X clause on a **counter count** may name. Two
+     * refusals, for two unrelated reasons.
+     *
+     * ### The two number-word domains, which this must not overlap
+     *
+     * The three dynamic counter rules and the two fixed ones read the same sentence position, so
+     * they have to partition [DynamicAmount] rather than be tried in order — the split
+     * [Steps.countedStepPair] draws, for the reason written there. A `Fixed` amount is the numeral's
+     * and [XValue][DynamicAmount.XValue] is the bare row's; everything else is a clause. Refusing
+     * the other two here is belt to [count]'s braces, which cannot print either of them, and it is
+     * the half that keeps a hand-written `AddDynamicCountersEffect(amount = Fixed(2))` declining
+     * instead of coming back as a second reading of "put two +1/+1 counters".
+     *
+     * ### The source's own counter tally, which is last-known information half the time it is printed
+     *
+     * [counterCount] reads `EntityProperty(Source, CounterCount)`, and `DynamicAmountEvaluator`
+     * resolves that from **live** state: `counterCountOf` looks the entity up and answers 0 when it
+     * is not there. So in the position Oracle most often prints this clause — "When ~ dies, put X
+     * +1/+1 counters on target creature you control, where X is the number of +1/+1 counters on ~"
+     * (Servant of the Scale) — the source is already gone and the amount is silently zero. The SDK
+     * has the right reading for that position, `DynamicAmount.LastKnownSourceCounters`, and the card
+     * corpus has a third spelling again (`Effects.MoveAllLastKnownCounters`, which moves the pile
+     * instead of counting it).
+     *
+     * Which of the three a line means is decided by the trigger it is lifted into, and a step cannot
+     * see that — the same reason the bare `X` row is the enters position's alone. So this refuses the
+     * live tally rather than emitting a model that evaluates to zero, and the translation belongs at
+     * the lift in [Triggers], the one place the position is known. It is narrow: every other row of
+     * [count] reads the board or a zone and means the same wherever the clause lands.
+     */
+    fun namesX(amount: DynamicAmount): Boolean = when {
+        amount is DynamicAmount.Fixed -> false
+        amount == DynamicAmount.XValue -> false
+        amount == counterCountOfSelf(amount) -> false
+        else -> true
+    }
+
+    /** [counterCount]'s model, for the [namesX] refusal — the source's own live counter tally. */
+    private fun counterCountOfSelf(amount: DynamicAmount): DynamicAmount? {
+        val property = amount as? DynamicAmount.EntityProperty ?: return null
+        val counter = property.numericProperty as? EntityNumericProperty.CounterCount ?: return null
+        return DynamicAmounts.countersOnSelf(counter.counterType).takeIf { it == amount }
+    }
 
     /** "+1/+1 counters on it" / "+1/+1 counter on ~" — a tally of the source's own counters. */
     private val plusOneCounters: DynamicAmount = DynamicAmounts.countersOnSelf(CounterTypeFilter.PlusOnePlusOne)
@@ -669,4 +783,18 @@ object Amounts {
 
     private fun addedManaAmount(effect: Effect?): DynamicAmount? =
         (effect as? com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect)?.amount
+}
+
+/**
+ * Registers the `equal to …` spelling of a `, where X is …` counter rule: one line, derived from the
+ * rule's own template, parsing to the same model and never printing.
+ *
+ * Which of the two prints is a corpus count and nothing deeper — 48 printed lines put the clause
+ * behind a comma against roughly half that many behind the noun — so the majority spelling is
+ * canonical and a card printing the other comes back as a variant rather than a decline. What must
+ * not be two is the script, the reader and the fail-closed reconstruction, which is exactly what
+ * [com.wingedsheep.assay.syntax.PhraseBuilder.alsoSpelled] shares.
+ */
+fun PhraseBuilder<*>.definedByCount() {
+    alsoSpelled(Amounts.equalTo(template), "${ruleName ?: template} (count behind the noun)")
 }

@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.model.CardScript
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.PayCost
@@ -148,9 +149,36 @@ object SelfSteps {
                     bind("kind" to kind, "n" to count, "self" to Unit)
                 }
             }
+        // The count named by a trailing clause instead of by a number word. One rule, both of
+        // Oracle's spellings, over the SDK's dynamic counter effect — and no bare-"X" row, for the
+        // reason [Amounts.namesX] gives: this clause is one [Triggers] lifts, and the announced X is
+        // silently zero anywhere it lands but a spell.
+        fun dynamicScriptFor(kind: String, amount: DynamicAmount) =
+            CardScript(spellEffect = Effects.AddDynamicCounters(kind, amount, target))
+        val defined = phrase<CardScript>(
+            "put X {kind} counters on {self}${Amounts.WHERE_X}",
+            name = "put a counted number of counters on$tag",
+        ) {
+            definedByCount()
+            slot("kind", Primitives.counterKind)
+            slot("self", subject)
+            slot("amount", Amounts.count)
+            build {
+                val amount = it.value<DynamicAmount>("amount")
+                if (Amounts.namesX(amount)) dynamicScriptFor(it.value("kind"), amount) else null
+            }
+            match { script ->
+                val (kind, amount) =
+                    Steps.dynamicCountersAdded(script.spellEffect, target) ?: return@match null
+                if (!Amounts.namesX(amount)) return@match null
+                if (script != dynamicScriptFor(kind, amount)) return@match null
+                bind("kind" to kind, "amount" to amount, "self" to Unit)
+            }
+        }
         return listOf(
             rule("put {kind} counter on {self}", "put a counter on$tag", null),
             rule("put {n} {kind} counters on {self}", "put counters on$tag", Cardinals.word),
+            defined,
         )
     }
 
