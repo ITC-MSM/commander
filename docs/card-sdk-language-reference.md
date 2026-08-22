@@ -4426,6 +4426,13 @@ work for abilities-on-stack (which carry no `CardComponent`).
   for "Whenever this becomes blocked, it deals N damage to each creature blocking it" (Battle-Scarred
   Goblin). Resolves in resolution-time effect contexts (where the source is carried); inert in
   group/projection, untap, and trigger-gating contexts.
+- `IsCombatPairedWithSource` (filter builder `blockingOrBlockedBySource()`) — the same CR 509
+  pairing read **live in both directions**: the candidate blocks the source, or the source blocks
+  the candidate. "Each creature blocking or blocked by this creature" (Spitting Slug =
+  `Patterns.Group.grantKeywordToAll(FIRST_STRIKE, GroupFilter(Creature.blockingOrBlockedBySource()))`).
+  Use this while the source is still on the battlefield; `CardSource.LastKnownCombatPairedWithSource`
+  answers the same question from a leaves-battlefield snapshot for a dies trigger (Abu Ja'far).
+  Source-relative, so it is inert in group/projection, untap, and trigger-gating contexts.
 - `CreatedBySource` (filter builder `createdBySource()`) — source-relative (CR 111 provenance): matches a
   token whose stamped `CreatedByComponent.creatorId` equals the effect's `PredicateContext.sourceId` — a
   token *created by the source permanent*. Stamped at creation by a `CreateTokenEffect` with
@@ -4945,6 +4952,12 @@ sealed set for attack-time facts beyond the basics.
   when only the blocking direction should fire. `binding = ATTACHED` fires off the
   equipped/enchanted creature's combat (Barrow-Blade — "Whenever equipped creature blocks
   or becomes blocked by a creature, …"); the partner is the `TriggeringEntity`.
+- `BlocksOrBecomesBlocked(binding = SELF)` — the **partner-less** printed wording ("whenever this
+  creature blocks or becomes blocked"), which is a *single* trigger however many creatures the
+  source ends up paired with (Spitting Slug) — CR 509.3a/509.3c. Same event with `oncePerCombat = true`, which
+  collapses the per-partner firings to the first match; the `TriggeringEntity` is that first
+  partner, so a card that says "it" still has one. Reach for `BlocksOrBecomesBlockedBy` only when
+  the card names a partner quality — that one fires once per matching partner.
 - `AttacksAndIsntBlocked` — SELF. Fires once per attacker that reaches end of
   Declare Blockers with no creatures declared as blockers (CR 509.3g). Backed by
   `BecomesUnblockedEvent` matched against `BlockersDeclaredEvent`. Used for

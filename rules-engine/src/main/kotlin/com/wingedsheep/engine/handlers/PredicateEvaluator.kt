@@ -1368,6 +1368,18 @@ class PredicateEvaluator {
                     container.get<BlockingComponent>()?.blockedAttackerIds?.contains(sourceId) == true
             }
 
+            // Creature blocking the effect's source OR blocked by it (CR 509), read live from
+            // combat state in both directions: either the candidate blocks the source, or the
+            // source blocks the candidate. Source-relative; inert with no source.
+            StatePredicate.IsCombatPairedWithSource -> {
+                val sourceId = context?.sourceId
+                sourceId != null && (
+                    container.get<BlockingComponent>()?.blockedAttackerIds?.contains(sourceId) == true ||
+                        state.getEntity(sourceId)?.get<BlockingComponent>()
+                            ?.blockedAttackerIds?.contains(entityId) == true
+                    )
+            }
+
             // Token created by the effect's source permanent (CR 111). Source-relative: the
             // candidate's stamped CreatedByComponent.creatorId equals context.sourceId. Inert with
             // no source context or for tokens with no recorded creator.

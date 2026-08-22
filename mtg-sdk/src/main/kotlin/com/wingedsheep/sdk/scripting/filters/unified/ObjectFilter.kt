@@ -935,6 +935,14 @@ data class GameObjectFilter(
     )
 
     /**
+     * Must be blocking the effect's source **or** blocked by it (CR 509), read live from combat
+     * state. Source-relative. "Each creature blocking or blocked by this creature" (Spitting Slug).
+     */
+    fun blockingOrBlockedBySource() = copy(
+        statePredicates = statePredicates + StatePredicate.IsCombatPairedWithSource
+    )
+
+    /**
      * Must be a token created by the effect's source permanent (CR 111 provenance), recognized via
      * the source's stamped `CreatedByComponent`. "Tokens created with this creature" (Tetravus).
      */

@@ -178,6 +178,22 @@ sealed interface StatePredicate {
     }
 
     /**
+     * Creature that is blocking the effect's source **or** being blocked by it — the live CR 509
+     * pairing in either direction, read off the blocked-attacker sets rather than a snapshot.
+     * Source-relative; yields false with no source context or outside combat.
+     *
+     * The live counterpart of [com.wingedsheep.sdk.scripting.effects.CardSource].LastKnownCombatPairedWithSource,
+     * which answers the same question from a leaves-battlefield snapshot for a dies trigger. Use
+     * this one while the source is still on the battlefield — "each creature blocking or blocked by
+     * this creature" (Spitting Slug).
+     */
+    @SerialName("IsCombatPairedWithSource")
+    @Serializable
+    data object IsCombatPairedWithSource : Entity {
+        override val description: String = "blocking or blocked by this creature"
+    }
+
+    /**
      * A token that was *created by the effect's source permanent* — its provenance creator id (the
      * `CreatedByComponent` stamped when a `CreateTokenEffect` with `stampCreator = true` made it)
      * equals the source entity supplied in the evaluation context. Source-relative; yields false

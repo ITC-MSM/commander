@@ -1000,14 +1000,27 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     @SerialName("BlocksOrBecomesBlockedByEvent")
     @Serializable
     data class BlocksOrBecomesBlockedByEvent(
-        val partnerFilter: GameObjectFilter? = null
+        val partnerFilter: GameObjectFilter? = null,
+        /**
+         * When true, fire **once** for the whole combat instead of once per matching partner —
+         * the partner-less printed wording "whenever this creature blocks or becomes blocked"
+         * (Spitting Slug), which is a single trigger no matter how many creatures it is paired
+         * with. `TriggerContext.triggeringEntityId` is then the first matching partner, so a
+         * card that says "it" still has one; a card that says "each creature blocking or blocked
+         * by this creature" reads the whole set from live combat state instead
+         * (`GameObjectFilter.Creature.blockingOrBlockedBySource()`).
+         */
+        val oncePerCombat: Boolean = false
     ) : EventPattern {
         override val description: String = buildString {
-            append("this creature blocks or becomes blocked by ")
-            if (partnerFilter != null) {
-                append(describeObjectForEvent(partnerFilter))
-            } else {
-                append("a creature")
+            append("this creature blocks or becomes blocked")
+            if (!oncePerCombat || partnerFilter != null) {
+                append(" by ")
+                if (partnerFilter != null) {
+                    append(describeObjectForEvent(partnerFilter))
+                } else {
+                    append("a creature")
+                }
             }
         }
 
