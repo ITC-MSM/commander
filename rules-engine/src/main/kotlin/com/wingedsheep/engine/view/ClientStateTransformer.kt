@@ -2074,6 +2074,10 @@ class ClientStateTransformer(
         var preventsAllDamage = false
         val preventedCreatureTypes = mutableSetOf<String>()
         val preventedFromSources = mutableSetOf<EntityId>()
+        // Single-instance chosen-source shields, kept separate from the all-damage ones above
+        // because they read differently: "the next time" rather than "all damage", and Dark Sphere
+        // halves rather than prevents. Pair = (source, halved).
+        val preventedNextInstanceFromSources = mutableListOf<Pair<EntityId, Boolean>>()
         for (floatingEffect in state.floatingEffects) {
             val modification = floatingEffect.effect.modification
             if (
@@ -2106,6 +2110,11 @@ class ClientStateTransformer(
                 }
                 is SerializableModification.PreventAllDamageFromSource -> {
                     preventedFromSources.add(modification.damageSourceId)
+                }
+                is SerializableModification.PreventNextDamageInstanceFromSource -> {
+                    preventedNextInstanceFromSources.add(
+                        modification.damageSourceId to modification.halveRoundedDown
+                    )
                 }
                 else -> {}
             }
@@ -2147,6 +2156,27 @@ class ClientStateTransformer(
                     effectId = "prevent_damage_from_source_${sourceId.value}",
                     name = "Prevent from $sourceName",
                     description = "All damage that would be dealt to you by $sourceName this turn is prevented",
+                    icon = "prevent-damage"
+                )
+            )
+        }
+
+        // The Circle of Protection family and Dark Sphere: one instance from one chosen source.
+        // Listed per shield rather than deduplicated by source — two Circles pointed at the same
+        // source are two separate shields, each spent by its own damage instance.
+        for ((sourceId, halved) in preventedNextInstanceFromSources) {
+            val sourceName = state.getEntity(sourceId)?.get<CardComponent>()?.name ?: "a chosen source"
+            effects.add(
+                ClientPlayerEffect(
+                    effectId = "prevent_next_damage_instance_from_source_${sourceId.value}" +
+                        if (halved) "_halved" else "",
+                    name = if (halved) "Halve from $sourceName" else "Prevent from $sourceName",
+                    description = if (halved) {
+                        "The next time $sourceName would deal damage to you this turn, " +
+                            "prevent half that damage, rounded down"
+                    } else {
+                        "The next time $sourceName would deal damage to you this turn, prevent that damage"
+                    },
                     icon = "prevent-damage"
                 )
             )

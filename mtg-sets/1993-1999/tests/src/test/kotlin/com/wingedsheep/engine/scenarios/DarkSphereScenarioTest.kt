@@ -77,6 +77,55 @@ class DarkSphereScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("the shield shows up as a badge on the player it protects") {
+                // The shield lives on the player, not on a card — and the Sphere sacrifices itself
+                // paying for it, so without a player badge there is nothing on screen to say the
+                // shield is there at all.
+                val game = scenario()
+                    .withPlayers("Defender", "Attacker")
+                    .withCardOnBattlefield(1, "Dark Sphere")
+                    .withCardOnBattlefield(2, "Shivan Dragon")
+                    .withLifeTotal(1, 20)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                withClue("nothing to show before it is activated") {
+                    game.getClientState(1).players
+                        .single { it.playerId == game.player1Id }
+                        .activeEffects
+                        .none { it.effectId.startsWith("prevent_next_damage_instance_from_source") } shouldBe true
+                }
+
+                val sphere = game.findPermanent("Dark Sphere")!!
+                game.execute(
+                    ActivateAbility(
+                        playerId = game.player1Id,
+                        sourceId = sphere,
+                        abilityId = sphereAbilityId()
+                    )
+                ).error shouldBe null
+                game.resolveStack()
+                val decision = game.state.pendingDecision
+                decision.shouldNotBeNull()
+                decision.shouldBeInstanceOf<SelectCardsDecision>()
+                game.submitDecision(CardsSelectedResponse(decision.id, listOf(game.findPermanent("Shivan Dragon")!!)))
+
+                val badge = game.getClientState(1).players
+                    .single { it.playerId == game.player1Id }
+                    .activeEffects
+                    .singleOrNull { it.effectId.startsWith("prevent_next_damage_instance_from_source") }
+                withClue("the protected player carries a badge naming the chosen source") {
+                    badge.shouldNotBeNull()
+                    badge.name shouldBe "Halve from Shivan Dragon"
+                }
+                withClue("and it says the halving, which is what makes this Dark Sphere and not a Circle") {
+                    badge!!.description shouldBe
+                        "The next time Shivan Dragon would deal damage to you this turn, " +
+                        "prevent half that damage, rounded down"
+                }
+            }
+
             test("a 1-damage instance halves to nothing prevented and still spends the shield") {
                 // Half of 1 rounded down is 0, so the ping lands in full — and because this is a
                 // *next instance* shield, it is consumed anyway: the second ping also lands.
