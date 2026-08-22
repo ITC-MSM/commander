@@ -2702,7 +2702,8 @@ fourth direction.
 So what this band ships is the **count**, in every position the SDK has a value for it, and what it
 delivers is not whole cards. It is the ranking: the family fell to **77 cards / 52 sole / 77 lines**
 and off the top of the table, because 46 lines stopped dying on the count and started dying on the
-clause that is actually blocking them.
+clause that is actually blocking them. Whole-corpus coverage moves 8,363 → **8,364** (+1), which is
+the number this band is honest about rather than the one it claims.
 
 ### "any number of" is never a slot — it is a different value in every position
 
