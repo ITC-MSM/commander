@@ -43,7 +43,7 @@
 ### Blue
 - [x] Amnesia
 - [x] Apprentice Wizard
-- [ ] Dance of Many
+- [x] Dance of Many
 - [ ] Deep Water
 - [x] Drowned
 - [x] Electric Eel

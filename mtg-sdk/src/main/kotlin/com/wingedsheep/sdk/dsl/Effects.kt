@@ -2659,6 +2659,7 @@ object Effects {
         controller: EffectTarget? = null,
         exceptions: com.wingedsheep.sdk.scripting.effects.CopyExceptions =
             com.wingedsheep.sdk.scripting.effects.CopyExceptions.None,
+        stampCreator: Boolean = false,
     ): Effect = CreateTokenCopyOfTargetEffect(
         target = target,
         count = DynamicAmount.Fixed(count),
@@ -2684,6 +2685,7 @@ object Effects {
         exileUnlessSourceIsRingBearer = exileUnlessSourceIsRingBearer,
         controller = controller,
         exceptions = exceptions,
+        stampCreator = stampCreator,
     )
 
     /**

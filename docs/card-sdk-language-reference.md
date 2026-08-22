@@ -1726,7 +1726,10 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   exposes `stampCreator: Boolean` — when true each minted token records the creating permanent (the
   effect's source) so later abilities can recognize "tokens created with this permanent" via the
   `StatePredicate.CreatedBySource` filter (`.createdBySource()`). Tetravus uses it to reabsorb only the
-  Tetravite tokens it minted; off by default.
+  Tetravite tokens it minted; off by default. **`Effects.CreateTokenCopyOfTarget(…, stampCreator = …)`
+  carries the same flag** — the copy path needs the same provenance for the same reason, and Dance of
+  Many's "when this enchantment leaves the battlefield, exile the token" is unimplementable without
+  it: two Dances on the battlefield mint indistinguishable copies, and each has to exile only its own.
 - `CreateDynamicToken(dynamicPower, dynamicToughness, colors?, creatureTypes, keywords?, count?, controller?, imageUri?)` —
   tokens whose P/T is computed at resolution (e.g. Pure Reflection's X/X Reflection where X = the cast spell's mana
   value, via `DynamicAmounts.triggeringManaValue()`). `controller` directs who gets the token (e.g.
