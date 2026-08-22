@@ -7945,6 +7945,34 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > effects (§4) and the `Conditions.IsDay` / `Conditions.IsNight` conditions (§12) for the rest of the
 > day/night surface, and [`com.wingedsheep.sdk.core.DayNight`] for the enum.
 
+> **Devoid** (CR 702.114, Battle for Zendikar / Oath of the Gatewatch). `card { keywords(Keyword.DEVOID) }`
+> — the bare keyword is the whole mechanic, with no builder and no static ability.
+>
+> Devoid is a *characteristic-defining* ability (CR 604.3): "this object is colorless", functioning in
+> **every zone** and even outside the game. So the SDK models it where colors are *derived* rather than
+> as a continuous effect — `CardDefinition.colors` reads empty for a card carrying the keyword (in
+> either spelling: the `keywords(...)` set or a `KeywordAbility.Simple(Keyword.DEVOID)`), and every
+> reader downstream inherits it with no wiring of its own: `CardComponent.colors` (so a devoid card is
+> colorless in hand, library, graveyard, exile and on the stack), projection's layer-5 base row, the
+> `HasColor` / `IsColorless` / `IsColored` / `IsMulticolored` predicates, protection and hexproof-from
+> scopes, `BlockEvasionRules` (fear and the "can('t) be blocked except by [color] creatures"
+> restrictions), the client card view, and `mtg-search`.
+>
+> Two consequences worth knowing:
+>
+> - **A later color-changing effect still wins.** CR 613.3 applies CDAs first within a layer, then
+>   everything else in timestamp order — and devoid *is* the base value here, so a
+>   `StaticAbility` with `setColors`/`colors` (Layer 5 `ChangeColor` / `AddColor`) paints over it
+>   exactly as the rules ask.
+> - **Color identity is untouched.** CR 903.4 builds identity from the mana symbols in the cost and
+>   rules text plus colors a CDA *defines*; devoid defines none, so Ulamog's Nullifier is a colorless
+>   card with a blue color identity. `CardDefinition.colorIdentity` deliberately reads the mana cost
+>   and never consults the keyword.
+>
+> Multiple instances are redundant, and nothing in Magic *grants* devoid — it is a printed CDA only,
+> so there is no `GrantKeyword(Keyword.DEVOID)` path to honor. The printed reminder text
+> "(This card has no color.)" is authored into `oracleText` (and is what Argentum Assay round-trips).
+
 **`Keyword` enum (display-level)**
 
 Flying, Menace, Intimidate, Fear, Shadow, Horsemanship, all basic landwalks (Plainswalk … Forestwalk), Desertwalk
@@ -7952,7 +7980,8 @@ Flying, Menace, Intimidate, Fear, Shadow, Horsemanship, all basic landwalks (Pla
 (`Keyword.NONBASIC_LANDWALK` — unblockable while the defending player controls any non-basic land;
 `LandwalkRule` checks `typeLine.isLand && !isBasicLand`; Trailblazer's Boots), First Strike, Double
 Strike, Trample, Deathtouch, Lifelink, Vigilance, Reach, Provoke, Defender, Indestructible, Hexproof, Shroud, Haste,
-Flash, Prowess, Flurry, Changeling, Convoke, Delve, Improvise, Affinity, Emerge, Storm, Flashback, Harmonize, Mayhem, Disturb, Evoke, Sneak, Ninjutsu, Web-slinging, Impending, Conspire, Casualty, Miracle, Hideaway, Cascade, Plot,
+Flash, Prowess, Flurry, Changeling, Devoid (**not** display-only — see the note above: the engine
+derives `CardDefinition.colors` from it), Convoke, Delve, Improvise, Affinity, Emerge, Storm, Flashback, Harmonize, Mayhem, Disturb, Evoke, Sneak, Ninjutsu, Web-slinging, Impending, Conspire, Casualty, Miracle, Hideaway, Cascade, Plot,
 Offspring, Persist, Undying, Enduring, Ascend, Storied, Start your engines!, Max speed, Wither, Toxic, Eerie, Vivid, Fateful Bite, Exploit, Soulbond, Daybound, Nightbound, … (display-only — engine effect lives in handlers or
 composite abilities).
 

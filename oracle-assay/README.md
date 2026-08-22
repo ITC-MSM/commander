@@ -21,8 +21,8 @@ attached-permanent statics, which opened `staticAbilities` — the largest `Card
 differential could not see into, and the one every later static family lands in.
 
 The most recent work is **the functional zone** — "Return ~ from your graveyard to your hand.", the
-tail ranking's number-two family at **131 cards, 74 of them solely, over 131 lines** (**+94 whole
-cards**, 8,234 → 8,328), and the band where a printed phrase turned out to fill two SDK fields at
+tail ranking's biggest family by the column that decides work — **131 cards, 74 of them solely, over
+131 lines** (**+94 whole cards**, 8,250 → 8,344), and the band where a printed phrase turned out to fill two SDK fields at
 once. "From your graveyard" is a resolution guard on the effect *and* the zone the ability functions
 in, and it was the second one that blocked every line: an ability whose activation zone was not the
 battlefield could not print, whatever its effect clause said. Carrying the zone up from the clause
@@ -1365,8 +1365,10 @@ The report is two documents at once, and the second one is about `mtg-sdk`:
   `Reminders.gloss` takes the noun as a parameter for exactly that reason.
 - **~40 keyword abilities have no `Keyword` enum constant at all** — Exalted, Infect, Echo,
   Soulshift, Bloodthirst, Scavenge, Backup, Megamorph, Unleash, Extort, Evolve, Myriad, Unearth,
-  Mentor, Afterlife, Enlist, Champion, Eternalize, Skulk, Melee, Battle cry, Reinforce, Devoid,
+  Mentor, Afterlife, Enlist, Champion, Eternalize, Skulk, Melee, Battle cry, Reinforce,
   Dethrone, Phasing, Cumulative upkeep, … — ranked by cards blocked in the report's bottom table.
+  Devoid was one of them until `Keyword.DEVOID` landed; it is now a plain `simple(…)` row in
+  `Keywords.SIMPLE_KEYWORDS`, which is what closing any of these costs.
 
 ## The prevention band
 
@@ -2340,8 +2342,10 @@ once for a different noun.
 
 ## The functional zone
 
-`~ from your …` — the tail ranking's number-two family, **131 cards, 74 sole-blocked, 131 lines**, and
-the sentence behind almost all of them is one of three:
+`~ from your …` — **131 cards, 74 sole-blocked, 131 lines**. Second on the tail ranking by cards
+blocked and first by `sole`, which is the column that decides work: the row above it was `Devoid` at
+134 cards and 16 sole, and that one closed on `main` while this was in flight. The sentence behind
+almost all of them is one of three:
 
 ```
 {2}{B}: Return ~ from your graveyard to your hand.                       63 lines
@@ -2355,7 +2359,7 @@ The grammar has moved the source to a named zone since the first `SelfSteps` rul
 sentence that **prints where the card is coming from** — and that phrase is the family, because of
 where the second half of it lands in the model.
 
-Whole-corpus coverage 8,234 → **8,328 cards** (+94); the baked ledger 8,015 → **8,109 whole**, with
+Whole-corpus coverage 8,250 → **8,344 cards** (+94); the baked ledger 8,030 → **8,124 whole**, with
 **none lost**. MISMATCH, AMBIGUOUS, non-invertible normalization and redundant readings all stay at
 **0**. The family falls to **10 cards / 0 sole / 10 lines** — every one of them "Remove ~ from your
 deck before playing if you're not playing for ante", which is a different construct wearing the same

@@ -469,4 +469,14 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // an unreadable count still scaffolds.
     supported("CDA_Power", "rule: characteristic-defining power (dynamicPower / dynamicStats)")
     supported("CDA_Toughness", "rule: characteristic-defining toughness (dynamicToughness / dynamicStats)")
+
+    // Characteristic-defining COLOR (CR 604.3, applied in layer 5). Unlike its power/toughness
+    // siblings this rule carries no capability of its own — every colour CDA in the corpus is one of
+    // several very different mechanics, told apart only by the nested `_SettableColor`: `Devoid`
+    // (CR 702.114, 132 cards) is a bare keyword the SDK derives `CardDefinition.colors` from, while
+    // `SimpleColorList` ("this card is blue"), `AllColors`, `Colorless` and `TheChosenColor` are each
+    // a colour-setting shape the SDK has no card-level home for. So this is an ENVELOPE: the nested
+    // tag decides. `Devoid` resolves through the Keyword entry in `keywords()`; the others stay
+    // UNMAPPED and keep blocking, which is the honest split.
+    envelope("CDA_Color", "envelope: the nested _SettableColor carries the capability (Devoid -> Keyword.DEVOID)")
 }
