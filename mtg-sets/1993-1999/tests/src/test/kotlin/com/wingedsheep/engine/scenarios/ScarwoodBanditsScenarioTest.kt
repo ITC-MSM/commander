@@ -71,4 +71,47 @@ class ScarwoodBanditsScenarioTest : FunSpec({
             driver.state.projectedState.getController(prize) shouldBe opponent
         }
     }
+
+    test("the ransom is asked of the opponent, and paying it keeps the artifact") {
+        // The declining case above can't tell who was asked: `submitYesNo` answers whatever
+        // decision is pending regardless of whose it is, and declining and never-being-asked both
+        // end with the artifact changing hands. This one names the player on the decision, and
+        // pays out of *their* pool — the Bandits' controller has none left after activating.
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Forest" to 40), startingLife = 20)
+
+        val me = driver.activePlayer!!
+        val opponent = driver.getOpponent(me)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val bandits = driver.putCreatureOnBattlefield(me, "Scarwood Bandits")
+        driver.removeSummoningSickness(bandits)
+        val prize = driver.putPermanentOnBattlefield(opponent, "Fountain of Youth")
+        driver.giveMana(me, Color.GREEN, 3)
+        driver.giveMana(opponent, Color.GREEN, 2)
+
+        driver.submit(
+            ActivateAbility(
+                playerId = me,
+                sourceId = bandits,
+                abilityId = abilityId,
+                targets = listOf(entityIdToChosenTarget(driver.state, prize)),
+            )
+        ).isSuccess shouldBe true
+
+        var guard = 0
+        while (guard++ < 16 && driver.pendingDecision == null && driver.state.stack.isNotEmpty()) {
+            driver.bothPass()
+        }
+
+        withClue("the printed \"unless an opponent pays\" bills the opponent, not the activator") {
+            driver.pendingDecision?.playerId shouldBe opponent
+        }
+
+        settle(driver, opponent, pay = true)
+
+        withClue("they paid the ransom, so the artifact never moved") {
+            driver.state.projectedState.getController(prize) shouldBe opponent
+        }
+    }
 })

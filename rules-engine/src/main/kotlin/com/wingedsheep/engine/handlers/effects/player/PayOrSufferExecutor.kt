@@ -61,7 +61,13 @@ class PayOrSufferExecutor(
             ?: return EffectResult.error(state, "No source for pay or suffer effect")
 
         // Resolve who must pay — defaults to controller but can be the opponent (e.g., "target opponent loses 3 life unless they sacrifice")
-        val payingPlayerId = context.resolvePlayerTarget(effect.player)
+        //
+        // The state-aware overload is required, not a nicety: the stateless one answers only the
+        // references it can read off the context (You, the target slots, TriggeringPlayer) and
+        // returns null for everything else, and null here falls back to the *controller*. So
+        // "unless an opponent pays" (Player.AnOpponent, which needs the turn order to resolve) had
+        // been billing the ability's own controller — who then bought their own permanent back.
+        val payingPlayerId = context.resolvePlayerTarget(effect.player, state)
             ?: context.controllerId
 
         // Find source card info
