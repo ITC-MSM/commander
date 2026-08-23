@@ -271,7 +271,10 @@ object Activated {
     private val choice: Phrase<List<ActivatedAbility>> =
         phrase("{cost}: {alternatives}", name = "an activated mana ability with a choice") {
             slot("cost", Costs.cost)
-            slot("alternatives", Mana.addedAlternatives)
+            slot(
+                "alternatives",
+                oneOf("several kinds of mana", Mana.addedAlternatives, Mana.addedAlternativesRestricted),
+            )
             build { bindings ->
                 val cost = bindings.value<AbilityCost>("cost")
                 val built = bindings.value<List<Effect>>("alternatives")

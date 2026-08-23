@@ -20,7 +20,29 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is **the combat restriction** — "can't be blocked", the tail ranking's top
+The most recent work is **the mana spend restriction** — "Spend this mana only to cast creature
+spells.", the tail ranking's top family at **116 cards, 64 of them solely, over 118 lines**
+(**+58 whole cards**, 8,748 → 8,806) — and it is the band whose construct turns out **not to be a
+sentence at all**. Every printed instance is a second sentence after an "add …" clause, and what it
+denotes is the `restriction` field on that clause's effect, so it has nowhere to go in a `Steps` run:
+a run member is a `CompositeEffect` element, and this is not an effect. The rule therefore spans both
+sentences, on the *clause* rather than on the activated ability — which is what made it cheap, because
+the five positions that print those two sentences (an ability's colon, a trigger's comma, a loyalty
+`+1:`, a bare spell, a granted ability's quotation marks) all slot `Steps.step` and inherited it
+without being told. The axis it reads **cannot be a `Filters` slot**, and that is a fact about the SDK
+rather than a gap: `ManaRestriction` is a closed vocabulary of *spend contexts*, and a spend context is
+not a set of objects — so the grammar becomes the same product the SDK is, over the card type, the
+subtype, the mana-value floor and eleven parameterless atoms, with `AnyOf` as the join. Its
+**declared empty cell** is where the touchstone earned its keep: `CreatureSpellsOnly` owns "cast
+creature spells" (15 hand-written cards to 0), and the first gate run reported exactly one ambiguity
+because that atom also stands in for the creature cell *inside the join* — a declared hole has to be
+declared everywhere its value can appear, not only in the rule that owns it. And the probe pulled in
+two neighbouring families, one of which was a defect rather than missing work: the plural any-colour
+clause was spelled "add {n} mana of any color" where Oracle prints "of any **one** color" 63 times to
+3, so the rule had been reading the three oddities and declining the sixty-three cards. See
+[the mana spend restriction](#the-mana-spend-restriction).
+
+Before it came **the combat restriction** — "can't be blocked", the tail ranking's top
 family at **122 cards, 79 of them solely, over 122 lines** (**+93 whole cards**, 8,653 → 8,746) — and
 it is the band where the ranked construct turned out to be one the grammar had *already read three
 times*, each time frozen into a whole sentence. `Grammar.flagLine` read "~ can't be blocked." as a
@@ -3304,6 +3326,185 @@ a noun phrase — `Filters` → `ManaValues` → `Amounts` → `Filters` is a ge
 the JVM answers an initialization cycle by handing back a half-built object whose slot reads `null`.
 Duplicating either vocabulary to break it is the one thing this module exists to prevent, so the
 indirection is in the kernel and knows nothing about mana values.
+## The mana spend restriction
+
+"Spend this mana only to cast creature spells." — the tail ranking's **top family by every column**:
+**116 cards, 64 of them solely, over 118 lines**, and a probe that agreed at **62**. Whole-corpus
+coverage went 8,748 → **8,806** (+58); the baked verdict ledger 8,519 → **8,576 whole**, with 57 cards
+gained and **none lost**. No new SDK type and no SDK change at all: one new grammar file, one new
+clause in `Mana`, and two spellings that were frozen in the rule beside it.
+
+### It is not a sentence. It is a field on the sentence before it
+
+Every printed instance is a *second* sentence following an "add …" clause, and what it denotes is the
+`restriction` field on that clause's effect — one field on each of `AddManaEffect`,
+`AddColorlessManaEffect`, `AddManaOfChoiceEffect` and `AddDynamicManaEffect`. That is why it could not
+be a clause in `Steps`' run: a run member is a `CompositeEffect` element, and this is not an effect.
+The rule spans **both sentences** (`"{add}. {spend}"`), which is `Grammar.amplifyLine`'s shape one
+slot in — the fragment is the only place a line's two contributions can meet, and the clause is the
+only place a sentence *pair's* can.
+
+Putting it on the clause rather than in `Activated` is what made the family cheap. The same two
+sentences are printed after an activated ability's colon, after a trigger's comma, after a loyalty
+ability's `+1:`, as a bare spell effect, and inside a granted ability's quotation marks. All five slot
+`Steps.step`, so all five inherited the rule without being told — and the choice form
+("Add {U} or {R}. Spend this mana only to cast a noncreature spell." — The Emperor of Palamecia) needed
+one extra rule, because that line is two abilities sharing both a cost and a restriction.
+
+The strip is what keeps the fail-closed property. `Mana.production`'s leaf re-reads what it writes, so
+a restricted effect prints "{G}", reads back bare, compares unequal and refuses; the any-colour and
+combination rules refuse one by reconstructing the whole script. That behaviour was already there as a
+guard, and this band made it load-bearing in the other direction: the wrapper hands the inner clause an
+effect with the restriction removed, so a rider or a non-default expiry still refuses rather than
+printing a bare sentence and dropping it.
+
+### The axis cannot be a filter, and that is a fact about the SDK
+
+Every other "what does this apply to" family in this grammar slots `Filters`. This one cannot:
+`ManaRestriction` is a **closed vocabulary of spend contexts**, not a `GameObjectFilter`, so a filter
+slot would have nowhere to put its value. That is not a gap. A spend context is not a set of objects —
+"turn permanents face up", "unlock a door" and "activate equip abilities" name special actions and cost
+payments no object filter describes — and the two contexts that *are* about a card's characteristics
+are exactly the two the SDK parameterizes.
+
+So the grammar becomes the same product the SDK is:
+
+| axis | printed | SDK |
+|---|---|---|
+| card type × {spells, abilities, both} × negated | "artifact spells or activate abilities of artifacts", "noncreature spells" | `CardTypeSpellsOrAbilitiesOnly` |
+| subtype list | "Dragon spells", "Mount or Vehicle spells", "a Dragon spell or an Omen spell" | `SubtypeSpellsOnly` |
+| one subtype, spells *and* abilities | "Dragon spells or activate abilities of Dragons" | `SubtypeSpellsOrAbilitiesOnly` |
+| mana-value floor × `{X}` clause × creature-only | "spells with mana value 5 or greater or spells with {X} in their mana costs" | `SpellsWithManaValueAtLeast` |
+| eleven parameterless contexts | "creature spells", "activate abilities", "unlock a door" | the atoms |
+| the join | "cast an enchantment spell, unlock a door, or turn a permanent face up" | `AnyOf` |
+| the one negative sentence | "This mana can't be spent to cast a nonartifact spell." | `CannotCastSpellsOtherThan` |
+
+**The negative is a different sentence, not a negated spelling of the positive one**, and the SDK is
+emphatic about why: every "spend only to …" clause is a whitelist that blocks each spend it does not
+name, while "can't be spent to cast a nonartifact spell" blocks exactly one thing and leaves activating
+an ability, paying a ward cost and turning a permanent face up legal. Both wordings exist over the same
+card types — "Spend this mana only to cast a **noncreature** spell" (The Emperor of Palamecia) against
+"This mana can't be spent to cast a **nonartifact** spell" (every Powerstone) — so the two sentences
+carry a distinction the words are the only record of.
+
+### The declared empty cell, and the guard it puts on the join
+
+`CardTypeSpellsOrAbilitiesOnly(CREATURE, allowSpells = true, allowAbilities = false)` and
+`CreatureSpellsOnly` mean the same thing and would print the same words. All 15 hand-written cards that
+print "cast a creature spell" use the second and none uses the first, so the card-type row **declares
+that cell empty**: the product covers every type but creature in its spells-only column, and the atom
+covers creature. Same treatment `Mana` gives `ManaColorSet.Specific` and `Filters` gives the bare
+subtype — one text, one model, resolved by measuring the corpus rather than by preference.
+
+The consequence is the interesting half, and the gate found it. "Cast artifact spells or activate
+abilities of artifacts" is *one* atom with both booleans set, so an `AnyOf` of the row's two halves
+would print those same words — a guard the join needs anyway. But **the empty cell means the atom
+stands in for the creature cell inside the join too**, and the first run of the touchstone reported
+exactly one ambiguity: Gwenna, Eyes of Gaea's "cast creature spells or activate abilities of creature
+sources" read both as the combined row and as `AnyOf(CreatureSpellsOnly, abilities of creatures)`. A
+declared hole has to be declared everywhere the value can appear, not only where the rule that owns it
+lives.
+
+### Number is not in the model, so half the family is an alternate
+
+Oracle writes both "cast **a** creature spell" and "cast creature spell**s**" for the same value: the
+printed number tracks how much mana the clause added, which the restriction does not carry. Exactly one
+prints, and the plural is canonical — it needs no article agreement, it is the spelling the SDK's own
+`description` strings use, and the bare contexts ("activate abilities") have no singular at all. The
+same argument runs through the whole file: four spellings of one card type's abilities ("abilities of
+artifacts", "abilities of artifact sources", "an ability of an artifact", "an ability of an artifact
+source") are one value, because a source *is* any object with that card type in any zone by Mishra's
+Workshop's own printed ruling; and "or **to** activate", "**and** activate" and "and/or" are joins the
+model has no room for. 1,640 → **1,706** lines now normalize from an alternate spelling.
+
+### The neighbours the probe found, and the frozen word in one of them
+
+The family's probe said 62 whole cards. Two *other* decline families turned out to be the same job,
+because a card whose add clause cannot be read never reaches its restriction sentence and is keyed
+somewhere else entirely:
+
+| family | cards | sole | probe |
+|---|---|---|---|
+| `Spend this mana …` | 116 | 64 | 62 |
+| `mana of any …` — "Add **three mana of any one color**." | 39 | 21 | 16 |
+| `colors. Spend this …` — "Add two mana **in any combination of colors**." | 14 | 8 | 8 |
+
+The second row is a defect, not missing work. `Mana.addAnyColour` spelled its plural template
+`add {n} mana of any color` — and Oracle prints "add two mana of any **one** color" **63** times in the
+corpus against "add two mana of any color" **3** times. The rule was reading the three oddities and
+declining the sixty-three cards. It is the same shape as `Filters`' controller layer sitting outside
+the mana-value qualifier: a modifier frozen at whichever spelling the first card to need it happened to
+use. The fix is one `alsoSpelled` with the two templates swapped — and the *singular* takes the pair the
+other way round, because "add one mana of any color" is what 625 cards print and "of any one color" is
+the lone oddity. **Which spelling is canonical is a per-count measurement, not a rule about the word.**
+
+The third row is a row: "in any combination of colors" is `AddManaInAnyCombination`'s own default colour
+set, all five, where the existing rule read only the enumerated form ("in any combination of {R} and/or
+{G}").
+
+### What the differential found
+
+26 more cards became comparable (4,156 → **4,182**) and the gate reported **two** new divergences, both
+of them card bugs and both of them in a *different* line of the card the mana sentence had just
+finished:
+
+| card | bug | class |
+|---|---|---|
+| Fabrication Foundry | "Return target artifact card **from your graveyard**" with no `fromZone` guard | the functional-zone band's class, card 20 |
+| Interdimensional Web Watch | restated `Patterns.Exile.impulse` by hand and named its pipeline collection something else | the restate-a-recipe class |
+
+Both are the pattern the band before last named: *a band that finishes a card's last line inherits its
+other clauses' unnormalized fields.* Neither card was comparable before, because one declining line is
+enough to keep a whole card out of the differential. After the fixes the count is back to its baseline
+**46**.
+
+### The finding that is not this band's to fix
+
+Widening the subtype join by two spellings — "cast a Dragon spell or an Omen spell" and "or **to**
+activate an ability of a Hero source" — added two more cards and **two more divergences**, and they are
+one parser bug with seven cards already in the baseline behind it. The grammar reads a bare subtype in
+**card** position as `Permanent.withSubtype`, inherited from the battlefield reading the
+[bare-tribal-noun migration](../docs/oracle-assay.md) settled over 104 cards. In card position that
+predicate is wrong, and the corpus says so out loud: **Boggart Birth Rite is a Kindred Sorcery with the
+Goblin creature type**, so it is "a Goblin card" that is not a permanent, and Boggart Harbinger's
+"search your library for a Goblin card" must be able to find it. Five Goblin, six Elf, four Giant, four
+Merfolk, three Faerie and four Elemental cards in the corpus are non-permanents carrying a creature
+type — which is exactly the Harbinger cycle's tribe list.
+
+`Filters` already contains the correct reading and the argument for it: `spellSubtype` exists because
+"a spell on the stack is not a permanent", and a card in a library is not a permanent either. So the
+fix is that instantiation repeated for the card position — and it is **a flip plus a migration**, not a
+row: 28 hand-written cards spell the card-position filter with `Permanent.withSubtype` against 22 with
+`Any.withSubtype`, so flipping the grammar first would trade seven divergences for twenty-eight. That is
+the trap the bare-tribal-noun migration recorded ("flipping first would have left 103 unexplained
+divergences"), and the honest thing is to name the band rather than half-do it inside this one.
+
+### What is left
+
+The family fell to **3 cards / 2 sole / 3 lines**, and the restriction *vocabulary* now reads **129 of
+the corpus's 205 restriction sentences**. What blocks the rest is mostly not this sentence:
+
+- **the add clause above it** — "Add {G}{U}." (a run of *different* symbols, which `Mana` declines on
+  purpose as a `CompositeEffect` it does not build; 7 cards, 5 sole), "Add X mana of any one color,
+  where X is ~'s power" (a where-clause), "Add one mana of any color in your commander's color
+  identity" (8 cards, 6 sole);
+- **`ManaSpellRider`** — "When you spend this mana to cast a Dragon creature spell, you gain 2 life"
+  (9 cards, 7 sole) and the two "…, and that spell can't be countered" riders. The SDK models these
+  and the grammar has no rule for them; this is the nearest adjacent band;
+- **contexts with no SDK atom** — "on costs that contain {X}" (4 lines, and Rosheen Meanderer is a
+  card people play), "a multicolored spell" (4 cards), "a colorless spell", "spells from your
+  graveyard", "your commander";
+- **the chosen type** (5 lines) — a different *effect*, `AddAnyColorManaSpendOnChosenTypeEffect`, which
+  mints its restriction at resolution from the source's `CastChoicesComponent`, so the whole two-sentence
+  span is one rule rather than a restriction slot;
+- **`creatureOnly` on a printed subtype** — "cast Dragon creature spells", "an Elf creature spell". The
+  field exists on `SubtypeSpellsOrAbilitiesOnly`, but every hand-written user of it is a chosen-type
+  card whose printed wording is "a creature spell of the chosen type", so reading a *named* subtype onto
+  it is a model the corpus does not vouch for. Declined on purpose.
+- **an invariant plural** — "activate abilities of **Myr**". `Primitives.pluralSubtype`'s pattern
+  requires a trailing "s", and widening it would give every bare singular subtype in the grammar a
+  second reading as a plural. One line, and not worth that.
+
 ## The differential gate
 
 `just assay-differential` diffs Assay's reading of a card against the `CardDefinition` a human wrote

@@ -1881,6 +1881,7 @@ object Steps {
             Stack.clauses +
             Mana.addClause +
             Mana.addClauses +
+            Mana.restricted +
             Library.clauses +
             TopOfLibrary.clauses +
             Hand.clauses +
