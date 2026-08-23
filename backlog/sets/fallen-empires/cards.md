@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 77 / 102
+**Implemented:** 78 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -27,7 +27,7 @@
 - [x] Icatian Infantry
 - [x] Icatian Javelineers
 - [x] Icatian Lieutenant
-- [ ] Icatian Moneychanger
+- [x] Icatian Moneychanger
 - [x] Icatian Phalanx
 - [x] Icatian Priest
 - [x] Icatian Scout
