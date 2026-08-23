@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 
 /**
@@ -63,6 +64,66 @@ class NightSoilScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
         withClue("a Saproling arrived: " + driver.getCreatures(alice).map { driver.getCardName(it) }) {
             driver.getCreatures(alice).size shouldBe 1
+        }
+    }
+
+    test("the offered cost lists every graveyard that can pay it, not just the activator's") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Forest" to 40), startingLife = 20)
+
+        val alice = driver.activePlayer!!
+        val bob = driver.getOpponent(alice)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val nightSoil = driver.putPermanentOnBattlefield(alice, "Night Soil")
+        val mine = listOf(
+            driver.putCardInGraveyard(alice, "Elvish Warrior"),
+            driver.putCardInGraveyard(alice, "Centaur Courser"),
+        )
+        val theirs = listOf(
+            driver.putCardInGraveyard(bob, "Elvish Warrior"),
+            driver.putCardInGraveyard(bob, "Centaur Courser"),
+        )
+        driver.putCardInGraveyard(bob, "Lightning Bolt")
+        driver.giveColorlessMana(alice, 1)
+
+        val info = driver.legalActions(alice)
+            .first {
+                it.actionType == "ActivateAbility" &&
+                    (it.action as? ActivateAbility)?.sourceId == nightSoil
+            }
+            .additionalCostInfo!!
+
+        withClue("the picker is offered both graveyards' creature cards, and only creature cards") {
+            info.validExileTargets shouldContainExactlyInAnyOrder (mine + theirs)
+        }
+    }
+
+    test("a graveyard too shallow to pay the whole cost is not offered at all") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Forest" to 40), startingLife = 20)
+
+        val alice = driver.activePlayer!!
+        val bob = driver.getOpponent(alice)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val nightSoil = driver.putPermanentOnBattlefield(alice, "Night Soil")
+        driver.putCardInGraveyard(alice, "Elvish Warrior")
+        val theirs = listOf(
+            driver.putCardInGraveyard(bob, "Elvish Warrior"),
+            driver.putCardInGraveyard(bob, "Centaur Courser"),
+        )
+        driver.giveColorlessMana(alice, 1)
+
+        val info = driver.legalActions(alice)
+            .first {
+                it.actionType == "ActivateAbility" &&
+                    (it.action as? ActivateAbility)?.sourceId == nightSoil
+            }
+            .additionalCostInfo!!
+
+        withClue("Alice's lone creature card can never be half of a legal payment, so it is dropped") {
+            info.validExileTargets shouldContainExactlyInAnyOrder theirs
         }
     }
 

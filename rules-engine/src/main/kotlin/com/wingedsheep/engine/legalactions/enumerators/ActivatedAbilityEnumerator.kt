@@ -331,7 +331,8 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         }
                         is CostAtom.ExileFrom -> {
                             val targets = context.costUtils.findExileTargets(
-                                state, playerId, atom.filter, atom.zone, atom.anyPlayersZone
+                                state, playerId, atom.filter, atom.zone,
+                                atom.anyPlayersZone, atom.singleZone, atom.count
                             )
                             if (targets.size < atom.count) continue
                             exileCost = atom
@@ -557,8 +558,15 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                         // AdditionalCostData.validExileTargets (the picker prompt
                                         // for Rust Harvester's "Exile an artifact card from your
                                         // graveyard" cost).
+                                        // The atom's own pool flags have to ride along: Night Soil
+                                        // pays "{1}, Exile two creature cards from a single
+                                        // graveyard" as a *composite* cost, and dropping
+                                        // `anyPlayersZone` here narrowed the picker to the
+                                        // activating player's graveyard — an opponent's cards were
+                                        // legal payment the UI never offered.
                                         val targets = context.costUtils.findExileTargets(
-                                            state, playerId, atom.filter, atom.zone
+                                            state, playerId, atom.filter, atom.zone,
+                                            atom.anyPlayersZone, atom.singleZone, atom.count
                                         )
                                         if (targets.size < atom.count) {
                                             costCanBePaid = false

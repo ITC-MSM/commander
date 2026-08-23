@@ -145,24 +145,37 @@ class CostEnumerationUtils(
 
     // --- Exile targets ---
 
+    /**
+     * The cards an exile cost may be paid with.
+     *
+     * [anyPlayersZone] widens the pool from the payer's copy of [zone] to every player's — Night
+     * Soil exiles "two creature cards from a single graveyard", and an opponent's graveyard is
+     * fair game. [singleZone] then adds that cost's other half: all [count] cards must come out of
+     * the *same* copy, so a graveyard holding fewer than [count] matches can never contribute to a
+     * legal payment and is dropped here. Dropping it is what keeps a naive "take the first
+     * [count]" consumer — the AI's strategist, the auto-payment path — from assembling a
+     * cross-graveyard selection the payment handler would reject.
+     */
     fun findExileTargets(
         state: GameState,
         playerId: EntityId,
         filter: GameObjectFilter,
         zone: Zone,
         anyPlayersZone: Boolean = false,
+        singleZone: Boolean = false,
+        count: Int = 1,
     ): List<EntityId> {
         val predicateContext = PredicateContext(controllerId = playerId)
-        val pool = if (anyPlayersZone) {
-            // "from a single graveyard" (Night Soil) — every player's copy of the zone is in the
-            // pool; the same-owner constraint is enforced when the selection is validated, not by
-            // narrowing the candidates here.
-            state.turnOrder.flatMap { state.getZone(ZoneKey(it, zone)) }
-        } else {
-            state.getZone(ZoneKey(playerId, zone))
+        val owners = if (anyPlayersZone) state.turnOrder else listOf(playerId)
+        val matchesByOwner = owners.map { owner ->
+            state.getZone(ZoneKey(owner, zone)).filter { entityId ->
+                predicateEvaluator.matches(state, state.projectedState, entityId, filter, predicateContext)
+            }
         }
-        return pool.filter { entityId ->
-            predicateEvaluator.matches(state, state.projectedState, entityId, filter, predicateContext)
+        return if (singleZone) {
+            matchesByOwner.filter { it.size >= count }.flatten()
+        } else {
+            matchesByOwner.flatten()
         }
     }
 

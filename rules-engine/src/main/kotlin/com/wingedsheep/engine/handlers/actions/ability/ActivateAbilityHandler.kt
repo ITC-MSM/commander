@@ -925,12 +925,26 @@ class ActivateAbilityHandler(
         val exileFromGraveyardCost = extractExileFromGraveyardCost(effectiveCost)
         val alreadyExiling = (action.costPayment?.exiledCards?.isNotEmpty() == true)
         if (exileFromGraveyardCost != null && !alreadyExiling) {
-            val exileCandidates = costHandler.findMatchingCardsUnified(
-                state,
-                state.getZone(com.wingedsheep.engine.state.ZoneKey(action.playerId, Zone.GRAVEYARD)),
-                exileFromGraveyardCost.filter,
-                action.playerId
-            )
+            // The pool follows the atom's own flags, not "the activator's graveyard": Night Soil
+            // exiles "two creature cards from a single graveyard", so every player's graveyard is
+            // in the pool, and a graveyard holding fewer than `count` matches is dropped because
+            // it can't legally supply the whole payment on its own.
+            val exileOwners =
+                if (exileFromGraveyardCost.anyPlayersZone) state.turnOrder else listOf(action.playerId)
+            val exileCandidatesByOwner = exileOwners.map { owner ->
+                costHandler.findMatchingCardsUnified(
+                    state,
+                    state.getZone(com.wingedsheep.engine.state.ZoneKey(owner, Zone.GRAVEYARD)),
+                    exileFromGraveyardCost.filter,
+                    action.playerId
+                )
+            }
+            val exileCandidates =
+                if (exileFromGraveyardCost.singleZone) {
+                    exileCandidatesByOwner.filter { it.size >= exileFromGraveyardCost.count }.flatten()
+                } else {
+                    exileCandidatesByOwner.flatten()
+                }
             if (exileCandidates.size > exileFromGraveyardCost.count) {
                 val decisionId = java.util.UUID.randomUUID().toString()
                 val prompt = "Select ${exileFromGraveyardCost.count} card${if (exileFromGraveyardCost.count > 1) "s" else ""} to exile from graveyard for ${cardComponent.name}"
