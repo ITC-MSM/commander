@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 98 / 102
+**Implemented:** 99 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -78,7 +78,7 @@
 - [x] Dwarven Lieutenant
 - [x] Dwarven Soldier
 - [x] Goblin Chirurgeon
-- [ ] Goblin Flotilla
+- [x] Goblin Flotilla
 - [x] Goblin Grenade
 - [x] Goblin Kites
 - [x] Goblin War Drums
