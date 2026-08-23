@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 11 / 102
+**Implemented:** 12 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -32,7 +32,7 @@
 - [x] Icatian Priest
 - [x] Icatian Scout
 - [ ] Icatian Skirmishers
-- [ ] Icatian Town
+- [x] Icatian Town
 - [x] Order of Leitbur
 
 ### Blue
