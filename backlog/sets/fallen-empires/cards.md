@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 29 / 102
+**Implemented:** 30 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -99,7 +99,7 @@
 - [ ] Night Soil
 - [ ] Spore Cloud
 - [ ] Spore Flower
-- [ ] Thallid
+- [x] Thallid
 - [ ] Thallid Devourer
 - [ ] Thelon's Chant
 - [ ] Thelon's Curse
