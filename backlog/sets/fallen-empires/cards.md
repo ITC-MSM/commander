@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 26 / 102
+**Implemented:** 27 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -81,7 +81,7 @@
 - [ ] Goblin Flotilla
 - [x] Goblin Grenade
 - [ ] Goblin Kites
-- [ ] Goblin War Drums
+- [x] Goblin War Drums
 - [ ] Goblin Warrens
 - [ ] Orcish Captain
 - [ ] Orcish Spy
