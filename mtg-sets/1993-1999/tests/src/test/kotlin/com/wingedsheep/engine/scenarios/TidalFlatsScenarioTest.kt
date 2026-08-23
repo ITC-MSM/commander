@@ -63,6 +63,41 @@ class TidalFlatsScenarioTest : FunSpec({
         }
     }
 
+    test("an attacker whose controller declines the {1} still hands the blocker first strike") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Island" to 40), startingLife = 20)
+
+        val alice = driver.activePlayer!!
+        val bob = driver.getOpponent(alice)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(alice, "Raging Goblin")
+        driver.removeSummoningSickness(attacker)
+        val flats = driver.putPermanentOnBattlefield(bob, "Tidal Flats")
+        val blocker = driver.putCreatureOnBattlefield(bob, "Elvish Warrior")
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(alice, listOf(attacker), bob)
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+        driver.declareBlockers(bob, mapOf(blocker to listOf(attacker)))
+
+        driver.giveMana(bob, Color.BLUE, 2)
+        driver.submitSuccess(
+            ActivateAbility(playerId = bob, sourceId = flats, abilityId = abilityId)
+        )
+        // The decline path is the one real games take, and it is *not* the unpayable path above:
+        // Alice can afford the toll, so she is prompted, and the rider runs from the resumed
+        // continuation rather than inline. That resume used to drop the ForEach loop's current
+        // attacker, leaving "creatures you control blocking that creature" matching nothing.
+        driver.giveColorlessMana(alice, 1)
+        driver.bothPass()
+        driver.submitYesNo(alice, false)
+
+        withClue("declining the toll is the same as being unable to pay it") {
+            projector.project(driver.state).hasKeyword(blocker, Keyword.FIRST_STRIKE) shouldBe true
+        }
+    }
+
     test("an attacker whose controller pays the {1} leaves the blocker ordinary") {
         val driver = createDriver()
         driver.initMirrorMatch(deck = Deck.of("Island" to 40), startingLife = 20)

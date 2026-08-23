@@ -206,6 +206,10 @@ class SacrificeAndPayContinuationResumer(
                 pipeline = PipelineState(
                     namedTargets = continuation.namedTargets,
                     storedCollections = continuation.storedCollections,
+                    // Rebind the enclosing ForEach loop's entity: the consequence may refer back to it
+                    // (Tidal Flats' "creatures you control blocking *that creature*"), and a null here
+                    // matches nothing at all rather than failing loudly.
+                    iterationTarget = continuation.iterationEntityId
                 ),
                 triggeringEntityId = continuation.triggeringEntityId,
                 triggeringPlayerId = continuation.triggeringPlayerId
@@ -228,6 +232,10 @@ class SacrificeAndPayContinuationResumer(
             pipeline = PipelineState(
                 namedTargets = continuation.namedTargets,
                 storedCollections = continuation.storedCollections,
+                // Rebind the enclosing ForEach loop's entity: the consequence may refer back to it
+                // (Tidal Flats' "creatures you control blocking *that creature*"), and a null here
+                // matches nothing at all rather than failing loudly.
+                iterationTarget = continuation.iterationEntityId
             ),
             triggeringEntityId = continuation.triggeringEntityId,
             triggeringPlayerId = continuation.triggeringPlayerId
@@ -670,6 +678,10 @@ class SacrificeAndPayContinuationResumer(
                 // Carried across the pause so a collection-reading suffer effect still resolves —
                 // Wand of Ith discards "the card revealed this way".
                 storedCollections = continuation.storedCollections,
+                // Rebind the enclosing ForEach loop's entity: the consequence may refer back to it
+                // (Tidal Flats' "creatures you control blocking *that creature*"), and a null here
+                // matches nothing at all rather than failing loudly.
+                iterationTarget = continuation.iterationEntityId
             ),
             triggeringEntityId = continuation.triggeringEntityId,
             triggeringPlayerId = continuation.triggeringPlayerId

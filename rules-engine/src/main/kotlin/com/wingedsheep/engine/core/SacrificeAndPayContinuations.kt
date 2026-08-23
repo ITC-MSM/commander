@@ -139,7 +139,16 @@ data class PayOrSufferContinuation(
      *
      * Mirrors the same field on [AnyPlayerMayPayContinuation], for the same reason.
      */
-    val storedCollections: Map<String, List<EntityId>> = emptyMap()
+    val storedCollections: Map<String, List<EntityId>> = emptyMap(),
+    /**
+     * The enclosing `ForEachInGroup` loop's current entity, when the pay-or-suffer sits inside one
+     * (Tidal Flats: "for each attacking creature ... its controller may pay {1}"). The consequence
+     * refers back to it — "creatures you control blocking *that creature*" — so the resumed context
+     * has to rebind `PipelineState.iterationTarget`. Without it the auto-suffer path (nothing to
+     * pay with, no prompt) worked while the far more common declined-a-prompt path silently
+     * matched nothing.
+     */
+    val iterationEntityId: EntityId? = null
 ) : ContinuationFrame
 
 /**
@@ -190,7 +199,9 @@ data class PayOrSufferChoiceContinuation(
      */
     val consequenceDescription: String? = null,
     /** Mirror of [PayOrSufferContinuation.storedCollections] for the multi-option path. */
-    val storedCollections: Map<String, List<EntityId>> = emptyMap()
+    val storedCollections: Map<String, List<EntityId>> = emptyMap(),
+    /** Mirror of [PayOrSufferContinuation.iterationEntityId] for the multi-option path. */
+    val iterationEntityId: EntityId? = null
 ) : ContinuationFrame
 
 /**
