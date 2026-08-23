@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 4 / 102
+**Implemented:** 5 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -26,7 +26,7 @@
 - [ ] Heroism
 - [ ] Icatian Infantry
 - [ ] Icatian Javelineers
-- [ ] Icatian Lieutenant
+- [x] Icatian Lieutenant
 - [ ] Icatian Moneychanger
 - [ ] Icatian Phalanx
 - [x] Icatian Priest
