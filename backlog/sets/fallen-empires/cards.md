@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 7 / 102
+**Implemented:** 8 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -18,7 +18,7 @@
 ---
 
 ### White
-- [ ] Combat Medic
+- [x] Combat Medic
 - [ ] Farrel's Mantle
 - [ ] Farrel's Zealot
 - [ ] Farrelite Priest
