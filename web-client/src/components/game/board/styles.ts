@@ -2330,6 +2330,13 @@ const passiveCounterPalette: Record<string, CounterBadgePalette> = {
   PLUS_TWO_PLUS_ZERO: { bg: 'rgba(20, 60, 25, 0.95)', border: 'rgba(120, 220, 130, 0.7)', color: '#9ce0a8' },
   PLUS_ZERO_PLUS_TWO: { bg: 'rgba(20, 60, 25, 0.95)', border: 'rgba(120, 220, 130, 0.7)', color: '#9ce0a8' },
   MINUS_ONE_MINUS_ZERO: { bg: 'rgba(60, 20, 20, 0.95)', border: 'rgba(220, 120, 120, 0.7)', color: '#e09c9c' },
+  PLUS_ONE_PLUS_TWO: { bg: 'rgba(20, 60, 25, 0.95)', border: 'rgba(120, 220, 130, 0.7)', color: '#9ce0a8' },
+  PLUS_TWO_PLUS_TWO: { bg: 'rgba(20, 60, 25, 0.95)', border: 'rgba(120, 220, 130, 0.7)', color: '#9ce0a8' },
+  MINUS_TWO_MINUS_TWO: { bg: 'rgba(60, 20, 20, 0.95)', border: 'rgba(220, 120, 120, 0.7)', color: '#e09c9c' },
+  TIDE: { bg: 'rgba(18, 38, 56, 0.95)', border: 'rgba(110, 180, 230, 0.7)', color: '#9fd0f0', glow: 'rgba(110, 180, 230, 0.55)' },
+  JAVELIN: { bg: 'rgba(44, 38, 26, 0.95)', border: 'rgba(210, 180, 120, 0.7)', color: '#e0cba0' },
+  CREDIT: { bg: 'rgba(48, 42, 18, 0.95)', border: 'rgba(226, 196, 96, 0.7)', color: '#ecd98a' },
+  CUBE: { bg: 'rgba(34, 30, 52, 0.95)', border: 'rgba(168, 150, 220, 0.7)', color: '#c6b6ea' },
   MINUS_ZERO_MINUS_ONE: { bg: 'rgba(60, 20, 20, 0.95)', border: 'rgba(220, 120, 120, 0.7)', color: '#e09c9c' },
 }
 

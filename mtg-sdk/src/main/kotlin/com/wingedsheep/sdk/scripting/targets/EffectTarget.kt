@@ -285,6 +285,23 @@ sealed interface EffectTarget {
     }
 
     /**
+     * TAPPED AS COST: a permanent tapped to pay this activation's cost — the tap counterpart of
+     * [DiscardedAsCost], reading `EffectContext.tappedPermanents`.
+     *
+     * Vodalian War Machine (FEM) is the card that needs it: each of its abilities taps an untapped
+     * Merfolk, and its death trigger destroys the Merfolk that paid. Each activation schedules its
+     * own delayed trigger naming *its* Merfolk, so the reference is baked into a concrete id when
+     * the trigger is created and the whole set is destroyed when the War Machine dies.
+     *
+     * @property index Which tapped permanent to reference; every printed use taps exactly one.
+     */
+    @SerialName("TappedAsCost")
+    @Serializable
+    data class TappedAsCost(val index: Int = 0) : EffectTarget {
+        override val description: String = "the tapped permanent"
+    }
+
+    /**
      * LINKED EXILED CARD: a card exiled *with* the source permanent — its `LinkedExileComponent`,
      * the pile every imprint / "exiled with this" mechanic writes. This is the [EffectTarget] role
      * counterpart of [com.wingedsheep.sdk.scripting.values.EntityReference.LinkedExiledCard], which

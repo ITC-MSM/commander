@@ -953,6 +953,15 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.ControllerDealtCombatDamageBySourceThisTurn
     )
 
+    /**
+     * The candidate's controller controls at least one permanent matching [subfilter] — Seasinger's
+     * "target creature whose controller controls an Island". The subfilter's "you" is the
+     * *candidate's* controller, not the ability's.
+     */
+    fun controllerControls(subfilter: GameObjectFilter) = copy(
+        statePredicates = statePredicates + StatePredicate.ControllerControls(subfilter)
+    )
+
     /** Must be blocking */
     fun blocking() = copy(
         statePredicates = statePredicates + StatePredicate.IsBlocking
@@ -972,6 +981,14 @@ data class GameObjectFilter(
      */
     fun blockingOrBlockedBySource() = copy(
         statePredicates = statePredicates + StatePredicate.IsCombatPairedWithSource
+    )
+
+    /**
+     * Blocking the entity the enclosing `ForEachInGroup` is iterating over — Tidal Flats'
+     * "creatures you control blocking that creature".
+     */
+    fun blockingIterationEntity() = copy(
+        statePredicates = statePredicates + StatePredicate.IsBlockingIterationEntity
     )
 
     /**

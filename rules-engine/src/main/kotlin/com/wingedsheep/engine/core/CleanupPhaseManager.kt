@@ -430,7 +430,8 @@ class CleanupPhaseManager(
         val remaining = state.floatingEffects.filter { floatingEffect ->
             when (floatingEffect.duration) {
                 is Duration.WhileSourceTapped,
-                is Duration.WhileSourceTappedAndAffectedPowerAtMostSource -> {
+                is Duration.WhileSourceTappedAndAffectedPowerAtMostSource,
+                is Duration.WhileYouControlSourceAndSourceTapped -> {
                     val sourceId = floatingEffect.sourceId
                     sourceId != null && state.getBattlefield().contains(sourceId) &&
                         state.getEntity(sourceId)?.has<TappedComponent>() == true
@@ -552,10 +553,12 @@ class CleanupPhaseManager(
                     sourceId != null && newState.getBattlefield().contains(sourceId)
                 }
                 is Duration.WhileSourceTapped,
-                is Duration.WhileSourceTappedAndAffectedPowerAtMostSource -> {
-                    // Keep if source is still on battlefield AND tapped. The power-comparison
-                    // half of WhileSourceTappedAndAffectedPowerAtMostSource is gated per-frame
-                    // by StateProjector, so cleanup only enforces the source-tapped condition.
+                is Duration.WhileSourceTappedAndAffectedPowerAtMostSource,
+                is Duration.WhileYouControlSourceAndSourceTapped -> {
+                    // Keep if source is still on battlefield AND tapped. The power-comparison half
+                    // of WhileSourceTappedAndAffectedPowerAtMostSource and the source-controller
+                    // half of WhileYouControlSourceAndSourceTapped are gated per-frame by
+                    // StateProjector, so cleanup only enforces the source-tapped condition.
                     val sourceId = floatingEffect.sourceId
                     sourceId != null && newState.getBattlefield().contains(sourceId) &&
                         newState.getEntity(sourceId)?.has<TappedComponent>() == true

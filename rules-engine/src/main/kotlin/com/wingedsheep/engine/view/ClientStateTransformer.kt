@@ -2072,7 +2072,10 @@ class ClientStateTransformer(
         // Check floating effects for damage prevention shields on this player
         var preventDamageTotal = 0
         var preventsAllDamage = false
+        var preventsAllCombatDamage = false
+        var preventsAttackingCreatureDamage = false
         val preventedCreatureTypes = mutableSetOf<String>()
+        val preventedCombatDamageSources = mutableSetOf<String>()
         val preventedFromSources = mutableSetOf<EntityId>()
         // Single-instance chosen-source shields, kept separate from the all-damage ones above
         // because they read differently: "the next time" rather than "all damage", and Dark Sphere
@@ -2097,10 +2100,26 @@ class ClientStateTransformer(
                     )
                 )
             }
+            // Board-wide combat-damage prevention (Fog, Holy Day, Spore Flower's ability). These
+            // shields name neither a permanent nor a player, so they carry no affected entity to
+            // hang a card badge on — and without a player badge the only trace that one resolved is
+            // a line in the log. They apply to every creature's combat damage, so both players
+            // carry the badge.
+            when (modification) {
+                is SerializableModification.PreventAllCombatDamage -> preventsAllCombatDamage = true
+                is SerializableModification.PreventCombatDamageFromGroup ->
+                    preventedCombatDamageSources.add(modification.filter.description)
+                else -> {}
+            }
             if (playerId !in floatingEffect.effect.affectedEntities) continue
             when (modification) {
                 is SerializableModification.PreventAllDamageTo -> {
                     preventsAllDamage = true
+                }
+                // Deep Wood. Unlike the two above this one is scoped to the shield's controller,
+                // so it badges only the protected player.
+                is SerializableModification.PreventDamageFromAttackingCreatures -> {
+                    preventsAttackingCreatureDamage = true
                 }
                 is SerializableModification.PreventNextDamage -> {
                     preventDamageTotal += modification.remainingAmount
@@ -2125,6 +2144,36 @@ class ClientStateTransformer(
                     effectId = "prevent_all_damage",
                     name = "Prevent All Damage",
                     description = "All damage that would be dealt to you is prevented",
+                    icon = "prevent-damage"
+                )
+            )
+        }
+        if (preventsAllCombatDamage) {
+            effects.add(
+                ClientPlayerEffect(
+                    effectId = "prevent_all_combat_damage",
+                    name = "No Combat Damage",
+                    description = "All combat damage that would be dealt this turn is prevented",
+                    icon = "prevent-damage"
+                )
+            )
+        }
+        if (preventsAttackingCreatureDamage) {
+            effects.add(
+                ClientPlayerEffect(
+                    effectId = "prevent_damage_from_attackers",
+                    name = "No Attacker Damage",
+                    description = "Damage that attacking creatures would deal to you this turn is prevented",
+                    icon = "prevent-damage"
+                )
+            )
+        }
+        for (sourceDescription in preventedCombatDamageSources) {
+            effects.add(
+                ClientPlayerEffect(
+                    effectId = "prevent_combat_damage_from_${sourceDescription.lowercase().replace(' ', '_')}",
+                    name = "No Combat Damage",
+                    description = "Combat damage that would be dealt by $sourceDescription this turn is prevented",
                     icon = "prevent-damage"
                 )
             )
@@ -2809,42 +2858,16 @@ class ClientStateTransformer(
                         )
                     )
                 }
-                is SerializableModification.PreventAllCombatDamage -> {
-                    effects.add(
-                        ClientCardEffect(
-                            effectId = "prevent_all_combat_damage",
-                            name = "No Combat Dmg",
-                            description = "All combat damage is prevented",
-                            icon = "prevent-damage"
-                        )
-                    )
-                }
+                // PreventAllCombatDamage, PreventCombatDamageFromGroup and
+                // PreventDamageFromAttackingCreatures are not card-scoped — the first two hold no
+                // affected entity at all and the third holds a player — so they are badged on the
+                // player in buildActiveEffects instead.
                 is SerializableModification.PreventCombatDamageToAndBy -> {
                     effects.add(
                         ClientCardEffect(
                             effectId = "prevent_combat_damage_to_and_by",
                             name = "No Combat Dmg",
                             description = "All combat damage dealt to and dealt by this creature is prevented",
-                            icon = "prevent-damage"
-                        )
-                    )
-                }
-                is SerializableModification.PreventCombatDamageFromGroup -> {
-                    effects.add(
-                        ClientCardEffect(
-                            effectId = "prevent_combat_damage_from_group",
-                            name = "No Combat Dmg",
-                            description = "Combat damage from this creature is prevented",
-                            icon = "prevent-damage"
-                        )
-                    )
-                }
-                is SerializableModification.PreventDamageFromAttackingCreatures -> {
-                    effects.add(
-                        ClientCardEffect(
-                            effectId = "prevent_damage_from_attackers",
-                            name = "Fog",
-                            description = "Damage from attacking creatures is prevented",
                             icon = "prevent-damage"
                         )
                     )

@@ -1682,6 +1682,13 @@ class ActivatedAbilityBuilder {
      * `equipAbility(cost)` helper already sets it.
      */
     var isEquipAbility: Boolean = false
+
+    /**
+     * Bookkeep this ability's per-turn activation count so its effect can read it back with
+     * `Conditions.ThisAbilityActivatedThisTurnAtLeast` (Farrelite Priest, Initiates of the Ebon
+     * Hand). Off by default — see [ActivatedAbility.trackActivations].
+     */
+    var trackActivations: Boolean = false
     var timing: TimingRule = TimingRule.InstantSpeed
     var restrictions: List<ActivationRestriction> = emptyList()
     var activateFromZone: Zone = Zone.BATTLEFIELD
@@ -1788,6 +1795,7 @@ class ActivatedAbilityBuilder {
             timing = if (manaAbility) TimingRule.ManaAbility else timing,
             restrictions = effectiveRestrictions,
             activateFromZone = activateFromZone,
+            trackActivations = trackActivations,
             descriptionOverride = description,
             hasConvoke = hasConvoke,
             hasWaterbend = hasWaterbend,

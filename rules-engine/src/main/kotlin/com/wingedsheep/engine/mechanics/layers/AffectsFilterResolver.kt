@@ -455,6 +455,8 @@ internal class AffectsFilterResolver {
         StatePredicate.IsBlockingSource -> false
         // Same reasoning for the both-directions live pairing — no source permanent here.
         StatePredicate.IsCombatPairedWithSource -> false
+        // Loop-relative; only meaningful inside a ForEach at resolution, never in projection.
+        StatePredicate.IsBlockingIterationEntity -> false
         // Source-relative: "created with the source" needs the ability's source permanent, absent
         // in group-static projection. Only meaningful in target/gather-filter contexts via
         // PredicateEvaluator. Never match here.
@@ -633,6 +635,10 @@ internal class AffectsFilterResolver {
         // resolve that "you", so this predicate is only meaningful in target/condition contexts via
         // PredicateEvaluator (where the controllerId is supplied). Never match in projection.
         is StatePredicate.AttachedTo -> false
+        // "whose controller controls <filter>" needs a battlefield scan bound to the
+        // candidate's controller, which the group-static projection pass cannot do here.
+        // Only meaningful in target/condition contexts via PredicateEvaluator.
+        is StatePredicate.ControllerControls -> false
         is StatePredicate.AttachedToCardType -> {
             val attached = container.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
             attached != null &&

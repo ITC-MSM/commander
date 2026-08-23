@@ -548,6 +548,7 @@ class BeginningPhaseManager(
         StatePredicate.InSameBandAsSource,
         StatePredicate.IsBlockingSource,
         StatePredicate.IsCombatPairedWithSource,
+        StatePredicate.IsBlockingIterationEntity,
         StatePredicate.CreatedBySource,
         StatePredicate.EnteredThisTurn,
         StatePredicate.WasDealtDamageThisTurn,
@@ -588,6 +589,7 @@ class BeginningPhaseManager(
         is StatePredicate.WasCastFromZone -> true
         is StatePredicate.AttachedToCardType -> true
         is StatePredicate.AttachedTo -> true
+        is StatePredicate.ControllerControls -> true
         is StatePredicate.IsEnchantedByAura -> true
     }
 }

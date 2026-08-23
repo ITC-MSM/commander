@@ -174,6 +174,10 @@ class CostPaymentService(private val services: EngineServices) {
                 // PayCost) — unreachable, but a yes/no is its shape if it is ever wired up.
                 is CostAtom.PutCountersOnSelf ->
                     yesNoPrompt(state, payerId, resolved, sourceId, sourceName, ctx, "${atom.description}?", atom.description)
+                // Tourach's Chant / Thelon's Chant — the payer picks which of their permanents
+                // takes the counter, on the battlefield rather than in an overlay.
+                is CostAtom.PutCountersOnPermanent ->
+                    selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, candidates, 1, useTargetingUI = true)
                 is CostAtom.RemoveCounters -> {
                     val count = when (val c = atom.count) {
                         is com.wingedsheep.sdk.scripting.values.DynamicAmount.Fixed -> c.amount
@@ -378,6 +382,8 @@ class CostPaymentService(private val services: EngineServices) {
             // Not offered as a PayCost (canAfford reports it unaffordable) — an activated-ability
             // cost is paid through CostHandler.payAtom, which owns the counter-placement path.
             is CostAtom.PutCountersOnSelf -> CostPaymentExecution(state, emptyList(), success = false)
+            is CostAtom.PutCountersOnPermanent ->
+                putCountersOnSelected(state, selected.keys.toList(), atom.counterType, atom.count)
             is CostAtom.RemoveCounters -> performRemoveCounters(state, payerId, atom, sourceId, selected)
             // Likewise activated-ability-only — see the prompt branch above.
             is CostAtom.RevealNotedCreatureType -> CostPaymentExecution(state, emptyList(), success = false)
@@ -651,6 +657,41 @@ class CostPaymentService(private val services: EngineServices) {
         return CostPaymentExecution(newState, events, success = true)
     }
 
+    /**
+     * Put [count] counters of [counterType] on each selected permanent — the payment half of
+     * [CostAtom.PutCountersOnPermanent]. Selection is a single permanent in every printed use, but
+     * the loop costs nothing and keeps the shape uniform with the other selection payments.
+     */
+    private fun putCountersOnSelected(
+        state: GameState,
+        selected: List<EntityId>,
+        counterType: String,
+        count: Int
+    ): CostPaymentExecution {
+        if (selected.isEmpty()) return CostPaymentExecution(state, emptyList(), success = false)
+        val resolved = resolveCounterType(counterType)
+        var newState = state
+        val events = mutableListOf<GameEvent>()
+        for (permanentId in selected) {
+            val container = newState.getEntity(permanentId) ?: continue
+            // Read the counters inside the update so a repeated id accumulates rather than
+            // clobbering — no printed cost selects the same permanent twice, but the loop shouldn't
+            // depend on that.
+            newState = newState.updateEntity(permanentId) { c ->
+                c.with((c.get<CountersComponent>() ?: CountersComponent()).withAdded(resolved, count))
+            }
+            events.add(
+                com.wingedsheep.engine.core.CountersAddedEvent(
+                    permanentId,
+                    counterType,
+                    count,
+                    container.get<CardComponent>()?.name ?: "Permanent"
+                )
+            )
+        }
+        return CostPaymentExecution(newState, events, success = true)
+    }
+
     private fun tapSelected(state: GameState, selected: List<EntityId>): CostPaymentExecution {
         var newState = state
         val events = mutableListOf<GameEvent>()
@@ -734,6 +775,9 @@ class CostPaymentService(private val services: EngineServices) {
                     // Activated-ability cost only: no printed morph / "unless you …" cost puts
                     // counters on a permanent, and CostHandler owns the placement path.
                     is CostAtom.PutCountersOnSelf -> false
+                    // Unpayable with nothing to put the counter on — which is the whole point of
+                    // the punisher clause it backs.
+                    is CostAtom.PutCountersOnPermanent -> domain(state, payerId, c, sourceId).isNotEmpty()
                     // Activated-ability cost only (it reads a note on the source permanent).
                     is CostAtom.RevealNotedCreatureType -> false
                     is CostAtom.RemoveCounters -> {
@@ -810,6 +854,8 @@ class CostPaymentService(private val services: EngineServices) {
                 // ExileFromGraveyardForTotal does pick objects, but only ever as an activated-ability
                 // cost — CostHandler owns its selection, and [canAfford] already reports it
                 // unaffordable as a PayCost, so it has no domain on this path.
+                is CostAtom.PutCountersOnPermanent ->
+                    controlledMatching(state, payerId, atom.filter)
                 is CostAtom.Mana, is CostAtom.PayLife, is CostAtom.Mill,
                 is CostAtom.ExileTopOfLibrary,
                 is CostAtom.PutCountersOnSelf, is CostAtom.VariablePermanents,

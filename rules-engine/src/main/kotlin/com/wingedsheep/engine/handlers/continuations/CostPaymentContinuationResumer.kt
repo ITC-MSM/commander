@@ -87,6 +87,9 @@ class CostPaymentContinuationResumer(
             // (nothing to select) if one is ever built.
             is CostAtom.PutCountersOnSelf ->
                 resumeYesNo(state, continuation, cost, response, checkForMore)
+            // Selected-permanent counter placement — one permanent chosen on the battlefield.
+            is CostAtom.PutCountersOnPermanent ->
+                resumeSelection(state, continuation, cost, response, checkForMore)
             // Ability-scoped only (it reads a note on the source permanent), and it takes no
             // selection — never reaches a PayCost prompt.
             is CostAtom.RevealNotedCreatureType ->

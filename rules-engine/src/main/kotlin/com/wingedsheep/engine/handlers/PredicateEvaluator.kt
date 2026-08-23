@@ -4,6 +4,7 @@ import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
 import com.wingedsheep.engine.state.components.battlefield.chosenColor
 import com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent
 import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.engine.handlers.predicates.becameTappedOnlyOnceThisTurn
 import com.wingedsheep.engine.handlers.predicates.hasDealtDamage
 import com.wingedsheep.engine.handlers.predicates.receivedCounterThisTurn
@@ -1155,9 +1156,9 @@ class PredicateEvaluator {
 
     /**
      * Resolve an [EffectTarget] player reference that needs [GameState] (so it can't be
-     * answered by [PredicateContext.resolvePlayerTarget] alone). Currently covers
-     * [EffectTarget.ControllerOfTriggeringEntity] — the controller of the entity that
-     * caused the trigger (e.g. Tectonic Instability: "tap all lands its controller controls").
+     * answered by [PredicateContext.resolvePlayerTarget] alone): the controller of the entity that
+     * caused the trigger (e.g. Tectonic Instability: "tap all lands its controller controls"), the
+     * controller of the first chosen target, and the defending player of an attacking source.
      */
     private fun resolveReferencedPlayerFromState(
         state: GameState,
@@ -1186,6 +1187,17 @@ class PredicateEvaluator {
                 ?: state.getEntity(targetId)?.get<ControllerComponent>()?.playerId
                 ?: state.getEntity(targetId)
                     ?.get<LastKnownPermanentComponent>()?.snapshot?.controllerId
+        }
+        // "target creature defending player controls" (Necrite) — the filter is evaluated while the
+        // trigger is choosing targets, so the defending player has to be resolvable *here* and not
+        // only at resolution. Without it every candidate fails the controller predicate, the
+        // trigger finds no legal targets, and it is removed from the stack without ever asking its
+        // "you may" question. Reads combat off the source, with the same removed-from-combat
+        // fallback the resolution-time path uses (CR 802.2a).
+        is EffectTarget.PlayerRef -> when (target.player) {
+            Player.DefendingPlayer -> TargetResolutionUtils
+                .defendingPlayerOfAttacker(state, context.sourceId)
+            else -> null
         }
         else -> null
     }
@@ -1379,6 +1391,15 @@ class PredicateEvaluator {
                         state.getEntity(sourceId)?.get<BlockingComponent>()
                             ?.blockedAttackerIds?.contains(entityId) == true
                     )
+            }
+
+            // "…creatures you control blocking *that creature*" (Tidal Flats) — the same check as
+            // IsBlockingSource but against the ForEach loop's current entity, which is what "that
+            // creature" refers to inside the loop.
+            StatePredicate.IsBlockingIterationEntity -> {
+                val iterated = context?.iterationEntityId
+                iterated != null &&
+                    container.get<BlockingComponent>()?.blockedAttackerIds?.contains(iterated) == true
             }
 
             // Token created by the effect's source permanent (CR 111). Source-relative: the
@@ -1733,6 +1754,23 @@ class PredicateEvaluator {
                 matches(state, projected, attached.targetId, predicate.filter, ctx)
             }
 
+            // "whose controller controls an Island" (Seasinger). The nested filter is scanned
+            // over the candidate's controller's battlefield, and its "you" is rebound to that
+            // controller — not to the ability's controller — because the clause describes the
+            // creature's own side of the table.
+            is StatePredicate.ControllerControls -> {
+                val ownerId = projected.getController(entityId)
+                    ?: container.get<ControllerComponent>()?.playerId
+                    ?: return false
+                val ctx = PredicateContext(
+                    controllerId = ownerId,
+                    sourceId = context?.sourceId,
+                )
+                state.getBattlefield().any { candidate ->
+                    matches(state, projected, candidate, predicate.filter, ctx)
+                }
+            }
+
             // Source-relative — the candidate IS the effect's source permanent itself
             // (GameObjectFilter counterpart of GroupFilter's Scope.Self). Backs the granted
             // PreventActivatedAbilities form (Braided Net), where the activation-legality
@@ -2080,6 +2118,12 @@ data class PredicateContext(
      */
     val triggeringPlayerId: EntityId? = null,
     /**
+     * The entity an enclosing `ForEachInGroup` is currently iterating over. Lets a filter inside
+     * such a loop talk about *that* creature — Tidal Flats' "creatures you control blocking that
+     * creature" — where a source-relative predicate would read the enchantment instead.
+     */
+    val iterationEntityId: EntityId? = null,
+    /**
      * The entity a continuous effect is being applied to during projection (e.g. the creature an
      * Aura is enchanting). Lets filters resolve [EntityReference.AffectedEntity] — needed by
      * `AggregateBattlefield(filter = ...sharingCreatureTypeWith(AffectedEntity))` for Alpha Status.
@@ -2189,7 +2233,8 @@ data class PredicateContext(
                 targets = context.targets,
                 namedTargets = context.pipeline.namedTargets,
                 xValue = context.xValue,
-                chosenColor = context.chosenColor
+                chosenColor = context.chosenColor,
+                iterationEntityId = context.pipeline.iterationTarget
             )
         }
     }

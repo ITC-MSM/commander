@@ -268,6 +268,16 @@ object Costs {
         AbilityCost.Atom(CostAtom.ExileFrom(Zone.GRAVEYARD, filter, count))
 
     /**
+     * Exile [count] cards matching [filter] from a *single* graveyard — any player's, but all
+     * from the same one (Night Soil). The pool is every graveyard; the constraint is that the
+     * chosen cards share an owner.
+     */
+    fun ExileFromSingleGraveyard(count: Int, filter: GameObjectFilter = GameObjectFilter.Any): AbilityCost =
+        AbilityCost.Atom(
+            CostAtom.ExileFrom(Zone.GRAVEYARD, filter, count, anyPlayersZone = true, singleZone = true)
+        )
+
+    /**
      * Exile exactly [count] permanents matching [filter] from the battlefield as a cost —
      * "Exile a creature you control:" (City of Shadows).
      *
@@ -863,6 +873,17 @@ object Costs {
          * to its mana value" (Wand of Ith). PayOrSuffer only; see [PayCost.DynamicLife].
          */
         fun PayDynamicLife(amount: DynamicAmount): PayCost = PayCost.DynamicLife(amount)
+
+        /**
+         * Put [count] counters of [counterType] on a permanent matching [filter] the payer
+         * controls — Tourach's Chant's "unless they put a -1/-1 counter on a creature they
+         * control". Unpayable when they control no matching permanent.
+         */
+        fun PutCountersOnPermanent(
+            counterType: String,
+            count: Int = 1,
+            filter: GameObjectFilter = GameObjectFilter.Permanent
+        ): PayCost = PayCost.Atom(CostAtom.PutCountersOnPermanent(counterType, count, filter))
 
         /** Exile [count] cards matching [filter] from [zone]. */
         fun Exile(

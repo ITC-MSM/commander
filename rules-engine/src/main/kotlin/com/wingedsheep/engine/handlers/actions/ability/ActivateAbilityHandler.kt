@@ -212,8 +212,11 @@ class ActivateAbilityHandler(
             if (!inZone) return "This ability can only be activated from the ${ability.activateFromZone.name.lowercase()}"
             if (ownerId != action.playerId) return "You don't own this card"
         } else {
-            // Check if any player may activate this ability (e.g., Lethal Vapors)
-            val anyPlayerMay = ability.restrictions.any { it is ActivationRestriction.AnyPlayerMay }
+            // Check if any player may activate this ability (e.g., Lethal Vapors). Recursive
+            // through `All`, because the permission is routinely *narrowed* by a companion
+            // restriction rather than standing alone — Merseine's "only the controller of the
+            // enchanted creature may activate this ability" is AnyPlayerMay + a condition.
+            val anyPlayerMay = ability.restrictions.any { anyPlayerMayIn(it) }
 
             if (!anyPlayerMay) {
                 // Use projected controller to account for control-changing effects (e.g., Annex)
@@ -296,19 +299,27 @@ class ActivateAbilityHandler(
         val equipTargetIdForCost = action.targets.filterIsInstance<ChosenTarget.Permanent>().firstOrNull()?.entityId
         val costWithDefinedX =
             castPermissionUtils.applyDefinedXValue(rawCost, ability, state, action.sourceId, action.playerId)
-        val effectiveCost = castPermissionUtils.relaxAbilityCostColorsIfAny(
-            state, action.sourceId,
-            castPermissionUtils.applyFreeFirstEquipDiscount(
-                castPermissionUtils.applyEquipCostReduction(
-                    castPermissionUtils.applyActivatedAbilityCostReduction(
-                        applyGenericCostReduction(costWithDefinedX, ability, state, action.sourceId, action.playerId, action.targets),
-                        state, action.sourceId, ability.isExhaust, ability.isPowerUp
-                    ),
-                    ability, state, action.playerId, equipTargetIdForCost,
-                    abilitySourceId = action.sourceId
-                ),
-                ability, state, action.playerId
-            )
+        // Order matters: each step prices the cost the previous one produced. The last one lowers
+        // an attached-permanent mana cost (Merseine) to a plain mana atom, so nothing downstream
+        // has to know that shape existed.
+        val costAfterGenericReduction = applyGenericCostReduction(
+            costWithDefinedX, ability, state, action.sourceId, action.playerId, action.targets
+        )
+        val costAfterAbilityReduction = castPermissionUtils.applyActivatedAbilityCostReduction(
+            costAfterGenericReduction, state, action.sourceId, ability.isExhaust, ability.isPowerUp
+        )
+        val costAfterEquipReduction = castPermissionUtils.applyEquipCostReduction(
+            costAfterAbilityReduction, ability, state, action.playerId, equipTargetIdForCost,
+            abilitySourceId = action.sourceId
+        )
+        val costAfterEquipDiscount = castPermissionUtils.applyFreeFirstEquipDiscount(
+            costAfterEquipReduction, ability, state, action.playerId
+        )
+        val costAfterColorRelaxation = castPermissionUtils.relaxAbilityCostColorsIfAny(
+            state, action.sourceId, costAfterEquipDiscount
+        )
+        val effectiveCost = castPermissionUtils.lowerAttachedManaCost(
+            state, action.sourceId, costAfterColorRelaxation
         )
         val effectiveTargetReqs = if (textReplacement != null) {
             ability.targetRequirements.map { it.applyTextReplacement(textReplacement) }
@@ -919,12 +930,26 @@ class ActivateAbilityHandler(
         val exileFromGraveyardCost = extractExileFromGraveyardCost(effectiveCost)
         val alreadyExiling = (action.costPayment?.exiledCards?.isNotEmpty() == true)
         if (exileFromGraveyardCost != null && !alreadyExiling) {
-            val exileCandidates = costHandler.findMatchingCardsUnified(
-                state,
-                state.getZone(com.wingedsheep.engine.state.ZoneKey(action.playerId, Zone.GRAVEYARD)),
-                exileFromGraveyardCost.filter,
-                action.playerId
-            )
+            // The pool follows the atom's own flags, not "the activator's graveyard": Night Soil
+            // exiles "two creature cards from a single graveyard", so every player's graveyard is
+            // in the pool, and a graveyard holding fewer than `count` matches is dropped because
+            // it can't legally supply the whole payment on its own.
+            val exileOwners =
+                if (exileFromGraveyardCost.anyPlayersZone) state.turnOrder else listOf(action.playerId)
+            val exileCandidatesByOwner = exileOwners.map { owner ->
+                costHandler.findMatchingCardsUnified(
+                    state,
+                    state.getZone(com.wingedsheep.engine.state.ZoneKey(owner, Zone.GRAVEYARD)),
+                    exileFromGraveyardCost.filter,
+                    action.playerId
+                )
+            }
+            val exileCandidates =
+                if (exileFromGraveyardCost.singleZone) {
+                    exileCandidatesByOwner.filter { it.size >= exileFromGraveyardCost.count }.flatten()
+                } else {
+                    exileCandidatesByOwner.flatten()
+                }
             if (exileCandidates.size > exileFromGraveyardCost.count) {
                 val decisionId = java.util.UUID.randomUUID().toString()
                 val prompt = "Select ${exileFromGraveyardCost.count} card${if (exileFromGraveyardCost.count > 1) "s" else ""} to exile from graveyard for ${cardComponent.name}"
@@ -1524,7 +1549,9 @@ class ActivateAbilityHandler(
         fun isPerTurnTracked(r: ActivationRestriction): Boolean =
             r is ActivationRestriction.OncePerTurn || r is ActivationRestriction.MaxPerTurn ||
                 (r is ActivationRestriction.All && r.restrictions.any { isPerTurnTracked(it) })
-        if (ability.restrictions.any { isPerTurnTracked(it) }) {
+        // `trackActivations` opts an unrestricted ability into the same tally so its own effect can
+        // read the count back (Farrelite Priest's burnout clause).
+        if (ability.trackActivations || ability.restrictions.any { isPerTurnTracked(it) }) {
             // Only track if source is still on the battlefield (it might have been bounced as cost)
             if (currentState.getEntity(action.sourceId) != null) {
                 currentState = currentState.updateEntity(action.sourceId) { c ->
@@ -1638,7 +1665,10 @@ class ActivateAbilityHandler(
                 // permanent is already in the graveyard (CR 113.7a); without the snapshots the
                 // amount resolves to 0 and the ability produces nothing.
                 sacrificedPermanents = sacrificedSnapshots,
-                manaColorChoice = action.manaColorChoice
+                manaColorChoice = action.manaColorChoice,
+                // The tally above was already incremented for this activation, so a burnout clause
+                // reading "four or more times this turn" sees the fourth activation as the fourth.
+                activatedAbilityId = if (ability.trackActivations) ability.id else null,
             )
 
             val effectResult = effectExecutorRegistry.execute(currentState, finalEffect, context).toExecutionResult()
@@ -2446,6 +2476,13 @@ class ActivateAbilityHandler(
             }
         }
         else -> cost
+    }
+
+    /** Whether [restriction] opens the ability to players other than the source's controller. */
+    private fun anyPlayerMayIn(restriction: ActivationRestriction): Boolean = when (restriction) {
+        is ActivationRestriction.AnyPlayerMay -> true
+        is ActivationRestriction.All -> restriction.restrictions.any { anyPlayerMayIn(it) }
+        else -> false
     }
 
     private fun checkActivationRestriction(

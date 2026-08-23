@@ -50,6 +50,20 @@ data class ActivatedAbility(
      */
     val equipQuality: String? = null,
     val activateFromZone: Zone = Zone.BATTLEFIELD,
+    /**
+     * Count this ability's activations for the turn even though no [restrictions] entry needs the
+     * tally. The engine only bookkeeps activations for abilities gated by `OncePerTurn` /
+     * `MaxPerTurn`, because that is all anything used to read; Fallen Empires' burnout mana
+     * creatures (Farrelite Priest, Initiates of the Ebon Hand) read the count *without* being
+     * limited by it — "{1}: Add {W}. If this ability has been activated four or more times this
+     * turn, sacrifice this creature at the beginning of the next end step." (the Initiates add
+     * {B} rather than {W}; the burnout clause is identical).
+     *
+     * Opt-in rather than always-on so the per-activation bookkeeping stays off the hot path for
+     * the overwhelming majority of abilities that never look at it. Pair with
+     * `Conditions.ThisAbilityActivatedThisTurnAtLeast`.
+     */
+    val trackActivations: Boolean = false,
     val descriptionOverride: String? = null,
     val hasConvoke: Boolean = false,
     /**
@@ -558,6 +572,21 @@ sealed interface AbilityCost : TextReplaceable<AbilityCost> {
             }
             return if (changed) copy(costs = newCosts) else this
         }
+    }
+
+    /**
+     * Pay the mana cost of the permanent this Aura/Equipment is attached to — Merseine's
+     * "Pay enchanted creature's mana cost: Remove a net counter from this Aura."
+     *
+     * Lowered to a plain [Atom] mana cost against the attached permanent's printed cost before
+     * anything prices or pays it, the same way `PayCost.OwnManaCost` is lowered against its source,
+     * so every downstream path sees a uniform shape. An unattached source, or one attached to a
+     * permanent with no mana cost, prices as {0}.
+     */
+    @SerialName("AttachedPermanentManaCost")
+    @Serializable
+    data object AttachedPermanentManaCost : AbilityCost {
+        override val description: String = "Pay enchanted permanent's mana cost"
     }
 
     /** Tap the creature this aura is attached to ({T} enchanted creature) */

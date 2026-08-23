@@ -167,7 +167,9 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 // the player will actually pay.
                 val costWithDefinedX =
                     context.castPermissionUtils.applyDefinedXValue(rawCost, ability, state, entityId, playerId)
-                val effectiveCost = context.castPermissionUtils.relaxAbilityCostColorsIfAny(
+                val effectiveCost = context.castPermissionUtils.lowerAttachedManaCost(
+                    state, entityId,
+                    context.castPermissionUtils.relaxAbilityCostColorsIfAny(
                     state, entityId,
                     context.castPermissionUtils.applyFreeFirstEquipDiscount(
                         context.castPermissionUtils.applyEquipCostReduction(
@@ -179,6 +181,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         ),
                         ability, state, playerId
                     )
+                )
                 )
 
                 // Description shown to the player. When the effective cost differs from the printed
@@ -328,7 +331,8 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         }
                         is CostAtom.ExileFrom -> {
                             val targets = context.costUtils.findExileTargets(
-                                state, playerId, atom.filter, atom.zone
+                                state, playerId, atom.filter, atom.zone,
+                                atom.anyPlayersZone, atom.singleZone, atom.count
                             )
                             if (targets.size < atom.count) continue
                             exileCost = atom
@@ -358,7 +362,10 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         // here (life payability is validated at payment time, matching the prior
                         // fall-through behavior for these costs). Putting counters on the source
                         // costs nothing the player must have, so it never gates enumeration either.
-                        is CostAtom.PayLife, is CostAtom.RevealFromHand, is CostAtom.PutCountersOnSelf -> {}
+                        is CostAtom.PayLife, is CostAtom.RevealFromHand, is CostAtom.PutCountersOnSelf,
+                        // PayCost-only (Tourach's Chant); no activated ability pays it, so there is
+                        // nothing to enumerate.
+                        is CostAtom.PutCountersOnPermanent -> {}
                         // Gated above, before this `when` — only the chooser is offered the
                         // ability at all — and it takes no enumeration-time selection.
                         is CostAtom.RevealNotedCreatureType -> {}
@@ -551,8 +558,15 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                         // AdditionalCostData.validExileTargets (the picker prompt
                                         // for Rust Harvester's "Exile an artifact card from your
                                         // graveyard" cost).
+                                        // The atom's own pool flags have to ride along: Night Soil
+                                        // pays "{1}, Exile two creature cards from a single
+                                        // graveyard" as a *composite* cost, and dropping
+                                        // `anyPlayersZone` here narrowed the picker to the
+                                        // activating player's graveyard — an opponent's cards were
+                                        // legal payment the UI never offered.
                                         val targets = context.costUtils.findExileTargets(
-                                            state, playerId, atom.filter, atom.zone
+                                            state, playerId, atom.filter, atom.zone,
+                                            atom.anyPlayersZone, atom.singleZone, atom.count
                                         )
                                         if (targets.size < atom.count) {
                                             costCanBePaid = false
@@ -576,7 +590,8 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                     // Pay-life / reveal / put-counters-on-self carry no enumeration-time
                                     // gate here (matching the prior else fall-through for these sub-costs).
                                     is CostAtom.PayLife, is CostAtom.RevealFromHand,
-                                    is CostAtom.PutCountersOnSelf -> {}
+                                    is CostAtom.PutCountersOnSelf,
+                                    is CostAtom.PutCountersOnPermanent -> {}
                                     // See the top-level branch: gated before the `when`.
                                     is CostAtom.RevealNotedCreatureType -> {}
                                     // CR 701.17b — a mill cost is unpayable when the library holds
@@ -776,23 +791,11 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                     continue
                 }
 
-                // Check for X-variable costs early (needed for counter removal info and cost info)
-                val hasRemoveXCountersCostEarly = when (val cost = ability.cost) {
-                    is AbilityCost.Atom -> {
-                        val atom = cost.atom
-                        atom is CostAtom.RemoveCounters &&
-                            (atom.count is com.wingedsheep.sdk.scripting.values.DynamicAmount.XValue)
-                    }
-                    is AbilityCost.Composite -> cost.costs.any {
-                        if (it !is AbilityCost.Atom) false
-                        else {
-                            val atom = it.atom
-                            atom is CostAtom.RemoveCounters &&
-                                atom.count is com.wingedsheep.sdk.scripting.values.DynamicAmount.XValue
-                        }
-                    }
-                    else -> false
-                }
+                // Check for X-variable costs early (needed for counter removal info and cost info).
+                // The predicate is shared with ManaAbilityEnumerator — a mana ability can carry the
+                // same "remove any number of counters" X (the storage lands), and the two answers
+                // must agree or the client's X picker appears for one and not the other.
+                val hasNonManaXCost = context.costUtils.hasPlayerChosenNonManaX(ability.cost)
 
                 val hasTapXPermanentsCost = when (ability.cost) {
                     is AbilityCost.TapXPermanents -> true
@@ -880,15 +883,15 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 val abilityManaCostString = abilityManaCost?.toString()?.ifEmpty { "{0}" }
                 val abilityHasXInManaCost = abilityManaCost?.hasX == true
 
-                // Reuse the early checks for X-variable costs
-                val hasRemoveXCountersCost = hasRemoveXCountersCostEarly
+                // Reuse the early check for X-variable costs. It already covers TapXPermanents,
+                // so the OR below is belt-and-braces rather than two separate questions.
                 // Note: an `ExileXFromGraveyard` cost is deliberately NOT an X-picker cost. There X
                 // *is* the size of the graveyard selection, so the engine pauses for the cards and
                 // derives X from the count rather than asking for a number up front (see
                 // ActivateAbilityHandler's ExileXFromGraveyard pause). A `{X}` alongside it
                 // (Necropolis Fiend) still flags here through [abilityHasXInManaCost], because
                 // there X also has to be paid in mana.
-                val abilityHasXCost = abilityHasXInManaCost || hasRemoveXCountersCost || hasTapXPermanentsCost
+                val abilityHasXCost = abilityHasXInManaCost || hasNonManaXCost || hasTapXPermanentsCost
 
                 val abilityMaxAffordableX: Int? = if (abilityHasXCost) {
                     context.costUtils.calculateMaxAffordableX(state, playerId, ability.cost, abilityManaCost, precomputedSources = context.availableManaSources, sourceId = entityId)
@@ -1118,6 +1121,13 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
     /**
      * Check for "any player may activate" abilities on opponent's permanents (e.g., Lethal Vapors).
      */
+    /** See ActivateAbilityHandler.anyPlayerMayIn — the permission is often nested inside `All`. */
+    private fun anyPlayerMayIn(restriction: ActivationRestriction): Boolean = when (restriction) {
+        is ActivationRestriction.AnyPlayerMay -> true
+        is ActivationRestriction.All -> restriction.restrictions.any { anyPlayerMayIn(it) }
+        else -> false
+    }
+
     private fun enumerateAnyPlayerMayAbilities(context: EnumerationContext, result: MutableList<LegalAction>) {
         val state = context.state
         val playerId = context.playerId
@@ -1138,7 +1148,8 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
             // of a "any player may activate" permanent must still offer its ability.
             val cardDef = context.cardRegistry.getCard(cardComponent.cardDefinitionId) ?: continue
             val anyPlayerAbilities = cardDef.script.activatedAbilities.filter { ability ->
-                !ability.isManaAbility && ability.activateFromZone == Zone.BATTLEFIELD && ability.restrictions.any { it is ActivationRestriction.AnyPlayerMay }
+                !ability.isManaAbility && ability.activateFromZone == Zone.BATTLEFIELD &&
+                    ability.restrictions.any { anyPlayerMayIn(it) }
             }
             if (anyPlayerAbilities.isEmpty()) continue
 

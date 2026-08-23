@@ -96,6 +96,9 @@ export const counterManaClass: Record<string, string> = {
   PLUS_TWO_PLUS_ZERO: 'counter-plus',
   PLUS_ZERO_PLUS_TWO: 'counter-plus',
   MINUS_ONE_MINUS_ZERO: 'counter-minus',
+  PLUS_ONE_PLUS_TWO: 'counter-plus',
+  PLUS_TWO_PLUS_TWO: 'counter-plus',
+  MINUS_TWO_MINUS_TWO: 'counter-minus',
   MINUS_ZERO_MINUS_ONE: 'counter-minus',
   LOYALTY: 'counter-loyalty',
   CHARGE: 'counter-charge',
@@ -174,4 +177,8 @@ export const counterManaClass: Record<string, string> = {
   // Spore counters are the Fungus mechanic's own, so they get the font's fungus glyph. Sharing a
   // glyph with another type (as SILVER does with CHARGE) is fine — the badge tooltip disambiguates.
   SPORE: 'counter-fungus',
+  TIDE: 'counter-flood',
+  JAVELIN: 'counter-arrow',
+  CREDIT: 'counter-gold',
+  CUBE: 'counter-charge',
 }

@@ -246,11 +246,29 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
     data class ExileFrom(
         val zone: Zone,
         val filter: GameObjectFilter = GameObjectFilter.Any,
-        val count: Int = 1
+        val count: Int = 1,
+        /**
+         * Widen the pool from the payer's own [zone] to *every* player's — "exile two creature
+         * cards from a single graveyard" (Night Soil). Each card leaves from and is exiled by its
+         * own owner's zone; the payer only chooses.
+         */
+        val anyPlayersZone: Boolean = false,
+        /**
+         * With [anyPlayersZone], require all [count] cards to come from the *same* player's zone.
+         * That is the whole restriction on Night Soil: two lone creatures in two graveyards can't
+         * be combined, so a board with one creature card in each graveyard pays nothing.
+         */
+        val singleZone: Boolean = false,
     ) : CostAtom {
         override val selectionCount: Int get() = count
-        override val description: String get() =
-            "exile ${quantify(count, filter.description)} from your ${zone.name.lowercase()}"
+        override val description: String get() = when {
+            anyPlayersZone && singleZone ->
+                "exile ${quantify(count, filter.description)} from a single ${zone.name.lowercase()}"
+            anyPlayersZone ->
+                "exile ${quantify(count, filter.description)} from a ${zone.name.lowercase()}"
+            else ->
+                "exile ${quantify(count, filter.description)} from your ${zone.name.lowercase()}"
+        }
 
         override fun applyTextReplacement(replacer: TextReplacer): CostAtom {
             val newFilter = filter.applyTextReplacement(replacer)
@@ -378,6 +396,40 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
             append("put ")
             append(quantify(count, "$counterType counter"))
             append(" on this permanent")
+        }
+    }
+
+    /**
+     * Put [count] counters of [counterType] on a permanent matching [filter] that the *payer*
+     * controls — the selected-permanent sibling of [PutCountersOnSelf].
+     *
+     * Fallen Empires' Chants print it as the way out of a punisher clause: Tourach's Chant deals 3
+     * damage to a player "unless the player puts a -1/-1 counter on a creature they control". The
+     * payer picks which of their creatures takes it, and a player controlling no matching permanent
+     * simply cannot pay — unlike [PutCountersOnSelf], which is always payable because it needs no
+     * selection.
+     */
+    @SerialName("AtomPutCountersOnPermanent")
+    @Serializable
+    data class PutCountersOnPermanent(
+        val counterType: String,
+        val count: Int = 1,
+        val filter: GameObjectFilter = GameObjectFilter.Permanent,
+    ) : CostAtom {
+        override val selectionCount: Int get() = 1
+        override val description: String get() = buildString {
+            append("put ")
+            append(quantify(count, "$counterType counter"))
+            append(" on ")
+            append(filter.indefiniteArticle)
+            append(" ")
+            append(filter.description)
+            append(" you control")
+        }
+
+        override fun applyTextReplacement(replacer: TextReplacer): CostAtom {
+            val newFilter = filter.applyTextReplacement(replacer)
+            return if (newFilter !== filter) copy(filter = newFilter) else this
         }
     }
 

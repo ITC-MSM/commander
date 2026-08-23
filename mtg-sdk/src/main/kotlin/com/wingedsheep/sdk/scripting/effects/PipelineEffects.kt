@@ -753,7 +753,20 @@ enum class Chooser {
      * library…"-style effects (Magmatic Hellkite), where the destroyed permanent's
      * controller performs a follow-up search/choice.
      */
-    ControllerOfTarget
+    ControllerOfTarget,
+
+    /**
+     * The defending player (CR 802.2a) decides — the player, or the controller/protector of the
+     * planeswalker or battle, that the source of the ability is attacking. For an attack trigger
+     * whose payoff acts on that player's own cards, they are the one who chooses: "defending player
+     * discards three cards" (Mindstab Thrull) is their choice from their own hand, not the
+     * attacker's.
+     *
+     * Resolves through the same combat read as [com.wingedsheep.sdk.scripting.references.Player]
+     * `.DefendingPlayer`, including its removed-from-combat leg — so it still answers after an
+     * ability has sacrificed its own attacking source on the way to the choice.
+     */
+    DefendingPlayer
 }
 
 /**
@@ -815,7 +828,7 @@ data class GatherCardsEffect(
     val source: CardSource,
     val storeAs: String,
     val revealed: Boolean = false,
-    val lookAudience: LookAudience = LookAudience.Controller
+    val lookAudience: LookAudience = LookAudience.Controller,
 ) : Effect {
     override val description: String = buildString {
         if (revealed) append("Reveal ") else append("Look at ")

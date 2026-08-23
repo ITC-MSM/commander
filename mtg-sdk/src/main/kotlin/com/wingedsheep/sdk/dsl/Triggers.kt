@@ -476,12 +476,19 @@ object Triggers {
      * When this creature blocks or becomes blocked by a creature matching the filter.
      * TriggerContext.triggeringEntityId = the combat partner.
      * Sole consumer of [BlocksOrBecomesBlockedByEvent].
+     *
+     * Fires **once per matching partner** by default, which is what the singular printed wording
+     * ("blocks or becomes blocked by *a* creature", Corrosive Ooze) asks for. Set [oncePerCombat]
+     * for the "by **one or more** Orcs" wording (Dwarven Soldier), which is a single trigger
+     * however many partners match — the same distinction [BlocksOrBecomesBlocked] draws for the
+     * partner-less wording, but with a filter.
      */
     fun BlocksOrBecomesBlockedBy(
         filter: GameObjectFilter,
-        binding: TriggerBinding = TriggerBinding.SELF
+        binding: TriggerBinding = TriggerBinding.SELF,
+        oncePerCombat: Boolean = false
     ): TriggerSpec = TriggerSpec(
-        event = BlocksOrBecomesBlockedByEvent(partnerFilter = filter),
+        event = BlocksOrBecomesBlockedByEvent(partnerFilter = filter, oncePerCombat = oncePerCombat),
         binding = binding
     )
 

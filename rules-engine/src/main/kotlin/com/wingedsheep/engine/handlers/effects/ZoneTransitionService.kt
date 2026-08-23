@@ -84,7 +84,22 @@ data class ZoneEntryOptions(
      * the Craft cost payment, and only for the material exiles — never for the crafted card's own
      * self-exile.
      */
-    val craftMaterial: Boolean = false
+    val craftMaterial: Boolean = false,
+    /**
+     * The player performing a move into a library — the one who chose the card and watched where
+     * it landed, and so the one who may keep seeing it (CR 400.2). Only consulted for a
+     * [Zone.LIBRARY] destination at a known position; see
+     * [com.wingedsheep.engine.handlers.effects.library.LibraryRevealUtils.placementAudience].
+     *
+     * Left `null` by callers with no player behind the move, which yields no knowledge for anyone.
+     */
+    val libraryMoverId: EntityId? = null,
+    /**
+     * True when a move into a library is revealed to every player on the way in, which makes the
+     * placement public knowledge rather than the mover's alone. Independent of the source zone —
+     * a move out of a public zone is already table-wide without this.
+     */
+    val libraryMovePublic: Boolean = false
 )
 
 /**
@@ -191,6 +206,7 @@ object ZoneTransitionService {
         var lastKnownAttachedTo = options.lastKnownAttachedTo
         var lastKnownBlockingOrBlockedByIds: List<EntityId> = emptyList()
         var lastKnownWasAttacking = false
+        var lastKnownAttackedDefenderId: EntityId? = null
         var lastKnownWasToken = false
         var lastKnownCreatedBy: EntityId? = null
         var lastKnownDamageDealtByPlayers: Map<EntityId, Int> = emptyMap()
@@ -239,6 +255,11 @@ object ZoneTransitionService {
             // attacking" (Garna, Bloodfist of Keld) resolves after the death, so it can only read
             // last known information (CR 608.2h).
             lastKnownWasAttacking = container.has<AttackingComponent>()
+            // …and *what* it was attacking. CR 802.2a keeps naming a defending player after the
+            // creature "is no longer attacking" — the player it *was* attacking before it left
+            // combat — so an ability that outlives its own attacking source still has an answer.
+            // Mindstab Thrull sacrifices itself before the defending player discards.
+            lastKnownAttackedDefenderId = container.get<AttackingComponent>()?.defenderId
             lastKnownWasToken = container.has<TokenComponent>()
             // Which permanent minted this one — a token is gone from state by the time a
             // leaves-the-battlefield trigger gates (CR 704.5d), so "when the token leaves the
@@ -342,6 +363,7 @@ object ZoneTransitionService {
                 wasEnchanted = lastKnownWasEnchanted,
                 blockingOrBlockedByIds = lastKnownBlockingOrBlockedByIds,
                 wasAttacking = lastKnownWasAttacking,
+                attackedDefenderId = lastKnownAttackedDefenderId,
                 wasToken = lastKnownWasToken,
                 createdBy = lastKnownCreatedBy,
                 damageDealtByPlayers = lastKnownDamageDealtByPlayers,
@@ -609,6 +631,25 @@ object ZoneTransitionService {
                 if (effectiveLibraryPlacement is LibraryPlacement.Shuffled) {
                     events.add(com.wingedsheep.engine.core.LibraryShuffledEvent(ownerId))
                 }
+                // Every library entry in the engine passes through here, which makes this the one
+                // place that decides who is allowed to keep seeing the card. It *replaces* the
+                // card's reveal audience rather than adding to it, so whatever the card was known
+                // as elsewhere — revealed in a hand, public on the battlefield — does not survive
+                // being tucked away unless this placement itself grants it. A caller that says
+                // nothing gets the safe answer: nobody knows.
+                newState = com.wingedsheep.engine.handlers.effects.library.LibraryRevealUtils
+                    .setPlacementKnowledge(
+                        newState,
+                        listOf(entityId),
+                        com.wingedsheep.engine.handlers.effects.library.LibraryRevealUtils
+                            .placementAudience(
+                                fromZone = fromZone,
+                                publiclyRevealed = options.libraryMovePublic,
+                                moverId = options.libraryMoverId,
+                                allPlayers = newState.turnOrder,
+                                knownPosition = effectiveLibraryPlacement !is LibraryPlacement.Shuffled,
+                            )
+                    )
             }
             Zone.EXILE -> {
                 newState = newState.addToZone(destZoneKey, entityId)

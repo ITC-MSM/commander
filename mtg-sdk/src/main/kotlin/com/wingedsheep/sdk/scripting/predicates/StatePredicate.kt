@@ -194,6 +194,17 @@ sealed interface StatePredicate {
     }
 
     /**
+     * Blocking the entity an enclosing `ForEachInGroup` is iterating over — "creatures you control
+     * blocking **that creature**" (Tidal Flats), where "that creature" is the loop's current
+     * attacker rather than the effect's source. False outside such a loop.
+     */
+    @SerialName("IsBlockingIterationEntity")
+    @Serializable
+    data object IsBlockingIterationEntity : Entity {
+        override val description: String = "blocking that creature"
+    }
+
+    /**
      * A token that was *created by the effect's source permanent* — its provenance creator id (the
      * `CreatedByComponent` stamped when a `CreateTokenEffect` with `stampCreator = true` made it)
      * equals the source entity supplied in the evaluation context. Source-relative; yields false
@@ -792,6 +803,21 @@ sealed interface StatePredicate {
     @Serializable
     data class AttachedTo(val filter: com.wingedsheep.sdk.scripting.GameObjectFilter) : Entity {
         override val description: String = "attached to ${filter.description}"
+    }
+
+    /**
+     * The candidate's *controller* controls at least one permanent matching [filter] — "target
+     * creature whose controller controls an Island" (Seasinger). The nested filter is evaluated
+     * against projected battlefield state, and its "you" is bound to the candidate's controller
+     * rather than to the ability's controller, which is the whole point: the constraint is about
+     * the creature's owner-of-the-moment, not about who is casting.
+     */
+    @SerialName("ControllerControls")
+    @Serializable
+    data class ControllerControls(
+        val filter: com.wingedsheep.sdk.scripting.GameObjectFilter
+    ) : Entity {
+        override val description: String = "whose controller controls ${filter.indefiniteArticle} ${filter.description}"
     }
 
     // =============================================================================

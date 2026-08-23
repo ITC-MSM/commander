@@ -911,6 +911,22 @@ sealed interface DelayedTriggerExpiry {
     @SerialName("DelayedTriggerExpiry.UntilControllersNextTurn")
     @Serializable
     data object UntilControllersNextTurn : DelayedTriggerExpiry
+
+    /**
+     * Remove the delayed trigger when the current combat phase ends — the scope of a "this combat"
+     * rider, which [EndOfTurn] is too coarse for once a turn has more than one combat phase.
+     *
+     * Goblin Flotilla (FEM) installs one per combat: "At the beginning of each combat, unless you
+     * pay {R}, whenever this creature blocks or becomes blocked by a creature *this combat*, that
+     * creature gains first strike until end of turn." Paying in the second combat must not leave
+     * the first combat's unpaid watcher running.
+     *
+     * Expired alongside the removal of creatures from combat, on entry to the postcombat main
+     * phase — the same moment the engine considers the combat phase over.
+     */
+    @SerialName("DelayedTriggerExpiry.EndOfCombat")
+    @Serializable
+    data object EndOfCombat : DelayedTriggerExpiry
 }
 
 /**

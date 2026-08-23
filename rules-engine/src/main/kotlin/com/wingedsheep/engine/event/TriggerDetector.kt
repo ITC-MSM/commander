@@ -883,6 +883,50 @@ class TriggerDetector(
                     continue
                 }
 
+                // "…whenever this creature blocks or becomes blocked by a creature this combat, that
+                // creature gains first strike" (Goblin Flotilla). Like the battlefield-resident
+                // form, this fans out one trigger per combat partner so `TriggeringEntity` names
+                // the *partner* — the creature the rider actually acts on — rather than the watched
+                // creature itself.
+                if (specEvent is com.wingedsheep.sdk.scripting.EventPattern.BlocksOrBecomesBlockedByEvent &&
+                    event is com.wingedsheep.engine.core.BlockersDeclaredEvent &&
+                    delayed.watchedEntityId != null
+                ) {
+                    val watched = delayed.watchedEntityId
+                    val partners = mutableListOf<EntityId>()
+                    event.blockers[watched]?.let { partners.addAll(it) }
+                    for ((blockerId, attackerIds) in event.blockers) {
+                        if (attackerIds.contains(watched)) partners.add(blockerId)
+                    }
+                    for (partnerId in partners.distinct()) {
+                        val partnerFilter = specEvent.partnerFilter
+                        if (partnerFilter != null && !predicateEvaluator.matches(
+                                state, state.projectedState, partnerId, partnerFilter,
+                                PredicateContext(controllerId = delayed.controllerId, sourceId = delayed.sourceId)
+                            )
+                        ) continue
+                        if (delayed.fireOnce && delayed.id in firedOnceIds) continue
+                        if (delayed.fireOnce) firedOnceIds.add(delayed.id)
+                        triggers.add(
+                            PendingTrigger(
+                                ability = TriggeredAbility.create(
+                                    trigger = spec.event,
+                                    binding = spec.binding,
+                                    effect = delayed.effect,
+                                    targetRequirement = delayed.targetRequirement,
+                                    additionalTargetRequirements = delayed.additionalTargetRequirements
+                                ),
+                                sourceId = delayed.sourceId,
+                                sourceName = delayed.sourceName,
+                                controllerId = delayed.controllerId,
+                                triggerContext = TriggerContext(triggeringEntityId = partnerId),
+                                consumesDelayedTriggerId = if (delayed.fireOnce) delayed.id else null
+                            )
+                        )
+                    }
+                    continue
+                }
+
                 if (delayed.fireOnce) firedOnceIds.add(delayed.id)
                 triggers.add(
                     PendingTrigger(
@@ -1005,6 +1049,24 @@ class TriggerDetector(
                     com.wingedsheep.sdk.scripting.ControlChangeDirection.GAINED ->
                         event.newControllerId == controllerId
                 }
+            }
+            // Goblin Flotilla's "this combat" rider. Entity-scoped: the watched creature must be
+            // in combat with somebody; which partners it fired for is decided by the fan-out above.
+            is com.wingedsheep.sdk.scripting.EventPattern.BlocksOrBecomesBlockedByEvent -> {
+                if (event !is com.wingedsheep.engine.core.BlockersDeclaredEvent) return false
+                val watched = watchedEntityId ?: return false
+                event.blockers.containsKey(watched) || event.blockers.values.any { it.contains(watched) }
+            }
+            // "This turn, when target creature you control attacks and isn't blocked, …" — the
+            // Fallen Empires Delif's artifacts. Entity-scoped: the watched creature is the one
+            // whose unblocked attack the delayed trigger is waiting for, so the CR 509.3g test
+            // runs against it rather than against the artifact that created the trigger.
+            is com.wingedsheep.sdk.scripting.EventPattern.BecomesUnblockedEvent -> {
+                if (event !is com.wingedsheep.engine.core.BlockersDeclaredEvent) return false
+                val watched = watchedEntityId ?: return false
+                val isAttacking = state.getEntity(watched)
+                    ?.get<com.wingedsheep.engine.state.components.combat.AttackingComponent>() != null
+                isAttacking && event.blockers.values.none { it.contains(watched) }
             }
             else -> false
         }
@@ -1262,6 +1324,36 @@ class TriggerDetector(
                                     sourceName = cardComponent.name,
                                     controllerId = controllerId,
                                     triggerContext = TriggerContext(triggeringEntityId = partnerId)
+                                )
+                            )
+                        }
+                    }
+                    // "Whenever enchanted/equipped creature attacks and isn't blocked"
+                    // (Farrel's Mantle). BecomesUnblockedEvent piggybacks on BlockersDeclaredEvent
+                    // and its condition is a *negative* over the whole block map — "no blocker
+                    // lists this attacker" — which the per-entity AttachmentTriggerDetector path
+                    // cannot express, so ATTACHED is resolved here alongside the sibling
+                    // BlocksOrBecomesBlockedBy case. The combat relationships are read against the
+                    // enchanted creature; the trigger's source stays the Aura/Equipment, and the
+                    // triggering entity is the attacker so "it"/"its controller" bind to it.
+                    else if (ability.trigger is EventPattern.BecomesUnblockedEvent &&
+                        ability.binding == TriggerBinding.ATTACHED &&
+                        event is com.wingedsheep.engine.core.BlockersDeclaredEvent) {
+                        val attachedCreatureId = state.getEntity(entityId)
+                            ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
+                            ?.targetId
+                        val isAttacking = attachedCreatureId != null && state.getEntity(attachedCreatureId)
+                            ?.get<com.wingedsheep.engine.state.components.combat.AttackingComponent>() != null
+                        val isUnblocked = attachedCreatureId != null &&
+                            event.blockers.values.none { it.contains(attachedCreatureId) }
+                        if (isAttacking && isUnblocked) {
+                            triggers.add(
+                                PendingTrigger(
+                                    ability = ability,
+                                    sourceId = entityId,
+                                    sourceName = cardComponent.name,
+                                    controllerId = controllerId,
+                                    triggerContext = TriggerContext(triggeringEntityId = attachedCreatureId)
                                 )
                             )
                         }

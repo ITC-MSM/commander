@@ -248,7 +248,10 @@ class CastSpellEnumerator : ActionEnumerator {
                             sacrificeTargets.addAll(validSacTargets)
                         }
                         is CostAtom.ExileFrom -> {
-                            val validExileTargets = context.costUtils.findExileTargets(state, playerId, atom.filter, atom.zone)
+                            val validExileTargets = context.costUtils.findExileTargets(
+                                state, playerId, atom.filter, atom.zone,
+                                atom.anyPlayersZone, atom.singleZone, atom.count,
+                            )
                             if (validExileTargets.size < atom.count) {
                                 canPayAdditionalCosts = false
                             }
@@ -2965,7 +2968,10 @@ class CastSpellEnumerator : ActionEnumerator {
                             modeSacrificeTargets.addAll(validSacTargets)
                         }
                         is CostAtom.ExileFrom -> {
-                            val validExileTargets = context.costUtils.findExileTargets(state, playerId, atom.filter, atom.zone)
+                            val validExileTargets = context.costUtils.findExileTargets(
+                                state, playerId, atom.filter, atom.zone,
+                                atom.anyPlayersZone, atom.singleZone, atom.count,
+                            )
                             if (validExileTargets.size < atom.count) canPayAdditionalCosts = false
                             modeExileTargets = validExileTargets
                             modeExileMinCount = atom.count
