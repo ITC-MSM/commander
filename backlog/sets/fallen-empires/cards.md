@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 80 / 102
+**Implemented:** 81 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -111,7 +111,7 @@
 - [x] Aeolipile
 - [x] Balm of Restoration
 - [x] Conch Horn
-- [ ] Delif's Cone
+- [x] Delif's Cone
 - [ ] Delif's Cube
 - [x] Draconian Cylix
 - [x] Elven Lyre
