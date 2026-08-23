@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 71 / 102
+**Implemented:** 72 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -97,7 +97,7 @@
 - [x] Feral Thallid
 - [x] Fungal Bloom
 - [ ] Night Soil
-- [ ] Spore Cloud
+- [x] Spore Cloud
 - [x] Spore Flower
 - [x] Thallid
 - [x] Thallid Devourer
