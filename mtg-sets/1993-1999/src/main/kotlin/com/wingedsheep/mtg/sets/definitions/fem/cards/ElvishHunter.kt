@@ -36,6 +36,7 @@ val ElvishHunter = card("Elvish Hunter") {
             EffectTarget.ContextTarget(0),
             Duration.UntilAfterAffectedControllersNextUntap,
         )
+        description = "{1}{G}, {T}: Target creature doesn't untap during its controller's next untap step."
     }
 
     metadata {

@@ -38,6 +38,7 @@ val HandOfJustice = card("Hand of Justice") {
         )
         val t = target("target creature", TargetCreature(filter = TargetFilter.Creature))
         effect = Effects.Destroy(t)
+        description = "{T}, Tap three untapped white creatures you control: Destroy target creature."
     }
 
     metadata {

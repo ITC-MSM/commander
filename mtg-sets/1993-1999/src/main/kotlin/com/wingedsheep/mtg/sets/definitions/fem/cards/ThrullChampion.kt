@@ -44,6 +44,7 @@ val ThrullChampion = card("Thrull Champion") {
             TargetPermanent(filter = TargetFilter(GameObjectFilter.Permanent.withSubtype(Subtype.THRULL)))
         )
         effect = Effects.GainControl(t, Duration.WhileYouControlSource("this creature"))
+        description = "{T}: Gain control of target Thrull for as long as you control this creature."
     }
 
     metadata {

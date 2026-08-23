@@ -40,6 +40,7 @@ val TheloniteMonk = card("Thelonite Monk") {
             target = EffectTarget.ContextTarget(0),
             duration = Duration.Permanent
         )
+        description = "{T}, Sacrifice a green creature: Target land becomes a Forest."
     }
 
     metadata {

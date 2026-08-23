@@ -89,3 +89,43 @@ The ATTACHED binding of `AttacksAndIsntBlocked` was wired for this set. An **ANY
 variant ("whenever a creature you control attacks and isn't blocked") still is not, and
 `TriggerMatcher` declines it. No FEM card needs it; noted because the language reference's claim that
 the trigger is "SELF only" was updated and this is the part of that claim that survives.
+
+## 6. Auto-generated ability descriptions mangle composed filters — CORPUS-WIDE
+
+Surfaced by the self-play pass (Stage 3), which reads `legalActions[].description` — the same string
+a real client renders for an ability with no hand-written `description`.
+
+`GameObjectFilter` / `TargetFilter` description composition in `mtg-sdk` duplicates and misorders the
+filter words, and drops the noun after "target". Verbatim, before the card-level fix:
+
+```
+{T}, Tap 3 untapped you control untapped creature whites you control: Destroy target
+{1}{G}, {T}: target gains doesnt untap doesn't untap during its controller's next untap step
+{T}, Sacrifice a creature green: target becomes a Forest
+{T}: gain control of target for as long as you control this creature
+{T}, Sacrifice this permanent: Put 1 +1/+2 counter on target
+```
+
+`.withColor(WHITE).untapped().youControl()` renders as "untapped you control untapped creature whites
+you control" — the adjectives are emitted more than once and in the wrong order, and the
+`AbilityFlag` name leaks in raw ("doesnt untap doesn't untap").
+
+The card definitions are correct; only the generated rendering is wrong. **Fixed for FEM at the card
+level**: Hand of Justice, Elvish Hunter, Thelonite Monk, Thrull Champion and Thrull Retainer now
+carry an explicit `description`, which is the house idiom and which the set already used elsewhere.
+The composer itself is left alone — it renders every card in the corpus that omits a `description`,
+so changing it is a corpus-wide diff with a corpus-wide snapshot move and belongs in its own change.
+
+Two gym-API observations from the same pass, recorded because they cost a self-play driver real time
+and neither is a card defect:
+
+- A `CardsSelectedResponse` the engine rejects comes back **HTTP 200 with the same `decisionId`
+  re-issued**, so a driver cannot distinguish accepted from silently-rejected and can loop forever.
+- Triggered abilities on the stack are always reported as `kind: "OTHER"` with an empty name
+  (`ObservationBuilder`'s own comment concedes the fallback), so the doc's "did the trigger appear on
+  the stack?" check cannot actually be performed — triggers have to be inferred from state diffs.
+- `affordable: true` counts mana from sources whose activation cost is an explicit sacrifice (Basal
+  Thrull, Svyelunite Temple) that the auto-tap solver then refuses, and the cast path raises no
+  mana-source decision. The engine half is deliberate and asserted by
+  `ExplicitActivationManaSourcesTest`; the consequence is that `affordable` is not a usable gate for
+  a self-play driver.
