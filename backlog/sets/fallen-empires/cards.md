@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 13 / 102
+**Implemented:** 14 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -55,7 +55,7 @@
 
 ### Black
 - [ ] Armor Thrull
-- [ ] Basal Thrull
+- [x] Basal Thrull
 - [ ] Breeding Pit
 - [ ] Derelor
 - [ ] Ebon Praetor
