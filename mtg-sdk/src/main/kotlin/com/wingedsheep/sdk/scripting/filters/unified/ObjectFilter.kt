@@ -953,7 +953,6 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.ControllerDealtCombatDamageBySourceThisTurn
     )
 
-    /** Must be blocking */
     /**
      * The candidate's controller controls at least one permanent matching [subfilter] — Seasinger's
      * "target creature whose controller controls an Island". The subfilter's "you" is the
@@ -963,6 +962,7 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.ControllerControls(subfilter)
     )
 
+    /** Must be blocking */
     fun blocking() = copy(
         statePredicates = statePredicates + StatePredicate.IsBlocking
     )

@@ -424,8 +424,13 @@ export function isHighlightable(a: LegalActionInfo): boolean {
   // covers the storage lands ("{T}, Remove any number of storage counters: Add {B} for each"):
   // without it the card is unclickable, the X picker never opens, and the ability resolves for
   // X = 0 — counters spent, no mana produced.
+  // The X exception needs its own guard: a storage land with no counters still enumerates the
+  // ability (X = 0 is legal), so without this the land glows, the picker opens with maxX 0, and
+  // confirming taps it for nothing.
   const needsPlayerInput =
-    a.additionalCostInfo != null || a.manaCostString != null || a.hasXCost === true
+    a.additionalCostInfo != null ||
+    a.manaCostString != null ||
+    (a.hasXCost === true && (a.maxAffordableX ?? 0) > 0)
   return (!a.isManaAbility || needsPlayerInput) && a.isAffordable !== false
 }
 

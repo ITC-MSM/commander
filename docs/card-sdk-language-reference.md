@@ -925,8 +925,10 @@ self-exclusive one is never offered the source in the first place.
   matching permanent**, which is the whole point of the punisher clause it models: Tourach's Chant (FEM)
   deals 3 damage to a player "unless the player puts a -1/-1 counter on a creature they control", and a
   player with an empty board simply takes the damage. The payer picks which of their permanents takes it.
-- `Costs.pay.Exile(filter, zone = GRAVEYARD, count)` grows two flags for the "from a single graveyard"
-  wording. `anyPlayersZone = true` widens the pool from the payer's own zone to **every** player's (each
+- `Costs.ExileFromSingleGraveyard(count, filter)` is the "from a single graveyard" wording. The two
+  flags it sets live on the underlying `CostAtom.ExileFrom`, **not** on `Costs.pay.Exile` — that
+  facade is `(filter, zone = HAND, count)` and offers no way to reach them, so a `PayOrSuffer` cost
+  cannot express this shape today. `anyPlayersZone = true` widens the pool from the payer's own zone to **every** player's (each
   card leaves from, and is exiled by, its own owner's zone; the payer only chooses). `singleZone = true`
   then adds the other half: all `count` cards must come out of **one** player's zone. Both together are
   Night Soil (FEM), "{1}, Exile two creature cards from a single graveyard" — so a board with one
@@ -1449,8 +1451,9 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   **each printed size needs its own constant**, declared in both `CounterType` and `Counters` *and* listed in
   `CounterType.STAT_COUNTERS` so `fromName` can resolve its printed spelling. Miss that last step and the
   counter works everywhere except by name, silently. `CounterTypeStatCoverageTest` guards it.
-  Each has a matching `CounterTypeFilter` (`PlusOnePlusZero`, etc.) for `EntersWithCounters`,
-  counter-count dynamic amounts, and counter triggers. Only `+1/+1` and `-1/-1` annihilate each other as a
+  The **six one-step kinds** have a dedicated `CounterTypeFilter` case (`PlusOnePlusZero`, etc.) for
+  `EntersWithCounters`, counter-count dynamic amounts, and counter triggers; the asymmetric sizes
+  (`+1/+2`, `+2/+2`, `-2/-2`) have none and go through `CounterTypeFilter.Named("+1/+2")`. Only `+1/+1` and `-1/-1` annihilate each other as a
   state-based action (CR 122.3); the asymmetric counters never cancel.
 - `DoubleCounters(type?, target?)` — one-shot doubling of the `type` counters (default `+1/+1`) already on the
   target: reads the current count and places that many more (so the total doubles). Distinct from the
@@ -4534,6 +4537,13 @@ work for abilities-on-stack (which carry no `CardComponent`).
   counterpart of `IsBlockingSource` — reach for it whenever the printed "that creature" is the loop
   variable and not the permanent whose ability is resolving. Inert in group/projection contexts, which
   have no loop.
+- `ControllerControls(filter)` (filter builder `controllerControls(subfilter)`) — the candidate's
+  **controller** controls something matching `subfilter`: "target creature whose controller controls
+  an Island" (Seasinger, FEM). The load-bearing detail is that the subfilter's `youControl()` is
+  rebound to the *candidate's* controller, not the ability's — `PredicateEvaluator` swaps
+  `PredicateContext.controllerId` for the candidate's before evaluating the nested filter. That is the
+  whole point: the constraint is about whose creature it is right now, not about who is casting. The
+  nested filter reads projected battlefield state.
 - `IsCombatPairedWithSource` (filter builder `blockingOrBlockedBySource()`) — the same CR 509
   pairing read **live in both directions**: the candidate blocks the source, or the source blocks
   the candidate. "Each creature blocking or blocked by this creature" (Spitting Slug =
@@ -12012,12 +12022,6 @@ Counter effects live in §4 (`AddCounters`, `RemoveCounters`, `Proliferate`, `Mo
   single pile face up for everyone — including the caster, before a `ChoosePileEffect` — re-gather
   that pile via `GatherCards(FromVariable("pile"), revealed = true)`; any pile never revealed
   renders to the caster as opaque card backs (Sauron's Ransom's concealed face-down pile).
-  `excludeCollection = "<name>"` drops from the gathered set every entity already present in that stored
-  collection — the **set difference** the pipeline otherwise cannot express. Raiding Party (FEM) is the
-  shape that needs it: each player picks Plains to spare, the picks accumulate into one collection across
-  players, and what is destroyed is "all Plains that weren't chosen this way by **any** player" — the
-  Plains on the battlefield *minus* that accumulated set. An absent or unknown collection name excludes
-  nothing, so the gather degrades to its unfiltered self rather than silently emptying.
 - `CaptureControllersEffect(from, storeAs)` — snapshot each entity's current controller into a parallel
   `List<EntityId>` under `storedCollections[storeAs]`. Required when a later step needs "who controlled
   this card before it left the battlefield" — `ControllerComponent` is stripped on move-out.

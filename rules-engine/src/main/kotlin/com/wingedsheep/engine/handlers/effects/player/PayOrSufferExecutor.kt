@@ -394,6 +394,7 @@ class PayOrSufferExecutor(
             triggeringEntityId = context.triggeringEntityId,
             triggeringPlayerId = context.triggeringPlayerId,
             abilityControllerId = context.controllerId,
+            storedCollections = context.pipeline.storedCollections,
             iterationEntityId = context.pipeline.iterationTarget
         )
 
@@ -509,7 +510,7 @@ class PayOrSufferExecutor(
                 sourceName = sourceName,
                 phase = DecisionPhase.RESOLUTION
             ),
-            yesText = "Mill $cards",
+            yesText = "Mill ${cost.count} $cards",
             noText = "Accept consequence"
         )
 

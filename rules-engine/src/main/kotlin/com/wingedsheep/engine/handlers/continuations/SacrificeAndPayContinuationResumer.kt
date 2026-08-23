@@ -5,6 +5,8 @@ import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
 import com.wingedsheep.engine.handlers.effects.zones.ForceExileMultiZoneExecutor
 import com.wingedsheep.engine.handlers.effects.zones.ForceSacrificeExecutor
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.handlers.effects.library.MillAmountModifier
 import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.EffectContext
@@ -404,20 +406,40 @@ class SacrificeAndPayContinuationResumer(
         val counterType = com.wingedsheep.engine.handlers.effects.permanent.counters
             .resolveCounterType(counterName)
 
+        // Counters put on to pay a cost are an ordinary counter placement (CR 121.6), so this runs
+        // the same four-step chokepoint as CostHandler's PutCountersOnSelf and AddCountersExecutor:
+        // the "can't have counters put on it" gate (Solemnity), the placement replacements
+        // (Hardened Scales, Doubling Season), the first-placement-this-turn marker, and a
+        // CountersAddedEvent that names its placer. Skipping any of them is silent — a placer-less
+        // event makes every placer-restricted trigger decline, and nothing fails.
+        val placerId = continuation.playerId
         var newState = state
         val events = mutableListOf<GameEvent>()
         for (permanentId in selected) {
             val container = newState.getEntity(permanentId) ?: continue
+            if (!newState.projectedState.canReceiveCounters(permanentId)) continue
             val counters = container.get<CountersComponent>() ?: CountersComponent()
+            val modifiedCount = ReplacementEffectUtils.applyCounterPlacementModifiers(
+                newState, permanentId, counterType, continuation.requiredCounters, placerId = placerId
+            )
+            val firstThisTurn = DamageUtils.isFirstCounterThisTurn(newState, permanentId)
             newState = newState.updateEntity(permanentId) { c ->
-                c.with(counters.withAdded(counterType, continuation.requiredCounters))
+                c.with(counters.withAdded(counterType, modifiedCount))
+            }.let {
+                DamageUtils.markCounterPlacedOnCreature(
+                    it, placerId, permanentId,
+                    com.wingedsheep.engine.handlers.effects.permanent.counters
+                        .counterTypeToString(counterType)
+                )
             }
             events.add(
                 CountersAddedEvent(
                     permanentId,
                     counterName,
-                    continuation.requiredCounters,
-                    container.get<CardComponent>()?.name ?: "Permanent"
+                    modifiedCount,
+                    container.get<CardComponent>()?.name ?: "Permanent",
+                    firstThisTurn,
+                    placedBy = placerId,
                 )
             )
         }

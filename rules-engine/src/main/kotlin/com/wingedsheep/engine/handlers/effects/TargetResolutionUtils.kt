@@ -309,12 +309,7 @@ object TargetResolutionUtils {
             ?: container.get<TriggeredAbilityOnStackComponent>()?.controllerId
     }
 
-    /**
-     * The controller ladder: caster → projected → base → last-known → owner. Shared rather than
-     * duplicated — [TriggerProcessor] resolves a trigger's `decisionMaker` before any
-     * [EffectContext] exists, and a second hand-rolled ladder would drift from this one.
-     */
-    internal fun controllerOf(state: GameState, entityId: EntityId): EntityId? {
+    private fun controllerOf(state: GameState, entityId: EntityId): EntityId? {
         val entity = state.getEntity(entityId) ?: return null
         return entity.get<SpellOnStackComponent>()?.casterId
             ?: state.projectedState.getController(entityId)

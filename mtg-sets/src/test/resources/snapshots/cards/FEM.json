@@ -4575,8 +4575,16 @@
                                 "type": "BattlefieldMatching",
                                 "filter": "land Plains"
                             },
-                            "storeAs": "doomed",
-                            "excludeCollection": "allSpared"
+                            "storeAs": "allPlains"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "allPlains",
+                            "filter": {
+                                "type": "ExcludeOtherCollection",
+                                "otherCollectionName": "allSpared"
+                            },
+                            "storeMatching": "doomed"
                         },
                         {
                             "type": "MoveCollection",

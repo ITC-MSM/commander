@@ -332,15 +332,7 @@ class GatherCardsExecutor : EffectExecutor<GatherCardsEffect> {
             }
         }
 
-        // Set difference against an already-stored collection — "all Plains that weren't chosen
-        // this way by any player" (Raiding Party). Applied before the empty check so an exclusion
-        // that removes everything short-circuits the same way an empty gather does.
-        val cards = if (effect.excludeCollection != null) {
-            val excluded = context.pipeline.storedCollections[effect.excludeCollection].orEmpty().toSet()
-            gathered.filterNot { it in excluded }
-        } else {
-            gathered
-        }
+        val cards = gathered
 
         if (cards.isEmpty()) {
             return EffectResult.success(state).copy(

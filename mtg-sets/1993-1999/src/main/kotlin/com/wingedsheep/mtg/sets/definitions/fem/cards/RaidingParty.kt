@@ -14,6 +14,8 @@ import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.Chooser
 import com.wingedsheep.sdk.scripting.effects.ForEachInCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachPlayerCollectingEffect
+import com.wingedsheep.sdk.scripting.effects.CollectionFilter
+import com.wingedsheep.sdk.scripting.effects.FilterCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.MoveType
@@ -39,8 +41,8 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *
  * Three pipeline pieces carry it: [ForEachPlayerCollectingEffect] runs a fresh sub-pipeline per
  * player in APNAP order and appends each player's picks into one shared collection; the
- * spare-count is the selection's own `_count` doubled; and the final gather uses
- * `excludeCollection` to take the battlefield's Plains *minus* everything spared.
+ * spare-count is the selection's own `_count` doubled; and a `FilterCollectionEffect` over
+ * `CollectionFilter.ExcludeOtherCollection` takes the battlefield's Plains *minus* everything spared.
  *
  * Note "up to two Plains" is not "up to two of your Plains" — a player may spare an opponent's, and
  * a player who taps nothing simply spares nothing.
@@ -101,12 +103,18 @@ val RaidingParty = card("Raiding Party") {
                 collectCollections = mapOf("spared" to "allSpared"),
             ),
             // Everything left over — the complement of what every player spared between them.
+            // Gather every Plains, then subtract the accumulated picks: the set difference is
+            // `CollectionFilter.ExcludeOtherCollection`, which is what that filter exists for.
             GatherCardsEffect(
                 source = CardSource.BattlefieldMatching(
                     filter = GameObjectFilter.Land.withSubtype(Subtype.PLAINS)
                 ),
-                storeAs = "doomed",
-                excludeCollection = "allSpared",
+                storeAs = "allPlains",
+            ),
+            FilterCollectionEffect(
+                from = "allPlains",
+                filter = CollectionFilter.ExcludeOtherCollection("allSpared"),
+                storeMatching = "doomed",
             ),
             MoveCollectionEffect(
                 from = "doomed",

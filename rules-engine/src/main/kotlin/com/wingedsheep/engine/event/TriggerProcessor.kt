@@ -14,6 +14,7 @@ import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComp
 import com.wingedsheep.engine.state.components.stack.abilityIdentityOf
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.sdk.dsl.LibraryPatterns
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityId
@@ -207,7 +208,11 @@ class TriggerProcessor(
             )
         )
         if (legalTargets.isEmpty() && targetRequirement.effectiveMinCount > 0) return null
-        return BatchKey(trigger.controllerId, identity)
+        // Keyed on who is *asked*, not who controls the ability. A card whose "may" names someone
+        // else (Farrel's Mantle's "its controller may") can produce two triggers with the same
+        // controller and the same identity while the question belongs to two different players —
+        // batching those would fan one player's answer onto the other's decision.
+        return BatchKey(askedPlayerFor(state, trigger), identity)
     }
 
     /**
@@ -245,7 +250,9 @@ class TriggerProcessor(
         val decisionId = "batch-may-${java.util.UUID.randomUUID()}"
         val decision = BatchYesNoDecision(
             id = decisionId,
-            playerId = first.controllerId,
+            // Same player the BatchKey was built on, so the auto-answer store is keyed identically
+            // on the batched and single paths.
+            playerId = askedPlayerFor(state, first),
             prompt = ability.effect.description,
             context = DecisionContext(
                 sourceId = first.sourceId,
@@ -397,6 +404,26 @@ class TriggerProcessor(
      * Before asking, checks if legal targets exist — if not, the ability fizzles
      * without even asking the may question.
      */
+    /**
+     * The player who answers a "you may" on a triggered ability: the ability's `decisionMaker` when
+     * it names one, else its controller.
+     *
+     * Routed through the shared [TargetResolutionUtils.resolvePlayerTarget] rather than a local
+     * `when`, so every [EffectTarget] player shape it already understands works here too and cannot
+     * drift from the resolution-time answer [GatedEffectExecutor] gives. Anything it cannot resolve
+     * falls back to the controller — what every card without a `decisionMaker` already gets.
+     */
+    private fun askedPlayerFor(state: GameState, trigger: PendingTrigger): EntityId {
+        val chooser = trigger.ability.effect.asMayDecide()?.decisionMaker ?: return trigger.controllerId
+        val context = EffectContext(
+            sourceId = trigger.sourceId,
+            controllerId = trigger.controllerId,
+            triggeringEntityId = trigger.triggerContext.triggeringEntityId,
+            triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+        )
+        return TargetResolutionUtils.resolvePlayerTarget(chooser, context, state) ?: trigger.controllerId
+    }
+
     private fun processMayThenTargetTrigger(
         state: GameState,
         trigger: PendingTrigger,
@@ -454,17 +481,8 @@ class TriggerProcessor(
         // Who is asked. Normally the ability's controller, but a card can name someone else —
         // Farrel's Mantle's "its controller may", where "it" is the enchanted creature and the Aura
         // may sit on an opponent's permanent. This path asks the question before the effect runs,
-        // so GatedEffectExecutor's own decisionMaker handling never gets the chance; resolve it
-        // here from the triggering entity. Anything this can't resolve falls back to the
-        // controller, which is what every card without a decisionMaker already gets.
-        val askedPlayerId = when (val chooser = ability.effect.asMayDecide()?.decisionMaker) {
-            null, is com.wingedsheep.sdk.scripting.targets.EffectTarget.Controller -> trigger.controllerId
-            is com.wingedsheep.sdk.scripting.targets.EffectTarget.ControllerOfTriggeringEntity ->
-                trigger.triggerContext.triggeringEntityId
-                    ?.let { com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.controllerOf(state, it) }
-                    ?: trigger.controllerId
-            else -> trigger.controllerId
-        }
+        // so GatedEffectExecutor's own decisionMaker handling never gets the chance.
+        val askedPlayerId = askedPlayerFor(state, trigger)
 
         // Persistent auto-answer yield (backlog §C): a remembered yes/no for this ability resolves
         // the may-question without prompting. "Yes" still proceeds to per-instance target selection
