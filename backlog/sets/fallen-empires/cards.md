@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 82 / 102
+**Implemented:** 83 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -54,7 +54,7 @@
 - [ ] Vodalian War Machine
 
 ### Black
-- [ ] Armor Thrull
+- [x] Armor Thrull
 - [x] Basal Thrull
 - [x] Breeding Pit
 - [x] Derelor
