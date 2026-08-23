@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 24 / 102
+**Implemented:** 25 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -131,4 +131,4 @@
 - [ ] Rainbow Vale
 - [x] Ruins of Trokair
 - [ ] Sand Silos
-- [ ] Svyelunite Temple
+- [x] Svyelunite Temple
