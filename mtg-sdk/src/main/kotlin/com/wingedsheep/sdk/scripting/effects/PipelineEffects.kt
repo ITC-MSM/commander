@@ -443,6 +443,15 @@ sealed interface SelectionMode {
 
     /**
      * Player must choose exactly N cards.
+     *
+     * **N is a ceiling, not a contract.** When the collection holds fewer than N eligible cards the
+     * executor clamps to what is there and selects them all, rather than failing — which is right
+     * for "discard two cards" with one card in hand, and wrong for a card whose text is
+     * all-or-nothing. If "if you can't, …" is printed on the card (Frankenstein's Monster: "exile X
+     * creature cards from your graveyard. If you can't, put this creature into its owner's
+     * graveyard instead"), gate the whole selection on a `Conditions.CompareAmounts` count of the
+     * source zone *before* anything moves and put the failure in the else branch; leaving it to
+     * this mode silently builds the smaller outcome instead of none.
      */
     @SerialName("ChooseExactly")
     @Serializable

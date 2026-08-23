@@ -423,15 +423,20 @@ sealed interface StatePredicate {
      * creatures that couldn't attack" clause of Season of the Witch, which spares a creature that
      * had no choice in the matter rather than punishing it for staying home.
      *
-     * The reasons a creature had no choice, in the order CR 508.1a asks them:
+     * The reasons a creature had no choice. Who may be declared, and by whom, is CR 508.1a:
      *
      *  - **its controller wasn't attacking this turn.** Only the active player declares attackers,
      *    so every creature an opponent controls is spared — the sweep is one-sided in practice,
      *    hitting only the creatures that skipped the turn's Declare Attackers Step. In a
      *    shared-team-turns format the whole active team counts (CR 805.10b).
-     *  - **defender**, a **"can't attack"** effect (Pacifism), or **summoning sickness** (entered
-     *    this turn without haste). These read from projected state where they can, so
-     *    granted/removed keywords and effects count.
+     *  - **no Declare Attackers Step happened at all.** The clause above asks whose turn it is,
+     *    which is not the same question: an effect that skips the combat phase (False Peace,
+     *    Fatespinner) means nobody was ever offered the choice, so nobody stayed home by choice.
+     *  - **summoning sickness** — it entered this turn without haste.
+     *
+     * And the attack *restrictions*, CR 508.1c: **defender** (CR 702.3b) or a **"can't attack"**
+     * effect (Pacifism). All of these read from projected state where they can, so granted/removed
+     * keywords and effects count.
      *
      * It deliberately does *not* re-run the full declare-attackers legality check — that needs a
      * chosen defending player and a `CardRestrictionsError`-style card registry, neither of which

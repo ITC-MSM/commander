@@ -22,6 +22,7 @@ import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.battlefield.SaddledComponent
 import com.wingedsheep.engine.state.components.battlefield.SolvedComponent
 import com.wingedsheep.engine.state.components.combat.AttackedThisCombatComponent
+import com.wingedsheep.engine.state.components.combat.AttackersDeclaredThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.combat.BlockedThisCombatComponent
 import com.wingedsheep.engine.state.components.combat.BlockedThisTurnComponent
@@ -1502,8 +1503,13 @@ class PredicateEvaluator {
             // Whether this creature has been declared as an attacker this turn — derived
             // from the controller's PlayerAttackersThisTurnComponent, the same set that
             // backs raid / "you attacked with N creatures this turn" tribal triggers.
+            //
+            // Controller comes from projection first: after an Act of Treason the base
+            // ControllerComponent names the player who no longer controls it, and the attacker set
+            // lives on the player who declared. AffectsFilterResolver reads it the same way.
             StatePredicate.AttackedThisTurn -> {
-                val controllerId = container.get<ControllerComponent>()?.playerId
+                val controllerId = projected.getController(entityId)
+                    ?: container.get<ControllerComponent>()?.playerId
                     ?: return false
                 val attackerSet = state.getEntity(controllerId)
                     ?.get<PlayerAttackersThisTurnComponent>()
@@ -1512,15 +1518,22 @@ class PredicateEvaluator {
             }
 
             // "Creatures that couldn't attack" (Season of the Witch). The clause spares a creature
-            // that had no say in staying home, so it asks a cut-down version of what CR 508.1a asks
-            // at declare-attackers time:
+            // that had no say in staying home, so it asks a cut-down version of the declare-attackers
+            // checks. Two of the three come from CR 508.1a — who may be declared, and by whom:
             //  - only the active player declares attackers, so a creature its controller couldn't
             //    have attacked *with* — anything an opponent controls on this turn — is spared.
-            //    Asked through `isActiveTurnFor`, so a shared-team turn (CR 805.4) counts both
+            //    Asked through `isActiveTurnFor`, so a shared team turn (CR 805.10b) counts both
             //    teammates' creatures as able to attack;
-            //  - defender, a projected "can't attack" (Pacifism), or summoning sickness (entered
-            //    this turn without haste). All three read from projection where they can, so
-            //    granted/removed keywords count.
+            //  - summoning sickness (entered this turn without haste);
+            // and the third from CR 508.1c, the attack *restrictions*: defender (CR 702.3b) or a
+            // projected "can't attack" (Pacifism). All of them read from projection where they can,
+            // so granted/removed keywords count.
+            //
+            // The controller clause asks whose turn it is, which answers "was this player the one
+            // declaring?" but not "did a declaration happen at all". AttackersDeclaredThisTurn is
+            // the second half: an effect that skips the combat phase (False Peace, Fatespinner)
+            // means nobody reached a Declare Attackers Step, so no creature stayed home by choice.
+            //
             // Not the full declare-attackers legality check — that needs a chosen defending player
             // and a card registry, neither of which predicate evaluation has — so a creature kept
             // home only by a "can't attack unless …" restriction is still destroyed, as is one that
@@ -1531,6 +1544,8 @@ class PredicateEvaluator {
                     ?: container.get<ControllerComponent>()?.playerId
                 controllerId == null ||
                     !state.isActiveTurnFor(controllerId) ||
+                    state.getEntity(controllerId)
+                        ?.has<AttackersDeclaredThisTurnComponent>() != true ||
                     projected.hasKeyword(entityId, Keyword.DEFENDER) ||
                     projected.cantAttack(entityId) ||
                     (
@@ -1540,9 +1555,11 @@ class PredicateEvaluator {
             }
 
             // The same read one turn back: PlayerAttackersLastTurnComponent is the this-turn set as
-            // it stood at the end of the controller's own most recent turn.
+            // it stood at the end of the controller's own most recent turn. Controller read as
+            // above, so the two attack-history predicates agree with each other and with projection.
             StatePredicate.AttackedLastTurn -> {
-                val controllerId = container.get<ControllerComponent>()?.playerId
+                val controllerId = projected.getController(entityId)
+                    ?: container.get<ControllerComponent>()?.playerId
                     ?: return false
                 val attackerSet = state.getEntity(controllerId)
                     ?.get<PlayerAttackersLastTurnComponent>()

@@ -9056,14 +9056,19 @@ answer it and would silently return `false`.
   reasons a creature had no say in staying home. First, **its controller wasn't the one attacking**:
   only the active player declares attackers (CR 508.1a), so every creature an opponent controls is
   exempt and the sweep only ever hits creatures that skipped this turn's Declare Attackers Step. (In
-  a shared-team-turns format the whole active team counts — CR 805.10b.) Then the per-creature
-  reasons, read from projection where they can be: it has **defender**, it **can't attack**
-  (Pacifism), or it is **summoning sick** (entered this turn without haste). It is deliberately
-  *not* the full declare-attackers legality check — that needs a chosen defending player and a card
-  registry, neither of which predicate evaluation has — so a creature kept home only by a
-  card-specific "can't attack unless …" restriction is not exempt, and neither is one that came
-  under its controller's control this turn without entering the battlefield. Implemented identically
-  in `PredicateEvaluator` and `AffectsFilterResolver` so resolution and projection agree.
+  a shared-team-turns format the whole active team counts — CR 805.10b.) Second, **no Declare
+  Attackers Step happened at all** — a distinct question from whose turn it is, and the one that
+  keeps an effect skipping the combat phase (False Peace, Fatespinner) from making the sweep punish
+  a choice nobody was offered; backed by `AttackersDeclaredThisTurnComponent`, the turn-scoped
+  sibling of `AttackersDeclaredThisCombatComponent`, stamped even for an empty declaration. Then the
+  per-creature reasons, read from projection where they can be: it is **summoning sick** (entered
+  this turn without haste, CR 508.1a), or it is under an attack restriction (CR 508.1c) — it has
+  **defender** (CR 702.3b) or it **can't attack** (Pacifism). It is deliberately *not* the full
+  declare-attackers legality check — that needs a chosen defending player and a card registry,
+  neither of which predicate evaluation has — so a creature kept home only by a card-specific "can't
+  attack unless …" restriction is not exempt, and neither is one that came under its controller's
+  control this turn without entering the battlefield. Implemented identically in
+  `PredicateEvaluator` and `AffectsFilterResolver` so resolution and projection agree.
 - `SourceBlockedThisTurn` — this permanent was declared as a blocker at least once **this turn**
   (CR 509.1). The turn-scoped sibling of `SourceBlockedThisCombat`: backed by
   `BlockedThisTurnComponent`, stamped beside the per-combat marker at blocker declaration but
@@ -10798,8 +10803,10 @@ spell {
 
 **Dynamic "choose up to X"** — `ModalEffect.chooseUpToDynamic(dynamicMax, *modes, allowRepeat = false)`
 caps the pick count by a `DynamicAmount`, evaluated as the ability goes onto the stack for a
-triggered ability and at resolution for an activated one. `minChooseCount` is
-forced to `0` (the player may always decline); `chooseCount` becomes `min(eval, modes.size)`.
+triggered ability and at resolution for an activated one. This factory sets no
+`dynamicMinChooseCount`, so the floor stays `0` (the player may always decline); `chooseCount`
+becomes `min(eval, modes.size)` — or just `eval`, uncapped by the mode list, when
+`allowRepeat = true` lets one mode fill every pick.
 If the evaluated cap is `0` no mode is chosen and nothing happens. Used by Riku of Many Paths,
 where the cap is `ContextProperty(MODES_CHOSEN_ON_TRIGGERING_SPELL)`. Equivalent raw shape:
 `ModalEffect(modes, chooseCount = modes.size, minChooseCount = 0, dynamicChooseCount = …)`.

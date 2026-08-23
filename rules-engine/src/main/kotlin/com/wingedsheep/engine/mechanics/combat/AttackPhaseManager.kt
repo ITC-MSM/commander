@@ -8,6 +8,7 @@ import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.combat.AttackedThisCombatComponent
 import com.wingedsheep.engine.state.components.combat.AttackersDeclaredThisCombatComponent
+import com.wingedsheep.engine.state.components.combat.AttackersDeclaredThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.GoadedComponent
 import com.wingedsheep.engine.state.components.combat.MustAttackPlayerComponent
 import com.wingedsheep.engine.state.components.combat.MustAttackThisTurnComponent
@@ -233,7 +234,11 @@ internal class AttackPhaseManager(
         val attackersAgainstPlayer = attackers.filterValues { it in state.turnOrder }.keys
 
         newState = newState.updateEntity(attackingPlayer) { container ->
-            var updated = container.with(AttackersDeclaredThisCombatComponent)
+            // Both markers are stamped even for an empty declaration: they record that the step
+            // happened, which is what tells "declared nothing" apart from "never got the chance".
+            var updated = container
+                .with(AttackersDeclaredThisCombatComponent)
+                .with(AttackersDeclaredThisTurnComponent)
             if (attackers.isNotEmpty()) {
                 updated = updated.with(PlayerAttackedThisTurnComponent)
                 val previous = container.get<PlayerAttackersThisTurnComponent>()?.attackerIds ?: emptySet()

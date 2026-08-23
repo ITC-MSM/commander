@@ -22,6 +22,7 @@ import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityFired
 import com.wingedsheep.engine.state.components.battlefield.GraveyardPlayPermissionUsedComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.battlefield.TokenReplacementOfferedThisTurnComponent
+import com.wingedsheep.engine.state.components.combat.AttackersDeclaredThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.BlockedOrWasBlockedByLegendaryThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.CanAttackDespiteDefenderThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.GoadedComponent
@@ -807,6 +808,9 @@ class CleanupPhaseManager(
             if (container.has<ReceivedCountersThisTurnComponent>()) {
                 needsUpdate = true
             }
+            if (container.has<AttackersDeclaredThisTurnComponent>()) {
+                needsUpdate = true
+            }
             if (container.has<PlayerAttackedThisTurnComponent>()) {
                 needsUpdate = true
             }
@@ -870,6 +874,7 @@ class CleanupPhaseManager(
                         .without<DamageDealtToCreaturesThisTurnComponent>()
                         .without<TargetedByControllerThisTurnComponent>()
                         .without<ReceivedCountersThisTurnComponent>()
+                        .without<AttackersDeclaredThisTurnComponent>()
                         .without<PlayerAttackedThisTurnComponent>()
                         .without<PlayerAttackersThisTurnComponent>()
                         .without<PlayerAttackedPlayersThisTurnComponent>()

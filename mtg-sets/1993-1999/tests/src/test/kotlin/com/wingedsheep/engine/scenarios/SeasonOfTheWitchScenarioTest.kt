@@ -1,6 +1,8 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.YesNoDecision
+import com.wingedsheep.engine.state.components.combat.AttackersDeclaredThisTurnComponent
+import com.wingedsheep.engine.state.components.player.SkipCombatPhasesComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
@@ -18,11 +20,13 @@ import io.kotest.matchers.types.shouldBeInstanceOf
  *  At the beginning of the end step, destroy all untapped creatures that didn't attack this turn,
  *  except for creatures that couldn't attack."
  *
- * The end-step sweep is the interesting half: it has to spare four different kinds of creature —
- * the ones that attacked, the ones left tapped, the ones that never had the option (defender,
- * "can't attack", summoning sickness), and — the broadest exemption, and the easiest to miss —
- * every creature the *non-active* player controls, since only the active player ever declares
- * attackers (CR 508.1a).
+ * The end-step sweep is the interesting half: it has to spare the ones that attacked, the ones left
+ * tapped, the ones that never had the option (defender, "can't attack", summoning sickness), and —
+ * the broadest exemptions, and the easiest to miss — every creature the *non-active* player
+ * controls, since only the active player ever declares attackers (CR 508.1a), plus the entire board
+ * on a turn whose combat phase was skipped, where no attacker could be declared at all. The last
+ * two each come with a control test asserting the sweep still bites without them, because a sweep
+ * that silently failed to run would pass every "spared" assertion on its own.
  */
 class SeasonOfTheWitchScenarioTest : ScenarioTestBase() {
 
@@ -103,6 +107,62 @@ class SeasonOfTheWitchScenarioTest : ScenarioTestBase() {
                 }
                 withClue("the Witch player couldn't have attacked on someone else's turn") {
                     game.findPermanent("Grizzly Bears").shouldNotBeNull()
+                }
+            }
+
+            test("a turn whose combat phase was skipped destroys nothing") {
+                // False Peace / Fatespinner leave SkipCombatPhasesComponent on their target;
+                // TurnManager consumes it at BEGIN_COMBAT and jumps straight to the postcombat
+                // main phase, so no Declare Attackers Step ever happens. Nobody was offered the
+                // choice to attack, so "creatures that couldn't attack" covers the whole board —
+                // its controller's included. Paired with the control test below, which is the same
+                // turn with the combat phase left intact.
+                val game = scenario()
+                    .withPlayers("Witch", "Opponent")
+                    .withCardOnBattlefield(1, "Season of the Witch")
+                    .withCardOnBattlefield(1, "Grizzly Bears")
+                    .withLifeTotal(1, 20)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.state = game.state.updateEntity(game.player1Id) {
+                    it.with(SkipCombatPhasesComponent)
+                }
+
+                game.passUntilPhase(Phase.ENDING, Step.END)
+                withClue("the combat phase really was skipped") {
+                    game.state.getEntity(game.player1Id)
+                        ?.has<AttackersDeclaredThisTurnComponent>() shouldBe false
+                }
+                game.resolveStack()
+
+                withClue("no Declare Attackers Step happened, so staying home was nobody's choice") {
+                    game.findPermanent("Grizzly Bears").shouldNotBeNull()
+                }
+            }
+
+            test("the same turn with its combat phase intact destroys the creature that stayed home") {
+                // The control for the test above: identical board, minus the skip. The Bears reach
+                // a Declare Attackers Step, are not declared, and pay for it.
+                val game = scenario()
+                    .withPlayers("Witch", "Opponent")
+                    .withCardOnBattlefield(1, "Season of the Witch")
+                    .withCardOnBattlefield(1, "Grizzly Bears")
+                    .withLifeTotal(1, 20)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.passUntilPhase(Phase.ENDING, Step.END)
+                withClue("the step happened — an empty declaration still marks it") {
+                    game.state.getEntity(game.player1Id)
+                        ?.has<AttackersDeclaredThisTurnComponent>() shouldBe true
+                }
+                game.resolveStack()
+
+                withClue("the Bears reached a Declare Attackers Step and sat it out") {
+                    game.findPermanent("Grizzly Bears").shouldBeNull()
                 }
             }
 

@@ -25,11 +25,12 @@ import com.wingedsheep.sdk.scripting.effects.SacrificeSelfEffect
  * broadest clause is the one that decides who the sweep hits at all: only the active player
  * declares attackers (CR 508.1a), so a creature an opponent controls could not have attacked this
  * turn and is exempt. The sweep is therefore one-sided in practice — on your turn it destroys the
- * creatures *you* left at home, not your opponent's board. Per-creature, it also exempts defender,
- * "can't attack", and summoning sickness. It is deliberately not the full declare-attackers
- * legality check (that needs a chosen defending player and a card registry, neither of which
- * predicate evaluation has), so a creature kept home only by a card-specific "can't attack
- * unless …" restriction is still destroyed.
+ * creatures *you* left at home, not your opponent's board. It also exempts everyone when the turn
+ * had no Declare Attackers Step to skip, which is what an opposing False Peace or Fatespinner
+ * produces. Per-creature, it exempts defender, "can't attack", and summoning sickness. It is
+ * deliberately not the full declare-attackers legality check (that needs a chosen defending player
+ * and a card registry, neither of which predicate evaluation has), so a creature kept home only by
+ * a card-specific "can't attack unless …" restriction is still destroyed.
  *
  * The trigger is `EachEndStep`, not `YourEndStep`: the printed line says "the end step", so the
  * opponent's own stay-at-home creatures are judged on the opponent's turn.

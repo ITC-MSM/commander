@@ -140,6 +140,23 @@ enum class DamageAssignmentReason {
 data object AttackersDeclaredThisCombatComponent : Component
 
 /**
+ * The turn-scoped sibling of [AttackersDeclaredThisCombatComponent]: this player reached a Declare
+ * Attackers Step at some point this turn. Like that marker it is stamped even when no creature was
+ * declared, because the question it answers is whether the *opportunity* existed, not whether it
+ * was taken — [PlayerAttackedThisTurnComponent] already answers the latter.
+ *
+ * Backs the first clause of `StatePredicate.CouldNotHaveAttackedThisTurn` (Season of the Witch).
+ * Its absence is what distinguishes "declared no attackers" from "never got to declare": an effect
+ * that skips the combat phase (False Peace, Fatespinner) means no creature could have been declared
+ * as an attacker, so none of them stayed home by choice.
+ *
+ * Persists past END_COMBAT — that is the whole point, since the end step is where it gets read —
+ * and is removed at end of turn during cleanup.
+ */
+@Serializable
+data object AttackersDeclaredThisTurnComponent : Component
+
+/**
  * Marker component added to the defending player when blockers have been declared this combat.
  * This is used to prevent the DeclareBlockers action from being offered again,
  * even if no creatures were selected to block.

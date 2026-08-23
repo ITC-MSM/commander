@@ -89,8 +89,9 @@ class ModalEffectExecutor(
         // nested inside another effect takes, and it had drifted from it.
         //
         // The ceiling is capped by the mode list only when each mode can be picked once. With
-        // [ModalEffect.allowRepeat] the same mode stays on the menu every pick, so three modes can
-        // absorb any number of picks and capping at `modes.size` would silently shrink X.
+        // [ModalEffect.allowRepeat] the same mode stays on the menu every pick (CR 700.2d), so
+        // three modes can absorb any number of picks and capping at `modes.size` would silently
+        // shrink X. `forCast` makes the same distinction, so the two paths now agree on both bounds.
         val (effectiveChooseCount, effectiveMinChooseCount) = if (effect.dynamicChooseCount != null) {
             val evaluator = com.wingedsheep.engine.handlers.DynamicAmountEvaluator()
             val raw = evaluator.evaluate(state, effect.dynamicChooseCount!!, context)
