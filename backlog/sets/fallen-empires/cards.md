@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 75 / 102
+**Implemented:** 76 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -44,7 +44,7 @@
 - [x] Homarid Warrior
 - [ ] Merseine
 - [x] River Merfolk
-- [ ] Seasinger
+- [x] Seasinger
 - [x] Svyelunite Priest
 - [ ] Tidal Flats
 - [ ] Tidal Influence
