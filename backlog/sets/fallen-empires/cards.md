@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 90 / 102
+**Implemented:** 91 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -101,7 +101,7 @@
 - [x] Spore Flower
 - [x] Thallid
 - [x] Thallid Devourer
-- [ ] Thelon's Chant
+- [x] Thelon's Chant
 - [ ] Thelon's Curse
 - [x] Thelonite Druid
 - [x] Thelonite Monk
