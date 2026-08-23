@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 33 / 102
+**Implemented:** 34 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -98,7 +98,7 @@
 - [ ] Fungal Bloom
 - [ ] Night Soil
 - [ ] Spore Cloud
-- [ ] Spore Flower
+- [x] Spore Flower
 - [x] Thallid
 - [x] Thallid Devourer
 - [ ] Thelon's Chant
