@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 39 / 102
+**Implemented:** 40 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -45,7 +45,7 @@
 - [ ] Merseine
 - [x] River Merfolk
 - [ ] Seasinger
-- [ ] Svyelunite Priest
+- [x] Svyelunite Priest
 - [ ] Tidal Flats
 - [ ] Tidal Influence
 - [ ] Vodalian Knights
