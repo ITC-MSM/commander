@@ -39,6 +39,8 @@ val ThrullWizard = card("Thrull Wizard") {
             player = EffectTarget.TargetController,
             consequenceDescription = "counter that spell",
         )
+        description =
+            "{1}{B}: Counter target black spell unless that spell's controller pays {B} or {3}."
     }
 
     metadata {

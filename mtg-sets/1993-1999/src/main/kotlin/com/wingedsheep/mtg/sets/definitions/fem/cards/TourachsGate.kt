@@ -70,7 +70,8 @@ val TourachsGate = card("Tourach's Gate") {
             toughness = -1,
             filter = GroupFilter(GameObjectFilter.Creature.attacking().youControl())
         )
-        description = "Tap enchanted land: Attacking creatures you control get +2/-1 until end of turn."
+        description = "Tap enchanted land: Attacking creatures you control get +2/-1 until end of turn. " +
+            "Activate only if enchanted land is untapped."
     }
 
     metadata {

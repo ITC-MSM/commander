@@ -21,8 +21,8 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  * Whenever this creature attacks and isn't blocked, you may sacrifice it. If you do, destroy
  * target creature defending player controls. It can't be regenerated.
  *
- * The target is chosen when the ability goes on the stack, so it is picked before the sacrifice
- * decision is made. [MindstabThrull]'s sibling.
+ * The engine asks the "you may" before target selection for may-then-target triggers, so the
+ * prompt names the target by its printed wording rather than as "that creature". [MindstabThrull]'s sibling.
  */
 val Necrite = card("Necrite") {
     manaCost = "{1}{B}{B}"
@@ -52,7 +52,8 @@ val Necrite = card("Necrite") {
                 SacrificeSelfEffect,
                 Effects.Destroy(t, noRegenerate = true)
             ),
-            descriptionOverride = "sacrifice this creature. If you do, destroy that creature. It can't be regenerated",
+            descriptionOverride = "sacrifice this creature. If you do, destroy target creature " +
+                "defending player controls. It can't be regenerated",
         )
         description = "Whenever this creature attacks and isn't blocked, you may sacrifice it. If you do, destroy target creature defending player controls. It can't be regenerated."
     }
