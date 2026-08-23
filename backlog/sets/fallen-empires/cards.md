@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 37 / 102
+**Implemented:** 38 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -43,7 +43,7 @@
 - [ ] Homarid Spawning Bed
 - [ ] Homarid Warrior
 - [ ] Merseine
-- [ ] River Merfolk
+- [x] River Merfolk
 - [ ] Seasinger
 - [ ] Svyelunite Priest
 - [ ] Tidal Flats
