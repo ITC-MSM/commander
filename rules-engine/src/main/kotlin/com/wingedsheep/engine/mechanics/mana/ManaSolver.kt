@@ -2409,7 +2409,7 @@ class ManaSolver(
             val attachedTo = state.getEntity(sourceId)?.get<AttachedToComponent>()?.targetId
             attachedTo != null && canTapForCost(state, attachedTo)
         }
-        // CR 701.58a — forage: exile three cards from your graveyard, or sacrifice a Food.
+        // CR 701.59a — forage: exile three cards from your graveyard, or sacrifice a Food.
         is AbilityCost.Forage -> state.getZone(ZoneKey(playerId, Zone.GRAVEYARD)).size >= 3 ||
             state.projectedState.getBattlefieldControlledBy(playerId)
                 .any { state.projectedState.hasSubtype(it, Subtype.FOOD.value) }

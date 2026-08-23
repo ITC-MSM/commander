@@ -31,7 +31,10 @@ loses 2 life" and "~ deals 2 damage to each opponent" are Bloomburrow sentences 
 sentences, so a set-shaped pick paid corpus-wide. It found **four card bugs**, three of them one
 shape (a bare tribal noun typed as `IsCreature`), and it declined the set's largest family on
 purpose: gift's printed line means two different models depending on whether the card is a permanent
-or a spell, and the line grammar cannot see a type line. See
+or a spell, and the line grammar cannot see a type line. It also closed the two **forage** findings
+the same section had been carrying — a missing `ForagedEvent` (now `Triggers.WheneverYouForage`,
+emitted from the cost resolver *and* from a marker inside the effect form) and a genuine rules bug
+in Treetop Sentries, which spelled its printed "If you do" as CR 603.12's reflexive trigger. See
 [Bloomburrow's second pass](#bloomburrows-second-pass).
 
 Before it came **the chosen count** — "sacrifice **any number of** creatures", the tail
@@ -756,15 +759,41 @@ position, so gift stays declined and counted. It needs one of two things, neithe
 a `KeywordAbility.Gift` the SDK admits on a spell (so both card types share one shape), or a
 face-level rule that may read the type line.
 
-**Two findings left standing.** Corpseberry Cultivator prints "Whenever you forage, put a +1/+1
-counter on this creature." and the card folds that counter into its *own* forage's `afterEffect`
-instead, so a forage from any other source does not grow it — there is no `ForageEvent` in
-`EventPattern` to trigger off, which makes it `add-feature` work rather than a card edit. Its counter
-type was the plain string `"PLUS_ONE_PLUS_ONE"` and that half is fixed here. And the two cards
-printing "you may forage. If you do, …" hold it two different ways — Bushy Bodyguard as
-`MayEffect(forage(afterEffect = …))`, Treetop Sentries as `ReflexiveTriggerEffect(forage(),
-optional = true, …)` — one English, two SDK spellings, which is a fold to settle before a forage
-band can have a canonical form to print.
+**Two forage findings, both closed in the same change.** They were reported as standing findings
+first and then fixed, and they are worth reading together because one was an SDK gap and the other
+was a fold.
+
+The gap: Corpseberry Cultivator prints "Whenever you forage, put a +1/+1 counter on this creature."
+and the card folded that counter into its *own* forage's `afterEffect`, so a forage from any other
+source did not grow it — there was no forage event in `EventPattern` to trigger off. There is now
+(`Triggers.WheneverYouForage`), and the shape it took is the transferable part: a keyword action that
+is sometimes a **cost** and sometimes an **effect** cannot be observed from one place. The three cost
+contexts share `ForageCostResolver.pay`, so the event is emitted there — as one wrapper over that
+function's four exits rather than a line in each, so a mode added later cannot forget it. The effect
+form lowers to generic gather/select/move and sacrifice effects with nothing forage-shaped to emit
+from, so it carries a marker (`Effects.Foraged()`) *inside each of `Patterns.Mechanic.forage`'s two
+modes* — which is also what gives the "only if it actually happened" property for free, since forage
+has no "even if you can't" clause and a declined forage runs no mode. Waterbend is split the same
+way; collect evidence gets away with one site only because its effect form delegates to its cost
+resolver. Wiring a new event into the trigger path means **two** `when` branches in `TriggerIndex`
+(the SDK pattern *and* the engine event), both of which fall through to `emptyList()`, plus
+`TriggerMatcher` and `TriggerContext` — miss any one and the trigger compiles, ships and never fires.
+
+The fold: the two cards printing "you may forage. If you do, …" held it two different ways — Bushy
+Bodyguard as `MayEffect(forage(afterEffect = …))`, Treetop Sentries as
+`ReflexiveTriggerEffect(forage(), optional = true, …)`. The printed text settles it and the corpus
+agrees without being asked: **"If you do" is one resolution and "When you do" is CR 603.12's
+reflexive trigger**, a second stack object with its own priority window. Across 87
+`ReflexiveTriggerEffect` cards and 312 `MayEffect` cards, *zero* `MayEffect` card prints "When you
+do" — so Treetop Sentries was not a style divergence but a rules bug, giving opponents a response
+window the printed card does not create, and rendering its own prompt as "… When you do, draw a
+card". It is a `MayEffect` now, leaving Curious Forager ("**When** you do, return target permanent
+card…") as the set's sole and correct reflexive trigger. Two cards elsewhere in the corpus carry the
+same contradiction and are named in the PR rather than fixed here.
+
+With one canonical form to print, a forage band in the grammar is now writable — "you may forage.",
+"you may forage. If you do, …" and "Whenever you forage, …" over four BLB cards. It is deliberately
+not in this change: the band is Assay work and these two were card and engine work.
 
 ## The Bloomburrow band
 

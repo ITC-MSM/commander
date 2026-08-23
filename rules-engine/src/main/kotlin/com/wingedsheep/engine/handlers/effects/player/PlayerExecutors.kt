@@ -62,6 +62,7 @@ class PlayerExecutors(
         RemoveMaximumHandSizeExecutor(),
         ReduceMaximumHandSizeExecutor(),
         GiftGivenExecutor(),
+        ForagedExecutor(),
         GrantCastCreaturesFromGraveyardWithForageExecutor(),
         GrantFlashToSpellsExecutor(),
         GrantSpellKeywordExecutor(),
