@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 101 / 102
+**Implemented:** 102 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -87,7 +87,7 @@
 - [x] Orcish Spy
 - [x] Orcish Veteran
 - [x] Orgg
-- [ ] Raiding Party
+- [x] Raiding Party
 
 ### Green
 - [x] Elven Fortress
