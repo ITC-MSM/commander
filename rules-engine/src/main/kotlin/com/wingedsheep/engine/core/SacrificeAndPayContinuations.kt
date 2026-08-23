@@ -164,7 +164,8 @@ enum class PayOrSufferCostType {
     CHOICE,
     TAP,
     REMOVE_COUNTERS,
-    PUT_COUNTERS
+    PUT_COUNTERS,
+    MILL
 }
 
 /**

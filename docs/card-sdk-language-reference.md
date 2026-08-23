@@ -894,6 +894,13 @@ preview — in the turn-face-up handler.)
   "...unless you tap an untapped permanent you control" (Command Bridge).
 - `Costs.pay.TapAnother(filter = Any, count = 1)` — the printed-"another" variant; same cost with
   the source excluded.
+- `Costs.pay.Atom(CostAtom.Mill(count))` — mill from the top of your own library. No named factory:
+  it arrives through `Costs.pay.Atom`. "...sacrifice this creature unless you mill two cards"
+  (Deep Spawn, the only printed instance). Milling from the top selects nothing, so the prompt is a
+  plain yes/no. **CR 701.17b** — a player can't pay a cost that mills more cards than their library
+  holds, so a library shallower than `count` makes this unpayable and the `suffer` half happens
+  with no prompt at all. Mill *replacement* effects apply when the payment is made, not to the
+  announced count.
 
 The word **"another"** is the only thing that decides self-exclusion, and it lives on the cost atom
 (`excludeSelf`). Every path that asks "which objects could pay this?" reads that flag and nothing

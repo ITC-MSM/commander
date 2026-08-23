@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
 import com.wingedsheep.engine.handlers.effects.zones.ForceExileMultiZoneExecutor
 import com.wingedsheep.engine.handlers.effects.zones.ForceSacrificeExecutor
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+import com.wingedsheep.engine.handlers.effects.library.MillAmountModifier
 import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PipelineState
@@ -172,6 +173,7 @@ class SacrificeAndPayContinuationResumer(
             }
             PayOrSufferCostType.SACRIFICE -> resumePayOrSufferSacrifice(state, continuation, response, checkForMore)
             PayOrSufferCostType.PAY_LIFE -> resumePayOrSufferPayLife(state, continuation, response, checkForMore)
+            PayOrSufferCostType.MILL -> resumePayOrSufferMill(state, continuation, response, checkForMore)
             PayOrSufferCostType.MANA -> resumePayOrSufferMana(state, continuation, response, checkForMore)
             PayOrSufferCostType.EXILE -> resumePayOrSufferExile(state, continuation, response, checkForMore)
             PayOrSufferCostType.TAP -> resumePayOrSufferTap(state, continuation, response, checkForMore)
@@ -447,6 +449,35 @@ class SacrificeAndPayContinuationResumer(
             ?: return ExecutionResult.error(state, "Player has no life total")
 
         return checkForMore(newState, events)
+    }
+
+    /**
+     * Resume the [CostAtom.Mill] payment for pay-or-suffer (Deep Spawn).
+     *
+     * Affordability was settled before the prompt — CR 701.17b forbids paying a mill cost deeper
+     * than the library — so a yes here always pays. Mill *replacement* effects apply now, which is
+     * why the count goes through [MillAmountModifier] rather than being taken literally.
+     */
+    private fun resumePayOrSufferMill(
+        state: GameState,
+        continuation: PayOrSufferContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is YesNoResponse) {
+            return ExecutionResult.error(state, "Expected yes/no response for pay or suffer mill")
+        }
+
+        if (!response.choice) {
+            return executePayOrSufferConsequence(state, continuation, checkForMore)
+        }
+
+        val playerId = continuation.playerId
+        val count = MillAmountModifier.apply(state, playerId, continuation.requiredCount)
+        val milled = state.getZone(ZoneKey(playerId, Zone.LIBRARY)).take(count)
+        val result = ZoneTransitionService.moveToZoneBatch(state, milled, Zone.GRAVEYARD)
+
+        return checkForMore(result.state, result.events)
     }
 
     /**
