@@ -22,7 +22,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * {T}, Remove any number of storage counters from this land: Add {R} for each storage counter
  * removed this way.
  *
- * The storage-land cycle. Three pieces make it work: the optional-untap flag (CR 502.2) lets the
+ * The storage-land cycle. Three pieces make it work: the optional-untap flag (CR 502.3) lets the
  * controller leave it tapped, the upkeep trigger's *intervening if* (CR 603.4) only charges it
  * while it is tapped, and the mana ability's variable counter-removal cost feeds its own
  * [DynamicAmount.XValue] back into the amount of mana produced.

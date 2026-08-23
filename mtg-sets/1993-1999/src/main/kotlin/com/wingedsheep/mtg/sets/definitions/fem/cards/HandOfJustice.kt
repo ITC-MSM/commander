@@ -17,7 +17,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  * {T}, Tap three untapped white creatures you control: Destroy target creature.
  *
  * The three tapped creatures exclude Hand of Justice itself: the {T} symbol in the same cost
- * already taps it, and a cost can't tap one permanent twice (CR 118.8).
+ * already taps it, and an already-tapped permanent can't be tapped again to pay a cost (CR 107.5).
  */
 val HandOfJustice = card("Hand of Justice") {
     manaCost = "{5}{W}"

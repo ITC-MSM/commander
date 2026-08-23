@@ -16,7 +16,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  * You may choose not to untap this artifact during your untap step.
  * {3}, {T}: Target creature gets +2/+0 for as long as this artifact remains tapped.
  *
- * Endoskeleton's shape: the optional-untap flag (CR 502.2) keeps the artifact tapped for as long
+ * Endoskeleton's shape: the optional-untap flag (CR 502.3) keeps the artifact tapped for as long
  * as its controller wants, and [Duration.WhileSourceTapped] ties the bonus to that state rather
  * than to end of turn.
  */
