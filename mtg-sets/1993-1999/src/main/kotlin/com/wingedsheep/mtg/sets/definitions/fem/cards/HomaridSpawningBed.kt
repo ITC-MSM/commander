@@ -21,7 +21,8 @@ import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
  * payment and read back by [EntityReference.Sacrificed], so a token (mana value 0) makes nothing.
  *
  * The 1/1 blue Camarid has never been printed as a token card, so there is no art for it anywhere
- * on Scryfall and it falls through to the engine's generic token art.
+ * on Scryfall; it resolves through the engine-wide `TokenArt` table, which points it at Fallen
+ * Empires' own Homarid — the crustacean that breeds them.
  */
 val HomaridSpawningBed = card("Homarid Spawning Bed") {
     manaCost = "{U}{U}"

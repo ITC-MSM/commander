@@ -4,15 +4,15 @@ import com.wingedsheep.mtg.sets.discovery.CardDiscovery
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.MtgSet
+import com.wingedsheep.mtg.sets.definitions.por.PortalSet
 import com.wingedsheep.sdk.model.Printing
 import com.wingedsheep.sdk.model.TokenPrinting
 
 /**
  * Fallen Empires (1994)
  *
- * Scaffolded to hold the canonical [CardDefinition]s of cards whose earliest real-expansion
- * printing is Fallen Empires (e.g. Icatian Priest), with later sets contributing reprint
- * [Printing] rows.
+ * Complete: all 102 cards. Holds the canonical [CardDefinition]s of cards whose earliest
+ * real-expansion printing is Fallen Empires, with later sets contributing reprint [Printing] rows.
  *
  * Set Code: FEM
  * Release Date: November 1, 1994
@@ -22,7 +22,12 @@ object FallenEmpiresSet : MtgSet {
     override val code = "FEM"
     override val displayName = "Fallen Empires"
     override val releaseDate = "1994-11-01"
-    override val incomplete = true
+
+    /**
+     * Fallen Empires printed no basic lands of its own and belongs to no block, so its limited
+     * environment borrows Portal's — the same fallback The Dark takes.
+     */
+    override val basicLandsFallback = PortalSet
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)
@@ -41,8 +46,8 @@ object FallenEmpiresSet : MtgSet {
      * the four tokens the set mints borrow the closest matching art from sets that did print one.
      *
      * The fifth, the 1/1 blue Camarid from Homarid Spawning Bed, has never been printed as a token
-     * card at all and has no art anywhere on Scryfall; it deliberately has no row here and falls
-     * through to the engine-wide generic art.
+     * card at all and has no art anywhere on Scryfall, so it has no row here: it resolves through
+     * the engine-wide `TokenArt` table instead, which points it at this set's own Homarid.
      */
     override val tokenArt: List<TokenPrinting> = listOf(
         TokenPrinting(
