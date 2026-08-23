@@ -84,7 +84,22 @@ data class ZoneEntryOptions(
      * the Craft cost payment, and only for the material exiles — never for the crafted card's own
      * self-exile.
      */
-    val craftMaterial: Boolean = false
+    val craftMaterial: Boolean = false,
+    /**
+     * The player performing a move into a library — the one who chose the card and watched where
+     * it landed, and so the one who may keep seeing it (CR 400.2). Only consulted for a
+     * [Zone.LIBRARY] destination at a known position; see
+     * [com.wingedsheep.engine.handlers.effects.library.LibraryRevealUtils.placementAudience].
+     *
+     * Left `null` by callers with no player behind the move, which yields no knowledge for anyone.
+     */
+    val libraryMoverId: EntityId? = null,
+    /**
+     * True when a move into a library is revealed to every player on the way in, which makes the
+     * placement public knowledge rather than the mover's alone. Independent of the source zone —
+     * a move out of a public zone is already table-wide without this.
+     */
+    val libraryMovePublic: Boolean = false
 )
 
 /**
@@ -609,6 +624,25 @@ object ZoneTransitionService {
                 if (effectiveLibraryPlacement is LibraryPlacement.Shuffled) {
                     events.add(com.wingedsheep.engine.core.LibraryShuffledEvent(ownerId))
                 }
+                // Every library entry in the engine passes through here, which makes this the one
+                // place that decides who is allowed to keep seeing the card. It *replaces* the
+                // card's reveal audience rather than adding to it, so whatever the card was known
+                // as elsewhere — revealed in a hand, public on the battlefield — does not survive
+                // being tucked away unless this placement itself grants it. A caller that says
+                // nothing gets the safe answer: nobody knows.
+                newState = com.wingedsheep.engine.handlers.effects.library.LibraryRevealUtils
+                    .setPlacementKnowledge(
+                        newState,
+                        listOf(entityId),
+                        com.wingedsheep.engine.handlers.effects.library.LibraryRevealUtils
+                            .placementAudience(
+                                fromZone = fromZone,
+                                publiclyRevealed = options.libraryMovePublic,
+                                moverId = options.libraryMoverId,
+                                allPlayers = newState.turnOrder,
+                                knownPosition = effectiveLibraryPlacement !is LibraryPlacement.Shuffled,
+                            )
+                    )
             }
             Zone.EXILE -> {
                 newState = newState.addToZone(destZoneKey, entityId)
