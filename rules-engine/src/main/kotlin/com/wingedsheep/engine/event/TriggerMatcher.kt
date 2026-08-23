@@ -593,6 +593,12 @@ class TriggerMatcher(
                 event is com.wingedsheep.engine.core.EvidenceCollectedEvent &&
                     matchesPlayer(trigger.player, event.playerId, controllerId)
             }
+            is EventPattern.ForagedEvent -> {
+                // The forager rides the event rather than being read off the source: a forage paid
+                // as a cost belongs to whoever paid, which need not be the source's controller.
+                event is com.wingedsheep.engine.core.ForagedEvent &&
+                    matchesPlayer(trigger.player, event.playerId, controllerId)
+            }
             is EventPattern.CaseSolvedEvent -> {
                 // The solving player rides the event (the Case's controller when its "To solve"
                 // trigger resolved), so a Case sacrificed by its own Solved ability still credits

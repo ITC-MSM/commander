@@ -170,11 +170,17 @@ object Amounts {
         zone: Zone,
         name: String,
     ): Phrase<DynamicAmount> =
-        phrase("the number of {filter} cards $surface", name = name) {
-            slot("filter", Filters.filter)
-            build { DynamicAmount.Count(player, zone, it.value("filter")) }
+        phrase("the number of {filter} $surface", name = name) {
+            slot("filter", Filters.pluralCards)
+            // `Count`'s filter defaults to `Any`, so the bare noun this vocabulary can now print is
+            // *definitionally* [bareZoneCount]'s model. Two rules for one value is the
+            // redundant-readings configuration, so the unqualified count stays that rule's — it
+            // covers three surfaces where this one covers two — and this row refuses it.
+            build { it.value<GameObjectFilter>("filter").takeIf { f -> f != GameObjectFilter.Any }
+                ?.let { f -> DynamicAmount.Count(player, zone, f) } }
             match { amount ->
                 val counted = amount as? DynamicAmount.Count ?: return@match null
+                if (counted.filter == GameObjectFilter.Any) return@match null
                 if (counted != DynamicAmount.Count(player, zone, counted.filter)) return@match null
                 bind("filter" to counted.filter)
             }

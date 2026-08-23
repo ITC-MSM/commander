@@ -117,6 +117,7 @@ import com.wingedsheep.sdk.scripting.effects.GainControlByRankEffect
 import com.wingedsheep.sdk.scripting.effects.PlayerRankDirection
 import com.wingedsheep.sdk.scripting.effects.PlayerRankMetric
 import com.wingedsheep.sdk.scripting.effects.RankTieBreak
+import com.wingedsheep.sdk.scripting.effects.ForagedEffect
 import com.wingedsheep.sdk.scripting.effects.GiftGivenEffect
 import com.wingedsheep.sdk.scripting.effects.GrantSpellKeywordEffect
 import com.wingedsheep.sdk.scripting.effects.GrantFlashToSpellsEffect
@@ -5464,6 +5465,19 @@ object Effects {
      * Add this to gift modes so that "whenever you give a gift" triggers fire.
      */
     fun GiftGiven(): Effect = GiftGivenEffect
+
+    // =========================================================================
+    // Forage
+    // =========================================================================
+
+    /**
+     * Signal that a forage was taken (CR 701.59a) so "Whenever you forage" triggers fire.
+     *
+     * `Patterns.Mechanic.forage` already appends this to each of its modes — a card writing the
+     * keyword action through that facade needs nothing. Reach for it directly only when spelling a
+     * forage some other way.
+     */
+    fun Foraged(): Effect = ForagedEffect
 
     // =========================================================================
     // Spell Keyword Grants

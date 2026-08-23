@@ -2481,8 +2481,8 @@ object Triggers {
     )
 
     /**
-     * Whenever you collect evidence (CR 701.59). Fires once per collection, after the cards are
-     * exiled — never for a declined collection, nor for one CR 701.59b made impossible.
+     * Whenever you collect evidence (CR 701.57). Fires once per collection, after the cards are
+     * exiled — never for a declined collection, nor for one CR 701.57b made impossible.
      *
      * Fires for a collection made in *any* context, including this permanent's own: Surveillance
      * Monitor's "when this creature enters, you may collect evidence 4" feeds its own "whenever you
@@ -2490,6 +2490,21 @@ object Triggers {
      */
     val WheneverYouCollectEvidence: TriggerSpec = TriggerSpec(
         event = EvidenceCollectedEvent(Player.You),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
+     * Whenever you forage (CR 701.59a). Fires once per forage, after the three cards are exiled or
+     * the Food is sacrificed — never for a declined forage, and never for one no mode was feasible
+     * for, since forage has no "even if you can't" clause.
+     *
+     * Fires for a forage taken in *any* context, including this permanent's own: Corpseberry
+     * Cultivator's "at the beginning of combat on your turn, you may forage" feeds its own "whenever
+     * you forage, put a +1/+1 counter on this creature", and so does a forage paid as somebody
+     * else's ability cost.
+     */
+    val WheneverYouForage: TriggerSpec = TriggerSpec(
+        event = ForagedEvent(Player.You),
         binding = TriggerBinding.ANY
     )
 

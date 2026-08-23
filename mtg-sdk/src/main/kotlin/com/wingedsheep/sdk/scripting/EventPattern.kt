@@ -520,7 +520,7 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     /**
      * Whenever [player] collects evidence (CR 701.59). Fires once per collection, after the chosen
      * cards have been exiled — and only then: a declined collection, and one that was impossible
-     * under CR 701.59b, never fire it, so "whenever you collect evidence" payoffs (Surveillance
+     * under CR 701.57b, never fire it, so "whenever you collect evidence" payoffs (Surveillance
      * Monitor's Thopter, Evidence Examiner's Clue) can trust that evidence genuinely changed hands.
      *
      * Fires for **every** context the mechanic appears in — an activated-ability cost (Cryptex), a
@@ -529,7 +529,7 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * Collector) — because all four share one payment implementation. That matters for the printed
      * cards: Surveillance Monitor's own ETB collection triggers its own payoff.
      *
-     * Note that this is a *different* fact from the CR 701.59c linkage: this pattern observes any
+     * Note that this is a *different* fact from the CR 701.57c linkage: this pattern observes any
      * collection by [player], while `Conditions.WasEvidenceCollected` asks only whether *this
      * object's own* optional cast cost was declared.
      */
@@ -539,6 +539,37 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         val player: Player = Player.You
     ) : EventPattern {
         override val description: String = "${player.description} collects evidence"
+    }
+
+    /**
+     * Whenever [player] forages — CR 701.59a, "Exile three cards from your graveyard or sacrifice a
+     * Food."
+     *
+     * The sibling of [EvidenceCollectedEvent] in every respect that matters, and modelled on it
+     * deliberately. It fires only once the forage has actually been *taken*: forage has no
+     * "even if you can't" clause, so a declined or unpayable forage never fires it, and a
+     * "whenever you forage" payoff can trust that cards genuinely left the graveyard or a Food
+     * genuinely died.
+     *
+     * Fires for **every** context the keyword action appears in — an activated-ability cost
+     * (Camellia, the Seedmiser; Thornvault Forager), a cast-time additional cost (Feed the Cycle),
+     * the graveyard-cast permission (Osteomancer Adept) and the resolution-time effect form
+     * (`Patterns.Mechanic.forage`, on Bushy Bodyguard and Curious Forager). The three cost contexts
+     * share one payment implementation and the effect form carries a marker
+     * ([com.wingedsheep.sdk.scripting.effects.EmitForagedEventEffect]) inside each of its two modes,
+     * which is the same split waterbend uses: a keyword action that is sometimes a cost and
+     * sometimes an effect cannot be observed from one place.
+     *
+     * The forager is whoever *pays*, not the source's controller — Feed the Cycle can be cast by
+     * either player and Ygra's ward is paid by an opponent — so [player] is matched against the
+     * paying player carried on the engine event.
+     */
+    @SerialName("ForagedEvent")
+    @Serializable
+    data class ForagedEvent(
+        val player: Player = Player.You
+    ) : EventPattern {
+        override val description: String = "${player.description} forages"
     }
 
     /**

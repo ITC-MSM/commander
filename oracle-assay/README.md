@@ -21,7 +21,7 @@ attached-permanent statics, which opened `staticAbilities` — the largest `Card
 differential could not see into, and the one every later static family lands in.
 
 The most recent work is **the combat restriction** — "can't be blocked", the tail ranking's top
-family at **122 cards, 79 of them solely, over 122 lines** (**+93 whole cards**, 8,364 → 8,457) — and
+family at **122 cards, 79 of them solely, over 122 lines** (**+93 whole cards**, 8,653 → 8,746) — and
 it is the band where the ranked construct turned out to be one the grammar had *already read three
 times*, each time frozen into a whole sentence. `Grammar.flagLine` read "~ can't be blocked." as a
 line with no subject; `Statics` read "~ can't be blocked by black creatures." about the source only;
@@ -39,6 +39,44 @@ biggest remaining sub-band **is not this family's work**: 31 lines carry an "as 
 look like 19 cards, but substituting a readable conditional finishes **2 of 29** — the payload is the
 condition vocabulary, and saying so is the product. See
 [the combat restriction](#the-combat-restriction).
+
+Before it came **the card's mana value** — "search your library for a creature card **with
+mana value 3 or less**", and the construct the tail ranking named was not what was blocking it. The
+grammar had read "creature with mana value 3 or less" since the counting band; what it could not read
+was the same clause **one word to the right**, because every card-position rule spelled the head noun
+in its *own* template — "return target `{filter}` **card** from your graveyard" — which puts "card" in
+the sentence and freezes the noun phrase at its type. A suffix clause attaches behind a head noun, and
+in card position there was no head noun inside the phrase to attach behind. So `card` became a
+**layer**, and its place in the cascade is the finding: the layers above it are modifiers English
+writes in front of a head noun and the layers below it are clauses English writes behind one, which
+means a position that prints a head noun splits the cascade in exactly one place and every suffix
+layer — keyword, power, mana value — reaches card position without being told. The qualifier itself is
+a 3×3 table with two *declared* empty cells, whose word order is decided by the value beside it:
+English postfixes a comparison to a numeral ("3 or less") and prefixes it to a clause ("less than or
+equal to the number of lands you control"), and equality's postfix form is the **empty string**. Then
+the residue named a defect one layer over and paid again — `controlledBy` had been the cascade's
+*outermost* layer, printing "creature with mana value 3 or less an opponent controls" where Oracle
+writes the controller clause first by a wide margin, so the grammar was reading the rare order and
+declining the common one. Its differential half found card bugs in both directions, most of them one
+misreading: **"mana value N or less" implemented as "fetch N cards"**.
+See [the card's mana value](#the-cards-mana-value).
+
+Before it came **Bloomburrow's second pass** — the set read again after the
+[Bloomburrow band](#the-bloomburrow-band) left it at 60 of 280, and the first band aimed at a set
+that already has one. It is **rows in six existing families and no new machinery**, which is what a
+second pass on a set is supposed to cost: `Triggers.Expend(n)` as the first trigger prefix whose
+event carries a *number*, the two life-change trigger specs, the five life-state conditions
+Bloomburrow's Bats check, and the two "each opponent" clauses that pay them off. The set went
+**69 → 83 cards** and the corpus **8,364 → 8,516** — the disproportion is the point: "each opponent
+loses 2 life" and "~ deals 2 damage to each opponent" are Bloomburrow sentences and 600-odd cards'
+sentences, so a set-shaped pick paid corpus-wide. It found **four card bugs**, three of them one
+shape (a bare tribal noun typed as `IsCreature`), and it declined the set's largest family on
+purpose: gift's printed line means two different models depending on whether the card is a permanent
+or a spell, and the line grammar cannot see a type line. It also closed the two **forage** findings
+the same section had been carrying — a missing `ForagedEvent` (now `Triggers.WheneverYouForage`,
+emitted from the cost resolver *and* from a marker inside the effect form) and a genuine rules bug
+in Treetop Sentries, which spelled its printed "If you do" as CR 603.12's reflexive trigger. See
+[Bloomburrow's second pass](#bloomburrows-second-pass).
 
 Before it came **the chosen count** — "sacrifice **any number of** creatures", the tail
 ranking's fourth family at **123 cards, 83 of them solely, over 123 lines**, and the first band
@@ -364,21 +402,21 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    64753  (37998 unique)
 
-Round-trips byte-exact           26264   405.6‰ (40.6%)
-Alternate spelling normalized    1436
-Declined                         37053
+Round-trips byte-exact           27214   420.3‰ (42.0%)
+Alternate spelling normalized    1639
+Declined                         35900
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 Redundant readings (same model)  0
 
-Cards fully covered              8102 / 34882   232.3‰ (23.2%)
-Vanilla + keyword-only cards     1444 / 1712   843.5‰ (84.3%)   <- Phase 1 target
+Cards fully covered              8746 / 34882   250.7‰ (25.1%)
+Vanilla + keyword-only cards     1445 / 1713   843.5‰ (84.4%)   <- Phase 1 target
 Portal (set POR)                 200 / 200     1000.0‰ (100%)   <- the Portal band's target
 Legions (set LGN)                145 / 145     1000.0‰ (100%)   <- the Legions band's target
-Bloomburrow (set BLB)            60 / 280      214.3‰ (21.4%)   <- the Bloomburrow band, in progress
-Reminder-text glosses            2870 matched · 114 differed · 965 unglossed
+Bloomburrow (set BLB)            88 / 280      314.3‰ (31.4%)   <- two passes; gift is what is left
+Reminder-text glosses            3005 matched · 114 differed · 965 unglossed
 ```
 
 Fineness is **parts per thousand**, per the assay the module is named for — 841.1‰ is 84.1%.
@@ -689,6 +727,115 @@ the pre-band measurement and can only have risen, since a card blocked by two fa
 sole-blocked by neither.) A flat tail is the shape the equipment band's residue had, and it is the
 signal that the next target is a *set* rather than a family.
 
+## Bloomburrow's second pass
+
+The [Bloomburrow band](#the-bloomburrow-band) left the set at 60 of 280 and named what was next.
+This is that list, worked from the top down, and it is the first band aimed at a set that already
+has one — which makes it the cleanest measurement of what a *second* pass costs. The answer is
+**rows in six existing families and no new machinery**: the set went 69 → **83 cards** and the
+corpus 8,364 → **8,516**, against 27 added lines in `Triggers`, 17 in `Conditions` and 36 in
+`Steps`.
+
+**A trigger event with a number in it.** Expend is Bloomburrow's own keyword action — "you spend
+your Nth total mana to cast spells this turn" — and `dsl.Triggers.Expend(n)` is the whole spec, with
+the watched player frozen at `Player.You` because that is the only subject Oracle prints. So it is
+the first prefix in [`Triggers`](src/main/kotlin/com/wingedsheep/assay/grammar/Triggers.kt) that is a
+`slottedTriggerRule` over a **number** rather than over a noun phrase, and the leaf is
+[`Primitives.cardinal`](src/main/kotlin/com/wingedsheep/assay/grammar/Primitives.kt) rather than
+`Cardinals.word`: Oracle writes "expend **4**" where it writes "draw **two** cards". Ten cards print
+the family, at two thresholds, and nothing in the sentence says those are the only two — which is
+the whole reason the threshold is a slot and not ten rules. Because the prefix slots `Steps.step`
+whole, every one of those cards' payoffs arrived for free, and the two that did not (Byway Barterer's
+"discard your hand. If you do, draw two cards", Muerra's play-from-exile) are ordinary step gaps
+rather than expend gaps.
+
+**The Bats' condition vocabulary.** Bloomburrow's white-black half checks the turn's life history
+five different ways, and `Conditions` names all five, so all five are `constant` rows beside
+`WasBargained` and `WasKicked` — the same durable-fact reads. The one worth stating is
+`YouLostLifeThisTurn`: it is printed in the *present perfect* — "As long as **you've** lost life this
+turn" (Essence Channeler) — where the other four are past simple, and the only other card in the
+corpus whose text contains "you lost life this turn" is Ludevic, Necro-Alchemist, whose clause is
+about a player *other* than you and is therefore a different model. So the perfect is not a second
+spelling to choose between under the one-printed-form-per-model invariant; it is this condition's
+only one, and the check was a corpus grep rather than a guess.
+
+**The set-shaped pick that paid corpus-wide.** Two of the rows are the reason the corpus number moved
+eleven times as far as the set number. "Each opponent loses 2 life" is a `countedStep` beside
+"target player loses 2 life" and "~ deals 2 damage to each opponent" is a `countedStepPair` beside
+"…to target opponent" — one verb over a recipient the model *names* instead of one it targets, which
+is why they are rows rather than a player slot inside the targeted rules: a slot spanning both would
+let the grammar print a targeted clause without its target requirement. Bloomburrow prints them on
+five cards. The corpus prints them on six hundred.
+
+**What it found.** Four hand-written cards, and three of them are one shape — the bare tribal noun
+typed as `IsCreature` where the printed noun names only a subtype, the same class the 103-card
+migration fixed everywhere the grammar could already see. Brambleguard Veteran's "Raccoons you
+control", Obyra, Dreaming Duelist's "another Faerie you control" and Stromkirk Bloodthief's "target
+Vampire you control" were all invisible before, because nothing had read a bare tribal noun in those
+three positions. The fourth is Silverquill Charm holding the counter type as the string `"+1+1"`
+rather than `"+1/+1"`, which `CounterTypeFilter.Named` fails *open* on — so it works today and would
+stop working the moment anything compared the name. A fifth, Corpseberry Cultivator, is fixed only
+half way and named below.
+
+**Gift is what is left, and it is declined on purpose.** It is the set's largest family by a wide
+margin — 22 cards, over the `Gift a card` keyword line and the `If the gift was promised, …` rider —
+and the reason it is not here is a *shape* rather than an amount of work. The printed line denotes
+two different models depending on the card's type. On a permanent it is
+`KeywordAbility.Gift(kind)` plus the enters ability `giftEnterTrigger` lowers from it, which a line
+rule can build by calling that lowering exactly as `equipLine` calls `ActivatedAbility.equip`. On an
+instant or a sorcery there is no permanent to trigger off, so the promise is folded into the spell's
+own resolution as `Patterns.Mechanic.giftSpell`'s two modes — with per-mode targets, per-mode prose
+labels and a `ChooseOpponentForSourceEffect` spliced in — and `CardValidator` *rejects* the keyword
+on a non-permanent. A line rule cannot tell those apart, because the fact that separates them is the
+type line and the line grammar is deliberately type-line-blind (`Reminders` and `CardCompiler` are
+the only things here that read one). Worse, the spell form is not a line construct at all: its model
+has no keyword and no trigger, so line one's contribution depends on line two, and `CardFragment` is
+a per-line value by design.
+
+Both halves were written and both were reverted, and the differential is what settled it: with the
+keyword line and the two gift conditions in, Nocturnal Hunger and Valley Rally started being read
+*whole* — as an instant carrying a gift keyword the validator forbids, plus a resolution-time
+condition the SDK's own KDoc says is permanents-only. That is the reversible-but-wrong class in a new
+position, so gift stays declined and counted. It needs one of two things, neither of them Assay work:
+a `KeywordAbility.Gift` the SDK admits on a spell (so both card types share one shape), or a
+face-level rule that may read the type line.
+
+**Two forage findings, both closed in the same change.** They were reported as standing findings
+first and then fixed, and they are worth reading together because one was an SDK gap and the other
+was a fold.
+
+The gap: Corpseberry Cultivator prints "Whenever you forage, put a +1/+1 counter on this creature."
+and the card folded that counter into its *own* forage's `afterEffect`, so a forage from any other
+source did not grow it — there was no forage event in `EventPattern` to trigger off. There is now
+(`Triggers.WheneverYouForage`), and the shape it took is the transferable part: a keyword action that
+is sometimes a **cost** and sometimes an **effect** cannot be observed from one place. The three cost
+contexts share `ForageCostResolver.pay`, so the event is emitted there — as one wrapper over that
+function's four exits rather than a line in each, so a mode added later cannot forget it. The effect
+form lowers to generic gather/select/move and sacrifice effects with nothing forage-shaped to emit
+from, so it carries a marker (`Effects.Foraged()`) *inside each of `Patterns.Mechanic.forage`'s two
+modes* — which is also what gives the "only if it actually happened" property for free, since forage
+has no "even if you can't" clause and a declined forage runs no mode. Waterbend is split the same
+way; collect evidence gets away with one site only because its effect form delegates to its cost
+resolver. Wiring a new event into the trigger path means **two** `when` branches in `TriggerIndex`
+(the SDK pattern *and* the engine event), both of which fall through to `emptyList()`, plus
+`TriggerMatcher` and `TriggerContext` — miss any one and the trigger compiles, ships and never fires.
+
+The fold: the two cards printing "you may forage. If you do, …" held it two different ways — Bushy
+Bodyguard as `MayEffect(forage(afterEffect = …))`, Treetop Sentries as
+`ReflexiveTriggerEffect(forage(), optional = true, …)`. The printed text settles it and the corpus
+agrees without being asked: **"If you do" is one resolution and "When you do" is CR 603.12's
+reflexive trigger**, a second stack object with its own priority window. Across 87
+`ReflexiveTriggerEffect` cards and 312 `MayEffect` cards, *zero* `MayEffect` card prints "When you
+do" — so Treetop Sentries was not a style divergence but a rules bug, giving opponents a response
+window the printed card does not create, and rendering its own prompt as "… When you do, draw a
+card". It is a `MayEffect` now, leaving Curious Forager ("**When** you do, return target permanent
+card…") as the set's sole and correct reflexive trigger. Two cards elsewhere in the corpus carry the
+same contradiction and are named in the PR rather than fixed here.
+
+With one canonical form to print, a forage band in the grammar is now writable — "you may forage.",
+"you may forage. If you do, …" and "Whenever you forage, …" over four BLB cards. It is deliberately
+not in this change: the band is Assay work and these two were card and engine work.
+
 ## The Bloomburrow band
 
 Bloomburrow is 280 cards, every one of them implemented by hand here, which makes it the first set
@@ -755,6 +902,10 @@ differential on the day a line stopped declining:
 keyword line and the `If the gift was promised, …` rider, the second of which needs its base clause
 to read first. After it: the Class levels (`{3}{U}: Level 2`, 10 cards), modal spells (8), and
 "Spend this mana only to cast …" (6).
+
+That list is what [Bloomburrow's second pass](#bloomburrows-second-pass) worked, and gift is the one
+row on it that came back with an answer other than a rule — see that section for why the printed
+line means two models and the grammar declines it on purpose.
 
 ## The cost band
 
@@ -2949,7 +3100,7 @@ changes and keeps the printed filter, reports **7**. Fifth time, same direction,
 that performs the family's own transformation has no gap to be wrong in; one that stands in for it
 does.*
 
-The band delivered **+93 whole cards** (8,364 → 8,457) against a table summing to ~28, and the
+The band delivered **+93 whole cards** (8,653 → 8,746) against a table summing to ~28, and the
 difference is the durational rows for the *other* three restrictions: "can't block this turn" alone is
 59 printed lines across its own decline families, which this family's ranking never counted.
 
@@ -3000,6 +3151,159 @@ creature **gets +2/+0 and** can't be blocked" — the `Statics.pumpAndKeyword` s
 run of restriction clauses, about 10 lines. That one is a `Statics.line` question rather than a
 member of this family.
 
+## The card's mana value
+
+`card with mana …` — high on the tail ranking when it was picked, and its shape is the one worth
+carrying forward, because the construct the ranking named is not what was blocking it.
+
+### The diagnosis is a word, and `assay parse` states it
+
+```
+Search your library for a creature card with mana value 3 or less, put it onto the battlefield, then shuffle.
+                                  ^ expected " with mana value " | " with " | " you control" | " card, put it onto the battlefield, then shuffle" | …
+```
+
+The grammar has read "creature **with mana value 3 or less**" since the counting band. What it could
+not read is the same clause one word to the right, because every card-position rule spelled the head
+noun in **its own template** — `"return target {filter} card from your graveyard to your hand"`,
+`"search your library for {filter} card, …"`. That puts "card" in the *sentence* and freezes the noun
+phrase at its type: a suffix clause attaches behind the head noun, and in card position there was no
+head noun inside the phrase for it to attach behind. One printed word, and a family near the top of
+the ranking.
+
+So the change is two pieces, and the second is the one that pays.
+
+### The mana-value qualifier is a 3×3 table with two empty cells
+
+| | equal | at most | at least |
+|---|---|---|---|
+| a numeral | `mana value 3` | `mana value 3 or less` | `mana value 3 or greater` |
+| the announced `X` | `mana value X` | `mana value X or less` | — |
+| a clause | `mana value equal to …` | `mana value less than or equal to …` | — |
+
+English **postfixes** the comparison to a number and **prefixes** it to a phrase: "3 or less"
+against "less than or equal to the number of lands you control". Nothing in the model chooses between
+them — `ManaValueAtMost(3)` has one printed form and `ManaValueAtMostDynamic(…)` has another — so the
+comparison cannot be a slot over one template. A slot would make "mana value less than or equal to 3"
+a second spelling of the first row, which is printing left undetermined. It is three generators over
+one comparison list instead, each taking only the comparisons its value shape has a spelling for.
+
+The equality row is that observation at its limit: **equality's postfix form is the empty string.**
+"Mana value 3" is not an abbreviation of a comparison Oracle left out — the bare numeral *is* how the
+equality is written, which is why `""` is a row of the table rather than a case above it. Both empty
+cells are the SDK's and both are visible in the corpus: one card prints "mana value X or greater" and
+there is no `ManaValueAtLeastX` for it to be, and no card at all prints a clause with "or greater".
+Across the whole Oracle bulk the seven filled cells cover all but a handful of the places a
+mana-value qualifier appears, and the handful is "mana value 4 or 5" (Transit Mage and three
+siblings) — a *disjunction* of two equalities rather than a comparison, which declines as the
+different construct it is.
+
+Its SDK finding is one missing call. `CardPredicate.ManaValueEqualsDynamic` exists, the engine
+evaluates it, and `manaValueAtMostDynamic` has a fluent builder — the equality sibling did not, so
+Talion, the Kindly Lord reaches past the facade to the raw constructor. Naming an existing
+composition is the one kind of `mtg-sdk` change this module may make on its own, and this is one.
+
+### `card` is a layer, and where it sits is the finding
+
+[`Filters.cardNoun`](src/main/kotlin/com/wingedsheep/assay/grammar/Filters.kt) is a fourth
+instantiation of the noun cascade, beside `plural`, `pluralSubject` and `spellQuality`, with the head
+noun *inside* it. Its place in the layer list is the whole point:
+
+> the layers above it are modifiers English writes **in front** of a head noun; the layers below it
+> are clauses English writes **behind** one.
+
+A position that prints a head noun therefore splits the cascade in exactly one place, and every
+suffix layer reaches card position without being told — keyword, power, and mana value all at once.
+Three details follow from the split rather than being chosen: the type phrase stays **singular in
+both numbers** because Oracle inflects only the head ("creature cards", never "creatures cards" —
+which the noun-in-the-template shape *could* print, and the counted library search did); the article
+derives from the printed form of the whole card noun, so "**a** creature card" and "**a** card" come
+from one function; and the **controller layer is absent**, because an object in a library or a
+graveyard is owned rather than controlled and every sentence here says which zone in its own words.
+
+The migration is what made it a refactor rather than an addition: every template across `Library`,
+`Graveyard`, `Costs`, `SpellCosts`, `TopOfLibrary`, `Amounts` and `Conditions` that spelled the noun
+itself gave the word back to the noun phrase, and **three rules were deleted** because they became
+rows of it.
+`Graveyard.returnAnyCardToHand` was exactly the general rule with `Any`; `Costs.discardCard` and
+`exileAnyFromGraveyard` were `constant`s for models that are *definitionally* `Discard(Any, 1)` and
+`ExileFromGraveyard(1, Any)`. Each had a KDoc paragraph explaining that `Filters` had no noun for
+`Any` — true when written, and the kind of write-off [the conditional-tapped-entry
+band](#the-conditional-tapped-entry-band) says has an expiry date.
+
+### The residue named a defect one layer over, and paid again
+
+With the mana-value clause readable, the family re-keyed onto `with mana value …` — and its top
+example was not a new construct:
+
+```
+When ~ enters, exile target creature an opponent controls with mana value 3 or less.
+```
+
+The cascade had `controlledBy` as its **outermost** layer, so it printed "creature with mana value 3
+or less an opponent controls". Oracle puts the controller clause in *front* of the quality clause on
+all but fourteen cards in the corpus — so the grammar had been reading the fourteen and declining the
+rest. The two layers commute in the model (`controllerPredicate` is its own field, not a member of
+`cardPredicates`), so only English was ever at stake, and swapping them paid a second time over with
+the divergence set unchanged. The rare order stays readable as an `alternate` over a quality
+vocabulary that excludes the bare pass-through — which is what keeps "creature you control" at
+exactly one reading and the redundancy count at zero.
+
+That is the general lesson: **a band that makes one layer reachable will measure the layer next to
+it.** The residue is not a smaller version of the family; it is whatever the family was hiding.
+
+### What the gate found: card bugs, most of them one misreading
+
+Every new divergence the band produced was a bug in a shipped card. Most share a single misreading,
+and it is the sharpest thing here: **"mana value N or less" implemented as "fetch N cards".**
+
+| Card | Printed | Shipped |
+|---|---|---|
+| Bog Glider | a Mercenary permanent card with mana value **2 or less** | up to **2** Mercenaries, any mana value |
+| Rathi Intimidator | a Mercenary permanent card with mana value **2 or less** | up to **2** Mercenaries, any mana value |
+| Defiant Falcon | a Rebel permanent card with mana value **3 or less** | up to **3** Rebels, any mana value |
+| Zur the Enchanter | an enchantment card with mana value **3 or less** | up to **3** cards, **no filter at all** |
+
+All four are mtgish-generated, and the emitter has since grown the guard that would have refused
+them — `"ManaValueIs" in blob` declines the whole search to SCAFFOLD — so these are stale output
+rather than a live generator defect. The mechanism is worth knowing anyway: the emitter reads a
+search's count with `findInteger(args)`, which walks the *whole* args subtree for the first integer,
+and on these cards the only integer in the IR is the mana-value threshold sitting in the filter.
+
+The rest are one each of shapes this module has already named. Unearth and Disembowel simply dropped
+the cap (Unearth returned any creature card from your graveyard; Disembowel destroyed any creature
+whatever X was paid) — the class [the top-of-library band](#the-top-of-library-band) records, where
+**a field the grammar cannot produce is a field nothing is checking**. Teshar, Ancestor's Apostle was
+missing the `fromZone = GRAVEYARD` guard, one more instance of [the functional
+zone](#the-functional-zone)'s finding, visible only now that the clause in front of it parses. And
+Star Charter restated `Patterns.Library.lookAtTopRevealMatchingToHand` — the recipe whose own KDoc
+names that card — by hand instead of calling it, and lost the `revealed = true` on the move to hand
+doing so, so a card the text says to *reveal* went to hand unseen. All are fixed here and the
+divergence set is back to the entries that predate this change.
+
+### What is left in the family
+
+The family is off the tail ranking entirely. What still declines with a readable mana-value clause is
+the sentence around it, and three positions account for most of it:
+
+- **the spell position** — "Counter target spell with mana value 4 or greater." The frozen-facade
+  lesson once more: `Filters.spellQuality` carries the table already, and `Stack`'s counter rules
+  simply do not slot it. The caret lands at the end of "Counter target spell".
+- **the clause values `Amounts.count` cannot spell** — "less than or equal to **~'s power**" (Carmen
+  and Winter Soldier), "your devotion to black", "1 plus the sacrificed creature's mana value" (the
+  Birthing Pod cycle). Each is a row in the count vocabulary, not a row here.
+- **the destinations** — "from your hand onto the battlefield", "from among them onto the
+  battlefield", "from your graveyard rather than pay this spell's mana cost". `Patterns.Library`
+  parameters nobody has slotted yet, exactly as [the top-of-library
+  band](#the-top-of-library-band) found them.
+
+One kernel primitive came out of this band and belongs to the next family that needs it.
+[`deferred`](src/main/kotlin/com/wingedsheep/assay/syntax/Phrase.kt) resolves a slot on first use
+rather than at construction, because a qualifier can be measured by a count and a count is taken over
+a noun phrase — `Filters` → `ManaValues` → `Amounts` → `Filters` is a genuine cycle in English, and
+the JVM answers an initialization cycle by handing back a half-built object whose slot reads `null`.
+Duplicating either vocabulary to break it is the one thing this module exists to prevent, so the
+indirection is in the kernel and knows nothing about mana values.
 ## The differential gate
 
 `just assay-differential` diffs Assay's reading of a card against the `CardDefinition` a human wrote

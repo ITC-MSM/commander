@@ -661,6 +661,25 @@ data object GiftGivenEffect : Effect {
     override val description: String = "Give a gift"
 }
 
+// =============================================================================
+// Forage Effects
+// =============================================================================
+
+/**
+ * Signals that a forage was taken (CR 701.59a) so that "Whenever you forage" triggers fire.
+ *
+ * A marker with no state change of its own, exactly like [GiftGivenEffect] — and it exists for the
+ * same reason: the keyword action's *effect* form lowers to generic gather/select/move and sacrifice
+ * effects, so there is no forage-shaped executor for the event to come out of.
+ * `Patterns.Mechanic.forage` appends this to each of its two modes; the three *cost* contexts emit
+ * the event from their shared payment implementation instead, and never reach this.
+ */
+@SerialName("Foraged")
+@Serializable
+data object ForagedEffect : Effect {
+    override val description: String = "Forage"
+}
+
 /**
  * Grant a keyword to spells of a certain type that the controller casts.
  * Used for emblems like Ral's "Instant and sorcery spells you cast have storm."

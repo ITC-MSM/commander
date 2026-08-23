@@ -422,6 +422,24 @@ object Steps {
             ),
         ),
         listOf(
+            // "Each opponent loses 2 life" — the drain half of Bloomburrow's Bats, and 600-odd cards
+            // corpus-wide. A row rather than a player slot for [castPrefixes]' reason: the recipient
+            // is a `Player` on the effect, and a slot there would also let the rule print "target
+            // opponent loses" and "each player loses", which are separate printed sentences with
+            // separate rows. `Effects.DrainLife` is not in the way — that is Exsanguinate's
+            // "…you gain life equal to the life lost this way", a different sentence and a different
+            // type; a fixed-both-ways drain is the `Composite` the sequence rules already build.
+            countedStep(
+                "each opponent loses {n} life", "each opponent loses life",
+                script = {
+                    CardScript(
+                        spellEffect = Effects.LoseLife(it, EffectTarget.PlayerRef(Player.EachOpponent)),
+                    )
+                },
+                count = ::lifeLost,
+            ),
+        ),
+        listOf(
             countedStep(
                 "target player loses {n} life", "target player loses life",
                 script = {
@@ -497,6 +515,24 @@ object Steps {
             },
             amount = ::damageDealtAmount,
             leading = "{self} deals damage equal to {amount} to target opponent",
+        ),
+        // "~ deals 2 damage to each opponent." — a recipient the model *names* rather than targets,
+        // so the clause declares no requirement, exactly as "that player" above does. It is a row
+        // beside the targeted ones rather than a player slot inside them for [countedSteps]' reason:
+        // "each opponent" and "target opponent" are separate printed sentences over separate
+        // `EffectTarget` shapes, and a slot spanning both would let the rule print a targeted clause
+        // without its requirement.
+        countedStepPair(
+            "{self} deals {n} damage to each opponent",
+            "{self} deals damage to each opponent equal to {amount}",
+            "deals damage to each opponent",
+            script = {
+                CardScript(
+                    spellEffect = Effects.DealDamage(it, EffectTarget.PlayerRef(Player.EachOpponent))
+                )
+            },
+            amount = ::damageDealtAmount,
+            leading = "{self} deals damage equal to {amount} to each opponent",
         ),
         // "Target opponent or planeswalker" is the modern redirection wording, and it is a
         // requirement type of its own rather than a filter — so it is a row beside "target player"
