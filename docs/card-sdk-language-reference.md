@@ -3462,9 +3462,15 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
   `ForEach`-over-players reads it through its own arm.
 - `Player.DefendingPlayer` — CR 802.2a: the player the ability's source is attacking, read from
   the source's attack assignment (a creature attacking a planeswalker defends against its
-  controller); falls back to the trigger's damaged player as last-known information for "deals
-  combat damage to a player" triggers. Use for attack/combat-damage triggers ("defending player
-  mills four cards", "that player sacrifices a creature").
+  controller); once the source has left the battlefield the defender frozen into its exit snapshot
+  answers instead (CR 608.2h), so an ability that **sacrifices its own attacking source before
+  naming the defending player** — Mindstab Thrull, Necrite — still resolves against the right
+  player rather than falling back to its own controller. Last resort is the trigger's damaged
+  player, for "deals combat damage to a player" triggers. Resolves the same way in a *target
+  filter* (`ControllerPredicate.ControlledByReferencedPlayer` over it — "target creature defending
+  player controls"), which is what lets such a trigger find legal targets at all. Use for
+  attack/combat-damage triggers ("defending player mills four cards", "that player sacrifices a
+  creature"); pair it with `Chooser.DefendingPlayer` when that player also makes the choice.
 - `Player.TriggeringPlayer` — the player bound by the trigger (the caster for `SpellCastEvent`,
   the active player for per-player step triggers — "at the beginning of each opponent's upkeep,
   *that player* …", **the player dealt the damage** for a `DealsDamageEvent` trigger whose
@@ -11916,13 +11922,18 @@ Counter effects live in §4 (`AddCounters`, `RemoveCounters`, `Proliferate`, `Mo
   - `chooser` (`Chooser`, default `Controller`) — who makes the selection: `Controller`, `Opponent`, `TargetPlayer`
     (`context.targets[0]` treated as the player), `TriggeringPlayer`, `SourceController` (the source's controller,
     ignoring per-iteration swaps), `ControllerOfSelection` (the controller of the cards in `from` — resolved from the
-    first card's projected controller), or `ControllerOfTarget` (the controller of the targeted *permanent*,
+    first card's projected controller), `DefendingPlayer` (the player the source is attacking, CR 508.1), or
+    `ControllerOfTarget` (the controller of the targeted *permanent*,
     `context.targets[0]`, falling back to its owner once it has left the battlefield). Use `ControllerOfSelection` for
     "their controller chooses…" where the deciding player is whoever controls the gathered cards and may be you or an
     opponent (Barrin's Spite: gather the two targeted creatures, their controller sacrifices one, the other is returned
     to hand). Use `ControllerOfTarget` for "destroy target permanent. Its controller searches/chooses…" where the
     targeted permanent's controller performs a follow-up (Magmatic Hellkite: destroy target nonbasic land, *its
-    controller* searches for a basic). The same `chooser` set is accepted by `ChoosePileEffect`.
+    controller* searches for a basic). Use `DefendingPlayer` for an attack trigger whose payoff is the defending
+    player's own choice — "defending player discards three cards" (Mindstab Thrull) is picked from *their* hand, not
+    the attacker's; it reads combat off the ability's source and keeps answering after a self-sacrifice has taken that
+    source off the battlefield (CR 508.1 / 608.2h), the same last-known leg `Player.DefendingPlayer` uses. The same
+    `chooser` set is accepted by `ChoosePileEffect`.
   - **`Chooser.Opponent` in multiplayer.** "An opponent" is *one* opponent, and the controller of the spell or
     ability picks which one (CR 601.7a / 602.3a for cast/activation-time choices; resolution-time choices follow the
     same principle and cards say so in their rulings — Curator of Destinies: "You decide which opponent chooses the

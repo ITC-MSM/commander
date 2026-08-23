@@ -4,6 +4,7 @@ import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
 import com.wingedsheep.engine.state.components.battlefield.chosenColor
 import com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent
 import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.engine.handlers.predicates.becameTappedOnlyOnceThisTurn
 import com.wingedsheep.engine.handlers.predicates.hasDealtDamage
 import com.wingedsheep.engine.handlers.predicates.receivedCounterThisTurn
@@ -1155,9 +1156,9 @@ class PredicateEvaluator {
 
     /**
      * Resolve an [EffectTarget] player reference that needs [GameState] (so it can't be
-     * answered by [PredicateContext.resolvePlayerTarget] alone). Currently covers
-     * [EffectTarget.ControllerOfTriggeringEntity] — the controller of the entity that
-     * caused the trigger (e.g. Tectonic Instability: "tap all lands its controller controls").
+     * answered by [PredicateContext.resolvePlayerTarget] alone): the controller of the entity that
+     * caused the trigger (e.g. Tectonic Instability: "tap all lands its controller controls"), the
+     * controller of the first chosen target, and the defending player of an attacking source.
      */
     private fun resolveReferencedPlayerFromState(
         state: GameState,
@@ -1186,6 +1187,17 @@ class PredicateEvaluator {
                 ?: state.getEntity(targetId)?.get<ControllerComponent>()?.playerId
                 ?: state.getEntity(targetId)
                     ?.get<LastKnownPermanentComponent>()?.snapshot?.controllerId
+        }
+        // "target creature defending player controls" (Necrite) — the filter is evaluated while the
+        // trigger is choosing targets, so the defending player has to be resolvable *here* and not
+        // only at resolution. Without it every candidate fails the controller predicate, the
+        // trigger finds no legal targets, and it is removed from the stack without ever asking its
+        // "you may" question. Reads combat off the source, with the same removed-from-combat
+        // fallback the resolution-time path uses (CR 802.2a).
+        is EffectTarget.PlayerRef -> when (target.player) {
+            Player.DefendingPlayer -> TargetResolutionUtils
+                .defendingPlayerOfAttacker(state, context.sourceId)
+            else -> null
         }
         else -> null
     }

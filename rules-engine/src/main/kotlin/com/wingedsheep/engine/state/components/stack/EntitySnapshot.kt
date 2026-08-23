@@ -147,6 +147,15 @@ data class EntitySnapshot(
      * [com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttacking].
      */
     val wasAttacking: Boolean = false,
+    /**
+     * What this permanent was attacking when it left the battlefield — the player, planeswalker or
+     * battle its `AttackingComponent` named. The id half of [wasAttacking], and CR 802.2a is why it
+     * has to be frozen: when the creature "is no longer attacking", the defending player its
+     * ability refers to is still "the player that creature was attacking before it was removed from
+     * combat". Mindstab Thrull sacrifices itself and *then* makes the defending player discard, so
+     * by that point the live component the defender is normally read off has been torn down.
+     */
+    val attackedDefenderId: EntityId? = null,
     /** True if the leaving entity was a token (CR 704.5d — suppress persist-style return triggers). */
     val wasToken: Boolean = false,
     /**

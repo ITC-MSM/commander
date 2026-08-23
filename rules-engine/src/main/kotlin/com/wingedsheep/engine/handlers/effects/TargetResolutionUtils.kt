@@ -60,7 +60,14 @@ object TargetResolutionUtils {
             effectTarget is EffectTarget.EnchantedPermanent
         ) {
             val sourceId = context.sourceId ?: return null
-            return state.getEntity(sourceId)?.get<AttachedToComponent>()?.targetId
+            val container = state.getEntity(sourceId) ?: return null
+            container.get<AttachedToComponent>()?.targetId?.let { return it }
+            // The Aura/Equipment itself is gone — its own ability paid for it. "Enchanted creature"
+            // then means the host it was attached to as it last existed on the battlefield
+            // (CR 608.2h): Thrull Retainer's "Sacrifice this Aura: Regenerate enchanted creature"
+            // has already unattached itself by the time the regeneration shield is created, and
+            // reading the live link there answers "nothing".
+            return container.get<LastKnownPermanentComponent>()?.snapshot?.attachedTo
         }
         if (effectTarget is EffectTarget.ChosenCreature) {
             val sourceId = context.sourceId ?: return null
@@ -133,14 +140,31 @@ object TargetResolutionUtils {
      */
     fun resolveDefendingPlayer(context: EffectContext, state: GameState): EntityId? {
         context.defendingPlayerId?.let { return it }
-        val defenderId = context.sourceId
-            ?.let { state.getEntity(it)?.get<AttackingComponent>()?.defenderId }
-        if (defenderId != null) {
-            return if (defenderId in state.turnOrder) defenderId
-            else state.getEntity(defenderId)?.get<ControllerComponent>()?.playerId
-        }
+        defendingPlayerOfAttacker(state, context.sourceId)?.let { return it }
         return (context.triggeringPlayerId ?: context.triggeringEntityId)
             ?.takeIf { it in state.turnOrder }
+    }
+
+    /**
+     * The player [attackerId] is attacking (CR 802.2a), read from combat: its own
+     * `AttackingComponent` while it is still on the battlefield, else the defender frozen into its
+     * battlefield-exit snapshot. A creature attacking a planeswalker or battle maps to that
+     * permanent's controller / protector — "defending player" is always a player.
+     *
+     * The frozen leg is the rule's own second clause: once the creature "is no longer attacking",
+     * the defending player is still the one it *was* attacking before it left combat. That is what
+     * lets an ability which sacrifices its own source *before* naming the defending player still
+     * find them (Mindstab Thrull, Necrite) — the sacrifice tears the live component down
+     * mid-resolution, and every read after it would otherwise fall through to the ability's
+     * controller, the attacking player, the one player it cannot be.
+     */
+    fun defendingPlayerOfAttacker(state: GameState, attackerId: EntityId?): EntityId? {
+        val container = attackerId?.let { state.getEntity(it) } ?: return null
+        val defenderId = container.get<AttackingComponent>()?.defenderId
+            ?: container.get<LastKnownPermanentComponent>()?.snapshot?.attackedDefenderId
+            ?: return null
+        return if (defenderId in state.turnOrder) defenderId
+        else state.getEntity(defenderId)?.get<ControllerComponent>()?.playerId
     }
 
     /**

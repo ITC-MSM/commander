@@ -3902,6 +3902,7 @@
                                                 "amount": 3
                                             }
                                         },
+                                        "chooser": "DefendingPlayer",
                                         "storeSelected": "discarded",
                                         "prompt": "Choose 3 cards to discard"
                                     },
