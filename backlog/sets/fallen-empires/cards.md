@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 27 / 102
+**Implemented:** 28 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -77,7 +77,7 @@
 - [ ] Dwarven Catapult
 - [x] Dwarven Lieutenant
 - [ ] Dwarven Soldier
-- [ ] Goblin Chirurgeon
+- [x] Goblin Chirurgeon
 - [ ] Goblin Flotilla
 - [x] Goblin Grenade
 - [ ] Goblin Kites
