@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 91 / 102
+**Implemented:** 92 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -96,7 +96,7 @@
 - [x] Elvish Scout
 - [x] Feral Thallid
 - [x] Fungal Bloom
-- [ ] Night Soil
+- [x] Night Soil
 - [x] Spore Cloud
 - [x] Spore Flower
 - [x] Thallid
