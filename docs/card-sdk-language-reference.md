@@ -9053,12 +9053,17 @@ answer it and would silently return `false`.
   `couldHaveAttackedThisTurn()`, and the plain negation `didntAttackThisTurn()`) — the "except for
   creatures that couldn't attack" exemption of **Season of the Witch**
   (`DestroyAll(Creature.untapped().didntAttackThisTurn().couldHaveAttackedThisTurn())`). Covers the
-  two reasons a creature had no say in staying home, both read from projected keywords: it has
-  **defender**, or it is **summoning sick** (entered this turn without haste). It is deliberately
-  *not* the full declare-attackers legality check — that needs a chosen defender and a card
+  reasons a creature had no say in staying home. First, **its controller wasn't the one attacking**:
+  only the active player declares attackers (CR 508.1a), so every creature an opponent controls is
+  exempt and the sweep only ever hits creatures that skipped this turn's Declare Attackers Step. (In
+  a shared-team-turns format the whole active team counts — CR 805.10b.) Then the per-creature
+  reasons, read from projection where they can be: it has **defender**, it **can't attack**
+  (Pacifism), or it is **summoning sick** (entered this turn without haste). It is deliberately
+  *not* the full declare-attackers legality check — that needs a chosen defending player and a card
   registry, neither of which predicate evaluation has — so a creature kept home only by a
-  card-specific "can't attack unless …" restriction is not exempt. Implemented identically in
-  `PredicateEvaluator` and `AffectsFilterResolver` so resolution and projection agree.
+  card-specific "can't attack unless …" restriction is not exempt, and neither is one that came
+  under its controller's control this turn without entering the battlefield. Implemented identically
+  in `PredicateEvaluator` and `AffectsFilterResolver` so resolution and projection agree.
 - `SourceBlockedThisTurn` — this permanent was declared as a blocker at least once **this turn**
   (CR 509.1). The turn-scoped sibling of `SourceBlockedThisCombat`: backed by
   `BlockedThisTurnComponent`, stamped beside the per-combat marker at blocker declaration but

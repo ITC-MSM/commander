@@ -78,14 +78,31 @@ class ModalEffectExecutor(
             state.getEntity(sourceId)?.get<CardComponent>()?.name
         }
 
-        // Resolve "choose up to <DynamicAmount>" at runtime. minChooseCount is treated
-        // as 0 (player may always decline picks once the dynamic-evaluated cap is
-        // exhausted); chooseCount becomes min(evaluated, modes.size).
+        // Resolve "choose up to <DynamicAmount>" at runtime.
+        //
+        // The floor comes from [ModalEffect.dynamicMinChooseCount] when the card set one, and only
+        // falls back to 0 — "you may decline every pick" — when it didn't. Forcing 0 here made the
+        // synthetic "Don't choose a mode" option appear on a *mandatory* dynamic modal
+        // (Frankenstein's Monster: exactly X counters, one per card exiled), letting the player
+        // walk away from picks the card doesn't let them skip. `ModalChooseCounts.forCast` has
+        // always read the floor for modal *spells*; this is the resolution-time path that a modal
+        // nested inside another effect takes, and it had drifted from it.
+        //
+        // The ceiling is capped by the mode list only when each mode can be picked once. With
+        // [ModalEffect.allowRepeat] the same mode stays on the menu every pick, so three modes can
+        // absorb any number of picks and capping at `modes.size` would silently shrink X.
         val (effectiveChooseCount, effectiveMinChooseCount) = if (effect.dynamicChooseCount != null) {
             val evaluator = com.wingedsheep.engine.handlers.DynamicAmountEvaluator()
             val raw = evaluator.evaluate(state, effect.dynamicChooseCount!!, context)
-            val capped = raw.coerceIn(0, effect.modes.size)
-            capped to 0
+            val capped = if (effect.allowRepeat) {
+                raw.coerceAtLeast(0)
+            } else {
+                raw.coerceIn(0, effect.modes.size)
+            }
+            val floor = effect.dynamicMinChooseCount
+                ?.let { evaluator.evaluate(state, it, context).coerceIn(0, capped) }
+                ?: 0
+            capped to floor
         } else {
             effect.chooseCount to effect.minChooseCount
         }

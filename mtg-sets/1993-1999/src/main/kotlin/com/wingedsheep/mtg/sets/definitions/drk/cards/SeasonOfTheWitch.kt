@@ -21,14 +21,18 @@ import com.wingedsheep.sdk.scripting.effects.SacrificeSelfEffect
  * filter that spells the printed sentence out clause by clause: untapped, didn't attack this turn,
  * and — the exemption — could have attacked in the first place.
  *
- * "Couldn't attack" is [GameObjectFilter.couldHaveAttackedThisTurn]'s negation and covers the two
- * reasons a creature had no say in staying home: it has defender, or it was summoning sick. It is
- * deliberately not the full declare-attackers legality check (that needs a chosen defender and a
- * card registry, neither of which predicate evaluation has), so a creature kept home only by a
- * card-specific "can't attack unless …" restriction is still destroyed.
+ * "Couldn't attack" is [GameObjectFilter.couldHaveAttackedThisTurn]'s negation. Its first and
+ * broadest clause is the one that decides who the sweep hits at all: only the active player
+ * declares attackers (CR 508.1a), so a creature an opponent controls could not have attacked this
+ * turn and is exempt. The sweep is therefore one-sided in practice — on your turn it destroys the
+ * creatures *you* left at home, not your opponent's board. Per-creature, it also exempts defender,
+ * "can't attack", and summoning sickness. It is deliberately not the full declare-attackers
+ * legality check (that needs a chosen defending player and a card registry, neither of which
+ * predicate evaluation has), so a creature kept home only by a card-specific "can't attack
+ * unless …" restriction is still destroyed.
  *
- * The trigger is `EachEndStep`, not `YourEndStep`: the printed line says "the end step", so a
- * creature that sat out an opponent's turn is judged too.
+ * The trigger is `EachEndStep`, not `YourEndStep`: the printed line says "the end step", so the
+ * opponent's own stay-at-home creatures are judged on the opponent's turn.
  */
 val SeasonOfTheWitch = card("Season of the Witch") {
     manaCost = "{B}{B}{B}"

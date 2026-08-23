@@ -802,8 +802,9 @@ data class GameObjectFilter(
     )
 
     /**
-     * Could **not** have been declared as an attacker this turn — it has defender or is summoning
-     * sick. "Except for creatures that couldn't attack" (Season of the Witch). See
+     * Could **not** have been declared as an attacker this turn — its controller wasn't the one
+     * declaring attackers, or it has defender, can't attack, or is summoning sick. "Except for
+     * creatures that couldn't attack" (Season of the Witch). See
      * [StatePredicate.CouldNotHaveAttackedThisTurn] for exactly what it covers.
      */
     fun couldNotHaveAttackedThisTurn() = copy(

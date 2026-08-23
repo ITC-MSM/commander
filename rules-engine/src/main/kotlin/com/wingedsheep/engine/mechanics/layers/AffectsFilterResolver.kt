@@ -519,16 +519,23 @@ internal class AffectsFilterResolver {
             } ?: emptySet()
             entityId in attackerSet
         }
-        // "Couldn't attack" — defender, or summoning sick (entered this turn without haste).
-        // Keywords come from the in-progress projection when this entity already has one, falling
-        // back to base keywords + flags, the same read line 340 uses for card predicates; that
-        // keeps this branch in step with PredicateEvaluator's without re-entering the projector.
+        // "Couldn't attack" — controlled by someone whose turn it isn't, so they never declared
+        // attackers this turn (CR 508.1a), defender, a projected "can't attack", or summoning sick (entered this turn
+        // without haste). Keywords come from the in-progress projection when this entity already
+        // has one, falling back to base keywords + flags, the same read line 340 uses for card
+        // predicates; that keeps this branch in step with PredicateEvaluator's without re-entering
+        // the projector.
         StatePredicate.CouldNotHaveAttackedThisTurn -> {
             val card = container.get<CardComponent>()
-            val keywords = projectedValues[entityId]?.keywords
+            val inProjection = projectedValues[entityId]
+            val keywords = inProjection?.keywords
                 ?: card?.let { (it.baseKeywords.map { k -> k.name } + it.baseFlags.map { f -> f.name }).toSet() }
                 ?: emptySet()
-            Keyword.DEFENDER.name in keywords ||
+            val controllerId = inProjection?.controllerId ?: container.get<ControllerComponent>()?.playerId
+            controllerId == null ||
+                !state.isActiveTurnFor(controllerId) ||
+                Keyword.DEFENDER.name in keywords ||
+                inProjection?.cantAttack == true ||
                 (container.has<EnteredThisTurnComponent>() && Keyword.HASTE.name !in keywords)
         }
         // The same read one turn back — see PlayerAttackersLastTurnComponent. Kept in step with

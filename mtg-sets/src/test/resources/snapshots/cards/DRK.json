@@ -2276,71 +2276,93 @@
             {
                 "type": "OnEnterRunEffect",
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "FromZone",
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "Count",
+                                "player": "You",
                                 "zone": "Graveyard",
                                 "filter": "creature"
                             },
-                            "storeAs": "fmCandidates"
-                        },
-                        {
-                            "type": "SelectFromCollection",
-                            "from": "fmCandidates",
-                            "selection": {
-                                "type": "ChooseExactly",
-                                "count": "XValue"
-                            },
-                            "storeSelected": "fmExiled"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "fmExiled",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Exile"
-                            }
-                        },
-                        {
-                            "type": "Modal",
-                            "modes": [
-                                {
-                                    "effect": {
-                                        "type": "AddCounters",
-                                        "counterType": "+2/+0",
-                                        "count": 1,
-                                        "target": "Self"
-                                    },
-                                    "description": "Put a +2/+0 counter on this creature"
-                                },
-                                {
-                                    "effect": {
-                                        "type": "AddCounters",
-                                        "counterType": "+1/+1",
-                                        "count": 1,
-                                        "target": "Self"
-                                    },
-                                    "description": "Put a +1/+1 counter on this creature"
-                                },
-                                {
-                                    "effect": {
-                                        "type": "AddCounters",
-                                        "counterType": "+0/+2",
-                                        "count": 1,
-                                        "target": "Self"
-                                    },
-                                    "description": "Put a +0/+2 counter on this creature"
-                                }
-                            ],
-                            "allowRepeat": true,
-                            "dynamicChooseCount": "XValue",
-                            "dynamicMinChooseCount": "XValue",
-                            "countsAsModalSpell": false
+                            "operator": "GTE",
+                            "right": "XValue"
                         }
-                    ]
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Graveyard",
+                                    "filter": "creature"
+                                },
+                                "storeAs": "fmCandidates"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "fmCandidates",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": "XValue"
+                                },
+                                "storeSelected": "fmExiled"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "fmExiled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                }
+                            },
+                            {
+                                "type": "Modal",
+                                "modes": [
+                                    {
+                                        "effect": {
+                                            "type": "AddCounters",
+                                            "counterType": "+2/+0",
+                                            "count": 1,
+                                            "target": "Self"
+                                        },
+                                        "description": "Put a +2/+0 counter on this creature"
+                                    },
+                                    {
+                                        "effect": {
+                                            "type": "AddCounters",
+                                            "counterType": "+1/+1",
+                                            "count": 1,
+                                            "target": "Self"
+                                        },
+                                        "description": "Put a +1/+1 counter on this creature"
+                                    },
+                                    {
+                                        "effect": {
+                                            "type": "AddCounters",
+                                            "counterType": "+0/+2",
+                                            "count": 1,
+                                            "target": "Self"
+                                        },
+                                        "description": "Put a +0/+2 counter on this creature"
+                                    }
+                                ],
+                                "allowRepeat": true,
+                                "dynamicChooseCount": "XValue",
+                                "dynamicMinChooseCount": "XValue",
+                                "countsAsModalSpell": false
+                            }
+                        ]
+                    },
+                    "otherwise": {
+                        "type": "MoveToZone",
+                        "target": "Self",
+                        "destination": "Graveyard"
+                    }
                 }
             }
         ]

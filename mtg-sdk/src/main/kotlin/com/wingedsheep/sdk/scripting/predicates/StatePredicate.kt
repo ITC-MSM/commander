@@ -423,13 +423,22 @@ sealed interface StatePredicate {
      * creatures that couldn't attack" clause of Season of the Witch, which spares a creature that
      * had no choice in the matter rather than punishing it for staying home.
      *
-     * Two reasons a creature had no choice, both read from projected state so granted/removed
-     * keywords count: it has **defender**, or it is **summoning sick** (entered this turn without
-     * haste). It deliberately does *not* re-run the full declare-attackers legality check — that
-     * needs a chosen defender and a `CardRestrictionsError`-style card registry, neither of which
+     * The reasons a creature had no choice, in the order CR 508.1a asks them:
+     *
+     *  - **its controller wasn't attacking this turn.** Only the active player declares attackers,
+     *    so every creature an opponent controls is spared — the sweep is one-sided in practice,
+     *    hitting only the creatures that skipped the turn's Declare Attackers Step. In a
+     *    shared-team-turns format the whole active team counts (CR 805.10b).
+     *  - **defender**, a **"can't attack"** effect (Pacifism), or **summoning sickness** (entered
+     *    this turn without haste). These read from projected state where they can, so
+     *    granted/removed keywords and effects count.
+     *
+     * It deliberately does *not* re-run the full declare-attackers legality check — that needs a
+     * chosen defending player and a `CardRestrictionsError`-style card registry, neither of which
      * exists in predicate evaluation — so a creature kept home only by a card-specific "can't
-     * attack unless …" restriction is not spared. Pair with [AttackedThisTurn] negated to get
-     * "didn't attack and could have".
+     * attack unless …" restriction is not spared, and neither is one that came under its
+     * controller's control this turn without entering the battlefield. Pair with [AttackedThisTurn]
+     * negated to get "didn't attack and could have".
      */
     @SerialName("CouldNotHaveAttackedThisTurn")
     @Serializable

@@ -18,8 +18,11 @@ import io.kotest.matchers.types.shouldBeInstanceOf
  *  At the beginning of the end step, destroy all untapped creatures that didn't attack this turn,
  *  except for creatures that couldn't attack."
  *
- * The end-step sweep is the interesting half: it has to spare three different kinds of creature —
- * the ones that attacked, the ones left tapped, and the ones that never had the option.
+ * The end-step sweep is the interesting half: it has to spare four different kinds of creature —
+ * the ones that attacked, the ones left tapped, the ones that never had the option (defender,
+ * "can't attack", summoning sickness), and — the broadest exemption, and the easiest to miss —
+ * every creature the *non-active* player controls, since only the active player ever declares
+ * attackers (CR 508.1a).
  */
 class SeasonOfTheWitchScenarioTest : ScenarioTestBase() {
 
@@ -48,6 +51,81 @@ class SeasonOfTheWitchScenarioTest : ScenarioTestBase() {
                 }
                 withClue("the Bears attacked, so they are spared (and are tapped besides)") {
                     game.findPermanent("Grizzly Bears").shouldNotBeNull()
+                }
+            }
+
+            test("the opponent's creatures are spared — they were never able to attack") {
+                // The bug this guards: only the active player declares attackers (CR 508.1a), so a
+                // creature the opponent controls could not have attacked this turn no matter how
+                // untapped and healthy it is. The sweep is one-sided; it punishes the controller of
+                // the turn for staying home.
+                val game = scenario()
+                    .withPlayers("Witch", "Opponent")
+                    .withCardOnBattlefield(1, "Season of the Witch")
+                    .withCardOnBattlefield(1, "Grizzly Bears")
+                    .withCardOnBattlefield(2, "Hurloon Minotaur")
+                    .withCardOnBattlefield(2, "Serra Angel")
+                    .withLifeTotal(1, 20)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.passUntilPhase(Phase.ENDING, Step.END)
+                game.resolveStack()
+
+                withClue("the active player's own Bears could have attacked and didn't") {
+                    game.findPermanent("Grizzly Bears").shouldBeNull()
+                }
+                withClue("it wasn't the opponent's turn — their creatures couldn't attack") {
+                    game.findPermanent("Hurloon Minotaur").shouldNotBeNull()
+                    game.findPermanent("Serra Angel").shouldNotBeNull()
+                }
+            }
+
+            test("on the opponent's turn the sweep judges the opponent's creatures instead") {
+                // "The end step", not "your end step": the enchantment keeps working while its
+                // controller is the one who couldn't have attacked.
+                val game = scenario()
+                    .withPlayers("Witch", "Opponent")
+                    .withCardOnBattlefield(1, "Season of the Witch")
+                    .withCardOnBattlefield(1, "Grizzly Bears")
+                    .withCardOnBattlefield(2, "Hurloon Minotaur")
+                    .withLifeTotal(1, 20)
+                    .withActivePlayer(2)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.passUntilPhase(Phase.ENDING, Step.END)
+                game.resolveStack()
+
+                withClue("the Minotaur's controller was attacking this turn and kept it home") {
+                    game.findPermanent("Hurloon Minotaur").shouldBeNull()
+                }
+                withClue("the Witch player couldn't have attacked on someone else's turn") {
+                    game.findPermanent("Grizzly Bears").shouldNotBeNull()
+                }
+            }
+
+            test("a Pacifism'd creature is spared because it can't attack") {
+                val game = scenario()
+                    .withPlayers("Witch", "Opponent")
+                    .withCardOnBattlefield(1, "Season of the Witch")
+                    .withCardOnBattlefield(1, "Grizzly Bears")
+                    .withCardOnBattlefield(1, "Hurloon Minotaur")
+                    .withCardAttachedTo(1, "Pacifism", "Grizzly Bears")
+                    .withLifeTotal(1, 20)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.passUntilPhase(Phase.ENDING, Step.END)
+                game.resolveStack()
+
+                withClue("Pacifism means the Bears couldn't attack — spared") {
+                    game.findPermanent("Grizzly Bears").shouldNotBeNull()
+                }
+                withClue("the Minotaur had no such excuse") {
+                    game.findPermanent("Hurloon Minotaur").shouldBeNull()
                 }
             }
 

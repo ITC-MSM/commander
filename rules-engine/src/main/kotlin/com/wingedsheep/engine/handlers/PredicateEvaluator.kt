@@ -1511,13 +1511,28 @@ class PredicateEvaluator {
                 entityId in attackerSet
             }
 
-            // "Creatures that couldn't attack" (Season of the Witch). Two reasons a creature had no
-            // choice about staying home, both read from projection so granted/removed keywords
-            // count: defender, or summoning sickness (entered this turn without haste). Not the
-            // full declare-attackers legality check — that needs a chosen defender and a card
-            // registry, neither of which predicate evaluation has.
+            // "Creatures that couldn't attack" (Season of the Witch). The clause spares a creature
+            // that had no say in staying home, so it asks a cut-down version of what CR 508.1a asks
+            // at declare-attackers time:
+            //  - only the active player declares attackers, so a creature its controller couldn't
+            //    have attacked *with* — anything an opponent controls on this turn — is spared.
+            //    Asked through `isActiveTurnFor`, so a shared-team turn (CR 805.4) counts both
+            //    teammates' creatures as able to attack;
+            //  - defender, a projected "can't attack" (Pacifism), or summoning sickness (entered
+            //    this turn without haste). All three read from projection where they can, so
+            //    granted/removed keywords count.
+            // Not the full declare-attackers legality check — that needs a chosen defending player
+            // and a card registry, neither of which predicate evaluation has — so a creature kept
+            // home only by a "can't attack unless …" restriction is still destroyed, as is one that
+            // came under its controller's control this turn without entering the battlefield (the
+            // sickness half reads EnteredThisTurn, not the sickness marker itself).
             StatePredicate.CouldNotHaveAttackedThisTurn -> {
-                projected.hasKeyword(entityId, Keyword.DEFENDER) ||
+                val controllerId = projected.getController(entityId)
+                    ?: container.get<ControllerComponent>()?.playerId
+                controllerId == null ||
+                    !state.isActiveTurnFor(controllerId) ||
+                    projected.hasKeyword(entityId, Keyword.DEFENDER) ||
+                    projected.cantAttack(entityId) ||
                     (
                         container.has<EnteredThisTurnComponent>() &&
                             !projected.hasKeyword(entityId, Keyword.HASTE)
