@@ -17452,7 +17452,7 @@
                             "filter": "creature pow<=3",
                             "storeSelected": "kept",
                             "storeRemainder": "rest",
-                            "prompt": "You may reveal a creature card with power 3 or less and put it into your hand",
+                            "prompt": "You may reveal a creature card with power 3 or less from among them and put it into your hand",
                             "showAllCards": true
                         },
                         {
@@ -17461,7 +17461,8 @@
                             "destination": {
                                 "type": "ToZone",
                                 "zone": "Hand"
-                            }
+                            },
+                            "revealed": true
                         },
                         {
                             "type": "MoveCollection",

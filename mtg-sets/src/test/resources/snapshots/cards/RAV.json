@@ -1330,7 +1330,12 @@
             {
                 "type": "TargetObject",
                 "filter": {
-                    "baseFilter": "creature"
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            "ManaValueEqualsX"
+                        ]
+                    }
                 },
                 "id": "target"
             }

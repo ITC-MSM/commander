@@ -2104,7 +2104,7 @@
             {
                 "type": "TargetObject",
                 "filter": {
-                    "baseFilter": "creature own:you",
+                    "baseFilter": "creature mv<=3 own:you",
                     "zone": "Graveyard"
                 },
                 "id": "target"

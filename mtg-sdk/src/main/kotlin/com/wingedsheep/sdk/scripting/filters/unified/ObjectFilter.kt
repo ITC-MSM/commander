@@ -462,6 +462,18 @@ data class GameObjectFilter(
         cardPredicates = cardPredicates + CardPredicate.ManaValueAtMostDynamic(amount)
     )
 
+    /**
+     * Mana value **exactly** a resolved [DynamicAmount] — "a creature card with mana value equal to
+     * the number of harmony counters on this artifact" (Instrument of the Bards).
+     *
+     * The equality sibling of [manaValueAtMostDynamic]. Oracle marks the difference with the word in
+     * front of the clause rather than after it: "equal to …" is this, "less than or equal to …" is
+     * the cap.
+     */
+    fun manaValueEqualsDynamic(amount: DynamicAmount) = copy(
+        cardPredicates = cardPredicates + CardPredicate.ManaValueEqualsDynamic(amount)
+    )
+
     /** Mana value is even (zero is even). */
     fun manaValueIsEven() = copy(
         cardPredicates = cardPredicates + CardPredicate.ManaValueIsEven

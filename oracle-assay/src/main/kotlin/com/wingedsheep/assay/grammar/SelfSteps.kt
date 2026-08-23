@@ -396,13 +396,16 @@ object SelfSteps {
     private fun sacrificeUnless(
         template: String,
         name: String,
+        // A discard names a *card* and a sacrifice names a permanent, which are two noun phrases
+        // rather than one with a word appended; see [Filters.cardNoun].
+        noun: Phrase<GameObjectFilter> = Filters.indefinite,
         cost: (GameObjectFilter) -> PayCost,
     ): Phrase<CardScript> {
         fun scriptFor(filter: GameObjectFilter) = CardScript(
             spellEffect = PayOrSufferEffect(cost = cost(filter), suffer = SacrificeSelfEffect)
         )
         return phrase(template, name = name) {
-            slot("filter", Filters.indefinite)
+            slot("filter", noun)
             build { scriptFor(it.value("filter")) }
             match { script ->
                 val effect = script.spellEffect as? PayOrSufferEffect ?: return@match null
@@ -514,8 +517,9 @@ object SelfSteps {
         sacrificeUnlessVariable,
         sacrificeUnlessRandomDiscard,
         sacrificeUnless(
-            "sacrifice it unless you discard {filter} card",
+            "sacrifice it unless you discard {filter}",
             "sacrifice the source unless you discard",
+            noun = Filters.indefiniteCard,
         ) { Costs.pay.Discard(filter = it) },
         sacrificeUnless(
             "sacrifice it unless you sacrifice {filter}",

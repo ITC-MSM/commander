@@ -199,8 +199,9 @@ object Conditions {
         // leaf is [Primitives.cardinal] and not [Cardinals.word].
         lifeThreshold(),
         countAtLeast(
-            "there are {n} or more {filter} cards in your graveyard",
+            "there are {n} or more {filter} in your graveyard",
             "several cards of a kind in your graveyard",
+            noun = Filters.pluralCards,
         ) { count, filter -> SdkConditions.CardsInGraveyardMatchingAtLeast(count, filter) },
         // Lavaborn Muse's intervening-if. "That player" is the one whose step triggered, which the
         // SDK names as `Player.TriggeringPlayer`.
@@ -270,10 +271,13 @@ object Conditions {
     private fun countAtLeast(
         template: String,
         name: String,
+        // The noun this row counts. Three rows count permanents and one counts *cards*, which is a
+        // different noun phrase rather than a different word — see [Filters.cardNoun].
+        noun: Phrase<GameObjectFilter> = Filters.plural,
         condition: (Int, GameObjectFilter) -> Condition,
     ): Phrase<Condition> = phrase(template, name = name) {
         slot("n", Cardinals.word)
-        slot("filter", Filters.plural)
+        slot("filter", noun)
         build { bindings ->
             val filter = bindings.value<GameObjectFilter>("filter")
             if (filter == GameObjectFilter.Any) return@build null
