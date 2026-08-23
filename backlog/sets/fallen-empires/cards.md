@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 48 / 102
+**Implemented:** 49 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -86,7 +86,7 @@
 - [x] Orcish Captain
 - [x] Orcish Spy
 - [x] Orcish Veteran
-- [ ] Orgg
+- [x] Orgg
 - [ ] Raiding Party
 
 ### Green
