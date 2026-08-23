@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 81 / 102
+**Implemented:** 82 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -112,7 +112,7 @@
 - [x] Balm of Restoration
 - [x] Conch Horn
 - [x] Delif's Cone
-- [ ] Delif's Cube
+- [x] Delif's Cube
 - [x] Draconian Cylix
 - [x] Elven Lyre
 - [x] Implements of Sacrifice
