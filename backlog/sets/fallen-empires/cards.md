@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 74 / 102
+**Implemented:** 75 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -104,7 +104,7 @@
 - [ ] Thelon's Chant
 - [ ] Thelon's Curse
 - [x] Thelonite Druid
-- [ ] Thelonite Monk
+- [x] Thelonite Monk
 - [x] Thorn Thallid
 
 ### Artifact
