@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 21 / 102
+**Implemented:** 22 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -124,7 +124,7 @@
 - [ ] Bottomless Vault
 - [ ] Dwarven Hold
 - [x] Dwarven Ruins
-- [ ] Ebon Stronghold
+- [x] Ebon Stronghold
 - [ ] Havenwood Battleground
 - [ ] Hollow Trees
 - [ ] Icatian Store
