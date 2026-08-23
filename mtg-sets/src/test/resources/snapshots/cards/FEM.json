@@ -6084,7 +6084,8 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "black"
+                            "baseFilter": "black",
+                            "zone": "Stack"
                         }
                     }
                 ]
