@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 64 / 102
+**Implemented:** 65 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -121,7 +121,7 @@
 - [x] Zelyon Sword
 
 ### Land
-- [ ] Bottomless Vault
+- [x] Bottomless Vault
 - [ ] Dwarven Hold
 - [x] Dwarven Ruins
 - [x] Ebon Stronghold
