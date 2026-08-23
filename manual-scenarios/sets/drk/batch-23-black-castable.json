@@ -111,7 +111,7 @@
         "name": "Grizzly Bears"
       },
       {
-        "name": "Tormod's Crypt"
+        "name": "Sol Ring"
       },
       {
         "name": "Plains"
@@ -148,5 +148,6 @@
   "player1StopAtSteps": [],
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
-  "player2OpponentStopAtSteps": []
+  "player2OpponentStopAtSteps": [],
+  "mode": "AI"
 }
