@@ -24,8 +24,9 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Sacrifice this creature: You gain 1 life for each credit counter on this creature. Activate only
  * during your upkeep.
  *
- * The lifegain reads the counters *at resolution*, and the sacrifice is a cost — so the count is
- * taken from the creature's last known information, three plus one per upkeep survived.
+ * The lifegain counts the credit counters the Moneychanger *had* — the sacrifice is a cost, paid
+ * before the ability resolves, so the count is last-known information (CR 113.7a): three, plus one
+ * per upkeep it survived.
  */
 val IcatianMoneychanger = card("Icatian Moneychanger") {
     manaCost = "{W}"
@@ -67,8 +68,11 @@ val IcatianMoneychanger = card("Icatian Moneychanger") {
                 ActivationRestriction.DuringStep(Step.UPKEEP)
             )
         )
+        // Last-known information (CR 113.7a): the sacrifice is a *cost*, so by the time the
+        // ability resolves the Moneychanger is in the graveyard with its counters stripped. Reading
+        // the live entity would gain 0 life every time.
         effect = Effects.GainLife(
-            DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.CREDIT))
+            DynamicAmounts.lastKnownSourceCounters(CounterTypeFilter.Named(Counters.CREDIT))
         )
         description = "Sacrifice this creature: You gain 1 life for each credit counter on this creature. Activate only during your upkeep."
     }

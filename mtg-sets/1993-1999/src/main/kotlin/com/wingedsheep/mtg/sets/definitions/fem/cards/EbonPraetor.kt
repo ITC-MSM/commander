@@ -27,9 +27,10 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * each turn.
  *
  * The Praetor shrinks by 2/2 every upkeep and the sacrifice only undoes one counter per turn, so
- * feeding it Thrulls — which also add a +1/+0 — is the intended way to keep it alive. Note the
- * ordering trap it prints: the upkeep trigger and the once-per-turn ability are both bounded to
- * your upkeep, so the counter goes on first and the sacrifice takes it back off.
+ * feeding it Thrulls — which also add a +1/+0 — is the intended way to keep it alive. Both the
+ * upkeep trigger and the once-per-turn ability live in your upkeep, and their order is the player's:
+ * activating in response to the trigger removes a counter that isn't there yet, so the usual line is
+ * to let the trigger resolve first.
  */
 val EbonPraetor = card("Ebon Praetor") {
     manaCost = "{4}{B}{B}"

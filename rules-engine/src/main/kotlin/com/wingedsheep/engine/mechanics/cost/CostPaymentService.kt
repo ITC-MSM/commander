@@ -674,8 +674,12 @@ class CostPaymentService(private val services: EngineServices) {
         val events = mutableListOf<GameEvent>()
         for (permanentId in selected) {
             val container = newState.getEntity(permanentId) ?: continue
-            val counters = container.get<CountersComponent>() ?: CountersComponent()
-            newState = newState.updateEntity(permanentId) { c -> c.with(counters.withAdded(resolved, count)) }
+            // Read the counters inside the update so a repeated id accumulates rather than
+            // clobbering — no printed cost selects the same permanent twice, but the loop shouldn't
+            // depend on that.
+            newState = newState.updateEntity(permanentId) { c ->
+                c.with((c.get<CountersComponent>() ?: CountersComponent()).withAdded(resolved, count))
+            }
             events.add(
                 com.wingedsheep.engine.core.CountersAddedEvent(
                     permanentId,
