@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 87 / 102
+**Implemented:** 88 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -60,7 +60,7 @@
 - [x] Derelor
 - [x] Ebon Praetor
 - [x] Hymn to Tourach
-- [ ] Initiates of the Ebon Hand
+- [x] Initiates of the Ebon Hand
 - [x] Mindstab Thrull
 - [x] Necrite
 - [x] Order of the Ebon Hand
