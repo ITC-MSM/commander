@@ -540,6 +540,16 @@ data class ThisAbilityActivatedThisTurnAtLeast(val count: Int) : Condition {
     override val description: String = "if this ability has been activated $count or more times this turn"
 }
 
+/**
+ * Condition: "if the exiled creature was a [subtype]" — reads what an **exile additional cost**
+ * (`Costs.additional.ExileCards`) just ate, for either a spell (Soul Exchange's "Put a +2/+2
+ * counter on that creature if the exiled creature was a Thrull") or an activated ability.
+ *
+ * The cost is paid as the spell is cast or the ability is activated (CR 601.2h), long before the
+ * effect resolves, so the answer is recorded at payment time. For a cost exiling from the
+ * battlefield the engine keeps a last-known-information snapshot (CR 113.7a), which is what makes
+ * an exiled *token* — a Breeding Pit Thrull, say — still count.
+ */
 @SerialName("ExiledAsCostHadSubtype")
 @Serializable
 data class ExiledAsCostHadSubtype(val subtype: String) : Condition {

@@ -1589,19 +1589,30 @@ class ConditionEvaluator(
 
     /**
      * Soul Exchange's "if the exiled creature was a Thrull". The additional cost is fully paid
-     * before the spell resolves, so the exiled card is a real entity in the exile zone and its
-     * printed subtypes can be read directly — no last-known-information snapshot needed.
+     * before the spell resolves (CR 601.2h), so by resolution the exiled object is either a card
+     * sitting in exile or — when the cost exiled a *permanent* — possibly gone entirely, a token
+     * having ceased to exist. Prefer the cost-time snapshot when one was captured, because it is
+     * both the only reading that survives a token and the one Rule 113.7a asks for: what the
+     * permanent last was on the battlefield, continuous effects included. Fall back to the card's
+     * printed subtypes for exile costs paid from a non-battlefield zone, where the card is still
+     * there to read and its printed line is the right answer.
      */
     private fun evaluateExiledAsCostHadSubtype(
         state: GameState,
         condition: com.wingedsheep.sdk.scripting.conditions.ExiledAsCostHadSubtype,
         context: EffectContext
     ): Boolean {
+        val snapshots = context.exiledAsCostSnapshots.associateBy { it.entityId }
         return context.exiledAsCostCards.any { exiledId ->
-            state.getEntity(exiledId)
-                ?.get<CardComponent>()
-                ?.typeLine?.subtypes
-                ?.any { it.value == condition.subtype } == true
+            val snapshot = snapshots[exiledId]
+            if (snapshot != null) {
+                snapshot.subtypes.any { it.equals(condition.subtype, ignoreCase = true) }
+            } else {
+                state.getEntity(exiledId)
+                    ?.get<CardComponent>()
+                    ?.typeLine?.subtypes
+                    ?.any { it.value == condition.subtype } == true
+            }
         }
     }
 

@@ -2544,6 +2544,12 @@ class CastSpellHandler(
         // Cards discarded to pay an additional discard cost — threaded to the spell on the stack so
         // a resolution-time condition can test the discarded card (EffectTarget.DiscardedAsCost).
         val discardedAsCostCards = mutableListOf<EntityId>()
+        // Cards exiled to pay an additional exile cost, threaded to the spell on the stack so a
+        // resolution-time effect can name them (CardSource.ExiledAsCost) or test what they were
+        // (Conditions.ExiledAsCostHadSubtype). Snapshots are taken only for battlefield exiles —
+        // see SpellOnStackComponent.exiledAsCostSnapshots.
+        val exiledAsCostCards = mutableListOf<EntityId>()
+        val exiledAsCostSnapshots = mutableListOf<EntitySnapshot>()
         /**
          * LKI snapshots for entities chosen via [AdditionalCost.ChooseEntity] when
          * `captureSnapshot = true`. Captured at cost-pay time so downstream effects
@@ -2715,6 +2721,14 @@ class CastSpellHandler(
                         }
                         is CostAtom.ExileFrom -> {
                             val exiledCards = action.additionalCostPayment.exiledCards
+                            exiledAsCostCards.addAll(exiledCards)
+                            // Rule 113.7a — freeze what a permanent last was while it is still on
+                            // the battlefield; a token won't be readable at all by resolution.
+                            if (atom.zone == Zone.BATTLEFIELD) {
+                                exiledAsCostSnapshots.addAll(
+                                    captureEntitySnapshots(exiledCards, currentState)
+                                )
+                            }
                             for (cardId in exiledCards) {
                                 val cardContainer = currentState.getEntity(cardId) ?: continue
                                 val card = cardContainer.get<CardComponent>() ?: continue
@@ -3623,6 +3637,8 @@ class CastSpellHandler(
             totalManaSpent = manaSpentThisCast,
             beheldCards = beheldCards,
             discardedAsCostCards = discardedAsCostCards,
+            exiledAsCostCards = exiledAsCostCards,
+            exiledAsCostSnapshots = exiledAsCostSnapshots,
             chosenEntitySnapshots = chosenEntitySnapshots,
             manaSpentWhite = manaSpentEvent?.white ?: 0,
             manaSpentBlue = manaSpentEvent?.blue ?: 0,

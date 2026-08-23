@@ -169,6 +169,16 @@ data class EffectContext(
      * accumulates across activations.
      */
     val exiledAsCostCards: List<EntityId> = emptyList(),
+    /**
+     * LKI snapshots (Rule 113.7a) for the entries of [exiledAsCostCards] that were exiled **from
+     * the battlefield**, captured before the zone change. A permanent exiled as a cost may be a
+     * token — which ceases to exist and can't be read at resolution — or may have been a Thrull
+     * only through a continuous effect, so "the exiled creature was a Thrull" (Soul Exchange) has
+     * to read what it last was on the battlefield rather than what its card prints. Empty for
+     * exile costs paid from any other zone, where the card is still a real object in exile and its
+     * printed characteristics are the right answer.
+     */
+    val exiledAsCostSnapshots: List<EntitySnapshot> = emptyList(),
     /** LKI snapshots for [tappedPermanents] (Rule 113.7a). See [EntitySnapshot]. */
     val tappedEntitySnapshots: List<EntitySnapshot> = emptyList(),
     /**
