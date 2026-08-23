@@ -104,6 +104,20 @@ enum class AbilityFlag(val displayName: String) {
     // ── Combat damage assignment flags ──────────────────────────
     ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS("Assigns combat damage equal to its toughness rather than its power"),
 
+    /**
+     * "It assigns no combat damage this turn" — the Fallen Empires rider that trades a creature's
+     * combat damage away for something else (Farrel's Zealot, Farrel's Mantle, Delif's Cone,
+     * Delif's Cube).
+     *
+     * Distinct from preventing the damage: the creature assigns none at all, so nothing is dealt
+     * for a prevention effect to see, no damage triggers fire, and lifelink/deathtouch have nothing
+     * to attach to. Read at the single assignment chokepoint,
+     * `CombatDamageUtils.getAssignedCombatDamage`, so it covers first strike, trample and the
+     * ordered-blockers assignment alike. Grant it with a duration — the cards that print it all say
+     * "this turn".
+     */
+    ASSIGNS_NO_COMBAT_DAMAGE("Assigns no combat damage this turn"),
+
     // ── Summoning-sickness flags ────────────────────────────────
     /**
      * "You may activate abilities of this creature as though it had haste" — the

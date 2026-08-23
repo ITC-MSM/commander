@@ -638,6 +638,8 @@ class ConditionEvaluator(
                         ?.castTimeFlags?.contains(condition.flag) == true
             }
             is SacrificedPermanentHadSubtype -> ifResolution { evaluateSacrificedPermanentHadSubtype(condition, it) }
+            is com.wingedsheep.sdk.scripting.conditions.ExiledAsCostHadSubtype ->
+                ifResolution { evaluateExiledAsCostHadSubtype(state, condition, it) }
             is SacrificedPermanentWasLegendary -> ifResolution { evaluateSacrificedPermanentWasLegendary(it) }
             is SacrificedPermanentWasSuspected -> ifResolution { evaluateSacrificedPermanentWasSuspected(it) }
             is YouSacrificedPermanentThisWay -> ifResolution { evaluateYouSacrificedPermanentThisWay(it) }
@@ -1580,6 +1582,24 @@ class ConditionEvaluator(
     ): Boolean {
         return context.sacrificedPermanents.any { snapshot ->
             snapshot.subtypes.contains(condition.subtype)
+        }
+    }
+
+    /**
+     * Soul Exchange's "if the exiled creature was a Thrull". The additional cost is fully paid
+     * before the spell resolves, so the exiled card is a real entity in the exile zone and its
+     * printed subtypes can be read directly — no last-known-information snapshot needed.
+     */
+    private fun evaluateExiledAsCostHadSubtype(
+        state: GameState,
+        condition: com.wingedsheep.sdk.scripting.conditions.ExiledAsCostHadSubtype,
+        context: EffectContext
+    ): Boolean {
+        return context.exiledAsCostCards.any { exiledId ->
+            state.getEntity(exiledId)
+                ?.get<CardComponent>()
+                ?.typeLine?.subtypes
+                ?.any { it.value == condition.subtype } == true
         }
     }
 

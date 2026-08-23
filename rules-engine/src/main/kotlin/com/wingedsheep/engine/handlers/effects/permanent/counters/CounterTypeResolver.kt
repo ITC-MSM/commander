@@ -20,6 +20,9 @@ fun resolveCounterType(counterType: String): CounterType = when (counterType) {
     "+0/+2" -> CounterType.PLUS_ZERO_PLUS_TWO
     "-1/-0" -> CounterType.MINUS_ONE_MINUS_ZERO
     "-0/-1" -> CounterType.MINUS_ZERO_MINUS_ONE
+    "+1/+2" -> CounterType.PLUS_ONE_PLUS_TWO
+    "+2/+2" -> CounterType.PLUS_TWO_PLUS_TWO
+    "-2/-2" -> CounterType.MINUS_TWO_MINUS_TWO
     else -> try {
         CounterType.valueOf(
             counterType.uppercase()
@@ -46,5 +49,8 @@ fun counterTypeToString(counterType: CounterType): String = when (counterType) {
     CounterType.PLUS_ZERO_PLUS_TWO -> "+0/+2"
     CounterType.MINUS_ONE_MINUS_ZERO -> "-1/-0"
     CounterType.MINUS_ZERO_MINUS_ONE -> "-0/-1"
+    CounterType.PLUS_ONE_PLUS_TWO -> "+1/+2"
+    CounterType.PLUS_TWO_PLUS_TWO -> "+2/+2"
+    CounterType.MINUS_TWO_MINUS_TWO -> "-2/-2"
     else -> counterType.name.lowercase()
 }

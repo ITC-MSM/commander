@@ -512,6 +512,25 @@ data class SacrificedPermanentHadSubtype(val subtype: String) : Condition {
 }
 
 /**
+ * True when a permanent exiled to pay this spell or ability's cost had [subtype] — the exile
+ * counterpart of [SacrificedPermanentHadSubtype].
+ *
+ * Soul Exchange (Fallen Empires): "As an additional cost to cast this spell, exile a creature you
+ * control. … Put a +2/+2 counter on that creature if the exiled creature was a Thrull." The cost is
+ * already paid when the spell resolves, so the check reads the exiled card in the exile zone rather
+ * than last-known information.
+ */
+@SerialName("ExiledAsCostHadSubtype")
+@Serializable
+data class ExiledAsCostHadSubtype(val subtype: String) : Condition {
+    override val description: String = "if a $subtype was exiled this way"
+    override fun applyTextReplacement(replacer: TextReplacer): Condition {
+        val newSubtype = replacer.replaceSubtype(Subtype(subtype))
+        return if (newSubtype.value == subtype) this else ExiledAsCostHadSubtype(newSubtype.value)
+    }
+}
+
+/**
  * Condition: "If the sacrificed permanent was legendary."
  *
  * Reads `EffectContext.sacrificedPermanents` (snapshots captured at cost-payment time

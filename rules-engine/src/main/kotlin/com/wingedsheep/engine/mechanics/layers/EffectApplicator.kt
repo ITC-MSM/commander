@@ -399,10 +399,18 @@ internal class EffectApplicator(
             val plusTwoPlusZero = counters.getCount(CounterType.PLUS_TWO_PLUS_ZERO)
             val plusZeroPlusTwo = counters.getCount(CounterType.PLUS_ZERO_PLUS_TWO)
 
-            val powerMod = (plusOneCounters - minusOneCounters) + plusOnePlusZero - minusOneMinusZero +
-                (2 * plusTwoPlusZero)
-            val toughnessMod = (plusOneCounters - minusOneCounters) + plusZeroPlusOne - minusZeroMinusOne +
-                (2 * plusZeroPlusTwo)
+            // The Fallen Empires sizes — +1/+2 (Armor Thrull), +2/+2 (Soul Exchange),
+            // -2/-2 (Ebon Praetor). Same rule (CR 122.1a), different X and Y.
+            val plusOnePlusTwo = counters.getCount(CounterType.PLUS_ONE_PLUS_TWO)
+            val plusTwoPlusTwo = counters.getCount(CounterType.PLUS_TWO_PLUS_TWO)
+            val minusTwoMinusTwo = counters.getCount(CounterType.MINUS_TWO_MINUS_TWO)
+
+            val powerMod = (plusOneCounters - minusOneCounters) +
+                plusOnePlusZero - minusOneMinusZero + (2 * plusTwoPlusZero) +
+                plusOnePlusTwo + (2 * plusTwoPlusTwo) - (2 * minusTwoMinusTwo)
+            val toughnessMod = (plusOneCounters - minusOneCounters) +
+                plusZeroPlusOne - minusZeroMinusOne + (2 * plusZeroPlusTwo) +
+                (2 * plusOnePlusTwo) + (2 * plusTwoPlusTwo) - (2 * minusTwoMinusTwo)
 
             if (powerMod != 0) {
                 values.power = (values.power ?: 0) + powerMod

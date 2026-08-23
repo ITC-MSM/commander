@@ -1364,6 +1364,13 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.SacrificedPermanentHadSubtype(subtype)
 
     /**
+     * A permanent exiled to pay this spell or ability's cost had [subtype] — the exile counterpart
+     * of [SacrificedHadSubtype] (Soul Exchange's "if the exiled creature was a Thrull").
+     */
+    fun ExiledAsCostHadSubtype(subtype: String): ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.ExiledAsCostHadSubtype(subtype)
+
+    /**
      * If at least one permanent sacrificed as part of the cost was legendary at the
      * moment of sacrifice. Used by LTR cards like Nasty End and Gríma Wormtongue.
      */

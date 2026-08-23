@@ -21,6 +21,16 @@ enum class CounterType {
     PLUS_ZERO_PLUS_TWO,
     MINUS_ONE_MINUS_ZERO,
     MINUS_ZERO_MINUS_ONE,
+
+    /**
+     * The Fallen Empires stat counters. CR 122.1a defines a +X/+Y counter generally, but the engine
+     * enumerates the kinds it can sum, so each printed size needs its own constant:
+     * `+1/+2` (Armor Thrull), `+2/+2` (Soul Exchange), `-2/-2` (Ebon Praetor).
+     */
+    PLUS_ONE_PLUS_TWO,
+    PLUS_TWO_PLUS_TWO,
+    MINUS_TWO_MINUS_TWO,
+
     LOYALTY,
 
     /**
@@ -146,7 +156,19 @@ enum class CounterType {
      * Hunger counter (Fasting). A pure bookkeeping counter: it modifies nothing on its own, and the
      * card that uses it reads its own count back through `Conditions.SourceCounterCountAtLeast`.
      */
-    HUNGER;
+    HUNGER,
+
+    /** Javelin counter (FEM — Icatian Javelineers). See [Counters.JAVELIN]. */
+    JAVELIN,
+
+    /** Credit counter (FEM — Icatian Moneychanger). See [Counters.CREDIT]. */
+    CREDIT,
+
+    /** Cube counter (FEM — Delif's Cube). See [Counters.CUBE]. */
+    CUBE,
+
+    /** Tide counter (FEM — Homarid, Tidal Influence). See [Counters.TIDE]. */
+    TIDE;
 
     companion object {
         /**
@@ -166,11 +188,11 @@ enum class CounterType {
          * The kinds whose printed name is a stat modifier rather than a word, so `valueOf` cannot
          * reach them — `"+1/+0".uppercase()` is still `"+1/+0"`.
          *
-         * All six exist in this enum and all six are declared in [Counters]; only `+1/+1` and
+         * All nine exist in this enum and all nine are declared in [Counters]; only `+1/+1` and
          * `-1/-1` used to be listed here, so [fromName] answered null for a `+1/+0` counter whose
          * name [Counters.PLUS_ONE_PLUS_ZERO] spells and whose filter
          * `CounterTypeFilter.PlusOnePlusZero` names. Every entry is derived from [Counters] rather
-         * than re-spelled, so a seventh stat kind cannot be added to one and missed here.
+         * than re-spelled, so a tenth stat kind cannot be added to one and missed here.
          */
         private val STAT_COUNTERS: Map<String, CounterType> = mapOf(
             Counters.PLUS_ONE_PLUS_ONE to PLUS_ONE_PLUS_ONE,
@@ -179,6 +201,9 @@ enum class CounterType {
             Counters.PLUS_ZERO_PLUS_ONE to PLUS_ZERO_PLUS_ONE,
             Counters.MINUS_ONE_MINUS_ZERO to MINUS_ONE_MINUS_ZERO,
             Counters.MINUS_ZERO_MINUS_ONE to MINUS_ZERO_MINUS_ONE,
+            Counters.PLUS_ONE_PLUS_TWO to PLUS_ONE_PLUS_TWO,
+            Counters.PLUS_TWO_PLUS_TWO to PLUS_TWO_PLUS_TWO,
+            Counters.MINUS_TWO_MINUS_TWO to MINUS_TWO_MINUS_TWO,
         )
     }
 }
@@ -196,6 +221,15 @@ object Counters {
     const val PLUS_ZERO_PLUS_TWO = "+0/+2"
     const val MINUS_ONE_MINUS_ZERO = "-1/-0"
     const val MINUS_ZERO_MINUS_ONE = "-0/-1"
+
+    /** +1/+2 counter (FEM — Armor Thrull). See [CounterType.PLUS_ONE_PLUS_TWO]. */
+    const val PLUS_ONE_PLUS_TWO = "+1/+2"
+
+    /** +2/+2 counter (FEM — Soul Exchange). See [CounterType.PLUS_TWO_PLUS_TWO]. */
+    const val PLUS_TWO_PLUS_TWO = "+2/+2"
+
+    /** -2/-2 counter (FEM — Ebon Praetor). See [CounterType.MINUS_TWO_MINUS_TWO]. */
+    const val MINUS_TWO_MINUS_TWO = "-2/-2"
     const val LOYALTY = "loyalty"
     const val DEFENSE = "defense"
     const val CHARGE = "charge"
@@ -518,6 +552,32 @@ object Counters {
     const val HONE = "hone"
     const val STORAGE = "storage"
     const val HUNGER = "hunger"
+
+    /**
+     * Javelin counter (FEM — Icatian Javelineers). A plain resource counter: the creature enters
+     * with one and removing it is part of the cost of its ping. The counter does nothing of its
+     * own — the card spends it.
+     */
+    const val JAVELIN = "javelin"
+
+    /**
+     * Credit counter (FEM — Icatian Moneychanger). Accrues one per upkeep and is cashed in for
+     * life when the creature sacrifices itself. Purely a stored quantity, like [STORAGE].
+     */
+    const val CREDIT = "credit"
+
+    /**
+     * Cube counter (FEM — Delif's Cube). Charged one at a time by the artifact's first ability and
+     * spent by its second — the same store-and-spend shape as [STORAGE].
+     */
+    const val CUBE = "cube"
+
+    /**
+     * Tide counter (FEM — Homarid, Tidal Influence). Unlike the other stored counters, a tide
+     * counter's *exact* count is what matters: the permanent's static effect switches on at
+     * exactly one and again at exactly three, and it sheds all of them on reaching four.
+     */
+    const val TIDE = "tide"
 
     /**
      * Skewer counter (WOE — Rotisserie Elemental). A tally counter with no inherent rule: the

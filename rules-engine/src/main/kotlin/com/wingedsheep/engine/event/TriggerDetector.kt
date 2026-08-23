@@ -1006,6 +1006,17 @@ class TriggerDetector(
                         event.newControllerId == controllerId
                 }
             }
+            // "This turn, when target creature you control attacks and isn't blocked, …" — the
+            // Fallen Empires Delif's artifacts. Entity-scoped: the watched creature is the one
+            // whose unblocked attack the delayed trigger is waiting for, so the CR 509.3g test
+            // runs against it rather than against the artifact that created the trigger.
+            is com.wingedsheep.sdk.scripting.EventPattern.BecomesUnblockedEvent -> {
+                if (event !is com.wingedsheep.engine.core.BlockersDeclaredEvent) return false
+                val watched = watchedEntityId ?: return false
+                val isAttacking = state.getEntity(watched)
+                    ?.get<com.wingedsheep.engine.state.components.combat.AttackingComponent>() != null
+                isAttacking && event.blockers.values.none { it.contains(watched) }
+            }
             else -> false
         }
     }
