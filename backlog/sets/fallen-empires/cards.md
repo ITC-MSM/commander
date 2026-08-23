@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 25 / 102
+**Implemented:** 26 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -114,7 +114,7 @@
 - [ ] Delif's Cone
 - [ ] Delif's Cube
 - [x] Draconian Cylix
-- [ ] Elven Lyre
+- [x] Elven Lyre
 - [ ] Implements of Sacrifice
 - [ ] Ring of Renewal
 - [ ] Spirit Shield
