@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 56 / 102
+**Implemented:** 57 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -116,7 +116,7 @@
 - [x] Draconian Cylix
 - [x] Elven Lyre
 - [ ] Implements of Sacrifice
-- [ ] Ring of Renewal
+- [x] Ring of Renewal
 - [x] Spirit Shield
 - [x] Zelyon Sword
 
