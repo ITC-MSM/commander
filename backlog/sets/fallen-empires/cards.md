@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 14 / 102
+**Implemented:** 15 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -109,7 +109,7 @@
 
 ### Artifact
 - [x] Aeolipile
-- [ ] Balm of Restoration
+- [x] Balm of Restoration
 - [ ] Conch Horn
 - [ ] Delif's Cone
 - [ ] Delif's Cube
