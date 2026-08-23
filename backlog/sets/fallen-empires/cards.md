@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 93 / 102
+**Implemented:** 94 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -47,7 +47,7 @@
 - [x] Seasinger
 - [x] Svyelunite Priest
 - [ ] Tidal Flats
-- [ ] Tidal Influence
+- [x] Tidal Influence
 - [x] Vodalian Knights
 - [x] Vodalian Mage
 - [x] Vodalian Soldiers
