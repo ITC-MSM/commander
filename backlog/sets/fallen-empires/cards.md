@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 12 / 102
+**Implemented:** 13 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -108,7 +108,7 @@
 - [ ] Thorn Thallid
 
 ### Artifact
-- [ ] Aeolipile
+- [x] Aeolipile
 - [ ] Balm of Restoration
 - [ ] Conch Horn
 - [ ] Delif's Cone
