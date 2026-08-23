@@ -188,11 +188,14 @@ enum class CounterType {
          * The kinds whose printed name is a stat modifier rather than a word, so `valueOf` cannot
          * reach them — `"+1/+0".uppercase()` is still `"+1/+0"`.
          *
-         * All nine exist in this enum and all nine are declared in [Counters]; only `+1/+1` and
+         * All eleven exist in this enum and all eleven are declared in [Counters]; only `+1/+1` and
          * `-1/-1` used to be listed here, so [fromName] answered null for a `+1/+0` counter whose
          * name [Counters.PLUS_ONE_PLUS_ZERO] spells and whose filter
          * `CounterTypeFilter.PlusOnePlusZero` names. Every entry is derived from [Counters] rather
-         * than re-spelled, so a tenth stat kind cannot be added to one and missed here.
+         * than re-spelled, but that only makes the *spelling* safe — a kind added to the enum and
+         * to [Counters] must still be listed below by hand, which is exactly how `+2/+0` and `+0/+2`
+         * came to be declared in both and reachable from neither. Keep this map exhaustive over the
+         * stat kinds; [CounterTypeStatCoverageTest] fails if it is not.
          */
         private val STAT_COUNTERS: Map<String, CounterType> = mapOf(
             Counters.PLUS_ONE_PLUS_ONE to PLUS_ONE_PLUS_ONE,
@@ -201,6 +204,8 @@ enum class CounterType {
             Counters.PLUS_ZERO_PLUS_ONE to PLUS_ZERO_PLUS_ONE,
             Counters.MINUS_ONE_MINUS_ZERO to MINUS_ONE_MINUS_ZERO,
             Counters.MINUS_ZERO_MINUS_ONE to MINUS_ZERO_MINUS_ONE,
+            Counters.PLUS_TWO_PLUS_ZERO to PLUS_TWO_PLUS_ZERO,
+            Counters.PLUS_ZERO_PLUS_TWO to PLUS_ZERO_PLUS_TWO,
             Counters.PLUS_ONE_PLUS_TWO to PLUS_ONE_PLUS_TWO,
             Counters.PLUS_TWO_PLUS_TWO to PLUS_TWO_PLUS_TWO,
             Counters.MINUS_TWO_MINUS_TWO to MINUS_TWO_MINUS_TWO,
