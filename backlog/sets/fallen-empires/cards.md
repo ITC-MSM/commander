@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 58 / 102
+**Implemented:** 59 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -128,7 +128,7 @@
 - [x] Havenwood Battleground
 - [ ] Hollow Trees
 - [ ] Icatian Store
-- [ ] Rainbow Vale
+- [x] Rainbow Vale
 - [x] Ruins of Trokair
 - [ ] Sand Silos
 - [x] Svyelunite Temple
