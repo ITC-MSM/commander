@@ -93,6 +93,7 @@ val WormsOfTheEarth = card("Worms of the Earth") {
         rarity = Rarity.RARE
         collectorNumber = "56"
         artist = "Anson Maddocks"
+        flavorText = "The ground collapsed, leaving nothing but the great Worms' mucous residues."
         imageUri = "https://cards.scryfall.io/normal/front/6/5/65a97821-ca5b-46fb-af08-86de81d0daac.jpg?1783947937"
     }
 }

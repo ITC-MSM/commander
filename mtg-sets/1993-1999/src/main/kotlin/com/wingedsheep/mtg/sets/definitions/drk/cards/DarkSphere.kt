@@ -36,6 +36,7 @@ val DarkSphere = card("Dark Sphere") {
         rarity = Rarity.UNCOMMON
         collectorNumber = "100"
         artist = "Mark Tedin"
+        flavorText = "\"I was struck senseless for a moment, but revived when the strange curiosity I carried fell to the ground, screaming like a dying animal.\"\n—Barl, Lord Ith"
         imageUri = "https://cards.scryfall.io/normal/front/7/2/72cfe9b9-677d-4ecb-83ab-67fb6481371d.jpg?1783947927"
     }
 }

@@ -70,50 +70,38 @@
     "oracleText": "Trample\nDuring your turn, Angry Mob's power and toughness are each equal to 2 plus the number of Swamps your opponents control. During turns other than yours, Angry Mob's power and toughness are each 2.",
     "creatureStats": {
         "power": {
-            "type": "Dynamic",
+            "type": "DynamicWithOffset",
             "source": {
                 "type": "Conditional",
                 "condition": "IsYourTurn",
                 "ifTrue": {
-                    "type": "Add",
-                    "left": {
-                        "type": "Fixed",
-                        "amount": 2
-                    },
-                    "right": {
-                        "type": "AggregateBattlefield",
-                        "player": "EachOpponent",
-                        "filter": "land Swamp"
-                    }
+                    "type": "AggregateBattlefield",
+                    "player": "EachOpponent",
+                    "filter": "land Swamp"
                 },
                 "ifFalse": {
                     "type": "Fixed",
-                    "amount": 2
+                    "amount": 0
                 }
-            }
+            },
+            "offset": 2
         },
         "toughness": {
-            "type": "Dynamic",
+            "type": "DynamicWithOffset",
             "source": {
                 "type": "Conditional",
                 "condition": "IsYourTurn",
                 "ifTrue": {
-                    "type": "Add",
-                    "left": {
-                        "type": "Fixed",
-                        "amount": 2
-                    },
-                    "right": {
-                        "type": "AggregateBattlefield",
-                        "player": "EachOpponent",
-                        "filter": "land Swamp"
-                    }
+                    "type": "AggregateBattlefield",
+                    "player": "EachOpponent",
+                    "filter": "land Swamp"
                 },
                 "ifFalse": {
                     "type": "Fixed",
-                    "amount": 2
+                    "amount": 0
                 }
-            }
+            },
+            "offset": 2
         }
     },
     "keywords": [
@@ -485,6 +473,7 @@
         "collectorNumber": "2",
         "rarity": "UNCOMMON",
         "artist": "Christopher Rush",
+        "flavorText": "The willow knows what the storm does not: that the power to endure harm outlives the power to inflict it.",
         "imageUri": "https://cards.scryfall.io/normal/front/2/2/22d4761d-acf2-4cb3-86a8-a3f30420a92e.jpg?1783947950"
     }
 }
@@ -494,6 +483,7 @@
     "name": "Bog Imp",
     "manaCost": "{1}{B}",
     "typeLine": "Creature — Imp",
+    "oracleText": "Flying (This creature can't be blocked except by creatures with flying or reach.)",
     "creatureStats": {
         "power": 1,
         "toughness": 1
@@ -1269,6 +1259,7 @@
         "collectorNumber": "100",
         "rarity": "UNCOMMON",
         "artist": "Mark Tedin",
+        "flavorText": "\"I was struck senseless for a moment, but revived when the strange curiosity I carried fell to the ground, screaming like a dying animal.\"\n—Barl, Lord Ith",
         "imageUri": "https://cards.scryfall.io/normal/front/7/2/72cfe9b9-677d-4ecb-83ab-67fb6481371d.jpg?1783947927"
     }
 }
@@ -3025,7 +3016,7 @@
         "collectorNumber": "46",
         "rarity": "RARE",
         "artist": "Quinton Hoover",
-        "flavorText": "\"If you don't have your health, you don't have anything.\" —Proverb",
+        "flavorText": "\"If you don't have your health, you don't have anything.\"\n—Proverb",
         "imageUri": "https://cards.scryfall.io/normal/front/a/1/a131605a-f646-4745-a1e4-48d155a3d94f.jpg?1783947938",
         "rulings": [
             {
@@ -3064,7 +3055,7 @@
         "collectorNumber": "78",
         "rarity": "RARE",
         "artist": "Rob Alexander",
-        "flavorText": "\"Where moments before we were lost beyond hope, the strange, floating lights showed us the way and restored our morale.\" —Vervamon the Elder",
+        "flavorText": "\"Where moments before we were lost beyond hope, the strange, floating lights showed us the way and restored our morale.\"\n—Vervamon the Elder",
         "imageUri": "https://cards.scryfall.io/normal/front/c/b/cbc93c0b-0ac8-4b8f-b2f6-96887d1acd77.jpg?1783947932"
     },
     "colorIdentityOverride": [
@@ -3739,7 +3730,7 @@
     "metadata": {
         "collectorNumber": "48",
         "artist": "Douglas Shuler",
-        "flavorText": "\"Comes right outta th' ground. If ya can smell it, it's too late.\" —Keevy Bogsbury",
+        "flavorText": "\"Comes right outta th' ground. If ya can smell it, it's too late.\"\n—Keevy Bogsbury",
         "imageUri": "https://cards.scryfall.io/normal/front/b/8/b80ecb15-258b-4fc9-86e4-c2bf01891606.jpg?1783947938"
     },
     "colorIdentityOverride": [
@@ -4488,7 +4479,7 @@
         "collectorNumber": "83",
         "rarity": "UNCOMMON",
         "artist": "Drew Tucker",
-        "flavorText": "\"Their rain of arrows left only myself alive, cowering within a tree hollow. They did not even come out to loot the bodies.\" —Vervamon the Elder",
+        "flavorText": "\"Their rain of arrows left only myself alive, cowering within a tree hollow. They did not even come out to loot the bodies.\"\n—Vervamon the Elder",
         "imageUri": "https://cards.scryfall.io/normal/front/2/f/2fb5926f-9988-4bc0-b2b7-e286db208310.jpg?1783947930"
     },
     "colorIdentityOverride": [
@@ -5980,6 +5971,7 @@
         "collectorNumber": "53",
         "rarity": "UNCOMMON",
         "artist": "Jesper Myrfors",
+        "flavorText": "Magic often masters those who cannot master it.",
         "imageUri": "https://cards.scryfall.io/normal/front/f/4/f4a176e1-b22b-4f36-ba7b-c506cb4e1bed.jpg?1783947938"
     }
 }
@@ -6881,6 +6873,7 @@
         "collectorNumber": "56",
         "rarity": "RARE",
         "artist": "Anson Maddocks",
+        "flavorText": "The ground collapsed, leaving nothing but the great Worms' mucous residues.",
         "imageUri": "https://cards.scryfall.io/normal/front/6/5/65a97821-ca5b-46fb-af08-86de81d0daac.jpg?1783947937"
     }
 }
