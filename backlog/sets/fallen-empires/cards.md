@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 54 / 102
+**Implemented:** 55 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -117,7 +117,7 @@
 - [x] Elven Lyre
 - [ ] Implements of Sacrifice
 - [ ] Ring of Renewal
-- [ ] Spirit Shield
+- [x] Spirit Shield
 - [ ] Zelyon Sword
 
 ### Land
