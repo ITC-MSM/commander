@@ -509,7 +509,7 @@ exist in the cost and charges the life through the shared life-payment service.
   be chosen. Both pauses precede cost payment, so cancelling either is side-effect-free. Pair with
   `TimingRule.SorcerySpeed` where the card says "Activate only as a sorcery."
 - `Costs.Forage()` (ability cost) / `Costs.additional.Forage` (additional cost) — Forage (CR
-  701.61): "exile three cards from your graveyard **or** sacrifice a Food." A *choice* between two
+  701.59a): "exile three cards from your graveyard **or** sacrifice a Food." A *choice* between two
   sub-costs that belongs to the player. All cost-shaped forage payment is unified in the engine's
   `ForageCostResolver`: the enumerators surface the available modes as separate legal actions (the
   same multi-action pattern the "OrPay" costs use — `ExileFromGraveyard` and `SacrificePermanent`
@@ -518,7 +518,11 @@ exist in the cost and charges the life through the shared life-payment service.
   engine-direct). Used as an activated/mana-ability cost (Camellia, Thornvault Forager), a modal
   additional cost (Feed the Cycle), and the graveyard-cast permission (Osteomancer Adept, where the
   card being cast is excluded from the exile pool). For a "you may forage" *effect* (not a cost) use
-  `Patterns.Mechanic.forage(afterEffect?)` instead.
+  `Patterns.Mechanic.forage(afterEffect?)` instead. Every one of these paths emits the foraged event
+  that fires `Triggers.WheneverYouForage` — the cost forms from `ForageCostResolver.pay`, the effect
+  form from a marker inside each of its modes — so no context can forage without the payoffs seeing
+  it. A forage that was declined, or one no mode was feasible for, emits nothing: forage has no
+  "even if you can't" clause.
 - `Costs.RevealNotedCreatureType` (ability cost) — "Reveal the creature type you chose" (MKM — A Killer Among Us). Publishes the secret creature type this permanent's controller noted with `Effects.SecretlyChooseCreatureType(...)` (§ effects) and hands it to the ability's own effect as `chosenValues["chosenCreatureType"]` — the key `CardPredicate.HasSubtypeFromVariable` reads, so "if target attacking creature token is the chosen type" is an ordinary `Conditions.TargetMatchesFilter(Filters.creature.withSubtypeFromVariable("chosenCreatureType"))` test rather than new vocabulary. Two rules make it more than a formality. **Only the player who made the note can pay it**: for anyone else the cost is unpayable, so a permanent whose control changed hands stops offering the ability at all (the card's own ruling; CR 702.106d's linkage). And the type is **captured at activation, not at resolution** (CR 113.7a) — the same cost usually sacrifices the source, so by the time the ability resolves the permanent and its note are gone. Activated-ability-only: a spell has no source permanent to carry a note, and every other cost context reports it unpayable rather than half-paying it.
 - `Costs.CollectEvidence(n)` (ability cost) / `Costs.additional.CollectEvidence(n)` (mandatory
   additional cost) / `card { collectEvidence(n) }` (the optional **linked** cast cost) — Collect
@@ -3097,8 +3101,14 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   numbers survive the reflexive trigger's stack round-trip, so the "when you do" half can spend it.
 - `forage(afterEffect?)` — Forage as an *effect* ("you may forage"): a `ChooseActionEffect` letting
   the player choose to exile three cards from their graveyard or sacrifice a Food (each gated by a
-  feasibility check), with `afterEffect` appended to whichever mode is taken (Bushy Bodyguard, Curious
-  Forager). For forage as a *cost*, use `Costs.Forage()` / `Costs.additional.Forage` (§3).
+  feasibility check), with `afterEffect` appended to whichever mode is taken (Bushy Bodyguard,
+  Treetop Sentries). Each mode also ends with `Effects.Foraged()`, the marker that fires
+  `Triggers.WheneverYouForage`; because it sits *inside* the mode, a declined or infeasible forage
+  emits nothing. For forage as a *cost*, use `Costs.Forage()` / `Costs.additional.Forage` (§3).
+  **"you may forage. *If you do*, X" is `MayEffect(forage(afterEffect = X))`** — one resolution.
+  Reserve `ReflexiveTriggerEffect` for the cards that print "*When* you do, X" (Curious Forager),
+  which is CR 603.12 and puts X on the stack as a second object with its own priority window; see
+  the reflexive-trigger entry above for the general rule.
 - `loot(draw?, discard?)` — "draw N, discard M" loop.
 - `rummage(count?)` — discard then draw.
 - `connive(target?)` — draw 1, discard 1, then put a +1/+1 counter on `target` (default Self) if the discard was a nonland (CR 701.50). Also exposed as `Effects.Connive(target)`. Returns the pipeline wrapped in `ConniveEffect(subject = target, body = …)`: the wrapper names the keyword action and its subject, which is what lets `ModifyKeywordAction` replace it and what makes it emit `PermanentConnivedEvent` (CR 701.50f). The pipeline itself is unchanged.
@@ -5543,6 +5553,11 @@ Triggers.youCastSpell(
   of Spring); the inline-static cards (Overabundance, Pulse) use the mana statics in §9 instead.
 - `YouCommitCrime` — MKM crime mechanic.
 - `YouGiveAGift` — Gift mechanic.
+- `WheneverYouForage` — Bloomburrow forage (CR 701.59a). Observes **any** forage by the player, in any
+  context — the permanent's own "you may forage" effect, another permanent's `{2}, Forage:` cost, a
+  cast-time additional cost — because every path emits `EventPattern.ForagedEvent` (see § Forage).
+  Never fires for a declined forage or one no mode was feasible for. The forager is whoever paid,
+  so a forage an opponent pays resolves "you" as that opponent. Corpseberry Cultivator.
 - `BecomesPlotted` — OTJ Plot (CR 718) — "when this card becomes plotted". SELF binding; fires for the
   very card that was plotted while it sits face up in exile (Aloe Alchemist). Detected by
   `TriggerDetector.detectPlottedCardTriggers` off the plot special action's `CardPlottedEvent`, since
@@ -12256,7 +12271,10 @@ Card authors rarely reference these directly; they are created/updated by the ma
   (`Costs.Forage()`, `Costs.additional.Forage`, and the cast-from-graveyard permission) route their
   payment, candidate-finding, and per-mode legal-action cost-info through the single
   `ForageCostResolver`, so the player chooses exile-vs-sacrifice and which cards/Food everywhere
-  (CR 701.61).
+  (CR 701.59a). The payoff is `Triggers.WheneverYouForage` (`EventPattern.ForagedEvent`), emitted
+  from `ForageCostResolver.pay` for the cost forms and from the `Effects.Foraged()` marker inside
+  each effect-form mode — the same cost/effect split waterbend uses. The foraging player is whoever
+  *paid*, which need not be the source's controller.
 - **Blight X** — `Costs.additional.BlightVariable` + `DynamicAmount.AdditionalCostBlightAmount` +
   `Conditions.BlightWasPaid(n)`.
 - **Divvy (Fact-or-Fiction)** — `Patterns.Library.factOrFiction(...)`; `SplitPilesDecision` stays dormant until N > 2.

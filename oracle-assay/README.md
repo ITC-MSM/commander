@@ -20,7 +20,24 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is **the chosen count** — "sacrifice **any number of** creatures", the tail
+The most recent work is **Bloomburrow's second pass** — the set read again after the
+[Bloomburrow band](#the-bloomburrow-band) left it at 60 of 280, and the first band aimed at a set
+that already has one. It is **rows in six existing families and no new machinery**, which is what a
+second pass on a set is supposed to cost: `Triggers.Expend(n)` as the first trigger prefix whose
+event carries a *number*, the two life-change trigger specs, the five life-state conditions
+Bloomburrow's Bats check, and the two "each opponent" clauses that pay them off. The set went
+**69 → 83 cards** and the corpus **8,364 → 8,516** — the disproportion is the point: "each opponent
+loses 2 life" and "~ deals 2 damage to each opponent" are Bloomburrow sentences and 600-odd cards'
+sentences, so a set-shaped pick paid corpus-wide. It found **four card bugs**, three of them one
+shape (a bare tribal noun typed as `IsCreature`), and it declined the set's largest family on
+purpose: gift's printed line means two different models depending on whether the card is a permanent
+or a spell, and the line grammar cannot see a type line. It also closed the two **forage** findings
+the same section had been carrying — a missing `ForagedEvent` (now `Triggers.WheneverYouForage`,
+emitted from the cost resolver *and* from a marker inside the effect form) and a genuine rules bug
+in Treetop Sentries, which spelled its printed "If you do" as CR 603.12's reflexive trigger. See
+[Bloomburrow's second pass](#bloomburrows-second-pass).
+
+Before it came **the chosen count** — "sacrifice **any number of** creatures", the tail
 ranking's fourth family at **123 cards, 83 of them solely, over 123 lines**, and the first band
 picked off that ranking whose probe came back *empty*: substitute a known-good cardinal for the
 family's own span and **three of 123 lines get further, and no whole card does**. That is the
@@ -344,21 +361,21 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    64753  (37998 unique)
 
-Round-trips byte-exact           26264   405.6‰ (40.6%)
-Alternate spelling normalized    1436
-Declined                         37053
+Round-trips byte-exact           26930   415.9‰ (41.6%)
+Alternate spelling normalized    1587
+Declined                         36236
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 Redundant readings (same model)  0
 
-Cards fully covered              8102 / 34882   232.3‰ (23.2%)
-Vanilla + keyword-only cards     1444 / 1712   843.5‰ (84.3%)   <- Phase 1 target
+Cards fully covered              8516 / 34882   244.1‰ (24.4%)
+Vanilla + keyword-only cards     1445 / 1713   843.5‰ (84.4%)   <- Phase 1 target
 Portal (set POR)                 200 / 200     1000.0‰ (100%)   <- the Portal band's target
 Legions (set LGN)                145 / 145     1000.0‰ (100%)   <- the Legions band's target
-Bloomburrow (set BLB)            60 / 280      214.3‰ (21.4%)   <- the Bloomburrow band, in progress
-Reminder-text glosses            2870 matched · 114 differed · 965 unglossed
+Bloomburrow (set BLB)            83 / 280      296.4‰ (29.6%)   <- two passes; gift is what is left
+Reminder-text glosses            3005 matched · 114 differed · 965 unglossed
 ```
 
 Fineness is **parts per thousand**, per the assay the module is named for — 841.1‰ is 84.1%.
@@ -669,6 +686,115 @@ the pre-band measurement and can only have risen, since a card blocked by two fa
 sole-blocked by neither.) A flat tail is the shape the equipment band's residue had, and it is the
 signal that the next target is a *set* rather than a family.
 
+## Bloomburrow's second pass
+
+The [Bloomburrow band](#the-bloomburrow-band) left the set at 60 of 280 and named what was next.
+This is that list, worked from the top down, and it is the first band aimed at a set that already
+has one — which makes it the cleanest measurement of what a *second* pass costs. The answer is
+**rows in six existing families and no new machinery**: the set went 69 → **83 cards** and the
+corpus 8,364 → **8,516**, against 27 added lines in `Triggers`, 17 in `Conditions` and 36 in
+`Steps`.
+
+**A trigger event with a number in it.** Expend is Bloomburrow's own keyword action — "you spend
+your Nth total mana to cast spells this turn" — and `dsl.Triggers.Expend(n)` is the whole spec, with
+the watched player frozen at `Player.You` because that is the only subject Oracle prints. So it is
+the first prefix in [`Triggers`](src/main/kotlin/com/wingedsheep/assay/grammar/Triggers.kt) that is a
+`slottedTriggerRule` over a **number** rather than over a noun phrase, and the leaf is
+[`Primitives.cardinal`](src/main/kotlin/com/wingedsheep/assay/grammar/Primitives.kt) rather than
+`Cardinals.word`: Oracle writes "expend **4**" where it writes "draw **two** cards". Ten cards print
+the family, at two thresholds, and nothing in the sentence says those are the only two — which is
+the whole reason the threshold is a slot and not ten rules. Because the prefix slots `Steps.step`
+whole, every one of those cards' payoffs arrived for free, and the two that did not (Byway Barterer's
+"discard your hand. If you do, draw two cards", Muerra's play-from-exile) are ordinary step gaps
+rather than expend gaps.
+
+**The Bats' condition vocabulary.** Bloomburrow's white-black half checks the turn's life history
+five different ways, and `Conditions` names all five, so all five are `constant` rows beside
+`WasBargained` and `WasKicked` — the same durable-fact reads. The one worth stating is
+`YouLostLifeThisTurn`: it is printed in the *present perfect* — "As long as **you've** lost life this
+turn" (Essence Channeler) — where the other four are past simple, and the only other card in the
+corpus whose text contains "you lost life this turn" is Ludevic, Necro-Alchemist, whose clause is
+about a player *other* than you and is therefore a different model. So the perfect is not a second
+spelling to choose between under the one-printed-form-per-model invariant; it is this condition's
+only one, and the check was a corpus grep rather than a guess.
+
+**The set-shaped pick that paid corpus-wide.** Two of the rows are the reason the corpus number moved
+eleven times as far as the set number. "Each opponent loses 2 life" is a `countedStep` beside
+"target player loses 2 life" and "~ deals 2 damage to each opponent" is a `countedStepPair` beside
+"…to target opponent" — one verb over a recipient the model *names* instead of one it targets, which
+is why they are rows rather than a player slot inside the targeted rules: a slot spanning both would
+let the grammar print a targeted clause without its target requirement. Bloomburrow prints them on
+five cards. The corpus prints them on six hundred.
+
+**What it found.** Four hand-written cards, and three of them are one shape — the bare tribal noun
+typed as `IsCreature` where the printed noun names only a subtype, the same class the 103-card
+migration fixed everywhere the grammar could already see. Brambleguard Veteran's "Raccoons you
+control", Obyra, Dreaming Duelist's "another Faerie you control" and Stromkirk Bloodthief's "target
+Vampire you control" were all invisible before, because nothing had read a bare tribal noun in those
+three positions. The fourth is Silverquill Charm holding the counter type as the string `"+1+1"`
+rather than `"+1/+1"`, which `CounterTypeFilter.Named` fails *open* on — so it works today and would
+stop working the moment anything compared the name. A fifth, Corpseberry Cultivator, is fixed only
+half way and named below.
+
+**Gift is what is left, and it is declined on purpose.** It is the set's largest family by a wide
+margin — 22 cards, over the `Gift a card` keyword line and the `If the gift was promised, …` rider —
+and the reason it is not here is a *shape* rather than an amount of work. The printed line denotes
+two different models depending on the card's type. On a permanent it is
+`KeywordAbility.Gift(kind)` plus the enters ability `giftEnterTrigger` lowers from it, which a line
+rule can build by calling that lowering exactly as `equipLine` calls `ActivatedAbility.equip`. On an
+instant or a sorcery there is no permanent to trigger off, so the promise is folded into the spell's
+own resolution as `Patterns.Mechanic.giftSpell`'s two modes — with per-mode targets, per-mode prose
+labels and a `ChooseOpponentForSourceEffect` spliced in — and `CardValidator` *rejects* the keyword
+on a non-permanent. A line rule cannot tell those apart, because the fact that separates them is the
+type line and the line grammar is deliberately type-line-blind (`Reminders` and `CardCompiler` are
+the only things here that read one). Worse, the spell form is not a line construct at all: its model
+has no keyword and no trigger, so line one's contribution depends on line two, and `CardFragment` is
+a per-line value by design.
+
+Both halves were written and both were reverted, and the differential is what settled it: with the
+keyword line and the two gift conditions in, Nocturnal Hunger and Valley Rally started being read
+*whole* — as an instant carrying a gift keyword the validator forbids, plus a resolution-time
+condition the SDK's own KDoc says is permanents-only. That is the reversible-but-wrong class in a new
+position, so gift stays declined and counted. It needs one of two things, neither of them Assay work:
+a `KeywordAbility.Gift` the SDK admits on a spell (so both card types share one shape), or a
+face-level rule that may read the type line.
+
+**Two forage findings, both closed in the same change.** They were reported as standing findings
+first and then fixed, and they are worth reading together because one was an SDK gap and the other
+was a fold.
+
+The gap: Corpseberry Cultivator prints "Whenever you forage, put a +1/+1 counter on this creature."
+and the card folded that counter into its *own* forage's `afterEffect`, so a forage from any other
+source did not grow it — there was no forage event in `EventPattern` to trigger off. There is now
+(`Triggers.WheneverYouForage`), and the shape it took is the transferable part: a keyword action that
+is sometimes a **cost** and sometimes an **effect** cannot be observed from one place. The three cost
+contexts share `ForageCostResolver.pay`, so the event is emitted there — as one wrapper over that
+function's four exits rather than a line in each, so a mode added later cannot forget it. The effect
+form lowers to generic gather/select/move and sacrifice effects with nothing forage-shaped to emit
+from, so it carries a marker (`Effects.Foraged()`) *inside each of `Patterns.Mechanic.forage`'s two
+modes* — which is also what gives the "only if it actually happened" property for free, since forage
+has no "even if you can't" clause and a declined forage runs no mode. Waterbend is split the same
+way; collect evidence gets away with one site only because its effect form delegates to its cost
+resolver. Wiring a new event into the trigger path means **two** `when` branches in `TriggerIndex`
+(the SDK pattern *and* the engine event), both of which fall through to `emptyList()`, plus
+`TriggerMatcher` and `TriggerContext` — miss any one and the trigger compiles, ships and never fires.
+
+The fold: the two cards printing "you may forage. If you do, …" held it two different ways — Bushy
+Bodyguard as `MayEffect(forage(afterEffect = …))`, Treetop Sentries as
+`ReflexiveTriggerEffect(forage(), optional = true, …)`. The printed text settles it and the corpus
+agrees without being asked: **"If you do" is one resolution and "When you do" is CR 603.12's
+reflexive trigger**, a second stack object with its own priority window. Across 87
+`ReflexiveTriggerEffect` cards and 312 `MayEffect` cards, *zero* `MayEffect` card prints "When you
+do" — so Treetop Sentries was not a style divergence but a rules bug, giving opponents a response
+window the printed card does not create, and rendering its own prompt as "… When you do, draw a
+card". It is a `MayEffect` now, leaving Curious Forager ("**When** you do, return target permanent
+card…") as the set's sole and correct reflexive trigger. Two cards elsewhere in the corpus carry the
+same contradiction and are named in the PR rather than fixed here.
+
+With one canonical form to print, a forage band in the grammar is now writable — "you may forage.",
+"you may forage. If you do, …" and "Whenever you forage, …" over four BLB cards. It is deliberately
+not in this change: the band is Assay work and these two were card and engine work.
+
 ## The Bloomburrow band
 
 Bloomburrow is 280 cards, every one of them implemented by hand here, which makes it the first set
@@ -735,6 +861,10 @@ differential on the day a line stopped declining:
 keyword line and the `If the gift was promised, …` rider, the second of which needs its base clause
 to read first. After it: the Class levels (`{3}{U}: Level 2`, 10 cards), modal spells (8), and
 "Spend this mana only to cast …" (6).
+
+That list is what [Bloomburrow's second pass](#bloomburrows-second-pass) worked, and gift is the one
+row on it that came back with an answer other than a rule — see that section for why the printed
+line means two models and the grammar declines it on purpose.
 
 ## The cost band
 

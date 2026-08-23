@@ -787,6 +787,33 @@ object Triggers {
         // one with a player field — which is what the SDK says too.
         triggerRule("when you cycle ${Normalizer.SELF}", SdkTriggers.YouCycleThis),
         triggerRule("whenever a player cycles a card", SdkTriggers.AnyPlayerCycles),
+        // Gift's payoff trigger (CR 702.174c) — Jolly Gerbils. `YouGiveAGift` is a whole
+        // `TriggerSpec` the SDK publishes, so there is nothing to slot; the giver is baked into the
+        // event as `Player.You` and no card prints another one.
+        triggerRule("whenever you give a gift", SdkTriggers.YouGiveAGift),
+        // The life-change triggers. `YouGainLife` / `YouLoseLife` are whole specs the SDK publishes,
+        // so these are constants beside the events above rather than a shape over a player field —
+        // "whenever an opponent gains life" is a different event and becomes its own row when a card
+        // needs one. Their "during your turn" siblings (Wax-Wane Witness, Moonstone Harbinger) are
+        // *not* here: that clause is a `triggerRestriction`, which [abilityFor] deliberately never
+        // writes, and reading it as an intervening-if would mean a different card.
+        triggerRule("whenever you gain life", SdkTriggers.YouGainLife),
+        triggerRule("whenever you lose life", SdkTriggers.YouLoseLife),
+        // Expend — "you spend your Nth total mana to cast spells this turn". A trigger event with
+        // a number in it, so it is the [slottedTriggerRule] shape rather than a constant per
+        // threshold: the corpus prints 4 and 8 and nothing in the sentence says those are the only
+        // two. `Triggers.Expend(n)` freezes the watched player at `Player.You`, which is the only
+        // subject Oracle prints, so the threshold is the rule's one slot — and it is [Primitives.cardinal] rather than
+        // [Cardinals.word] because Oracle writes it as a numeral: "Whenever you expend **4**".
+        slottedTriggerRule(
+            surface = "whenever you expend {n}",
+            name = "whenever you expend a number of mana",
+            noun = Primitives.cardinal,
+            effect = Steps.step,
+            valueOf = { (it.event as? EventPattern.ExpendEvent)?.threshold },
+            spec = { SdkTriggers.Expend(it) },
+            slotName = "n",
+        ),
         filteredTriggerRule(
             "whenever {filter} enters", "whenever a permanent enters", Filters.indefinite,
         ) { SdkTriggers.entersBattlefield(it, TriggerBinding.ANY) },
