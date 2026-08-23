@@ -18,9 +18,13 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * When you draw your third card in a turn, return this card from your graveyard to the battlefield tapped.
  *
  * Uses [Triggers.NthCardDrawn]`(3)` (CR 121.2) for the third-draw trigger, and
- * [Effects.PutOntoBattlefield]`(Self, tapped = true)` — the same "return from graveyard tapped"
- * idiom as Persistent Specimen / Reassembling Skeleton / Teacher's Pest, but triggered rather than
- * activated.
+ * [Effects.PutOntoBattlefieldFromGraveyard]`(Self, tapped = true)` for the recursion — the same
+ * facade as Persistent Specimen / Reassembling Skeleton / Teacher's Pest, but triggered rather than
+ * activated. The facade's `fromZone = GRAVEYARD` is the guard the printed line names: a Snacker
+ * that has left the graveyard by the time the trigger resolves stays where it is.
+ *
+ * `triggerZones = {GRAVEYARD}` because the ability's effect moves the card out of the graveyard, so
+ * it functions only there (CR 113.6m) — a Snacker on the battlefield doesn't see your third draw.
  */
 val SneakySnacker = card("Sneaky Snacker") {
     manaCost = "{U}{B}"
@@ -34,8 +38,8 @@ val SneakySnacker = card("Sneaky Snacker") {
 
     triggeredAbility {
         trigger = Triggers.NthCardDrawn(3)
-        effect = Effects.PutOntoBattlefield(EffectTarget.Self, tapped = true)
-        triggerZones = setOf(Zone.BATTLEFIELD, Zone.GRAVEYARD)
+        effect = Effects.PutOntoBattlefieldFromGraveyard(EffectTarget.Self, tapped = true)
+        triggerZones = setOf(Zone.GRAVEYARD)
         description = "When you draw your third card in a turn, return this card from your graveyard to the battlefield tapped."
     }
 

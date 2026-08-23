@@ -944,10 +944,10 @@
                     "type": "MoveToZone",
                     "target": "Self",
                     "destination": "Battlefield",
-                    "placement": "Tapped"
+                    "placement": "Tapped",
+                    "fromZone": "Graveyard"
                 },
                 "activeZones": [
-                    "Battlefield",
                     "Graveyard"
                 ],
                 "descriptionOverride": "When you draw your third card in a turn, return this card from your graveyard to the battlefield tapped."
