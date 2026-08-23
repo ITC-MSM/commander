@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 73 / 102
+**Implemented:** 74 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -103,7 +103,7 @@
 - [x] Thallid Devourer
 - [ ] Thelon's Chant
 - [ ] Thelon's Curse
-- [ ] Thelonite Druid
+- [x] Thelonite Druid
 - [ ] Thelonite Monk
 - [x] Thorn Thallid
 
