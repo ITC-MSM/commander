@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 68 / 102
+**Implemented:** 69 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -130,5 +130,5 @@
 - [x] Icatian Store
 - [x] Rainbow Vale
 - [x] Ruins of Trokair
-- [ ] Sand Silos
+- [x] Sand Silos
 - [x] Svyelunite Temple
