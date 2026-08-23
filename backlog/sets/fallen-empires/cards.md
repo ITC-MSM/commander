@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 49 / 102
+**Implemented:** 50 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -48,7 +48,7 @@
 - [x] Svyelunite Priest
 - [ ] Tidal Flats
 - [ ] Tidal Influence
-- [ ] Vodalian Knights
+- [x] Vodalian Knights
 - [x] Vodalian Mage
 - [x] Vodalian Soldiers
 - [ ] Vodalian War Machine
