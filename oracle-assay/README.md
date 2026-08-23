@@ -20,7 +20,28 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is **Bloomburrow's second pass** — the set read again after the
+The most recent work is **the card's mana value** — "search your library for a creature card **with
+mana value 3 or less**", and the construct the tail ranking named was not what was blocking it. The
+grammar had read "creature with mana value 3 or less" since the counting band; what it could not read
+was the same clause **one word to the right**, because every card-position rule spelled the head noun
+in its *own* template — "return target `{filter}` **card** from your graveyard" — which puts "card" in
+the sentence and freezes the noun phrase at its type. A suffix clause attaches behind a head noun, and
+in card position there was no head noun inside the phrase to attach behind. So `card` became a
+**layer**, and its place in the cascade is the finding: the layers above it are modifiers English
+writes in front of a head noun and the layers below it are clauses English writes behind one, which
+means a position that prints a head noun splits the cascade in exactly one place and every suffix
+layer — keyword, power, mana value — reaches card position without being told. The qualifier itself is
+a 3×3 table with two *declared* empty cells, whose word order is decided by the value beside it:
+English postfixes a comparison to a numeral ("3 or less") and prefixes it to a clause ("less than or
+equal to the number of lands you control"), and equality's postfix form is the **empty string**. Then
+the residue named a defect one layer over and paid again — `controlledBy` had been the cascade's
+*outermost* layer, printing "creature with mana value 3 or less an opponent controls" where Oracle
+writes the controller clause first by a wide margin, so the grammar was reading the rare order and
+declining the common one. Its differential half found card bugs in both directions, most of them one
+misreading: **"mana value N or less" implemented as "fetch N cards"**.
+See [the card's mana value](#the-cards-mana-value).
+
+Before it came **Bloomburrow's second pass** — the set read again after the
 [Bloomburrow band](#the-bloomburrow-band) left it at 60 of 280, and the first band aimed at a set
 that already has one. It is **rows in six existing families and no new machinery**, which is what a
 second pass on a set is supposed to cost: `Triggers.Expend(n)` as the first trigger prefix whose
@@ -2951,6 +2972,160 @@ number of" does. Seven sole-blocked cards sit behind it (both Recruiters, Iname,
 the three "cards named ~" tutors), and the band is the count slot plus five destination rows. Note
 that Scouting Trek is *implemented* and does not use the recipe, so writing it will produce a
 differential divergence to classify before it produces a card.
+
+## The card's mana value
+
+`card with mana …` — high on the tail ranking when it was picked, and its shape is the one worth
+carrying forward, because the construct the ranking named is not what was blocking it.
+
+### The diagnosis is a word, and `assay parse` states it
+
+```
+Search your library for a creature card with mana value 3 or less, put it onto the battlefield, then shuffle.
+                                  ^ expected " with mana value " | " with " | " you control" | " card, put it onto the battlefield, then shuffle" | …
+```
+
+The grammar has read "creature **with mana value 3 or less**" since the counting band. What it could
+not read is the same clause one word to the right, because every card-position rule spelled the head
+noun in **its own template** — `"return target {filter} card from your graveyard to your hand"`,
+`"search your library for {filter} card, …"`. That puts "card" in the *sentence* and freezes the noun
+phrase at its type: a suffix clause attaches behind the head noun, and in card position there was no
+head noun inside the phrase for it to attach behind. One printed word, and a family near the top of
+the ranking.
+
+So the change is two pieces, and the second is the one that pays.
+
+### The mana-value qualifier is a 3×3 table with two empty cells
+
+| | equal | at most | at least |
+|---|---|---|---|
+| a numeral | `mana value 3` | `mana value 3 or less` | `mana value 3 or greater` |
+| the announced `X` | `mana value X` | `mana value X or less` | — |
+| a clause | `mana value equal to …` | `mana value less than or equal to …` | — |
+
+English **postfixes** the comparison to a number and **prefixes** it to a phrase: "3 or less"
+against "less than or equal to the number of lands you control". Nothing in the model chooses between
+them — `ManaValueAtMost(3)` has one printed form and `ManaValueAtMostDynamic(…)` has another — so the
+comparison cannot be a slot over one template. A slot would make "mana value less than or equal to 3"
+a second spelling of the first row, which is printing left undetermined. It is three generators over
+one comparison list instead, each taking only the comparisons its value shape has a spelling for.
+
+The equality row is that observation at its limit: **equality's postfix form is the empty string.**
+"Mana value 3" is not an abbreviation of a comparison Oracle left out — the bare numeral *is* how the
+equality is written, which is why `""` is a row of the table rather than a case above it. Both empty
+cells are the SDK's and both are visible in the corpus: one card prints "mana value X or greater" and
+there is no `ManaValueAtLeastX` for it to be, and no card at all prints a clause with "or greater".
+Across the whole Oracle bulk the seven filled cells cover all but a handful of the places a
+mana-value qualifier appears, and the handful is "mana value 4 or 5" (Transit Mage and three
+siblings) — a *disjunction* of two equalities rather than a comparison, which declines as the
+different construct it is.
+
+Its SDK finding is one missing call. `CardPredicate.ManaValueEqualsDynamic` exists, the engine
+evaluates it, and `manaValueAtMostDynamic` has a fluent builder — the equality sibling did not, so
+Talion, the Kindly Lord reaches past the facade to the raw constructor. Naming an existing
+composition is the one kind of `mtg-sdk` change this module may make on its own, and this is one.
+
+### `card` is a layer, and where it sits is the finding
+
+[`Filters.cardNoun`](src/main/kotlin/com/wingedsheep/assay/grammar/Filters.kt) is a fourth
+instantiation of the noun cascade, beside `plural`, `pluralSubject` and `spellQuality`, with the head
+noun *inside* it. Its place in the layer list is the whole point:
+
+> the layers above it are modifiers English writes **in front** of a head noun; the layers below it
+> are clauses English writes **behind** one.
+
+A position that prints a head noun therefore splits the cascade in exactly one place, and every
+suffix layer reaches card position without being told — keyword, power, and mana value all at once.
+Three details follow from the split rather than being chosen: the type phrase stays **singular in
+both numbers** because Oracle inflects only the head ("creature cards", never "creatures cards" —
+which the noun-in-the-template shape *could* print, and the counted library search did); the article
+derives from the printed form of the whole card noun, so "**a** creature card" and "**a** card" come
+from one function; and the **controller layer is absent**, because an object in a library or a
+graveyard is owned rather than controlled and every sentence here says which zone in its own words.
+
+The migration is what made it a refactor rather than an addition: every template across `Library`,
+`Graveyard`, `Costs`, `SpellCosts`, `TopOfLibrary`, `Amounts` and `Conditions` that spelled the noun
+itself gave the word back to the noun phrase, and **three rules were deleted** because they became
+rows of it.
+`Graveyard.returnAnyCardToHand` was exactly the general rule with `Any`; `Costs.discardCard` and
+`exileAnyFromGraveyard` were `constant`s for models that are *definitionally* `Discard(Any, 1)` and
+`ExileFromGraveyard(1, Any)`. Each had a KDoc paragraph explaining that `Filters` had no noun for
+`Any` — true when written, and the kind of write-off [the conditional-tapped-entry
+band](#the-conditional-tapped-entry-band) says has an expiry date.
+
+### The residue named a defect one layer over, and paid again
+
+With the mana-value clause readable, the family re-keyed onto `with mana value …` — and its top
+example was not a new construct:
+
+```
+When ~ enters, exile target creature an opponent controls with mana value 3 or less.
+```
+
+The cascade had `controlledBy` as its **outermost** layer, so it printed "creature with mana value 3
+or less an opponent controls". Oracle puts the controller clause in *front* of the quality clause on
+all but fourteen cards in the corpus — so the grammar had been reading the fourteen and declining the
+rest. The two layers commute in the model (`controllerPredicate` is its own field, not a member of
+`cardPredicates`), so only English was ever at stake, and swapping them paid a second time over with
+the divergence set unchanged. The rare order stays readable as an `alternate` over a quality
+vocabulary that excludes the bare pass-through — which is what keeps "creature you control" at
+exactly one reading and the redundancy count at zero.
+
+That is the general lesson: **a band that makes one layer reachable will measure the layer next to
+it.** The residue is not a smaller version of the family; it is whatever the family was hiding.
+
+### What the gate found: card bugs, most of them one misreading
+
+Every new divergence the band produced was a bug in a shipped card. Most share a single misreading,
+and it is the sharpest thing here: **"mana value N or less" implemented as "fetch N cards".**
+
+| Card | Printed | Shipped |
+|---|---|---|
+| Bog Glider | a Mercenary permanent card with mana value **2 or less** | up to **2** Mercenaries, any mana value |
+| Rathi Intimidator | a Mercenary permanent card with mana value **2 or less** | up to **2** Mercenaries, any mana value |
+| Defiant Falcon | a Rebel permanent card with mana value **3 or less** | up to **3** Rebels, any mana value |
+| Zur the Enchanter | an enchantment card with mana value **3 or less** | up to **3** cards, **no filter at all** |
+
+All four are mtgish-generated, and the emitter has since grown the guard that would have refused
+them — `"ManaValueIs" in blob` declines the whole search to SCAFFOLD — so these are stale output
+rather than a live generator defect. The mechanism is worth knowing anyway: the emitter reads a
+search's count with `findInteger(args)`, which walks the *whole* args subtree for the first integer,
+and on these cards the only integer in the IR is the mana-value threshold sitting in the filter.
+
+The rest are one each of shapes this module has already named. Unearth and Disembowel simply dropped
+the cap (Unearth returned any creature card from your graveyard; Disembowel destroyed any creature
+whatever X was paid) — the class [the top-of-library band](#the-top-of-library-band) records, where
+**a field the grammar cannot produce is a field nothing is checking**. Teshar, Ancestor's Apostle was
+missing the `fromZone = GRAVEYARD` guard, one more instance of [the functional
+zone](#the-functional-zone)'s finding, visible only now that the clause in front of it parses. And
+Star Charter restated `Patterns.Library.lookAtTopRevealMatchingToHand` — the recipe whose own KDoc
+names that card — by hand instead of calling it, and lost the `revealed = true` on the move to hand
+doing so, so a card the text says to *reveal* went to hand unseen. All are fixed here and the
+divergence set is back to the entries that predate this change.
+
+### What is left in the family
+
+The family is off the tail ranking entirely. What still declines with a readable mana-value clause is
+the sentence around it, and three positions account for most of it:
+
+- **the spell position** — "Counter target spell with mana value 4 or greater." The frozen-facade
+  lesson once more: `Filters.spellQuality` carries the table already, and `Stack`'s counter rules
+  simply do not slot it. The caret lands at the end of "Counter target spell".
+- **the clause values `Amounts.count` cannot spell** — "less than or equal to **~'s power**" (Carmen
+  and Winter Soldier), "your devotion to black", "1 plus the sacrificed creature's mana value" (the
+  Birthing Pod cycle). Each is a row in the count vocabulary, not a row here.
+- **the destinations** — "from your hand onto the battlefield", "from among them onto the
+  battlefield", "from your graveyard rather than pay this spell's mana cost". `Patterns.Library`
+  parameters nobody has slotted yet, exactly as [the top-of-library
+  band](#the-top-of-library-band) found them.
+
+One kernel primitive came out of this band and belongs to the next family that needs it.
+[`deferred`](src/main/kotlin/com/wingedsheep/assay/syntax/Phrase.kt) resolves a slot on first use
+rather than at construction, because a qualifier can be measured by a count and a count is taken over
+a noun phrase — `Filters` → `ManaValues` → `Amounts` → `Filters` is a genuine cycle in English, and
+the JVM answers an initialization cycle by handing back a half-built object whose slot reads `null`.
+Duplicating either vocabulary to break it is the one thing this module exists to prevent, so the
+indirection is in the kernel and knows nothing about mana values.
 
 ## The differential gate
 

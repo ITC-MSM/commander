@@ -223,12 +223,17 @@ object SpellCosts {
                 CostReductionSource.PermanentsOnBattlefieldMatching(filter)
             }
         ),
-        countedRule("{filter} card in your graveyard", "cards in your graveyard") { filter ->
+        countedRule(
+            "{filter} in your graveyard",
+            "cards in your graveyard",
+            noun = Filters.cardNoun,
+        ) { filter ->
             CostReductionSource.CardsInGraveyardMatchingFilter(filter, 1)
         },
         countedRule(
-            "{filter} card in your graveyard and in exile",
+            "{filter} in your graveyard and in exile",
             "cards in your graveyard and in exile",
+            noun = Filters.cardNoun,
         ) { filter ->
             CostReductionSource.CardsInGraveyardAndExileMatchingFilter(filter, 1)
         },
@@ -265,9 +270,12 @@ object SpellCosts {
         template: String,
         name: String,
         controlled: Boolean = false,
+        // The noun the row counts: permanents for the battlefield rows, *cards* for the graveyard
+        // ones, which is a different noun phrase and not the same one with a word after it.
+        noun: Phrase<GameObjectFilter> = Filters.filter,
         source: (GameObjectFilter) -> CostReductionSource?,
     ): Phrase<CostReductionSource> = phrase(template, name = name) {
-        slot("filter", Filters.filter)
+        slot("filter", noun)
         build { bindings ->
             val printed = bindings.value<GameObjectFilter>("filter")
             val filter = if (controlled) controlledScope(printed) else printed.takeIf { scopeFree(it) }

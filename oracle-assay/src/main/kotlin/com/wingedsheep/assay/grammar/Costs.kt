@@ -161,23 +161,22 @@ object Costs {
             }
 
         /**
-         * "Discard a card" — the single commonest non-mana cost in the corpus, and the one shape
-         * where the noun is not a filter at all.
+         * "Discard a card", "Discard a creature card" — the single commonest non-mana cost in the
+         * corpus, over one noun phrase.
          *
-         * `GameObjectFilter.Any` is what an unqualified "card" means, and [Filters] deliberately has
-         * no noun for it — "card" is not a permanent type. So this is a constant rather than the
-         * `Any` case of the filtered rule below, which is also what keeps the two disjoint: the
-         * filtered rule cannot print `Any` because [Filters.indefinite] cannot.
+         * The unqualified form used to be a `constant` beside this rule, because [Filters] had no
+         * noun for `GameObjectFilter.Any` — and `Costs.DiscardCard` is *definitionally*
+         * `Discard(Any, 1)`, so the two rules printed one model the moment either could reach it.
+         * The bare word is now the `Any` row of [Filters.indefiniteCard], which is where it belongs:
+         * one printed form per model, and the qualified form gains every suffix the noun phrase can
+         * carry.
          */
-        val discardCard = constant("${lead("discard")} a card", atomOf(SdkCosts.DiscardCard))
-
-        /** "Discard a creature card" — Vampire Hounds. The noun a graveyard-facing filter spells. */
-        val discardFiltered = phrase("${lead("discard")} {filter} card", name = "discard a card of a kind") {
-            slot("filter", Filters.indefinite)
+        val discardFiltered = phrase("${lead("discard")} {filter}", name = "discard a card of a kind") {
+            slot("filter", Filters.indefiniteCard)
             build { atomOf(SdkCosts.Discard(it.value("filter"))) }
             match { atom ->
                 val discard = atom as? CostAtom.Discard ?: return@match null
-                if (discard.count != 1 || discard.filter == GameObjectFilter.Any) return@match null
+                if (discard.count != 1) return@match null
                 if (atom != atomOf(SdkCosts.Discard(discard.filter))) return@match null
                 bind("filter" to discard.filter)
             }
@@ -225,37 +224,30 @@ object Costs {
          * prints one.
          */
         val exileFromGraveyard =
-            phrase("${lead("exile")} {filter} card from your graveyard", name = "exile a card from your graveyard") {
-                slot("filter", Filters.indefinite)
+            phrase("${lead("exile")} {filter} from your graveyard", name = "exile a card from your graveyard") {
+                slot("filter", Filters.indefiniteCard)
                 build { atomOf(SdkCosts.ExileFromGraveyard(1, it.value("filter"))) }
                 match { atom ->
                     val exile = atom as? CostAtom.ExileFrom ?: return@match null
-                    if (exile.count != 1 || exile.filter == GameObjectFilter.Any) return@match null
+                    if (exile.count != 1) return@match null
                     if (atom != atomOf(SdkCosts.ExileFromGraveyard(1, exile.filter))) return@match null
                     bind("filter" to exile.filter)
                 }
             }
 
-        /** "Exile a card from your graveyard" — the unqualified noun, for [discardCard]'s reason. */
-        val exileAnyFromGraveyard = constant(
-            "${lead("exile")} a card from your graveyard",
-            atomOf(SdkCosts.ExileFromGraveyard(1)),
-        )
-
         /**
          * "Exile two creature cards from your graveyard" — the counted form.
          *
-         * The filter slot is the **singular** noun phrase even though the count is two, because
-         * Oracle pluralizes the head noun and leaves the qualifier alone: it is "two *creature*
-         * cards", not "two creatures cards". [Filters.plural] belongs where the noun phrase is the
-         * head; here "cards" is, and the filter is an adjective in front of it.
+         * The filter slot is the plural *card* noun, which inflects only its head: it is "two
+         * *creature* cards", not "two creatures cards". [Filters.plural] belongs where the noun
+         * phrase is the head; here "cards" is, and [Filters.pluralCards] owns the word.
          */
         val exileSeveralFromGraveyard = phrase(
-            "${lead("exile")} {n} {filter} cards from your graveyard",
+            "${lead("exile")} {n} {filter} from your graveyard",
             name = "exile several cards from your graveyard",
         ) {
             slot("n", Cardinals.word)
-            slot("filter", Filters.filter)
+            slot("filter", Filters.pluralCards)
             build { atomOf(SdkCosts.ExileFromGraveyard(it.int("n"), it.value("filter"))) }
             match { atom ->
                 val exile = atom as? CostAtom.ExileFrom ?: return@match null
@@ -440,14 +432,12 @@ object Costs {
             sacrificeFiltered,
             sacrificeAnother,
             sacrificeSeveral,
-            discardCard,
             discardFiltered,
             discardSeveral,
             discardAtRandom,
             millCard,
             millSeveral,
             exileFromGraveyard,
-            exileAnyFromGraveyard,
             exileSeveralFromGraveyard,
             tapPermanent,
             tapAnotherPermanent,

@@ -4143,6 +4143,13 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   fails closed (matches nothing) when there is no controller context to resolve a player-scoped amount,
   and is `false` in the layer-projection / cost-calculation / cast-record paths (no resolution context),
   matching the other entity-relative caps.
+- `.manaValueEqualsDynamic(amount)` — the fluent builder for `ManaValueEqualsDynamic` below, and
+  `.manaValueAtMostDynamic`'s equality sibling. Oracle marks the difference by where it puts the
+  comparison relative to the clause: "mana value **equal to** the number of harmony counters on this
+  artifact" (*Instrument of the Bards*) is this one, "mana value **less than or equal to** the number
+  of lands you control" (*Beseech the Queen*) is the cap. Use it wherever a filter needs the exact
+  form; the raw `CardPredicate` constructor is still what a multi-characteristic `Or` reaches for,
+  since that clause is not a single filter field.
 - `CardPredicate.ManaValueEqualsDynamic(amount)` / `PowerEqualsDynamic(amount)` /
   `ToughnessEqualsDynamic(amount)` — *exact* equality against a resolved `DynamicAmount`, the
   open-ended siblings of the fixed `ManaValueEquals`/`PowerEquals`/`ToughnessEquals` and the cast-`{X}`
