@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 44 / 102
+**Implemented:** 45 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -84,7 +84,7 @@
 - [x] Goblin War Drums
 - [x] Goblin Warrens
 - [ ] Orcish Captain
-- [ ] Orcish Spy
+- [x] Orcish Spy
 - [x] Orcish Veteran
 - [ ] Orgg
 - [ ] Raiding Party
