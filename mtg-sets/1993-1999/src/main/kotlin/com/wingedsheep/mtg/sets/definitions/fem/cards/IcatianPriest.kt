@@ -36,6 +36,6 @@ val IcatianPriest = card("Icatian Priest") {
         collectorNumber = "12"
         artist = "Drew Tucker"
         flavorText = "\"May you be strong and valiant, to defeat the enemies of the pure.\"\n—\"Leitbur's Prayer\""
-        imageUri = "https://cards.scryfall.io/normal/front/d/7/d7690cdd-6610-4310-9e93-60dc4db2ae8d.jpg"
+        imageUri = "https://cards.scryfall.io/normal/front/d/7/d7690cdd-6610-4310-9e93-60dc4db2ae8d.jpg?1783947916"
     }
 }

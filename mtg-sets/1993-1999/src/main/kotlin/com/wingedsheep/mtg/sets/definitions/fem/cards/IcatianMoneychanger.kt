@@ -17,7 +17,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Icatian Moneychanger
  * {W}
  * Creature — Human
- * 0/1
+ * 0/2
  * This creature enters with three credit counters on it.
  * When this creature enters, it deals 3 damage to you.
  * At the beginning of your upkeep, put a credit counter on this creature.
@@ -37,7 +37,7 @@ val IcatianMoneychanger = card("Icatian Moneychanger") {
         "Sacrifice this creature: You gain 1 life for each credit counter on this creature. " +
         "Activate only during your upkeep."
     power = 0
-    toughness = 1
+    toughness = 2
 
     replacementEffect(
         EntersWithCounters(

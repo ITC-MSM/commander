@@ -14,7 +14,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Thelonite Monk
  * {2}{G}{G}
  * Creature — Insect Monk Cleric
- * 2/2
+ * 1/2
  * {T}, Sacrifice a green creature: Target land becomes a Forest.
  *
  * "Becomes a Forest" replaces the land's existing land types (CR 305.7), which is what
@@ -26,7 +26,7 @@ val TheloniteMonk = card("Thelonite Monk") {
     colorIdentity = "G"
     typeLine = "Creature — Insect Monk Cleric"
     oracleText = "{T}, Sacrifice a green creature: Target land becomes a Forest. (This effect lasts indefinitely.)"
-    power = 2
+    power = 1
     toughness = 2
 
     activatedAbility {

@@ -20,7 +20,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Enchantment
  * At the beginning of your upkeep, sacrifice this enchantment unless you pay {G}.
  * Whenever a player puts a Swamp onto the battlefield, this enchantment deals 3 damage to that
- * player unless they put a -1/-1 counter on a creature they control.
+ * player unless the player puts a -1/-1 counter on a creature they control.
  *
  * The second clause is a punisher, and its teeth are that the way out is a *cost*: a player who
  * controls no creature cannot put the counter anywhere and simply takes the 3. "Puts onto the
@@ -32,7 +32,7 @@ val ThelonsChant = card("Thelon's Chant") {
     typeLine = "Enchantment"
     oracleText = "At the beginning of your upkeep, sacrifice this enchantment unless you pay {G}.\n" +
         "Whenever a player puts a Swamp onto the battlefield, this enchantment deals 3 damage " +
-        "to that player unless they put a -1/-1 counter on a creature they control."
+        "to that player unless the player puts a -1/-1 counter on a creature they control."
 
     triggeredAbility {
         trigger = Triggers.YourUpkeep
@@ -57,7 +57,7 @@ val ThelonsChant = card("Thelon's Chant") {
             player = EffectTarget.PlayerRef(Player.TriggeringPlayer),
             consequenceDescription = "take 3 damage from this enchantment",
         )
-        description = "Whenever a player puts a Swamp onto the battlefield, this enchantment deals 3 damage to that player unless they put a -1/-1 counter on a creature they control."
+        description = "Whenever a player puts a Swamp onto the battlefield, this enchantment deals 3 damage to that player unless the player puts a -1/-1 counter on a creature they control."
     }
 
     metadata {

@@ -3253,7 +3253,7 @@
     "oracleText": "This creature enters with three credit counters on it.\nWhen this creature enters, it deals 3 damage to you.\nAt the beginning of your upkeep, put a credit counter on this creature.\nSacrifice this creature: You gain 1 life for each credit counter on this creature. Activate only during your upkeep.",
     "creatureStats": {
         "power": 0,
-        "toughness": 1
+        "toughness": 2
     },
     "script": {
         "triggeredAbilities": [
@@ -3422,7 +3422,7 @@
         "rarity": "UNCOMMON",
         "artist": "Drew Tucker",
         "flavorText": "\"May you be strong and valiant, to defeat the enemies of the pure.\"\n—\"Leitbur's Prayer\"",
-        "imageUri": "https://cards.scryfall.io/normal/front/d/7/d7690cdd-6610-4310-9e93-60dc4db2ae8d.jpg"
+        "imageUri": "https://cards.scryfall.io/normal/front/d/7/d7690cdd-6610-4310-9e93-60dc4db2ae8d.jpg?1783947916"
     },
     "colorIdentityOverride": [
         "WHITE"
@@ -5556,7 +5556,7 @@
     "name": "Thelon's Chant",
     "manaCost": "{1}{G}{G}",
     "typeLine": "Enchantment",
-    "oracleText": "At the beginning of your upkeep, sacrifice this enchantment unless you pay {G}.\nWhenever a player puts a Swamp onto the battlefield, this enchantment deals 3 damage to that player unless they put a -1/-1 counter on a creature they control.",
+    "oracleText": "At the beginning of your upkeep, sacrifice this enchantment unless you pay {G}.\nWhenever a player puts a Swamp onto the battlefield, this enchantment deals 3 damage to that player unless the player puts a -1/-1 counter on a creature they control.",
     "script": {
         "triggeredAbilities": [
             {
@@ -5614,7 +5614,7 @@
                     },
                     "consequenceDescription": "take 3 damage from this enchantment"
                 },
-                "descriptionOverride": "Whenever a player puts a Swamp onto the battlefield, this enchantment deals 3 damage to that player unless they put a -1/-1 counter on a creature they control."
+                "descriptionOverride": "Whenever a player puts a Swamp onto the battlefield, this enchantment deals 3 damage to that player unless the player puts a -1/-1 counter on a creature they control."
             }
         ]
     },
@@ -5811,7 +5811,7 @@
     "typeLine": "Creature — Insect Monk Cleric",
     "oracleText": "{T}, Sacrifice a green creature: Target land becomes a Forest. (This effect lasts indefinitely.)",
     "creatureStats": {
-        "power": 2,
+        "power": 1,
         "toughness": 2
     },
     "script": {
