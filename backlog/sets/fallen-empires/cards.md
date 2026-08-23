@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 62 / 102
+**Implemented:** 63 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -62,7 +62,7 @@
 - [x] Hymn to Tourach
 - [ ] Initiates of the Ebon Hand
 - [x] Mindstab Thrull
-- [ ] Necrite
+- [x] Necrite
 - [x] Order of the Ebon Hand
 - [ ] Soul Exchange
 - [x] Thrull Champion
