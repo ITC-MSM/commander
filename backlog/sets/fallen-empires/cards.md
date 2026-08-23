@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 83 / 102
+**Implemented:** 84 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -64,7 +64,7 @@
 - [x] Mindstab Thrull
 - [x] Necrite
 - [x] Order of the Ebon Hand
-- [ ] Soul Exchange
+- [x] Soul Exchange
 - [x] Thrull Champion
 - [x] Thrull Retainer
 - [ ] Thrull Wizard
