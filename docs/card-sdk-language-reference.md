@@ -5049,11 +5049,17 @@ sealed set for attack-time facts beyond the basics.
   `triggeringEntityId` is set to the blocked attacker in that case.
 - `becomesBlocked(filter?, binding?)` — factory. Replaces the old
   `CreatureYouControlBecomesBlocked` and `FilteredBecomesBlocked(filter)`.
-- `BlocksOrBecomesBlockedBy(filter, binding = SELF)` — either direction, partner-filtered;
-  sole consumer of `BlocksOrBecomesBlockedByEvent`. Prefer `blocks(attackerFilter=...)`
-  when only the blocking direction should fire. `binding = ATTACHED` fires off the
-  equipped/enchanted creature's combat (Barrow-Blade — "Whenever equipped creature blocks
-  or becomes blocked by a creature, …"); the partner is the `TriggeringEntity`.
+- `BlocksOrBecomesBlockedBy(filter, binding = SELF, oncePerCombat = false)` — either direction,
+  partner-filtered; sole consumer of `BlocksOrBecomesBlockedByEvent`. Prefer
+  `blocks(attackerFilter=...)` when only the blocking direction should fire. `binding = ATTACHED`
+  fires off the equipped/enchanted creature's combat (Barrow-Blade — "Whenever equipped creature
+  blocks or becomes blocked by a creature, …"); the partner is the `TriggeringEntity`.
+  Fires **once per matching partner** by default, which is the singular printed wording
+  ("blocked by *a* creature", Corrosive Ooze). Pass `oncePerCombat = true` for the
+  "blocked by **one or more** Orcs" wording (Dwarven Soldier): one trigger however many partners
+  match. Getting this wrong is easy to miss — two identical stat-modifying resolutions collapse
+  into one continuous effect, so the P/T can read correctly while two copies of the ability sit on
+  the stack. Assert the stack, not just the projection.
 - `BlocksOrBecomesBlocked(binding = SELF)` — the **partner-less** printed wording ("whenever this
   creature blocks or becomes blocked"), which is a *single* trigger however many creatures the
   source ends up paired with (Spitting Slug) — CR 509.3a/509.3c. Same event with `oncePerCombat = true`, which

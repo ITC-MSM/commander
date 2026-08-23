@@ -16,8 +16,10 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Whenever this creature blocks or becomes blocked by one or more Orcs, this creature gets +0/+2
  * until end of turn.
  *
- * The trigger fires once per combat however many Orcs are involved — it is a single
- * blocks-or-becomes-blocked-by event, not one per partner.
+ * "By one or more Orcs" is a single trigger however many Orcs are involved, so the trigger takes
+ * `oncePerCombat = true`. Without it the detector fans out one trigger per matching partner — the
+ * right reading for the singular "blocked by a creature" wording, but two Orc blockers would then
+ * pump this twice.
  */
 val DwarvenSoldier = card("Dwarven Soldier") {
     manaCost = "{1}{R}"
@@ -29,7 +31,10 @@ val DwarvenSoldier = card("Dwarven Soldier") {
     toughness = 1
 
     triggeredAbility {
-        trigger = Triggers.BlocksOrBecomesBlockedBy(GameObjectFilter.Creature.withSubtype(Subtype.ORC))
+        trigger = Triggers.BlocksOrBecomesBlockedBy(
+            GameObjectFilter.Creature.withSubtype(Subtype.ORC),
+            oncePerCombat = true,
+        )
         effect = Effects.ModifyStats(0, 2, EffectTarget.Self)
         description = "Whenever this creature blocks or becomes blocked by one or more Orcs, this creature gets +0/+2 until end of turn."
     }
