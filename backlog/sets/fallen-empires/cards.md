@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 45 / 102
+**Implemented:** 46 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -83,7 +83,7 @@
 - [ ] Goblin Kites
 - [x] Goblin War Drums
 - [x] Goblin Warrens
-- [ ] Orcish Captain
+- [x] Orcish Captain
 - [x] Orcish Spy
 - [x] Orcish Veteran
 - [ ] Orgg
