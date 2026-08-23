@@ -175,6 +175,7 @@ class SacrificeAndPayContinuationResumer(
             PayOrSufferCostType.MANA -> resumePayOrSufferMana(state, continuation, response, checkForMore)
             PayOrSufferCostType.EXILE -> resumePayOrSufferExile(state, continuation, response, checkForMore)
             PayOrSufferCostType.TAP -> resumePayOrSufferTap(state, continuation, response, checkForMore)
+            PayOrSufferCostType.PUT_COUNTERS -> resumePayOrSufferPutCounters(state, continuation, response, checkForMore)
             PayOrSufferCostType.REMOVE_COUNTERS, PayOrSufferCostType.CHOICE -> ExecutionResult.error(state, "Choice cost type should be handled by PayOrSufferChoiceContinuation, not PayOrSufferContinuation")
         }
     }
@@ -363,6 +364,52 @@ class SacrificeAndPayContinuationResumer(
             val (tappedState, tapEvent) = tap(newState, permanentId)
             newState = tappedState
             tapEvent?.let(events::add)
+        }
+
+        return checkForMore(newState, events)
+    }
+
+    /**
+     * Handle the put-counters payment for pay or suffer (Tourach's Chant, Thelon's Chant).
+     *
+     * Selecting nothing is a decline, exactly as it is for the sacrifice and tap payments.
+     */
+    private fun resumePayOrSufferPutCounters(
+        state: GameState,
+        continuation: PayOrSufferContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is CardsSelectedResponse) {
+            return ExecutionResult.error(state, "Expected card selection response for pay or suffer put counters")
+        }
+
+        val selected = response.selectedCards
+        if (selected.size < continuation.requiredCount) {
+            return executePayOrSufferConsequence(state, continuation, checkForMore)
+        }
+
+        val counterName = continuation.counterType
+            ?: return ExecutionResult.error(state, "Put-counters payment has no counter type")
+        val counterType = com.wingedsheep.engine.handlers.effects.permanent.counters
+            .resolveCounterType(counterName)
+
+        var newState = state
+        val events = mutableListOf<GameEvent>()
+        for (permanentId in selected) {
+            val container = newState.getEntity(permanentId) ?: continue
+            val counters = container.get<CountersComponent>() ?: CountersComponent()
+            newState = newState.updateEntity(permanentId) { c ->
+                c.with(counters.withAdded(counterType, continuation.requiredCounters))
+            }
+            events.add(
+                CountersAddedEvent(
+                    permanentId,
+                    counterName,
+                    continuation.requiredCounters,
+                    container.get<CardComponent>()?.name ?: "Permanent"
+                )
+            )
         }
 
         return checkForMore(newState, events)

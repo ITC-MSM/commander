@@ -106,6 +106,10 @@ class PayOrSufferExecutor(
                 is CostAtom.ReturnToHand -> EffectResult.error(state, "ReturnToHand payment for PayOrSuffer not yet implemented")
                 is CostAtom.RevealFromHand -> EffectResult.error(state, "RevealCard payment for PayOrSuffer not yet implemented")
                 is CostAtom.PutCountersOnSelf -> EffectResult.error(state, "PutCountersOnSelf is an activated-ability cost, not a PayOrSuffer cost")
+                // Tourach's Chant / Thelon's Chant — "unless they put a -1/-1 counter on a creature
+                // they control". The payer picks which of their permanents takes it.
+                is CostAtom.PutCountersOnPermanent ->
+                    handlePutCountersCost(state, effect, context, atom, sourceId, sourceCard.name, payingPlayerId)
                 is CostAtom.RevealNotedCreatureType ->
                     EffectResult.error(state, "RevealNotedCreatureType is an activated-ability cost, not a PayOrSuffer cost")
                 is CostAtom.Mill -> EffectResult.error(state, "Mill payment for PayOrSuffer not yet implemented")
@@ -330,6 +334,65 @@ class PayOrSufferExecutor(
 
         return EffectResult.paused(
             stateWithContinuation,
+            decisionResult.pendingDecision,
+            decisionResult.events
+        )
+    }
+
+    /**
+     * Handle a put-counters cost — the player picks one permanent they control to take the
+     * counters, or declines and suffers. A player with no matching permanent can't pay at all, so
+     * the suffer effect runs without a prompt.
+     */
+    private fun handlePutCountersCost(
+        state: GameState,
+        effect: PayOrSufferEffect,
+        context: EffectContext,
+        cost: CostAtom.PutCountersOnPermanent,
+        sourceId: EntityId,
+        sourceName: String,
+        controllerId: EntityId
+    ): EffectResult {
+        val validPermanents = findValidPermanentsOnBattlefield(state, controllerId, cost.filter, null, sourceId)
+        if (validPermanents.isEmpty()) {
+            return executeSufferEffect(state, effect.suffer, context)
+        }
+
+        val consequence = effect.consequenceDescription ?: effect.suffer.description
+        val decisionResult = decisionHandler.createCardSelectionDecision(
+            state = state,
+            playerId = controllerId,
+            sourceId = sourceId,
+            sourceName = sourceName,
+            prompt = "${cost.description.replaceFirstChar { it.uppercase() }}, or $consequence?",
+            options = validPermanents,
+            minSelections = 0,
+            maxSelections = 1,
+            ordered = false,
+            phase = DecisionPhase.RESOLUTION,
+            useTargetingUI = true
+        )
+
+        val continuation = PayOrSufferContinuation(
+            decisionId = decisionResult.pendingDecision!!.id,
+            playerId = controllerId,
+            sourceId = sourceId,
+            sourceName = sourceName,
+            costType = PayOrSufferCostType.PUT_COUNTERS,
+            sufferEffect = effect.suffer,
+            requiredCount = 1,
+            filter = cost.filter,
+            counterType = cost.counterType,
+            requiredCounters = cost.count,
+            targets = context.targets,
+            namedTargets = context.pipeline.namedTargets,
+            triggeringEntityId = context.triggeringEntityId,
+            triggeringPlayerId = context.triggeringPlayerId,
+            abilityControllerId = context.controllerId
+        )
+
+        return EffectResult.paused(
+            decisionResult.state.pushContinuation(continuation),
             decisionResult.pendingDecision,
             decisionResult.events
         )
@@ -766,6 +829,10 @@ class PayOrSufferExecutor(
                 is CostAtom.ReturnToHand -> false
                 is CostAtom.RevealFromHand -> false
                 is CostAtom.PutCountersOnSelf -> false
+                // Unpayable with nothing to put the counter on — which is exactly the punisher
+                // clause's teeth: a player with no creatures takes the damage.
+                is CostAtom.PutCountersOnPermanent ->
+                    findValidPermanentsOnBattlefield(state, playerId, atom.filter, null, sourceId).isNotEmpty()
                 is CostAtom.RevealNotedCreatureType -> false
                 is CostAtom.VariablePermanents -> false
                 // No printed PayOrSuffer cost mills, and the execute branch above has no handler,

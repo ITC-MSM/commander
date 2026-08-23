@@ -293,7 +293,13 @@ class CostHandler {
                 if (xCount == 0) {
                     CostPaymentResult.success(state, manaPool)
                 } else {
-                    exileCardsFromZone(state, controllerId, Zone.GRAVEYARD, xCount, cost.filter, choices.exileChoices, manaPool)
+                    exileCardsFromZone(
+                        state,
+                        controllerId,
+                        CostAtom.ExileFrom(Zone.GRAVEYARD, cost.filter, xCount),
+                        choices.exileChoices,
+                        manaPool,
+                    )
                 }
             }
             is AbilityCost.DiscardSelf -> {
@@ -592,8 +598,20 @@ class CostHandler {
             findMatchingCardsUnified(state, state.getZone(handZone), atom.filter, controllerId).size >= atom.count
         }
         is CostAtom.ExileFrom -> {
-            val zone = ZoneKey(controllerId, atom.zone)
-            findMatchingCardsUnified(state, state.getZone(zone), atom.filter, controllerId).size >= atom.count
+            if (atom.anyPlayersZone) {
+                // "from a single graveyard" (Night Soil): affordability is per-zone, not pooled —
+                // one matching card in each of two graveyards pays nothing.
+                val perZone = state.turnOrder.map { owner ->
+                    findMatchingCardsUnified(
+                        state, state.getZone(ZoneKey(owner, atom.zone)), atom.filter, controllerId
+                    ).size
+                }
+                if (atom.singleZone) perZone.any { it >= atom.count }
+                else perZone.sum() >= atom.count
+            } else {
+                val zone = ZoneKey(controllerId, atom.zone)
+                findMatchingCardsUnified(state, state.getZone(zone), atom.filter, controllerId).size >= atom.count
+            }
         }
         // CR 701.59b — a player unable to exile cards totalling N can't choose to collect evidence,
         // so the ability isn't activatable at all. The gate is the graveyard's summed mana value,
@@ -640,6 +658,9 @@ class CostHandler {
         // Adding counters takes nothing away, so there is never a reason it can't be paid — this
         // is what keeps Mazemind Tome activatable on the very activation that exiles it.
         is CostAtom.PutCountersOnSelf -> true
+        // Selected-permanent counter placement is a PayCost only (Tourach's Chant); no printed
+        // activated ability pays it, so it is reported unpayable on this rail.
+        is CostAtom.PutCountersOnPermanent -> false
         is CostAtom.RemoveCounters -> {
             if (atom.self) {
                 val counters = state.getEntity(sourceId)?.get<CountersComponent>() ?: return false
@@ -717,7 +738,7 @@ class CostHandler {
             CostPaymentResult.success(result.state, manaPool, result.events)
         }
         is CostAtom.ExileFrom ->
-            exileCardsFromZone(state, controllerId, atom.zone, atom.count, atom.filter, choices.exileChoices, manaPool)
+            exileCardsFromZone(state, controllerId, atom, choices.exileChoices, manaPool)
         // Rides `exileChoices`, the same channel the client already fills for a graveyard exile
         // cost. No card carries both an ExileFrom and a CollectEvidence cost, so the two can't be
         // confused for one another.
@@ -808,6 +829,8 @@ class CostHandler {
                 )
             }
         }
+        is CostAtom.PutCountersOnPermanent ->
+            CostPaymentResult.failure("PutCountersOnPermanent is a PayCost, not an activated-ability cost")
         is CostAtom.PutCountersOnSelf -> {
             // Counters put on as a cost are an ordinary counter placement (CR 121.6), so they run
             // through the same chokepoint as the AddCounters effect: the "can't have counters put
@@ -1238,7 +1261,16 @@ class CostHandler {
                     life >= atom.amount
                 }
                 is CostAtom.ExileFrom ->
-                    findMatchingCardsUnified(state, state.getZone(ZoneKey(controllerId, atom.zone)), atom.filter, controllerId).size >= atom.count
+                    if (atom.anyPlayersZone) {
+                        val perZone = state.turnOrder.map { owner ->
+                            findMatchingCardsUnified(
+                                state, state.getZone(ZoneKey(owner, atom.zone)), atom.filter, controllerId
+                            ).size
+                        }
+                        if (atom.singleZone) perZone.any { it >= atom.count } else perZone.sum() >= atom.count
+                    } else {
+                        findMatchingCardsUnified(state, state.getZone(ZoneKey(controllerId, atom.zone)), atom.filter, controllerId).size >= atom.count
+                    }
                 // CR 701.59b — see canPayAtom. An optional collect-evidence cast cost that can't be
                 // reached simply isn't offered as a second cast action.
                 //
@@ -1294,6 +1326,7 @@ class CostHandler {
                 // inherently ability-scoped — a spell on the stack has no permanent to put the
                 // counters on, nor one carrying a secret note).
                 is CostAtom.Mana, is CostAtom.ReturnToHand, is CostAtom.RevealFromHand,
+                is CostAtom.PutCountersOnPermanent,
                 is CostAtom.PutCountersOnSelf, is CostAtom.Mill,
                 is CostAtom.RevealNotedCreatureType,
                 is CostAtom.ExileTopOfLibrary -> false
@@ -1408,41 +1441,67 @@ class CostHandler {
     private fun exileCardsFromZone(
         state: GameState,
         controllerId: EntityId,
-        fromZone: Zone,
-        count: Int,
-        filter: GameObjectFilter,
+        atom: CostAtom.ExileFrom,
         exileChoices: List<EntityId>,
         manaPool: ManaPool
     ): CostPaymentResult {
-        val sourceZone = ZoneKey(controllerId, fromZone)
-        val validCards = findMatchingCardsUnified(state, state.getZone(sourceZone), filter, controllerId)
+        val fromZone = atom.zone
+        val count = atom.count
 
-        if (validCards.size < count) {
-            return CostPaymentResult.failure("Not enough cards in ${fromZone.name.lowercase()} to exile")
+        // The owners whose copy of the zone is in the pool: everyone for "from a graveyard"
+        // (Night Soil), the payer alone otherwise.
+        val owners = if (atom.anyPlayersZone) state.turnOrder else listOf(controllerId)
+        val byOwner = owners.associateWith { owner ->
+            findMatchingCardsUnified(state, state.getZone(ZoneKey(owner, fromZone)), atom.filter, controllerId)
         }
 
-        // Use exile choices if provided, otherwise auto-select
         val toExile = if (exileChoices.isNotEmpty()) {
             exileChoices.take(count)
         } else {
-            validCards.take(count)
+            // Auto-selection has to respect the same-zone constraint, or an engine-direct payment
+            // could pick a combination the player could not have chosen.
+            val autoPool = if (atom.singleZone) {
+                byOwner.values.firstOrNull { it.size >= count } ?: emptyList()
+            } else {
+                byOwner.values.flatten()
+            }
+            autoPool.take(count)
+        }
+
+        if (toExile.size < count) {
+            return CostPaymentResult.failure("Not enough cards in ${fromZone.name.lowercase()} to exile")
+        }
+
+        // Every chosen card must actually be in the pool, and — for "a single graveyard" — they
+        // must all be in the *same* player's copy of it. A GameAction is client-supplied, so both
+        // halves are validated here rather than trusted.
+        val ownerOf = mutableMapOf<EntityId, EntityId>()
+        for (cardId in toExile) {
+            val owner = byOwner.entries.firstOrNull { (_, cards) -> cardId in cards }?.key
+                ?: return CostPaymentResult.failure("Chosen card is not in a legal ${fromZone.name.lowercase()}")
+            ownerOf[cardId] = owner
+        }
+        if (atom.singleZone && ownerOf.values.distinct().size > 1) {
+            return CostPaymentResult.failure(
+                "All ${count} cards must come from a single ${fromZone.name.lowercase()}"
+            )
         }
 
         var newState = state
         val events = mutableListOf<GameEvent>()
-        val exileZone = ZoneKey(controllerId, Zone.EXILE)
 
         for (cardId in toExile) {
+            val owner = ownerOf.getValue(cardId)
             val cardName = newState.getEntity(cardId)?.get<CardComponent>()?.name ?: "Card"
-            newState = newState.removeFromZone(sourceZone, cardId)
-            newState = newState.addToZone(exileZone, cardId)
+            newState = newState.removeFromZone(ZoneKey(owner, fromZone), cardId)
+            newState = newState.addToZone(ZoneKey(owner, Zone.EXILE), cardId)
             events.add(
                 ZoneChangeEvent(
                     entityId = cardId,
                     entityName = cardName,
                     fromZone = fromZone,
                     toZone = Zone.EXILE,
-                    ownerId = controllerId
+                    ownerId = owner
                 )
             )
         }

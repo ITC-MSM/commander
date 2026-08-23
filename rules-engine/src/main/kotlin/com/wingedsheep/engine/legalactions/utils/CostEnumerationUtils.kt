@@ -148,11 +148,19 @@ class CostEnumerationUtils(
         state: GameState,
         playerId: EntityId,
         filter: GameObjectFilter,
-        zone: Zone
+        zone: Zone,
+        anyPlayersZone: Boolean = false,
     ): List<EntityId> {
-        val zoneKey = ZoneKey(playerId, zone)
         val predicateContext = PredicateContext(controllerId = playerId)
-        return state.getZone(zoneKey).filter { entityId ->
+        val pool = if (anyPlayersZone) {
+            // "from a single graveyard" (Night Soil) — every player's copy of the zone is in the
+            // pool; the same-owner constraint is enforced when the selection is validated, not by
+            // narrowing the candidates here.
+            state.turnOrder.flatMap { state.getZone(ZoneKey(it, zone)) }
+        } else {
+            state.getZone(ZoneKey(playerId, zone))
+        }
+        return pool.filter { entityId ->
             predicateEvaluator.matches(state, state.projectedState, entityId, filter, predicateContext)
         }
     }

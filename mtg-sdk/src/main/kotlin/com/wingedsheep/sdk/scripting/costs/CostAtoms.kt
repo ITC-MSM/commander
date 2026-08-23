@@ -40,6 +40,7 @@ fun CostAtom.repeated(times: Int): CostAtom {
         is CostAtom.ExileFrom -> copy(count = count * times)
         is CostAtom.TapPermanents -> copy(count = count * times)
         is CostAtom.ReturnToHand -> copy(count = count * times)
+        is CostAtom.PutCountersOnPermanent -> copy(count = count * times)
         is CostAtom.RemoveCounters -> {
             val fixed = count as? DynamicAmount.Fixed
                 ?: throw IllegalArgumentException(

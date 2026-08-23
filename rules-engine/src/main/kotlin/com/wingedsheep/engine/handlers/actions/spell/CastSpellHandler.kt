@@ -1969,6 +1969,7 @@ class CastSpellHandler(
                     // Mill and ExileFromGraveyardForTotal are activated-ability-only costs, never
                     // spell additional costs (canPayAdditionalCost already reports both unpayable).
                     is CostAtom.Mana, is CostAtom.RevealFromHand,
+                    is CostAtom.PutCountersOnPermanent,
                     is CostAtom.PutCountersOnSelf,
                     is CostAtom.RevealNotedCreatureType,
                     is CostAtom.ExileFromGraveyardForTotal,
@@ -2817,6 +2818,7 @@ class CastSpellHandler(
                         // offered as a spell's additional cost (canPayAdditionalCost reports it
                         // unpayable), so this branch is unreachable for the same reason Mill's is.
                         is CostAtom.PayLife, is CostAtom.Mana, is CostAtom.RevealFromHand,
+                        is CostAtom.PutCountersOnPermanent,
                         is CostAtom.PutCountersOnSelf,
                         is CostAtom.RevealNotedCreatureType,
                         is CostAtom.ExileFromGraveyardForTotal,

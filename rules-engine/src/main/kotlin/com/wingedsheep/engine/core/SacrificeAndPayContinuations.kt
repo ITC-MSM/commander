@@ -103,6 +103,12 @@ data class PayOrSufferContinuation(
     val manaCost: ManaCost? = null,
     val zone: Zone? = null,
     val counterType: String? = null,
+    /**
+     * How many counters of [counterType] the payment places, for
+     * [PayOrSufferCostType.PUT_COUNTERS]. Distinct from [requiredCount], which is how many
+     * *permanents* the player must select — one, for every printed use.
+     */
+    val requiredCounters: Int = 1,
     val self: Boolean = false,
     /**
      * Trigger context from the original PayOrSufferEffect execution, preserved so the
@@ -148,7 +154,8 @@ enum class PayOrSufferCostType {
     EXILE,
     CHOICE,
     TAP,
-    REMOVE_COUNTERS
+    REMOVE_COUNTERS,
+    PUT_COUNTERS
 }
 
 /**
