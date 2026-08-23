@@ -4,21 +4,21 @@
   "player1": {
     "lifeTotal": 20,
     "hand": [
-      "Goblin Rock Sled",
-      "Spitting Slug",
-      "Whippoorwill",
-      "Lurker",
-      "Runesword"
+      "Lightning Bolt",
+      "Giant Growth"
     ],
     "battlefield": [
       {
-        "name": "Forest"
+        "name": "Goblin Rock Sled"
       },
       {
-        "name": "Forest"
+        "name": "Spitting Slug"
       },
       {
-        "name": "Forest"
+        "name": "Whippoorwill"
+      },
+      {
+        "name": "Lurker"
       },
       {
         "name": "Forest"
@@ -97,13 +97,13 @@
         "name": "Hill Giant"
       },
       {
-        "name": "Serra Angel"
+        "name": "Drudge Skeletons"
       },
       {
         "name": "Mountain"
       },
       {
-        "name": "Mountain"
+        "name": "Swamp"
       },
       {
         "name": "Mountain"
@@ -127,19 +127,9 @@
   "phase": "PRECOMBAT_MAIN",
   "activePlayer": 1,
   "priorityPlayer": 1,
-  "player1StopAtSteps": [
-    "DECLARE_ATTACKERS",
-    "DECLARE_BLOCKERS"
-  ],
-  "player2StopAtSteps": [
-    "DECLARE_ATTACKERS",
-    "DECLARE_BLOCKERS"
-  ],
-  "player1OpponentStopAtSteps": [
-    "DECLARE_BLOCKERS"
-  ],
-  "player2OpponentStopAtSteps": [
-    "DECLARE_BLOCKERS"
-  ],
+  "player1StopAtSteps": [],
+  "player2StopAtSteps": [],
+  "player1OpponentStopAtSteps": [],
+  "player2OpponentStopAtSteps": [],
   "mode": "AI"
 }

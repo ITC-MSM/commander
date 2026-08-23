@@ -49,9 +49,6 @@
       },
       {
         "name": "Grizzly Bears"
-      },
-      {
-        "name": "Serra Angel"
       }
     ],
     "graveyard": [
@@ -113,15 +110,9 @@
   "phase": "PRECOMBAT_MAIN",
   "activePlayer": 1,
   "priorityPlayer": 1,
-  "player1StopAtSteps": [
-    "UPKEEP",
-    "END"
-  ],
-  "player2StopAtSteps": [
-    "UPKEEP",
-    "END"
-  ],
+  "player1StopAtSteps": [],
+  "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
   "player2OpponentStopAtSteps": [],
-  "mode": "SELF"
+  "mode": "AI"
 }
