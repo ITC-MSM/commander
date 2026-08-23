@@ -1234,7 +1234,8 @@
                                 "subtype": "Orc"
                             }
                         ]
-                    }
+                    },
+                    "oncePerCombat": true
                 },
                 "effect": {
                     "type": "ModifyStats",
@@ -1792,6 +1793,7 @@
                             }
                         ]
                     },
+                    "decisionMaker": "ControllerOfTriggeringEntity",
                     "descriptionOverride": "have the enchanted creature deal damage equal to its power plus 2 to that creature. If you do, it assigns no combat damage this turn"
                 },
                 "targetRequirement": {
@@ -2185,6 +2187,7 @@
         "collectorNumber": "55",
         "rarity": "RARE",
         "artist": "Tom Wänerstrand",
+        "flavorText": "Exceptionally poor sailors, Goblins usually arrived at their destination retching and in no condition to fight.",
         "imageUri": "https://cards.scryfall.io/normal/front/8/7/87024efe-4a74-49fe-a43a-480bed0a650a.jpg?1783947895"
     },
     "colorIdentityOverride": [
@@ -2229,7 +2232,7 @@
     "metadata": {
         "collectorNumber": "56a",
         "artist": "Ron Spencer",
-        "flavorText": "\"According to accepted theory, the Grenade held some kind of flammable mixture and was carried to its target by a hapless Goblin.\" —*Sarpadian Empires, vol. IV*",
+        "flavorText": "\"According to accepted theory, the Grenade held some kind of flammable mixture and was carried to its target by a hapless Goblin.\"\n—*Sarpadian Empires, vol. IV*",
         "imageUri": "https://cards.scryfall.io/normal/front/8/8/8837eaba-9602-4f63-9897-85583fcdcf51.jpg?1783947894",
         "rulings": [
             {
@@ -2575,7 +2578,8 @@
         "imageUri": "https://cards.scryfall.io/normal/front/0/8/08ee87a0-a7eb-4472-9045-85d11e8a1501.jpg?1783947919"
     },
     "colorIdentityOverride": [
-        "WHITE"
+        "WHITE",
+        "RED"
     ]
 }
 
@@ -3981,7 +3985,7 @@
                             }
                         ]
                     },
-                    "descriptionOverride": "sacrifice this creature. If you do, destroy that creature. It can't be regenerated"
+                    "descriptionOverride": "sacrifice this creature. If you do, destroy target creature defending player controls. It can't be regenerated"
                 },
                 "targetRequirement": {
                     "type": "TargetObject",
@@ -4168,31 +4172,16 @@
                 "id": "ability_1",
                 "cost": "CostTap",
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "TopOfLibrary",
-                                "count": {
-                                    "type": "Fixed",
-                                    "amount": 3
-                                },
-                                "player": "TargetPlayer"
-                            },
-                            "storeAs": "spied"
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 3
                         },
-                        {
-                            "type": "MoveCollection",
-                            "from": "spied",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Library",
-                                "player": "TargetPlayer",
-                                "placement": "Top"
-                            }
-                        }
-                    ]
+                        "player": "TargetPlayer"
+                    },
+                    "storeAs": "spied"
                 },
                 "targetRequirements": [
                     {
@@ -5727,7 +5716,8 @@
         "imageUri": "https://cards.scryfall.io/normal/front/9/b/9b868846-cc3c-4756-a5dd-2335bb380567.jpg?1783947884"
     },
     "colorIdentityOverride": [
-        "GREEN"
+        "GREEN",
+        "BLUE"
     ]
 }
 
@@ -6088,7 +6078,8 @@
                             "zone": "Stack"
                         }
                     }
-                ]
+                ],
+                "descriptionOverride": "{1}{B}: Counter target black spell unless that spell's controller pays {B} or {3}."
             }
         ]
     },
@@ -6521,7 +6512,7 @@
                         "target": "Self"
                     }
                 },
-                "descriptionOverride": "Tap enchanted land: Attacking creatures you control get +2/-1 until end of turn."
+                "descriptionOverride": "Tap enchanted land: Attacking creatures you control get +2/-1 until end of turn. Activate only if enchanted land is untapped."
             }
         ],
         "auraTarget": {
