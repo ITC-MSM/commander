@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 60 / 102
+**Implemented:** 61 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -73,7 +73,7 @@
 
 ### Red
 - [x] Brassclaw Orcs
-- [ ] Dwarven Armorer
+- [x] Dwarven Armorer
 - [ ] Dwarven Catapult
 - [x] Dwarven Lieutenant
 - [x] Dwarven Soldier
