@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 86 / 102
+**Implemented:** 87 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -21,7 +21,7 @@
 - [x] Combat Medic
 - [x] Farrel's Mantle
 - [x] Farrel's Zealot
-- [ ] Farrelite Priest
+- [x] Farrelite Priest
 - [x] Hand of Justice
 - [ ] Heroism
 - [x] Icatian Infantry
