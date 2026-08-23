@@ -207,6 +207,31 @@ class ManaStaticsIndex private constructor(
                 }
             }
 
+            // Granted statics, not just printed ones. A *spell* can create a mana bonus that no
+            // permanent carries — High Tide's "until end of turn, whenever a player taps an Island
+            // for mana, that player adds an additional {U}" — by granting the static to its own
+            // controller for the turn. Only the battlefield-wide bonus shapes are read here; the
+            // attachment-scoped ones (AdditionalManaOnTap) need a host to be attached to.
+            for (granted in state.grantedStaticAbilities) {
+                when (val static = granted.ability) {
+                    is AdditionalManaOnSourceTap -> {
+                        // The filter's "you" is the grant holder — a player entity for a
+                        // spell-created grant, a permanent's controller otherwise.
+                        val controller = projected.getController(granted.entityId) ?: granted.entityId
+                        (sourceTapBonuses ?: mutableListOf<SourceTapBonus>().also { sourceTapBonuses = it })
+                            .add(SourceTapBonus(granted.entityId, static, controller))
+                    }
+                    is MultiplyManaOnSourceTap -> {
+                        val controller = projected.getController(granted.entityId) ?: granted.entityId
+                        (
+                            sourceTapMultipliers
+                                ?: mutableListOf<SourceTapMultiplier>().also { sourceTapMultipliers = it }
+                            ).add(SourceTapMultiplier(granted.entityId, static, controller))
+                    }
+                    else -> {}
+                }
+            }
+
             if (grantors == null && overrides == null && replacements == null &&
                 auraBonuses == null && sourceTapBonuses == null && sourceTapMultipliers == null
             ) {

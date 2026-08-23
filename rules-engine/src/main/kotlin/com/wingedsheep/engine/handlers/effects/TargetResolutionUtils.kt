@@ -42,6 +42,8 @@ object TargetResolutionUtils {
             is EffectTarget.TriggeringEntity -> context.triggeringEntityId
             is EffectTarget.DiscardedAsCost ->
                 context.discardedAsCostCards.getOrNull(effectTarget.index)
+            is EffectTarget.TappedAsCost ->
+                context.tappedPermanents.getOrNull(effectTarget.index)
             is EffectTarget.PipelineTarget ->
                 context.pipeline.storedCollections[effectTarget.collectionName]?.getOrNull(effectTarget.index)
             else -> null
