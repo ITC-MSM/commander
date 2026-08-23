@@ -5,7 +5,7 @@ each expressed as an unnamed theme: Thrull sacrifice (black), Thallid spore coun
 Homarid tide counters (blue), Goblin/Orc/Dwarf attrition (red), and Icatian tokens-and-counters
 (white). The set also prints two full land cycles and a large "sacrifice for value" artifact bloc.
 
-**Status: the set is complete, 102 / 102.** Every box below is ticked; the ones that started unticked
+**Status: the set is complete and verified, 102 / 102.** Every box below is ticked; the ones that started unticked
 name the engine work that closed them, so this file doubles as the record of what Fallen Empires cost.
 
 ---

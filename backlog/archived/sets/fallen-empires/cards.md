@@ -3,6 +3,13 @@
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
 **Implemented:** 102 / 102
+**Status:** COMPLETE — verified 2026-08-23 with the `verify-set` skill. All 102 cards match
+Scryfall field for field (name, mana cost, color identity, type line, oracle text, P/T, loyalty,
+rarity, collector number, artist, flavor text, image) with no waivers; every card's script was
+reviewed against its oracle text in 11 batches; all five tokens resolve real art. Four confirmed
+gameplay bugs were found and fixed (Deep Spawn, Farrel's Mantle, Orcish Spy, Dwarven Soldier).
+Divergences left open are recorded in
+[`fallen-empires-engine-gaps.md`](fallen-empires-engine-gaps.md).
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 16   |
