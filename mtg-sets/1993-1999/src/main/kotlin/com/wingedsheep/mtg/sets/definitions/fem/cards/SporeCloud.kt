@@ -7,7 +7,6 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.effects.ForEachInGroupEffect
 import com.wingedsheep.sdk.scripting.effects.GrantKeywordEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -36,7 +35,7 @@ val SporeCloud = card("Spore Cloud") {
         effect = Effects.Composite(
             Patterns.Group.tapAll(GroupFilter(GameObjectFilter.Creature.blocking())),
             Effects.PreventAllCombatDamage(),
-            ForEachInGroupEffect(
+            Effects.ForEachInGroup(
                 filter = GroupFilter(
                     GameObjectFilter.Creature.attacking() or GameObjectFilter.Creature.blocking()
                 ),
