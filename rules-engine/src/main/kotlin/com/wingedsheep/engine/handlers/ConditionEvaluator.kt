@@ -640,6 +640,8 @@ class ConditionEvaluator(
             is SacrificedPermanentHadSubtype -> ifResolution { evaluateSacrificedPermanentHadSubtype(condition, it) }
             is com.wingedsheep.sdk.scripting.conditions.ExiledAsCostHadSubtype ->
                 ifResolution { evaluateExiledAsCostHadSubtype(state, condition, it) }
+            is com.wingedsheep.sdk.scripting.conditions.ThisAbilityActivatedThisTurnAtLeast ->
+                ifResolution { evaluateThisAbilityActivatedThisTurnAtLeast(state, condition, it) }
             is SacrificedPermanentWasLegendary -> ifResolution { evaluateSacrificedPermanentWasLegendary(it) }
             is SacrificedPermanentWasSuspected -> ifResolution { evaluateSacrificedPermanentWasSuspected(it) }
             is YouSacrificedPermanentThisWay -> ifResolution { evaluateYouSacrificedPermanentThisWay(it) }
@@ -1601,6 +1603,26 @@ class ConditionEvaluator(
                 ?.typeLine?.subtypes
                 ?.any { it.value == condition.subtype } == true
         }
+    }
+
+    /**
+     * Farrelite Priest's "if this ability has been activated four or more times this turn". The
+     * tally lives on the source permanent, keyed by ability id, and the handler increments it
+     * before the effect runs — so the fourth activation reads four. Reads false when the ability
+     * did not opt into bookkeeping (`activatedAbilityId` null), which is the correct answer for
+     * every ability that never asks.
+     */
+    private fun evaluateThisAbilityActivatedThisTurnAtLeast(
+        state: GameState,
+        condition: com.wingedsheep.sdk.scripting.conditions.ThisAbilityActivatedThisTurnAtLeast,
+        context: EffectContext
+    ): Boolean {
+        val abilityId = context.activatedAbilityId ?: return false
+        val sourceId = context.sourceId ?: return false
+        val tracker = state.getEntity(sourceId)
+            ?.get<com.wingedsheep.engine.state.components.battlefield.AbilityActivatedThisTurnComponent>()
+            ?: return false
+        return tracker.activationCount(abilityId) >= condition.count
     }
 
     private fun evaluateSacrificedPermanentWasLegendary(context: EffectContext): Boolean {

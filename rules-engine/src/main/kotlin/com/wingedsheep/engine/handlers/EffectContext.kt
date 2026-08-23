@@ -54,6 +54,14 @@ data class EffectContext(
      */
     val abilityIdentity: com.wingedsheep.sdk.scripting.AbilityIdentity? = null,
     /**
+     * The id of the *activated* ability currently resolving, as recorded in the source's
+     * `AbilityActivatedThisTurnComponent`. Lets an effect read back how many times its own ability
+     * has been activated this turn (`ThisAbilityActivatedThisTurnAtLeast` — Farrelite Priest).
+     * Null for spells, triggered abilities and any activation whose ability opted out of
+     * bookkeeping.
+     */
+    val activatedAbilityId: com.wingedsheep.sdk.scripting.AbilityId? = null,
+    /**
      * The player currently under consideration as a target, bound while evaluating a
      * `TargetPlayer.restriction` / `TargetOpponent.restriction` (CR 115). Resolves
      * [com.wingedsheep.sdk.scripting.references.Player.Candidate]. Null in every normal

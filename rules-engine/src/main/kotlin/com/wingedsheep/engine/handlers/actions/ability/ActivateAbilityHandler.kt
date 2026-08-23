@@ -1524,7 +1524,9 @@ class ActivateAbilityHandler(
         fun isPerTurnTracked(r: ActivationRestriction): Boolean =
             r is ActivationRestriction.OncePerTurn || r is ActivationRestriction.MaxPerTurn ||
                 (r is ActivationRestriction.All && r.restrictions.any { isPerTurnTracked(it) })
-        if (ability.restrictions.any { isPerTurnTracked(it) }) {
+        // `trackActivations` opts an unrestricted ability into the same tally so its own effect can
+        // read the count back (Farrelite Priest's burnout clause).
+        if (ability.trackActivations || ability.restrictions.any { isPerTurnTracked(it) }) {
             // Only track if source is still on the battlefield (it might have been bounced as cost)
             if (currentState.getEntity(action.sourceId) != null) {
                 currentState = currentState.updateEntity(action.sourceId) { c ->
@@ -1638,7 +1640,10 @@ class ActivateAbilityHandler(
                 // permanent is already in the graveyard (CR 113.7a); without the snapshots the
                 // amount resolves to 0 and the ability produces nothing.
                 sacrificedPermanents = sacrificedSnapshots,
-                manaColorChoice = action.manaColorChoice
+                manaColorChoice = action.manaColorChoice,
+                // The tally above was already incremented for this activation, so a burnout clause
+                // reading "four or more times this turn" sees the fourth activation as the fourth.
+                activatedAbilityId = if (ability.trackActivations) ability.id else null,
             )
 
             val effectResult = effectExecutorRegistry.execute(currentState, finalEffect, context).toExecutionResult()

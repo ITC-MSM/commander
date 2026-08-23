@@ -520,6 +520,26 @@ data class SacrificedPermanentHadSubtype(val subtype: String) : Condition {
  * already paid when the spell resolves, so the check reads the exiled card in the exile zone rather
  * than last-known information.
  */
+/**
+ * True when the activated ability currently resolving has been activated at least [count] times
+ * this turn, counting the activation that is resolving right now.
+ *
+ * Fallen Empires' burnout mana creatures — Farrelite Priest and Initiates of the Ebon Hand —
+ * print "{1}: Add {B}. If this ability has been activated four or more times this turn, sacrifice
+ * this creature at the beginning of the next end step." The clause reads a tally rather than
+ * imposing a limit, so the ability must opt into bookkeeping with
+ * [com.wingedsheep.sdk.scripting.ActivatedAbility.trackActivations]; without that the engine only
+ * counts activations for abilities gated by OncePerTurn / MaxPerTurn and this reads zero.
+ *
+ * Scoped to the resolving ability on its own source: two copies of Farrelite Priest each burn out
+ * on their own fourth activation.
+ */
+@SerialName("ThisAbilityActivatedThisTurnAtLeast")
+@Serializable
+data class ThisAbilityActivatedThisTurnAtLeast(val count: Int) : Condition {
+    override val description: String = "if this ability has been activated $count or more times this turn"
+}
+
 @SerialName("ExiledAsCostHadSubtype")
 @Serializable
 data class ExiledAsCostHadSubtype(val subtype: String) : Condition {

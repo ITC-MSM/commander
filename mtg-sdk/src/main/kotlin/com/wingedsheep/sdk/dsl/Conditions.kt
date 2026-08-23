@@ -1371,6 +1371,13 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.ExiledAsCostHadSubtype(subtype)
 
     /**
+     * The activated ability currently resolving has been activated at least [count] times this
+     * turn, this activation included. Requires the ability to set `trackActivations = true`.
+     */
+    fun ThisAbilityActivatedThisTurnAtLeast(count: Int): ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.ThisAbilityActivatedThisTurnAtLeast(count)
+
+    /**
      * If at least one permanent sacrificed as part of the cost was legendary at the
      * moment of sacrifice. Used by LTR cards like Nasty End and Gríma Wormtongue.
      */
