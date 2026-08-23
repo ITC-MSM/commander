@@ -588,6 +588,7 @@ class BeginningPhaseManager(
         is StatePredicate.WasCastFromZone -> true
         is StatePredicate.AttachedToCardType -> true
         is StatePredicate.AttachedTo -> true
+        is StatePredicate.ControllerControls -> true
         is StatePredicate.IsEnchantedByAura -> true
     }
 }

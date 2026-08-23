@@ -1733,6 +1733,23 @@ class PredicateEvaluator {
                 matches(state, projected, attached.targetId, predicate.filter, ctx)
             }
 
+            // "whose controller controls an Island" (Seasinger). The nested filter is scanned
+            // over the candidate's controller's battlefield, and its "you" is rebound to that
+            // controller — not to the ability's controller — because the clause describes the
+            // creature's own side of the table.
+            is StatePredicate.ControllerControls -> {
+                val ownerId = projected.getController(entityId)
+                    ?: container.get<ControllerComponent>()?.playerId
+                    ?: return false
+                val ctx = PredicateContext(
+                    controllerId = ownerId,
+                    sourceId = context?.sourceId,
+                )
+                state.getBattlefield().any { candidate ->
+                    matches(state, projected, candidate, predicate.filter, ctx)
+                }
+            }
+
             // Source-relative — the candidate IS the effect's source permanent itself
             // (GameObjectFilter counterpart of GroupFilter's Scope.Self). Backs the granted
             // PreventActivatedAbilities form (Braided Net), where the activation-legality

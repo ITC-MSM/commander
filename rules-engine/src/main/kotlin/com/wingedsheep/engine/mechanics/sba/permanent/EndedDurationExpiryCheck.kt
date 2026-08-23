@@ -169,6 +169,17 @@ class EndedDurationExpiryCheck : StateBasedActionCheck {
                 else all
             }
 
+            // Seasinger — the conjunction of the two gates above. Either half failing ends the
+            // effect for good (CR 611.2b), which is what makes untapping Seasinger hand the
+            // borrowed creature back permanently rather than for one turn.
+            is Duration.WhileYouControlSourceAndSourceTapped -> {
+                val sourceId = floating.sourceId
+                if (sourceId == null || !state.getBattlefield().contains(sourceId)) emptySet()
+                else if (!sourceTapped(state, sourceId)) emptySet()
+                else if (projected.getController(sourceId) != floating.controllerId) emptySet()
+                else all
+            }
+
             is Duration.WhileAffectedHasCounter -> {
                 // "for as long as it has a [X] counter on it" (Ultima) — keep only affected
                 // entities that still carry the counter (CR 611.2b). Entities that merely left

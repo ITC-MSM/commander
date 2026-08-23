@@ -794,6 +794,21 @@ sealed interface StatePredicate {
         override val description: String = "attached to ${filter.description}"
     }
 
+    /**
+     * The candidate's *controller* controls at least one permanent matching [filter] — "target
+     * creature whose controller controls an Island" (Seasinger). The nested filter is evaluated
+     * against projected battlefield state, and its "you" is bound to the candidate's controller
+     * rather than to the ability's controller, which is the whole point: the constraint is about
+     * the creature's owner-of-the-moment, not about who is casting.
+     */
+    @SerialName("ControllerControls")
+    @Serializable
+    data class ControllerControls(
+        val filter: com.wingedsheep.sdk.scripting.GameObjectFilter
+    ) : Entity {
+        override val description: String = "whose controller controls ${filter.indefiniteArticle} ${filter.description}"
+    }
+
     // =============================================================================
     // Rooms (Entity)
     // =============================================================================
