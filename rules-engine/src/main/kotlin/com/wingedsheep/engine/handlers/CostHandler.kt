@@ -82,6 +82,14 @@ class CostHandler {
     ): Boolean {
         return when (cost) {
             is AbilityCost.Free -> true
+            // Lowered to a plain mana atom by CastPermissionUtils.lowerAttachedManaCost before it
+            // reaches any pricing path, so this branch is only hit by a caller that skipped the
+            // lowering — read the attached permanent's cost directly rather than failing open.
+            is AbilityCost.AttachedPermanentManaCost -> canPayAtom(
+                state,
+                (attachedManaCostAtom(state, sourceId)),
+                sourceId, controllerId, manaPool, abilityContext
+            )
             is AbilityCost.Atom -> canPayAtom(state, cost.atom, sourceId, controllerId, manaPool, abilityContext)
             is AbilityCost.Tap -> {
                 !state.getEntity(sourceId)!!.has<TappedComponent>()
@@ -234,6 +242,9 @@ class CostHandler {
             is AbilityCost.Free -> {
                 CostPaymentResult.success(state, manaPool)
             }
+            is AbilityCost.AttachedPermanentManaCost -> payAtom(
+                state, attachedManaCostAtom(state, sourceId), sourceId, controllerId, manaPool, choices, abilityContext
+            )
             is AbilityCost.Atom -> payAtom(state, cost.atom, sourceId, controllerId, manaPool, choices, abilityContext)
             is AbilityCost.Tap -> {
                 // Route through the tap atom so the "{T}:" cost emits its TappedEvent — every
@@ -1438,6 +1449,20 @@ class CostHandler {
      * graveyard-only today (Costs.ExileFromGraveyard → CostAtom.ExileFrom(GRAVEYARD)); the zone
      * parameter keeps the helper honest for any future non-graveyard ability exile.
      */
+    /**
+     * The attached permanent's printed mana cost as a payable atom — the un-lowered form of
+     * [AbilityCost.AttachedPermanentManaCost]. An unattached source prices as {0}.
+     */
+    private fun attachedManaCostAtom(state: GameState, sourceId: EntityId): CostAtom.Mana {
+        val attachedTo = state.getEntity(sourceId)
+            ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
+            ?.targetId
+        val manaCost = attachedTo
+            ?.let { state.getEntity(it)?.get<CardComponent>()?.manaCost }
+            ?: com.wingedsheep.sdk.core.ManaCost(emptyList())
+        return CostAtom.Mana(manaCost)
+    }
+
     private fun exileCardsFromZone(
         state: GameState,
         controllerId: EntityId,

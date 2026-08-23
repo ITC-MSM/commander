@@ -167,7 +167,9 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 // the player will actually pay.
                 val costWithDefinedX =
                     context.castPermissionUtils.applyDefinedXValue(rawCost, ability, state, entityId, playerId)
-                val effectiveCost = context.castPermissionUtils.relaxAbilityCostColorsIfAny(
+                val effectiveCost = context.castPermissionUtils.lowerAttachedManaCost(
+                    state, entityId,
+                    context.castPermissionUtils.relaxAbilityCostColorsIfAny(
                     state, entityId,
                     context.castPermissionUtils.applyFreeFirstEquipDiscount(
                         context.castPermissionUtils.applyEquipCostReduction(
@@ -179,6 +181,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         ),
                         ability, state, playerId
                     )
+                )
                 )
 
                 // Description shown to the player. When the effective cost differs from the printed
@@ -1122,6 +1125,13 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
     /**
      * Check for "any player may activate" abilities on opponent's permanents (e.g., Lethal Vapors).
      */
+    /** See ActivateAbilityHandler.anyPlayerMayIn — the permission is often nested inside `All`. */
+    private fun anyPlayerMayIn(restriction: ActivationRestriction): Boolean = when (restriction) {
+        is ActivationRestriction.AnyPlayerMay -> true
+        is ActivationRestriction.All -> restriction.restrictions.any { anyPlayerMayIn(it) }
+        else -> false
+    }
+
     private fun enumerateAnyPlayerMayAbilities(context: EnumerationContext, result: MutableList<LegalAction>) {
         val state = context.state
         val playerId = context.playerId
@@ -1142,7 +1152,8 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
             // of a "any player may activate" permanent must still offer its ability.
             val cardDef = context.cardRegistry.getCard(cardComponent.cardDefinitionId) ?: continue
             val anyPlayerAbilities = cardDef.script.activatedAbilities.filter { ability ->
-                !ability.isManaAbility && ability.activateFromZone == Zone.BATTLEFIELD && ability.restrictions.any { it is ActivationRestriction.AnyPlayerMay }
+                !ability.isManaAbility && ability.activateFromZone == Zone.BATTLEFIELD &&
+                    ability.restrictions.any { anyPlayerMayIn(it) }
             }
             if (anyPlayerAbilities.isEmpty()) continue
 

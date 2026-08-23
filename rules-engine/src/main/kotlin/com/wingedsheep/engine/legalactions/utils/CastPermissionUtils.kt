@@ -1518,6 +1518,36 @@ class CastPermissionUtils(
      * ([com.wingedsheep.sdk.core.ManaCost.relaxColorsTo]), which composes correctly because each
      * pass only widens colored pips into hybrids.
      */
+    /**
+     * Lower [AbilityCost.AttachedPermanentManaCost] to a concrete mana cost read off the permanent
+     * the source is attached to (Merseine's "Pay enchanted creature's mana cost"), so every path
+     * that prices, displays or pays the cost sees a plain [CostAtom.Mana]. Mirrors
+     * `CostPaymentService.resolve`'s treatment of `PayCost.OwnManaCost`.
+     *
+     * An unattached source — or one attached to a permanent with no mana cost, such as a land —
+     * lowers to an empty cost, which is {0} and trivially payable.
+     */
+    fun lowerAttachedManaCost(
+        state: GameState,
+        sourceId: EntityId,
+        cost: AbilityCost
+    ): AbilityCost {
+        fun lower(c: AbilityCost): AbilityCost = when (c) {
+            is AbilityCost.AttachedPermanentManaCost -> {
+                val attachedTo = state.getEntity(sourceId)
+                    ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
+                    ?.targetId
+                val manaCost = attachedTo
+                    ?.let { state.getEntity(it)?.get<CardComponent>()?.manaCost }
+                    ?: com.wingedsheep.sdk.core.ManaCost(emptyList())
+                AbilityCost.Atom(CostAtom.Mana(manaCost))
+            }
+            is AbilityCost.Composite -> AbilityCost.Composite(c.costs.map { lower(it) })
+            else -> c
+        }
+        return lower(cost)
+    }
+
     fun relaxAbilityCostColorsIfAny(
         state: GameState,
         sourceId: EntityId,

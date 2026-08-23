@@ -212,8 +212,11 @@ class ActivateAbilityHandler(
             if (!inZone) return "This ability can only be activated from the ${ability.activateFromZone.name.lowercase()}"
             if (ownerId != action.playerId) return "You don't own this card"
         } else {
-            // Check if any player may activate this ability (e.g., Lethal Vapors)
-            val anyPlayerMay = ability.restrictions.any { it is ActivationRestriction.AnyPlayerMay }
+            // Check if any player may activate this ability (e.g., Lethal Vapors). Recursive
+            // through `All`, because the permission is routinely *narrowed* by a companion
+            // restriction rather than standing alone — Merseine's "only the controller of the
+            // enchanted creature may activate this ability" is AnyPlayerMay + a condition.
+            val anyPlayerMay = ability.restrictions.any { anyPlayerMayIn(it) }
 
             if (!anyPlayerMay) {
                 // Use projected controller to account for control-changing effects (e.g., Annex)
@@ -296,7 +299,9 @@ class ActivateAbilityHandler(
         val equipTargetIdForCost = action.targets.filterIsInstance<ChosenTarget.Permanent>().firstOrNull()?.entityId
         val costWithDefinedX =
             castPermissionUtils.applyDefinedXValue(rawCost, ability, state, action.sourceId, action.playerId)
-        val effectiveCost = castPermissionUtils.relaxAbilityCostColorsIfAny(
+        val effectiveCost = castPermissionUtils.lowerAttachedManaCost(
+            state, action.sourceId,
+            castPermissionUtils.relaxAbilityCostColorsIfAny(
             state, action.sourceId,
             castPermissionUtils.applyFreeFirstEquipDiscount(
                 castPermissionUtils.applyEquipCostReduction(
@@ -309,6 +314,7 @@ class ActivateAbilityHandler(
                 ),
                 ability, state, action.playerId
             )
+        )
         )
         val effectiveTargetReqs = if (textReplacement != null) {
             ability.targetRequirements.map { it.applyTextReplacement(textReplacement) }
@@ -2451,6 +2457,13 @@ class ActivateAbilityHandler(
             }
         }
         else -> cost
+    }
+
+    /** Whether [restriction] opens the ability to players other than the source's controller. */
+    private fun anyPlayerMayIn(restriction: ActivationRestriction): Boolean = when (restriction) {
+        is ActivationRestriction.AnyPlayerMay -> true
+        is ActivationRestriction.All -> restriction.restrictions.any { anyPlayerMayIn(it) }
+        else -> false
     }
 
     private fun checkActivationRestriction(

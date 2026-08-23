@@ -573,6 +573,21 @@ sealed interface AbilityCost : TextReplaceable<AbilityCost> {
         }
     }
 
+    /**
+     * Pay the mana cost of the permanent this Aura/Equipment is attached to — Merseine's
+     * "Pay enchanted creature's mana cost: Remove a net counter from this Aura."
+     *
+     * Lowered to a plain [Atom] mana cost against the attached permanent's printed cost before
+     * anything prices or pays it, the same way `PayCost.OwnManaCost` is lowered against its source,
+     * so every downstream path sees a uniform shape. An unattached source, or one attached to a
+     * permanent with no mana cost, prices as {0}.
+     */
+    @SerialName("AttachedPermanentManaCost")
+    @Serializable
+    data object AttachedPermanentManaCost : AbilityCost {
+        override val description: String = "Pay enchanted permanent's mana cost"
+    }
+
     /** Tap the creature this aura is attached to ({T} enchanted creature) */
     @SerialName("CostTapAttachedCreature")
     @Serializable
