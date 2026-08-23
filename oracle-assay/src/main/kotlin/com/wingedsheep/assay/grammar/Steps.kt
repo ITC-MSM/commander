@@ -132,29 +132,6 @@ object Steps {
     // ---------------------------------------------------------------------------------------
 
     /**
-     * How a quantified target rule writes its effect: once against the requirement for a singular
-     * quantifier, and once per chosen target for a plural one.
-     *
-     * The two halves of the same fact [Targets.Quantifier.plural] carries, and the reason it is one
-     * column rather than two — a quantifier that admits several targets is exactly one whose effect
-     * the SDK spells as an iteration. Every family slotting the table goes through this pair, so the
-     * wrapping is decided once rather than per verb.
-     */
-    private fun Targets.Quantifier.effectOver(member: (EffectTarget) -> Effect): Effect =
-        if (plural) ForEachTargetEffect(listOf(member(EffectTarget.ContextTarget(0)))) else member(Targets.bound())
-
-    /**
-     * The inverse of [effectOver] — the member effect inside [effect], or null when [effect] is not
-     * the shape this quantifier writes. Fail-closed on the iteration space: a `ForEachEffect` over
-     * players or a group says something no quantified target sentence does.
-     */
-    private fun Targets.Quantifier.memberOf(effect: Effect?): Effect? = if (plural) {
-        (effect as? ForEachEffect)?.takeIf { it.space is IterationSpace.Targets }?.body
-    } else {
-        effect
-    }
-
-    /**
      * The same verb over **every quantifier English prints in front of "target"** — "Destroy target
      * creature.", "Destroy up to one target creature.", "Destroy two target lands.", "Destroy up to
      * three target creatures.", "Destroy up to X target artifacts." One declaration, one rule per
@@ -1277,31 +1254,6 @@ object Steps {
         }
     }
 
-    /**
-     * "Target creature can't be blocked this turn." — Cephalid Pathmage.
-     *
-     * The SDK grants the *flag* rather than a keyword here, which is the same two-places-for-one-
-     * thing finding [Grammar.flagLine] records: `AbilityFlag.CANT_BE_BLOCKED` is a card-level flag
-     * for the permanent form and a `GrantKeywordEffect` over the flag's own name for the durational
-     * one. The rule spells the flag's name because that is what the cards carry.
-     */
-    private val targetCantBeBlocked: Phrase<CardScript> = run {
-        fun scriptFor(filter: GameObjectFilter) = CardScript(
-            spellEffect = GrantKeywordEffect(AbilityFlag.CANT_BE_BLOCKED.name, Targets.bound()),
-            targetRequirements = listOf(Targets.permanent(filter)),
-        )
-        phrase("target {filter} can't be blocked this turn", name = "target can't be blocked") {
-            slot("filter", Filters.filter)
-            build { scriptFor(it.value("filter")) }
-            match { script ->
-                val requirement = script.targetRequirements.singleOrNull() ?: return@match null
-                val filter = Targets.permanentFilter(requirement) ?: return@match null
-                if (script != scriptFor(filter)) return@match null
-                bind("filter" to filter)
-            }
-        }
-    }
-
     /** "You lose the game." / "That player loses the game." — Phage the Untouchable, both halves. */
     private fun losesTheGame(template: String, name: String, player: EffectTarget): Phrase<CardScript> {
         val script = CardScript(spellEffect = Effects.LoseGame(player))
@@ -1349,7 +1301,6 @@ object Steps {
         sacrificeFiltered,
         sacrificeAnyNumber(excludeSource = false),
         sacrificeAnyNumber(excludeSource = true),
-        targetCantBeBlocked,
         losesTheGame("you lose the game", "you lose the game", EffectTarget.Controller),
         losesTheGame(
             "that player loses the game",
@@ -1564,6 +1515,13 @@ object Steps {
         groupStep("exile all {filter}", "exile all", plural = true) { Effects.Exile(it) },
         groupStep("tap all {filter}", "tap all", plural = true) { Effects.Tap(it) },
         groupStep("untap all {filter}", "untap all", plural = true) { Effects.Untap(it) },
+        // "Creatures you control can't be blocked this turn." — Jace, Arcane Strategist's ultimate,
+        // and the group row of [Combat]'s durational evasion family. It lives here rather than there
+        // because a mass grant is one `ForEachInGroup`, which is this shape and not the quantified
+        // target one.
+        groupStep("{filter} can't be blocked this turn", "a group can't be blocked", plural = true) {
+            Effects.GrantKeyword(AbilityFlag.CANT_BE_BLOCKED, it)
+        },
         otherGroupStep("tap all other {filter}", "tap all other") { Effects.Tap(it) },
         otherGroupStep("untap all other {filter}", "untap all other") { Effects.Untap(it) },
         destroyAllNoRegenerate,

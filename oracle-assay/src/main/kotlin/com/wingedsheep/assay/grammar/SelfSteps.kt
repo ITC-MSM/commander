@@ -81,7 +81,14 @@ object SelfSteps {
             selfLosesKeyword(target, subject, tag),
             move("untap {self}", "untap$tag", Effects.Untap(target), subject),
             move("regenerate {self}", "regenerate$tag", RegenerateEffect(target), subject),
-        ) + putCounters(target, subject, tag)
+        ) + putCounters(target, subject, tag) +
+            // "{2}{U}: ~ can't be blocked this turn." — the durational evasion, whose whole family
+            // lives in [Combat] beside the combat statics it is the spell-side sibling of. It is a
+            // member here rather than a clause of its own because its object moves with every other
+            // member's: 24 printed lines say it about the source, and being a clause is also what
+            // lets "~ gets +1/+0 until end of turn and can't be blocked this turn." read as the two
+            // clauses it is.
+            Combat.restrictionClauses(target, subject, surface = "{self}", tag = tag)
         if (!pronominal) return named
         return named + listOf(
             putOnTop(target, tag),

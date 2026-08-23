@@ -476,6 +476,57 @@ the write-off names its own fix: a fail-closed guard where an ability is assembl
 that reads `XValue` under a cost that declares none. Registering it unscoped would have round-tripped
 and meant something else — the reversible-but-wrong class, in one clause.
 
+The **combat restriction** band is the one to read before believing a ranked family is a *missing*
+construct. "Can't be blocked" led the tail ranking by every column (122 cards, 79 sole) and the
+grammar had read it since Phase 1 — three times, each frozen into a whole sentence, covering three of
+the twenty-odd combinations Oracle prints. `mtg-sdk` had the factoring right all along: every
+`CantBeBlocked*` static carries the affected set as one `GroupFilter` and differs only in what it
+forbids, so the grammar's job was to become the same **product** — a subject crossed with a
+restriction — rather than to acquire a construct. **When a top-ranked family names something you are
+sure is implemented, check how many of its combinations are, not whether any is.**
+
+Four of its lessons transfer.
+
+**A deliberate hole in a product is where the card bugs live.** The source's bare "~ can't be
+blocked." stays an `AbilityFlag` (19 hand-written cards to 6), so the grammar must *not* offer a
+source-scoped bare static — two rules for one text. But a card-level flag lands on the permanent the
+card **is**, so on an Aura or an Equipment that same shortcut grants the evasion to the enchantment:
+silently inert, and the board looks right. Three shipped cards were doing it. Ask of every hole in a
+product whether the spelling that fills it elsewhere is *reachable* in the positions the hole covers.
+
+**Neighbouring SDK families with opposite defaults for one field are a card bug generator.** Every
+ability in `BlockingStaticAbilities.kt` defaults `filter` to `GroupFilter.source()`; `GrantKeyword`
+and `ModifyStats` default to `attachedCreature()`. Air Bladder's two lines took the two defaults and
+one of them was wrong. The grammar's answer is to spell the subject in every rule and never rely on a
+default — and the finding goes in the *SDK's* KDoc, because that is where the next card author will be
+standing.
+
+**One printed sentence can be a row of a family it does not look like.** "Target creature can't be
+blocked this turn." is `GrantKeywordEffect` — the same effect "gains flying until end of turn" builds
+— over an `AbilityFlag` rather than a `Keyword`. A CR 702.x keyword is a *noun* a creature can gain;
+an `AbilityFlag` names a sentence and has no noun, so Oracle prints it as its own predicate with the
+duration spelled "this turn". That is an irregular *surface* on an existing model, not a second
+vocabulary — and once it was a row, three more restrictions ("can't block this turn", "can't attack
+this turn", "can't attack or block this turn") were rows of the same table for free. Before writing a
+family, check whether the model you are about to build is one an existing family already builds under
+a different word.
+
+**A sub-band's card count is a claim about the payload, and it can be off by 19×.** The conditioned
+form ("~ can't be blocked as long as defending player controls an artifact") is 31 of the family's
+lines and an upper bound of 19 cards; substituting a readable conditional finishes **2 of 29**,
+because the payload is `Conditions` and not this family. Writing the wrapper would have bought one
+card. The band's product there is the *name of the next band*, which is the fronted-duration lesson a
+fourth time. Note also that the exact probe corrected the first probe from 18 cards to 7 for the same
+band's cheapest row — the fifth overstatement in the same direction, and it happened because the
+first run substituted a stand-in for the printed filter as well as for the construct.
+
+Two mechanical notes. `effectOver`/`memberOf` moved from `Steps` onto `Targets.Quantifier`, because
+they are the same knowledge `requirement` is — what a quantifier *denotes* — and a second family
+taking the whole table must not carry a second copy of the iteration-space decision. And a family's
+findings are **not bounded by what the differential can compare**: Whispersilk Cloak and My Precious
+have the same bug as Cloak of Mists and are not comparable (their line is a static clause run the
+grammar does not read), so they were found by grepping the flag the band had just classified.
+
 **Three anaphors, three positions.** Oracle's "it" means the source in a first clause ("Whenever this
 creature attacks, **it** gets +2/+0"), the target in a later one ("Untap target creature. **It**
 gets +2/+4"), and — inside a trigger whose event names a **filter** — the object that matched
