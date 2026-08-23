@@ -274,6 +274,12 @@ object Graveyard {
         graveyardStep(
             "return target {filter} from your graveyard to your hand",
             "return a card from your graveyard to your hand",
+            // No `fromZone` guard here, unlike the battlefield row below — deliberate, not an
+            // oversight in the asymmetry. `Effects.Move(_, HAND)` is what the corpus writes: of the
+            // 198 hand-written cards whose oracle text says "from your graveyard to your hand",
+            // exactly two set `fromZone`, and both are self-returns (Redtooth Vanguard, Squee,
+            // Goblin Nabob) that this rule never generates — `Recursion.kt` owns those. The 113
+            // targeted returns this row does produce write no guard at all.
         ) { Effects.Move(it, Zone.HAND) },
         graveyardStep(
             "return target {filter} from your graveyard to the battlefield",
