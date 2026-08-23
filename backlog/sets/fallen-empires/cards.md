@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 84 / 102
+**Implemented:** 85 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -58,7 +58,7 @@
 - [x] Basal Thrull
 - [x] Breeding Pit
 - [x] Derelor
-- [ ] Ebon Praetor
+- [x] Ebon Praetor
 - [x] Hymn to Tourach
 - [ ] Initiates of the Ebon Hand
 - [x] Mindstab Thrull
