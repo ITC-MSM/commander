@@ -39,7 +39,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  */
 val ThelonsCurse = card("Thelon's Curse") {
     manaCost = "{G}{G}"
-    colorIdentity = "G"
+    colorIdentity = "GU"
     typeLine = "Enchantment"
     oracleText = "Blue creatures don't untap during their controllers' untap steps.\n" +
         "At the beginning of each player's upkeep, that player may choose any number of tapped " +

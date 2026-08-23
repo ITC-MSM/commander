@@ -61,6 +61,7 @@ val GoblinFlotilla = card("Goblin Flotilla") {
         rarity = Rarity.RARE
         collectorNumber = "55"
         artist = "Tom Wänerstrand"
+        flavorText = "Exceptionally poor sailors, Goblins usually arrived at their destination retching and in no condition to fight."
         imageUri = "https://cards.scryfall.io/normal/front/8/7/87024efe-4a74-49fe-a43a-480bed0a650a.jpg?1783947895"
     }
 }

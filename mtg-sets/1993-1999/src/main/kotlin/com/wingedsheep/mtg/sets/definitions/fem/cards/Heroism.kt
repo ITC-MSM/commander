@@ -31,7 +31,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  */
 val Heroism = card("Heroism") {
     manaCost = "{2}{W}"
-    colorIdentity = "W"
+    colorIdentity = "WR"
     typeLine = "Enchantment"
     oracleText = "Sacrifice a white creature: For each attacking red creature, prevent all combat " +
         "damage that would be dealt by that creature this turn unless its controller pays {2}{R}."
