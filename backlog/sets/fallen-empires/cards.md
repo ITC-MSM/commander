@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 88 / 102
+**Implemented:** 89 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -67,7 +67,7 @@
 - [x] Soul Exchange
 - [x] Thrull Champion
 - [x] Thrull Retainer
-- [ ] Thrull Wizard
+- [x] Thrull Wizard
 - [ ] Tourach's Chant
 - [x] Tourach's Gate
 
