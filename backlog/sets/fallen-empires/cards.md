@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 66 / 102
+**Implemented:** 67 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -126,7 +126,7 @@
 - [x] Dwarven Ruins
 - [x] Ebon Stronghold
 - [x] Havenwood Battleground
-- [ ] Hollow Trees
+- [x] Hollow Trees
 - [ ] Icatian Store
 - [x] Rainbow Vale
 - [x] Ruins of Trokair
