@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 22 / 102
+**Implemented:** 23 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -125,7 +125,7 @@
 - [ ] Dwarven Hold
 - [x] Dwarven Ruins
 - [x] Ebon Stronghold
-- [ ] Havenwood Battleground
+- [x] Havenwood Battleground
 - [ ] Hollow Trees
 - [ ] Icatian Store
 - [ ] Rainbow Vale
