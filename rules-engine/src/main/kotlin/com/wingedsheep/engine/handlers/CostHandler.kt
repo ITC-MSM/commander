@@ -888,6 +888,9 @@ class CostHandler {
                 // Remove from source permanent (self-cost)
                 val counters = state.getEntity(sourceId)?.get<CountersComponent>()
                     ?: return CostPaymentResult.failure("Source has no counters")
+                // The permanent's own name, not the literal "Source" — this string is the log line
+                // the player reads ("Removed 2 storage counter(s) from Bottomless Vault").
+                val sourceName = state.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Permanent"
                 if (counterType != null) {
                     val current = counters.getCount(counterType)
                     if (current < requiredCount) {
@@ -896,7 +899,7 @@ class CostHandler {
                     newState = newState.updateEntity(sourceId) { c ->
                         c.with(counters.withRemoved(counterType, requiredCount))
                     }
-                    events.add(CountersRemovedEvent(sourceId, atom.counterType!!, requiredCount, "Source"))
+                    events.add(CountersRemovedEvent(sourceId, atom.counterType!!, requiredCount, sourceName))
                 } else {
                     // Self with any-type: use distributedCounterRemovals
                     val removals = choices.distributedCounterRemovals
@@ -907,7 +910,7 @@ class CostHandler {
                         newState = newState.updateEntity(sourceId) { c ->
                             c.with(source.withRemoved(resolvedType, removal.count))
                         }
-                        events.add(CountersRemovedEvent(sourceId, removal.counterType, removal.count, "Source"))
+                        events.add(CountersRemovedEvent(sourceId, removal.counterType, removal.count, sourceName))
                     }
                 }
             } else {

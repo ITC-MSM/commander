@@ -24,6 +24,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.costs.CostAtom
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Extracted cost-checking helpers from LegalActionsCalculator.
@@ -594,6 +595,30 @@ class CostEnumerationUtils(
     /**
      * Calculate max affordable X for activated abilities, considering various X cost types.
      */
+    /**
+     * Does this cost make the player choose an X that is *not* paid in mana — "remove any number
+     * of counters from ~" ([CostAtom.RemoveCounters] with an [DynamicAmount.XValue] count) or
+     * "tap X permanents"?
+     *
+     * Shared by every enumerator that builds a `LegalAction`, because the answer decides whether
+     * the client opens its X picker at all. An enumerator that forgets to ask hands the player an
+     * activation with no choice, which then pays X = 0 — the storage lands (Bottomless Vault and
+     * its cycle) removing zero counters for zero mana was exactly that.
+     */
+    fun hasPlayerChosenNonManaX(abilityCost: AbilityCost): Boolean {
+        fun isXCounterRemoval(cost: AbilityCost): Boolean =
+            cost is AbilityCost.Atom &&
+                (cost.atom as? CostAtom.RemoveCounters)?.count is DynamicAmount.XValue
+        return when (abilityCost) {
+            is AbilityCost.TapXPermanents -> true
+            is AbilityCost.Atom -> isXCounterRemoval(abilityCost)
+            is AbilityCost.Composite -> abilityCost.costs.any {
+                it is AbilityCost.TapXPermanents || isXCounterRemoval(it)
+            }
+            else -> false
+        }
+    }
+
     fun calculateMaxAffordableX(
         state: GameState,
         playerId: EntityId,

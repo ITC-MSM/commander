@@ -336,6 +336,19 @@ class ManaAbilityEnumerator : ActionEnumerator {
 
                 val availableManaColors = constrainedColors(ability.effect, state, entityId, playerId, context)
 
+                // A mana ability can still make the player choose an X that isn't paid in mana —
+                // the storage lands' "{T}, Remove any number of storage counters: Add {B} for each"
+                // (Bottomless Vault and its cycle). Without these fields the client has no X picker
+                // to open, activates with X unset, and the cost dutifully removes zero counters for
+                // zero mana. Same helper the non-mana enumerator uses, so the two can't drift.
+                val hasNonManaX = context.costUtils.hasPlayerChosenNonManaX(effectiveCost)
+                val manaAbilityMaxX: Int? = if (hasNonManaX) {
+                    context.costUtils.calculateMaxAffordableX(
+                        state, playerId, effectiveCost, effectiveCost.manaCostOrNull,
+                        precomputedSources = context.availableManaSources, sourceId = entityId
+                    )
+                } else null
+
                 result.add(
                     LegalAction(
                         actionType = "ActivateAbility",
@@ -343,6 +356,9 @@ class ManaAbilityEnumerator : ActionEnumerator {
                         action = ActivateAbility(playerId, entityId, ability.id),
                         affordable = affordable,
                         isManaAbility = true,
+                        hasXCost = hasNonManaX,
+                        maxAffordableX = manaAbilityMaxX,
+                        minX = if (hasNonManaX) ability.minimumXValue else 0,
                         additionalCostInfo = costInfo,
                         requiresManaColorChoice = ability.effect is AddManaOfChoiceEffect ||
                             ability.effect is AddAnyColorManaSpendOnChosenTypeEffect ||

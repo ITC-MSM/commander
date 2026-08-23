@@ -418,7 +418,15 @@ export function cardIdForAction(info: LegalActionInfo): EntityId | undefined {
 }
 
 export function isHighlightable(a: LegalActionInfo): boolean {
-  return (!a.isManaAbility || a.additionalCostInfo != null || a.manaCostString != null) && a.isAffordable !== false
+  // A mana ability is normally not highlightable: tapping a land for mana is driven by the mana
+  // payment flow, not by clicking the card. The exceptions are the ones that need something from
+  // the player first — an extra cost, a mana cost of their own, or an X to choose. That last one
+  // covers the storage lands ("{T}, Remove any number of storage counters: Add {B} for each"):
+  // without it the card is unclickable, the X picker never opens, and the ability resolves for
+  // X = 0 — counters spent, no mana produced.
+  const needsPlayerInput =
+    a.additionalCostInfo != null || a.manaCostString != null || a.hasXCost === true
+  return (!a.isManaAbility || needsPlayerInput) && a.isAffordable !== false
 }
 
 /**

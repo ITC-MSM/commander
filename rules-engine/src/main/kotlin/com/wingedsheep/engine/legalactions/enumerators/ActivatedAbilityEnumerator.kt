@@ -783,23 +783,11 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                     continue
                 }
 
-                // Check for X-variable costs early (needed for counter removal info and cost info)
-                val hasRemoveXCountersCostEarly = when (val cost = ability.cost) {
-                    is AbilityCost.Atom -> {
-                        val atom = cost.atom
-                        atom is CostAtom.RemoveCounters &&
-                            (atom.count is com.wingedsheep.sdk.scripting.values.DynamicAmount.XValue)
-                    }
-                    is AbilityCost.Composite -> cost.costs.any {
-                        if (it !is AbilityCost.Atom) false
-                        else {
-                            val atom = it.atom
-                            atom is CostAtom.RemoveCounters &&
-                                atom.count is com.wingedsheep.sdk.scripting.values.DynamicAmount.XValue
-                        }
-                    }
-                    else -> false
-                }
+                // Check for X-variable costs early (needed for counter removal info and cost info).
+                // The predicate is shared with ManaAbilityEnumerator — a mana ability can carry the
+                // same "remove any number of counters" X (the storage lands), and the two answers
+                // must agree or the client's X picker appears for one and not the other.
+                val hasNonManaXCost = context.costUtils.hasPlayerChosenNonManaX(ability.cost)
 
                 val hasTapXPermanentsCost = when (ability.cost) {
                     is AbilityCost.TapXPermanents -> true
@@ -887,15 +875,15 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 val abilityManaCostString = abilityManaCost?.toString()?.ifEmpty { "{0}" }
                 val abilityHasXInManaCost = abilityManaCost?.hasX == true
 
-                // Reuse the early checks for X-variable costs
-                val hasRemoveXCountersCost = hasRemoveXCountersCostEarly
+                // Reuse the early check for X-variable costs. It already covers TapXPermanents,
+                // so the OR below is belt-and-braces rather than two separate questions.
                 // Note: an `ExileXFromGraveyard` cost is deliberately NOT an X-picker cost. There X
                 // *is* the size of the graveyard selection, so the engine pauses for the cards and
                 // derives X from the count rather than asking for a number up front (see
                 // ActivateAbilityHandler's ExileXFromGraveyard pause). A `{X}` alongside it
                 // (Necropolis Fiend) still flags here through [abilityHasXInManaCost], because
                 // there X also has to be paid in mana.
-                val abilityHasXCost = abilityHasXInManaCost || hasRemoveXCountersCost || hasTapXPermanentsCost
+                val abilityHasXCost = abilityHasXInManaCost || hasNonManaXCost || hasTapXPermanentsCost
 
                 val abilityMaxAffordableX: Int? = if (abilityHasXCost) {
                     context.costUtils.calculateMaxAffordableX(state, playerId, ability.cost, abilityManaCost, precomputedSources = context.availableManaSources, sourceId = entityId)
