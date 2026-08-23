@@ -5,7 +5,10 @@ survived an adversarial verification pass whose brief was to refute it. None of 
 hold the set back — every one is either invisible in a two-player game of DRK-only cards, or is a
 pre-existing engine behaviour that DRK merely happens to expose.
 
-Ordered by blast radius.
+Ordered by blast radius. **Two were fixed at the card level** after this file was first written —
+Worms of the Earth (§5) and Sorrow's Path (§9) — and one (§7, Reflecting Mirror) turned out on closer
+reading not to be a divergence at all. Each says so inline rather than being deleted, because the
+engine-level gap behind the two fixes is still open.
 
 ---
 
@@ -137,10 +140,18 @@ the 5-damage mode. This is **the common case, not a corner case** — Worms of t
 the card that makes players landless, so the lock is escapable at zero cost by whoever it locks out
 hardest. `WormsOfTheEarthScenarioTest.kt:55` only covers the two-lands-available path.
 
-**Fix:** card-shaped and small (~5 lines) — gate mode 1 behind a "you control two or more lands"
-condition so the composite's `Destroy` is unreachable when the sacrifice can't be paid. The general
-mode-feasibility gate in `ModalEffectExecutor` is the better fix and a separate engine unit; every
-`ModalEffect` in the corpus shares the gap.
+**FIXED at the card level.** Mode 1's composite is now wrapped in
+`GatedEffect(Gate.WhenCondition(Conditions.ControlLandsAtLeast(2)), …)`, so the `Destroy` is
+unreachable when the sacrifice can't be paid. `ControlLandsAtLeast` reads `Player.You`, and
+`ForEachExecutor.bindIterationContext` rebinds `controllerId` to the iterated player for
+`IterationSpace.Players`, so it asks about the player actually being offered the escape.
+`WormsOfTheEarthScenarioTest` covers it: a player with one land picks the sacrifice mode, gets no
+land-selection prompt, and the enchantment survives. Verified by mutation — removing the gate turns
+that test red and leaves the other three green.
+
+**Still open, and the better fix:** `ModalEffectExecutor` does not feasibility-filter its modes, and
+`SacrificeExecutor` returning `success` below its count is what makes an unpayable mode silently
+"work". Every `ModalEffect` in the corpus shares this; the card-level gate fixes one instance of it.
 
 ---
 
@@ -167,28 +178,40 @@ says. A card-only mitigation could gate the life gain on the skip marker not alr
 
 ---
 
-## 7. `Targets.SpellOrAbilityWithSingleTarget` does not restrict to spells — Reflecting Mirror
+## 7. Reflecting Mirror — investigated and NOT a divergence
 
-`Targets.kt:452-454` is byte-identical to `Targets.kt:462-464`, and
-`TargetFilter.SpellOrAbilityOnStack` (`TargetFilter.kt:298`) carries no type predicate at all.
+An earlier verification pass reported that Reflecting Mirror ("target **spell** with a single
+target") could be announced against an activated or triggered ability, and that its X gate collapsed
+there because an ability stack entity carries no `CardComponent`, making `2 × manaValue` equal 0.
 
-**Partly refuted:** the *single-target* half of the original claim is wrong — it is enforced, just
-late, at `ChangeTargetExecutor.kt:58` (`if (spellTargets.size != 1) return success`). Announcing
-against a multi-target spell is a legal fizzle that wastes the mana and the tap, not an advantage.
+**That is wrong, and acting on it would have introduced the bug it described.**
 
-**The real bug** is spell-vs-ability. Reflecting Mirror reads "target **spell**" but can be announced
-against an activated or triggered ability on the stack — and there the X gate collapses:
-`DynamicAmountEvaluator.kt:1307-1308` computes mana value as
-`state.getEntity(entityId)?.get<CardComponent>()?.manaValue ?: 0`, and ability stack entities carry no
-`CardComponent`, so `2 × MV = 0` and **X = 0 satisfies the gate** — redirecting any opponent's
-single-target ability aimed at you costs nothing but the tap.
+Whether a stack target requirement offers abilities at all is decided in one place —
+`StackObjectTargeting.permitsAbilities` — which both readers consult (`TargetFinder`, the
+authoritative target set, and `TargetEnumerationUtils`, the legal actions sent to clients and the
+AI). An ability is a candidate **only when the filter explicitly names an ability predicate**.
+`TargetFilter.SpellOrAbilityOnStack` is `GameObjectFilter.Any` in the stack zone and names none, so
+abilities are never offered. Reflecting Mirror is spell-only in practice today, and the X = 0 path is
+unreachable through legal play.
 
-Reflecting Mirror is the **only** corpus user where the distinction matters: Willbender, Bolt Bend,
-Return the Favor, Untimely Malfunction and Redirect Lightning all print "spell or ability".
+The trap: the obvious "fix" is a filter built from
+`CardPredicate.Not(CardPredicate.IsActivatedOrTriggeredAbility)`. But `permitsAbilities` deliberately
+does **not** invert negation — its own comment says the question is "does the requirement's text
+mention abilities at all", not "must the object be an ability" — so such a filter returns `true` and
+would start offering ability entities, relying on the predicate to reject them afterwards. That is
+strictly worse than the status quo. No change made.
 
-**Fix:** card-shaped. `CardPredicate.Not(CardPredicate.IsActivatedOrTriggeredAbility)` already exists
-(`CardPredicate.kt:1119`, `:1272`), so add a `SpellWithSingleTarget` sibling in `Targets.kt` (~4
-lines), point the card at it, and add the row to `card-sdk-language-reference.md`.
+The genuinely open item here is the *opposite* one, and it is already recorded in
+`docs/card-sdk-language-reference.md`: `Targets.SpellOrAbility` and
+`Targets.SpellOrAbilityWithSingleTarget` name no ability predicate, so the "or ability" half of
+Willbender, Bolt Bend, Return the Favor, Untimely Malfunction and Redirect Lightning does not reach
+abilities today. Closing that needs an explicit `Or` naming the ability kinds, per the reference's own
+caveat — and it does not involve Reflecting Mirror, which wants the narrow behaviour it already has.
+
+Reflecting Mirror's one real divergence is unchanged and documented in its KDoc: X is *chosen* and
+validated at resolution rather than *computed* at activation, because ability cost calculation can't
+see the chosen targets. Underpaying is possible but wasted; the redirect can never be had below its
+printed price.
 
 ---
 
@@ -232,10 +255,16 @@ blockers do the same. Heads-up, only the duplicate-target case is reachable.
 `SorrowsPathScenarioTest.kt:88` already proves the opponent-control half is rejected at announcement,
 so the gap is specifically distinctness and "same".
 
-**Fix: card-shaped, two lines, no engine change.** `sameController` already exists and is reachable
-from this card's own factory (`TargetRequirement.kt:187`, forwarded at `:456`). Collapse to one
-requirement — `TargetCreature(count = 2, sameController = true, filter = TargetFilter(opponentsBlockingCreature))`
-— which buys both CR 601.2c distinctness and the same-controller check at announcement.
+**FIXED.** Collapsed to one requirement —
+`target("blockers", TargetCreature(count = 2, sameController = true, filter = TargetFilter(opponentsBlockingCreature)))`
+— which buys both CR 601.2c distinctness and the same-controller check at announcement. (Note the
+activated-ability builder exposes `target(name, requirement)` but not the `targets(...)` plural form,
+which lives only on `SpellBuilder`; the effect reads `ContextTarget(0)`/`(1)` off the flat positional
+target list either way, so one requirement of two behaves identically for it.)
+`SorrowsPathScenarioTest` covers it: naming the same blocker twice is rejected at announcement, the
+land never taps, and its controller takes no damage. Verified by mutation — restoring the two
+independent requirements turns that test red on the announcement assertion and leaves the other
+three green.
 
 ---
 

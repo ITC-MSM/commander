@@ -15,6 +15,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.kotest.matchers.types.shouldNotBeInstanceOf
 
 /**
  * Scenario tests for Worms of the Earth (DRK #56).
@@ -110,6 +111,55 @@ class WormsOfTheEarthScenarioTest : ScenarioTestBase() {
                 game.resolveStack()
                 withClue("a creature spell is untouched by a land lock") {
                     game.findPermanent("Grizzly Bears").shouldNotBeNull()
+                }
+            }
+
+            test("a player with only one land can't buy out with the sacrifice mode") {
+                // The escape a player without two lands is *supposed* to have is the 5-damage mode.
+                // Nothing filters an unpayable mode out of the modal choice, and a Sacrifice below
+                // its count is a silent no-op that still reports success — so without the gate on
+                // the card this branch sacrificed nothing and destroyed the enchantment anyway.
+                // That is the common case, not a corner one: Worms of the Earth is the card that
+                // makes players landless in the first place.
+                val game = scenario()
+                    .withPlayers("Wormlord", "Farmer")
+                    .withCardOnBattlefield(1, "Worms of the Earth")
+                    .withLandsOnBattlefield(1, "Swamp", 1)
+                    .withCardInLibrary(1, "Grizzly Bears")
+                    .withCardInLibrary(2, "Grizzly Bears")
+                    .withActivePlayer(2)
+                    .inPhase(Phase.ENDING, Step.END)
+                    .build()
+
+                game.passUntilPhase(Phase.BEGINNING, Step.UPKEEP)
+                game.state.activePlayerId shouldBe game.player1Id
+                game.resolveStack()
+
+                val offer = game.state.pendingDecision
+                offer.shouldNotBeNull()
+                offer.shouldBeInstanceOf<YesNoDecision>()
+                game.answerYesNo(true)
+
+                val mode = game.state.pendingDecision
+                mode.shouldNotBeNull()
+                mode.shouldBeInstanceOf<ChooseOptionDecision>()
+                game.submitDecision(OptionChosenResponse(mode.id, 0))
+
+                // No land-selection prompt follows: the branch is gated off entirely, rather than
+                // prompting for two lands out of one and quietly taking none.
+                withClue("no lands are chosen, because two can't be paid") {
+                    game.state.pendingDecision.shouldNotBeInstanceOf<SelectCardsDecision>()
+                }
+
+                // The other player is offered the escape in turn; they decline.
+                (game.state.pendingDecision as? YesNoDecision)?.let { game.answerYesNo(false) }
+                game.resolveStack()
+
+                withClue("the lock survives — the sacrifice mode bought nothing") {
+                    game.findPermanent("Worms of the Earth").shouldNotBeNull()
+                }
+                withClue("and the one Swamp is still there") {
+                    game.findPermanents("Swamp").size shouldBe 1
                 }
             }
         }

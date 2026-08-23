@@ -219,6 +219,69 @@ class SorrowsPathScenarioTest : ScenarioTestBase() {
                     game.findPermanent("Craw Wurm").shouldNotBeNull()
                 }
             }
+
+            test("refuses the same blocker named twice, before the land ever taps") {
+                // "Two target blocking creatures" is one instance of "target", so CR 601.2c makes
+                // the pair distinct — naming the same blocker twice is an illegal *announcement*,
+                // not a spell that fizzles. The difference is the whole point of this test: the tap
+                // is a cost, so an ability that fizzled at resolution would already have dealt the
+                // becomes-tapped trigger's 2 damage across its controller's board and left the land
+                // tapped for nothing.
+                val game = scenario()
+                    .withPlayers("Pathfinder", "Defender")
+                    .withCardOnBattlefield(1, "Sorrow's Path")
+                    .withCardOnBattlefield(1, "Hurloon Minotaur")
+                    .withCardOnBattlefield(1, "Craw Wurm")
+                    .withCardOnBattlefield(2, "Wall of Wood")
+                    .withCardOnBattlefield(2, "Grizzly Bears")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
+                    .build()
+
+                game.declareAttackers(
+                    mapOf("Hurloon Minotaur" to 2, "Craw Wurm" to 2)
+                ).error shouldBe null
+                game.passUntilPhase(Phase.COMBAT, Step.DECLARE_BLOCKERS)
+
+                val minotaur = game.findPermanent("Hurloon Minotaur")!!
+                val wurm = game.findPermanent("Craw Wurm")!!
+                val wall = game.findPermanent("Wall of Wood")!!
+                val bears = game.findPermanent("Grizzly Bears")!!
+
+                game.declareBlockers(
+                    mapOf(
+                        "Wall of Wood" to listOf("Hurloon Minotaur"),
+                        "Grizzly Bears" to listOf("Craw Wurm"),
+                    )
+                ).error shouldBe null
+                game.passPriority()
+
+                val lifeBefore = game.getLifeTotal(1)
+                val result = game.execute(
+                    ActivateAbility(
+                        playerId = game.player1Id,
+                        sourceId = game.findPermanent("Sorrow's Path")!!,
+                        abilityId = pathAbilityId(),
+                        targets = listOf(
+                            entityIdToChosenTarget(game.state, wall),
+                            entityIdToChosenTarget(game.state, wall),
+                        )
+                    )
+                )
+
+                withClue("the same creature can't fill both target slots") {
+                    result.error.shouldNotBeNull()
+                }
+                withClue("so the land never tapped and its controller took no damage") {
+                    game.getLifeTotal(1) shouldBe lifeBefore
+                }
+                withClue("and the blocks are untouched") {
+                    game.state.getEntity(wall)?.get<BlockingComponent>()
+                        ?.blockedAttackerIds?.toList() shouldContainExactly listOf(minotaur)
+                    game.state.getEntity(bears)?.get<BlockingComponent>()
+                        ?.blockedAttackerIds?.toList() shouldContainExactly listOf(wurm)
+                }
+            }
         }
     }
 }

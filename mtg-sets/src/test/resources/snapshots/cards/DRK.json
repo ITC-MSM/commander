@@ -5618,17 +5618,12 @@
                 "targetRequirements": [
                     {
                         "type": "TargetObject",
+                        "count": 2,
                         "filter": {
                             "baseFilter": "creature blocking ctrl:opponent"
                         },
-                        "id": "first blocker"
-                    },
-                    {
-                        "type": "TargetObject",
-                        "filter": {
-                            "baseFilter": "creature blocking ctrl:opponent"
-                        },
-                        "id": "second blocker"
+                        "id": "blockers",
+                        "sameController": true
                     }
                 ],
                 "descriptionOverride": "{T}: Choose two target blocking creatures controlled by the same opponent. If each of those creatures could block all creatures that the other is blocking, remove both of them from combat. Each one then blocks all creatures the other was blocking."
@@ -6815,21 +6810,40 @@
                             "modes": [
                                 {
                                     "effect": {
-                                        "type": "Composite",
-                                        "effects": [
-                                            {
-                                                "type": "ForceSacrifice",
-                                                "filter": "land",
-                                                "count": 2,
-                                                "target": "Controller"
-                                            },
-                                            {
-                                                "type": "MoveToZone",
-                                                "target": "Self",
-                                                "destination": "Graveyard",
-                                                "byDestruction": true
+                                        "type": "Gated",
+                                        "gate": {
+                                            "type": "Gate.WhenCondition",
+                                            "condition": {
+                                                "type": "Compare",
+                                                "left": {
+                                                    "type": "AggregateBattlefield",
+                                                    "player": "You",
+                                                    "filter": "land"
+                                                },
+                                                "operator": "GTE",
+                                                "right": {
+                                                    "type": "Fixed",
+                                                    "amount": 2
+                                                }
                                             }
-                                        ]
+                                        },
+                                        "then": {
+                                            "type": "Composite",
+                                            "effects": [
+                                                {
+                                                    "type": "ForceSacrifice",
+                                                    "filter": "land",
+                                                    "count": 2,
+                                                    "target": "Controller"
+                                                },
+                                                {
+                                                    "type": "MoveToZone",
+                                                    "target": "Self",
+                                                    "destination": "Graveyard",
+                                                    "byDestruction": true
+                                                }
+                                            ]
+                                        }
                                     },
                                     "description": "Sacrifice two lands"
                                 },

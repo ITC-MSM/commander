@@ -15,9 +15,9 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
 
 /**
  * "Two target blocking creatures controlled by the same opponent" — so a legal target is a blocking
- * creature an *opponent* controls, never one of your own. The "same" half can't be expressed by a
- * filter (it relates the two targets to each other, not to the activating player) and is enforced
- * at resolution by `SwapBlockingAssignmentsExecutor`.
+ * creature an *opponent* controls, never one of your own. The "same" half relates the two targets to
+ * each other rather than to the activating player, so it can't live in this filter; it rides on the
+ * requirement instead, as `sameController = true`.
  */
 private val opponentsBlockingCreature = GameObjectFilter.Creature.blocking().opponentControls()
 
@@ -50,8 +50,20 @@ val SorrowsPath = card("Sorrow's Path") {
 
     activatedAbility {
         cost = Costs.Tap
-        target("first blocker", TargetCreature(filter = TargetFilter(opponentsBlockingCreature)))
-        target("second blocker", TargetCreature(filter = TargetFilter(opponentsBlockingCreature)))
+        // One requirement of two, not two of one. "Two target blocking creatures" is a single
+        // instance of "target", so CR 601.2c distinctness applies to the pair — and both that check
+        // and `sameController` are only enforced *within* one requirement. Split across two
+        // requirements they were checked at resolution instead, which is too late: the tap is a
+        // cost, so the becomes-tapped trigger had already dealt its 2 damage across your board by
+        // the time the ability fizzled for naming the same blocker twice.
+        target(
+            "blockers",
+            TargetCreature(
+                count = 2,
+                sameController = true,
+                filter = TargetFilter(opponentsBlockingCreature),
+            ),
+        )
         effect = SwapBlockingAssignmentsEffect
         description = "{T}: Choose two target blocking creatures controlled by the same opponent. " +
             "If each of those creatures could block all creatures that the other is blocking, " +
