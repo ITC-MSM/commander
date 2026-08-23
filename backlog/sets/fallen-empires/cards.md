@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 99 / 102
+**Implemented:** 100 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -23,7 +23,7 @@
 - [x] Farrel's Zealot
 - [x] Farrelite Priest
 - [x] Hand of Justice
-- [ ] Heroism
+- [x] Heroism
 - [x] Icatian Infantry
 - [x] Icatian Javelineers
 - [x] Icatian Lieutenant
