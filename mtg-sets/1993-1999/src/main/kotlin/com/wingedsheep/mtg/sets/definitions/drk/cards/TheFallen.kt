@@ -48,6 +48,7 @@ val TheFallen = card("The Fallen") {
         rarity = Rarity.UNCOMMON
         collectorNumber = "53"
         artist = "Jesper Myrfors"
+        flavorText = "Magic often masters those who cannot master it."
         imageUri = "https://cards.scryfall.io/normal/front/f/4/f4a176e1-b22b-4f36-ba7b-c506cb4e1bed.jpg?1783947938"
     }
 }

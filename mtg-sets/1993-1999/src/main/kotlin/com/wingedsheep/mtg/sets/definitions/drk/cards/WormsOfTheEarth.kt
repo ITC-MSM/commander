@@ -1,5 +1,6 @@
 package com.wingedsheep.mtg.sets.definitions.drk.cards
 
+import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
@@ -62,13 +63,24 @@ val WormsOfTheEarth = card("Worms of the Earth") {
                     modes = listOf(
                         Mode(
                             description = "Sacrifice two lands",
-                            effect = Effects.Composite(
-                                Effects.Sacrifice(
-                                    GameObjectFilter.Land,
-                                    count = 2,
-                                    target = EffectTarget.Controller,
+                            // Gated on actually having two lands, because nothing else stops this
+                            // mode being chosen. `ModalEffect` never feasibility-filters its modes,
+                            // and `Sacrifice` below the required count is a silent no-op that
+                            // returns *success* — so a player with one land or none could pick this
+                            // branch, sacrifice nothing, and still reach the `Destroy` below,
+                            // walking out of the lock for free. That player is exactly who the lock
+                            // is working on, so it was the common case, not a corner one. Printed,
+                            // their only way out is the 5-damage mode.
+                            effect = GatedEffect(
+                                gate = Gate.WhenCondition(Conditions.ControlLandsAtLeast(2)),
+                                then = Effects.Composite(
+                                    Effects.Sacrifice(
+                                        GameObjectFilter.Land,
+                                        count = 2,
+                                        target = EffectTarget.Controller,
+                                    ),
+                                    Effects.Destroy(EffectTarget.Self),
                                 ),
-                                Effects.Destroy(EffectTarget.Self),
                             ),
                         ),
                         Mode(
@@ -93,6 +105,7 @@ val WormsOfTheEarth = card("Worms of the Earth") {
         rarity = Rarity.RARE
         collectorNumber = "56"
         artist = "Anson Maddocks"
+        flavorText = "The ground collapsed, leaving nothing but the great Worms' mucous residues."
         imageUri = "https://cards.scryfall.io/normal/front/6/5/65a97821-ca5b-46fb-af08-86de81d0daac.jpg?1783947937"
     }
 }

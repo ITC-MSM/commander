@@ -28,6 +28,11 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * drifting into two effects that could disagree — off your turn the whole "plus Swamps" term simply
  * isn't there.
  *
+ * The constant 2 is the printed *offset*, so it rides in `powerOffset`/`toughnessOffset` rather than
+ * inside the amount. Both spellings compute the same numbers, but only the offset form renders as
+ * `*+2` (`CharacteristicValue.DynamicWithOffset`, same shape as Tarmogoyf); folding it into the
+ * amount produces a plain `CharacteristicValue.Dynamic`, whose description is a bare "*".
+ *
  * "Swamps your opponents control" is the land subtype, so a nonbasic land with the Swamp type
  * counts, and a Swamp *you* control never does.
  */
@@ -45,14 +50,13 @@ val AngryMob = card("Angry Mob") {
     dynamicStats(
         DynamicAmount.Conditional(
             condition = Conditions.IsYourTurn,
-            ifTrue = DynamicAmount.Add(
-                DynamicAmount.Fixed(2),
-                DynamicAmounts
-                    .battlefield(Player.EachOpponent, GameObjectFilter.Land.withSubtype(Subtype.SWAMP))
-                    .count(),
-            ),
-            ifFalse = DynamicAmount.Fixed(2),
-        )
+            ifTrue = DynamicAmounts
+                .battlefield(Player.EachOpponent, GameObjectFilter.Land.withSubtype(Subtype.SWAMP))
+                .count(),
+            ifFalse = DynamicAmount.Fixed(0),
+        ),
+        powerOffset = 2,
+        toughnessOffset = 2,
     )
 
     metadata {

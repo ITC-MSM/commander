@@ -46,6 +46,7 @@ val BloodOfTheMartyr = card("Blood of the Martyr") {
         rarity = Rarity.UNCOMMON
         collectorNumber = "2"
         artist = "Christopher Rush"
+        flavorText = "The willow knows what the storm does not: that the power to endure harm outlives the power to inflict it."
         imageUri = "https://cards.scryfall.io/normal/front/2/2/22d4761d-acf2-4cb3-86a8-a3f30420a92e.jpg?1783947950"
     }
 }

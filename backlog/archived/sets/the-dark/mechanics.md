@@ -326,15 +326,21 @@ activation cost — that's the only unproven piece.
 
 Cards: City of Shadows
 
-## - [ ] Coin flips with an unbounded repeat (1 card)
+## - [x] Coin flips with an unbounded repeat (1 card)
 
 CR 705. Mana Clash flips for both players and **repeats until both coins come up heads on the same
 flip**, dealing damage each round.
 
-**Engine support:** ❌ `Effects.FlipCoins(count)` tallies a *fixed* number of flips and
-`FlipCoinEffect` branches on one. Neither models "repeat this process until <condition>" with a
-per-iteration effect. Needs a repeat-while primitive — see `ExileFromTopRepeating`'s
-`repeatCondition` for the closest existing shape.
+**Engine support:** ✅ `Effects.RepeatWhile` is the repeat-while primitive this needed. It is a
+do-while: the body runs once, then `RepeatCondition.WhileCondition` is re-evaluated after each pass,
+and `RepeatWhileExecutor` recurses with `resolutionDepth + 1`, so the only bound is
+`GameLimits.MAX_RESOLUTION_DEPTH` (500) — unreachable in practice for this card. Mana Clash uses two
+separate one-coin `FlipCoins(storeHeadsAs = …)` calls so each player's result stays distinguishable,
+deals 1 damage per tails, and exits only on a simultaneous double-heads.
+
+Known nit, not a gap: `FlipCoinsExecutor` uses `flipperId = context.controllerId`, so the opponent's
+coin is flipped by you. Observable only with a Krark's Thumb-style flip replacement or a "whenever a
+player flips a coin" trigger, neither of which exists alongside this card today.
 
 Cards: Mana Clash
 

@@ -3,6 +3,11 @@
 **Set Size:** 119 cards
 **Release Date:** August 1, 1994
 **Implemented:** 119 / 119
+**Status:** COMPLETE — verified 2026-08-23 with the `verify-set` skill. All 119 cards match
+Scryfall field for field (name, mana cost, color identity, type line, oracle text, P/T, loyalty,
+rarity, collector number, artist, flavor text, image) with no waivers; every card's script was
+reviewed against its oracle text; no token art gaps. Engine-level divergences that survived
+adversarial verification are recorded in [`the-dark-engine-gaps.md`](the-dark-engine-gaps.md).
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 19    | 19   |
