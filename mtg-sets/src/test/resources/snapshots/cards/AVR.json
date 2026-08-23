@@ -1772,6 +1772,49 @@
     ]
 }
 
+// Marrow Bats
+{
+    "name": "Marrow Bats",
+    "manaCost": "{4}{B}",
+    "typeLine": "Creature — Bat Skeleton",
+    "oracleText": "Flying\nPay 4 life: Regenerate this creature.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomPayLife",
+                        "amount": 4
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "113",
+        "rarity": "UNCOMMON",
+        "artist": "Jason A. Engle",
+        "flavorText": "\"No matter how far we push into Stensia, undeath will always remain in these lands.\"\n—Terhold, archmage of Drunau",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/8/38dcbad0-267e-411f-8e99-5d90b537bf9b.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Mist Raven
 {
     "name": "Mist Raven",
@@ -1973,6 +2016,102 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Rain of Thorns
+{
+    "name": "Rain of Thorns",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose one or more —\n• Destroy target artifact.\n• Destroy target enchantment.\n• Destroy target land.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "artifact"
+                            },
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Destroy target artifact"
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "enchantment"
+                            },
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Destroy target enchantment"
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "land"
+                            },
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Destroy target land"
+                }
+            ],
+            "chooseCount": 3,
+            "minChooseCount": 1
+        }
+    },
+    "metadata": {
+        "collectorNumber": "190",
+        "rarity": "UNCOMMON",
+        "artist": "Sam Burley",
+        "flavorText": "When the forests became havens for evil, the archmages devised new ways to cleanse the wilds.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fd1cb530-b9d5-4386-b89e-2acecc8294c8.jpg",
+        "rulings": [
+            {
+                "date": "2012-05-01",
+                "text": "You can choose just one mode, any two of the modes, or all three. You make this choice as you cast Rain of Thorns."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

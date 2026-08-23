@@ -58,6 +58,67 @@
     ]
 }
 
+// Borrowing 100,000 Arrows
+{
+    "name": "Borrowing 100,000 Arrows",
+    "manaCost": "{2}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Draw a card for each tapped creature target opponent controls.",
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "AggregateBattlefield",
+                "player": "TargetOpponent",
+                "filter": "creature tapped"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetOpponent",
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "35",
+        "rarity": "UNCOMMON",
+        "artist": "Song Shikai",
+        "flavorText": "Kongming and Lu Su tricked Wei troops into shooting over 100,000 arrows at them to later use against the Wei at Red Cliffs.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/96b5362a-bbca-4dc3-a320-3664609fe169.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Brilliant Plan
+{
+    "name": "Brilliant Plan",
+    "manaCost": "{4}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Draw three cards.",
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 3
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "36",
+        "rarity": "UNCOMMON",
+        "artist": "Song Shikai",
+        "flavorText": "At Red Cliffs, Kongming and Zhou Yu each wrote his plan for defeating the Wei on the palm of his hand. They laughed as they both revealed the same word, \"Fire.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/a/6acae374-9d71-4f8d-ba75-a983756624c7.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Corrupt Court Official
 {
     "name": "Corrupt Court Official",
@@ -138,6 +199,63 @@
     ]
 }
 
+// Famine
+{
+    "name": "Famine",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Famine deals 3 damage to each creature and each player.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature"
+                        }
+                    },
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "target": "Self"
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "Each"
+                    },
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "target": "Controller"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "75",
+        "rarity": "UNCOMMON",
+        "artist": "Sun Nan",
+        "flavorText": "\"But it was a year of dearth. People were reduced to eating leaves of jujube trees. Corpses were seen everywhere in the countryside.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/d/8d6c10ca-f6d6-4322-aa17-7e874cb10bb1.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Forest Bear
 {
     "name": "Forest Bear",
@@ -175,6 +293,41 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Kongming, "Sleeping Dragon"
+{
+    "name": "Kongming, \"Sleeping Dragon\"",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Legendary Creature — Human Advisor",
+    "oracleText": "Other creatures you control get +1/+1.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "9",
+        "rarity": "RARE",
+        "artist": "Gao Yan",
+        "flavorText": "\"Such a lord as this—all virtues' height—Had never been, nor ever was again.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/4/f4ae0a05-1870-4f4a-b8a2-bfb5381acacb.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

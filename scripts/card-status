@@ -69,8 +69,17 @@ STANDARD_LEGAL_RATIO = 0.5
 
 SET_CODE_RE = re.compile(r'override\s+val\s+code\s*=\s*"([^"]+)"')
 DISPLAY_NAME_RE = re.compile(r'override\s+val\s+displayName\s*=\s*"([^"]+)"')
-CARD_DSL_RE = re.compile(r'\b(?:card|basicLand)\(\s*"([^"]+)"')
-PRINTING_NAME_RE = re.compile(r'\bname\s*=\s*"([^"]+)"')
+# The `(?:[^"\\]|\\.)*` body (rather than `[^"]+`) is load-bearing: a handful of real card
+# names embed escaped double quotes — `card("Kongming, \\"Sleeping Dragon\\"")` — and a naive
+# `[^"]+` truncates at the first `\\"`, so the card reads as missing from a set that has it.
+# Captured values are Kotlin string literals; unescape them before comparing to Scryfall names.
+CARD_DSL_RE = re.compile(r'\b(?:card|basicLand)\(\s*"((?:[^"\\]|\\.)*)"')
+PRINTING_NAME_RE = re.compile(r'\bname\s*=\s*"((?:[^"\\]|\\.)*)"')
+
+
+def unescape_kotlin(literal: str) -> str:
+    """Turn the body of a Kotlin string literal back into the value it denotes."""
+    return re.sub(r'\\(.)', r'\1', literal)
 
 SKIP_FOLDERS = {"custom"}
 
@@ -170,8 +179,8 @@ def scan_implementations(cards_dir: Path) -> set[str]:
         return names
     for kt in cards_dir.glob("*.kt"):
         text = kt.read_text(encoding="utf-8")
-        names.update(CARD_DSL_RE.findall(text))
-        names.update(PRINTING_NAME_RE.findall(text))
+        names.update(unescape_kotlin(n) for n in CARD_DSL_RE.findall(text))
+        names.update(unescape_kotlin(n) for n in PRINTING_NAME_RE.findall(text))
     return names
 
 
