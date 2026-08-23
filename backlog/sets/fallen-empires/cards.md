@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 65 / 102
+**Implemented:** 66 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -122,7 +122,7 @@
 
 ### Land
 - [x] Bottomless Vault
-- [ ] Dwarven Hold
+- [x] Dwarven Hold
 - [x] Dwarven Ruins
 - [x] Ebon Stronghold
 - [x] Havenwood Battleground
