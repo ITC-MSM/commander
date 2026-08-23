@@ -20,6 +20,10 @@
                             "keyword": "FLYING"
                         }
                     ]
+                },
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "AttachedTo"
                 }
             }
         ],

@@ -6466,6 +6466,26 @@ staticAbility {
   (`applyCantBeBlockedWhilePropertyAtMost`) that runs after every P/T layer, so it reads final
   projected stats and is re-asked each projection — the evasion comes back if the creature shrinks
   again. The same trap applies to any static whose gate reads a later layer than the static's own.
+- `CantBeBlocked(filter = GroupFilter.source())` — the unfiltered evasion, lowered to a projected
+  `AbilityFlag.CANT_BE_BLOCKED` over `filter`. **Which spelling to reach for is decided by what the
+  sentence is about, and getting it wrong is silent:**
+  - a **creature**'s own "This creature can't be blocked." is the card-level flag —
+    `flags(AbilityFlag.CANT_BE_BLOCKED)` — which is what 19 hand-written cards carry;
+  - an **Aura or Equipment**'s "Enchanted/Equipped creature can't be blocked." is *this static* with
+    `GroupFilter.attachedCreature()`. The card-level flag lands on the enchantment or artifact, which
+    never blocks and is never blocked, so the ability does nothing and the board looks right. Cloak of
+    Mists, Whispersilk Cloak and My Precious all shipped that way;
+  - a **conditional** "…can't be blocked if/as long as X" is this static inside a
+    `ConditionalStaticAbility` (Nimble Brigand, Cephalid Inkmage) — a flag cannot be gated;
+  - the **durational** "target creature can't be blocked this turn" is
+    `Effects.GrantKeyword(AbilityFlag.CANT_BE_BLOCKED, target, duration)`.
+
+  Note also that **every ability in `BlockingStaticAbilities.kt` defaults `filter` to
+  `GroupFilter.source()`**, where `ModifyStats` and `GrantKeyword` default to `attachedCreature()`.
+  Two neighbouring families with opposite defaults for the same omitted field, and it is the same trap
+  `GrantSubtype` records below: an attachment must pass the attached scope explicitly or it restricts
+  *itself*. Air Bladder's "Enchanted creature can block only creatures with flying." was doing exactly
+  that while the `GrantKeyword` line beside it was right.
 - `CantBeBlockedBy(blockerFilter, filter = GroupFilter.source())` — evasion: the affected creature
   can't be blocked by creatures matching `blockerFilter` (Juggernaut's "can't be blocked by Walls",
   Steel Leaf Champion's "power 2 or less"). Resolved by `CantBeBlockedByRule`, which reads three

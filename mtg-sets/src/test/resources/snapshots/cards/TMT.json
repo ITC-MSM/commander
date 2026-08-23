@@ -9738,7 +9738,7 @@
                 "type": "CantBeBlockedByMoreThan",
                 "maxBlockers": 1,
                 "filter": {
-                    "baseFilter": "creature Boar ctrl:you"
+                    "baseFilter": "permanent Boar ctrl:you"
                 }
             }
         ]

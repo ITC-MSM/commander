@@ -20,7 +20,27 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is **the card's mana value** — "search your library for a creature card **with
+The most recent work is **the combat restriction** — "can't be blocked", the tail ranking's top
+family at **122 cards, 79 of them solely, over 122 lines** (**+93 whole cards**, 8,653 → 8,746) — and
+it is the band where the ranked construct turned out to be one the grammar had *already read three
+times*, each time frozen into a whole sentence. `Grammar.flagLine` read "~ can't be blocked." as a
+line with no subject; `Statics` read "~ can't be blocked by black creatures." about the source only;
+`Steps` read "target creature can't be blocked this turn" as one requirement shape. Three rules
+covering three of the twenty-odd combinations Oracle prints, and the three that existed were the
+three somebody's card had needed. `mtg-sdk` had already factored it correctly — every `CantBeBlocked*`
+static carries the affected set as one `GroupFilter` and differs only in what it forbids — so the fix
+is that the grammar becomes the same **product**: a subject (the source, the attached permanent, a
+plural noun phrase) crossed with a restriction, in both slots the SDK gives it. Its own findings are
+two. The **one hole in the product is deliberate**: the source's bare form is an `AbilityFlag` in 19
+hand-written cards against 6 that write the static, so a source-scoped bare row would be a second
+rule for one text — and that hole is exactly what had put a silently inert evasion on three
+attachments, because `flags(AbilityFlag.CANT_BE_BLOCKED)` lands on the *Aura*. And the family's
+biggest remaining sub-band **is not this family's work**: 31 lines carry an "as long as …" clause and
+look like 19 cards, but substituting a readable conditional finishes **2 of 29** — the payload is the
+condition vocabulary, and saying so is the product. See
+[the combat restriction](#the-combat-restriction).
+
+Before it came **the card's mana value** — "search your library for a creature card **with
 mana value 3 or less**", and the construct the tail ranking named was not what was blocking it. The
 grammar had read "creature with mana value 3 or less" since the counting band; what it could not read
 was the same clause **one word to the right**, because every card-position rule spelled the head noun
@@ -382,20 +402,20 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    64753  (37998 unique)
 
-Round-trips byte-exact           26930   415.9‰ (41.6%)
-Alternate spelling normalized    1587
-Declined                         36236
+Round-trips byte-exact           27214   420.3‰ (42.0%)
+Alternate spelling normalized    1639
+Declined                         35900
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 Redundant readings (same model)  0
 
-Cards fully covered              8516 / 34882   244.1‰ (24.4%)
+Cards fully covered              8746 / 34882   250.7‰ (25.1%)
 Vanilla + keyword-only cards     1445 / 1713   843.5‰ (84.4%)   <- Phase 1 target
 Portal (set POR)                 200 / 200     1000.0‰ (100%)   <- the Portal band's target
 Legions (set LGN)                145 / 145     1000.0‰ (100%)   <- the Legions band's target
-Bloomburrow (set BLB)            83 / 280      296.4‰ (29.6%)   <- two passes; gift is what is left
+Bloomburrow (set BLB)            88 / 280      314.3‰ (31.4%)   <- two passes; gift is what is left
 Reminder-text glosses            3005 matched · 114 differed · 965 unglossed
 ```
 
@@ -2973,6 +2993,164 @@ the three "cards named ~" tutors), and the band is the count slot plus five dest
 that Scouting Trek is *implemented* and does not use the recipe, so writing it will produce a
 differential divergence to classify before it produces a card.
 
+## The combat restriction
+
+"Can't be blocked" led the tail ranking by every column — **122 cards, 79 sole-blocked, 122 lines**
+— and it is the first band whose ranked construct the grammar could already read. Three times, in
+three places, each frozen into a whole sentence:
+
+| where | what it read | what it could not |
+|---|---|---|
+| `Grammar.flagLine` | `~ can't be blocked.` | any other subject, any condition, any clause position |
+| `Statics.blockerRestriction` | `~ can't be blocked by {blockers}.` | the attached permanent, a group, `except by` |
+| `Statics.groupCantBeBlockedExceptBy` | `{filter} can't be blocked except by {blockers}.` | the source, the attached permanent |
+| `Steps.targetCantBeBlocked` | `target {filter} can't be blocked this turn` | every other quantifier, the source, the anaphor, a group |
+
+Five rules for three of the combinations Oracle prints. The SDK had never been the problem: every
+`CantBlock`, `CantBeBlocked`, `CantBeBlockedBy`, `CantBeBlockedExceptBy`, `CantBeBlockedByMoreThan`,
+`CantBeBlockedByFewerThan` and `CanOnlyBlockCreaturesWith` carries the affected set as one
+`GroupFilter` field and differs only in what it forbids, and `CantBeBlockedByFewerThan` — menace
+generalized past two — had a caller in three hand-written cards and none in the grammar. So the band
+is the product, in both slots the type list spans.
+
+### The subject is one axis, and it is the SDK's own field
+
+Three spellings, three **disjoint** `GroupFilter` values, so printing is decided by the model and not
+by an alternation's order — the property every `oneOf` here is written to have:
+
+| printed | value | printed lines with "can't be blocked" |
+|---|---|---|
+| `~` | `GroupFilter.source()` — `Scope.Self` | 279 |
+| `enchanted creature` | `GroupFilter.attachedCreature()` — `Scope.AttachedTo` | 25 |
+| `{filter}` (a plural noun phrase) | `GroupFilter(f)` — a battlefield scan | 10 |
+
+Crossed with seven restriction rows (bare, `by {blockers}`, `except by {blockers}`, `by more than one
+creature`, `by more than {n} creatures`, `except by {n} or more creatures`, `can't block`, `can block
+only {blockers}`), that is one shape and a table where there were five rules. The subject's
+fail-closed half is worth naming because it is done **once for the whole value** rather than per
+field: the candidate slot bindings are fed back through the subject's own builder and the result
+compared, so an `excludeSelf`, an `excludeTarget`, a `chosenSubtypeKey` or a `Scope.SoulbondPair` —
+every field a printed subject says nothing about — refuses to print instead of being dropped.
+
+### The hole in the product is deliberate, and it is what the card bugs were hiding in
+
+The source's bare "~ can't be blocked." is **not** offered as a static, and the reason is the
+two-spellings rule: 19 hand-written cards spell that sentence as `flags(AbilityFlag.CANT_BE_BLOCKED)`
+against 6 that write `CantBeBlocked()`, so registering a source-scoped bare row beside
+`Grammar.flagLine` would be two rules for one text — `AMBIGUOUS` by construction.
+
+The attached and group subjects have no such competitor, and that asymmetry is the whole finding. A
+card-level flag lands on the permanent **the card is**, so on an Aura or an Equipment it grants the
+evasion to the enchantment or artifact — which never blocks and is never blocked. Three shipped cards
+were carrying that no-op: **Cloak of Mists**, **Whispersilk Cloak** and **My Precious**. All three
+now write `CantBeBlocked(GroupFilter.attachedCreature())`, and each has a scenario test that fails on
+the old reading.
+
+A fourth card had the same bug by a different route. Every ability in
+`mtg-sdk`'s `BlockingStaticAbilities.kt` defaults its `filter` to `GroupFilter.source()`, while
+`GrantKeyword` and `ModifyStats` — the statics an attachment is otherwise made of — default to
+`GroupFilter.attachedCreature()`. **Air Bladder** took the default for "Enchanted creature can block
+only creatures with flying." and restricted the Aura; the line beside it, "Enchanted creature has
+flying.", took the opposite default and was right. Two neighbouring families with opposite defaults
+for the same omitted field is not something a card author can be expected to remember, so the
+warning now lives in the SDK KDoc next to the types.
+
+### The durational half is a row of the grant family whose surface is irregular
+
+"Target creature can't be blocked this turn." is `GrantKeywordEffect` — the *same* effect "gains
+flying until end of turn" builds — over `AbilityFlag.CANT_BE_BLOCKED` instead of a `Keyword`. Only
+the surface differs, and the reason is a fact about the SDK's two keyword vocabularies rather than
+about this sentence: a CR 702.x keyword is a **noun** a creature can be said to gain, while an
+`AbilityFlag` names a whole sentence and has no noun, so Oracle prints the flag as its own predicate
+with the duration spelled "this turn". That makes it a row, not a second grant vocabulary — and once
+it is a row, the four restrictions beside it (`can't block this turn`, `can't attack this turn`,
+`can't attack or block this turn`, `can't be blocked this turn except by …`) are rows of the same
+table, each one SDK effect.
+
+The table is instantiated in the three positions the module already keeps apart, exactly as
+`Prevention.clausesFor` and `SelfSteps.retargetable` are: every quantifier English prints in front of
+"target", the source-and-pronoun subject (which is also what lets "~ gets +1/+0 until end of turn and
+can't be blocked this turn." read as the two clauses it is), and the "that creature" anaphor. The
+pronoun is **deliberately absent** from the anaphor position: nine printed lines say "It can't be
+blocked this turn." about a permanent the same clause animated ("{1}{U}{B}: Until end of turn, ~
+becomes a 3/2 blue and black Elemental creature. It's still a land. It can't be blocked this turn."
+— Creeping Tar Pit), and reading those as the target would be byte-perfect and about the wrong
+creature.
+
+Moving `effectOver`/`memberOf` out of `Steps` and onto `Targets.Quantifier` is what let a second
+family take the whole table without a second copy of the iteration-space decision. It is the same
+knowledge `Quantifier.requirement` already is: what one quantifier *denotes*.
+
+### The measurement, and the four times the probe overstated
+
+The band's honest sub-band table, each row measured with the transformation that row's rule actually
+performs:
+
+| sub-band | lines | readable after the substitution | whole cards |
+|---|---|---|---|
+| `except by {blockers}` | 20 | 12 | 7 |
+| `except by {n} or more creatures` | 8 | 8 | 6 |
+| the durational table | 52 | 22 | 12 |
+| the other subject positions | 10 | 2 | 1 |
+| conditioned (`as long as` / `if` / `unless`) | 31 | **2** | **1** |
+
+The first probe run substituted a known-good stand-in (`can't be blocked by Walls`) for the whole
+`except by …` span and reported **18** cards; the exact one, which changes only the two words the rule
+changes and keeps the printed filter, reports **7**. Fifth time, same direction, same cause — *a probe
+that performs the family's own transformation has no gap to be wrong in; one that stands in for it
+does.*
+
+The band delivered **+93 whole cards** (8,653 → 8,746) against a table summing to ~28, and the
+difference is the durational rows for the *other* three restrictions: "can't block this turn" alone is
+59 printed lines across its own decline families, which this family's ranking never counted.
+
+### What the differential found
+
+21 more cards became comparable (3,851 → 3,872) and every one of the five new divergences was a card
+bug:
+
+| card | bug | class |
+|---|---|---|
+| Cloak of Mists | the evasion was a card flag on the Aura | attachment scope |
+| Air Bladder | `CanOnlyBlockCreaturesWith` took the `source()` default | attachment scope |
+| Invisibility | `Creature.withSubtype(Wall)` where a bare tribal noun is `Permanent` | the bare-tribal-noun migration |
+| Rocksteady, Crash Courser | the same, in the subject noun phrase | the bare-tribal-noun migration |
+| Relentless X-ATM092 | "Return this card **from your graveyard**" with no `fromZone` guard | the functional-zone band's class, card 19 |
+
+Whispersilk Cloak and My Precious carry the same attachment-scope bug and are *not* comparable —
+their line is "Equipped creature can't be blocked **and has** shroud", a static clause run the grammar
+does not read — so those two were found by grepping the flag rather than by the gate. That is worth
+recording: a family's own findings are not bounded by what the gate can currently compare.
+
+After the fixes the differential is back to its baseline **44** divergences at **988.6‰** agreement,
+with none of them new.
+
+### What is left, and the band it names
+
+The family fell to **63 cards / 44 sole / 63 lines**. Its largest remaining sub-band is the
+conditioned form, and the honest reading of it is the band's second finding: 31 lines, an upper bound
+of 19 cards, and **2 of 29 conditions readable**. "As long as defending player controls an untapped
+land", "as long as you've drawn two or more cards this turn", "if you've cast two or more spells this
+turn", "as long as there are eight or more permanent cards in your graveyard" — the payload is
+`Conditions`, and `CantBeBlockedIfDefenderControls`, `CantBeBlockedIfCastSpellType`,
+`CantBeBlockedUnlessDefenderSharesCreatureType` and `CantBeBlockedWhilePropertyAtMost` are sitting in
+the SDK waiting for it. Writing the conditional wrapper here would have bought one card; naming the
+condition vocabulary is what the 31 lines are actually for.
+
+Two smaller residues, both `Filters`:
+
+- the blocker slot's missing noun phrases — "creatures with flying **or reach**" (3 cards, a keyword
+  disjunction beside the colour and subtype ones `Filters` already layers), "artifact creatures
+  **and/or** white creatures" (3, a join of noun phrases), `legendary` (the known 416-line supertype
+  layer), and `Vehicles`;
+- "**Each** creature you control can't be blocked by more than one creature." (3 lines) — "each" as a
+  plural subject quantifier, which `Filters.plural` does not spell.
+
+And one static clause run: "Enchanted creature **can't be blocked and has** shroud", "Enchanted
+creature **gets +2/+0 and** can't be blocked" — the `Statics.pumpAndKeyword` shape generalized to a
+run of restriction clauses, about 10 lines. That one is a `Statics.line` question rather than a
+member of this family.
+
 ## The card's mana value
 
 `card with mana …` — high on the tail ranking when it was picked, and its shape is the one worth
@@ -3126,7 +3304,6 @@ a noun phrase — `Filters` → `ManaValues` → `Amounts` → `Filters` is a ge
 the JVM answers an initialization cycle by handing back a half-built object whose slot reads `null`.
 Duplicating either vocabulary to break it is the one thing this module exists to prevent, so the
 indirection is in the kernel and knows nothing about mana values.
-
 ## The differential gate
 
 `just assay-differential` diffs Assay's reading of a card against the `CardDefinition` a human wrote

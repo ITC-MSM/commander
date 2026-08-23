@@ -2108,7 +2108,7 @@
                 "type": "CantBeBlockedExceptBy",
                 "blockerFilter": {
                     "cardPredicates": [
-                        "IsCreature",
+                        "IsPermanent",
                         {
                             "type": "HasSubtype",
                             "subtype": "Wall"
