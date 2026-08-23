@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 8 / 102
+**Implemented:** 9 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -33,7 +33,7 @@
 - [x] Icatian Scout
 - [ ] Icatian Skirmishers
 - [ ] Icatian Town
-- [ ] Order of Leitbur
+- [x] Order of Leitbur
 
 ### Blue
 - [ ] Deep Spawn
