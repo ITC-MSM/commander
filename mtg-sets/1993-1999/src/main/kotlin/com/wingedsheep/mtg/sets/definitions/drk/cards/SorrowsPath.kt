@@ -13,8 +13,13 @@ import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
 
-/** Blocking creatures are the only legal targets for the swap. */
-private val blockingCreature = GameObjectFilter.Creature.blocking()
+/**
+ * "Two target blocking creatures controlled by the same opponent" — so a legal target is a blocking
+ * creature an *opponent* controls, never one of your own. The "same" half can't be expressed by a
+ * filter (it relates the two targets to each other, not to the activating player) and is enforced
+ * at resolution by `SwapBlockingAssignmentsExecutor`.
+ */
+private val opponentsBlockingCreature = GameObjectFilter.Creature.blocking().opponentControls()
 
 /**
  * Sorrow's Path
@@ -45,8 +50,8 @@ val SorrowsPath = card("Sorrow's Path") {
 
     activatedAbility {
         cost = Costs.Tap
-        target("first blocker", TargetCreature(filter = TargetFilter(blockingCreature)))
-        target("second blocker", TargetCreature(filter = TargetFilter(blockingCreature)))
+        target("first blocker", TargetCreature(filter = TargetFilter(opponentsBlockingCreature)))
+        target("second blocker", TargetCreature(filter = TargetFilter(opponentsBlockingCreature)))
         effect = SwapBlockingAssignmentsEffect
         description = "{T}: Choose two target blocking creatures controlled by the same opponent. " +
             "If each of those creatures could block all creatures that the other is blocking, " +

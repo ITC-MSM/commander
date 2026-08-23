@@ -6576,8 +6576,12 @@ staticAbility {
   redirecting onto a controller who was never asked.
 - `SwapBlockingAssignmentsEffect` — Sorrow's Path's blocker swap. Reads the ability's two chosen
   targets, re-checks at resolution (CR 608.2b) that both are still blocking creatures under the same
-  controller, and applies the printed gate: the swap happens only if **each** creature could legally
-  block **every** attacker the other is currently blocking, run through the same
+  controller *and* that that controller is an opponent of the activating player — "two target
+  blocking creatures controlled by the same **opponent**", so a filter can carry the opponent half
+  (`GameObjectFilter.Creature.blocking().opponentControls()`) but only the executor can relate the
+  two targets to each other. Control is read from projected state, so a blocker stolen mid-combat is
+  judged by who controls it now. It then applies the printed gate: the swap happens only if **each**
+  creature could legally block **every** attacker the other is currently blocking, run through the same
   `defaultBlockEvasionRules` a declared block goes through. A creature that couldn't have blocked a
   flier by declaring can't be handed one here either. If either direction is illegal the effect does
   nothing at all — not a partial swap.
@@ -6593,9 +6597,11 @@ staticAbility {
   why Worms of the Earth prints both lines. Checked by `LandEntryLocks.landsCantEnter` on the
   move-to-battlefield path; the land simply does not enter and stays where it was.
 - `CantAttackUnlessSacrifice(sacrificeFilter, count = 1)` — a **non-mana** attack cost, paid as
-  attackers are declared (CR 508.1e–g): Leviathan's "this creature can't attack unless you sacrifice
-  two Islands". Distinct from `CantAttackUnless`, which takes a *condition* — controlling two Islands
-  is not the same as spending them — and from `CantAttackOrBlockUnlessPay`, which is generic mana only
+  attackers are declared: Leviathan's "this creature can't attack unless you sacrifice two Islands".
+  The clause is a restriction (CR 508.1c) whose cost is determined and paid at CR 508.1h–j — not an
+  optional "as it attacks" cost (CR 508.1g), which a player may always decline. Distinct from
+  `CantAttackUnless`, which takes a *condition* — controlling two Islands is not the same as
+  spending them — and from `CantAttackOrBlockUnlessPay`, which is generic mana only
   and carries a blocking half this deliberately lacks. Enforced in two places that share
   `AttackSacrificeCosts` so they cannot drift: `CantAttackUnlessSacrificeRule` makes the declaration
   illegal up front when the controller can't pay, and `AttackPhaseManager.pauseForAttackSacrifice`

@@ -20,8 +20,8 @@ import io.kotest.matchers.shouldBe
  *  Each one then blocks all creatures the other was blocking.
  *  Whenever this land becomes tapped, it deals 2 damage to you and each creature you control."
  *
- * Both halves are tested, including the gate that makes the card unusable: a swap that would hand a
- * ground creature a flier is refused outright rather than half-applied.
+ * Both halves are tested, including the two gates: the targets must be an opponent's blockers, and
+ * a swap that would hand a ground creature a flier is refused outright rather than half-applied.
  */
 class SorrowsPathScenarioTest : ScenarioTestBase() {
 
@@ -82,6 +82,63 @@ class SorrowsPathScenarioTest : ScenarioTestBase() {
                         ?.blockedAttackerIds?.toList() shouldContainExactly listOf(wurm)
                     game.state.getEntity(sprites)?.get<BlockingComponent>()
                         ?.blockedAttackerIds?.toList() shouldContainExactly listOf(angel)
+                }
+            }
+
+            test("refuses to swap the activating player's own blockers") {
+                // "…controlled by the same opponent". On the opponent's turn the Sorrow's Path
+                // player is the one blocking, so their own two blockers are the only blocking
+                // creatures on the board — and they are not legal targets. Both creatures could
+                // legally block either attacker, so nothing but the controller restriction is
+                // stopping this swap.
+                val game = scenario()
+                    .withPlayers("Pathfinder", "Attacker")
+                    .withCardOnBattlefield(1, "Sorrow's Path")
+                    .withCardOnBattlefield(1, "Wall of Wood")
+                    .withCardOnBattlefield(1, "Scryb Sprites")
+                    .withCardOnBattlefield(2, "Hurloon Minotaur")
+                    .withCardOnBattlefield(2, "Craw Wurm")
+                    .withActivePlayer(2)
+                    .inPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
+                    .build()
+
+                game.declareAttackers(
+                    mapOf("Hurloon Minotaur" to 1, "Craw Wurm" to 1)
+                ).error shouldBe null
+                game.passUntilPhase(Phase.COMBAT, Step.DECLARE_BLOCKERS)
+
+                val minotaur = game.findPermanent("Hurloon Minotaur")!!
+                val wurm = game.findPermanent("Craw Wurm")!!
+                val wall = game.findPermanent("Wall of Wood")!!
+                val sprites = game.findPermanent("Scryb Sprites")!!
+
+                game.declareBlockers(
+                    mapOf(
+                        "Wall of Wood" to listOf("Hurloon Minotaur"),
+                        "Scryb Sprites" to listOf("Craw Wurm"),
+                    )
+                ).error shouldBe null
+
+                val result = game.execute(
+                    ActivateAbility(
+                        playerId = game.player1Id,
+                        sourceId = game.findPermanent("Sorrow's Path")!!,
+                        abilityId = pathAbilityId(),
+                        targets = listOf(
+                            entityIdToChosenTarget(game.state, wall),
+                            entityIdToChosenTarget(game.state, sprites),
+                        )
+                    )
+                )
+
+                withClue("your own blockers are not legal targets") {
+                    result.error.shouldNotBeNull()
+                }
+                withClue("nothing moved, and the land never tapped") {
+                    game.state.getEntity(wall)?.get<BlockingComponent>()
+                        ?.blockedAttackerIds?.toList() shouldContainExactly listOf(minotaur)
+                    game.state.getEntity(sprites)?.get<BlockingComponent>()
+                        ?.blockedAttackerIds?.toList() shouldContainExactly listOf(wurm)
                 }
             }
 

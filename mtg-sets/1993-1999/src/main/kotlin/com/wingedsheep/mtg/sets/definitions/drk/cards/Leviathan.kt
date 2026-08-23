@@ -22,14 +22,16 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Trample
  * This creature enters tapped and doesn't untap during your untap step.
  * At the beginning of your upkeep, you may sacrifice two Islands. If you do, untap this creature.
- * This creature can't attack unless you sacrifice two Islands.
+ * This creature can't attack unless you sacrifice two Islands. (This cost is paid as attackers
+ * are declared.)
  *
  * Two Islands to wake it, two more every time it swings. The first three lines are existing
  * vocabulary — `EntersTapped`, the [AbilityFlag.DOESNT_UNTAP] self-suppression Colossus of Sardia
  * uses, and an optional upkeep trigger whose cost is an ordinary sacrifice.
  *
- * The last line is not: it is a **cost** paid as attackers are declared (CR 508.1e–g), and the
- * engine only had generic-mana attack taxes. `CantAttackUnlessSacrifice` adds the non-mana form,
+ * The last line is not: it is a **cost** paid as attackers are declared — the clause is a
+ * restriction (CR 508.1c) and its cost is determined and paid at CR 508.1h–j — and the engine only
+ * had generic-mana attack taxes. `CantAttackUnlessSacrifice` adds the non-mana form,
  * split across two places that share one helper so they cannot disagree — the declaration is
  * illegal up front when the controller can't pay, and the declare-attackers step then pauses to
  * ask *which* Islands, in the same window the mana tax is paid.
@@ -46,7 +48,8 @@ val Leviathan = card("Leviathan") {
     toughness = 10
     oracleText = "Trample\nThis creature enters tapped and doesn't untap during your untap step.\n" +
         "At the beginning of your upkeep, you may sacrifice two Islands. If you do, untap this " +
-        "creature.\nThis creature can't attack unless you sacrifice two Islands."
+        "creature.\nThis creature can't attack unless you sacrifice two Islands. (This cost is " +
+        "paid as attackers are declared.)"
 
     keywords(Keyword.TRAMPLE)
     flags(AbilityFlag.DOESNT_UNTAP)

@@ -156,9 +156,11 @@ internal class AttackPhaseManager(
             return pauseForAttackTaxConfirmation(state, attackingPlayer, attackers, totalTax, bands)
         }
 
-        // Non-mana attack costs (CR 508.1e–g): "can't attack unless you sacrifice two Islands"
-        // (Leviathan). Affordability was already enforced by CantAttackUnlessSacrificeRule, so
-        // reaching here means the cost *can* be paid; what remains is choosing what to sacrifice.
+        // Non-mana attack costs: "can't attack unless you sacrifice two Islands" (Leviathan). The
+        // clause is a *restriction* checked at CR 508.1c, and the cost it names is determined and
+        // paid at CR 508.1h–j — not an optional "as it attacks" cost (CR 508.1g), which the player
+        // may always decline. Affordability was already enforced by CantAttackUnlessSacrificeRule,
+        // so reaching here means the cost *can* be paid; what remains is choosing what to sacrifice.
         val sacrificeCosts = AttackSacrificeCosts.requirementsFor(state, attackers.keys, cardRegistry)
         if (sacrificeCosts.isNotEmpty()) {
             return pauseForAttackSacrifice(state, attackingPlayer, attackers, sacrificeCosts, bands)

@@ -29,9 +29,8 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * Creature — Zombie
  * 0/1
  * As this creature enters, exile X creature cards from your graveyard. If you can't, put this
- * creature into its owner's graveyard instead of onto the battlefield.
- * For each creature card exiled this way, this creature enters with a +2/+0, +1/+1, or +0/+2
- * counter on it.
+ * creature into its owner's graveyard instead of onto the battlefield. For each creature card
+ * exiled this way, this creature enters with a +2/+0, +1/+1, or +0/+2 counter on it.
  *
  * The first sentence is all-or-nothing and the gate has to be asked before anything moves: a
  * `ConditionalEffect` on "creature cards in your graveyard >= X" runs the exile-and-count branch,
@@ -63,7 +62,7 @@ val FrankensteinsMonster = card("Frankenstein's Monster") {
     power = 0
     toughness = 1
     oracleText = "As this creature enters, exile X creature cards from your graveyard. If you " +
-        "can't, put this creature into its owner's graveyard instead of onto the battlefield.\n" +
+        "can't, put this creature into its owner's graveyard instead of onto the battlefield. " +
         "For each creature card exiled this way, this creature enters with a +2/+0, +1/+1, or " +
         "+0/+2 counter on it."
 

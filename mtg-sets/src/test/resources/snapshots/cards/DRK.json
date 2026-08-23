@@ -2266,7 +2266,7 @@
     "name": "Frankenstein's Monster",
     "manaCost": "{X}{B}{B}",
     "typeLine": "Creature — Zombie",
-    "oracleText": "As this creature enters, exile X creature cards from your graveyard. If you can't, put this creature into its owner's graveyard instead of onto the battlefield.\nFor each creature card exiled this way, this creature enters with a +2/+0, +1/+1, or +0/+2 counter on it.",
+    "oracleText": "As this creature enters, exile X creature cards from your graveyard. If you can't, put this creature into its owner's graveyard instead of onto the battlefield. For each creature card exiled this way, this creature enters with a +2/+0, +1/+1, or +0/+2 counter on it.",
     "creatureStats": {
         "power": 0,
         "toughness": 1
@@ -3293,7 +3293,7 @@
     "name": "Leviathan",
     "manaCost": "{5}{U}{U}{U}{U}",
     "typeLine": "Creature — Leviathan",
-    "oracleText": "Trample\nThis creature enters tapped and doesn't untap during your untap step.\nAt the beginning of your upkeep, you may sacrifice two Islands. If you do, untap this creature.\nThis creature can't attack unless you sacrifice two Islands.",
+    "oracleText": "Trample\nThis creature enters tapped and doesn't untap during your untap step.\nAt the beginning of your upkeep, you may sacrifice two Islands. If you do, untap this creature.\nThis creature can't attack unless you sacrifice two Islands. (This cost is paid as attackers are declared.)",
     "creatureStats": {
         "power": 10,
         "toughness": 10
@@ -5628,14 +5628,14 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature blocking"
+                            "baseFilter": "creature blocking ctrl:opponent"
                         },
                         "id": "first blocker"
                     },
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature blocking"
+                            "baseFilter": "creature blocking ctrl:opponent"
                         },
                         "id": "second blocker"
                     }

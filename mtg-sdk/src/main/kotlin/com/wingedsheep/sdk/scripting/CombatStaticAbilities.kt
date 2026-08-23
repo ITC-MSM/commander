@@ -220,11 +220,14 @@ data class AssignCombatDamageAsUnblocked(
  */
 /**
  * This creature can't attack unless its controller sacrifices [count] permanents matching
- * [sacrificeFilter], paid as attackers are declared (CR 508.1e-g) — Leviathan's "this creature
- * can't attack unless you sacrifice two Islands".
+ * [sacrificeFilter], paid as attackers are declared — Leviathan's "this creature can't attack
+ * unless you sacrifice two Islands".
  *
  * A **cost**, not a condition, which is why it is not [CantAttackUnless]: merely controlling two
- * Islands is not enough, they have to go. The declaration is illegal up front when the controller
+ * Islands is not enough, they have to go. It is also not an *optional* attack cost (CR 508.1g,
+ * "costs a player may pay as a creature attacks"): the clause is a restriction checked at
+ * CR 508.1c, and its cost is determined and paid at CR 508.1h–j. CR 508.1d is the reason an
+ * unpayable one simply keeps the creature home rather than making the whole declaration illegal. The declaration is illegal up front when the controller
  * doesn't control enough matching permanents to pay (a cost you can't pay can't be paid), and
  * otherwise the declare-attackers step pauses for the choice of which to sacrifice, in the same
  * window the generic-mana [AttackTax] pauses to be paid.

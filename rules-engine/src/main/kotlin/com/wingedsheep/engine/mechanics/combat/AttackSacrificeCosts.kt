@@ -10,9 +10,9 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.CantAttackUnlessSacrifice
 
 /**
- * The sacrifice cost of declaring an attacker (CR 508.1e–g) —
- * [CantAttackUnlessSacrifice], Leviathan's "this creature can't attack unless you sacrifice two
- * Islands".
+ * The sacrifice cost of declaring an attacker — [CantAttackUnlessSacrifice], Leviathan's "this
+ * creature can't attack unless you sacrifice two Islands". A restriction checked at CR 508.1c whose
+ * cost is determined and paid at CR 508.1h–j, not an optional attack cost (CR 508.1g).
  *
  * One place for both halves of the rule so they cannot drift: the *affordability* check that makes
  * an unpayable declaration illegal ([com.wingedsheep.engine.mechanics.combat.rules.CantAttackUnlessSacrificeRule])

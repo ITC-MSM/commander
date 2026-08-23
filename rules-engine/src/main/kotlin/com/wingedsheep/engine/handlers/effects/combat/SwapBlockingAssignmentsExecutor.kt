@@ -17,7 +17,8 @@ import kotlin.reflect.KClass
  * Executor for [SwapBlockingAssignmentsEffect] — Sorrow's Path.
  *
  * Reads the two chosen targets, verifies at resolution (CR 608.2b) that both are still blocking
- * creatures under the same controller, and then applies the printed gate: the swap happens only if
+ * creatures under the same controller and that that controller is an *opponent* of the activating
+ * player, and then applies the printed gate: the swap happens only if
  * **each** creature could legally block **every** attacker the other is currently blocking. The
  * check runs the same `defaultBlockEvasionRules` a declared block goes through, so an evasion
  * ability that would have stopped the block at declaration stops it here too.
@@ -50,13 +51,26 @@ class SwapBlockingAssignmentsExecutor(
         val secondBlocking = state.getEntity(second)?.get<BlockingComponent>()?.blockedAttackerIds
             ?: return EffectResult.success(state)
 
-        // Both must still be controlled by the same player (the printed "controlled by the same
-        // opponent" — re-checked here because control can change after targets were chosen).
-        val firstController = state.getEntity(first)?.get<ControllerComponent>()?.playerId
-        val secondController = state.getEntity(second)?.get<ControllerComponent>()?.playerId
+        // "…controlled by the same opponent", re-checked here because targets are re-validated on
+        // resolution (CR 608.2b). Both halves matter: the two blockers must share a controller, and
+        // that controller must not be the activating player. The target filter already carries the
+        // opponent half — only this side can relate the two targets to each other.
+        //
+        // Control is read from projected state rather than the base ControllerComponent, matching
+        // the rest of the engine's battlefield reads: control change is a continuous effect that
+        // base state can't see, and `firstController` is handed straight to `canBlockAll` as the
+        // blocking player. The two answers can't diverge today — CR 506.4 removes a creature from
+        // combat when its controller changes, so the `BlockingComponent` reads above have already
+        // refused any such target — but reading the base component here would be a divergence
+        // waiting for the first control-change effect that doesn't remove from combat.
+        val firstController = state.projectedState.getController(first)
+            ?: state.getEntity(first)?.get<ControllerComponent>()?.playerId
+        val secondController = state.projectedState.getController(second)
+            ?: state.getEntity(second)?.get<ControllerComponent>()?.playerId
         if (firstController == null || firstController != secondController) {
             return EffectResult.success(state)
         }
+        if (firstController == context.controllerId) return EffectResult.success(state)
 
         // The gate: each must be able to block everything the other is blocking.
         if (!canBlockAll(state, first, secondBlocking, firstController)) return EffectResult.success(state)

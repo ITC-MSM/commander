@@ -635,27 +635,17 @@ enum class RedirectScope {
 }
 
 /**
- * Redirect damage that would be dealt to the protected targets this turn.
- * "The next time damage would be dealt to [protected targets] this turn,
- *  that damage is dealt to [redirectTo] instead."
- * Used for Glarecaster and similar redirection effects.
- *
- * @property protectedTargets The entities protected by this redirection shield (e.g., Self + Controller)
- * @property redirectTo The target that will receive the redirected damage (chosen at activation)
- * @property amount If set, only redirect up to this many damage (e.g., "the next 1 damage"). Null = redirect all.
- * @property scope When the shield is used up (only meaningful when [amount] is null). See [RedirectScope].
- */
-/**
  * Swap what two blocking creatures are blocking — Sorrow's Path's "if each of those creatures could
  * block all creatures that the other is blocking, remove both of them from combat. Each one then
  * blocks all creatures the other was blocking."
  *
- * Both targets must still be blocking creatures controlled by the same player when this resolves,
- * and the swap only happens if it would be **legal both ways**: each creature is checked against
- * every attacker it is about to block, through the same evasion rules that govern a normal block
- * declaration. A creature that couldn't have blocked a flier by declaring can't be handed one here
- * either. When the check fails the effect does nothing, which is the printed behaviour and most of
- * this card's reputation.
+ * Both targets must still be blocking creatures controlled by the same *opponent* of the
+ * activating player when this resolves — the printed line allows neither a split pair nor your
+ * own blockers — and the swap only happens if it would be **legal both ways**: each creature is
+ * checked against every attacker it is about to block, through the same evasion rules that govern
+ * a normal block declaration. A creature that couldn't have blocked a flier by declaring can't be
+ * handed one here either. When the check fails the effect does nothing, which is the printed
+ * behaviour and most of this card's reputation.
  *
  * Targets are read from the ability's chosen targets, so this effect carries no fields.
  */
@@ -667,6 +657,17 @@ data object SwapBlockingAssignmentsEffect : Effect {
             "both of them from combat. Each one then blocks all creatures the other was blocking"
 }
 
+/**
+ * Redirect damage that would be dealt to the protected targets this turn.
+ * "The next time damage would be dealt to [protected targets] this turn,
+ *  that damage is dealt to [redirectTo] instead."
+ * Used for Glarecaster and similar redirection effects.
+ *
+ * @property protectedTargets The entities protected by this redirection shield (e.g., Self + Controller)
+ * @property redirectTo The target that will receive the redirected damage (chosen at activation)
+ * @property amount If set, only redirect up to this many damage (e.g., "the next 1 damage"). Null = redirect all.
+ * @property scope When the shield is used up (only meaningful when [amount] is null). See [RedirectScope].
+ */
 @SerialName("RedirectNextDamage")
 @Serializable
 data class RedirectNextDamageEffect(
