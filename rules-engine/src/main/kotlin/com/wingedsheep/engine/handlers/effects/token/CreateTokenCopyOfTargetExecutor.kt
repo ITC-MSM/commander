@@ -252,7 +252,7 @@ class CreateTokenCopyOfTargetExecutor(
                     .applyOnEntry(newState, tokenId, controllerId, cardRegistry)
             } else {
                 com.wingedsheep.engine.handlers.effects.EntersWithReplacements
-                    .applyGlobal(newState, tokenId, controllerId)
+                    .applyGlobal(newState, tokenId, controllerId, cardRegistry)
             }
             newState = afterCounters
             events.addAll(counterEvents)

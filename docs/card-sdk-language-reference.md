@@ -8745,7 +8745,10 @@ composite abilities).
   (`Scope.SoulbondPair`) — "both creatures" / "each of those creatures". That scope resolves to `{source, partner}` while
   paired and to the **empty set** while unpaired, so "as long as this creature is paired with another creature" is
   self-enforcing and needs no `condition =` gate: Lightning Mauler is just
-  `GrantKeyword(Keyword.HASTE, GroupFilter.soulbondPair())`, and Deadeye Navigator is
+  `GrantKeyword(Keyword.HASTE, GroupFilter.soulbondPair())`, Spectral Gateguards is the same with `VIGILANCE`,
+  Tandem Lookout is `GrantTriggeredAbility(<whenever this creature deals damage to an opponent, draw a card>,
+  GroupFilter.soulbondPair())` — hosted on *each* half, so `TriggerBinding.SELF` makes "this creature" mean whichever
+  one dealt the damage — and Deadeye Navigator is
   `GrantActivatedAbility(<{1}{U}: blink self>, GroupFilter.soulbondPair())` — a granted ability's `EffectTarget.Self`
   binds to the permanent that *has* it (CR 113.7), so activating it on the partner blinks the partner.
   Pairing state lives in the engine, not the SDK: `PairWithSourceExecutor` stamps a symmetric `PairedComponent` on both
@@ -11314,6 +11317,7 @@ All `ReplacementEffect` subtypes inherit the following virtual properties from t
 
 - `restrictions: List<Condition>` (default empty) — when non-empty, the replacement only applies if every condition passes; a uniform gating mechanism used by `PreventDamage`, `DoubleDamage`, `ModifyLifeLoss`, `LifeLossFloor`, and others. In the `ReplacementEffectProcessor` (the draw domain today) each condition is evaluated with the **player the event affects** as `EffectContext.controllerId` — so `Player.You` inside a restriction reads as the drawing player, not the source's controller. The two coincide for a `Player.You` `appliesTo`; for `Player.EachOpponent` they don't, and such a card needs a source-relative condition instead.
 - `optional: Boolean` (default `false`) — when `true`, the player affected by the event may decline the replacement (e.g. "you may draw a card instead").
+- `activeZones: Set<Zone>` (default `{BATTLEFIELD}`) — the zones the effect functions from (CR 113.6), the replacement-effect twin of `TriggeredAbility.activeZones`. Declaring another zone is a *move*, not an addition: `EntersWithReplacements` sweeps the battlefield for `BATTLEFIELD` sources and every graveyard for `GRAVEYARD` ones, so `{GRAVEYARD}` switches the effect **on** in the graveyard and **off** on the battlefield. That is the whole of "as long as this creature is in your graveyard, …" (Dearly Departed) — no condition, no duration. Currently a constructor parameter on `EntersWithDynamicCounters` only; other subtypes take the interface default until a card needs otherwise. "You" for a graveyard source resolves to the graveyard's **owner** (a card outside the battlefield has no controller, CR 108.3), and the sweep visits every card, so two copies in one graveyard stack.
 - `priorityGroup: ReplacementPriorityGroup` (default `ReplacementPriorityGroup.ANY`) — the CR 616.1a–f priority tier. Declared as an *override on the subtype*, never as a card-facing constructor parameter, so the engine processor never pattern-matches on SDK types and a card can't accidentally promote itself out of the affected player's 616.1e choice. Today only `EntersAsCopy` overrides it (`COPY`).
 
 The priority groups are (CR 616.1a–f):
@@ -11332,6 +11336,20 @@ The priority groups are (CR 616.1a–f):
   `restrictions: List<Condition>` (default empty) gates the prevention on extra conditions evaluated
   against the source's controller — the same pattern as `ModifyLifeLoss.restrictions`. Use it for
   "as long as …, prevent …" statics (Spirit of Resistance: a five-distinct-colors `Compare` gate).
+- `ReplacementEffect.PreventDamageByRemovingCounter(counterType = PlusOnePlusOne, appliesTo = DamageEvent(recipient = Self))`
+  — "If this creature would be dealt damage, prevent that damage and remove a +1/+1 counter from it"
+  (Unbreathing Horde). The printed twin of the shield counter's prevention half (CR 122.1c), wired at
+  the same two chokepoints (`DamageUtils.dealDamageToTarget` and
+  `CombatDamageManager.applyShieldCountersToCombatDamage`) and inheriting its scoping: exactly **one**
+  counter per damage *event*, however large the damage and however many counters are on the permanent —
+  a creature blocking two attackers is dealt damage once (CR 510.2), and the first-strike and regular
+  damage steps are two events. One deliberate difference from the shield counter: the prevention does
+  **not** depend on having a counter to spend, because it is a printed ability rather than a rule made
+  of counters. A separate type rather than a flag on `PreventDamage` — the counter removal is what the
+  ability *is*, and it needs a state-returning application path where plain prevention is pure
+  arithmetic. Only self-recipient patterns are honoured; a card shielding *other* permanents this way
+  would need a battlefield-wide scan. A permanent carrying both this and a shield counter spends only
+  the shield counter (once the shield prevents the damage there is nothing left to replace).
 - `CapDamage(maxAmount, appliesTo)` — clamp matching damage to `maxAmount` (a *replacement* distinct
   from prevent/modify; applied after all amplification). Divine Presence: `CapDamage(3, DamageEvent(recipient = Any))`.
 - `SetMinimumDamage(minAmount = 0, dynamicMinimum?, appliesTo)` — the **floor** mirror of `CapDamage`:
@@ -11559,7 +11577,7 @@ The priority groups are (CR 616.1a–f):
   characteristics — a "whenever a Mountain enters" trigger won't see the type a Multiversal Passage
   just chose. Both entry paths behave the same way here, so it is consistent, not path-dependent.
 - `EntersWithCounters(counterType?, count, selfOnly?, condition?, otherOnly?, appliesTo?)` /
-  `EntersWithDynamicCounters(counterType?, count, otherOnly?, appliesTo?)` — "[permanent] enters with
+  `EntersWithDynamicCounters(counterType?, count, otherOnly?, appliesTo?, activeZones?)` — "[permanent] enters with
   N counters." `EntersWithCounters` takes a fixed `count: Int` (Master Biomancer, Metallic Mimic);
   `EntersWithDynamicCounters` takes a `count: DynamicAmount` (Stag Beetle; the SOS Converge "Archaic"
   cycle via `convergeEntersWithCounters()` → `count = DistinctColorsManaSpent`). `appliesTo` defaults
@@ -11567,6 +11585,11 @@ The priority groups are (CR 616.1a–f):
   - **Self** (default) — applies to the permanent that owns the replacement. Reserve a *dynamic* count
     for "this creature enters with a counter for each color of mana spent to cast **it**" / "for each X
     it has".
+  - **`activeZones = {GRAVEYARD}`** (dynamic variant) — the source hands out its counters from the
+    *graveyard* instead of the battlefield (Dearly Departed: "as long as this creature is in your
+    graveyard, each Human creature you control enters with an additional +1/+1 counter on it"). Pair it
+    with `otherOnly = true`, which is what routes the effect through the global sweep; the source can
+    never be live for its own entry anyway, since entering the battlefield is leaving the graveyard.
   - **`otherOnly = true`** (both variants) — applies to *other* matching creatures entering (Metallic
     Mimic: "each **other** creature you control of the chosen type enters with an additional +1/+1
     counter"; Gev, Scaled Scorch:

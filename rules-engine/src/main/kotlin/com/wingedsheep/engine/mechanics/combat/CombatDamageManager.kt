@@ -905,6 +905,12 @@ internal class CombatDamageManager(
      * [applyDamageToCreature] (redirection, Anti-Venom) while `DamageUtils` puts them first — a
      * legal but different CR 616.1 ordering, recorded on [applyShieldCounterToDamage].
      *
+     * Runs both counter-spending shields in one pass — the shield-counter rule and the printed
+     * [com.wingedsheep.sdk.scripting.PreventDamageByRemovingCounter] ability (Unbreathing Horde) —
+     * because they share the batch scoping and the position in the CR 616.1 ordering. A creature
+     * carrying both spends only the shield counter: once the shield prevents the damage there is no
+     * damage left for the printed ability to replace.
+     *
      * @return the state with counters consumed, the assignments that survive (those whose target's
      *   damage was not prevented), and the [CountersRemovedEvent]s to emit.
      */
@@ -924,10 +930,26 @@ internal class CombatDamageManager(
             // Per-recipient, so it is read inside the loop: a creature marked unpreventable
             // (Whippoorwill) takes damage in full while its neighbours keep their shields.
             val cantBePrevented = DamageUtils.isDamagePreventionDisabled(state, targetId)
-            val shielded = applyShieldCounterToDamage(newState, targetId, cantBePrevented) ?: continue
-            newState = shielded.state
-            events.add(shielded.event)
-            if (shielded.damagePrevented) preventedTargets.add(targetId)
+            val shielded = applyShieldCounterToDamage(newState, targetId, cantBePrevented)
+            if (shielded != null) {
+                newState = shielded.state
+                events.add(shielded.event)
+                if (shielded.damagePrevented) {
+                    preventedTargets.add(targetId)
+                    // The damage is already gone; a printed prevent-and-remove ability on the same
+                    // creature has nothing left to replace, so it keeps its counter.
+                    continue
+                }
+            }
+            // The printed sibling (Unbreathing Horde). Batch-scoped for the same CR 510.2 reason as
+            // the shield-counter rule above: one counter per damage *event*, so a creature blocking
+            // two attackers spends one counter and prevents all of it.
+            val counterShield = applyPreventByRemovingCounterToDamage(
+                newState, targetId, isCombatDamage = true, cantBePrevented = cantBePrevented
+            ) ?: continue
+            newState = counterShield.state
+            counterShield.event?.let { events.add(it) }
+            if (counterShield.damagePrevented) preventedTargets.add(targetId)
         }
 
         if (preventedTargets.isEmpty()) return Triple(newState, assignments, events)
