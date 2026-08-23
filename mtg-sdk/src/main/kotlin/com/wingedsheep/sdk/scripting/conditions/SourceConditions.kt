@@ -512,22 +512,14 @@ data class SacrificedPermanentHadSubtype(val subtype: String) : Condition {
 }
 
 /**
- * True when a permanent exiled to pay this spell or ability's cost had [subtype] — the exile
- * counterpart of [SacrificedPermanentHadSubtype].
- *
- * Soul Exchange (Fallen Empires): "As an additional cost to cast this spell, exile a creature you
- * control. … Put a +2/+2 counter on that creature if the exiled creature was a Thrull." The cost is
- * already paid when the spell resolves, so the check reads the exiled card in the exile zone rather
- * than last-known information.
- */
-/**
  * True when the activated ability currently resolving has been activated at least [count] times
  * this turn, counting the activation that is resolving right now.
  *
- * Fallen Empires' burnout mana creatures — Farrelite Priest and Initiates of the Ebon Hand —
- * print "{1}: Add {B}. If this ability has been activated four or more times this turn, sacrifice
- * this creature at the beginning of the next end step." The clause reads a tally rather than
- * imposing a limit, so the ability must opt into bookkeeping with
+ * Fallen Empires' burnout mana creatures — Farrelite Priest and Initiates of the Ebon Hand — print
+ * "{1}: Add {W}. If this ability has been activated four or more times this turn, sacrifice this
+ * creature at the beginning of the next end step." (the Initiates add {B} rather than {W}; the
+ * burnout clause is identical). The clause reads a tally rather than imposing a limit, so the
+ * ability must opt into bookkeeping with
  * [com.wingedsheep.sdk.scripting.ActivatedAbility.trackActivations]; without that the engine only
  * counts activations for abilities gated by OncePerTurn / MaxPerTurn and this reads zero.
  *

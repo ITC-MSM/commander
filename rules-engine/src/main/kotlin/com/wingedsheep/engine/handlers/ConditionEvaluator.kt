@@ -8,6 +8,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.CastFromHandComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
@@ -53,6 +54,8 @@ import com.wingedsheep.sdk.scripting.conditions.APlayerControlsMostOfSubtype
 import com.wingedsheep.sdk.scripting.conditions.YouControlMostOfChosenType
 import com.wingedsheep.sdk.scripting.conditions.AllConditions
 import com.wingedsheep.sdk.scripting.conditions.AnyCondition
+import com.wingedsheep.sdk.scripting.conditions.ExiledAsCostHadSubtype
+import com.wingedsheep.sdk.scripting.conditions.ThisAbilityActivatedThisTurnAtLeast
 import com.wingedsheep.sdk.scripting.conditions.APlayerLifeAtMost
 import com.wingedsheep.sdk.scripting.conditions.EachPlayerLifeAtMost
 import com.wingedsheep.sdk.scripting.conditions.AnyPlayerDealtCombatDamageThisTurnAtLeast
@@ -638,9 +641,8 @@ class ConditionEvaluator(
                         ?.castTimeFlags?.contains(condition.flag) == true
             }
             is SacrificedPermanentHadSubtype -> ifResolution { evaluateSacrificedPermanentHadSubtype(condition, it) }
-            is com.wingedsheep.sdk.scripting.conditions.ExiledAsCostHadSubtype ->
-                ifResolution { evaluateExiledAsCostHadSubtype(state, condition, it) }
-            is com.wingedsheep.sdk.scripting.conditions.ThisAbilityActivatedThisTurnAtLeast ->
+            is ExiledAsCostHadSubtype -> ifResolution { evaluateExiledAsCostHadSubtype(state, condition, it) }
+            is ThisAbilityActivatedThisTurnAtLeast ->
                 ifResolution { evaluateThisAbilityActivatedThisTurnAtLeast(state, condition, it) }
             is SacrificedPermanentWasLegendary -> ifResolution { evaluateSacrificedPermanentWasLegendary(it) }
             is SacrificedPermanentWasSuspected -> ifResolution { evaluateSacrificedPermanentWasSuspected(it) }
@@ -1599,7 +1601,7 @@ class ConditionEvaluator(
      */
     private fun evaluateExiledAsCostHadSubtype(
         state: GameState,
-        condition: com.wingedsheep.sdk.scripting.conditions.ExiledAsCostHadSubtype,
+        condition: ExiledAsCostHadSubtype,
         context: EffectContext
     ): Boolean {
         val snapshots = context.exiledAsCostSnapshots.associateBy { it.entityId }
@@ -1611,7 +1613,7 @@ class ConditionEvaluator(
                 state.getEntity(exiledId)
                     ?.get<CardComponent>()
                     ?.typeLine?.subtypes
-                    ?.any { it.value == condition.subtype } == true
+                    ?.any { it.value.equals(condition.subtype, ignoreCase = true) } == true
             }
         }
     }
@@ -1625,13 +1627,13 @@ class ConditionEvaluator(
      */
     private fun evaluateThisAbilityActivatedThisTurnAtLeast(
         state: GameState,
-        condition: com.wingedsheep.sdk.scripting.conditions.ThisAbilityActivatedThisTurnAtLeast,
+        condition: ThisAbilityActivatedThisTurnAtLeast,
         context: EffectContext
     ): Boolean {
         val abilityId = context.activatedAbilityId ?: return false
         val sourceId = context.sourceId ?: return false
         val tracker = state.getEntity(sourceId)
-            ?.get<com.wingedsheep.engine.state.components.battlefield.AbilityActivatedThisTurnComponent>()
+            ?.get<AbilityActivatedThisTurnComponent>()
             ?: return false
         return tracker.activationCount(abilityId) >= condition.count
     }

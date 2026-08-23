@@ -56,7 +56,8 @@ data class ActivatedAbility(
      * `MaxPerTurn`, because that is all anything used to read; Fallen Empires' burnout mana
      * creatures (Farrelite Priest, Initiates of the Ebon Hand) read the count *without* being
      * limited by it — "{1}: Add {W}. If this ability has been activated four or more times this
-     * turn, sacrifice this creature at the beginning of the next end step."
+     * turn, sacrifice this creature at the beginning of the next end step." (the Initiates add
+     * {B} rather than {W}; the burnout clause is identical).
      *
      * Opt-in rather than always-on so the per-activation bookkeeping stays off the hot path for
      * the overwhelming majority of abilities that never look at it. Pair with

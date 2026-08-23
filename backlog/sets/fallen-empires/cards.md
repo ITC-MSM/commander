@@ -5,13 +5,13 @@
 **Implemented:** 102 / 102
 | Section    | Total | Done |
 |------------|-------|------|
-| White      | 16    | 1    |
-| Blue       | 16    | 1    |
-| Black      | 16    | 0    |
-| Red        | 16    | 1    |
-| Green      | 16    | 0    |
-| Artifact   | 11    | 0    |
-| Land       | 11    | 0    |
+| White      | 16    | 16   |
+| Blue       | 16    | 16   |
+| Black      | 16    | 16   |
+| Red        | 16    | 16   |
+| Green      | 16    | 16   |
+| Artifact   | 11    | 11   |
+| Land       | 11    | 11   |
 
 > Verify status anytime with `scripts/card-status --set FEM` (and `--list`). That command's count is authoritative — keep this file's `Implemented:` line in sync (`just fix-backlog`) as boxes are checked. The set's mechanics are catalogued in [`mechanics.md`](mechanics.md).
 

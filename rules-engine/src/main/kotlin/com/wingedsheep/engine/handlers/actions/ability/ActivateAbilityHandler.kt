@@ -299,22 +299,27 @@ class ActivateAbilityHandler(
         val equipTargetIdForCost = action.targets.filterIsInstance<ChosenTarget.Permanent>().firstOrNull()?.entityId
         val costWithDefinedX =
             castPermissionUtils.applyDefinedXValue(rawCost, ability, state, action.sourceId, action.playerId)
-        val effectiveCost = castPermissionUtils.lowerAttachedManaCost(
-            state, action.sourceId,
-            castPermissionUtils.relaxAbilityCostColorsIfAny(
-            state, action.sourceId,
-            castPermissionUtils.applyFreeFirstEquipDiscount(
-                castPermissionUtils.applyEquipCostReduction(
-                    castPermissionUtils.applyActivatedAbilityCostReduction(
-                        applyGenericCostReduction(costWithDefinedX, ability, state, action.sourceId, action.playerId, action.targets),
-                        state, action.sourceId, ability.isExhaust, ability.isPowerUp
-                    ),
-                    ability, state, action.playerId, equipTargetIdForCost,
-                    abilitySourceId = action.sourceId
-                ),
-                ability, state, action.playerId
-            )
+        // Order matters: each step prices the cost the previous one produced. The last one lowers
+        // an attached-permanent mana cost (Merseine) to a plain mana atom, so nothing downstream
+        // has to know that shape existed.
+        val costAfterGenericReduction = applyGenericCostReduction(
+            costWithDefinedX, ability, state, action.sourceId, action.playerId, action.targets
         )
+        val costAfterAbilityReduction = castPermissionUtils.applyActivatedAbilityCostReduction(
+            costAfterGenericReduction, state, action.sourceId, ability.isExhaust, ability.isPowerUp
+        )
+        val costAfterEquipReduction = castPermissionUtils.applyEquipCostReduction(
+            costAfterAbilityReduction, ability, state, action.playerId, equipTargetIdForCost,
+            abilitySourceId = action.sourceId
+        )
+        val costAfterEquipDiscount = castPermissionUtils.applyFreeFirstEquipDiscount(
+            costAfterEquipReduction, ability, state, action.playerId
+        )
+        val costAfterColorRelaxation = castPermissionUtils.relaxAbilityCostColorsIfAny(
+            state, action.sourceId, costAfterEquipDiscount
+        )
+        val effectiveCost = castPermissionUtils.lowerAttachedManaCost(
+            state, action.sourceId, costAfterColorRelaxation
         )
         val effectiveTargetReqs = if (textReplacement != null) {
             ability.targetRequirements.map { it.applyTextReplacement(textReplacement) }
