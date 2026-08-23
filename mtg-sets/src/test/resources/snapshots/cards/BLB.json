@@ -1667,7 +1667,7 @@
                     "space": {
                         "type": "IterationSpace.Group",
                         "filter": {
-                            "baseFilter": "creature Raccoon ctrl:you"
+                            "baseFilter": "permanent Raccoon ctrl:you"
                         }
                     },
                     "body": {
@@ -3721,7 +3721,7 @@
                                         },
                                         {
                                             "type": "AddCounters",
-                                            "counterType": "PLUS_ONE_PLUS_ONE",
+                                            "counterType": "+1/+1",
                                             "count": 1,
                                             "target": "Self"
                                         }
@@ -3744,7 +3744,7 @@
                                         },
                                         {
                                             "type": "AddCounters",
-                                            "counterType": "PLUS_ONE_PLUS_ONE",
+                                            "counterType": "+1/+1",
                                             "count": 1,
                                             "target": "Self"
                                         }

@@ -151,6 +151,23 @@ object Conditions {
         // spellings arrive as sibling rows rather than as a shape.
         constant("it's bargained", SdkConditions.WasBargained),
         constant("it's kicked", SdkConditions.WasKicked),
+        // The life-state conditions Bloomburrow's Bats and Lizards check. Each is one whole clause
+        // with a facade of its own, so they are constants rather than a shape: `Conditions` names
+        // the gained/lost pair and both of its joins, and the printed English draws the same
+        // distinctions ("gained **or** lost" against "gained **and** lost").
+        //
+        // Each has exactly one printed spelling in the corpus, which is what lets all five be
+        // canonical. `YouLostLifeThisTurn` is the one worth stating: it is spelled in the *present
+        // perfect* — "As long as **you've** lost life this turn" (Essence Channeler) — where the
+        // other four are past simple, and the only other card whose text contains "you lost life
+        // this turn" is Ludevic, Necro-Alchemist, whose clause is about a player *other* than you
+        // and therefore a different model. So the perfect is not a second spelling to choose
+        // between; it is this condition's only one.
+        constant("you gained life this turn", SdkConditions.YouGainedLifeThisTurn),
+        constant("you gained or lost life this turn", SdkConditions.YouGainedOrLostLifeThisTurn),
+        constant("you gained and lost life this turn", SdkConditions.YouGainedAndLostLifeThisTurn),
+        constant("you've lost life this turn", SdkConditions.YouLostLifeThisTurn),
+        constant("an opponent lost life this turn", SdkConditions.OpponentLostLifeThisTurn),
         eitherControlled,
         countAtLeast(
             "you control {n} or more {filter}",

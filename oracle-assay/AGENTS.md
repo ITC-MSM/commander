@@ -188,6 +188,19 @@ both are worth knowing before touching a leaf: a subtype is a *proper noun* stan
 own type list — an ungated one reads "**Other** creatures you control get +0/+1." as a tribe called
 *Other*, byte-perfect and wrong, which the differential caught and the README records.
 
+A set is also worth reading **twice**. Bloomburrow's second pass cost rows in six existing families
+and no machinery at all, and it moved the set 69 → 83 cards while moving the corpus 8,364 → 8,516 —
+eleven times as far, because two of its rows ("each opponent loses N life", "~ deals N damage to each
+opponent") are printed on five Bloomburrow cards and six hundred others. That ratio is the argument
+for a second pass: the first pass takes a set's machinery and the second takes its *vocabulary*, and
+vocabulary is what the rest of the corpus shares. The pass also produced the module's clearest case
+of a construct that is not a line rule: gift's printed line means `KeywordAbility.Gift` plus a
+derived enters trigger on a permanent and a modal fold inside the spell's own resolution on an
+instant, and nothing but the **type line** separates them — which the line grammar does not have and
+should not get. Both halves were written, the differential reported two instants being read whole as
+cards the validator would reject, and both were reverted. A construct whose meaning depends on the
+face rather than the line is a finding to report, not a rule to widen.
+
 The **Bloomburrow band** is the third, and it is the shape of a set picked *because it is already
 implemented*: every card in it has a golden, so every declined line is a grammar gap whose answer is
 written and whose fix the differential confirms on the same run. That is where it paid — four pieces
