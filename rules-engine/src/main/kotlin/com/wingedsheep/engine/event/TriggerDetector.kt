@@ -1241,27 +1241,29 @@ class TriggerDetector(
                             }
                         }
 
-                        for (partnerId in partners.distinct()) {
+                        val matchingPartners = partners.distinct().filter { partnerId ->
                             val partnerFilter = trigger.partnerFilter
-                            val matchesFilter = if (partnerFilter != null) {
-                                predicateEvaluator.matches(
-                                    state, projected, partnerId, partnerFilter,
-                                    PredicateContext(controllerId = controllerId, sourceId = entityId)
+                            partnerFilter == null || predicateEvaluator.matches(
+                                state, projected, partnerId, partnerFilter,
+                                PredicateContext(controllerId = controllerId, sourceId = entityId)
+                            )
+                        }
+                        // "…blocks or becomes blocked *by* [filter]" is once per matching partner
+                        // (Corrosive Ooze). The partner-less wording "…blocks or becomes blocked"
+                        // is a single trigger however many creatures it is paired with (Spitting
+                        // Slug), so collapse to the first matching partner — it still binds an "it".
+                        val firingPartners =
+                            if (trigger.oncePerCombat) matchingPartners.take(1) else matchingPartners
+                        for (partnerId in firingPartners) {
+                            triggers.add(
+                                PendingTrigger(
+                                    ability = ability,
+                                    sourceId = entityId,
+                                    sourceName = cardComponent.name,
+                                    controllerId = controllerId,
+                                    triggerContext = TriggerContext(triggeringEntityId = partnerId)
                                 )
-                            } else {
-                                true
-                            }
-                            if (matchesFilter) {
-                                triggers.add(
-                                    PendingTrigger(
-                                        ability = ability,
-                                        sourceId = entityId,
-                                        sourceName = cardComponent.name,
-                                        controllerId = controllerId,
-                                        triggerContext = TriggerContext(triggeringEntityId = partnerId)
-                                    )
-                                )
-                            }
+                            )
                         }
                     }
                     // For "whenever [a player] draws a card" (DrawEvent), drawing N cards via a

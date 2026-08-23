@@ -93,6 +93,8 @@ export const counterManaClass: Record<string, string> = {
   MINUS_ONE_MINUS_ONE: 'counter-minus',
   PLUS_ONE_PLUS_ZERO: 'counter-plus',
   PLUS_ZERO_PLUS_ONE: 'counter-plus',
+  PLUS_TWO_PLUS_ZERO: 'counter-plus',
+  PLUS_ZERO_PLUS_TWO: 'counter-plus',
   MINUS_ONE_MINUS_ZERO: 'counter-minus',
   MINUS_ZERO_MINUS_ONE: 'counter-minus',
   LOYALTY: 'counter-loyalty',

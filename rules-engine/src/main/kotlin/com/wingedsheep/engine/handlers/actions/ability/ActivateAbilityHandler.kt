@@ -1,4 +1,5 @@
 package com.wingedsheep.engine.handlers.actions.ability
+import com.wingedsheep.engine.handlers.TargetingSourceType
 import com.wingedsheep.engine.state.components.battlefield.chosenColor
 
 import com.wingedsheep.engine.core.ActivateAbility
@@ -132,6 +133,22 @@ class ActivateAbilityHandler(
             is AbilityCost.Composite -> costs.firstNotNullOfOrNull { it.firstExileForTotalAtomOrNull() }
             else -> null
         }
+
+    /**
+     * Whether this cost exiles anything at all — either the sum-gated
+     * [CostAtom.ExileFromGraveyardForTotal] or a plain counted [CostAtom.ExileFrom].
+     *
+     * Both feed the same flat `exileChoices` channel, and both produce cards the resolving effect
+     * may need to name via `CardSource.ExiledAsCost` — Necropolis reads the mana value of the very
+     * creature card its "Exile a creature card from your graveyard:" cost just exiled. Gating the
+     * record on the *sum-gated* atom alone left the plain counted form with an empty list, so an
+     * effect reading it back saw nothing.
+     */
+    private fun AbilityCost.hasExileAtom(): Boolean = when (this) {
+        is AbilityCost.Atom -> atom is CostAtom.ExileFrom || atom is CostAtom.ExileFromGraveyardForTotal
+        is AbilityCost.Composite -> costs.any { it.hasExileAtom() }
+        else -> false
+    }
 
     override fun validate(state: GameState, action: ActivateAbility): String? {
         // `opponentTargetsChosen` is an internal resume marker for "… of an opponent's choice"
@@ -517,7 +534,8 @@ class ActivateAbilityHandler(
                 // X-clamped target counts (e.g. Rot-Curse Rakshasa's Renew "X target creatures")
                 // and X-bounded "mana value X or less" reanimation targets (Fabrication Foundry)
                 // need the chosen X to validate — mirror the spell path.
-                xValue = effectiveXValue
+                xValue = effectiveXValue,
+                targetingSourceType = TargetingSourceType.ABILITY
             )
             if (targetError != null) {
                 return targetError
@@ -1577,10 +1595,18 @@ class ActivateAbilityHandler(
             // the base effect for AddManaOfChoiceEffect routes the choice through the existing
             // any-color machinery (action.manaColorChoice on a manual tap, or a resolution-time
             // color decision if none was supplied).
-            if (landMatchesManaColorReplacement(currentState, action.sourceId, action.playerId)) {
+            val colorReplacement = manaColorReplacementFor(currentState, action.sourceId)
+            if (colorReplacement != null) {
+                val fixed = colorReplacement.color
                 finalEffect = when (val fe = finalEffect) {
-                    is AddManaEffect -> AddManaOfChoiceEffect(ManaColorSet.AnyColor, fe.amount)
-                    is AddColorlessManaEffect -> AddManaOfChoiceEffect(ManaColorSet.AnyColor, fe.amount)
+                    // A *fixed* colour (Deep Water: "it produces {U} instead of any other type")
+                    // needs no choice at all — rewrite the produced mana directly.
+                    is AddManaEffect ->
+                        if (fixed != null) fe.copy(color = fixed)
+                        else AddManaOfChoiceEffect(ManaColorSet.AnyColor, fe.amount)
+                    is AddColorlessManaEffect ->
+                        if (fixed != null) AddManaEffect(fixed, fe.amount)
+                        else AddManaOfChoiceEffect(ManaColorSet.AnyColor, fe.amount)
                     else -> finalEffect
                 }
             }
@@ -1837,10 +1863,11 @@ class ActivateAbilityHandler(
             xValue = effectiveXValue,
             tappedPermanents = firstTapSlice,
             tappedEntitySnapshots = tappedSnapshots,
-            // Only the sum-gated exile cost records its selection: it is the one whose effect can
-            // refer back to the cards it exiled (`CardSource.ExiledAsCost`). Empty for every other
-            // ability, so nothing else changes.
-            exiledAsCostCards = if (totalExileAtom != null) exileChoices else emptyList(),
+            // An exile cost records its selection so the resolving effect can refer back to the
+            // cards it exiled (`CardSource.ExiledAsCost`) — the sum-gated form (Baron Helmut Zemo)
+            // and the plain counted form (Necropolis) alike. Empty for an ability whose cost exiles
+            // nothing, so nothing else changes.
+            exiledAsCostCards = if (effectiveCost.hasExileAtom()) exileChoices else emptyList(),
             lastKnownSourceCounters = lastKnownSourceCounters,
             lastKnownSourceSnapshot = lastKnownSourceSnapshot,
             lastKnownSourceAttachments = lastKnownSourceAttachments,
@@ -2543,30 +2570,35 @@ class ActivateAbilityHandler(
     }
 
     /**
-     * True if the land [landId] is subject to a [ReplaceLandManaColor] static (Pulse of Llanowar) —
-     * i.e. some permanent on the battlefield has that static and its filter matches the tapped land
-     * from the static controller's projected perspective. When true, the land's produced mana is
-     * replaced with one mana of a color of its controller's choice.
+     * The [ReplaceLandManaColor] static the land [landId] is subject to, if any — some permanent on
+     * the battlefield has that static and its filter matches the tapped land from the static
+     * controller's projected perspective. The land's produced mana is then replaced: with one mana
+     * of a color of its controller's choice (Pulse of Llanowar), or with the static's fixed `color`
+     * when it names one (Deep Water). Returns the static rather than a Boolean so the caller can
+     * tell those two apart.
      */
-    private fun landMatchesManaColorReplacement(
+    private fun manaColorReplacementFor(
         state: GameState,
-        landId: EntityId,
-        @Suppress("UNUSED_PARAMETER") tappingPlayerId: EntityId
-    ): Boolean {
+        landId: EntityId
+    ): ReplaceLandManaColor? {
+        val grantsByEntity = state.grantedStaticAbilities.groupBy { it.entityId }
         for (entityId in state.getBattlefield()) {
             val container = state.getEntity(entityId) ?: continue
             val card = container.get<CardComponent>() ?: continue
-            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            for (staticAbility in cardDef.script.staticAbilities) {
+            val printed = cardRegistry.getCard(card.cardDefinitionId)?.script?.staticAbilities.orEmpty()
+            // Granted statics too — a durational "{U}: … until end of turn" mana rule (Deep Water)
+            // lives only in `grantedStaticAbilities`, since the layer projector doesn't carry them.
+            val granted = grantsByEntity[entityId]?.map { it.ability }.orEmpty()
+            for (staticAbility in if (granted.isEmpty()) printed else printed + granted) {
                 val replacement = staticAbility as? ReplaceLandManaColor ?: continue
                 val staticController = state.projectedState.getController(entityId) ?: continue
                 val filterContext = PredicateContext(controllerId = staticController, sourceId = entityId)
                 if (predicateEvaluator.matches(state, state.projectedState, landId, replacement.filter, filterContext)) {
-                    return true
+                    return replacement
                 }
             }
         }
-        return false
+        return null
     }
 
     /**
@@ -2576,7 +2608,7 @@ class ActivateAbilityHandler(
      * Instances stack **multiplicatively** — two Virtues of Strength make a basic land produce nine
      * times as much, per the printed ruling — so the factors are folded with `*`.
      *
-     * Mirrors [landMatchesManaColorReplacement]: each static's filter is evaluated from the
+     * Mirrors [manaColorReplacementFor]: each static's filter is evaluated from the
      * *static's own* projected controller, so `.youControl()` means "controlled by the player who
      * controls the Virtue", which for a mana ability is necessarily the tapping player.
      */

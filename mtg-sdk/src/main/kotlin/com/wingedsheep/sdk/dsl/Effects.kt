@@ -1643,6 +1643,22 @@ object Effects {
         GrantKeywordEffect(keyword.name, target, duration, condition)
 
     /**
+     * Mark a permanent as unable to regenerate. Composed *before* a destroy for the "destroy it, it
+     * can't be regenerated" wording (see [Destroy]'s `noRegenerate`), but also useful on its own as
+     * a standing rider on a creature that was merely damaged — Runesword.
+     */
+    fun CantBeRegenerated(target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
+        CantBeRegeneratedEffect(target)
+
+    /**
+     * "If it would die this turn, exile it instead." Marks a creature so its death is replaced by
+     * exile; a no-op on a non-creature. Composed after damage (Carbonize) or granted as a rider
+     * on a creature that deals damage (Runesword).
+     */
+    fun MarkExileOnDeath(target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
+        com.wingedsheep.sdk.scripting.effects.MarkExileOnDeathEffect(target)
+
+    /**
      * Grant an ability flag to a target.
      */
     fun GrantKeyword(
@@ -2659,6 +2675,7 @@ object Effects {
         controller: EffectTarget? = null,
         exceptions: com.wingedsheep.sdk.scripting.effects.CopyExceptions =
             com.wingedsheep.sdk.scripting.effects.CopyExceptions.None,
+        stampCreator: Boolean = false,
     ): Effect = CreateTokenCopyOfTargetEffect(
         target = target,
         count = DynamicAmount.Fixed(count),
@@ -2684,6 +2701,7 @@ object Effects {
         exileUnlessSourceIsRingBearer = exileUnlessSourceIsRingBearer,
         controller = controller,
         exceptions = exceptions,
+        stampCreator = stampCreator,
     )
 
     /**
@@ -3774,8 +3792,10 @@ object Effects {
     /**
      * Change the target of target spell or ability with a single target.
      */
-    fun ChangeTarget(): Effect =
-        ChangeTargetEffect
+    fun ChangeTarget(
+        newTargetMustBePlayer: Boolean = false,
+        onlyIfCurrentTargetIsController: Boolean = false,
+    ): Effect = ChangeTargetEffect(newTargetMustBePlayer, onlyIfCurrentTargetIsController)
 
     /**
      * Reselect the target of the triggering spell or ability at random.
@@ -4671,6 +4691,23 @@ object Effects {
             target = target,
             amount = DynamicAmount.Fixed(amount),
             sourceFilter = PreventionSourceFilter.ChosenSource
+        )
+
+    /**
+     * The next time a source of your choice would deal damage to [target] this turn, prevent **half**
+     * that damage, rounded down (Dark Sphere). Single-instance shield like the Circle of Protection
+     * family: the unprevented half is still dealt, and the shield is spent either way — a 1-damage
+     * instance halves to 0 prevented and consumes it.
+     */
+    fun PreventHalfNextDamageFromChosenSource(
+        target: EffectTarget = EffectTarget.Controller
+    ): Effect =
+        PreventDamageEffect(
+            target = target,
+            amount = null,
+            sourceFilter = PreventionSourceFilter.ChosenSource,
+            nextInstanceOnly = true,
+            halvePreventedDamage = true
         )
 
     /**

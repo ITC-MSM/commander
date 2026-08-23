@@ -1245,6 +1245,23 @@ data class CraftedFromExiledComponent(
 data object WasDealtDamageThisTurnComponent : Component
 
 /**
+ * Damage dealt to this permanent for the rest of the turn can't be prevented, and can't be dealt to
+ * another permanent or player instead — Whippoorwill's "Damage that would be dealt to that creature
+ * this turn can't be prevented or dealt instead to another permanent or player."
+ *
+ * The *per-recipient* counterpart of `GameState.damageCantBePreventedThisTurn`, which is global
+ * (Fear, Fire, Foes!). Read by `DamageUtils.isDamagePreventionDisabled(state, recipientId)` and by
+ * the `RedirectDamage` finder, so it shuts off both halves of the printed clause. Cleared at end of
+ * turn by `CleanupPhaseManager`.
+ *
+ * Deliberately a marker on the *recipient* rather than a replacement effect: "can't be prevented" is
+ * a rules modification (CR 615.9), not itself a replacement, so it has to be consulted where
+ * prevention is applied rather than competing in the replacement-effect gather.
+ */
+@Serializable
+data object DamageUnpreventableThisTurnComponent : Component
+
+/**
  * Marks a permanent as having dealt damage, and records the turn it last did so.
  *
  * One marker answers both windows of `StatePredicate.HasDealtDamage`: its presence means "has dealt
@@ -1262,6 +1279,42 @@ data object WasDealtDamageThisTurnComponent : Component
  */
 @Serializable
 data class HasDealtDamageComponent(val lastDealtDamageTurn: Int) : Component
+
+/**
+ * The players and planeswalkers this permanent has dealt damage to **this game** — the memory
+ * behind The Fallen ("this creature deals 1 damage to each opponent and planeswalker it has dealt
+ * damage to this game").
+ *
+ * Unlike [DealtCombatDamageToPlayersThisTurnComponent] this is not a per-turn marker: it is never
+ * cleared by `CleanupPhaseManager`, so it accumulates across every turn the permanent spends on the
+ * battlefield. It *is* stripped on a zone change like the rest of the damage memory, because a
+ * permanent that leaves and returns is a new object with no history (CR 400.7) — which is the
+ * printed behaviour: a Fallen that dies and is reanimated has dealt damage to nobody.
+ *
+ * Both combat and noncombat damage count, and it records planeswalkers alongside players; the
+ * consumer filters to what the card asks for.
+ */
+@Serializable
+data class DealtDamageToThisGameComponent(
+    val recipientIds: Set<EntityId> = emptySet()
+) : Component
+
+/**
+ * A number the controller chose as this permanent entered the battlefield, kept for as long as the
+ * permanent exists — Nameless Race's "pay any amount of life" and the characteristic-defining power
+ * and toughness that read it back.
+ *
+ * A characteristic-defining ability needs this value during *projection*, long after the resolution
+ * that chose it has gone, so it cannot live in the effect pipeline (`VariableReference` dies with
+ * the resolution) and it must not be a counter (counters are visible, removable game state; this is
+ * a fixed fact about how the permanent entered).
+ *
+ * Not cleared at cleanup — it is not a per-turn marker. Stripped on a zone change with the rest of
+ * the battlefield state, because a permanent that leaves and returns is a new object that re-chooses
+ * as it enters (CR 400.7).
+ */
+@Serializable
+data class EnteredWithValueComponent(val value: Int) : Component
 
 /**
  * Counts how many times a permanent has *become tapped* (CR 701.26a — a transition from untapped to

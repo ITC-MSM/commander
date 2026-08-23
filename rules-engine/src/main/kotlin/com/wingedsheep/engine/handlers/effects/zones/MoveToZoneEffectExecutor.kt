@@ -103,6 +103,16 @@ class MoveToZoneEffectExecutor(
             return attachAuraOnEnter(state, targetId, cardComponent, controllerId, context)
         }
 
+        // "Lands can't enter the battlefield" (Worms of the Earth). The land simply doesn't enter:
+        // the move is a no-op and the card stays where it was. Only this path needs the check —
+        // *playing* a land is stopped earlier by PlayersCantPlayLands, and a land can't be cast.
+        if (effect.destination == Zone.BATTLEFIELD &&
+            cardComponent.typeLine.isLand &&
+            LandEntryLocks.landsCantEnter(state, cardRegistry)
+        ) {
+            return EffectResult.success(state)
+        }
+
         // Build ZoneEntryOptions based on placement and effect properties
         val entryOptions = buildEntryOptions(effect, cardComponent, controllerId)
 

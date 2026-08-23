@@ -306,13 +306,59 @@ enum class TappedForManaType {
  *   state from the land controller's perspective, so `youControl()` means "you, the controller of
  *   this static, control the land").
  */
+/**
+ * Creatures dealt damage by this permanent are doomed for the rest of the turn: they can't be
+ * regenerated, and if they would die they are exiled instead. Runesword's two riders, which the
+ * printed card states as separate sentences but which key off the same event and name the same
+ * creature.
+ *
+ * This has to be a static consulted **at damage time**, not a triggered ability. A trigger for
+ * "whenever this deals damage to a creature" only resolves after state-based actions have already
+ * put the dying creature into its graveyard (CR 704.3), so marking it then is too late to change
+ * where it went. Both marks are the same floating effects `Effects.CantBeRegenerated` and
+ * `Effects.MarkExileOnDeath` place — Carbonize can compose those after its own damage because that
+ * all happens in one resolution; combat damage gives no such window.
+ *
+ * The two clauses are flags on one ability rather than two abilities because they are one printed
+ * rider on one card; a future card wanting only half sets only that half.
+ */
+@SerialName("CreaturesDamagedBySourceAreDoomed")
+@Serializable
+data class CreaturesDamagedBySourceAreDoomed(
+    val cantBeRegenerated: Boolean = true,
+    val exileInsteadOfDying: Boolean = true
+) : StaticAbility {
+    override val description: String = buildString {
+        append("creatures dealt damage by this ")
+        val clauses = buildList {
+            if (cantBeRegenerated) add("can't be regenerated this turn")
+            if (exileInsteadOfDying) add("are exiled instead of dying this turn")
+        }
+        append(clauses.joinToString(" and "))
+    }
+}
+
 @SerialName("ReplaceLandManaColor")
 @Serializable
 data class ReplaceLandManaColor(
-    val filter: GameObjectFilter
+    val filter: GameObjectFilter,
+    /**
+     * When set, matched lands produce *this* color rather than one of the controller's choice —
+     * Deep Water's "it produces {U} instead of any other type". Null (the default) keeps Pulse of
+     * Llanowar's free choice, which the engine implements by swapping in an add-one-mana-of-any-color
+     * ability.
+     */
+    val color: Color? = null
 ) : StaticAbility {
     override val description: String =
-        "If a ${filter.description} is tapped for mana, it produces mana of a color of its controller's choice instead of any other type"
+        // describeObjectForEvent, not filter.description: it renders the article and puts the
+        // controller clause *after* the noun ("a land you control"), where the raw filter
+        // description would prefix it ("a you control land").
+        if (color != null) {
+            "If ${describeObjectForEvent(filter)} is tapped for mana, it produces {${color.symbol}} instead of any other type"
+        } else {
+            "If ${describeObjectForEvent(filter)} is tapped for mana, it produces mana of a color of its controller's choice instead of any other type"
+        }
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
         val newFilter = filter.applyTextReplacement(replacer)
         return if (newFilter !== filter) copy(filter = newFilter) else this
@@ -357,7 +403,8 @@ data class MultiplyManaOnSourceTap(
     val multiplier: Int
 ) : StaticAbility {
     override val description: String =
-        "If you tap a ${sourceFilter.description} for mana, it produces $multiplier times as much of that mana instead"
+        // See ReplaceLandManaColor: the describer keeps "you control" a suffix, not a prefix.
+        "If you tap ${describeObjectForEvent(sourceFilter)} for mana, it produces $multiplier times as much of that mana instead"
 
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
         val newFilter = sourceFilter.applyTextReplacement(replacer)

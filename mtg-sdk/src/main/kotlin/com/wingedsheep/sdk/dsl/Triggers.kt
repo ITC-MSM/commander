@@ -485,6 +485,19 @@ object Triggers {
         binding = binding
     )
 
+    /**
+     * When this creature blocks or becomes blocked — the partner-less printed wording, which is a
+     * *single* trigger however many creatures it ends up paired with (Spitting Slug), unlike
+     * [BlocksOrBecomesBlockedBy] which fires once per matching partner.
+     * TriggerContext.triggeringEntityId = the first combat partner.
+     */
+    fun BlocksOrBecomesBlocked(
+        binding: TriggerBinding = TriggerBinding.SELF
+    ): TriggerSpec = TriggerSpec(
+        event = BlocksOrBecomesBlockedByEvent(oncePerCombat = true),
+        binding = binding
+    )
+
     // -------------------------------------------------------------------------
     // Damage dealt (outgoing) — see also `dealsDamage(...)` factory below for
     // axis combinations not covered by these named constants.

@@ -881,6 +881,8 @@ export const PASSIVE_COUNTER_TYPES: readonly CounterType[] = [
   CounterType.SPORE,
   CounterType.PLUS_ONE_PLUS_ZERO,
   CounterType.PLUS_ZERO_PLUS_ONE,
+  CounterType.PLUS_TWO_PLUS_ZERO,
+  CounterType.PLUS_ZERO_PLUS_TWO,
   CounterType.MINUS_ONE_MINUS_ZERO,
   CounterType.MINUS_ZERO_MINUS_ONE,
 ]

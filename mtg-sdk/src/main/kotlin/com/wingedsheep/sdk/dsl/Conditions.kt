@@ -1190,6 +1190,34 @@ object Conditions {
         SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.attackedThisTurn())
 
     /**
+     * If this permanent was declared as a blocker at least once **this turn** (CR 509.1) — the
+     * turn-scoped sibling of [SourceBlockedThisCombat], so it survives into the postcombat main
+     * phase and across a second combat in the same turn.
+     */
+    val SourceBlockedThisTurn: ConditionInterface =
+        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.blockedThisTurn())
+
+    /**
+     * If this permanent attacked **or** blocked this turn — the pair Lurker gates on
+     * ("can't be the target of spells unless it attacked or blocked this turn").
+     */
+    val SourceAttackedOrBlockedThisTurn: ConditionInterface =
+        Any(SourceAttackedThisTurn, SourceBlockedThisTurn)
+
+    /**
+     * If this permanent was declared as an attacker during its controller's **most recent own
+     * turn** — "if it attacked during your last turn". The one-turn-back sibling of
+     * [SourceAttackedThisTurn]: false on the turn it actually attacked, true on the next one.
+     *
+     * Gates the untap step for Goblin Rock Sled, wrapped in a `ConditionalStaticAbility` around a
+     * `GrantKeyword(DOESNT_UNTAP)`. An Aura granting the same clause to its host (Tangle Kelp)
+     * wants `EnchantedPermanentMatches(GameObjectFilter.Any.attackedLastTurn())` instead — the Aura
+     * itself never attacks, so a source-scoped condition would always read false there.
+     */
+    val SourceAttackedLastTurn: ConditionInterface =
+        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.attackedLastTurn())
+
+    /**
      * If this creature was declared as an attacker at least once during the current combat (CR 508.1).
      * Backed by the per-entity `AttackedThisCombatComponent` marker, stamped at attacker-declaration
      * time and cleared when the combat phase ends — so, unlike [SourceAttackedThisTurn], it resets

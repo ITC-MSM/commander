@@ -1,4 +1,5 @@
 package com.wingedsheep.engine.handlers.actions.spell
+import com.wingedsheep.engine.handlers.TargetingSourceType
 import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.giftKeyword
 
@@ -737,7 +738,8 @@ class CastSpellHandler(
                     sourceColors = (transformedFace ?: cardDef).colors,
                     sourceSubtypes = (transformedFace ?: cardDef).typeLine.subtypes.map { it.value }.toSet(),
                     sourceId = action.cardId,
-                    xValue = action.xValue
+                    xValue = action.xValue,
+                    targetingSourceType = TargetingSourceType.SPELL
                 )
                 if (targetError != null) {
                     return targetError
@@ -1628,6 +1630,8 @@ class CastSpellHandler(
         CounterType.MINUS_ONE_MINUS_ONE -> Counters.MINUS_ONE_MINUS_ONE
         CounterType.PLUS_ONE_PLUS_ZERO -> Counters.PLUS_ONE_PLUS_ZERO
         CounterType.PLUS_ZERO_PLUS_ONE -> Counters.PLUS_ZERO_PLUS_ONE
+        CounterType.PLUS_TWO_PLUS_ZERO -> Counters.PLUS_TWO_PLUS_ZERO
+        CounterType.PLUS_ZERO_PLUS_TWO -> Counters.PLUS_ZERO_PLUS_TWO
         CounterType.MINUS_ONE_MINUS_ZERO -> Counters.MINUS_ONE_MINUS_ZERO
         CounterType.MINUS_ZERO_MINUS_ONE -> Counters.MINUS_ZERO_MINUS_ONE
         else -> type.name.lowercase()

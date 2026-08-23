@@ -202,7 +202,10 @@ class SacrificeAndPayContinuationResumer(
                 sourceId = continuation.sourceId,
                 controllerId = continuation.abilityControllerId ?: continuation.playerId,
                 targets = continuation.targets,
-                pipeline = PipelineState(namedTargets = continuation.namedTargets),
+                pipeline = PipelineState(
+                    namedTargets = continuation.namedTargets,
+                    storedCollections = continuation.storedCollections,
+                ),
                 triggeringEntityId = continuation.triggeringEntityId,
                 triggeringPlayerId = continuation.triggeringPlayerId
             )
@@ -221,7 +224,10 @@ class SacrificeAndPayContinuationResumer(
             sourceId = continuation.sourceId,
             controllerId = continuation.playerId,
             targets = continuation.targets,
-            pipeline = PipelineState(namedTargets = continuation.namedTargets),
+            pipeline = PipelineState(
+                namedTargets = continuation.namedTargets,
+                storedCollections = continuation.storedCollections,
+            ),
             triggeringEntityId = continuation.triggeringEntityId,
             triggeringPlayerId = continuation.triggeringPlayerId
         )
@@ -612,7 +618,12 @@ class SacrificeAndPayContinuationResumer(
             sourceId = sourceId,
             controllerId = continuation.abilityControllerId ?: continuation.playerId,
             targets = continuation.targets,
-            pipeline = PipelineState(namedTargets = continuation.namedTargets),
+            pipeline = PipelineState(
+                namedTargets = continuation.namedTargets,
+                // Carried across the pause so a collection-reading suffer effect still resolves —
+                // Wand of Ith discards "the card revealed this way".
+                storedCollections = continuation.storedCollections,
+            ),
             triggeringEntityId = continuation.triggeringEntityId,
             triggeringPlayerId = continuation.triggeringPlayerId
         )
@@ -705,7 +716,13 @@ class SacrificeAndPayContinuationResumer(
         val context = EffectContext(
             sourceId = continuation.sourceId,
             controllerId = continuation.controllerId,
-            pipeline = PipelineState(storedCollections = continuation.storedCollections),
+            pipeline = PipelineState(
+                storedCollections = continuation.storedCollections,
+                // The enclosing per-permanent loop's current entity, so a consequence written as
+                // `EffectTarget.Self` still means that permanent after the pay-or-decline pause
+                // (Cleansing: "for each land, destroy that land unless any player pays 1 life").
+                iterationTarget = continuation.iterationTarget
+            ),
             triggeringEntityId = continuation.triggeringEntityId,
             triggeringPlayerId = continuation.triggeringPlayerId
         )

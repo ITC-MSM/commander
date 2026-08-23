@@ -858,6 +858,12 @@ object Costs {
         /** Pay [amount] life. */
         fun PayLife(amount: Int): PayCost = PayCost.Atom(CostAtom.PayLife(amount))
 
+        /**
+         * Pay life equal to a value computed when the cost is offered — "unless they pay life equal
+         * to its mana value" (Wand of Ith). PayOrSuffer only; see [PayCost.DynamicLife].
+         */
+        fun PayDynamicLife(amount: DynamicAmount): PayCost = PayCost.DynamicLife(amount)
+
         /** Exile [count] cards matching [filter] from [zone]. */
         fun Exile(
             filter: GameObjectFilter = GameObjectFilter.Any,

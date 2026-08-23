@@ -539,6 +539,18 @@ function MobileCardPreview({ card, dismissible = false }: { card: import('@/type
               onError={(e) => handleImageError(e, isRevealedFaceDown ? card.revealedName! : card.name, 'large')}
             />
           )}
+          {/* Same marker as on the battlefield card: a token that copies a real card shows that
+              card's image, so only this says it is a token. */}
+          {card.isToken && !card.imageUri?.includes('/art_crop/') && (
+            <div style={{
+              position: 'absolute', top: 8, left: 8,
+              backgroundColor: 'rgba(0, 0, 0, 0.78)', color: '#f0f0f0',
+              fontSize: 11, fontWeight: 700, letterSpacing: 0.5, padding: '2px 8px', borderRadius: 4,
+              border: '1px solid rgba(255, 255, 255, 0.55)', pointerEvents: 'none', whiteSpace: 'nowrap',
+            }}>
+              TOKEN
+            </div>
+          )}
           {isRevealedFaceDown && (
             <div style={{
               position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',

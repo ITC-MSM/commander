@@ -22,11 +22,15 @@ import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityFired
 import com.wingedsheep.engine.state.components.battlefield.GraveyardPlayPermissionUsedComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.battlefield.TokenReplacementOfferedThisTurnComponent
+import com.wingedsheep.engine.state.components.combat.AttackersDeclaredThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.BlockedOrWasBlockedByLegendaryThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.CanAttackDespiteDefenderThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.GoadedComponent
 import com.wingedsheep.engine.state.components.combat.MustAttackThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.PlayerAttackedThisTurnComponent
+import com.wingedsheep.engine.state.components.combat.PlayerAttackersLastTurnComponent
+import com.wingedsheep.engine.state.components.combat.BlockedThisTurnComponent
+import com.wingedsheep.engine.state.components.battlefield.DamageUnpreventableThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.PlayerAttackersThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.RoomFaceStatics
@@ -804,6 +808,9 @@ class CleanupPhaseManager(
             if (container.has<ReceivedCountersThisTurnComponent>()) {
                 needsUpdate = true
             }
+            if (container.has<AttackersDeclaredThisTurnComponent>()) {
+                needsUpdate = true
+            }
             if (container.has<PlayerAttackedThisTurnComponent>()) {
                 needsUpdate = true
             }
@@ -835,6 +842,12 @@ class CleanupPhaseManager(
             if (container.has<WasDealtDamageThisTurnComponent>()) {
                 needsUpdate = true
             }
+            if (container.has<DamageUnpreventableThisTurnComponent>()) {
+                needsUpdate = true
+            }
+            if (container.has<BlockedThisTurnComponent>()) {
+                needsUpdate = true
+            }
             if (container.has<BlockedOrWasBlockedByLegendaryThisTurnComponent>()) {
                 needsUpdate = true
             }
@@ -861,6 +874,7 @@ class CleanupPhaseManager(
                         .without<DamageDealtToCreaturesThisTurnComponent>()
                         .without<TargetedByControllerThisTurnComponent>()
                         .without<ReceivedCountersThisTurnComponent>()
+                        .without<AttackersDeclaredThisTurnComponent>()
                         .without<PlayerAttackedThisTurnComponent>()
                         .without<PlayerAttackersThisTurnComponent>()
                         .without<PlayerAttackedPlayersThisTurnComponent>()
@@ -871,12 +885,33 @@ class CleanupPhaseManager(
                         .without<AbilityResolutionCountThisTurnComponent>()
                         .without<TokenReplacementOfferedThisTurnComponent>()
                         .without<WasDealtDamageThisTurnComponent>()
+                        .without<DamageUnpreventableThisTurnComponent>()
+                        .without<BlockedThisTurnComponent>()
                         .without<BlockedOrWasBlockedByLegendaryThisTurnComponent>()
                         .without<DamageDealtByPlayersThisTurnComponent>()
                         .without<DamagedBySourcesThisTurnComponent>()
                         .without<DealtCombatDamageToPlayersThisTurnComponent>()
                         .without<SaddledComponent>()
                         .without<CrewSaddleContributorsComponent>()
+                }
+            }
+        }
+
+        // 5a-bis. Roll "attacked this turn" into "attacked last turn" for the *active player only*,
+        // before the this-turn set above is gone. Cleanup runs at the end of every turn, so rolling
+        // for everyone would let an intervening opponent's turn — during which this player declared
+        // no attackers — blank the record and turn "your last turn" into "the previous turn in the
+        // game". Backs StatePredicate.AttackedLastTurn (Goblin Rock Sled, Tangle Kelp).
+        newState.activePlayerId?.let { activePlayerId ->
+            val attackedThisTurn = state.getEntity(activePlayerId)
+                ?.get<PlayerAttackersThisTurnComponent>()
+                ?.attackerIds
+                .orEmpty()
+            newState = newState.updateEntity(activePlayerId) { c ->
+                if (attackedThisTurn.isEmpty()) {
+                    c.without<PlayerAttackersLastTurnComponent>()
+                } else {
+                    c.with(PlayerAttackersLastTurnComponent(attackedThisTurn))
                 }
             }
         }

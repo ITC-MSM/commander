@@ -952,6 +952,7 @@ class StaticAbilityHandler(
             is CanAttackDespiteDefender,
             is CanBlockAnyNumber,
             is CantAttackUnless,
+            is com.wingedsheep.sdk.scripting.CantAttackUnlessSacrifice,
             is CantAttackUnlessCoAttacker,
             is CantBeAttackedBy,
             is CantBeAttackedWhileAttached,
@@ -968,6 +969,7 @@ class StaticAbilityHandler(
             is CrewSaddleContribution,
 
             // Combat: damage assignment (CombatDamageManager / CombatDamageUtils / DamageUtils):
+            is com.wingedsheep.sdk.scripting.CreaturesDamagedBySourceAreDoomed,
             is AssignCombatDamageAsUnblocked,
             is AssignDamageEqualToToughness,
             is DivideCombatDamageFreely,
@@ -1005,6 +1007,8 @@ class StaticAbilityHandler(
             is PlayLandsAndCastFilteredFromTopOfLibrary,
             is PlotFromTopOfLibrary,
             is PlayersCantCastSpells,
+            is com.wingedsheep.sdk.scripting.PlayersCantPlayLands,
+            is com.wingedsheep.sdk.scripting.LandsCantEnterTheBattlefield,
             is RestrictSpellsCastPerTurn,
 
             // Spell costs (CostCalculator):

@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.damage.OptionalDamageRedirect
 import com.wingedsheep.engine.mechanics.battle.Battles
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
@@ -255,10 +256,32 @@ internal class CombatDamageManager(
             finalAssignments = modifier.modify(state, projected, finalAssignments)
         }
 
+        // Pre-check: the "you may" of an optional redirection shield (Blood of the Martyr). Asked off
+        // the final assignments — one question per damage instance the shield covers — and answered
+        // before any of the simultaneous batch is dealt (CR 510.2). Phases 1 and 2 above are pure
+        // computations over `state`, so re-running the step after each answer re-derives exactly the
+        // same assignments; nothing has been applied yet that the re-run would repeat.
+        val redirectChoice = OptionalDamageRedirect.check(
+            state,
+            finalAssignments.map { OptionalDamageRedirect.Instance(it.sourceId, it.targetId, it.amount) }
+        )
+        var newState = when (redirectChoice) {
+            is OptionalDamageRedirect.Check.Ask -> {
+                val pausedState = redirectChoice.state.pushContinuation(
+                    CombatOptionalRedirectContinuation(
+                        decisionId = redirectChoice.decision.id,
+                        choiceKey = redirectChoice.choiceKey,
+                        firstStrike = firstStrike
+                    )
+                )
+                return ExecutionResult.paused(pausedState, redirectChoice.decision)
+            }
+            is OptionalDamageRedirect.Check.Ready -> redirectChoice.state
+        }
+
         // Phase 2b: Shield counters (CR 122.1c). Consumes one counter per shielded permanent for
         // the whole simultaneous batch and drops the assignments whose damage it prevents, so the
         // downstream steps (redirect consumption, lifelink) never see prevented damage.
-        var newState = state
         val events = mutableListOf<GameEvent>()
         val shieldResult = applyShieldCountersToCombatDamage(newState, finalAssignments)
         newState = shieldResult.first
@@ -894,12 +917,13 @@ internal class CombatDamageManager(
         val preventedTargets = mutableSetOf<EntityId>()
         // Unpreventable damage (Leyline of Punishment) is still dealt, but per the official rulings
         // the shield counter is still removed.
-        val cantBePrevented = DamageUtils.isDamagePreventionDisabled(state)
-
         for (targetId in assignments.map { it.targetId }.distinct()) {
             val container = state.getEntity(targetId) ?: continue
             val isPlayer = container.get<LifeTotalComponent>() != null && container.get<CardComponent>() == null
             if (isPlayer) continue
+            // Per-recipient, so it is read inside the loop: a creature marked unpreventable
+            // (Whippoorwill) takes damage in full while its neighbours keep their shields.
+            val cantBePrevented = DamageUtils.isDamagePreventionDisabled(state, targetId)
             val shielded = applyShieldCounterToDamage(newState, targetId, cantBePrevented) ?: continue
             newState = shielded.state
             events.add(shielded.event)
@@ -974,7 +998,7 @@ internal class CombatDamageManager(
         // simultaneous combat-damage step (CR 510.2); it is consumed once afterwards by
         // consumeBatchRedirectShields.
         val (redirectState, redirectTargetId, redirectAmount) = DamageUtils.checkDamageRedirection(
-            newState, targetId, effectiveAmount, inBatch = true
+            newState, targetId, effectiveAmount, inBatch = true, sourceId = sourceId
         )
         newState = redirectState
         if (redirectTargetId != null && redirectAmount > 0) {
@@ -1120,6 +1144,11 @@ internal class CombatDamageManager(
         }
         // Combat damage counts toward "sources you controlled dealt damage this turn" too.
         newState = DamageUtils.trackDamageSourceForController(newState, sourceId)
+        // Planeswalkers (not battles) join the source's "dealt damage to this game" memory, the
+        // player half of which is recorded in DamageUtils.trackDamageReceivedByPlayer (The Fallen).
+        if (counterType == com.wingedsheep.sdk.core.CounterType.LOYALTY) {
+            newState = DamageUtils.markDealtDamageToThisGame(newState, sourceId, targetId)
+        }
 
         val sourceName = newState.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Creature"
         val defaultName = if (counterType == com.wingedsheep.sdk.core.CounterType.LOYALTY) "Planeswalker" else "Battle"
@@ -1173,7 +1202,7 @@ internal class CombatDamageManager(
         // inBatch=true — a Glarecaster shield protects its controller's creatures too, so a blocked
         // attacker's damage to a protected blocker is redirected as part of the same batch.
         val (redirectState, redirectTargetId, redirectAmount) = DamageUtils.checkDamageRedirection(
-            newState, targetId, effectiveAmount, inBatch = true
+            newState, targetId, effectiveAmount, inBatch = true, sourceId = sourceId
         )
         newState = redirectState
         if (redirectTargetId != null && redirectAmount > 0) {
@@ -1351,6 +1380,7 @@ internal class CombatDamageManager(
             // death triggers ("a creature dealt damage this turn by a Spider you controlled dies",
             // Shelob) can match the source even after it dies in the same combat (CR 608.2h).
             newState = DamageUtils.trackDamageSourceLki(newState, sourceId, targetId)
+            newState = DamageUtils.applyDoomedRidersToDamagedCreature(newState, sourceId, targetId)
             val sourceName = newState.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Creature"
             val targetName = newState.getEntity(targetId)?.get<CardComponent>()?.name ?: "Creature"
             val targetIsFaceDown = newState.getEntity(targetId)?.has<FaceDownComponent>() == true
@@ -1538,7 +1568,7 @@ internal class CombatDamageManager(
                         incomingDamage.getOrPut(targetId) { mutableMapOf() }
                             .merge(attackerId, amplified) { a, b -> a + b }
                     } else {
-                        val damageCantBePrevented = DamageUtils.isDamagePreventionDisabled(state)
+                        val damageCantBePrevented = DamageUtils.isDamagePreventionDisabled(state, targetId)
                         val attackerColors = projected.getColors(attackerId)
                         val attackerSubtypes = projected.getSubtypes(attackerId)
                         val attackerTypes = projected.getTypes(attackerId)

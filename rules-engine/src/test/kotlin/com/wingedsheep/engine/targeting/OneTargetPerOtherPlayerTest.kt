@@ -3,6 +3,7 @@ package com.wingedsheep.engine.targeting
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
+import com.wingedsheep.engine.handlers.TargetingSourceType
 import com.wingedsheep.engine.legalactions.utils.TargetEnumerationUtils
 import com.wingedsheep.engine.mechanics.targeting.TargetValidator
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
@@ -118,6 +119,9 @@ class OneTargetPerOtherPlayerTest : FunSpec({
                 targets = targets,
                 requirements = listOf(perOtherPlayer),
                 casterId = driver.player1,
+                // The shape under test is a planeswalker's loyalty ability (Kaya's −2), so the
+                // spells-only restrictions (Lurker) must not apply to it.
+                targetingSourceType = TargetingSourceType.ABILITY,
             )
 
         test("one creature from each of two opponents is legal") {

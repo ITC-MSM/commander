@@ -150,6 +150,14 @@ data class EntitySnapshot(
     /** True if the leaving entity was a token (CR 704.5d — suppress persist-style return triggers). */
     val wasToken: Boolean = false,
     /**
+     * The permanent that created this one ([CreatedByComponent]), frozen as it left. A token is
+     * swept out of existence before a leaves-the-battlefield trigger gates (CR 704.5d), so
+     * "when **the token** leaves the battlefield" (Dance of Many) can only tell its own token from
+     * anyone else's by last-known information. See
+     * [com.wingedsheep.engine.state.components.identity.CreatedByComponent].
+     */
+    val createdBy: EntityId? = null,
+    /**
      * True if this permanent carried the suspected designation (CR 701.60a) at capture time.
      *
      * Frozen because the designation is a floating effect keyed on the entity, and a sacrificed

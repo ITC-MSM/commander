@@ -2,18 +2,17 @@
 
 **Set Size:** 119 cards
 **Release Date:** August 1, 1994
-**Implemented:** 97 / 119
-
+**Implemented:** 119 / 119
 | Section    | Total | Done |
 |------------|-------|------|
-| White      | 19    | 16   |
-| Blue       | 19    | 15   |
-| Black      | 18    | 13   |
-| Red        | 18    | 17   |
-| Green      | 18    | 15   |
+| White      | 19    | 19   |
+| Blue       | 19    | 19   |
+| Black      | 18    | 18   |
+| Red        | 18    | 18   |
+| Green      | 18    | 18   |
 | Multicolor | 3     | 3    |
-| Artifact   | 20    | 15   |
-| Land       | 4     | 3    |
+| Artifact   | 20    | 20   |
+| Land       | 4     | 4    |
 
 > Verify status anytime with `scripts/card-status --set DRK` (and `--list`). That command's count is authoritative — keep this file's `Implemented:` line in sync (`just fix-backlog`) as boxes are checked. The set's mechanics are catalogued in [`mechanics.md`](mechanics.md).
 
@@ -21,9 +20,9 @@
 
 ### White
 - [x] Angry Mob
-- [ ] Blood of the Martyr
-- [ ] Brainwash
-- [ ] Cleansing
+- [x] Blood of the Martyr
+- [x] Brainwash
+- [x] Cleansing
 - [x] Dust to Dust
 - [x] Exorcist
 - [x] Fasting
@@ -43,22 +42,22 @@
 ### Blue
 - [x] Amnesia
 - [x] Apprentice Wizard
-- [ ] Dance of Many
-- [ ] Deep Water
+- [x] Dance of Many
+- [x] Deep Water
 - [x] Drowned
 - [x] Electric Eel
 - [x] Erosion
 - [x] Flood
 - [x] Ghost Ship
 - [x] Giant Shark
-- [ ] Leviathan
+- [x] Leviathan
 - [x] Mana Vortex
 - [x] Merfolk Assassin
 - [x] Mind Bomb
 - [x] Psychic Allergy
 - [x] Riptide
 - [x] Sunken City
-- [ ] Tangle Kelp
+- [x] Tangle Kelp
 - [x] Water Wurm
 
 ### Black
@@ -68,18 +67,18 @@
 - [x] Bog Rats
 - [x] Curse Artifact
 - [x] Eater of the Dead
-- [ ] Frankenstein's Monster
+- [x] Frankenstein's Monster
 - [x] Grave Robbers
 - [x] Inquisition
 - [x] Marsh Gas
 - [x] Murk Dwellers
-- [ ] Nameless Race
+- [x] Nameless Race
 - [x] Rag Man
-- [ ] Season of the Witch
-- [ ] The Fallen
+- [x] Season of the Witch
+- [x] The Fallen
 - [x] Uncle Istvan
 - [x] Word of Binding
-- [ ] Worms of the Earth
+- [x] Worms of the Earth
 
 ### Red
 - [x] Ball Lightning
@@ -92,7 +91,7 @@
 - [x] Goblin Caves
 - [x] Goblin Digging Team
 - [x] Goblin Hero
-- [ ] Goblin Rock Sled
+- [x] Goblin Rock Sled
 - [x] Goblin Shrine
 - [x] Goblin Wizard
 - [x] Goblins of the Flarg
@@ -107,7 +106,7 @@
 - [x] Gaea's Touch
 - [x] Hidden Path
 - [x] Land Leeches
-- [ ] Lurker
+- [x] Lurker
 - [x] Marsh Viper
 - [x] Niall Silvain
 - [x] People of the Woods
@@ -115,10 +114,10 @@
 - [x] Scarwood Bandits
 - [x] Scarwood Hag
 - [x] Scavenger Folk
-- [ ] Spitting Slug
+- [x] Spitting Slug
 - [x] Tracker
 - [x] Venom
-- [ ] Whippoorwill
+- [x] Whippoorwill
 - [x] Wormwood Treefolk
 
 ### Multicolor
@@ -131,25 +130,25 @@
 - [x] Bone Flute
 - [x] Book of Rass
 - [x] Coal Golem
-- [ ] Dark Sphere
+- [x] Dark Sphere
 - [x] Diabolic Machine
 - [x] Fellwar Stone
 - [x] Fountain of Youth
 - [x] Living Armor
-- [ ] Necropolis
-- [ ] Reflecting Mirror
-- [ ] Runesword
+- [x] Necropolis
+- [x] Reflecting Mirror
+- [x] Runesword
 - [x] Scarecrow
 - [x] Skull of Orm
 - [x] Standing Stones
 - [x] Stone Calendar
 - [x] Tormod's Crypt
 - [x] Tower of Coireall
-- [ ] Wand of Ith
+- [x] Wand of Ith
 - [x] War Barge
 
 ### Land
 - [x] City of Shadows
 - [x] Maze of Ith
 - [x] Safe Haven
-- [ ] Sorrow's Path
+- [x] Sorrow's Path
