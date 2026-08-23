@@ -1328,6 +1328,36 @@ class TriggerDetector(
                             )
                         }
                     }
+                    // "Whenever enchanted/equipped creature attacks and isn't blocked"
+                    // (Farrel's Mantle). BecomesUnblockedEvent piggybacks on BlockersDeclaredEvent
+                    // and its condition is a *negative* over the whole block map — "no blocker
+                    // lists this attacker" — which the per-entity AttachmentTriggerDetector path
+                    // cannot express, so ATTACHED is resolved here alongside the sibling
+                    // BlocksOrBecomesBlockedBy case. The combat relationships are read against the
+                    // enchanted creature; the trigger's source stays the Aura/Equipment, and the
+                    // triggering entity is the attacker so "it"/"its controller" bind to it.
+                    else if (ability.trigger is EventPattern.BecomesUnblockedEvent &&
+                        ability.binding == TriggerBinding.ATTACHED &&
+                        event is com.wingedsheep.engine.core.BlockersDeclaredEvent) {
+                        val attachedCreatureId = state.getEntity(entityId)
+                            ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
+                            ?.targetId
+                        val isAttacking = attachedCreatureId != null && state.getEntity(attachedCreatureId)
+                            ?.get<com.wingedsheep.engine.state.components.combat.AttackingComponent>() != null
+                        val isUnblocked = attachedCreatureId != null &&
+                            event.blockers.values.none { it.contains(attachedCreatureId) }
+                        if (isAttacking && isUnblocked) {
+                            triggers.add(
+                                PendingTrigger(
+                                    ability = ability,
+                                    sourceId = entityId,
+                                    sourceName = cardComponent.name,
+                                    controllerId = controllerId,
+                                    triggerContext = TriggerContext(triggeringEntityId = attachedCreatureId)
+                                )
+                            )
+                        }
+                    }
                     // For "whenever [a player] draws a card" (DrawEvent), drawing N cards via a
                     // single effect creates N separate trigger firings — one per card drawn
                     // (CR 121.2 + 603.2). The engine emits a single aggregate CardsDrawnEvent, so

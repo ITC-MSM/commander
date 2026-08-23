@@ -67,6 +67,10 @@ val FarrelsMantle = card("Farrel's Mantle") {
                     Duration.EndOfTurn,
                 ),
             ),
+            // "Its controller may" — the *enchanted creature's* controller, who need not be the
+            // Aura's controller: the Mantle can be put on an opponent's creature and the choice is
+            // still theirs. The trigger binds the attacker as the triggering entity for this.
+            decisionMaker = EffectTarget.ControllerOfTriggeringEntity,
             descriptionOverride = "have the enchanted creature deal damage equal to its power plus 2 to that creature. If you do, it assigns no combat damage this turn",
         )
         description = "Whenever enchanted creature attacks and isn't blocked, its controller may have it deal damage equal to its power plus 2 to another target creature. If that player does, the attacking creature assigns no combat damage this turn."

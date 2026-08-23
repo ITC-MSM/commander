@@ -2503,7 +2503,11 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   fails, `otherwise` runs. One executor + one continuation/resumer own the canonical unwind order, so
   targets on `then`/`otherwise` lock at trigger time (CR 603.3d) and the gate is resolved at
   resolution time (CR 117.3a) by `decisionMaker` (defaults to the controller) — the may-vs-target
-  timing is correct by construction rather than re-encoded per wrapper. Gates:
+  timing is correct by construction rather than re-encoded per wrapper. `decisionMaker` is honoured
+  on the may-then-target trigger path too, where `TriggerProcessor` asks the question itself before
+  the effect ever executes (Farrel's Mantle's "its controller may", with the Aura on an opponent's
+  creature); `EffectTarget.ControllerOfTriggeringEntity` is the reference that path resolves, and
+  anything it can't resolve falls back to the ability's controller. Gates:
   - `Gate.MayDecide(prompt?, hint?, dynamicHint?, sourceRequiredZone?, inlineOnTrigger?, feasibility?)`
     — pure yes/no
     ("You may [then]."). Replaces `MayEffect` (see the `MayEffect` facade below). `sourceRequiredZone`
@@ -5073,11 +5077,17 @@ sealed set for attack-time facts beyond the basics.
   collapses the per-partner firings to the first match; the `TriggeringEntity` is that first
   partner, so a card that says "it" still has one. Reach for `BlocksOrBecomesBlockedBy` only when
   the card names a partner quality — that one fires once per matching partner.
-- `AttacksAndIsntBlocked` — SELF. Fires once per attacker that reaches end of
+- `AttacksAndIsntBlocked` — SELF or ATTACHED. Fires once per attacker that reaches end of
   Declare Blockers with no creatures declared as blockers (CR 509.3g). Backed by
   `BecomesUnblockedEvent` matched against `BlockersDeclaredEvent`. Used for
   Merchant Ship: "Whenever this creature attacks and isn't blocked, you gain 2 life."
-  (SELF only — an ANY-binding filtered variant isn't wired in `TriggerMatcher` yet.)
+  `.copy(binding = TriggerBinding.ATTACHED)` fires off the enchanted/equipped creature's
+  unblocked attack (Farrel's Mantle); the combat relationships are read against that creature and
+  it becomes the `TriggeringEntity`, while the trigger's source stays the Aura/Equipment. Like
+  `BlocksOrBecomesBlockedBy`, ATTACHED is resolved in the main `TriggerDetector` loop rather than
+  `AttachmentTriggerDetector`, because "isn't blocked" is a *negative* over the whole block map,
+  which the per-entity attachment path never sees.
+  (An ANY-binding filtered variant still isn't wired in `TriggerMatcher`.)
 
 **`AttackPredicate`** — extensible "facts about an attack declaration."
 Adding a new attack-time mechanic is one new sealed-case + one matcher branch

@@ -451,11 +451,26 @@ class TriggerProcessor(
         val sourceName = trigger.sourceName
         val abilityIdentity = state.abilityIdentityOf(trigger.sourceId, ability.id)
 
+        // Who is asked. Normally the ability's controller, but a card can name someone else —
+        // Farrel's Mantle's "its controller may", where "it" is the enchanted creature and the Aura
+        // may sit on an opponent's permanent. This path asks the question before the effect runs,
+        // so GatedEffectExecutor's own decisionMaker handling never gets the chance; resolve it
+        // here from the triggering entity. Anything this can't resolve falls back to the
+        // controller, which is what every card without a decisionMaker already gets.
+        val askedPlayerId = when (val chooser = ability.effect.asMayDecide()?.decisionMaker) {
+            null, is com.wingedsheep.sdk.scripting.targets.EffectTarget.Controller -> trigger.controllerId
+            is com.wingedsheep.sdk.scripting.targets.EffectTarget.ControllerOfTriggeringEntity ->
+                trigger.triggerContext.triggeringEntityId
+                    ?.let { com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.controllerOf(state, it) }
+                    ?: trigger.controllerId
+            else -> trigger.controllerId
+        }
+
         // Persistent auto-answer yield (backlog §C): a remembered yes/no for this ability resolves
         // the may-question without prompting. "Yes" still proceeds to per-instance target selection
         // (only the yes/no is batched, never the targeting — §C.6); "no" skips the trigger.
-        abilityIdentity?.let { state.autoAnswerFor(trigger.controllerId, it) }?.let { auto ->
-            val note = AbilityAutoAnsweredEvent(trigger.sourceId, sourceName, trigger.controllerId, auto)
+        abilityIdentity?.let { state.autoAnswerFor(askedPlayerId, it) }?.let { auto ->
+            val note = AbilityAutoAnsweredEvent(trigger.sourceId, sourceName, askedPlayerId, auto)
             if (!auto) return ExecutionResult.success(state, listOf(note))
             val innerEffect = ability.effect.asMayDecide()!!.then
             val unwrappedTrigger = trigger.copy(ability = ability.copy(effect = innerEffect))
@@ -472,7 +487,7 @@ class TriggerProcessor(
         // printed text. Whenever an author wrote the clause out, that is the prompt.
         val decisionResult = decisionHandler.createYesNoDecision(
             state = state,
-            playerId = trigger.controllerId,
+            playerId = askedPlayerId,
             sourceId = trigger.sourceId,
             sourceName = sourceName,
             prompt = ability.descriptionOverride ?: ability.effect.description,

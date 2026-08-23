@@ -57,11 +57,15 @@ class TriggerMatcher(
         state: GameState
     ): Boolean {
         // ATTACHED triggers are generally handled by AttachmentTriggerDetector, not the main loop.
-        // Exception: BlocksOrBecomesBlockedByEvent ATTACHED is handled in the main loop, since it
-        // needs the full BlockersDeclaredEvent block map to find the equipped creature's combat
-        // partner (Barrow-Blade).
+        // Two exceptions, both needing the full BlockersDeclaredEvent block map that the per-entity
+        // attachment path never sees:
+        //   - BlocksOrBecomesBlockedByEvent, to find the equipped creature's combat partner
+        //     (Barrow-Blade)
+        //   - BecomesUnblockedEvent, whose "isn't blocked" is a negative over the whole map
+        //     (Farrel's Mantle)
         if (binding == TriggerBinding.ATTACHED &&
-            trigger !is EventPattern.BlocksOrBecomesBlockedByEvent
+            trigger !is EventPattern.BlocksOrBecomesBlockedByEvent &&
+            trigger !is EventPattern.BecomesUnblockedEvent
         ) return false
 
         return when (trigger) {
@@ -187,10 +191,17 @@ class TriggerMatcher(
                 // declare-blockers): SELF matches when sourceId is an attacker this combat
                 // AND is absent from every blocker's blocked-attackers list.
                 if (event !is BlockersDeclaredEvent) return false
-                if (binding != TriggerBinding.SELF) return false
-                val isAttacking = state.getEntity(sourceId)
+                if (binding != TriggerBinding.SELF && binding != TriggerBinding.ATTACHED) return false
+                // ATTACHED reads the combat relationships against the enchanted/equipped creature
+                // (Farrel's Mantle); the trigger's source stays the Aura/Equipment.
+                val combatCreatureId = if (binding == TriggerBinding.ATTACHED) {
+                    state.getEntity(sourceId)
+                        ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
+                        ?.targetId ?: return false
+                } else sourceId
+                val isAttacking = state.getEntity(combatCreatureId)
                     ?.get<com.wingedsheep.engine.state.components.combat.AttackingComponent>() != null
-                isAttacking && event.blockers.values.none { it.contains(sourceId) }
+                isAttacking && event.blockers.values.none { it.contains(combatCreatureId) }
             }
             is EventPattern.StateConditionMetEvent -> {
                 // Synthetic — never matched against real events. State triggers fire via
