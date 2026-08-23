@@ -2956,7 +2956,7 @@ class StackResolver(
         events.addAll(ownEvents)
 
         val (globalState, globalEvents) = EntersWithReplacements.applyGlobal(
-            newState, entityId, controllerId
+            newState, entityId, controllerId, cardRegistry
         )
         newState = globalState
         events.addAll(globalEvents)

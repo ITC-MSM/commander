@@ -2,6 +2,7 @@ package com.wingedsheep.engine.handlers.effects
 
 import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.DamageDealtEvent
+import com.wingedsheep.engine.core.applyPreventByRemovingCounterToDamage
 import com.wingedsheep.engine.core.applyShieldCounterToDamage
 import com.wingedsheep.engine.core.DamagePreventedEvent
 import com.wingedsheep.engine.core.EffectResult
@@ -291,6 +292,24 @@ object DamageUtils {
                 newState = shielded.state
                 if (shielded.damagePrevented) return EffectResult.success(newState, listOf(shielded.event))
                 shieldCounterEvents = listOf(shielded.event)
+            }
+        }
+
+        // The printed sibling of the rule above: "If this creature would be dealt damage, prevent
+        // that damage and remove a +1/+1 counter from it" (Unbreathing Horde). Same one-counter-per-
+        // event scoping, same position in the CR 616.1 ordering, but it prevents even with no
+        // counter left to spend.
+        if (!isPlayer) {
+            val counterShield = applyPreventByRemovingCounterToDamage(
+                newState, targetId, isCombatDamage = isCombatDamage, cantBePrevented = cantBePrevented
+            )
+            if (counterShield != null) {
+                newState = counterShield.state
+                val counterEvents = listOfNotNull(counterShield.event)
+                if (counterShield.damagePrevented) {
+                    return EffectResult.success(newState, shieldCounterEvents + counterEvents)
+                }
+                shieldCounterEvents = shieldCounterEvents + counterEvents
             }
         }
 
