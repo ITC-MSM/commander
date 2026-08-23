@@ -1661,7 +1661,8 @@
                             "baseFilter": "creature"
                         }
                     }
-                ]
+                ],
+                "descriptionOverride": "{1}{G}, {T}: Target creature doesn't untap during its controller's next untap step."
             }
         ]
     },
@@ -2450,7 +2451,8 @@
                         },
                         "id": "target creature"
                     }
-                ]
+                ],
+                "descriptionOverride": "{T}, Tap three untapped white creatures you control: Destroy target creature."
             }
         ]
     },
@@ -5830,7 +5832,8 @@
                             "baseFilter": "land"
                         }
                     }
-                ]
+                ],
+                "descriptionOverride": "{T}, Sacrifice a green creature: Target land becomes a Forest."
             }
         ]
     },
@@ -5955,7 +5958,8 @@
                         },
                         "id": "target Thrull"
                     }
-                ]
+                ],
+                "descriptionOverride": "{T}: Gain control of target Thrull for as long as you control this creature."
             }
         ],
         "staticAbilities": [
@@ -5995,7 +5999,8 @@
                 "effect": {
                     "type": "Regenerate",
                     "target": "EnchantedPermanent"
-                }
+                },
+                "descriptionOverride": "Sacrifice this Aura: Regenerate enchanted creature."
             }
         ],
         "staticAbilities": [
