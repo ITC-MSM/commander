@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 34 / 102
+**Implemented:** 35 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -91,7 +91,7 @@
 
 ### Green
 - [x] Elven Fortress
-- [ ] Elvish Farmer
+- [x] Elvish Farmer
 - [ ] Elvish Hunter
 - [ ] Elvish Scout
 - [x] Feral Thallid
