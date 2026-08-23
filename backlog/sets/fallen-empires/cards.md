@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 52 / 102
+**Implemented:** 53 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -65,7 +65,7 @@
 - [ ] Necrite
 - [x] Order of the Ebon Hand
 - [ ] Soul Exchange
-- [ ] Thrull Champion
+- [x] Thrull Champion
 - [ ] Thrull Retainer
 - [ ] Thrull Wizard
 - [ ] Tourach's Chant
