@@ -2,7 +2,7 @@
 
 **Set Size:** 102 cards
 **Release Date:** November 1, 1994
-**Implemented:** 38 / 102
+**Implemented:** 39 / 102
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 16    | 1    |
@@ -39,7 +39,7 @@
 - [ ] Deep Spawn
 - [ ] High Tide
 - [ ] Homarid
-- [ ] Homarid Shaman
+- [x] Homarid Shaman
 - [ ] Homarid Spawning Bed
 - [ ] Homarid Warrior
 - [ ] Merseine
