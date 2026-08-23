@@ -47,7 +47,7 @@ class GatherCardsExecutor : EffectExecutor<GatherCardsEffect> {
         effect: GatherCardsEffect,
         context: EffectContext
     ): EffectResult {
-        val cards = when (val source = effect.source) {
+        val gathered = when (val source = effect.source) {
             is CardSource.TopOfLibrary -> {
                 val count = amountEvaluator.evaluate(state, source.count, context)
                 val playerIds = resolvePlayers(source.player, context, state)
@@ -330,6 +330,16 @@ class GatherCardsExecutor : EffectExecutor<GatherCardsEffect> {
                         ?.sourceId == sourceId
                 }
             }
+        }
+
+        // Set difference against an already-stored collection — "all Plains that weren't chosen
+        // this way by any player" (Raiding Party). Applied before the empty check so an exclusion
+        // that removes everything short-circuits the same way an empty gather does.
+        val cards = if (effect.excludeCollection != null) {
+            val excluded = context.pipeline.storedCollections[effect.excludeCollection].orEmpty().toSet()
+            gathered.filterNot { it in excluded }
+        } else {
+            gathered
         }
 
         if (cards.isEmpty()) {

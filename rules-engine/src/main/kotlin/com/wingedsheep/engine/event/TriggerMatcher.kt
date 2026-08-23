@@ -2208,6 +2208,7 @@ class TriggerMatcher(
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.InSameBandAsSource,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsBlockingSource,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsCombatPairedWithSource,
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsBlockingIterationEntity,
         // CreatedBySource stays in the fail-open bucket only for the paths that reach here without a
         // source: the zone-change gate — the one path any card uses it from — intercepts it above
         // and answers exactly.

@@ -1170,6 +1170,10 @@ class DynamicAmountEvaluator(
     ): List<EntityId> {
         return when (player) {
             is Player.You -> listOf(context.controllerId)
+            // "its controller" inside a ForEach over entities — a single player, or none outside
+            // such a loop.
+            is Player.ControllerOfIterationEntity ->
+                listOfNotNull(TargetResolutionUtils.resolvePlayerRef(player, context, state))
             is Player.EachOpponent -> state.getOpponents(context.controllerId)
             is Player.TargetOpponent, is Player.TargetPlayer -> listOfNotNull(
                 TargetResolutionUtils.resolvePlayerRef(player, context, state)

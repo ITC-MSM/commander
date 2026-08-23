@@ -194,6 +194,17 @@ sealed interface StatePredicate {
     }
 
     /**
+     * Blocking the entity an enclosing `ForEachInGroup` is iterating over — "creatures you control
+     * blocking **that creature**" (Tidal Flats), where "that creature" is the loop's current
+     * attacker rather than the effect's source. False outside such a loop.
+     */
+    @SerialName("IsBlockingIterationEntity")
+    @Serializable
+    data object IsBlockingIterationEntity : Entity {
+        override val description: String = "blocking that creature"
+    }
+
+    /**
      * A token that was *created by the effect's source permanent* — its provenance creator id (the
      * `CreatedByComponent` stamped when a `CreateTokenEffect` with `stampCreator = true` made it)
      * equals the source entity supplied in the evaluation context. Source-relative; yields false

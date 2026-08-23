@@ -984,6 +984,14 @@ data class GameObjectFilter(
     )
 
     /**
+     * Blocking the entity the enclosing `ForEachInGroup` is iterating over — Tidal Flats'
+     * "creatures you control blocking that creature".
+     */
+    fun blockingIterationEntity() = copy(
+        statePredicates = statePredicates + StatePredicate.IsBlockingIterationEntity
+    )
+
+    /**
      * Must be a token created by the effect's source permanent (CR 111 provenance), recognized via
      * the source's stamped `CreatedByComponent`. "Tokens created with this creature" (Tetravus).
      */

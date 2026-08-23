@@ -1381,6 +1381,15 @@ class PredicateEvaluator {
                     )
             }
 
+            // "…creatures you control blocking *that creature*" (Tidal Flats) — the same check as
+            // IsBlockingSource but against the ForEach loop's current entity, which is what "that
+            // creature" refers to inside the loop.
+            StatePredicate.IsBlockingIterationEntity -> {
+                val iterated = context?.iterationEntityId
+                iterated != null &&
+                    container.get<BlockingComponent>()?.blockedAttackerIds?.contains(iterated) == true
+            }
+
             // Token created by the effect's source permanent (CR 111). Source-relative: the
             // candidate's stamped CreatedByComponent.creatorId equals context.sourceId. Inert with
             // no source context or for tokens with no recorded creator.
@@ -2097,6 +2106,12 @@ data class PredicateContext(
      */
     val triggeringPlayerId: EntityId? = null,
     /**
+     * The entity an enclosing `ForEachInGroup` is currently iterating over. Lets a filter inside
+     * such a loop talk about *that* creature — Tidal Flats' "creatures you control blocking that
+     * creature" — where a source-relative predicate would read the enchantment instead.
+     */
+    val iterationEntityId: EntityId? = null,
+    /**
      * The entity a continuous effect is being applied to during projection (e.g. the creature an
      * Aura is enchanting). Lets filters resolve [EntityReference.AffectedEntity] — needed by
      * `AggregateBattlefield(filter = ...sharingCreatureTypeWith(AffectedEntity))` for Alpha Status.
@@ -2206,7 +2221,8 @@ data class PredicateContext(
                 targets = context.targets,
                 namedTargets = context.pipeline.namedTargets,
                 xValue = context.xValue,
-                chosenColor = context.chosenColor
+                chosenColor = context.chosenColor,
+                iterationEntityId = context.pipeline.iterationTarget
             )
         }
     }

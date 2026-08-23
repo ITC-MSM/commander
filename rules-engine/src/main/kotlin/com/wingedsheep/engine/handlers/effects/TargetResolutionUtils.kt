@@ -179,6 +179,10 @@ object TargetResolutionUtils {
                 ?: context.controllerId
             is Player.ControllerOf -> context.targets.firstOrNull()?.toEntityId()
                 ?.let { controllerOf(state, it) }
+            // "its controller", inside a ForEach over entities — the loop's current entity, not the
+            // effect's source or its chosen target.
+            Player.ControllerOfIterationEntity -> context.pipeline.iterationTarget
+                ?.let { controllerOf(state, it) }
             // The other end of a becomes-target trigger: whoever controls the spell or ability
             // that did the targeting (Fractured Loyalty). The trigger context carries the
             // targeting stack object; [stackObjectController] reads it while it is still on the

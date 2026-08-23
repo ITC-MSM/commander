@@ -815,7 +815,17 @@ data class GatherCardsEffect(
     val source: CardSource,
     val storeAs: String,
     val revealed: Boolean = false,
-    val lookAudience: LookAudience = LookAudience.Controller
+    val lookAudience: LookAudience = LookAudience.Controller,
+    /**
+     * Drop from the gathered set every entity already present in this stored collection — the
+     * set-difference the pipeline otherwise has no way to express.
+     *
+     * Raiding Party (FEM) needs it: each player picks Plains to spare, the picks accumulate into
+     * one collection across players, and what is destroyed is "all Plains that weren't chosen this
+     * way by any player" — the Plains on the battlefield *minus* that accumulated set. Absent or
+     * unknown collection names exclude nothing.
+     */
+    val excludeCollection: String? = null,
 ) : Effect {
     override val description: String = buildString {
         if (revealed) append("Reveal ") else append("Look at ")

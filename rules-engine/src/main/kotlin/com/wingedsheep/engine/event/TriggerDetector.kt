@@ -883,6 +883,50 @@ class TriggerDetector(
                     continue
                 }
 
+                // "…whenever this creature blocks or becomes blocked by a creature this combat, that
+                // creature gains first strike" (Goblin Flotilla). Like the battlefield-resident
+                // form, this fans out one trigger per combat partner so `TriggeringEntity` names
+                // the *partner* — the creature the rider actually acts on — rather than the watched
+                // creature itself.
+                if (specEvent is com.wingedsheep.sdk.scripting.EventPattern.BlocksOrBecomesBlockedByEvent &&
+                    event is com.wingedsheep.engine.core.BlockersDeclaredEvent &&
+                    delayed.watchedEntityId != null
+                ) {
+                    val watched = delayed.watchedEntityId
+                    val partners = mutableListOf<EntityId>()
+                    event.blockers[watched]?.let { partners.addAll(it) }
+                    for ((blockerId, attackerIds) in event.blockers) {
+                        if (attackerIds.contains(watched)) partners.add(blockerId)
+                    }
+                    for (partnerId in partners.distinct()) {
+                        val partnerFilter = specEvent.partnerFilter
+                        if (partnerFilter != null && !predicateEvaluator.matches(
+                                state, state.projectedState, partnerId, partnerFilter,
+                                PredicateContext(controllerId = delayed.controllerId, sourceId = delayed.sourceId)
+                            )
+                        ) continue
+                        if (delayed.fireOnce && delayed.id in firedOnceIds) continue
+                        if (delayed.fireOnce) firedOnceIds.add(delayed.id)
+                        triggers.add(
+                            PendingTrigger(
+                                ability = TriggeredAbility.create(
+                                    trigger = spec.event,
+                                    binding = spec.binding,
+                                    effect = delayed.effect,
+                                    targetRequirement = delayed.targetRequirement,
+                                    additionalTargetRequirements = delayed.additionalTargetRequirements
+                                ),
+                                sourceId = delayed.sourceId,
+                                sourceName = delayed.sourceName,
+                                controllerId = delayed.controllerId,
+                                triggerContext = TriggerContext(triggeringEntityId = partnerId),
+                                consumesDelayedTriggerId = if (delayed.fireOnce) delayed.id else null
+                            )
+                        )
+                    }
+                    continue
+                }
+
                 if (delayed.fireOnce) firedOnceIds.add(delayed.id)
                 triggers.add(
                     PendingTrigger(
@@ -1005,6 +1049,13 @@ class TriggerDetector(
                     com.wingedsheep.sdk.scripting.ControlChangeDirection.GAINED ->
                         event.newControllerId == controllerId
                 }
+            }
+            // Goblin Flotilla's "this combat" rider. Entity-scoped: the watched creature must be
+            // in combat with somebody; which partners it fired for is decided by the fan-out above.
+            is com.wingedsheep.sdk.scripting.EventPattern.BlocksOrBecomesBlockedByEvent -> {
+                if (event !is com.wingedsheep.engine.core.BlockersDeclaredEvent) return false
+                val watched = watchedEntityId ?: return false
+                event.blockers.containsKey(watched) || event.blockers.values.any { it.contains(watched) }
             }
             // "This turn, when target creature you control attacks and isn't blocked, …" — the
             // Fallen Empires Delif's artifacts. Entity-scoped: the watched creature is the one
