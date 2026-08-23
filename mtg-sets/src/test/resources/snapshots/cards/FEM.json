@@ -3296,14 +3296,10 @@
                 "effect": {
                     "type": "GainLife",
                     "amount": {
-                        "type": "EntityProperty",
-                        "entity": "Source",
-                        "numericProperty": {
-                            "type": "CounterCount",
-                            "counterType": {
-                                "type": "Named",
-                                "name": "credit"
-                            }
+                        "type": "LastKnownSourceCounters",
+                        "counterType": {
+                            "type": "Named",
+                            "name": "credit"
                         }
                     }
                 },
