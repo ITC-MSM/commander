@@ -57,6 +57,36 @@
     "colorIdentityOverride": []
 }
 
+// Dispel
+{
+    "name": "Dispel",
+    "manaCost": "{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target instant spell.",
+    "script": {
+        "spellEffect": "Counter",
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "instant",
+                    "zone": "Stack"
+                },
+                "id": "target instant spell"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "26",
+        "artist": "Vance Kovacs",
+        "flavorText": "The Jwari winds undo reality as easily as they scatter a pile of leaves.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/1/f178d0cc-5dd1-41ab-a2e8-218ece6f2a86.jpg?1783942063"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Dragonmaster Outcast
 {
     "name": "Dragonmaster Outcast",

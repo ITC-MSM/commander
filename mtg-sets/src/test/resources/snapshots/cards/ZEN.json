@@ -794,6 +794,42 @@
     ]
 }
 
+// Goblin War Paint
+{
+    "name": "Goblin War Paint",
+    "manaCost": "{1}{R}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature gets +2/+2 and has haste.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "HASTE"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "129",
+        "artist": "Austin Hsu",
+        "flavorText": "War paint made from kolya fruit heightens senses and lessens fear. Unfortunately, fear is usually what keeps you alive.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/3/4388e57e-0c87-4d66-a862-58261d76c5ac.jpg?1783942144"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Grazing Gladehart
 {
     "name": "Grazing Gladehart",
@@ -1831,6 +1867,52 @@
         "imageUri": "https://cards.scryfall.io/normal/front/0/5/05460615-4c24-487f-841a-ca14106e5688.jpg?1783942125"
     },
     "colorIdentityOverride": []
+}
+
+// Territorial Baloth
+{
+    "name": "Territorial Baloth",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "Landfall — Whenever a land you control enters, this creature gets +2/+2 until end of turn.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "land ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "188",
+        "artist": "Jesper Ejsing",
+        "flavorText": "Its territory is defined by wherever it is at the moment.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/5/45033b8a-f3a8-4a23-b6b0-e011e3e7a4c1.jpg?1783942130"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
 }
 
 // Vampire Nighthawk
