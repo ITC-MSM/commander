@@ -546,6 +546,7 @@ shape + builder via `ScenarioBuilderService` / `ScenarioSessionFactory`).
     "graveyard": ["Mountain"],
     "exile": ["Swamp"],
     "library": ["Forest", "Forest"],
+    "sideboard": ["Boomerang Basics"],
     "commanders": []
   },
   "player2": { "lifeTotal": 20, "battlefield": [{ "name": "Hill Giant" }] },
@@ -559,6 +560,9 @@ shape + builder via `ScenarioBuilderService` / `ScenarioSessionFactory`).
   yourself — one token controls both seats), `AI` (engine AI, requires `game.ai.enabled`;
   `aiPlayer` 1|2 picks the seat), or `TWO_PLAYER` (two tokens). When omitted it is derived from
   `aiPlayer` for back-compat.
+- `sideboard` is the "outside the game" zone (CR 400.11). Without it a card that reaches outside
+  the game has nothing to find, so the wish cycle and Strixhaven's **Learn** (CR 701.48) can only
+  ever take their other branch — seed a Lesson here to exercise Learn's Lesson half.
 - Validation rejects unknown card names and (production) enforces per-zone + total card caps,
   returning `400` with `{ "errors": ["Unknown card: …", …] }`.
 - `customCards` (optional) is a list of **Scryfall(-style) card objects, as JSON strings**. Argentum
