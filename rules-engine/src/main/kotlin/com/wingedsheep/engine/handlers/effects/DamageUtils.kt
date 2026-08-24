@@ -24,6 +24,7 @@ import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
+import com.wingedsheep.engine.state.components.battlefield.LastKnownPermanentComponent
 import com.wingedsheep.engine.state.components.battlefield.DealtDamageToThisGameComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageDealtByPlayersThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageDealtToCreaturesThisTurnComponent
@@ -71,6 +72,7 @@ import com.wingedsheep.sdk.scripting.PreventDamage
 import com.wingedsheep.sdk.scripting.PreventLifeGain
 import com.wingedsheep.sdk.scripting.RedirectDamage
 import com.wingedsheep.sdk.scripting.effects.RedirectScope
+import com.wingedsheep.sdk.scripting.DamageCounterRecipient
 import com.wingedsheep.sdk.scripting.ReplaceDamageWithCounters
 import com.wingedsheep.sdk.scripting.ReplaceDamageWithMill
 import com.wingedsheep.sdk.scripting.ReplacementEffect
@@ -132,8 +134,49 @@ object DamageUtils {
      * [ControllerComponent] only for entities with no projected entry.
      */
     private fun replacementHostController(state: GameState, entityId: EntityId): EntityId? =
-        state.projectedState.getController(entityId)
-            ?: state.getEntity(entityId)?.get<ControllerComponent>()?.playerId
+        controllerOfObject(state, entityId)
+
+    /**
+     * Controller of the object *dealing* damage — the other half of the "a source you control"
+     * question ([SourceFilter.YouControl]). A damage source is not always a battlefield permanent:
+     * a burn spell resolving off the stack and an ability's source are damage sources too (CR
+     * 609.7), and neither has a projected entry, which is why this falls back to the base
+     * [ControllerComponent] the same way [replacementHostController] does.
+     */
+    private fun damageSourceController(
+        state: GameState,
+        entityId: EntityId,
+        projected: ProjectedState = state.projectedState
+    ): EntityId? = controllerOfObject(state, entityId, projected)
+
+    /**
+     * Projected controller of an object, falling back to its base [ControllerComponent] for
+     * objects outside the battlefield (stack, exile) that have no projected entry, and then to the
+     * *last-known* controller of one that has left the battlefield altogether.
+     *
+     * That last step is load-bearing on the source side. A permanent sacrificed to pay its own
+     * ability's cost (Fanatical Firebrand: "{T}, Sacrifice this creature: It deals 1 damage to any
+     * target") deals its damage from the graveyard, where `stripBattlefieldComponents` has already
+     * taken its [ControllerComponent] away — so the projected and base lookups both come back
+     * empty. CR 113.7a and CR 608.2h say the source's last known information answers "a source you
+     * control" in exactly that case; without this fallback every [SourceFilter.YouControl]
+     * replacement (Soul-Scar Mage, Twinflame Tyrant) silently declined for a self-sacrificing
+     * source, while the same ability from a source that stayed on the battlefield (Prodigal
+     * Sorcerer) worked.
+     *
+     * @param projected the projection to read control off — [GameState.projectedState] for ordinary
+     *   callers, the in-flight one for a mid-projection caller.
+     */
+    private fun controllerOfObject(
+        state: GameState,
+        entityId: EntityId,
+        projected: ProjectedState = state.projectedState
+    ): EntityId? {
+        val container = state.getEntity(entityId) ?: return null
+        return projected.getController(entityId)
+            ?: container.get<ControllerComponent>()?.playerId
+            ?: container.get<LastKnownPermanentComponent>()?.snapshot?.controllerId
+    }
 
     /**
      * Deal damage to a target (player or creature).
@@ -259,7 +302,7 @@ object DamageUtils {
         // This replaces the damage entirely — it is neither dealt nor prevented.
         val isPlayer = newState.getEntity(targetId)?.get<LifeTotalComponent>() != null
         if (isPlayer) {
-            val counterResult = applyReplaceDamageWithCounters(newState, targetId, effectiveAmount, sourceId)
+            val counterResult = applyReplaceDamageWithCounters(newState, targetId, effectiveAmount, sourceId, isCombatDamage)
             if (counterResult != null) return counterResult
 
             // Damage-to-an-opponent → prevent + each opponent mills that many (The Mindskinner).
@@ -269,7 +312,7 @@ object DamageUtils {
             // Damage-to-a-creature self-replacement (Anti-Venom): "if damage would be dealt to
             // <this creature>, prevent it and put that many +1/+1 counters on him." Matches only a
             // Self-recipient replacement whose host is the damaged creature.
-            val counterResult = applyReplaceDamageWithCounters(newState, targetId, effectiveAmount, sourceId)
+            val counterResult = applyReplaceDamageWithCounters(newState, targetId, effectiveAmount, sourceId, isCombatDamage)
             if (counterResult != null) return counterResult
         }
 
@@ -1701,16 +1744,11 @@ object DamageUtils {
             sourceId != null && sourceId == attachedTo
         }
         // "A source you control" — any source (permanent, spell, or ability) whose controller is
-        // this replacement's controller. Projected control for battlefield permanents; the base
-        // ControllerComponent for spells and abilities on the stack.
-        is SourceFilter.YouControl -> {
-            if (sourceId == null) false
-            else {
-                val sourceController = projected.getController(sourceId)
-                    ?: state.getEntity(sourceId)?.get<ControllerComponent>()?.playerId
-                sourceController == hostControllerId
-            }
-        }
+        // this replacement's controller. Projected control for battlefield permanents, the base
+        // ControllerComponent for spells and abilities on the stack, and last-known information for
+        // a source that has left the battlefield (see [controllerOfObject]).
+        is SourceFilter.YouControl ->
+            sourceId != null && damageSourceController(state, sourceId, projected) == hostControllerId
         is SourceFilter.Matching -> {
             if (sourceId == null) false
             else {
@@ -2541,23 +2579,35 @@ object DamageUtils {
     }
 
     /**
-     * Check for ReplaceDamageWithCounters replacement effects (Force Bubble).
+     * Check for [ReplaceDamageWithCounters] replacement effects (Force Bubble, Anti-Venom,
+     * Soul-Scar Mage).
      *
-     * Scans the battlefield for permanents with ReplaceDamageWithCounters replacement
-     * effects. If found and the recipient matches, replaces all damage with counters
-     * on the source permanent. If the counter threshold is met, sacrifices the permanent.
+     * Scans the battlefield for permanents carrying a [ReplaceDamageWithCounters] whose
+     * [com.wingedsheep.sdk.scripting.EventPattern.DamageEvent] matches this damage event —
+     * recipient, source and damage type all have to agree — and, on the first match, replaces the
+     * damage outright (CR 614.1a: the damage is never dealt) with counters on the permanent named
+     * by [ReplaceDamageWithCounters.counterRecipient]. The first match wins because a replacement
+     * gets one shot at an event (CR 614.5) and, after this one applies, the event is no longer a
+     * damage event for any other to see.
+     *
+     * This is a *replacement*, not a prevention effect, so it deliberately runs even when the
+     * damage can't be prevented (Soul-Scar Mage's own ruling says exactly that).
      *
      * @param state The current game state
-     * @param targetId The player entity receiving damage
+     * @param targetId The entity receiving damage — a player or a permanent
      * @param amount The damage amount to replace
-     * @param sourceId The entity dealing damage (for source filtering)
+     * @param sourceId The entity dealing damage (matched against the pattern's source filter)
+     * @param isCombatDamage Whether this is combat damage, matched against the pattern's damage
+     *        type. Combat-damage callers must pass `true`, or a noncombat-only replacement
+     *        (Soul-Scar Mage) would swallow combat damage as well.
      * @return ExecutionResult if replacement was applied, null if no replacement found
      */
     fun applyReplaceDamageWithCounters(
         state: GameState,
         targetId: EntityId,
         amount: Int,
-        sourceId: EntityId?
+        sourceId: EntityId?,
+        isCombatDamage: Boolean = false
     ): EffectResult? {
         if (amount <= 0) return null
 
@@ -2572,43 +2622,77 @@ object DamageUtils {
                 val damageEvent = effect.appliesTo
                 if (damageEvent !is com.wingedsheep.sdk.scripting.EventPattern.DamageEvent) continue
 
+                // Combat vs noncombat. Soul-Scar Mage only replaces noncombat damage, so a
+                // replacement that names a type is skipped when this event is the other one.
+                val damageTypeMatches = when (damageEvent.damageType) {
+                    is DamageType.Any -> true
+                    is DamageType.Combat -> isCombatDamage
+                    is DamageType.NonCombat -> !isCombatDamage
+                }
+                if (!damageTypeMatches) continue
+
+                // "a source you control" (Soul-Scar Mage) / "this permanent" — shared with every
+                // other damage-replacement scan so the supported filters cannot drift apart.
+                val sourceMatches = damageSourceMatches(
+                    state = state,
+                    projected = state.projectedState,
+                    filter = damageEvent.source,
+                    sourceId = sourceId,
+                    hostId = entityId,
+                    hostControllerId = sourceControllerId,
+                    recipientId = targetId,
+                )
+                if (!sourceMatches) continue
+
                 // Check recipient filter
                 val recipientMatches = when (val recipient = damageEvent.recipient) {
                     is RecipientFilter.You -> targetId == sourceControllerId
                     // "If damage would be dealt to <this creature>…" (Anti-Venom) — the damaged
                     // permanent is the replacement's own host; counters go on it (entityId).
                     is RecipientFilter.Self -> targetId == entityId
+                    // "…to a creature an opponent controls" (Soul-Scar Mage). Reads the projected
+                    // controller and the projected type, so a stolen creature and one that is only
+                    // a creature because of a continuous effect are both judged correctly.
+                    is RecipientFilter.CreatureOpponentControls ->
+                        state.projectedState.isCreature(targetId) &&
+                            state.projectedState.getController(targetId)
+                                ?.let { it != sourceControllerId } == true
                     is RecipientFilter.Any -> true
                     else -> false
                 }
                 if (!recipientMatches) continue
 
-                // Match found — replace damage with counters on this permanent
+                // Which permanent the counters land on. "That creature" (Soul-Scar Mage) is the
+                // damaged permanent; every "this permanent" printing is the replacement's host.
+                // A player has nowhere to put counters, so a DamagedPermanent replacement declines
+                // rather than dropping the damage on the floor.
+                val counterHolderId = when (effect.counterRecipient) {
+                    DamageCounterRecipient.ReplacementHost -> entityId
+                    DamageCounterRecipient.DamagedPermanent -> targetId
+                }
+                val counterHolder = state.getEntity(counterHolderId) ?: continue
+                if (effect.counterRecipient == DamageCounterRecipient.DamagedPermanent &&
+                    counterHolder.get<LifeTotalComponent>() != null
+                ) continue
+
+                // Match found — replace damage with counters
                 val events = mutableListOf<EngineGameEvent>()
                 var newState = state
 
-                // Convert string counter type to CounterType enum
-                val counterType = try {
-                    CounterType.valueOf(
-                        effect.counterType.uppercase()
-                            .replace(' ', '_')
-                            .replace('+', 'P')
-                            .replace('-', 'M')
-                            .replace("/", "_")
-                    )
-                } catch (e: IllegalArgumentException) {
-                    CounterType.PLUS_ONE_PLUS_ONE
-                }
+                // Convert the printed counter name to its CounterType. `fromName` is the shared
+                // parse: it knows the symbolic stat names ("+1/+1", "-1/-1") that `valueOf` alone
+                // cannot reach.
+                val counterType = CounterType.fromName(effect.counterType)
+                    ?: CounterType.PLUS_ONE_PLUS_ONE
 
-                // Add counters to the enchantment
-                val currentCounters = container.get<CountersComponent>() ?: CountersComponent()
+                val currentCounters = counterHolder.get<CountersComponent>() ?: CountersComponent()
                 val updatedCounters = currentCounters.withAdded(counterType, amount)
-                newState = newState.updateEntity(entityId) { c ->
+                newState = newState.updateEntity(counterHolderId) { c ->
                     c.with(updatedCounters)
                 }
 
-                val entityName = container.get<CardComponent>()?.name ?: ""
-                events.add(CountersAddedEvent(entityId, effect.counterType, amount, entityName, placedBy = sourceControllerId))
+                val entityName = counterHolder.get<CardComponent>()?.name ?: ""
+                events.add(CountersAddedEvent(counterHolderId, effect.counterType, amount, entityName, placedBy = sourceControllerId))
 
                 // Check sacrifice threshold (state-triggered ability approximation)
                 val totalCounters = updatedCounters.getCount(counterType)
