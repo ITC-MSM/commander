@@ -11460,6 +11460,28 @@ The priority groups are (CR 616.1a–f):
   Martyrs of Korlis uses `Conditions.SourceIsUntapped` for "As long as this creature is untapped, all
   damage that would be dealt to you by artifacts is dealt to this creature instead" (`redirectTo =
   EffectTarget.Self`, `source = SourceFilter.Matching(GameObjectFilter.Artifact)`).
+- `ReplaceDamageWithCounters(counterType, sacrificeThreshold = null, appliesTo = DamageEvent(recipient =
+  You), counterRecipient = DamageCounterRecipient.ReplacementHost)` — replace matching damage
+  (CR 614.1a, an "instead" effect: the damage is never dealt, so nothing that keys on damage being
+  dealt sees it) with `counterType` counters. Not a prevention effect, so it still applies to damage
+  that can't be prevented. `appliesTo` filters recipient, source, damage type and amount;
+  `counterRecipient` says where the counters land:
+  - `ReplacementHost` (default) — on the permanent that has the ability. **Force Bubble**: "If damage
+    would be dealt to you, put that many depletion counters on this enchantment instead"
+    (`DamageEvent(recipient = You)`, `sacrificeThreshold = 4` for the paired "sacrifice it when it has
+    four or more"). **Anti-Venom, Horrifying Healer** is the self-damage case where host and damaged
+    permanent coincide (`recipient = RecipientFilter.Self`).
+  - `DamagedPermanent` — on the permanent that would have been dealt the damage. **Soul-Scar Mage**:
+    "If a source you control would deal noncombat damage to a creature an opponent controls, put that
+    many -1/-1 counters on that creature instead" — `DamageEvent(recipient =
+    RecipientFilter.CreatureOpponentControls, source = SourceFilter.YouControl, damageType =
+    DamageType.NonCombat)`. A player recipient has nowhere to put counters, so the replacement
+    declines rather than eating the damage.
+
+  Wired in both damage paths (`DamageUtils.applyReplaceDamageWithCounters` for the general path,
+  `CombatDamageManager` for combat); combat callers pass `isCombatDamage = true` so a noncombat-only
+  pattern isn't applied to combat damage. Supported source filters are `Any`, `Self` and `YouControl`
+  — any other `SourceFilter` declines rather than guessing.
 - `ReplaceDamageWithMill(appliesTo = DamageEvent(recipient = Opponent))` — replace matching damage
   (CR 615, neither dealt nor prevented): each opponent of the replacement's controller mills that many
   cards instead. The Mindskinner: `DamageEvent(recipient = RecipientFilter.Opponent, source =

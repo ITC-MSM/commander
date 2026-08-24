@@ -1971,13 +1971,50 @@ data class EntersWithDevour(
 // =============================================================================
 
 /**
- * Replace damage dealt to a player with counters on this permanent.
- * Example: Force Bubble — "If damage would be dealt to you, put that many
- * depletion counters on this enchantment instead."
+ * Where the counters land when a [ReplaceDamageWithCounters] applies.
  *
- * @param counterType The type of counter to add (e.g., "depletion")
+ * The recipient of the *damage* is already named by the replacement's `appliesTo` pattern; this
+ * names the recipient of the *counters*, which is a separate question the printed cards answer
+ * two different ways.
+ */
+@Serializable
+enum class DamageCounterRecipient {
+    /**
+     * The permanent that has the replacement effect — "put that many depletion counters on
+     * **this enchantment** instead" (Force Bubble), and the self-damage case where the host and
+     * the damaged permanent happen to be the same object (Anti-Venom).
+     */
+    ReplacementHost,
+
+    /**
+     * The permanent that would have been dealt the damage — "put that many -1/-1 counters on
+     * **that creature** instead" (Soul-Scar Mage). Only meaningful when the pattern's recipient
+     * is a permanent; a player recipient has nowhere to put them, and the replacement declines.
+     */
+    DamagedPermanent
+}
+
+/**
+ * Replace damage with counters (CR 614.1a — an "instead" effect, so the damage is never dealt and
+ * nothing that keys on damage being dealt sees it; notably *not* a prevention effect, so it still
+ * applies to damage that can't be prevented).
+ *
+ * Which damage is replaced comes from [appliesTo] — recipient, source, damage type and amount are
+ * all filterable there. Where the counters go comes from [counterRecipient]:
+ *
+ * - Force Bubble — "If damage would be dealt to you, put that many depletion counters on this
+ *   enchantment instead": `DamageEvent(recipient = You)`, counters on the [ReplacementHost].
+ * - Soul-Scar Mage — "If a source you control would deal noncombat damage to a creature an
+ *   opponent controls, put that many -1/-1 counters on that creature instead":
+ *   `DamageEvent(recipient = CreatureOpponentControls, source = YouControl,
+ *   damageType = NonCombat)`, counters on the [DamagedPermanent].
+ *
+ * @param counterType The type of counter to add (e.g., "depletion", "-1/-1")
  * @param sacrificeThreshold If non-null, sacrifice this permanent when it has
- *        this many or more counters of the specified type (state-triggered ability)
+ *        this many or more counters of the specified type (state-triggered ability).
+ *        Only meaningful together with [DamageCounterRecipient.ReplacementHost].
+ * @param counterRecipient Which permanent receives the counters. Defaults to the replacement's
+ *        own host, which is what every "on this permanent" printing says.
  */
 @SerialName("ReplaceDamageWithCounters")
 @Serializable
@@ -1986,10 +2023,15 @@ data class ReplaceDamageWithCounters(
     val sacrificeThreshold: Int? = null,
     override val appliesTo: EventPattern = EventPattern.DamageEvent(
         recipient = RecipientFilter.You
-    )
+    ),
+    val counterRecipient: DamageCounterRecipient = DamageCounterRecipient.ReplacementHost
 ) : ReplacementEffect {
     override val description: String = buildString {
-        append("If ${appliesTo.description}, put that many $counterType counters on this permanent instead")
+        val where = when (counterRecipient) {
+            DamageCounterRecipient.ReplacementHost -> "this permanent"
+            DamageCounterRecipient.DamagedPermanent -> "that permanent"
+        }
+        append("If ${appliesTo.description}, put that many $counterType counters on $where instead")
         if (sacrificeThreshold != null) {
             append(". When there are $sacrificeThreshold or more $counterType counters on this permanent, sacrifice it")
         }
