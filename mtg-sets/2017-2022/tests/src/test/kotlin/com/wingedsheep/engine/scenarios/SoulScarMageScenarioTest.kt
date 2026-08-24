@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
@@ -163,6 +164,57 @@ class SoulScarMageScenarioTest : FunSpec({
         driver.counters(theirWurm) shouldBe 3
         driver.markedDamage(theirWurm) shouldBe 0
         driver.state.getBattlefield().contains(yourCourser) shouldBe false
+    }
+
+    /**
+     * Activate [cardName]'s first activated ability from [controller] at [target] and let it
+     * resolve. Everything the Mage cares about is on the source side, so the two cases below differ
+     * only in whether the source is still on the battlefield when the damage is dealt.
+     */
+    fun GameTestDriver.ping(controller: EntityId, cardName: String, source: EntityId, target: ChosenTarget) {
+        val abilityId = cardRegistry.getCard(cardName)!!.activatedAbilities.first().id
+        submit(
+            ActivateAbility(
+                playerId = controller,
+                sourceId = source,
+                abilityId = abilityId,
+                targets = listOf(target)
+            )
+        ).error shouldBe null
+        bothPass()
+        resolveStack(this)
+    }
+
+    test("noncombat damage from an activated ability you control becomes -1/-1 counters") {
+        val (driver, you, opponent) = newGame()
+        driver.putCreatureOnBattlefield(you, "Soul-Scar Mage")
+        val sorcerer = driver.putCreatureOnBattlefield(you, "Prodigal Sorcerer")
+        driver.removeSummoningSickness(sorcerer)
+        val angel = driver.putCreatureOnBattlefield(opponent, "Serra Angel") // 4/4
+
+        // The clause covers any source you control, not just spells — an ability's source counts.
+        driver.ping(you, "Prodigal Sorcerer", sorcerer, ChosenTarget.Permanent(angel))
+
+        driver.counters(angel) shouldBe 1
+        driver.markedDamage(angel) shouldBe 0
+    }
+
+    test("a source sacrificed to pay its own cost still counts as a source you control") {
+        val (driver, you, opponent) = newGame()
+        driver.putCreatureOnBattlefield(you, "Soul-Scar Mage")
+        // "{T}, Sacrifice this creature: It deals 1 damage to any target" — haste, so no need to
+        // clear summoning sickness for the tap.
+        val firebrand = driver.putCreatureOnBattlefield(you, "Fanatical Firebrand")
+        val angel = driver.putCreatureOnBattlefield(opponent, "Serra Angel") // 4/4
+
+        driver.ping(you, "Fanatical Firebrand", firebrand, ChosenTarget.Permanent(angel))
+
+        // The Firebrand is in the graveyard by the time it deals the damage, so its controller has
+        // to come from last-known information (CR 113.7a / 608.2h). Reading the live state instead
+        // found no controller at all and the replacement silently declined.
+        driver.state.getBattlefield().contains(firebrand) shouldBe false
+        driver.counters(angel) shouldBe 1
+        driver.markedDamage(angel) shouldBe 0
     }
 
     test("prowess still works") {

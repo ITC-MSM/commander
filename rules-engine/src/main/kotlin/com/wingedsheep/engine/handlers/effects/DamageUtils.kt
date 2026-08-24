@@ -24,6 +24,7 @@ import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
+import com.wingedsheep.engine.state.components.battlefield.LastKnownPermanentComponent
 import com.wingedsheep.engine.state.components.battlefield.DealtDamageToThisGameComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageDealtByPlayersThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageDealtToCreaturesThisTurnComponent
@@ -142,16 +143,40 @@ object DamageUtils {
      * 609.7), and neither has a projected entry, which is why this falls back to the base
      * [ControllerComponent] the same way [replacementHostController] does.
      */
-    private fun damageSourceController(state: GameState, entityId: EntityId): EntityId? =
-        controllerOfObject(state, entityId)
+    private fun damageSourceController(
+        state: GameState,
+        entityId: EntityId,
+        projected: ProjectedState = state.projectedState
+    ): EntityId? = controllerOfObject(state, entityId, projected)
 
     /**
      * Projected controller of an object, falling back to its base [ControllerComponent] for
-     * objects outside the battlefield (stack, exile) that have no projected entry.
+     * objects outside the battlefield (stack, exile) that have no projected entry, and then to the
+     * *last-known* controller of one that has left the battlefield altogether.
+     *
+     * That last step is load-bearing on the source side. A permanent sacrificed to pay its own
+     * ability's cost (Fanatical Firebrand: "{T}, Sacrifice this creature: It deals 1 damage to any
+     * target") deals its damage from the graveyard, where `stripBattlefieldComponents` has already
+     * taken its [ControllerComponent] away — so the projected and base lookups both come back
+     * empty. CR 113.7a and CR 608.2h say the source's last known information answers "a source you
+     * control" in exactly that case; without this fallback every [SourceFilter.YouControl]
+     * replacement (Soul-Scar Mage, Twinflame Tyrant) silently declined for a self-sacrificing
+     * source, while the same ability from a source that stayed on the battlefield (Prodigal
+     * Sorcerer) worked.
+     *
+     * @param projected the projection to read control off — [GameState.projectedState] for ordinary
+     *   callers, the in-flight one for a mid-projection caller.
      */
-    private fun controllerOfObject(state: GameState, entityId: EntityId): EntityId? =
-        state.projectedState.getController(entityId)
-            ?: state.getEntity(entityId)?.get<ControllerComponent>()?.playerId
+    private fun controllerOfObject(
+        state: GameState,
+        entityId: EntityId,
+        projected: ProjectedState = state.projectedState
+    ): EntityId? {
+        val container = state.getEntity(entityId) ?: return null
+        return projected.getController(entityId)
+            ?: container.get<ControllerComponent>()?.playerId
+            ?: container.get<LastKnownPermanentComponent>()?.snapshot?.controllerId
+    }
 
     /**
      * Deal damage to a target (player or creature).
@@ -1719,16 +1744,11 @@ object DamageUtils {
             sourceId != null && sourceId == attachedTo
         }
         // "A source you control" — any source (permanent, spell, or ability) whose controller is
-        // this replacement's controller. Projected control for battlefield permanents; the base
-        // ControllerComponent for spells and abilities on the stack.
-        is SourceFilter.YouControl -> {
-            if (sourceId == null) false
-            else {
-                val sourceController = projected.getController(sourceId)
-                    ?: state.getEntity(sourceId)?.get<ControllerComponent>()?.playerId
-                sourceController == hostControllerId
-            }
-        }
+        // this replacement's controller. Projected control for battlefield permanents, the base
+        // ControllerComponent for spells and abilities on the stack, and last-known information for
+        // a source that has left the battlefield (see [controllerOfObject]).
+        is SourceFilter.YouControl ->
+            sourceId != null && damageSourceController(state, sourceId, projected) == hostControllerId
         is SourceFilter.Matching -> {
             if (sourceId == null) false
             else {
@@ -2611,16 +2631,17 @@ object DamageUtils {
                 }
                 if (!damageTypeMatches) continue
 
-                // "a source you control" (Soul-Scar Mage) / "this permanent" — anything else is
-                // a source filter this path has never had to answer, and answering it wrong would
-                // silently widen a card's reach, so it declines instead.
-                val sourceMatches = when (damageEvent.source) {
-                    is SourceFilter.Any -> true
-                    is SourceFilter.Self -> sourceId == entityId
-                    is SourceFilter.YouControl ->
-                        sourceId != null && damageSourceController(state, sourceId) == sourceControllerId
-                    else -> false
-                }
+                // "a source you control" (Soul-Scar Mage) / "this permanent" — shared with every
+                // other damage-replacement scan so the supported filters cannot drift apart.
+                val sourceMatches = damageSourceMatches(
+                    state = state,
+                    projected = state.projectedState,
+                    filter = damageEvent.source,
+                    sourceId = sourceId,
+                    hostId = entityId,
+                    hostControllerId = sourceControllerId,
+                    recipientId = targetId,
+                )
                 if (!sourceMatches) continue
 
                 // Check recipient filter
