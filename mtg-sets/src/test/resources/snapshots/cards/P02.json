@@ -227,6 +227,30 @@
     ]
 }
 
+// Goblin Mountaineer
+{
+    "name": "Goblin Mountaineer",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Goblin Scout",
+    "oracleText": "Mountainwalk (This creature can't be blocked as long as defending player controls a Mountain.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "MOUNTAINWALK"
+    ],
+    "metadata": {
+        "collectorNumber": "101",
+        "artist": "DiTerlizzi",
+        "flavorText": "Goblin mountaineer, barely keeps his family fed.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f841fe25-237f-4303-b75e-392b82767eea.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Goblin Piker
 {
     "name": "Goblin Piker",
