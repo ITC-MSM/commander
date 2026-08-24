@@ -252,21 +252,41 @@ object Conditions {
         Exists(Player.You, Zone.BATTLEFIELD, GameObjectFilter.Creature)
 
     /**
-     * If there are no creatures anywhere on the battlefield (either player). Global scope —
-     * `Player.Each` checks every player's battlefield, negated. Used by Drop of Honey's
-     * "when there are no creatures on the battlefield, sacrifice this enchantment".
+     * If at least one permanent matching [filter] is on the battlefield, **under anyone's
+     * control** — the controller-blind sibling of [YouControl] / [OpponentControls].
+     *
+     * `Player.Each` is the global scope: every player's battlefield is searched and the
+     * condition holds as soon as one match is found anywhere. That is what "are on the
+     * battlefield" means on a card that never says whose — Drop of Honey's "when there are no
+     * creatures on the battlefield" (`negate = true`) and City in a Bottle's "whenever one or
+     * more *other* nontoken permanents … are on the battlefield" (`excludeSelf = true`).
+     *
+     * Set [excludeSelf] for the "other" wording — the source permanent is left out of the
+     * search, so a card whose own filter would match itself doesn't hold its own condition
+     * true forever. Set [negate] for "there are no …".
+     */
+    fun AnyPlayerControls(
+        filter: GameObjectFilter,
+        negate: Boolean = false,
+        excludeSelf: Boolean = false
+    ): ConditionInterface =
+        Exists(Player.Each, Zone.BATTLEFIELD, filter, negate = negate, excludeSelf = excludeSelf)
+
+    /**
+     * If there are no creatures anywhere on the battlefield (either player). Used by Drop of
+     * Honey's "when there are no creatures on the battlefield, sacrifice this enchantment".
      */
     val NoCreaturesOnBattlefield: ConditionInterface =
-        Exists(Player.Each, Zone.BATTLEFIELD, GameObjectFilter.Creature, negate = true)
+        AnyPlayerControls(GameObjectFilter.Creature, negate = true)
 
     /**
      * If there are no lands anywhere on the battlefield (either player). The land sibling of
-     * [NoCreaturesOnBattlefield], same global `Player.Each` + negate shape. Used by Mana Vortex's
-     * "when there are no lands on the battlefield, sacrifice this enchantment" — the clause that
-     * ends the card once it has eaten every land in play.
+     * [NoCreaturesOnBattlefield]. Used by Mana Vortex's "when there are no lands on the
+     * battlefield, sacrifice this enchantment" — the clause that ends the card once it has
+     * eaten every land in play.
      */
     val NoLandsOnBattlefield: ConditionInterface =
-        Exists(Player.Each, Zone.BATTLEFIELD, GameObjectFilter.Land, negate = true)
+        AnyPlayerControls(GameObjectFilter.Land, negate = true)
 
     /**
      * If you control at least one permanent matching [filter].

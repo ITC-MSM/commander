@@ -779,6 +779,17 @@ data class MayCastWithoutPayingManaCost(
  * (never advertising it), because a legal-action list that offers a land drop the handler will
  * refuse is worse than either alone.
  *
+ * Scoped along the same axes as [PlayersCantCastSpells]:
+ *
+ *  - **who** — [affected], relative to this permanent's controller.
+ *  - **which** — [landFilter], matched against the land card being played (card predicates work
+ *    in any zone, so it reads the same from hand, graveyard or exile). Defaults to every land;
+ *    City in a Bottle narrows it to `originallyPrintedInSet("ARN")`.
+ *  - **when** — [condition], evaluated in the controller's context; `null` = always.
+ *
+ * A filtered lock (`landFilter != Any`) never suppresses the land drop wholesale — it is applied
+ * per candidate card during enumeration, so the unaffected lands in a hand stay playable.
+ *
  * This stops the *play*. A land put onto the battlefield by an effect is a different event and
  * needs [LandsCantEnterTheBattlefield]; Worms of the Earth prints both lines for exactly that
  * reason.
@@ -804,16 +815,25 @@ data object LandsCantEnterTheBattlefield : StaticAbility {
 @Serializable
 data class PlayersCantPlayLands(
     val affected: Player = Player.Each,
-    val condition: Condition? = null
+    val condition: Condition? = null,
+    val landFilter: GameObjectFilter = GameObjectFilter.Any
 ) : StaticAbility {
     override val description: String = buildString {
+        val lands = if (landFilter == GameObjectFilter.Any) "lands" else "${landFilter.description} lands"
         when (affected) {
-            is Player.You -> append("You can't play lands")
-            is Player.EachOpponent -> append("Your opponents can't play lands")
-            is Player.Each -> append("Players can't play lands")
-            else -> append("${affected.description.replaceFirstChar { it.uppercase() }} can't play lands")
+            is Player.You -> append("You can't play $lands")
+            is Player.EachOpponent -> append("Your opponents can't play $lands")
+            is Player.Each -> append("Players can't play $lands")
+            else -> append("${affected.description.replaceFirstChar { it.uppercase() }} can't play $lands")
         }
         condition?.let { append(" ${it.description}") }
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = landFilter.applyTextReplacement(replacer)
+        val newCondition = condition?.applyTextReplacement(replacer)
+        return if (newFilter === landFilter && newCondition === condition) this
+        else copy(landFilter = newFilter, condition = newCondition)
     }
 }
 

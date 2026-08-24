@@ -6757,12 +6757,18 @@ staticAbility {
   `defaultBlockEvasionRules` a declared block goes through. A creature that couldn't have blocked a
   flier by declaring can't be handed one here either. If either direction is illegal the effect does
   nothing at all — not a partial swap.
-- `PlayersCantPlayLands(affected = Player.Each, condition = null)` — the land-play sibling of
-  `PlayersCantCastSpells` (Worms of the Earth). Playing a land is a *special action*, not casting a
-  spell, so a card stopping one says nothing about the other. Enforced in **both** `PlayLandHandler`
-  (rejecting the action) and `EnumerationContext.canPlayLand` (never advertising it) via
-  `LandDropUtils.playerCantPlayLands`, which also unwraps a `ConditionalStaticAbility` so an
-  "as long as …" gate is honored rather than locking forever.
+- `PlayersCantPlayLands(affected = Player.Each, condition = null, landFilter = GameObjectFilter.Any)`
+  — the land-play sibling of `PlayersCantCastSpells` (Worms of the Earth). Playing a land is a
+  *special action*, not casting a spell, so a card stopping one says nothing about the other.
+  Enforced in **both** `PlayLandHandler` (rejecting the action) and `EnumerationContext` (never
+  advertising it) via `LandDropUtils.playerCantPlayLands`, which also unwraps a
+  `ConditionalStaticAbility` so an "as long as …" gate is honored rather than locking forever.
+  Scoped along the same three axes as `PlayersCantCastSpells`: **who** (`affected`), **which**
+  (`landFilter`, matched against the land card being played, so card predicates read the same from
+  hand, graveyard or exile — City in a Bottle narrows it to `originallyPrintedInSet("ARN")`) and
+  **when** (`condition`). A *filtered* lock never suppresses the land drop wholesale: the blanket
+  `canPlayLand` probe deliberately ignores it and `EnumerationContext.cantPlayLand(cardId)` removes
+  only the named cards, so the unaffected lands in a hand stay playable.
 - `LandsCantEnterTheBattlefield` — the other half of the same lock, and genuinely separate: this one
   catches a land arriving by an *effect* (a fetch, a reanimation, a blink), which the play-side
   restriction never sees. A card printing only one of the two leaves the other route open, which is
@@ -9227,9 +9233,17 @@ answer it and would silently return `false`.
   signature promises. Self-exclusion is a property of the *count*, not a predicate on the filter,
   which is why it is a separate entry and not a `GameObjectFilter` modifier.
 - `ControlCreature` — you control any creature.
-- `NoCreaturesOnBattlefield` — there are no creatures anywhere on the battlefield (global, either player;
-  `Exists(Player.Each, …, negate = true)`). Used by Drop of Honey's "when there are no creatures on the
-  battlefield, sacrifice this enchantment" state trigger.
+- `AnyPlayerControls(filter, negate = false, excludeSelf = false)` — at least one permanent matching
+  `filter` is on the battlefield **under anyone's control**; the controller-blind sibling of
+  `YouControl` / `OpponentControls` (`Exists(Player.Each, Zone.BATTLEFIELD, …)`). This is what "are
+  on the battlefield" means on a card that never says whose. `excludeSelf` supplies the printed
+  "other" — City in a Bottle's "whenever one or more **other** nontoken permanents with a name
+  originally printed in the Arabian Nights expansion are on the battlefield", where without it the
+  artifact's own ARN-printed name would hold its condition true forever. `negate` gives the two
+  named shorthands below.
+- `NoCreaturesOnBattlefield` — there are no creatures anywhere on the battlefield (either player;
+  `AnyPlayerControls(Creature, negate = true)`). Used by Drop of Honey's "when there are no creatures
+  on the battlefield, sacrifice this enchantment" state trigger.
 - `NoLandsOnBattlefield` — the land sibling of `NoCreaturesOnBattlefield`, same global shape. Used by
   Mana Vortex's "when there are no lands on the battlefield, sacrifice this enchantment" state trigger.
 - `EntityNumericProperty.ValueChosenAsEntered` (via `DynamicAmount.EntityProperty(EntityReference.Source, …)`)

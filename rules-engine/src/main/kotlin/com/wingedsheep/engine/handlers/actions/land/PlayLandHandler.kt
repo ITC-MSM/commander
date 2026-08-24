@@ -102,6 +102,16 @@ class PlayLandHandler(
             return "You can only play land cards as lands"
         }
 
+        // Filtered "players can't play <these> lands" lock (City in a Bottle). The blanket probe
+        // above deliberately ignores filtered locks, so the named card is asked about here — the
+        // mirror of PlayLandEnumerator's per-candidate check.
+        if (LandDropUtils.playerCantPlayLands(
+                state, action.playerId, cardRegistry, conditionEvaluator, landCardId = action.cardId
+            )
+        ) {
+            return "You can't play ${cardComponent.name}"
+        }
+
         // Check card is in hand, on top of library with PlayFromTopOfLibrary, in exile with MayPlayPermission,
         // or in graveyard with MayPlayPermanentsFromGraveyard permission (Muldrotha)
         val handZone = ZoneKey(action.playerId, Zone.HAND)

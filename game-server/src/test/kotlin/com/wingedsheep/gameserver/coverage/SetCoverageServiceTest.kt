@@ -7,7 +7,6 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
-import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.comparables.shouldBeLessThanOrEqualTo
 import io.kotest.matchers.doubles.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.doubles.shouldBeLessThanOrEqual
@@ -152,14 +151,15 @@ class SetCoverageServiceTest : FunSpec({
             detail.total shouldBe detail.draft.count { it.notPlanned == null }
         }
 
-        test("only excuse cards that are actually still missing — Arabian Nights keeps its real gaps") {
-            // ARN's holes are two policy exclusions (Jeweled Bird = ante, Shahrazad = subgame) and
-            // the cards we could still build — City in a Bottle, now that Ring of Ma'rûf is done.
-            // Excluding the first pair must not paper over the second, so the set stays short of 100%.
+        test("an excused set still names what it isn't counting — Arabian Nights and its two exclusions") {
+            // ARN's only remaining holes are two policy exclusions (Jeweled Bird = ante, Shahrazad
+            // = subgame); every card we intend to build is built, City in a Bottle included. The
+            // exclusions drop out of the denominator but stay named in the detail view, so a set
+            // that reads 100% can always say which cards it excused to get there.
             val arn = coverage.find { it.code == "ARN" }.shouldNotBeNull()
             arn.notPlanned shouldBe 2
-            arn.total - arn.implemented shouldBeGreaterThanOrEqualTo 1
-            arn.percent shouldBeLessThan 100.0
+            arn.implemented shouldBe arn.total
+            arn.percent shouldBe 100.0
             val detail = service.detail("ARN").shouldNotBeNull()
             detail.draft.filter { it.notPlanned != null }.map { it.name } shouldBe
                 listOf("Jeweled Bird", "Shahrazad")

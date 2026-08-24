@@ -22,7 +22,7 @@ class PlayLandEnumerator : ActionEnumerator {
             val hand = state.getHand(playerId)
             for (cardId in hand) {
                 val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: continue
-                if (cardComponent.typeLine.isLand) {
+                if (cardComponent.typeLine.isLand && !context.cantPlayLand(cardId)) {
                     result.add(LegalAction(
                         actionType = "PlayLand",
                         description = "Play ${cardComponent.name}",
@@ -37,7 +37,7 @@ class PlayLandEnumerator : ActionEnumerator {
             val graveyardCards = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD))
             for (cardId in graveyardCards) {
                 val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: continue
-                if (cardComponent.typeLine.isLand) {
+                if (cardComponent.typeLine.isLand && !context.cantPlayLand(cardId)) {
                     result.add(LegalAction(
                         actionType = "PlayLand",
                         description = "Play ${cardComponent.name}",
@@ -60,6 +60,7 @@ class PlayLandEnumerator : ActionEnumerator {
                 if (cardId !in discardedThisTurn) continue
                 val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: continue
                 if (!cardComponent.typeLine.isLand) continue
+                if (context.cantPlayLand(cardId)) continue
                 val cardDef = context.cardRegistry.getCard(cardComponent.cardDefinitionId) ?: continue
                 if (com.wingedsheep.engine.mechanics.MayhemGrants.effectiveMayhem(state, cardId, cardDef) == null) continue
                 result.add(LegalAction(
@@ -79,6 +80,7 @@ class PlayLandEnumerator : ActionEnumerator {
                 if (!seenLinkedLands.add(exiledId)) continue
                 val cardComponent = state.getEntity(exiledId)?.get<CardComponent>() ?: continue
                 if (!cardComponent.typeLine.isLand) continue
+                if (context.cantPlayLand(exiledId)) continue
                 if (granter.ability.ownedByYou && cardComponent.ownerId != playerId) continue
                 val inExile = state.turnOrder.any { pid -> exiledId in state.getZone(ZoneKey(pid, Zone.EXILE)) }
                 if (!inExile) continue

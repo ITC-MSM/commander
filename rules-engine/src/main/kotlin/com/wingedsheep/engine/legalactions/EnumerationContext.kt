@@ -101,6 +101,20 @@ class EnumerationContext(
                 .playerCantPlayLands(state, playerId, cardRegistry)
     }
 
+    /**
+     * Whether a *filtered* [com.wingedsheep.sdk.scripting.PlayersCantPlayLands] lock forbids this
+     * player from playing the specific land [cardId] (City in a Bottle's "players can't … play
+     * lands with a name originally printed in the Arabian Nights expansion").
+     *
+     * The per-card sibling of [canPlayLand]'s blanket probe, mirroring how [cantCastSpell] sits
+     * beside [cantCastSpells]: the blanket flag suppresses the land drop wholesale, this one only
+     * removes the lands the lock actually names. Consulted by every PlayLand enumeration branch,
+     * and mirrored in `PlayLandHandler` so the offered list and the handler agree.
+     */
+    fun cantPlayLand(cardId: EntityId): Boolean =
+        com.wingedsheep.engine.legalactions.utils.LandDropUtils
+            .playerCantPlayLands(state, playerId, cardRegistry, landCardId = cardId)
+
     // Cast restrictions — blanket, spell-independent locks (a Silence-style CantCastSpellsComponent
     // or a RestrictSpellsCastPerTurn per-turn limit). Cached once per enumeration pass.
     val cantCastSpells: Boolean by lazy {
