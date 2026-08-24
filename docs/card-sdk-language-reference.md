@@ -2521,7 +2521,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   optional / gated-effect cluster** (phase-rs Lesson 1). A `Gate` decides whether `then` runs; if it
   fails, `otherwise` runs. One executor + one continuation/resumer own the canonical unwind order, so
   targets on `then`/`otherwise` lock at trigger time (CR 603.3d) and the gate is resolved at
-  resolution time (CR 117.3a) by `decisionMaker` (defaults to the controller) — the may-vs-target
+  resolution time (CR 608.2c) by `decisionMaker` (defaults to the controller) — the may-vs-target
   timing is correct by construction rather than re-encoded per wrapper. `decisionMaker` is honoured
   on the may-then-target trigger path too, where `TriggerProcessor` asks the question itself before
   the effect ever executes (Farrel's Mantle's "its controller may", with the Aura on an opponent's
@@ -8668,7 +8668,24 @@ composite abilities).
   counter removal can reach it, and it is sacrificed whenever the last counter leaves, not only on
   an upkeep.
 - `Renown(n)` — first combat damage to a player grants renown counters.
-- `Fabricate(n)` — ETB choose +1/+1 counters or Servo tokens.
+- `Fabricate(n)` — **engine-live.** Declare it and nothing else:
+  `keywordAbility(KeywordAbility.fabricate(2))` (Weaponcraft Enthusiast). The engine supplies the
+  CR 702.123 ability from
+  [`Fabricate`](../mtg-sdk/src/main/kotlin/com/wingedsheep/sdk/scripting/Fabricate.kt): a SELF
+  enters-the-battlefield trigger holding CR 702.123a's consent gate verbatim — a
+  `MayEffect(AddCounters(+1/+1, n, Self), otherwise = CreateToken(1/1 colorless Servo artifact))`.
+  It is deliberately **not** a `ModalEffect`, even though the reminder line reads "put two +1/+1
+  counters on it *or* create two Servos": a top-level `ModalEffect` on a triggered ability is a
+  *modal ability*, and CR 603.3c locks its mode in when the ability is **put on the stack**, while
+  fabricate's choice is made on **resolution** — which is the whole fabricate play pattern (they
+  kill it in response, so you take Servos instead). A consent gate resolves at resolution
+  (CR 608.2c), so it gets the timing right for free. Do **not** hand-write the trigger; it
+  would stack with the engine's. Do **not** pass an `imageUri` for the Servo either — the token is
+  created with none, so the set-scoped `TokenArtRegistry` resolves the Servo art of whichever set
+  printed the card. Derived like vanishing: the trigger is gated on the **projected** keyword (so
+  "loses all abilities" strips it) while N is read from the printed `KeywordAbility.Numeric`, and
+  per CR 702.123b each printed instance becomes its own trigger with its own N — two instances are
+  two separate decisions, never one summed fabricate. Pinned by `FabricateScenarioTest`.
 - `Tribute(n)` — opponent chooses ETB bonus.
 - `Mobilize(n)` — +N tapped-and-attacking 1/1 red Warrior tokens on attack (Tarkir: Dragonstorm, Mardu).
   Display-only; wire the behavior with the `card { mobilize(n) }` builder helper, which adds this keyword

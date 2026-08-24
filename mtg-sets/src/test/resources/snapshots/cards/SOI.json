@@ -3709,6 +3709,52 @@
     ]
 }
 
+// Stone Quarry
+{
+    "name": "Stone Quarry",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {R} or {W}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "279",
+        "rarity": "UNCOMMON",
+        "artist": "Cliff Childs",
+        "flavorText": "In Gavony, headstones come only from quarries that have been blessed by chaplains.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/6/e636cdc3-4b83-4f15-ad4a-6c8fa3533408.jpg?1783937697"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Strength of Arms
 {
     "name": "Strength of Arms",
@@ -5192,4 +5238,50 @@
         "imageUri": "https://cards.scryfall.io/normal/front/1/2/1285b444-1668-4a3d-9fcd-8ce4e95c6d2f.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Woodland Stream
+{
+    "name": "Woodland Stream",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {G} or {U}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "282",
+        "rarity": "UNCOMMON",
+        "artist": "James Paick",
+        "flavorText": "Two creaking waterwheels herald the approach to Briarbridge through the Ulvenwald.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/8/18a0c745-dee6-4cb2-acaa-3d2b8e0cce5b.jpg?1783937694"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ]
 }

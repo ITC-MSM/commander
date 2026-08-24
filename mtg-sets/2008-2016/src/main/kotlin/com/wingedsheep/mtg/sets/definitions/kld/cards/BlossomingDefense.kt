@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.ecl.cards
+package com.wingedsheep.mtg.sets.definitions.kld.cards
 
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.Effects
@@ -27,9 +27,9 @@ val BlossomingDefense = card("Blossoming Defense") {
 
     metadata {
         rarity = Rarity.UNCOMMON
-        collectorNumber = "167"
-        artist = "Eelis Kyttanen"
-        flavorText = "To survive Shadowmoor's wilds, safewrights must carry an unassailable seed of beauty within their heart."
-        imageUri = "https://cards.scryfall.io/normal/front/3/c/3cce80d0-b937-4325-a603-1278c110f244.jpg?1767658356"
+        collectorNumber = "146"
+        artist = "Anastasia Ovchinnikova"
+        flavorText = "Those who move harmoniously with the flow of aether can channel the power of the natural world."
+        imageUri = "https://cards.scryfall.io/normal/front/5/c/5c026c39-b09c-408a-844f-fb5eb785862a.jpg?1783937183"
     }
 }

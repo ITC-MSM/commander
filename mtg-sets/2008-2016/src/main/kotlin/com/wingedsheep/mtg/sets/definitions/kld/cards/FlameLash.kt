@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.blb.cards
+package com.wingedsheep.mtg.sets.definitions.kld.cards
 
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Targets
@@ -25,9 +25,10 @@ val FlameLash = card("Flame Lash") {
 
     metadata {
         rarity = Rarity.COMMON
-        collectorNumber = "391"
+        collectorNumber = "266"
         artist = "Viktor Titov"
-        imageUri = "https://cards.scryfall.io/normal/front/c/6/c6440439-7178-4a97-9e18-7fdef4b02678.jpg?1721428094"
+        flavorText = "\"This is just my warm-up.\""
+        imageUri = "https://cards.scryfall.io/normal/front/a/c/ac44e3cb-cc69-4222-87bc-ffa54b7ab34a.jpg?1783937138"
         inBooster = false
     }
 }
