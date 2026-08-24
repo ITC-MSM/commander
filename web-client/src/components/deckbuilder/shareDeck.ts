@@ -76,6 +76,14 @@ export interface SharedDeck {
   commanderPrinting?: PrintingRef
   /** Optional sparse per-card printing pins, keyed by card name. */
   printings?: Record<string, PrintingRef>
+  /**
+   * Optional constructed sideboard ("outside the game", CR 100.4a), card name → copies.
+   *
+   * Carried by the account (cloud) path only, which stores this object as JSON verbatim. The v2
+   * *share code* below does not encode it — its compact framing has no field for one — so a deck
+   * shared by link arrives without its sideboard.
+   */
+  sideboard?: Record<string, number>
 }
 
 /**
