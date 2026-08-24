@@ -1869,6 +1869,34 @@
     "colorIdentityOverride": []
 }
 
+// Terra Stomper
+{
+    "name": "Terra Stomper",
+    "manaCost": "{3}{G}{G}{G}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "This spell can't be countered.\nTrample (This creature can deal excess combat damage to the player or planeswalker it's attacking.)",
+    "creatureStats": {
+        "power": 8,
+        "toughness": 8
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "cantBeCountered": true
+    },
+    "metadata": {
+        "collectorNumber": "187",
+        "rarity": "RARE",
+        "artist": "Goran Josic",
+        "flavorText": "Sometimes violent earthquakes, hurtling boulders, and unseasonable dust storms are wrongly attributed to the Roil.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/a/4ab062f4-e4b1-4129-9027-d0ca1a723273.jpg?1783942130"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Territorial Baloth
 {
     "name": "Territorial Baloth",
@@ -2031,4 +2059,44 @@
         "imageUri": "https://cards.scryfall.io/normal/front/7/a/7abd2723-2851-4f1a-b2d0-dfcb526472c3.jpg?1783942121"
     },
     "colorIdentityOverride": []
+}
+
+// Welkin Tern
+{
+    "name": "Welkin Tern",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Bird",
+    "oracleText": "Flying (This creature can't be blocked except by creatures with flying or reach.)\nThis creature can block only creatures with flying.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CanOnlyBlockCreaturesWith",
+                "blockerFilter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        {
+                            "type": "HasKeyword",
+                            "keyword": "FLYING"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "76",
+        "artist": "Austin Hsu",
+        "flavorText": "\"The sky hedrons are covered with tern nests. It's as though the birds have given up on the land altogether.\"\n—Ilori, merfolk falconer",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/357931d0-8ba6-4857-9db9-7f42d81514a5.jpg?1783942157"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
 }

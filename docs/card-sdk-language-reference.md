@@ -10232,8 +10232,9 @@ both spellings, and the ability its bare-noun line grants says "Regenerate this 
   permanents whose projected subtypes include Equipment), and `equippedCreaturesYouControl(player = You)`
   — creatures with at least one Equipment attached (`GameObjectFilter.Creature.equipped()`). Used by
   Adelbert Steiner (+1/+1 per Equipment), Barret Wallace.
-- Facades: `DynamicAmounts.cardsInYourGraveyard()` / `creatureCardsInYourGraveyard()`
-  (graveyard counts), and `DynamicAmounts.cardsInYourHand()` — cards in your hand,
+- Facades: `DynamicAmounts.cardsInYourGraveyard(player = You)` /
+  `creatureCardsInYourGraveyard(player = You)` (graveyard counts) — pass `Player.Each` for the
+  "in **all** graveyards" wording (Undergrowth Scavenger's entry counters), and `DynamicAmounts.cardsInYourHand()` — cards in your hand,
   e.g. Stingerback Terror's "-1/-1 for each card in your hand" (multiply by `-1` and feed
   both bonuses of a `GrantDynamicStatsEffect(GroupFilter.source(), …)`). Greatest power among
   creatures you control is `DynamicAmounts.battlefield(Player.You, GameObjectFilter.Creature).maxPower()`

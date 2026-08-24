@@ -39,6 +39,43 @@
     ]
 }
 
+// Clear a Path
+{
+    "name": "Clear a Path",
+    "manaCost": "{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy target creature with defender.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature with defender"
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature kw:defender"
+                },
+                "id": "target creature with defender"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "32",
+        "artist": "Karl Kopinski",
+        "flavorText": "\"Why do guards always look surprised when we bash them?\" asked Ruric. \"I think they expect a bribe,\" said Thar.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/a/8a8f904b-a9a3-4bae-9284-4e9cbe7592ee.jpg?1783940038"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Kraul Warrior
 {
     "name": "Kraul Warrior",

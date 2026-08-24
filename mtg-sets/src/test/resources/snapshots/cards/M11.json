@@ -93,6 +93,48 @@
     ]
 }
 
+// Back to Nature
+{
+    "name": "Back to Nature",
+    "manaCost": "{1}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Destroy all enchantments.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "BattlefieldMatching",
+                        "filter": "enchantment"
+                    },
+                    "storeAs": "destroyAll_gathered"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "destroyAll_gathered",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    },
+                    "moveType": "Destroy"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "164",
+        "rarity": "UNCOMMON",
+        "artist": "Howard Lyon",
+        "flavorText": "\"Nature is a mutable cloud which is always and never the same.\"\n—Ralph Waldo Emerson, *Essays*",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/7/e7af9ebf-8935-4107-aacd-4c643b68cb6e.jpg?1783941801"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Barony Vampire
 {
     "name": "Barony Vampire",
@@ -499,6 +541,33 @@
     ]
 }
 
+// Jace's Ingenuity
+{
+    "name": "Jace's Ingenuity",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Draw three cards.",
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 3
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "60",
+        "rarity": "UNCOMMON",
+        "artist": "Igor Kieryluk",
+        "flavorText": "\"Brute force can sometimes kick down a locked door, but knowledge is a skeleton key.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/7/b79bea30-3210-4944-b146-3624c9869f45.jpg?1783941824"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Maritime Guard
 {
     "name": "Maritime Guard",
@@ -664,6 +733,46 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Tireless Missionaries
+{
+    "name": "Tireless Missionaries",
+    "manaCost": "{4}{W}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "When this creature enters, you gain 3 life.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "descriptionOverride": "When this creature enters, you gain 3 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "36",
+        "artist": "Dave Kendall",
+        "flavorText": "If they succeed in their holy work, their order will vanish into welcome obscurity, for there will be no more souls to redeem.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cc42fe32-5f02-472c-a25e-d03e01546dc6.jpg?1783941830"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
