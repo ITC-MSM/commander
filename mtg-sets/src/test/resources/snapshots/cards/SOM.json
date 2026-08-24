@@ -2933,8 +2933,7 @@
                         "type": "BoundVariable",
                         "name": "target"
                     },
-                    "destination": "Hand",
-                    "fromZone": "Graveyard"
+                    "destination": "Hand"
                 },
                 "targetRequirements": [
                     {

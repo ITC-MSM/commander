@@ -19,6 +19,11 @@ check-card-printing.py / card-status (no network):
 Cards with no fresh per-card cache entry are skipped (run missing-reprints.py
 first to populate the cache). Files that already exist are left untouched.
 
+Two things this can't fix are *named* at the end of a run instead of skipped
+silently: cards with a stale cache, and cards whose canonical is filed in a later
+set than their earliest real printing (those need the canonical relocated by a
+human — a `Printing` row in the earlier set would be wrong).
+
 Usage:
   scripts/generate-reprints.py            # generate all; print a summary
   scripts/generate-reprints.py --set DMU  # only rows written *into* DMU
@@ -316,6 +321,7 @@ def main() -> int:
     skipped_exists = 0
     skipped_nocache = 0
     stale: list[str] = []
+    misplaced: list[tuple[str, str, str]] = []  # (card, canonical set today, set it belongs in)
     by_set: dict[str, int] = defaultdict(int)
 
     for name in sorted(canonical):
@@ -330,7 +336,22 @@ def main() -> int:
             continue
         canon_set = canonical[name]
         expected = expected_canonical(printings)
+        expected_sc = expected.get("set_code") if expected else None
         rows = reprints.get(name, set())
+        # A canonical filed in a later set than the card's earliest real printing produces *no*
+        # output from the loop below: its `continue` is right (that set owes a relocated
+        # `card(...)`, not a `Printing` row) but silent, so the run reads as "this card needs
+        # nothing" — the same failure the `stale` list above was given a name for. Blossoming
+        # Defense and Flame Lash were both first printed in KLD with their canonicals sitting in
+        # ECL and BLB; `--set KLD` said "would write 4" with no hint those two were involved or
+        # that a human had to decide anything. Collected once per card rather than inside the
+        # per-printing loop, so a card whose earliest set already holds a stray `Printing` row (a
+        # row where the canonical belongs) is reported too instead of being swallowed by the
+        # `sc in rows` skip. With `--set X` the reader is working X, so keep the cards whose
+        # canonical *belongs in* X — the relocations that command can act on.
+        if expected_sc and expected_sc != canon_set and expected_sc in scaffolded:
+            if only is None or expected_sc == only:
+                misplaced.append((name, canon_set, expected_sc))
         seen_sets: set[str] = set()
         for p in printings:
             sc = p.get("set_code")
@@ -339,8 +360,8 @@ def main() -> int:
             seen_sets.add(sc)
             if sc not in scaffolded or sc == canon_set or sc in rows:
                 continue
-            if expected and sc == expected.get("set_code"):
-                continue  # canonical-to-be slot (relocate, not a reprint)
+            if expected_sc and sc == expected_sc:
+                continue  # canonical-to-be slot (relocate, not a reprint) — reported via `misplaced`
             if only and sc != only:
                 continue
             primary = primary_printing(printings, sc)
@@ -374,15 +395,31 @@ def main() -> int:
             print(f"NOTE: {len(unknown)} requested name(s) have no canonical here: {shown}")
     print(f"{'(dry-run) would write' if args.dry_run else 'wrote'} {written} reprint files "
           f"across {len(by_set)} sets")
-    print(f"skipped: {skipped_exists} already exist, {skipped_nocache} missing ids in cache")
+    # Every bucket, so `written` reconciles without guessing where the rest of the corpus went.
+    # The units differ and saying so beats implying they add up: the first three count *rows* (one
+    # card can owe several), the last two count *cards* that produced no row at all.
+    print(f"scanned {len(canonical)} canonical cards | rows: {written} to write, "
+          f"{skipped_exists} already exist, {skipped_nocache} missing ids in cache "
+          f"| cards needing a human: {len(misplaced)} misplaced canonical, {len(stale)} stale cache")
     if stale:
         shown = ", ".join(stale[:8]) + (" …" if len(stale) > 8 else "")
         print(
             f"WARNING: {len(stale)} cards had no fresh printing cache and were NOT considered: {shown}\n"
             f"         re-run scripts/missing-reprints.py (or fetch_printings per name) first"
         )
-    for sc in sorted(by_set, key=lambda s: (-by_set[s], s)):
-        print(f"  {sc.upper():<6} {by_set[sc]}")
+    if misplaced:
+        print(
+            f"WARNING: {len(misplaced)} canonicals are filed in a later set than the card's earliest\n"
+            f"         real printing. Nothing is written for those: the earliest set needs the\n"
+            f"         canonical `card(...)` RELOCATED into it, after which the set the canonical\n"
+            f"         sits in today owes a `Printing` row instead. Each needs a human:"
+        )
+        for name, actual, belongs in sorted(misplaced):
+            print(f"         {name}: canonical in {actual.upper()}, earliest printing is {belongs.upper()}")
+    if by_set:
+        print(f"per target set (sums to {written}):")
+        for sc in sorted(by_set, key=lambda s: (-by_set[s], s)):
+            print(f"  {sc.upper():<6} {by_set[sc]}")
     return 0
 
 

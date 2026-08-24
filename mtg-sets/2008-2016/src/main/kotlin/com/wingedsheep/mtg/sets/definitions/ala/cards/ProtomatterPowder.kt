@@ -1,11 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.ala.cards
 
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 
@@ -17,7 +15,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  *
  * The three printed cost atoms compose through [Costs.Composite] — [Costs.Mana], [Costs.Tap] and
  * [Costs.SacrificeSelf] — and the target is a [TargetObject] over
- * `GameObjectFilter.Artifact.ownedByYou()` scoped to [Zone.GRAVEYARD], the same shape Sharuum the
+ * [TargetFilter.ArtifactInYourGraveyard], the same shape Sharuum the
  * Hegemon uses. The recursion is [Effects.PutOntoBattlefieldFromGraveyard], the `fromZone`-guarded
  * sibling of `PutOntoBattlefield`, so the move is skipped if the card has left the graveyard by the
  * time the ability resolves.
@@ -33,7 +31,7 @@ val ProtomatterPowder = card("Protomatter Powder") {
         val t = target(
             "target",
             TargetObject(
-                filter = TargetFilter(GameObjectFilter.Artifact.ownedByYou(), zone = Zone.GRAVEYARD)
+                filter = TargetFilter.ArtifactInYourGraveyard
             )
         )
         effect = Effects.PutOntoBattlefieldFromGraveyard(t)

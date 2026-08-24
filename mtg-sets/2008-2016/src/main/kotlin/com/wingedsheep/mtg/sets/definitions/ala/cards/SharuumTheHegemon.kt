@@ -1,12 +1,10 @@
 package com.wingedsheep.mtg.sets.definitions.ala.cards
 
 import com.wingedsheep.sdk.core.Keyword
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 
@@ -18,8 +16,8 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  * Flying
  * When Sharuum enters, you may return target artifact card from your graveyard to the battlefield.
  *
- * The named target is a [TargetObject] over [TargetFilter] of `GameObjectFilter.Artifact.ownedByYou()`
- * scoped to [Zone.GRAVEYARD], and the recursion is
+ * The named target is a [TargetObject] over [TargetFilter.ArtifactInYourGraveyard],
+ * and the recursion is
  * [Effects.PutOntoBattlefieldFromGraveyard] — the `fromZone`-guarded sibling of
  * `PutOntoBattlefield`, so the move is skipped if the card has left the graveyard by resolution.
  * `optional = true` lowers the printed "you may" into a
@@ -41,7 +39,7 @@ val SharuumTheHegemon = card("Sharuum the Hegemon") {
         val t = target(
             "target",
             TargetObject(
-                filter = TargetFilter(GameObjectFilter.Artifact.ownedByYou(), zone = Zone.GRAVEYARD)
+                filter = TargetFilter.ArtifactInYourGraveyard
             )
         )
         optional = true

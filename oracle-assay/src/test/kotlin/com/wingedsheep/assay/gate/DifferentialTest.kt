@@ -22,6 +22,10 @@ import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetPermanent
+import com.wingedsheep.assay.grammar.CardFragment
+import com.wingedsheep.sdk.scripting.AdditionalCost
+import com.wingedsheep.sdk.scripting.costs.CostAtom
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
@@ -180,10 +184,15 @@ class DifferentialTest : StringSpec({
 
     // A keyword the SDK lowers to a triggered ability at authoring time leaves content in a slot the
     // grammar cannot produce. Confirming such a card would claim a check nobody performed.
+    //
+    // The probe field is `cantBeCopied`, not `cantBeCountered`: the latter used to stand in for "a
+    // slot the grammar cannot produce" and stopped being one when `modelledSlots()` was widened to
+    // match `MODELLED_SLOTS_NOTE`. Any genuinely unmodelled slot serves — pick a fresh one if this
+    // one is ever read too.
     "a card with script content outside the modelled slots is not compared" {
         val card = oracleCard("Teeka's Dragon", "Flying")
         val withLowering = definition("Teeka's Dragon", "Flying", keywords = setOf(Keyword.FLYING))
-            .let { it.copy(script = it.script.copy(cantBeCountered = true)) }
+            .let { it.copy(script = it.script.copy(cantBeCopied = true)) }
         val result = differential.compare(implemented(withLowering), index(card))
 
         result.population shouldBe Population.SCRIPT_NOT_MODELLED
@@ -415,5 +424,65 @@ class DifferentialTest : StringSpec({
         sample.size shouldBe 200
         sample.count { it.definition == null } shouldBe 0
         sample.first().definition?.name shouldNotBe null
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // The MODELLED_SLOTS_NOTE / modelledSlots() drift guard.
+    //
+    // `CardFragment.MODELLED_SLOTS_NOTE` names the `CardScript` slots the grammar can produce, and
+    // `Differential.modelledSlots()` is the comparator that has to agree with it. The note's own
+    // KDoc says the two are "kept as one list so they cannot drift apart" — but a prose constant
+    // cannot enforce that, and they *did* drift: the note gained `castRestrictions`,
+    // `additionalCosts` and `cantBeCountered` when the grammar learned to read them, the comparator
+    // did not, and every card using one was fail-closed straight into SCRIPT_NOT_MODELLED. The
+    // header string then advertised fields the gate silently dropped, so the reported coverage was
+    // wider than the real one and 58 cards nobody had checked looked checked.
+    //
+    // This is the test that would have caught it: a card whose script sets a slot the note claims
+    // must not land in SCRIPT_NOT_MODELLED. It asserts nothing about whether the card *agrees* with
+    // its text — DIVERGENT is a fine outcome here — only that the gate is willing to look at it.
+    // ---------------------------------------------------------------------------------------
+
+    fun classify(script: CardScript, text: String): Population {
+        val name = "Slot Probe"
+        val card = oracleCard(name, text)
+        val definition = definition(name, text).copy(script = script)
+        return differential.compare(implemented(definition), index(card)).population
+    }
+
+    "a slot MODELLED_SLOTS_NOTE claims is compared, not fail-closed as unmodelled" {
+        // One case per slot the note names that `modelledSlots()` used to omit. Each is a real
+        // printed line, so the grammar produces the slot and the only question is whether the
+        // comparator will look at it.
+        val cases = listOf(
+            "additionalCosts" to CardScript(
+                spellEffect = Effects.DrawCards(1),
+                additionalCosts = listOf(AdditionalCost.Atom(CostAtom.Discard(2))),
+            ),
+            "cantBeCountered" to CardScript(
+                spellEffect = Effects.DrawCards(1),
+                cantBeCountered = true,
+            ),
+        )
+        cases.forEach { (slot, script) ->
+            withClue("$slot is named in MODELLED_SLOTS_NOTE, so it must not fail-close the card") {
+                classify(script, "Draw a card.") shouldNotBe Population.SCRIPT_NOT_MODELLED
+            }
+        }
+    }
+
+    "every slot MODELLED_SLOTS_NOTE names is one modelledSlots() actually carries" {
+        // The note is the contract the differential's own header prints. Reading it back and
+        // checking each name against `CardScript`'s real properties keeps the string honest: a slot
+        // renamed or removed in the SDK, or a name typo'd into the note, fails here rather than
+        // quietly widening what the gate claims to cover.
+        val declared = CardFragment.MODELLED_SLOTS_NOTE.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        val real = CardScript::class.members.map { it.name }.toSet()
+        declared.forEach { slot ->
+            withClue("MODELLED_SLOTS_NOTE names '$slot', which is not a CardScript property") {
+                real shouldContain slot
+            }
+        }
+        declared.size shouldBe declared.toSet().size
     }
 })

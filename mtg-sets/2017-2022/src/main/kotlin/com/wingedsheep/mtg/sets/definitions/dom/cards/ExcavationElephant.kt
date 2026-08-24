@@ -4,7 +4,6 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.conditions.WasKicked
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
@@ -34,10 +33,7 @@ val ExcavationElephant = card("Excavation Elephant") {
         trigger = Triggers.EntersBattlefield
         interveningIf = WasKicked
         val t = target("target", TargetObject(
-            filter = TargetFilter(
-                GameObjectFilter.Artifact.ownedByYou(),
-                zone = Zone.GRAVEYARD
-            )
+            filter = TargetFilter.ArtifactInYourGraveyard
         ))
         effect = Effects.Move(
             target = t,

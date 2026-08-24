@@ -947,44 +947,41 @@
                 },
                 "binding": "OTHER",
                 "effect": {
-                    "type": "Modal",
-                    "modes": [
-                        {
-                            "effect": {
-                                "type": "AddDynamicCounters",
-                                "counterType": "+1/+1",
-                                "amount": {
-                                    "type": "Fixed",
-                                    "amount": 2
-                                },
-                                "target": "Self"
-                            },
-                            "description": "Put 2 +1/+1 counter(s) on this creature"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayDecide",
+                        "hint": "Put 2 +1/+1 counter(s) on this creature? If you don't, create a 2/2 white Spirit creature token."
+                    },
+                    "then": {
+                        "type": "AddDynamicCounters",
+                        "counterType": "+1/+1",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
                         },
-                        {
-                            "effect": {
-                                "type": "CreateToken",
-                                "power": 0,
-                                "toughness": 0,
-                                "colors": [
-                                    "WHITE"
-                                ],
-                                "creatureTypes": [
-                                    "Spirit"
-                                ],
-                                "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
-                                "dynamicPower": {
-                                    "type": "Fixed",
-                                    "amount": 2
-                                },
-                                "dynamicToughness": {
-                                    "type": "Fixed",
-                                    "amount": 2
-                                }
-                            }
+                        "target": "Self"
+                    },
+                    "otherwise": {
+                        "type": "CreateToken",
+                        "power": 0,
+                        "toughness": 0,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Spirit"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
+                        "dynamicPower": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "dynamicToughness": {
+                            "type": "Fixed",
+                            "amount": 2
                         }
-                    ],
-                    "countsAsModalSpell": false
+                    },
+                    "descriptionOverride": "Put 2 +1/+1 counter(s) on this creature. If you don't, create a 2/2 white Spirit creature token."
                 },
                 "descriptionOverride": "Whenever another nontoken creature you control dies, Anafenza endures 2."
             }
@@ -3428,44 +3425,41 @@
                         }
                     },
                     "then": {
-                        "type": "Modal",
-                        "modes": [
-                            {
-                                "effect": {
-                                    "type": "AddDynamicCounters",
-                                    "counterType": "+1/+1",
-                                    "amount": {
-                                        "type": "Fixed",
-                                        "amount": 1
-                                    },
-                                    "target": "Self"
-                                },
-                                "description": "Put 1 +1/+1 counter(s) on this creature"
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.MayDecide",
+                            "hint": "Put 1 +1/+1 counter(s) on this creature? If you don't, create a 1/1 white Spirit creature token."
+                        },
+                        "then": {
+                            "type": "AddDynamicCounters",
+                            "counterType": "+1/+1",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
                             },
-                            {
-                                "effect": {
-                                    "type": "CreateToken",
-                                    "power": 0,
-                                    "toughness": 0,
-                                    "colors": [
-                                        "WHITE"
-                                    ],
-                                    "creatureTypes": [
-                                        "Spirit"
-                                    ],
-                                    "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
-                                    "dynamicPower": {
-                                        "type": "Fixed",
-                                        "amount": 1
-                                    },
-                                    "dynamicToughness": {
-                                        "type": "Fixed",
-                                        "amount": 1
-                                    }
-                                }
+                            "target": "Self"
+                        },
+                        "otherwise": {
+                            "type": "CreateToken",
+                            "power": 0,
+                            "toughness": 0,
+                            "colors": [
+                                "WHITE"
+                            ],
+                            "creatureTypes": [
+                                "Spirit"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
+                            "dynamicPower": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "dynamicToughness": {
+                                "type": "Fixed",
+                                "amount": 1
                             }
-                        ],
-                        "countsAsModalSpell": false
+                        },
+                        "descriptionOverride": "Put 1 +1/+1 counter(s) on this creature. If you don't, create a 1/1 white Spirit creature token."
                     }
                 },
                 "descriptionOverride": "Whenever this creature attacks, you may pay {1}{W}. If you do, it endures 1."
@@ -4583,44 +4577,41 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Modal",
-                    "modes": [
-                        {
-                            "effect": {
-                                "type": "AddDynamicCounters",
-                                "counterType": "+1/+1",
-                                "amount": {
-                                    "type": "Fixed",
-                                    "amount": 3
-                                },
-                                "target": "Self"
-                            },
-                            "description": "Put 3 +1/+1 counter(s) on this creature"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayDecide",
+                        "hint": "Put 3 +1/+1 counter(s) on this creature? If you don't, create a 3/3 white Spirit creature token."
+                    },
+                    "then": {
+                        "type": "AddDynamicCounters",
+                        "counterType": "+1/+1",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
                         },
-                        {
-                            "effect": {
-                                "type": "CreateToken",
-                                "power": 0,
-                                "toughness": 0,
-                                "colors": [
-                                    "WHITE"
-                                ],
-                                "creatureTypes": [
-                                    "Spirit"
-                                ],
-                                "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
-                                "dynamicPower": {
-                                    "type": "Fixed",
-                                    "amount": 3
-                                },
-                                "dynamicToughness": {
-                                    "type": "Fixed",
-                                    "amount": 3
-                                }
-                            }
+                        "target": "Self"
+                    },
+                    "otherwise": {
+                        "type": "CreateToken",
+                        "power": 0,
+                        "toughness": 0,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Spirit"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
+                        "dynamicPower": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "dynamicToughness": {
+                            "type": "Fixed",
+                            "amount": 3
                         }
-                    ],
-                    "countsAsModalSpell": false
+                    },
+                    "descriptionOverride": "Put 3 +1/+1 counter(s) on this creature. If you don't, create a 3/3 white Spirit creature token."
                 },
                 "descriptionOverride": "When this creature enters, it endures 3."
             }
@@ -5880,44 +5871,41 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Modal",
-                    "modes": [
-                        {
-                            "effect": {
-                                "type": "AddDynamicCounters",
-                                "counterType": "+1/+1",
-                                "amount": {
-                                    "type": "Fixed",
-                                    "amount": 1
-                                },
-                                "target": "Self"
-                            },
-                            "description": "Put 1 +1/+1 counter(s) on this creature"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayDecide",
+                        "hint": "Put 1 +1/+1 counter(s) on this creature? If you don't, create a 1/1 white Spirit creature token."
+                    },
+                    "then": {
+                        "type": "AddDynamicCounters",
+                        "counterType": "+1/+1",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
                         },
-                        {
-                            "effect": {
-                                "type": "CreateToken",
-                                "power": 0,
-                                "toughness": 0,
-                                "colors": [
-                                    "WHITE"
-                                ],
-                                "creatureTypes": [
-                                    "Spirit"
-                                ],
-                                "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
-                                "dynamicPower": {
-                                    "type": "Fixed",
-                                    "amount": 1
-                                },
-                                "dynamicToughness": {
-                                    "type": "Fixed",
-                                    "amount": 1
-                                }
-                            }
+                        "target": "Self"
+                    },
+                    "otherwise": {
+                        "type": "CreateToken",
+                        "power": 0,
+                        "toughness": 0,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Spirit"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
+                        "dynamicPower": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "dynamicToughness": {
+                            "type": "Fixed",
+                            "amount": 1
                         }
-                    ],
-                    "countsAsModalSpell": false
+                    },
+                    "descriptionOverride": "Put 1 +1/+1 counter(s) on this creature. If you don't, create a 1/1 white Spirit creature token."
                 },
                 "descriptionOverride": "When this creature enters, it endures 1."
             }
@@ -7409,44 +7397,41 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Modal",
-                    "modes": [
-                        {
-                            "effect": {
-                                "type": "AddDynamicCounters",
-                                "counterType": "+1/+1",
-                                "amount": {
-                                    "type": "Fixed",
-                                    "amount": 2
-                                },
-                                "target": "Self"
-                            },
-                            "description": "Put 2 +1/+1 counter(s) on this creature"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayDecide",
+                        "hint": "Put 2 +1/+1 counter(s) on this creature? If you don't, create a 2/2 white Spirit creature token."
+                    },
+                    "then": {
+                        "type": "AddDynamicCounters",
+                        "counterType": "+1/+1",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
                         },
-                        {
-                            "effect": {
-                                "type": "CreateToken",
-                                "power": 0,
-                                "toughness": 0,
-                                "colors": [
-                                    "WHITE"
-                                ],
-                                "creatureTypes": [
-                                    "Spirit"
-                                ],
-                                "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
-                                "dynamicPower": {
-                                    "type": "Fixed",
-                                    "amount": 2
-                                },
-                                "dynamicToughness": {
-                                    "type": "Fixed",
-                                    "amount": 2
-                                }
-                            }
+                        "target": "Self"
+                    },
+                    "otherwise": {
+                        "type": "CreateToken",
+                        "power": 0,
+                        "toughness": 0,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Spirit"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
+                        "dynamicPower": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "dynamicToughness": {
+                            "type": "Fixed",
+                            "amount": 2
                         }
-                    ],
-                    "countsAsModalSpell": false
+                    },
+                    "descriptionOverride": "Put 2 +1/+1 counter(s) on this creature. If you don't, create a 2/2 white Spirit creature token."
                 },
                 "descriptionOverride": "Whenever this creature enters, it endures 2."
             },
@@ -7454,44 +7439,41 @@
                 "id": "ability_2",
                 "trigger": "AttackEvent",
                 "effect": {
-                    "type": "Modal",
-                    "modes": [
-                        {
-                            "effect": {
-                                "type": "AddDynamicCounters",
-                                "counterType": "+1/+1",
-                                "amount": {
-                                    "type": "Fixed",
-                                    "amount": 2
-                                },
-                                "target": "Self"
-                            },
-                            "description": "Put 2 +1/+1 counter(s) on this creature"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayDecide",
+                        "hint": "Put 2 +1/+1 counter(s) on this creature? If you don't, create a 2/2 white Spirit creature token."
+                    },
+                    "then": {
+                        "type": "AddDynamicCounters",
+                        "counterType": "+1/+1",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
                         },
-                        {
-                            "effect": {
-                                "type": "CreateToken",
-                                "power": 0,
-                                "toughness": 0,
-                                "colors": [
-                                    "WHITE"
-                                ],
-                                "creatureTypes": [
-                                    "Spirit"
-                                ],
-                                "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
-                                "dynamicPower": {
-                                    "type": "Fixed",
-                                    "amount": 2
-                                },
-                                "dynamicToughness": {
-                                    "type": "Fixed",
-                                    "amount": 2
-                                }
-                            }
+                        "target": "Self"
+                    },
+                    "otherwise": {
+                        "type": "CreateToken",
+                        "power": 0,
+                        "toughness": 0,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Spirit"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
+                        "dynamicPower": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "dynamicToughness": {
+                            "type": "Fixed",
+                            "amount": 2
                         }
-                    ],
-                    "countsAsModalSpell": false
+                    },
+                    "descriptionOverride": "Put 2 +1/+1 counter(s) on this creature. If you don't, create a 2/2 white Spirit creature token."
                 },
                 "descriptionOverride": "Whenever this creature attacks, it endures 2."
             }
@@ -8204,44 +8186,41 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Modal",
-                    "modes": [
-                        {
-                            "effect": {
-                                "type": "AddDynamicCounters",
-                                "counterType": "+1/+1",
-                                "amount": {
-                                    "type": "Fixed",
-                                    "amount": 1
-                                },
-                                "target": "Self"
-                            },
-                            "description": "Put 1 +1/+1 counter(s) on this creature"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayDecide",
+                        "hint": "Put 1 +1/+1 counter(s) on this creature? If you don't, create a 1/1 white Spirit creature token."
+                    },
+                    "then": {
+                        "type": "AddDynamicCounters",
+                        "counterType": "+1/+1",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
                         },
-                        {
-                            "effect": {
-                                "type": "CreateToken",
-                                "power": 0,
-                                "toughness": 0,
-                                "colors": [
-                                    "WHITE"
-                                ],
-                                "creatureTypes": [
-                                    "Spirit"
-                                ],
-                                "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
-                                "dynamicPower": {
-                                    "type": "Fixed",
-                                    "amount": 1
-                                },
-                                "dynamicToughness": {
-                                    "type": "Fixed",
-                                    "amount": 1
-                                }
-                            }
+                        "target": "Self"
+                    },
+                    "otherwise": {
+                        "type": "CreateToken",
+                        "power": 0,
+                        "toughness": 0,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Spirit"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
+                        "dynamicPower": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "dynamicToughness": {
+                            "type": "Fixed",
+                            "amount": 1
                         }
-                    ],
-                    "countsAsModalSpell": false
+                    },
+                    "descriptionOverride": "Put 1 +1/+1 counter(s) on this creature. If you don't, create a 1/1 white Spirit creature token."
                 },
                 "descriptionOverride": "When this creature enters, it endures 1."
             }
@@ -8743,35 +8722,32 @@
                     ]
                 },
                 "effect": {
-                    "type": "Modal",
-                    "modes": [
-                        {
-                            "effect": {
-                                "type": "AddDynamicCounters",
-                                "counterType": "+1/+1",
-                                "amount": "XValue",
-                                "target": "Self"
-                            },
-                            "description": "Put X +1/+1 counter(s) on this creature"
-                        },
-                        {
-                            "effect": {
-                                "type": "CreateToken",
-                                "power": 0,
-                                "toughness": 0,
-                                "colors": [
-                                    "WHITE"
-                                ],
-                                "creatureTypes": [
-                                    "Spirit"
-                                ],
-                                "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
-                                "dynamicPower": "XValue",
-                                "dynamicToughness": "XValue"
-                            }
-                        }
-                    ],
-                    "countsAsModalSpell": false
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayDecide",
+                        "hint": "Put X +1/+1 counter(s) on this creature? If you don't, create a X/X white Spirit creature token."
+                    },
+                    "then": {
+                        "type": "AddDynamicCounters",
+                        "counterType": "+1/+1",
+                        "amount": "XValue",
+                        "target": "Self"
+                    },
+                    "otherwise": {
+                        "type": "CreateToken",
+                        "power": 0,
+                        "toughness": 0,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Spirit"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
+                        "dynamicPower": "XValue",
+                        "dynamicToughness": "XValue"
+                    },
+                    "descriptionOverride": "Put X +1/+1 counter(s) on this creature. If you don't, create a X/X white Spirit creature token."
                 },
                 "timing": "SorcerySpeed",
                 "descriptionOverride": "{X}{B}, {T}, Pay X life: This creature endures X. Activate only as a sorcery."
@@ -13553,44 +13529,41 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Modal",
-                    "modes": [
-                        {
-                            "effect": {
-                                "type": "AddDynamicCounters",
-                                "counterType": "+1/+1",
-                                "amount": {
-                                    "type": "Fixed",
-                                    "amount": 2
-                                },
-                                "target": "Self"
-                            },
-                            "description": "Put 2 +1/+1 counter(s) on this creature"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayDecide",
+                        "hint": "Put 2 +1/+1 counter(s) on this creature? If you don't, create a 2/2 white Spirit creature token."
+                    },
+                    "then": {
+                        "type": "AddDynamicCounters",
+                        "counterType": "+1/+1",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
                         },
-                        {
-                            "effect": {
-                                "type": "CreateToken",
-                                "power": 0,
-                                "toughness": 0,
-                                "colors": [
-                                    "WHITE"
-                                ],
-                                "creatureTypes": [
-                                    "Spirit"
-                                ],
-                                "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
-                                "dynamicPower": {
-                                    "type": "Fixed",
-                                    "amount": 2
-                                },
-                                "dynamicToughness": {
-                                    "type": "Fixed",
-                                    "amount": 2
-                                }
-                            }
+                        "target": "Self"
+                    },
+                    "otherwise": {
+                        "type": "CreateToken",
+                        "power": 0,
+                        "toughness": 0,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Spirit"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
+                        "dynamicPower": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "dynamicToughness": {
+                            "type": "Fixed",
+                            "amount": 2
                         }
-                    ],
-                    "countsAsModalSpell": false
+                    },
+                    "descriptionOverride": "Put 2 +1/+1 counter(s) on this creature. If you don't, create a 2/2 white Spirit creature token."
                 },
                 "descriptionOverride": "When this creature enters, it endures 2."
             }
@@ -14452,44 +14425,41 @@
                             "target": "Controller"
                         },
                         {
-                            "type": "Modal",
-                            "modes": [
-                                {
-                                    "effect": {
-                                        "type": "AddDynamicCounters",
-                                        "counterType": "+1/+1",
-                                        "amount": {
-                                            "type": "Fixed",
-                                            "amount": 1
-                                        },
-                                        "target": "Self"
-                                    },
-                                    "description": "Put 1 +1/+1 counter(s) on this creature"
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.MayDecide",
+                                "hint": "Put 1 +1/+1 counter(s) on this creature? If you don't, create a 1/1 white Spirit creature token."
+                            },
+                            "then": {
+                                "type": "AddDynamicCounters",
+                                "counterType": "+1/+1",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 1
                                 },
-                                {
-                                    "effect": {
-                                        "type": "CreateToken",
-                                        "power": 0,
-                                        "toughness": 0,
-                                        "colors": [
-                                            "WHITE"
-                                        ],
-                                        "creatureTypes": [
-                                            "Spirit"
-                                        ],
-                                        "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
-                                        "dynamicPower": {
-                                            "type": "Fixed",
-                                            "amount": 1
-                                        },
-                                        "dynamicToughness": {
-                                            "type": "Fixed",
-                                            "amount": 1
-                                        }
-                                    }
+                                "target": "Self"
+                            },
+                            "otherwise": {
+                                "type": "CreateToken",
+                                "power": 0,
+                                "toughness": 0,
+                                "colors": [
+                                    "WHITE"
+                                ],
+                                "creatureTypes": [
+                                    "Spirit"
+                                ],
+                                "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
+                                "dynamicPower": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "dynamicToughness": {
+                                    "type": "Fixed",
+                                    "amount": 1
                                 }
-                            ],
-                            "countsAsModalSpell": false
+                            },
+                            "descriptionOverride": "Put 1 +1/+1 counter(s) on this creature. If you don't, create a 1/1 white Spirit creature token."
                         }
                     ]
                 },
@@ -18507,56 +18477,53 @@
                 },
                 "binding": "OTHER",
                 "effect": {
-                    "type": "Modal",
-                    "modes": [
-                        {
-                            "effect": {
-                                "type": "AddDynamicCounters",
-                                "counterType": "+1/+1",
-                                "amount": {
-                                    "type": "EntityProperty",
-                                    "entity": "Source",
-                                    "numericProperty": {
-                                        "type": "CounterCount",
-                                        "counterType": "CounterAny"
-                                    }
-                                },
-                                "target": "TriggeringEntity"
-                            },
-                            "description": "Put it's the number of  counters +1/+1 counter(s) on that creature"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayDecide",
+                        "hint": "Put it's the number of  counters +1/+1 counter(s) on that creature? If you don't, create a it's the number of  counters/it's the number of  counters white Spirit creature token."
+                    },
+                    "then": {
+                        "type": "AddDynamicCounters",
+                        "counterType": "+1/+1",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "Source",
+                            "numericProperty": {
+                                "type": "CounterCount",
+                                "counterType": "CounterAny"
+                            }
                         },
-                        {
-                            "effect": {
-                                "type": "CreateToken",
-                                "power": 0,
-                                "toughness": 0,
-                                "colors": [
-                                    "WHITE"
-                                ],
-                                "creatureTypes": [
-                                    "Spirit"
-                                ],
-                                "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
-                                "dynamicPower": {
-                                    "type": "EntityProperty",
-                                    "entity": "Source",
-                                    "numericProperty": {
-                                        "type": "CounterCount",
-                                        "counterType": "CounterAny"
-                                    }
-                                },
-                                "dynamicToughness": {
-                                    "type": "EntityProperty",
-                                    "entity": "Source",
-                                    "numericProperty": {
-                                        "type": "CounterCount",
-                                        "counterType": "CounterAny"
-                                    }
-                                }
+                        "target": "TriggeringEntity"
+                    },
+                    "otherwise": {
+                        "type": "CreateToken",
+                        "power": 0,
+                        "toughness": 0,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Spirit"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/large/front/8/e/8ea4fc2f-95a4-49d0-b06e-b88d19637737.jpg?1743176763",
+                        "dynamicPower": {
+                            "type": "EntityProperty",
+                            "entity": "Source",
+                            "numericProperty": {
+                                "type": "CounterCount",
+                                "counterType": "CounterAny"
+                            }
+                        },
+                        "dynamicToughness": {
+                            "type": "EntityProperty",
+                            "entity": "Source",
+                            "numericProperty": {
+                                "type": "CounterCount",
+                                "counterType": "CounterAny"
                             }
                         }
-                    ],
-                    "countsAsModalSpell": false
+                    },
+                    "descriptionOverride": "Put it's the number of  counters +1/+1 counter(s) on that creature. If you don't, create a it's the number of  counters/it's the number of  counters white Spirit creature token."
                 },
                 "descriptionOverride": "Whenever another nontoken creature you control enters, it endures X, where X is the number of counters on this creature."
             }

@@ -30,9 +30,11 @@ val TrashForTreasure = card("Trash for Treasure") {
     spell {
         val t = target(
             "target",
-            TargetObject(filter = TargetFilter(GameObjectFilter.Artifact.ownedByYou(), zone = Zone.GRAVEYARD))
+            TargetObject(filter = TargetFilter.ArtifactInYourGraveyard)
         )
-        effect = Effects.Move(t, Zone.BATTLEFIELD)
+        // `fromZone` because the printed line names the graveyard: without the guard, an artifact
+        // card exiled in response to this spell still returns — from exile.
+        effect = Effects.Move(t, Zone.BATTLEFIELD, fromZone = Zone.GRAVEYARD)
     }
     metadata {
         rarity = Rarity.RARE
