@@ -1,0 +1,34 @@
+services:
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  backend:
+    image: ghcr.io/itc-msm/commander/backend:platform
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_HOST: redis
+      CACHE_REDIS_PORT: "6379"
+      ACCOUNTS_ENABLED: "false"
+      GAME_AI_ENABLED: "true"
+      GAME_AI_MODE: engine
+      JAVA_TOOL_OPTIONS: -Xms256m -Xmx1536m
+    ports:
+      - "127.0.0.1:8180:8080"
+
+  frontend:
+    image: ghcr.io/itc-msm/commander/frontend:platform
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:3102:80"
+
+volumes:
+  redis_data:
