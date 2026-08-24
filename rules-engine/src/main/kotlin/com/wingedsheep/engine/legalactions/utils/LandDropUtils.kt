@@ -91,6 +91,24 @@ object LandDropUtils {
         return false
     }
 
+    /**
+     * Cheap guard: does any battlefield permanent carry a *filtered* [PlayersCantPlayLands]
+     * (`landFilter != Any`)? Lets enumeration skip the per-card [playerCantPlayLands] scan
+     * entirely in the common case where none is in play. Cached once per enumeration pass by
+     * [com.wingedsheep.engine.legalactions.EnumerationContext]; the mirror of
+     * `CastPermissionUtils.anyPerSpellCastRestrictionPresent`.
+     */
+    fun anyFilteredLandLockPresent(state: GameState, cardRegistry: CardRegistry): Boolean =
+        state.getBattlefield().any { id ->
+            val cardDef = state.getEntity(id)?.get<CardComponent>()
+                ?.let { cardRegistry.getCard(it.cardDefinitionId) }
+            cardDef?.script?.staticAbilities?.any { ability ->
+                val lock = ability as? PlayersCantPlayLands
+                    ?: (ability as? ConditionalStaticAbility)?.ability as? PlayersCantPlayLands
+                lock != null && lock.landFilter != GameObjectFilter.Any
+            } == true
+        }
+
     private val predicateEvaluator = PredicateEvaluator()
 
     fun getAdditionalLandDrops(

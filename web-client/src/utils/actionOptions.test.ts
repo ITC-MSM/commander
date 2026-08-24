@@ -152,6 +152,42 @@ describe('playCostRange', () => {
   })
 })
 
+describe('buildActionOptions — modal double-faced lands', () => {
+  const pathwayCard = card('', { name: 'Riverglide Pathway', cardTypes: ['LAND'] } as Partial<ClientCard>)
+
+  it('lists one entry per land face, labelled by the face rather than by the card', () => {
+    // CR 712.12: the server sends one PlayLand per land face, each described by the face it plays.
+    // `cardInfo.name` is the front face's name for both, so the descriptions are the only thing
+    // telling them apart — a `find` here would silently drop the back face.
+    const options = buildActionOptions(pathwayCard, [
+      action({
+        action: { type: 'PlayLand' },
+        actionType: 'PlayLand',
+        description: 'Play Riverglide Pathway',
+      }),
+      action({
+        action: { type: 'PlayLand', asBackFace: true },
+        actionType: 'PlayLand',
+        description: 'Play Lavaglide Pathway',
+      }),
+    ])
+    expect(options.map((o) => o.label)).toEqual([
+      'Play Riverglide Pathway',
+      'Play Lavaglide Pathway',
+    ])
+    expect(options.map((o) => o.key)).toEqual(['playLand', 'playLand-1'])
+    expect(options.every((o) => o.actionType === 'playLand')).toBe(true)
+  })
+
+  it('an ordinary land still reads "Play <card name>"', () => {
+    const options = buildActionOptions(
+      card('', { name: 'Island', cardTypes: ['LAND'] } as Partial<ClientCard>),
+      [action({ action: { type: 'PlayLand' }, actionType: 'PlayLand', description: 'Play Island' })],
+    )
+    expect(options.map((o) => o.label)).toEqual(['Play Island'])
+  })
+})
+
 describe('playLadderOptions', () => {
   it('lists cycling alongside the cast, even though cycling stays out of the range', () => {
     const options = buildActionOptions(card('{5}{W}'), [

@@ -38,6 +38,28 @@ object ModalDfcCasts {
      */
     fun castFace(cardDef: CardDefinition?): CardDefinition? {
         if (cardDef?.layout != CardLayout.MODAL_DFC) return null
-        return cardDef.backFace?.takeIf { it.isPermanent }
+        // A land face is a permanent face but is never *cast* — it is played (CR 305.1), which is
+        // [landFace]'s business. Excluding it here keeps a spell-front // land-back modal DFC
+        // (Emeria's Call // Emeria, Shattered Skyclave) from being offered as an illegal cast.
+        return cardDef.backFace?.takeIf { it.isPermanent && !it.typeLine.isLand }
+    }
+
+    /**
+     * The back face a modal-DFC **land play** would put onto the battlefield, or null when
+     * [cardDef] is not a modal DFC with a land back face.
+     *
+     * CR 712.12: *"A player playing a modal double-faced card or a copy of a modal double-faced
+     * card as a land chooses one of its faces that's a land before putting it onto the battlefield.
+     * It enters the battlefield with that face up."* The front face's own land-ness is the ordinary
+     * play-a-land question and needs nothing from here; this answers only "is there a *second*
+     * land play hiding on the back of this card", which is what the Zendikar Rising Pathway cycle
+     * (Riverglide Pathway // Lavaglide Pathway) needs from the land enumerator.
+     *
+     * The land-play mirror of [castFace], and disjoint from it by construction: a back face is
+     * either castable or playable-as-a-land, never both.
+     */
+    fun landFace(cardDef: CardDefinition?): CardDefinition? {
+        if (cardDef?.layout != CardLayout.MODAL_DFC) return null
+        return cardDef.backFace?.takeIf { it.typeLine.isLand }
     }
 }
