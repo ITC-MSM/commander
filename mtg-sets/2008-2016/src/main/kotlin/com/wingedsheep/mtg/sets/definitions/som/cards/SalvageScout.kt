@@ -1,11 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.som.cards
 
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 
@@ -27,11 +25,12 @@ val SalvageScout = card("Salvage Scout") {
 
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{W}"), Costs.SacrificeSelf)
-        val artifact = target(
-            "target",
-            TargetObject(filter = TargetFilter(GameObjectFilter.Artifact.ownedByYou(), zone = Zone.GRAVEYARD))
-        )
-        effect = Effects.ReturnToHandFromGraveyard(artifact)
+        val artifact = target("target", TargetObject(filter = TargetFilter.ArtifactInYourGraveyard))
+        // Plain `ReturnToHand`, not the `FromGraveyard` variant: this is a *targeted* return, so
+        // the requirement's own `zone = GRAVEYARD` is re-checked at resolution (CR 608.2b) and the
+        // ability fizzles if the card has left. The `fromZone` guard belongs on self-returns, which
+        // have no requirement to re-check.
+        effect = Effects.ReturnToHand(artifact)
         description = "{W}, Sacrifice this creature: Return target artifact card from your graveyard to your hand."
     }
 
