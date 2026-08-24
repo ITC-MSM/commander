@@ -164,6 +164,52 @@
     ]
 }
 
+// Cinder Barrens
+{
+    "name": "Cinder Barrens",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {B} or {R}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "168",
+        "rarity": "UNCOMMON",
+        "artist": "Cliff Childs",
+        "flavorText": "A mudflow swallowed the lowlands years ago. All that remains are a bottomless mire and an endless rain of ash.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/4/949f41a0-9082-4682-88b8-a29fbcb48d5d.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Expedite
 {
     "name": "Expedite",
@@ -263,6 +309,52 @@
     ]
 }
 
+// Meandering River
+{
+    "name": "Meandering River",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {W} or {U}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "173",
+        "rarity": "UNCOMMON",
+        "artist": "Cliff Childs",
+        "flavorText": "The river split into many channels as it flowed to the Halimar Sea. Few travelers could follow the same one twice.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/a/6a5bedf1-92b6-465c-afc2-ce8e150a5e57.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "WHITE"
+    ]
+}
+
 // Sphinx of the Final Word
 {
     "name": "Sphinx of the Final Word",
@@ -294,6 +386,52 @@
         "imageUri": "https://cards.scryfall.io/normal/front/8/6/866f92a3-2738-4e0f-adda-3ff9227dc17a.jpg?1783937917"
     },
     "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Submerged Boneyard
+{
+    "name": "Submerged Boneyard",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {U} or {B}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "178",
+        "rarity": "UNCOMMON",
+        "artist": "Cliff Childs",
+        "flavorText": "\"Long after the land has given up the last of its secrets, there will still be mysteries in the depths of the sea.\"\n—Kiora",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/4/6479a246-21ac-490a-aefb-6ed72aabdb88.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
         "BLUE"
     ]
 }
@@ -429,6 +567,98 @@
         "imageUri": "https://cards.scryfall.io/normal/front/b/f/bffc360e-db41-48f3-9365-680d55046e04.jpg?1783937929"
     },
     "colorIdentityOverride": []
+}
+
+// Timber Gorge
+{
+    "name": "Timber Gorge",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {R} or {G}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "179",
+        "rarity": "UNCOMMON",
+        "artist": "Cliff Childs",
+        "flavorText": "Tazeem's embrace is harsh, but for those that call it home, nothing else will do.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/5/55d05ff7-f071-4eb3-b10a-203741abdf10.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "RED"
+    ]
+}
+
+// Tranquil Expanse
+{
+    "name": "Tranquil Expanse",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {G} or {W}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "180",
+        "rarity": "UNCOMMON",
+        "artist": "Cliff Childs",
+        "flavorText": "Despite the chaos of the Roil and the devastation of the Eldrazi, Zendikar is a world of breathtaking beauty.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/42787d2b-3f9d-4c29-9ece-e65544eb1340.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
 }
 
 // Untamed Hunger

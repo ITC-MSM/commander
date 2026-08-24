@@ -49,7 +49,7 @@ val DarkLeoAndShredder = card("Dark Leo & Shredder") {
     staticAbility {
         ability = GrantKeyword(
             Keyword.DEATHTOUCH,
-            GroupFilter(GameObjectFilter.Creature.withSubtype("Ninja").youControl()).attacking()
+            GroupFilter(GameObjectFilter.Permanent.withSubtype("Ninja").youControl()).attacking()
         )
     }
 

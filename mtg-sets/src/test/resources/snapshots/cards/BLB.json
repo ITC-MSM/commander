@@ -2744,7 +2744,7 @@
                     "space": {
                         "type": "IterationSpace.Group",
                         "filter": {
-                            "baseFilter": "creature Squirrel ctrl:you",
+                            "baseFilter": "permanent Squirrel ctrl:you",
                             "excludeSelf": true
                         }
                     },
@@ -2762,7 +2762,7 @@
                 "type": "GrantKeyword",
                 "keyword": "MENACE",
                 "filter": {
-                    "baseFilter": "creature Squirrel ctrl:you",
+                    "baseFilter": "permanent Squirrel ctrl:you",
                     "excludeSelf": true
                 }
             }
@@ -11407,7 +11407,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Mouse ctrl:you",
+                    "baseFilter": "permanent Mouse ctrl:you",
                     "excludeSelf": true
                 }
             }

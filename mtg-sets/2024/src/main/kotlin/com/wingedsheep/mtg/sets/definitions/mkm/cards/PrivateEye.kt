@@ -47,7 +47,7 @@ val PrivateEye = card("Private Eye") {
             powerBonus = 1,
             toughnessBonus = 1,
             filter = GroupFilter(
-                GameObjectFilter.Creature.withSubtype(Subtype.DETECTIVE).youControl(),
+                GameObjectFilter.Permanent.withSubtype(Subtype.DETECTIVE).youControl(),
                 excludeSelf = true
             )
         )

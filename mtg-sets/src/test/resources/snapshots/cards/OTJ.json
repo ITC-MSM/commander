@@ -2877,7 +2877,7 @@
                 "type": "GrantKeyword",
                 "keyword": "DOUBLE_STRIKE",
                 "filter": {
-                    "baseFilter": "creature Ox ctrl:you"
+                    "baseFilter": "permanent Ox ctrl:you"
                 }
             }
         ]

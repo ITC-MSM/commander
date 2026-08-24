@@ -1567,6 +1567,59 @@
     ]
 }
 
+// Explosive Apparatus
+{
+    "name": "Explosive Apparatus",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "{3}, {T}, Sacrifice this artifact: It deals 2 damage to any target.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "255",
+        "artist": "Lindsey Look",
+        "flavorText": "\"Souls are volatile things. When compressed and loaded into a handheld device, their destructive potential is quite impressive.\"\n—Dierk, geistmage",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/7/e7329a19-2f68-4d2c-a725-e0d862cd234e.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
 // Falkenrath Gorger
 {
     "name": "Falkenrath Gorger",
@@ -1607,6 +1660,98 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Forsaken Sanctuary
+{
+    "name": "Forsaken Sanctuary",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {W} or {B}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "273",
+        "rarity": "UNCOMMON",
+        "artist": "Vincent Proce",
+        "flavorText": "\"Prayers will curdle on the tongue and be heard by rotting ears.\"\n—Minaldra, the Vizag Atum",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/b/0bd86cac-08c1-4db0-ab54-4bb65a771efe.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "WHITE"
+    ]
+}
+
+// Foul Orchard
+{
+    "name": "Foul Orchard",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {B} or {G}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "275",
+        "rarity": "UNCOMMON",
+        "artist": "Jung Park",
+        "flavorText": "\"Such a beautiful place for a stroll.\"\n—Liliana Vess",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/3/2378ac21-9912-40d7-972d-b1b71a8e4984.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
     ]
 }
 
@@ -2065,6 +2210,52 @@
         "imageUri": "https://cards.scryfall.io/normal/front/0/d/0d200f98-3377-46a3-9197-3cbd95d03dbf.jpg?1783937712"
     },
     "colorIdentityOverride": []
+}
+
+// Highland Lake
+{
+    "name": "Highland Lake",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {U} or {R}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "277",
+        "rarity": "UNCOMMON",
+        "artist": "Florian de Gesincourt",
+        "flavorText": "With the fate of Innistrad uncertain, some seek solace in remote areas.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/8/48b97a23-c4cf-47c9-9dbf-34215ea0e908.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "BLUE"
+    ]
 }
 
 // Hinterland Logger
@@ -3747,7 +3938,7 @@
         "rarity": "UNCOMMON",
         "artist": "Cliff Childs",
         "flavorText": "In Gavony, headstones come only from quarries that have been blessed by chaplains.",
-        "imageUri": "https://cards.scryfall.io/normal/front/e/6/e636cdc3-4b83-4f15-ad4a-6c8fa3533408.jpg?1783937697"
+        "imageUri": "https://cards.scryfall.io/normal/front/e/6/e636cdc3-4b83-4f15-ad4a-6c8fa3533408.jpg"
     },
     "colorIdentityOverride": [
         "RED",
@@ -5278,7 +5469,7 @@
         "rarity": "UNCOMMON",
         "artist": "James Paick",
         "flavorText": "Two creaking waterwheels herald the approach to Briarbridge through the Ulvenwald.",
-        "imageUri": "https://cards.scryfall.io/normal/front/1/8/18a0c745-dee6-4cb2-acaa-3d2b8e0cce5b.jpg?1783937694"
+        "imageUri": "https://cards.scryfall.io/normal/front/1/8/18a0c745-dee6-4cb2-acaa-3d2b8e0cce5b.jpg"
     },
     "colorIdentityOverride": [
         "GREEN",

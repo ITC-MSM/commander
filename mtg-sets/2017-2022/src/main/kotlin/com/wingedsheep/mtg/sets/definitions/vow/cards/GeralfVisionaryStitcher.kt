@@ -44,7 +44,7 @@ val GeralfVisionaryStitcher = card("Geralf, Visionary Stitcher") {
     staticAbility {
         ability = GrantKeyword(
             Keyword.FLYING,
-            GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.ZOMBIE).youControl())
+            GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.ZOMBIE).youControl())
         )
     }
 

@@ -60,7 +60,7 @@ val BeornTheFierce = card("Beorn the Fierce") {
             powerBonus = 2,
             toughnessBonus = 2,
             filter = GroupFilter(
-                GameObjectFilter.Creature.withSubtype(Subtype.BEAR).youControl(),
+                GameObjectFilter.Permanent.withSubtype(Subtype.BEAR).youControl(),
                 excludeSelf = true
             )
         )

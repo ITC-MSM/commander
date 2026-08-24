@@ -16887,7 +16887,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Detective ctrl:you",
+                    "baseFilter": "permanent Detective ctrl:you",
                     "excludeSelf": true
                 }
             }

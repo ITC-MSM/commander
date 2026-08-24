@@ -3478,7 +3478,7 @@
                     "type": "GrantKeyword",
                     "keyword": "MENACE",
                     "filter": {
-                        "baseFilter": "creature Werewolf ctrl:you"
+                        "baseFilter": "permanent Werewolf ctrl:you"
                     }
                 }
             ]

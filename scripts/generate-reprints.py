@@ -26,8 +26,24 @@ human — a `Printing` row in the earlier set would be wrong).
 
 Usage:
   scripts/generate-reprints.py            # generate all; print a summary
-  scripts/generate-reprints.py --set DMU  # only the given target set
+  scripts/generate-reprints.py --set DMU  # only rows written *into* DMU
   scripts/generate-reprints.py --dry-run  # report what would be written
+
+Scoping a sweep to its own work
+-------------------------------
+`--set` filters the *target* set a row is written into; it does not limit which
+canonicals are considered. A bare run therefore also emits every pre-existing
+reprint gap in the corpus — an Assay-ready sweep of one set once found itself
+holding 333 rows across 53 sets when only 94 belonged to the batch.
+
+To generate only the rows owed by the canonicals *you* just authored:
+
+  scripts/generate-reprints.py --cards-from names.txt   # one card name per line
+  scripts/generate-reprints.py --card "Sift" --card "Isolate"
+  scripts/generate-reprints.py --since main             # canonicals added vs a git ref
+
+`--since` reads the working tree, not just commits, so it works mid-sweep while
+the new card files are still uncommitted or untracked.
 """
 
 from __future__ import annotations
@@ -230,12 +246,72 @@ def render(name: str, set_code: str, p: dict, set_entry: dict | None, pkg_dir: s
     return "\n".join(lines)
 
 
+
+def canonical_names_since(ref: str) -> set[str]:
+    """Card names whose canonical `card("...")` lives in a file that differs from `ref`.
+
+    Reads the *working tree*, not just committed history: a sweep runs this while its new
+    card files are still uncommitted, and often untracked. Tracked-but-modified files come
+    from `git diff --name-only <ref>`, brand-new ones from `git ls-files --others`.
+    """
+    import subprocess
+
+    def git(*a: str) -> list[str]:
+        out = subprocess.run(
+            ["git", *a], cwd=REPO_ROOT, capture_output=True, text=True, check=True
+        ).stdout
+        return [ln for ln in out.splitlines() if ln.strip()]
+
+    try:
+        paths = set(git("diff", "--name-only", ref))
+        paths |= set(git("ls-files", "--others", "--exclude-standard"))
+    except subprocess.CalledProcessError as exc:
+        sys.exit(f"--since {ref!r}: git failed ({exc.stderr.strip() or exc})")
+
+    names: set[str] = set()
+    for rel in paths:
+        if "/definitions/" not in rel or not rel.endswith(".kt"):
+            continue
+        path = REPO_ROOT / rel
+        if not path.is_file():
+            continue  # deleted in the working tree
+        text = path.read_text(encoding="utf-8")
+        names |= {unescape_kotlin(m.group(1)) for m in CARD_DSL_RE.finditer(text)}
+    return names
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--set", help="only generate reprints for this target set code")
+    ap.add_argument("--set", help="only write rows INTO this target set code "
+                                  "(does not limit which canonicals are considered)")
+    ap.add_argument("--card", action="append", metavar="NAME", default=[],
+                    help="only rows owed by this canonical; repeatable")
+    ap.add_argument("--cards-from", metavar="FILE",
+                    help="only rows owed by the canonicals named in FILE, one per line "
+                         "(blank lines and #-comments ignored)")
+    ap.add_argument("--since", metavar="REF",
+                    help="only rows owed by canonicals whose file differs from REF in the "
+                         "working tree (includes untracked files, so it works mid-sweep)")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
     only = args.set.lower() if args.set else None
+
+    # Which canonicals to consider. Empty set == no restriction (the historical behaviour).
+    wanted: set[str] = set(args.card)
+    if args.cards_from:
+        path = Path(args.cards_from)
+        if not path.is_file():
+            sys.exit(f"--cards-from: no such file: {path}")
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#"):
+                wanted.add(line)
+    if args.since:
+        wanted |= canonical_names_since(args.since)
+    scoped = bool(args.card or args.cards_from or args.since)
+    if scoped and not wanted:
+        print("no canonicals matched the scope — nothing to do")
+        return 0
 
     scaffolded = scaffolded_set_codes()
     dir_for = dir_for_codes()
@@ -249,6 +325,8 @@ def main() -> int:
     by_set: dict[str, int] = defaultdict(int)
 
     for name in sorted(canonical):
+        if scoped and name not in wanted:
+            continue
         printings = load_card_printings(name)
         if printings is None:
             # No per-card cache, or one past the 30-day TTL. Counted and named rather than skipped
@@ -307,6 +385,14 @@ def main() -> int:
             written += 1
             by_set[sc] += 1
 
+    if scoped:
+        considered = sum(1 for n in canonical if n in wanted)
+        print(f"scoped to {len(wanted)} canonical name(s); {considered} of them are "
+              f"implemented in this checkout")
+        unknown = sorted(n for n in wanted if n not in canonical)
+        if unknown:
+            shown = ", ".join(unknown[:8]) + (" …" if len(unknown) > 8 else "")
+            print(f"NOTE: {len(unknown)} requested name(s) have no canonical here: {shown}")
     print(f"{'(dry-run) would write' if args.dry_run else 'wrote'} {written} reprint files "
           f"across {len(by_set)} sets")
     # Every bucket, so `written` reconciles without guessing where the rest of the corpus went.

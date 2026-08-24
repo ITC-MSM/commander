@@ -2758,7 +2758,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Goblin ctrl:you",
+                    "baseFilter": "permanent Goblin ctrl:you",
                     "excludeSelf": true
                 }
             }

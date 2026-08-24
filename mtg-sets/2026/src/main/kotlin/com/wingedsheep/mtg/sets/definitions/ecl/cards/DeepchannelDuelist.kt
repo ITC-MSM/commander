@@ -39,7 +39,7 @@ val DeepchannelDuelist = card("Deepchannel Duelist") {
         ability = ModifyStats(
             powerBonus = 1,
             toughnessBonus = 1,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype("Merfolk").youControl(), excludeSelf = true)
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype("Merfolk").youControl(), excludeSelf = true)
         )
     }
 

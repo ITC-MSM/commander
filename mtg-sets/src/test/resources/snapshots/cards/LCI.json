@@ -4250,14 +4250,14 @@
                 "powerBonus": 1,
                 "toughnessBonus": 0,
                 "filter": {
-                    "baseFilter": "creature Skeleton ctrl:you"
+                    "baseFilter": "permanent Skeleton ctrl:you"
                 }
             },
             {
                 "type": "GrantKeyword",
                 "keyword": "HASTE",
                 "filter": {
-                    "baseFilter": "creature Skeleton ctrl:you"
+                    "baseFilter": "permanent Skeleton ctrl:you"
                 }
             }
         ]
@@ -13242,7 +13242,7 @@
                 "type": "GrantKeyword",
                 "keyword": "HASTE",
                 "filter": {
-                    "baseFilter": "creature Dinosaur ctrl:you",
+                    "baseFilter": "permanent Dinosaur ctrl:you",
                     "excludeSelf": true
                 }
             }
