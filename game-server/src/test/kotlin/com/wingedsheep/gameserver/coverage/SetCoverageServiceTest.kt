@@ -188,6 +188,33 @@ class SetCoverageServiceTest : FunSpec({
         }
     }
 
+    test("tokens are not cards and never enter a denominator") {
+        // Most sets file their tokens under a separate `t<code>` set, which `scripts/card-status`
+        // never fetches. A few number them inside the main set — Duel Decks: Blessed vs. Cursed
+        // (#77–80) and Global Series (double-faced Mowu) — and those rows sat in the denominator
+        // forever, so DDQ read 67/71 with every card it prints authored. A token has no
+        // `CardDefinition` and no `Printing` row *by design* (its art is a `TokenPrinting` in its
+        // set's `tokenArt`), so it can never be "implemented" in the sense the count means.
+        //
+        // The invariant is deliberately narrow, because a real card may legitimately share a name
+        // with a token: a name only fails if the catalog knows it *solely* as token art. That is
+        // exactly the shape of the five rows this caught, and it stays quiet for the rest.
+        val tokenNames = MtgSetCatalog.all.flatMap { set -> set.tokenArt.map { it.name } }.toSet()
+        val realCardNames = MtgSetCatalog.all
+            .flatMap { set -> set.cards.map { it.name } + set.printings.map { it.name } }
+            .toSet()
+        val tokensOnly = tokenNames - realCardNames
+
+        val offenders = coverage.flatMap { row ->
+            val detail = service.detail(row.code) ?: return@flatMap emptyList<String>()
+            val names = detail.draft.map { it.name } + detail.extraGroups.flatMap { g -> g.cards.map { it.name } }
+            names.filter { it in tokensOnly }.map { "${row.code}/$it" }
+        }
+        withClue("token rows in the canonical totals — re-run `scripts/gen-set-totals`: $offenders") {
+            offenders shouldBe emptyList()
+        }
+    }
+
     test("detail returns null for an unknown set") {
         service.detail("ZZZ") shouldBe null
     }
