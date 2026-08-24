@@ -509,12 +509,20 @@ data class TypecycleCard(
 
 /**
  * Player plays a land.
+ *
+ * @property asBackFace Play a modal double-faced card as its **back** face (CR 712.12 — *"A player
+ *   playing a modal double-faced card as a land chooses one of its faces that's a land before
+ *   putting it onto the battlefield. It enters the battlefield with that face up."*). The Zendikar
+ *   Rising Pathway cycle is the whole user: Riverglide Pathway // Lavaglide Pathway is one card
+ *   offering two land plays, and this flag is which one was taken. Defaults to false — the printed
+ *   front face — so every single-faced land play is unchanged.
  */
 @Serializable
 @SerialName("PlayLand")
 data class PlayLand(
     override val playerId: EntityId,
-    val cardId: EntityId
+    val cardId: EntityId,
+    val asBackFace: Boolean = false
 ) : GameAction
 
 // =============================================================================

@@ -285,6 +285,15 @@ carries the other side for the hover preview's flip toggle.
     (unlike CR 712.8e for nonmodal DFCs, where it stays the front's). The Marvel Super Heroes hero cycle —
     Jennifer Walters // The Sensational She-Hulk, Bruce Banner // The Incredible Hulk, King T'Challa, Tony Stark,
     Monica Rambeau.
+  - **Land back** — a full `CardDefinition` in `backFace`, built with
+    `CardDefinition.modalDoubleFacedLand(front, back)`. Neither face is ever *cast*: CR 712.12 makes this a
+    **play-a-land** choice — *"A player playing a modal double-faced card as a land chooses one of its faces
+    that's a land before putting it onto the battlefield. It enters the battlefield with that face up."* So the
+    card shows up as **two land plays** in hand (`PlayLandEnumerator` emits one per land face, each named for the
+    face it plays) and `PlayLand.asBackFace` says which was taken. Neither face carries a mana cost or a color
+    indicator. Once down the permanent has only the played face's characteristics (CR 712.8f) and can never turn
+    over (CR 712.9 excludes modal DFCs from transforming); off the battlefield the card is its front face again
+    (CR 712.8a). The Zendikar Rising Pathway cycle — Riverglide Pathway // Lavaglide Pathway.
 - `PREPARE` — primary characteristics are the creature face, `cardFaces[0]` is the **prepare spell** (an
   instant/sorcery) (Secrets of Strixhaven). The card is only ever cast as the creature; the prepare spell is never
   cast from hand. A creature that carries `Keyword.PREPARED` ("This creature enters prepared") becomes prepared on

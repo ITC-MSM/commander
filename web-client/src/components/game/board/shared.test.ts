@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { attachmentStackLayout, shouldShowCastModal } from './shared'
+import { attachmentStackLayout, hasMultipleCastingOptions, shouldShowCastModal } from './shared'
 import type { LegalActionInfo } from '../../../types'
 import { entityId } from '../../../types'
 
@@ -68,6 +68,15 @@ function playLand(): LegalActionInfo {
   }
 }
 
+/** The back-face half of a modal double-faced land (CR 712.12). */
+function playLandBackFace(): LegalActionInfo {
+  return {
+    actionType: 'PlayLand',
+    description: 'Play Lavaglide Pathway',
+    action: { type: 'PlayLand', playerId: PLAYER, cardId: CARD, asBackFace: true },
+  }
+}
+
 describe('shouldShowCastModal', () => {
   it('does not open the menu when there are no legal actions', () => {
     expect(shouldShowCastModal([])).toBe(false)
@@ -118,6 +127,22 @@ describe('shouldShowCastModal', () => {
 
   it('does not open the menu for a plain land with only a play-land action', () => {
     expect(shouldShowCastModal([playLand()])).toBe(false)
+  })
+
+  it('opens the menu for a modal double-faced land — two land faces are two choices', () => {
+    expect(shouldShowCastModal([playLand(), playLandBackFace()])).toBe(true)
+  })
+})
+
+describe('hasMultipleCastingOptions', () => {
+  it('counts a modal double-faced land\'s two land faces as two ways to play it', () => {
+    // Both actions are PlayLand, so a boolean "has a play-land action" would count them as one
+    // — and this helper's whole job is answering how many ways the card can be played (CR 712.12).
+    expect(hasMultipleCastingOptions([playLand(), playLandBackFace()])).toBe(true)
+  })
+
+  it('an ordinary land is still a single way to play it', () => {
+    expect(hasMultipleCastingOptions([playLand()])).toBe(false)
   })
 
   it('opens the menu for multiple casting variants (morph + normal cast)', () => {
