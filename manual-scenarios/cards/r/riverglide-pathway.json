@@ -1,0 +1,31 @@
+{
+  "player1Name": "You",
+  "player2Name": "AI",
+  "mode": "AI",
+  "aiPlayer": 2,
+  "player1": {
+    "lifeTotal": 20,
+    "hand": ["Riverglide Pathway", "Shock", "Sleight of Hand"],
+    "battlefield": [],
+    "graveyard": [],
+    "library": ["Grizzly Bears", "Hill Giant", "Mountain", "Craw Wurm"]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": ["Grizzly Bears", "Mountain"],
+    "battlefield": [
+      {"name": "Grizzly Bears"},
+      {"name": "Mountain"},
+      {"name": "Mountain"}
+    ],
+    "graveyard": [],
+    "library": ["Hill Giant", "Mountain", "Grizzly Bears"]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1,
+  "player1StopAtSteps": [],
+  "player2StopAtSteps": [],
+  "player1OpponentStopAtSteps": [],
+  "player2OpponentStopAtSteps": []
+}
