@@ -44,7 +44,7 @@ val ChampionOfTheClachan = card("Champion of the Clachan") {
             powerBonus = 1,
             toughnessBonus = 1,
             filter = GroupFilter(
-                GameObjectFilter.Creature.withSubtype("Kithkin").youControl(),
+                GameObjectFilter.Permanent.withSubtype("Kithkin").youControl(),
                 excludeSelf = true
             )
         )

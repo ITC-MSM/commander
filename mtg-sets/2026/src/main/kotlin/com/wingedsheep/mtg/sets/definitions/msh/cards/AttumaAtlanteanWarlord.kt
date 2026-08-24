@@ -35,7 +35,7 @@ val AttumaAtlanteanWarlord = card("Attuma, Atlantean Warlord") {
             powerBonus = 1,
             toughnessBonus = 1,
             filter = GroupFilter(
-                GameObjectFilter.Creature.withSubtype("Merfolk").youControl(),
+                GameObjectFilter.Permanent.withSubtype("Merfolk").youControl(),
                 excludeSelf = true
             )
         )

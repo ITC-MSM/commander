@@ -3324,7 +3324,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Kithkin ctrl:you",
+                    "baseFilter": "permanent Kithkin ctrl:you",
                     "excludeSelf": true
                 }
             }
@@ -5041,7 +5041,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Merfolk ctrl:you",
+                    "baseFilter": "permanent Merfolk ctrl:you",
                     "excludeSelf": true
                 }
             }
@@ -5086,7 +5086,7 @@
                     "space": {
                         "type": "IterationSpace.Group",
                         "filter": {
-                            "baseFilter": "creature Merfolk ctrl:you",
+                            "baseFilter": "permanent Merfolk ctrl:you",
                             "excludeSelf": true
                         }
                     },
@@ -5106,7 +5106,7 @@
                     "powerBonus": 1,
                     "toughnessBonus": 0,
                     "filter": {
-                        "baseFilter": "creature Merfolk ctrl:you"
+                        "baseFilter": "permanent Merfolk ctrl:you"
                     }
                 },
                 "condition": {
@@ -12599,7 +12599,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Elf ctrl:you",
+                    "baseFilter": "permanent Elf ctrl:you",
                     "excludeSelf": true
                 }
             }

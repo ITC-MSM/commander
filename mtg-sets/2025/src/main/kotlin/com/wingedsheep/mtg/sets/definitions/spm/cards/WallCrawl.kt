@@ -65,7 +65,7 @@ val WallCrawl = card("Wall Crawl") {
         ability = ModifyStats(
             powerBonus = 1,
             toughnessBonus = 1,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.SPIDER).youControl())
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.SPIDER).youControl())
         )
     }
 
@@ -73,7 +73,7 @@ val WallCrawl = card("Wall Crawl") {
     staticAbility {
         ability = CantBeBlockedBy(
             blockerFilter = GameObjectFilter.Creature.withKeyword(Keyword.DEFENDER),
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.SPIDER).youControl())
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.SPIDER).youControl())
         )
     }
 

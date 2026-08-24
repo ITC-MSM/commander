@@ -96,7 +96,7 @@ val BruseTarlRovingRancher = card("Bruse Tarl, Roving Rancher") {
     staticAbility {
         ability = GrantKeyword(
             Keyword.DOUBLE_STRIKE,
-            GroupFilter(GameObjectFilter.Creature.withSubtype("Ox").youControl()),
+            GroupFilter(GameObjectFilter.Permanent.withSubtype("Ox").youControl()),
         )
     }
 

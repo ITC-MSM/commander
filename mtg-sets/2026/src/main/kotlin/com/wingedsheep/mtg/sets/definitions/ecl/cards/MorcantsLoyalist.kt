@@ -34,7 +34,7 @@ val MorcantsLoyalist = card("Morcant's Loyalist") {
             powerBonus = 1,
             toughnessBonus = 1,
             filter = GroupFilter(
-                GameObjectFilter.Creature.withSubtype("Elf").youControl(),
+                GameObjectFilter.Permanent.withSubtype("Elf").youControl(),
                 excludeSelf = true
             )
         )

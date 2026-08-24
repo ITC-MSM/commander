@@ -698,7 +698,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Cat ctrl:you",
+                    "baseFilter": "permanent Cat ctrl:you",
                     "excludeSelf": true
                 }
             },
@@ -706,7 +706,7 @@
                 "type": "GrantKeyword",
                 "keyword": "LIFELINK",
                 "filter": {
-                    "baseFilter": "creature Cat ctrl:you",
+                    "baseFilter": "permanent Cat ctrl:you",
                     "excludeSelf": true
                 }
             }

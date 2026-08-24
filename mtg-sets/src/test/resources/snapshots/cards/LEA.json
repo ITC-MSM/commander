@@ -1600,7 +1600,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Goblin",
+                    "baseFilter": "permanent Goblin",
                     "excludeSelf": true
                 }
             },
@@ -1608,7 +1608,7 @@
                 "type": "GrantKeyword",
                 "keyword": "MOUNTAINWALK",
                 "filter": {
-                    "baseFilter": "creature Goblin",
+                    "baseFilter": "permanent Goblin",
                     "excludeSelf": true
                 }
             }
@@ -2608,7 +2608,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Merfolk",
+                    "baseFilter": "permanent Merfolk",
                     "excludeSelf": true
                 }
             },
@@ -2616,7 +2616,7 @@
                 "type": "GrantKeyword",
                 "keyword": "ISLANDWALK",
                 "filter": {
-                    "baseFilter": "creature Merfolk",
+                    "baseFilter": "permanent Merfolk",
                     "excludeSelf": true
                 }
             }

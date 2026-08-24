@@ -4086,7 +4086,7 @@
                 "type": "GrantKeyword",
                 "keyword": "HASTE",
                 "filter": {
-                    "baseFilter": "creature Goblin"
+                    "baseFilter": "permanent Goblin ctrl:you"
                 }
             }
         ]

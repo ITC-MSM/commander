@@ -48,7 +48,7 @@ val HowlsquadHeavy = card("Howlsquad Heavy") {
         ability = GrantKeyword(
             Keyword.HASTE,
             GroupFilter(
-                GameObjectFilter.Creature.withSubtype(Subtype.GOBLIN).youControl(),
+                GameObjectFilter.Permanent.withSubtype(Subtype.GOBLIN).youControl(),
                 excludeSelf = true,
             ),
         )
