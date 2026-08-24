@@ -8,9 +8,9 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.TimingRule
 
 /**
- * Snow-Covered Island
- * Basic Snow Land — Island
- * ({T}: Add {U}.)
+ * Snow-Covered Plains
+ * Basic Snow Land — Plains
+ * ({T}: Add {W}.)
  *
  * Written with the plain [card] DSL rather than the `basicLand` helper: that helper hardcodes the
  * "Basic Land — <type>" type line and cannot carry the Snow supertype. The intrinsic mana ability is
@@ -21,24 +21,24 @@ import com.wingedsheep.sdk.scripting.TimingRule
  * `BoosterGenerator.getBasicLands` would offer this as a freely-addable basic during limited deck
  * building — which the card's own ruling forbids.
  */
-val SnowCoveredIsland = card("Snow-Covered Island") {
+val SnowCoveredPlains = card("Snow-Covered Plains") {
     manaCost = ""
-    colorIdentity = "U"
-    typeLine = "Basic Snow Land — Island"
-    oracleText = "({T}: Add {U}.)"
+    colorIdentity = "W"
+    typeLine = "Basic Snow Land — Plains"
+    oracleText = "({T}: Add {W}.)"
 
     activatedAbility {
         cost = Costs.Tap
-        effect = Effects.AddMana(Color.BLUE)
+        effect = Effects.AddMana(Color.WHITE)
         manaAbility = true
         timing = TimingRule.ManaAbility
     }
 
     metadata {
         rarity = Rarity.COMMON
-        collectorNumber = "371"
-        artist = "Anson Maddocks"
-        imageUri = "https://cards.scryfall.io/normal/front/a/d/ad8b77cf-b53e-4da3-9c27-3851b7b25a98.jpg?1783947448"
+        collectorNumber = "367"
+        artist = "Christopher Rush"
+        imageUri = "https://cards.scryfall.io/normal/front/c/b/cb3ac778-fb45-4fd3-a9af-8a0791f833e8.jpg?1783947448"
         inBooster = false
         ruling("2021-02-05", "Snow is a supertype, not a card type. It has no rules meaning or function by itself, but spells and abilities may refer to it.")
         ruling("2021-02-05", "The {S} symbol is a generic mana symbol. It represents a cost that can be paid by one mana that was produced by a snow source. That mana can be any color or colorless.")
