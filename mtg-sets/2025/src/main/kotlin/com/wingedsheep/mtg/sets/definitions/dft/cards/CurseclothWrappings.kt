@@ -52,7 +52,7 @@ val CurseclothWrappings = card("Cursecloth Wrappings") {
         ability = ModifyStats(
             powerBonus = 1,
             toughnessBonus = 1,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.ZOMBIE).youControl())
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.ZOMBIE).youControl())
         )
     }
 

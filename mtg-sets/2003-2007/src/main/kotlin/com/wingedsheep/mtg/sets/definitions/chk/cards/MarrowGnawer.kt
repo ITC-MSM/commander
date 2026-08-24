@@ -34,10 +34,10 @@ val MarrowGnawer = card("Marrow-Gnawer") {
     power = 2
     toughness = 3
     staticAbility {
-        ability = GrantKeyword(Keyword.FEAR, GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.RAT)))
+        ability = GrantKeyword(Keyword.FEAR, GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.RAT)))
     }
     activatedAbility {
-        cost = Costs.Composite(Costs.Tap, Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Rat")))
+        cost = Costs.Composite(Costs.Tap, Costs.Sacrifice(GameObjectFilter.Permanent.withSubtype("Rat")))
         effect = Effects.CreateToken(
             count = DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature.withSubtype("Rat")),
             power = 1,
