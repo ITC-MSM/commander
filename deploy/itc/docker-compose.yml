@@ -1,3 +1,5 @@
+name: argentum
+
 services:
   redis:
     image: redis:8-alpine
