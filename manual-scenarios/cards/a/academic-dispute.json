@@ -1,0 +1,35 @@
+{
+  "player1Name": "You",
+  "player2Name": "AI",
+  "mode": "AI",
+  "aiPlayer": 2,
+  "player1": {
+    "lifeTotal": 20,
+    "hand": ["Academic Dispute", "Grizzly Bears", "Hill Giant"],
+    "battlefield": [
+      {"name": "Mountain"},
+      {"name": "Mountain"},
+      {"name": "Air Elemental"}
+    ],
+    "graveyard": [],
+    "library": ["Craw Wurm", "Mountain", "Lightning Bolt", "Mountain"]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": ["Grizzly Bears", "Mountain"],
+    "battlefield": [
+      {"name": "Craw Wurm"},
+      {"name": "Mountain"},
+      {"name": "Mountain"}
+    ],
+    "graveyard": [],
+    "library": ["Hill Giant", "Mountain", "Grizzly Bears"]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1,
+  "player1StopAtSteps": ["DECLARE_ATTACKERS", "DECLARE_BLOCKERS"],
+  "player2StopAtSteps": [],
+  "player1OpponentStopAtSteps": [],
+  "player2OpponentStopAtSteps": []
+}
