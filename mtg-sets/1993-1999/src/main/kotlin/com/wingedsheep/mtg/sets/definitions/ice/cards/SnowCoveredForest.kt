@@ -8,9 +8,9 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.TimingRule
 
 /**
- * Snow-Covered Island
- * Basic Snow Land — Island
- * ({T}: Add {U}.)
+ * Snow-Covered Forest
+ * Basic Snow Land — Forest
+ * ({T}: Add {G}.)
  *
  * Written with the plain [card] DSL rather than the `basicLand` helper: that helper hardcodes the
  * "Basic Land — <type>" type line and cannot carry the Snow supertype. The intrinsic mana ability is
@@ -21,24 +21,24 @@ import com.wingedsheep.sdk.scripting.TimingRule
  * `BoosterGenerator.getBasicLands` would offer this as a freely-addable basic during limited deck
  * building — which the card's own ruling forbids.
  */
-val SnowCoveredIsland = card("Snow-Covered Island") {
+val SnowCoveredForest = card("Snow-Covered Forest") {
     manaCost = ""
-    colorIdentity = "U"
-    typeLine = "Basic Snow Land — Island"
-    oracleText = "({T}: Add {U}.)"
+    colorIdentity = "G"
+    typeLine = "Basic Snow Land — Forest"
+    oracleText = "({T}: Add {G}.)"
 
     activatedAbility {
         cost = Costs.Tap
-        effect = Effects.AddMana(Color.BLUE)
+        effect = Effects.AddMana(Color.GREEN)
         manaAbility = true
         timing = TimingRule.ManaAbility
     }
 
     metadata {
         rarity = Rarity.COMMON
-        collectorNumber = "371"
-        artist = "Anson Maddocks"
-        imageUri = "https://cards.scryfall.io/normal/front/a/d/ad8b77cf-b53e-4da3-9c27-3851b7b25a98.jpg?1783947448"
+        collectorNumber = "383"
+        artist = "Pat Lewis"
+        imageUri = "https://cards.scryfall.io/normal/front/4/c/4c0ad95c-d62c-4138-ada0-fa39a63a449e.jpg?1783947443"
         inBooster = false
         ruling("2021-02-05", "Snow is a supertype, not a card type. It has no rules meaning or function by itself, but spells and abilities may refer to it.")
         ruling("2021-02-05", "The {S} symbol is a generic mana symbol. It represents a cost that can be paid by one mana that was produced by a snow source. That mana can be any color or colorless.")
