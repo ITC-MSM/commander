@@ -750,6 +750,30 @@
     ]
 }
 
+// Hitchclaw Recluse
+{
+    "name": "Hitchclaw Recluse",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Spider",
+    "oracleText": "Reach",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "metadata": {
+        "collectorNumber": "181",
+        "artist": "Jeff Simpson",
+        "flavorText": "Not all spiders need webs to catch their prey.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/f/bf335eac-e57b-44ec-afe2-8aed567469e7.jpg?1783938322"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Joraga Invocation
 {
     "name": "Joraga Invocation",

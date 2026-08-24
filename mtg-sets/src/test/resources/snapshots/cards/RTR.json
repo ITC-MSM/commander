@@ -151,6 +151,47 @@
     ]
 }
 
+// Chromatic Lantern
+{
+    "name": "Chromatic Lantern",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "Lands you control have \"{T}: Add one mana of any color.\"\n{T}: Add one mana of any color.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_2",
+                    "cost": "CostTap",
+                    "effect": "AddManaOfChoice",
+                    "timing": "ManaAbility",
+                    "isManaAbility": true
+                },
+                "filter": {
+                    "baseFilter": "land ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "226",
+        "rarity": "RARE",
+        "artist": "Jung Park",
+        "flavorText": "Dimir mages put the lanterns to good use, creating shapeshifters and sleeper agents from mana foreign to them.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/7/57f4e0f0-13d1-43ed-8d95-13cff94a26e7.jpg?1783940325"
+    }
+}
+
 // Cobblebrute
 {
     "name": "Cobblebrute",
