@@ -98,6 +98,13 @@ class PlayLandEnumerator : ActionEnumerator {
         cardComponent: CardComponent,
         sourceZone: String? = null,
     ): List<LegalAction> {
+        // Hot path: legal-action enumeration runs on every priority pass and every AI/MCTS node,
+        // and the hand loop now reaches this for *every* card rather than only for lands. A card
+        // that is neither a land nor double-faced can offer no land play, and answering that from
+        // two booleans already on the CardComponent keeps the registry lookup below off the common
+        // path entirely.
+        if (!cardComponent.typeLine.isLand && !cardComponent.isDoubleFaced) return emptyList()
+
         val result = mutableListOf<LegalAction>()
         if (cardComponent.typeLine.isLand) {
             result.add(LegalAction(
