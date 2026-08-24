@@ -31,6 +31,17 @@ import com.wingedsheep.sdk.scripting.events.SourceFilter
  *
  * Fight damage is noncombat damage, so a fight an opponent's creature loses leaves -1/-1 counters
  * behind (2017-04-18 ruling) — that falls out of the pattern without a special case.
+ *
+ * **Known deviation — CR 616.1 ordering is not modelled.** When this replacement competes with
+ * another replacement or prevention effect, CR 616.1 gives the choice of which to apply first to
+ * "the affected object's controller" — the opponent, here — and the card's own 2017-04-18 ruling
+ * spells out both directions they would use it in (converting the damage to counters *before*
+ * Insult could double it, so Insult no longer applies; or taking Djeru's Resolve's prevention over
+ * the counters). The engine has no 616.1 prompt at all: it amplifies before it replaces, and it
+ * places counters ahead of a shield counter — in both cases the order the affected player would
+ * not have chosen. That is engine-wide behaviour rather than anything specific to this card, and
+ * the `ruling(...)` block below ships the ordering ruling verbatim, so this note is here to keep
+ * the two from reading as a contradiction.
  */
 val SoulScarMage = card("Soul-Scar Mage") {
     manaCost = "{R}"
