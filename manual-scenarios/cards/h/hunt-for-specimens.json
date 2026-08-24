@@ -1,0 +1,61 @@
+{
+  "player1Name": "You",
+  "player2Name": "AI",
+  "mode": "AI",
+  "aiPlayer": 2,
+  "player1": {
+    "lifeTotal": 14,
+    "hand": [
+      "Hunt for Specimens",
+      "Lightning Bolt",
+      "Grizzly Bears"
+    ],
+    "battlefield": [
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Mountain"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Craw Wurm",
+      "Grizzly Bears",
+      "Hill Giant"
+    ]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": [
+      "Grizzly Bears"
+    ],
+    "battlefield": [
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Craw Wurm"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Hill Giant",
+      "Grizzly Bears",
+      "Craw Wurm"
+    ]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1,
+  "player1StopAtSteps": [],
+  "player2StopAtSteps": [],
+  "player1OpponentStopAtSteps": [],
+  "player2OpponentStopAtSteps": []
+}
