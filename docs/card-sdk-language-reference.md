@@ -293,7 +293,8 @@ carries the other side for the hover preview's flip toggle.
     face it plays) and `PlayLand.asBackFace` says which was taken. Neither face carries a mana cost or a color
     indicator. Once down the permanent has only the played face's characteristics (CR 712.8f) and can never turn
     over (CR 712.9 excludes modal DFCs from transforming); off the battlefield the card is its front face again
-    (CR 712.8a). The Zendikar Rising Pathway cycle — Riverglide Pathway // Lavaglide Pathway.
+    (CR 712.8a). The ten-card Pathway cycle, split across Zendikar Rising (six) and Kaldheim (four) —
+    Riverglide Pathway // Lavaglide Pathway, Hengegate Pathway // Mistgate Pathway, and the rest.
 - `PREPARE` — primary characteristics are the creature face, `cardFaces[0]` is the **prepare spell** (an
   instant/sorcery) (Secrets of Strixhaven). The card is only ever cast as the creature; the prepare spell is never
   cast from hand. A creature that carries `Keyword.PREPARED` ("This creature enters prepared") becomes prepared on

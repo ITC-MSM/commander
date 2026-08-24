@@ -166,11 +166,11 @@ Used to perform the special action of playing a land.
 | `cardId`      | `EntityId` | The land card to play.                                                                          |
 | `asBackFace`  | `Boolean`  | Play a modal double-faced card as its **back** face (CR 712.12). Defaults to `false`. See below. |
 
-A modal double-faced land (the Zendikar Rising Pathway cycle) is one card with two land faces, and
-CR 712.12 makes the face a choice taken *before* the permanent enters. The server therefore
-enumerates **one `PlayLand` per land face**, each `description` naming the face it plays, and
-`asBackFace` is what distinguishes the two otherwise-identical actions. Clients must not collapse
-them: filtering `PlayLand` actions down to the first one silently drops a face.
+A modal double-faced land (the Pathway cycle, from Zendikar Rising and Kaldheim) is one card with
+two land faces, and CR 712.12 makes the face a choice taken *before* the permanent enters. The
+server therefore enumerates **one `PlayLand` per land face**, each `description` naming the face it
+plays, and `asBackFace` is what distinguishes the two otherwise-identical actions. Clients must not
+collapse them: filtering `PlayLand` actions down to the first one silently drops a face.
 
 #### D. `PassPriority`
 
