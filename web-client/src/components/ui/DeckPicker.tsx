@@ -384,7 +384,7 @@ export function DeckPicker({
     return null
   }, [tab, decks, selectedSavedId, pasteCommander])
 
-  // The constructed sideboard ("outside the game", CR 100.4a) the wish effects fetch from.
+  // The constructed sideboard ("outside the game", CR 400.11a) the wish effects fetch from.
   // Saved decks carry one (the deckbuilder persists it) and a pasted list carries whatever sat
   // under its `Sideboard` / `SB:` section; Random and Examples have none. The server ignores it
   // for Limited lobbies (those derive pool − maindeck) and uses it for constructed/premade ones.
@@ -458,7 +458,7 @@ export function DeckPicker({
   const stats = useMemo(() => computeDeckStats(currentDeck, cards), [currentDeck, cards])
   const totalCards = Object.values(currentDeck).reduce((a, b) => a + b, 0)
   // Shown under the paste box so a pasted `Sideboard` section is visibly accounted for rather
-  // than looking dropped — it deliberately isn't part of `totalCards` (CR 100.4a).
+  // than looking dropped — it deliberately isn't part of `totalCards` (CR 400.11a).
   const pasteSideboardCount = useMemo(
     () => Object.values(parsedPaste.sideboard).reduce((a, b) => a + b, 0),
     [parsedPaste],

@@ -597,7 +597,7 @@ sealed interface ClientMessage {
         /** Optional pinned printing for [commander]. Ignored when [commander] is null. */
         val commanderPrinting: PrintingRef? = null,
         /**
-         * Constructed sideboard ("outside the game", CR 100.4a), card name → count — the cards a
+         * Constructed sideboard ("outside the game", CR 400.11a), card name → count — the cards a
          * wish effect can fetch. Null / empty for a random pool, which has no constructed sideboard
          * (a Limited sideboard is derived from the pool instead; see `SideboardDerivation`).
          *

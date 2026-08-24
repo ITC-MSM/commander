@@ -3063,7 +3063,7 @@ export interface SubmitQuickGameLobbyDeckMessage {
   /** Optional pinned printing for the commander. Ignored when `commander` is null. */
   readonly commanderPrinting?: PrintingRef
   /**
-   * Constructed sideboard ("outside the game", CR 100.4a), card name → count. Omitted for a
+   * Constructed sideboard ("outside the game", CR 400.11a), card name → count. Omitted for a
    * random pool, whose sideboard the server derives from the pool instead.
    */
   readonly sideboard?: Record<string, number>

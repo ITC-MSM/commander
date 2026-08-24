@@ -12,7 +12,7 @@ export interface ParsedPaste {
   cards: Record<string, number>
   /**
    * The `Sideboard` / `SB:` section, card name → copies. The constructed sideboard lives
-   * "outside the game" (CR 100.4a) and is only reachable through wish effects, so it is kept
+   * "outside the game" (CR 400.11a) and is only reachable through wish effects, so it is kept
    * apart from `cards` rather than merged in — merging it would deal the sideboard into the
    * library and inflate the deck past its legal size.
    */

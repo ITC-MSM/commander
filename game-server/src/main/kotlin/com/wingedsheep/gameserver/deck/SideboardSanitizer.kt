@@ -6,7 +6,7 @@ import com.wingedsheep.engine.registry.CardRegistry
  * Drops sideboard entries the card registry doesn't know, at the server boundary.
  *
  * A submitted *deck* is validated and rejected outright when it names a card this engine hasn't
- * implemented. A sideboard isn't: it lives "outside the game" (CR 100.4a) and reaches
+ * implemented. A sideboard isn't: it lives "outside the game" (CR 400.11a) and reaches
  * `GameInitializer` unchecked, where `cardRegistry.requireCard` throws on the first unknown name —
  * so a single unimplemented sideboard card would fail game *initialization*, taking down a lobby
  * whose decks were all perfectly legal.

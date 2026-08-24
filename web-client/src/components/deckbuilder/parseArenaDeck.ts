@@ -32,7 +32,7 @@ export interface ParsedEntry {
 export interface ParseResult {
   /** Main-deck entries, in source order. */
   entries: ParsedEntry[]
-  /** Sideboard entries — the constructed "outside the game" board (CR 100.4a). */
+  /** Sideboard entries — the constructed "outside the game" board (CR 400.11a). */
   sideboard: ParsedEntry[]
   /**
    * Commander entries — cards listed under a `Commander` / `Commanders` /
