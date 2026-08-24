@@ -468,6 +468,51 @@
     ]
 }
 
+// Necrogen Scudder
+{
+    "name": "Necrogen Scudder",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Phyrexian Horror",
+    "oracleText": "Flying\nWhen this creature enters, you lose 3 life.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": "Controller"
+                },
+                "descriptionOverride": "When this creature enters, you lose 3 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "71",
+        "rarity": "UNCOMMON",
+        "artist": "Raymond Swanland",
+        "flavorText": "Contrary to popular belief, it's kept aloft by necrogen gas, not the screaming agony of a thousand murdered souls.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/d/7d69c045-d705-478b-9e8f-272a24737225.jpg?1783941729"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Painful Quandary
 {
     "name": "Painful Quandary",
