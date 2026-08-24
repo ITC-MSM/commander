@@ -108,6 +108,8 @@ class ActivateAbilityHandler(
     private val triggerDetector: TriggerDetector,
     private val triggerProcessor: TriggerProcessor,
     private val castPermissionUtils: CastPermissionUtils,
+    private val manaAbilitySideEffectExecutor:
+        com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor,
 ) : ActionHandler<ActivateAbility> {
     override val actionType: KClass<ActivateAbility> = ActivateAbility::class
 
@@ -1611,6 +1613,31 @@ class ActivateAbilityHandler(
 
         // Mana abilities don't use the stack
         if (ability.isManaAbility) {
+            // A mana ability is still an *activated* ability (CR 605.3), so activating one is an
+            // activation event like any other — Elrond, Moon-Reader's "whenever you activate an
+            // ability of a creature" fires off a creature's "{T}: Add {G}" per its ruling. Mana
+            // abilities resolve off the stack, so StackResolver never emits AbilityActivatedEvent
+            // for them; emit it here for every mana ability, {T}-costed or not. Consumers pick
+            // their own semantic off the flags: the default "isn't a mana ability" wording rejects
+            // `isManaAbility`, the Antiquities "without {T} in its activation cost" template
+            // (Haunting Wind / Powerleech / Artifact Possession) rejects `costsTap`, and the
+            // unqualified wording accepts both.
+            //
+            // Emitted here rather than after resolution because the branch below has two pause
+            // exits — an any-color effect (Birds of Paradise) and an any-color tap bonus (Fertile
+            // Ground) — and the ability is already activated by this point: its costs are paid.
+            // Adding it to [events] now carries it out through those exits too.
+            val manaAbilityActivatedEvent = AbilityActivatedEvent(
+                sourceId = action.sourceId,
+                sourceName = cardComponent.name,
+                controllerId = action.playerId,
+                abilityEntityId = null,
+                costsTap = hasTapCost(effectiveCost),
+                isManaAbility = true,
+                isExhaust = ability.isExhaust
+            )
+            events.add(manaAbilityActivatedEvent)
+
             // Check for an attached aura that overrides the produced mana color
             // (e.g., Shimmerwilds Growth: "Enchanted land is the chosen color").
             val overrideColor = findEnchantedLandManaColorOverride(currentState, action.sourceId)
@@ -1680,7 +1707,9 @@ class ActivateAbilityHandler(
                 // must survive that pause. Queue it as a PendingTriggersContinuation beneath the
                 // in-flight decision so it's put on the stack once the ability finishes resolving
                 // (mirrors PassPriorityHandler / SubmitDecisionHandler mid-resolution handling).
-                val deferred = triggerDetector.detectTriggers(effectResult.state, costPaymentEvents)
+                val deferred = triggerDetector.detectTriggers(
+                    effectResult.state, costPaymentEvents + manaAbilityActivatedEvent
+                )
                 if (deferred.isNotEmpty()) {
                     val pending = com.wingedsheep.engine.core.PendingTriggersContinuation(
                         decisionId = "mana-ability-cost-triggers-${java.util.UUID.randomUUID()}",
@@ -1831,37 +1860,21 @@ class ActivateAbilityHandler(
             )
             if (bonusResult.isPaused) return bonusResult
 
-            // A mana ability whose cost lacks {T} (e.g. Ashnod's Altar's "Sacrifice a creature: Add
-            // {C}{C}") still satisfies the Antiquities "activates an ability without {T} in its
-            // activation cost" template (Haunting Wind / Powerleech / Artifact Possession). Mana
-            // abilities resolve off the stack, so StackResolver never emits AbilityActivatedEvent
-            // for them — emit it here. The common tap-for-mana case (cost has {T}) is skipped, so
-            // there's no behavior change or client-log noise for ordinary mana sources.
-            val manaAbilityActivatedEvents: List<GameEvent> =
-                if (!hasTapCost(effectiveCost)) {
-                    listOf(
-                        AbilityActivatedEvent(
-                            sourceId = action.sourceId,
-                            sourceName = cardComponent.name,
-                            controllerId = action.playerId,
-                            abilityEntityId = null,
-                            costsTap = false,
-                            isManaAbility = true
-                        )
-                    )
-                } else emptyList()
-
             // Detect and queue any triggered abilities from the activation — the cost-side events
             // (a sacrificed source's dies trigger, the {T} TappedEvent for an artifact-tap trigger),
-            // the non-{T} mana-ability activation event above, and the mana ability's OWN effect
+            // the mana-ability activation event from the top of this branch, and the mana ability's OWN effect
             // resolution events (e.g. a `ReflexiveTriggerEffect`'s `ReflexiveAbilityTriggeredEvent` —
             // Rubble Rouser's "Add {R}. When you do, deal 1 damage to each opponent": the reflexive
             // half is NOT itself a mana ability (CR 605.1a requires it produce mana), so it must go
             // on the stack normally even though the ability that caused it resolved off it). Such
             // triggered abilities still use the stack even though the mana ability itself resolves
             // off it.
-            val activationTriggerEvents = activationCostEvents + manaAbilityActivatedEvents + effectResult.events
-            val resultEvents = bonusResult.events + manaAbilityActivatedEvents
+            // `activationCostEvents` was snapshotted before `manaAbilityActivatedEvent` was added,
+            // so naming it here adds it exactly once. `bonusResult.events` already carries it —
+            // it flowed in through `events` — so `resultEvents` must not append it again.
+            val activationTriggerEvents =
+                activationCostEvents + manaAbilityActivatedEvent + effectResult.events
+            val resultEvents = bonusResult.events
             val costTriggers = triggerDetector.detectTriggers(bonusResult.newState, activationTriggerEvents)
             if (costTriggers.isNotEmpty()) {
                 val triggerResult = triggerProcessor.processTriggers(bonusResult.newState, costTriggers)
@@ -1877,8 +1890,7 @@ class ActivateAbilityHandler(
                     resultEvents + triggerResult.events
                 )
             }
-            return if (manaAbilityActivatedEvents.isEmpty()) bonusResult
-            else ExecutionResult.success(bonusResult.newState, resultEvents)
+            return bonusResult
         }
 
         // Non-mana abilities go on the stack
@@ -2394,6 +2406,16 @@ class ActivateAbilityHandler(
             val (tappedState, tapEvent) = tap(currentState, source.entityId)
             currentState = tappedState
             tapEvent?.let(events::add)
+            // Auto-tapping a source to pay an ability's mana cost activates that source's mana
+            // ability just as a manual tap would (CR 605.3) — emit the same activation event the
+            // shared cast/cycling/plot auto-tap path emits, so "whenever you activate an ability"
+            // triggers (Elrond, Moon-Reader) don't silently miss the fast path.
+            manaAbilitySideEffectExecutor.activationEvent(
+                currentState,
+                source.entityId,
+                solution.manaProduced[source.entityId]?.color,
+                playerId
+            )?.let(events::add)
         }
 
         // Add produced mana to floating pool so costHandler.payAbilityCost can consume it.
@@ -2925,7 +2947,8 @@ class ActivateAbilityHandler(
                 services.conditionEvaluator,
                 services.triggerDetector,
                 services.triggerProcessor,
-                services.castPermissionUtils
+                services.castPermissionUtils,
+                services.manaAbilitySideEffectExecutor
             )
         }
     }
