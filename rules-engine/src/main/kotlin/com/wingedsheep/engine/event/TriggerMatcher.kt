@@ -310,12 +310,13 @@ class TriggerMatcher(
                     // (Haunting Wind / Powerleech / Artifact Possession). Match any activated
                     // ability whose cost lacks {T} — mana abilities without {T} count too.
                     if (event.costsTap) return false
-                } else {
+                } else if (!trigger.includeManaAbilities) {
                     // Default "activates an ability that isn't a mana ability" (Flamescroll
-                    // Celebrant): the engine emits AbilityActivatedEvent for non-mana abilities
-                    // (which use the stack) and, for the {T}-cost template above, for non-{T} mana
-                    // abilities — so explicitly reject the mana-ability ones here. Loyalty
-                    // abilities qualify (they aren't mana abilities).
+                    // Celebrant): the engine emits AbilityActivatedEvent for every activated
+                    // ability, mana or not, so explicitly reject the mana-ability ones here.
+                    // Loyalty abilities qualify (they aren't mana abilities). The
+                    // includeManaAbilities branch is the unqualified wording (Elrond,
+                    // Moon-Reader) and skips this gate, accepting mana abilities too.
                     if (event.isManaAbility) return false
                 }
                 // SELF/ATTACHED binding: the ability's source must be this permanent (Artifact
