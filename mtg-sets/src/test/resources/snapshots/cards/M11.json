@@ -588,6 +588,62 @@
     ]
 }
 
+// Mighty Leap
+{
+    "name": "Mighty Leap",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +2/+2 and gains flying until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "22",
+        "artist": "rk post",
+        "flavorText": "\"The southern fortress taken by invaders? Heh, sure . . . when elephants fly.\"\n—Brezard Skeinbow, captain of the guard",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/f/bf8e0f93-a450-4188-a735-d601a59ab108.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Nether Horror
 {
     "name": "Nether Horror",

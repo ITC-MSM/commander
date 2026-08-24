@@ -375,6 +375,42 @@
     ]
 }
 
+// Omenspeaker
+{
+    "name": "Omenspeaker",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "When this creature enters, scry 2. (Look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Scry",
+                    "count": 2
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "57",
+        "artist": "Dallas Williams",
+        "flavorText": "Her prophecies amaze her even as she speaks them.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/3/f347eb88-7d1d-4ed5-b841-2bf81f00d5f0.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Pheres-Band Centaurs
 {
     "name": "Pheres-Band Centaurs",
