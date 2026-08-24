@@ -851,3 +851,40 @@
         "GREEN"
     ]
 }
+
+// Totally Lost
+{
+    "name": "Totally Lost",
+    "manaCost": "{4}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Put target nonland permanent on top of its owner's library.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            },
+            "destination": "Library",
+            "placement": "Top"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "nonland permanent"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "54",
+        "artist": "David Palumbo",
+        "flavorText": "Fblthp had always hated crowds.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/ec8e4142-7c46-4d2f-aaa6-6410f323d9f0.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}

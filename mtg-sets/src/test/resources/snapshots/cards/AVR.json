@@ -1221,6 +1221,47 @@
     ]
 }
 
+// Ghostform
+{
+    "name": "Ghostform",
+    "manaCost": "{1}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Up to two target creatures can't be blocked this turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": "IterationSpace.Targets",
+            "body": {
+                "type": "GrantKeyword",
+                "keyword": "CANT_BE_BLOCKED",
+                "target": {
+                    "type": "ContextTarget",
+                    "index": 0
+                }
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "count": 2,
+                "optional": true,
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "56",
+        "artist": "Scott Chou",
+        "flavorText": "\"There's no such thing as 'impenetrable.'\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/f/1f6a20ba-6691-4844-9685-dfcd4184224e.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Goldnight Commander
 {
     "name": "Goldnight Commander",

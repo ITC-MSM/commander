@@ -250,6 +250,67 @@
     "colorIdentityOverride": []
 }
 
+// Pendulum of Patterns
+{
+    "name": "Pendulum of Patterns",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "When this artifact enters, you gain 3 life.\n{5}, {T}, Sacrifice this artifact: Draw a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "descriptionOverride": "When this artifact enters, you gain 3 life."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{5}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{5}, {T}, Sacrifice this artifact: Draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "192",
+        "artist": "Raoul Vitale",
+        "flavorText": "Its elaborate designs reveal secrets of aether's flow.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d19751aa-823e-4a0f-a004-dee333b34327.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
 // Prizefighter Construct
 {
     "name": "Prizefighter Construct",
