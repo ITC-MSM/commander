@@ -10733,6 +10733,7 @@
                         "type": "ContextTarget",
                         "index": 0
                     },
+                    "scope": "CombatOnly",
                     "direction": "FromTarget"
                 },
                 {

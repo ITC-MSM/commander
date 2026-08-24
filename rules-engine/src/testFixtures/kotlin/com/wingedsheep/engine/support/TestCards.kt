@@ -204,6 +204,20 @@ object TestCards {
     )
 
     /**
+     * 2/2 Shadow for {1}{B}
+     * Test card for shadow evasion — CR 702.28b restricts blocking in *both* directions.
+     */
+    val ShadowCreature = CardDefinition.creature(
+        name = "Shadow Creature",
+        manaCost = ManaCost.parse("{1}{B}"),
+        subtypes = setOf(Subtype("Shade")),
+        power = 2,
+        toughness = 2,
+        oracleText = "Shadow (This creature can block or be blocked by only creatures with shadow.)",
+        keywords = setOf(Keyword.SHADOW)
+    )
+
+    /**
      * 2/2 Artifact Creature for {2}
      * Colorless artifact creature for testing fear blocking.
      */
@@ -698,6 +712,7 @@ object TestCards {
         FirstStrikeKnight,
         BandingScout,
         FearCreature,
+        ShadowCreature,
         ArtifactCreature,
         BlackCreature,
         TrampleBeast,
