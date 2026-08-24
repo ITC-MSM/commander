@@ -778,6 +778,85 @@
     ]
 }
 
+// Soul-Scar Mage
+{
+    "name": "Soul-Scar Mage",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nIf a source you control would deal noncombat damage to a creature an opponent controls, put that many -1/-1 counters on that creature instead.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "PROWESS"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "ReplaceDamageWithCounters",
+                "counterType": "-1/-1",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "CreatureOpponentControls",
+                    "source": "SourceYouControl",
+                    "damageType": "DamageNonCombat"
+                },
+                "counterRecipient": "DamagedPermanent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "148",
+        "rarity": "RARE",
+        "artist": "Steve Argyle",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a8003786-6e2a-4e2d-a915-f23293c7273a.jpg?1783936483",
+        "rulings": [
+            {
+                "date": "2017-04-18",
+                "text": "If an effect causes a creature you control to fight a creature an opponent controls, the damage is dealt simultaneously. For instance, if your 2/2 creature fights an opponent's 4/4 creature, your creature will be dealt 4 damage and your opponent's creature will have two -1/-1 counters put on it."
+            },
+            {
+                "date": "2017-04-18",
+                "text": "Soul-Scar Mage's effect isn't a prevention effect. Damage that can't be prevented will be replaced with -1/-1 counters."
+            },
+            {
+                "date": "2017-04-18",
+                "text": "If multiple prevention and/or replacement effects are trying to apply to the same damage, the controller of the creature that would be dealt damage chooses the order in which to apply them."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Tattered Mummy
 {
     "name": "Tattered Mummy",

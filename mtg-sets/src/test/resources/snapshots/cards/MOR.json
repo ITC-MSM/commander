@@ -45,7 +45,7 @@
             "type": "MoveToZone",
             "target": {
                 "type": "BoundVariable",
-                "name": "target"
+                "name": "target nonland permanent"
             },
             "destination": "Hand"
         },
@@ -55,7 +55,7 @@
                 "filter": {
                     "baseFilter": "nonland permanent"
                 },
-                "id": "target"
+                "id": "target nonland permanent"
             }
         ]
     },
@@ -63,7 +63,7 @@
         "collectorNumber": "31",
         "artist": "Steve Ellis",
         "flavorText": "Gryffid scowled at the sky. A perfect day for the hunt tainted by clouds. He wished them gone. High above, the clouds looked down, scowled, and made a wish of their own.",
-        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0ae239b2-1596-4906-9711-1d180a246d35.jpg"
+        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0ae239b2-1596-4906-9711-1d180a246d35.jpg?1783942800"
     },
     "colorIdentityOverride": [
         "BLUE"
