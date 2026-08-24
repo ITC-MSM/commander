@@ -154,11 +154,11 @@ class SetCoverageServiceTest : FunSpec({
 
         test("only excuse cards that are actually still missing — Arabian Nights keeps its real gaps") {
             // ARN's holes are two policy exclusions (Jeweled Bird = ante, Shahrazad = subgame) and
-            // cards we could still build (City in a Bottle, Ring of Ma'rûf). Excluding the first
-            // pair must not paper over the second, so the set stays short of 100%.
+            // the cards we could still build — City in a Bottle, now that Ring of Ma'rûf is done.
+            // Excluding the first pair must not paper over the second, so the set stays short of 100%.
             val arn = coverage.find { it.code == "ARN" }.shouldNotBeNull()
             arn.notPlanned shouldBe 2
-            arn.total - arn.implemented shouldBeGreaterThanOrEqualTo 2
+            arn.total - arn.implemented shouldBeGreaterThanOrEqualTo 1
             arn.percent shouldBeLessThan 100.0
             val detail = service.detail("ARN").shouldNotBeNull()
             detail.draft.filter { it.notPlanned != null }.map { it.name } shouldBe

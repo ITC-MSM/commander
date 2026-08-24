@@ -1066,7 +1066,11 @@ object ClientEventTransformer {
                 isYours = event.controllerId == viewingPlayerId
             )
 
-            is AbilityActivatedEvent -> ClientEvent.AbilityActivated(
+            // Mana abilities never used the stack and so never showed up in the game log; the
+            // engine now emits AbilityActivatedEvent for them too (so "whenever you activate an
+            // ability" triggers can see them — Elrond, Moon-Reader), but they stay out of the log.
+            // A line whose description is empty says nothing the ManaAddedEvent doesn't already.
+            is AbilityActivatedEvent -> if (event.isManaAbility) null else ClientEvent.AbilityActivated(
                 sourceId = event.sourceId,
                 sourceName = event.sourceName,
                 abilityDescription = "", // Description not available

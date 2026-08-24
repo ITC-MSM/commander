@@ -1275,20 +1275,28 @@ object Triggers {
     )
 
     /**
-     * Whenever [player] activates an ability *of a permanent matching [sourceFilter]* that isn't a
-     * mana ability — Elrond, Moon-Reader's "whenever you activate an ability of a creature".
+     * Whenever [player] activates an ability *of a permanent matching [sourceFilter]* — the
+     * source-scoped sibling of [YouActivateAbility].
      *
-     * The source-scoped sibling of [YouActivateAbility]: same "isn't a mana ability" gate (CR 605 /
-     * 606), plus the activated ability's source permanent must match. Unlike
-     * [activatesAbilityWithoutTap], which keys on the literal "{T} in its activation cost" wording,
-     * this leaves the tap cost alone — a {T} ability of a creature fires it just as a costless one
-     * does.
+     * By default this keeps that trigger's "isn't a mana ability" gate (CR 605 / 606) and only adds
+     * the requirement that the activated ability's source permanent match. Set
+     * [includeManaAbilities] for the unqualified Oracle wording — Elrond, Moon-Reader's "whenever
+     * you activate an ability of a creature", whose ruling confirms a creature's "{T}: Add {G}"
+     * triggers it, since a mana ability is still an activated ability (CR 605.3).
+     *
+     * Unlike [activatesAbilityWithoutTap], which keys on the literal "{T} in its activation cost"
+     * wording, this leaves the tap cost alone — a {T} ability fires it just as a costless one does.
      */
     fun activatesAbilityOf(
         sourceFilter: GameObjectFilter,
-        player: Player = Player.You
+        player: Player = Player.You,
+        includeManaAbilities: Boolean = false
     ): TriggerSpec = TriggerSpec(
-        event = AbilityActivatedEvent(player = player, sourceFilter = sourceFilter),
+        event = AbilityActivatedEvent(
+            player = player,
+            sourceFilter = sourceFilter,
+            includeManaAbilities = includeManaAbilities
+        ),
         binding = TriggerBinding.ANY
     )
 
