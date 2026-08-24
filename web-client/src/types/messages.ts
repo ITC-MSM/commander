@@ -3062,6 +3062,11 @@ export interface SubmitQuickGameLobbyDeckMessage {
   readonly cardEntries?: readonly DeckEntry[]
   /** Optional pinned printing for the commander. Ignored when `commander` is null. */
   readonly commanderPrinting?: PrintingRef
+  /**
+   * Constructed sideboard ("outside the game", CR 100.4a), card name → count. Omitted for a
+   * random pool, whose sideboard the server derives from the pool instead.
+   */
+  readonly sideboard?: Record<string, number>
 }
 
 export interface SetQuickGameLobbyReadyMessage {
@@ -3121,6 +3126,7 @@ export function createSubmitQuickGameLobbyDeckMessage(
   commander?: string | null,
   cardEntries?: readonly DeckEntry[],
   commanderPrinting?: PrintingRef,
+  sideboard?: Record<string, number>,
 ): SubmitQuickGameLobbyDeckMessage {
   return {
     type: 'submitQuickGameLobbyDeck',
@@ -3128,6 +3134,7 @@ export function createSubmitQuickGameLobbyDeckMessage(
     ...(commander ? { commander } : {}),
     ...(cardEntries && cardEntries.length > 0 ? { cardEntries } : {}),
     ...(commanderPrinting ? { commanderPrinting } : {}),
+    ...(sideboard && Object.keys(sideboard).length > 0 ? { sideboard } : {}),
   }
 }
 export function createSetQuickGameLobbyReadyMessage(ready: boolean): SetQuickGameLobbyReadyMessage {

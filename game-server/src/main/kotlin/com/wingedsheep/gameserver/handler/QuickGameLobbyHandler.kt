@@ -7,6 +7,7 @@ import com.wingedsheep.gameserver.ai.RandomDeckResolver
 import com.wingedsheep.gameserver.config.GameProperties
 import com.wingedsheep.gameserver.deck.DeckValidator
 import com.wingedsheep.gameserver.deck.EasterEggDeckInjector
+import com.wingedsheep.gameserver.deck.SideboardSanitizer
 import com.wingedsheep.gameserver.lobby.AiDeckSpec
 import com.wingedsheep.gameserver.lobby.AiDeckSpecView
 import com.wingedsheep.gameserver.lobby.MomirBasicSetup
@@ -502,14 +503,38 @@ class QuickGameLobbyHandler(
                 return
             }
         }
+
+        // A sideboard belongs to a submitted deck; for a random pool it is meaningless (a Limited
+        // sideboard is the pool minus the maindeck, derived at game start). Unknown card names are
+        // dropped here rather than at game start, where they would throw out of GameInitializer.
+        val sanitizedSideboard = if (message.deckList.isNotEmpty()) {
+            SideboardSanitizer.sanitize(message.sideboard.orEmpty(), cardRegistry).also { result ->
+                if (result.hasDrops) {
+                    logger.info(
+                        "Lobby ${lobby.lobbyId}: dropped ${result.dropped.size} unknown sideboard " +
+                            "card(s) from ${playerSession.playerName}'s submission: ${result.dropped}",
+                    )
+                }
+            }.kept
+        } else {
+            emptyMap()
+        }
+
         lobbyRepository.withLock(lobby.lobbyId) { current ->
             if (current == null) return@withLock
             val player = current.findPlayer(playerSession.playerId) ?: return@withLock
             // No-op if the same deck is being resubmitted: avoids ping-pong with the picker
             // (which can re-emit its current value on every render) and keeps the ready flag
-            // sticky as long as the player's chosen deck hasn't actually changed.
-            if (player.deckList == message.deckList && player.commander == message.commander) return@withLock
+            // sticky as long as the player's chosen deck hasn't actually changed. The sideboard is
+            // part of "the same deck" — editing only the sideboard still has to resubmit.
+            if (player.deckList == message.deckList &&
+                player.commander == message.commander &&
+                player.sideboard == sanitizedSideboard
+            ) {
+                return@withLock
+            }
             player.deckList = message.deckList
+            player.sideboard = sanitizedSideboard
             // For random-pool submissions the commander field is meaningless; drop it so a stale
             // commander from a prior submission doesn't leak into the game start.
             player.commander = if (message.deckList.isNotEmpty()) message.commander else null
@@ -708,7 +733,15 @@ class QuickGameLobbyHandler(
                 commander != null -> stripCommanderFromCards(deckList, commander)
                 else -> deckList
             }
-            gameSession.addPlayer(playerSession, engineDeckList, commanderCardName = commander)
+            // Momir Basic substitutes a fixed deck and has no sideboard; every other seat brings
+            // whatever it submitted (empty for a random pool).
+            val sideboard = if (lobby.momirBasic) emptyMap() else lobbyPlayer.sideboard
+            gameSession.addPlayer(
+                playerSession,
+                engineDeckList,
+                commanderCardName = commander,
+                sideboard = sideboard,
+            )
             // Persistence info so a mid-game reconnect can find the player by token.
             val token = sessionRegistry.getTokenByWsId(playerSession.webSocketSession.id)
             if (token != null) {

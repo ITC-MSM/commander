@@ -23,6 +23,7 @@ import com.wingedsheep.gameserver.session.GameSession
 import com.wingedsheep.gameserver.config.GameProperties
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.gameserver.deck.DeckValidator
+import com.wingedsheep.gameserver.deck.SideboardSanitizer
 import com.wingedsheep.gameserver.deck.EasterEggDeckInjector
 import com.wingedsheep.gameserver.cube.CubeCardEntry
 import com.wingedsheep.gameserver.cube.CubeList
@@ -2759,9 +2760,21 @@ class LobbyHandler(
             }
         }
 
+        // Unknown card names are dropped before the sideboard is stored: it reaches the engine
+        // unvalidated (unlike the deck, which is rejected above), and GameInitializer throws on the
+        // first name the registry can't resolve — failing a game start whose decks were all legal.
+        val sanitizedSideboard = SideboardSanitizer.sanitize(sideboard, cardRegistry).also { result ->
+            if (result.hasDrops) {
+                logger.info(
+                    "Lobby $lobbyId: dropped ${result.dropped.size} unknown sideboard card(s) from " +
+                        "${identity.playerName}'s submission: ${result.dropped}",
+                )
+            }
+        }.kept
+
         // For a PREMADE_DECKS (constructed) lobby this explicit sideboard is honored; for Limited
         // lobbies TournamentLobby.submitDeck ignores it and derives pool − maindeck (CR 100.4b).
-        val result = lobby.submitDeck(identity.playerId, deckList, effectiveCommander, sideboard)
+        val result = lobby.submitDeck(identity.playerId, deckList, effectiveCommander, sanitizedSideboard)
         when (result) {
             is TournamentLobby.DeckSubmissionResult.Success -> {
                 val deckSize = deckList.values.sum()
