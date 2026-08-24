@@ -344,6 +344,49 @@
     ]
 }
 
+// Hydrosurge
+{
+    "name": "Hydrosurge",
+    "manaCost": "{U}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets -5/-0 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": -5
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": 0
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "54",
+        "artist": "Steve Prescott",
+        "flavorText": "\"Thirsty?\"\n—Drunvalus, hydromancer",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/a/1a22f992-ef16-45be-8bac-bd7418ed068f.jpg?1783940507"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Krenko, Mob Boss
 {
     "name": "Krenko, Mob Boss",

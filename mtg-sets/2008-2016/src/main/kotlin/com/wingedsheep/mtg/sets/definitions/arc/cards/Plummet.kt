@@ -11,6 +11,9 @@ import com.wingedsheep.sdk.model.Rarity
  * {1}{G}
  * Instant
  * Destroy target creature with flying.
+ *
+ * Canonical printing: Archenemy, the card's earliest real printing. Reprinted a dozen times over —
+ * M12 through M21, ORI, BFZ, RIX, IKO, THB, MID, AFR and M15 — each as a `Printing` row.
  */
 val Plummet = card("Plummet") {
     manaCost = "{1}{G}"

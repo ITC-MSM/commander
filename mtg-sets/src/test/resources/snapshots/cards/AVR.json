@@ -1509,6 +1509,49 @@
     ]
 }
 
+// Into the Void
+{
+    "name": "Into the Void",
+    "manaCost": "{3}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return up to two target creatures to their owners' hands.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": "IterationSpace.Targets",
+            "body": {
+                "type": "MoveToZone",
+                "target": {
+                    "type": "ContextTarget",
+                    "index": 0
+                },
+                "destination": "Hand"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "count": 2,
+                "optional": true,
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "up to two target creatures"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "62",
+        "rarity": "UNCOMMON",
+        "artist": "Daarken",
+        "flavorText": "\"The cathars have their swords, the inquisitors their axes. I prefer the 'diplomatic' approach.\"\n—Terhold, archmage of Drunau",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/d/5ddd1050-8abd-4dfe-9e52-5b56af358653.jpg?1783940717"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Killing Wave
 {
     "name": "Killing Wave",

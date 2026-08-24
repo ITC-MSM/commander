@@ -630,6 +630,69 @@
     ]
 }
 
+// Chord of Calling
+{
+    "name": "Chord of Calling",
+    "manaCost": "{X}{G}{G}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nSearch your library for a creature card with mana value X or less, put it onto the battlefield, then shuffle.",
+    "keywords": [
+        "CONVOKE"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Library",
+                        "filter": {
+                            "cardPredicates": [
+                                "IsCreature",
+                                "ManaValueAtMostX"
+                            ]
+                        }
+                    },
+                    "storeAs": "searchable"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "searchable",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "found"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "found",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield"
+                    }
+                },
+                "ShuffleLibrary",
+                "EmitLibrarySearchedEvent"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "156",
+        "rarity": "RARE",
+        "artist": "Heather Hudson",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e064174b-8f07-4fea-9eef-c3b5d0220b1a.jpg?1783943641"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Civic Wayfinder
 {
     "name": "Civic Wayfinder",
@@ -1866,6 +1929,51 @@
     ]
 }
 
+// Gather Courage
+{
+    "name": "Gather Courage",
+    "manaCost": "{G}",
+    "typeLine": "Instant",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nTarget creature gets +2/+2 until end of turn.",
+    "keywords": [
+        "CONVOKE"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "165",
+        "artist": "Brian Despain",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/3/93311f80-0d0e-4005-ba43-5dbfe438d127.jpg?1783943638"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Glass Golem
 {
     "name": "Glass Golem",
@@ -2871,6 +2979,50 @@
     },
     "colorIdentityOverride": [
         "BLACK",
+        "GREEN"
+    ]
+}
+
+// Overwhelm
+{
+    "name": "Overwhelm",
+    "manaCost": "{5}{G}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nCreatures you control get +3/+3 until end of turn.",
+    "keywords": [
+        "CONVOKE"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            },
+            "body": {
+                "type": "ModifyStats",
+                "powerModifier": {
+                    "type": "Fixed",
+                    "amount": 3
+                },
+                "toughnessModifier": {
+                    "type": "Fixed",
+                    "amount": 3
+                },
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "175",
+        "rarity": "UNCOMMON",
+        "artist": "Wayne Reynolds",
+        "flavorText": "\"Let the song of Selesnya be heard above the rhythm of our thundering hordes!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/672f6cc6-52ed-417f-b816-5733a71566e8.jpg?1783943633"
+    },
+    "colorIdentityOverride": [
         "GREEN"
     ]
 }
