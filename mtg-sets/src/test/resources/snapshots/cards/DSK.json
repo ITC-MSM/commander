@@ -5900,7 +5900,10 @@
         "additionalCosts": [
             {
                 "type": "AdditionalAtom",
-                "atom": "AtomReturnToHand"
+                "atom": {
+                    "type": "AtomReturnToHand",
+                    "filter": "permanent"
+                }
             }
         ]
     },

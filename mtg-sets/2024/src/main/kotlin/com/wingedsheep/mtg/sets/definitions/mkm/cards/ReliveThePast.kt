@@ -30,7 +30,7 @@ val ReliveThePast = card("Relive the Past") {
         val artifact = target(
             "up to one target artifact card from your graveyard",
             TargetObject(
-                filter = TargetFilter(GameObjectFilter.Artifact.ownedByYou(), zone = Zone.GRAVEYARD),
+                filter = TargetFilter.ArtifactInYourGraveyard,
                 optional = true,
             ),
         )

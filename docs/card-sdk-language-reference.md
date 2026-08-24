@@ -1192,15 +1192,22 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Return / placement
 
-- `ReturnToHand(target)` — bounce to hand.
+- `ReturnToHand(target)` — bounce to hand. Also the right effect for a **targeted** graveyard→hand
+  return ("Return target creature card from your graveyard to your hand"): the requirement's own
+  `zone = GRAVEYARD` is re-checked at resolution under CR 608.2b, so the clause needs no `fromZone`
+  guard, and Argentum Assay's `Graveyard.kt` row builds it without one. Writing the guard on a
+  targeted return *creates* a differential divergence.
 - `ReturnToHandFromGraveyard(target)` — the *guarded* bounce, `PutOntoBattlefieldFromGraveyard`'s
   sibling one destination over: `MoveToZone(…, Zone.HAND, fromZone = GRAVEYARD)`, so the move is
-  skipped if the card has left the graveyard by resolution. Use this for "Return this card from your
-  graveyard to your hand" (Sanitarium Skeleton, Eternal Dragon, Dutiful Griffin) and for any
-  graveyard→hand return whose printed line names the zone. It matters on a self-return in particular:
-  `ActivateAbilityHandler` checks an ability's `activateFromZone` when the ability is *activated* and
-  nothing re-checks it on resolution, so without the guard a card exiled from the graveyard in
-  response to its own ability comes back from exile.
+  skipped if the card has left the graveyard by resolution. Use this for the **self**-return, and only
+  that: "Return this card from your graveyard to your hand" (Sanitarium Skeleton, Eternal Dragon,
+  Dutiful Griffin) — every caller passes `EffectTarget.Self`. The guard is the *only* check
+  there because the clause names no target: `ActivateAbilityHandler` checks an ability's
+  `activateFromZone` when the ability is *activated* and nothing re-checks it on resolution, so
+  without the guard a card exiled from the graveyard in response to its own ability comes back from
+  exile. Assay builds this effect for that sentence (`Recursion.kt`), so a self-return omitting the
+  guard shows up in the differential. The asymmetry with `PutOntoBattlefieldFromGraveyard`, whose
+  *targeted* row does keep the guard, is empirical — dropping it there broke six cards.
 - `PutOnTopOfLibrary(target)` — place target on top of its owner's library.
 - `PutOnBottomOfLibrary(target)` — place target on the bottom of its owner's library (forced, no choice).
 - `PutOnTopOrBottomOfLibrary(target)` — player chooses top or bottom.
@@ -3703,6 +3710,7 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
 - `Targets.TappedCreature` / `UntappedCreature` — state-restricted.
 - `Targets.InstantOrSorcery` — instant-or-sorcery card.
 - `Targets.InstantOrSorceryInGraveyard` / `Targets.InstantOrSorceryInYourGraveyard` — an instant or sorcery card in a graveyard / **your** graveyard (the latter for "return target instant or sorcery card from your graveyard to your hand" — Repository Skaab; pair with `Effects.ReturnToHand`).
+- `TargetFilter.ArtifactInYourGraveyard` — an artifact card in **your** graveyard: the whole "return target artifact card from your graveyard" family (Ritual of Restoration, Myr Retriever, Buried Ruin, Refurbish, Fortuitous Find). Filter-side only — there is no `Targets` alias — so write `TargetObject(filter = TargetFilter.ArtifactInYourGraveyard)`. Its siblings are `TargetFilter.CreatureInYourGraveyard`, `TargetFilter.PermanentInYourGraveyard` (the bare tribal noun — see the table further down) and `TargetFilter.InstantOrSorceryInYourGraveyard`. **Inclusive**, like every card-type filter here: an artifact creature card matches this *and* `CreatureInYourGraveyard`, which is what lets Fortuitous Find's two modes each accept one. Ownership rather than control is the axis because a card in a graveyard has no controller.
 
 **Chained predicates** — `.youControl()`, `.controlledByOpponent()`, `.opponent()`, `.withSubtype(...)`,
 `.withKeyword(...)`, `.ofColor(...)`, `.tapped()`, `.untapped()`, `.power(n)`, `.minPower(n)`, `.maxPower(n)`,

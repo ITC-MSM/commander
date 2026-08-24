@@ -1,10 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.kld.cards
 
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 
@@ -27,7 +25,7 @@ val Refurbish = card("Refurbish") {
     spell {
         val t = target(
             "target",
-            TargetObject(filter = TargetFilter(GameObjectFilter.Artifact.ownedByYou(), zone = Zone.GRAVEYARD))
+            TargetObject(filter = TargetFilter.ArtifactInYourGraveyard)
         )
         effect = Effects.PutOntoBattlefieldFromGraveyard(t)
     }

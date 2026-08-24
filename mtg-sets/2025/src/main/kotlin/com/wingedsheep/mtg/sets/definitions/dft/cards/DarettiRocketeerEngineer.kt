@@ -39,10 +39,7 @@ val DarettiRocketeerEngineer = card("Daretti, Rocketeer Engineer") {
         val artifactCard = target(
             "target artifact card in your graveyard",
             TargetObject(
-                filter = TargetFilter(
-                    GameObjectFilter.Artifact.ownedByYou(),
-                    zone = Zone.GRAVEYARD
-                )
+                filter = TargetFilter.ArtifactInYourGraveyard
             )
         )
         effect = GatedEffect(
@@ -56,10 +53,7 @@ val DarettiRocketeerEngineer = card("Daretti, Rocketeer Engineer") {
         val artifactCard = target(
             "target artifact card in your graveyard",
             TargetObject(
-                filter = TargetFilter(
-                    GameObjectFilter.Artifact.ownedByYou(),
-                    zone = Zone.GRAVEYARD
-                )
+                filter = TargetFilter.ArtifactInYourGraveyard
             )
         )
         effect = GatedEffect(

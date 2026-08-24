@@ -55,7 +55,7 @@ val DoesMachines = card("Does Machines") {
             target = TargetObject(
                 count = 2,
                 optional = true,
-                filter = TargetFilter(GameObjectFilter.Artifact.ownedByYou(), zone = Zone.GRAVEYARD)
+                filter = TargetFilter.ArtifactInYourGraveyard
             )
             effect = ForEachTargetEffect(
                 effects = listOf(Effects.Move(EffectTarget.ContextTarget(0), Zone.HAND))

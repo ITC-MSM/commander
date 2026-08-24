@@ -41,7 +41,7 @@ val TuneUp = card("Tune Up") {
         val artifact = target(
             "target artifact card in your graveyard",
             TargetObject(
-                filter = TargetFilter(GameObjectFilter.Artifact.ownedByYou(), zone = Zone.GRAVEYARD)
+                filter = TargetFilter.ArtifactInYourGraveyard
             )
         )
         effect = Effects.Move(artifact, Zone.BATTLEFIELD, fromZone = Zone.GRAVEYARD).then(

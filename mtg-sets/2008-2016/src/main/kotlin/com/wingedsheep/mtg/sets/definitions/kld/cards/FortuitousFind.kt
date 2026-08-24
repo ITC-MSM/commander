@@ -36,7 +36,7 @@ val FortuitousFind = card("Fortuitous Find") {
             mode("Return target artifact card from your graveyard to your hand") {
                 val t = target(
                     "target",
-                    TargetObject(filter = TargetFilter(GameObjectFilter.Artifact.ownedByYou(), zone = Zone.GRAVEYARD)),
+                    TargetObject(filter = TargetFilter.ArtifactInYourGraveyard),
                 )
                 effect = Effects.ReturnToHand(t)
             }

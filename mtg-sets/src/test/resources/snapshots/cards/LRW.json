@@ -1388,7 +1388,7 @@
                 "type": "AdditionalAtom",
                 "atom": {
                     "type": "AtomReturnToHand",
-                    "filter": "creature ctrl:you"
+                    "filter": "creature"
                 }
             }
         ]
