@@ -4618,12 +4618,21 @@ object Effects {
      * on the battlefield" (Old Fat Spider Can't See Me), which the shield honors like any other
      * source-keyed floating effect: it stops applying the moment the source leaves.
      */
+    /**
+     * Prevent all damage [target] would deal for [duration].
+     *
+     * [scope] narrows *which* damage: the default [PreventionScope.AllDamage] covers combat and
+     * noncombat alike, while [PreventionScope.CombatOnly] is what a printed line saying "prevent
+     * all **combat** damage that would be dealt by …" actually means (Restrain, Safeguard).
+     */
     fun PreventAllDamageDealtBy(
         target: EffectTarget,
-        duration: Duration = Duration.EndOfTurn
+        duration: Duration = Duration.EndOfTurn,
+        scope: PreventionScope = PreventionScope.AllDamage
     ): Effect =
         PreventDamageEffect(
             target = target,
+            scope = scope,
             direction = PreventionDirection.FromTarget,
             duration = duration
         )

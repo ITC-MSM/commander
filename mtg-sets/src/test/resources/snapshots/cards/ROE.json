@@ -886,3 +886,50 @@
         "GREEN"
     ]
 }
+
+// Zof Shade
+{
+    "name": "Zof Shade",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Shade",
+    "oracleText": "{2}{B}: This creature gets +2/+2 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{B}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "132",
+        "artist": "Jason A. Engle",
+        "flavorText": "It haunts the remnants of the Helix of Zof, leeching strength from the vast Eldrazi ruin.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/4/b46976d4-7266-4359-bf7a-7e81983ae6e3.jpg?1783941979"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}

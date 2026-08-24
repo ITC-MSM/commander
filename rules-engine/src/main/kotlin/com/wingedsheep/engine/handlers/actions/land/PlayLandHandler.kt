@@ -7,6 +7,7 @@ import com.wingedsheep.engine.event.TriggerDetector
 import com.wingedsheep.engine.event.TriggerProcessor
 import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.handlers.actions.ActionHandler
+import com.wingedsheep.engine.handlers.effects.permanent.types.setDfcFace
 import com.wingedsheep.engine.handlers.effects.permanent.types.stampDoubleFacedFrontFace
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
@@ -98,8 +99,27 @@ class PlayLandHandler(
         val cardComponent = container.get<CardComponent>()
             ?: return "Not a card: ${action.cardId}"
 
-        if (!cardComponent.typeLine.isLand) {
+        // CR 712.11c's play-a-land analogue: only the face being played is evaluated. A modal DFC
+        // played as its back face is legal on the strength of *that* face's type line, and the
+        // printed front's (which is what `cardComponent` carries off the battlefield, CR 712.8a)
+        // is not consulted at all.
+        val playedFace = if (action.asBackFace) {
+            com.wingedsheep.engine.mechanics.ModalDfcCasts
+                .landFace(cardRegistry.getCard(cardComponent.cardDefinitionId))
+                ?: return "${cardComponent.name} has no land back face to play"
+        } else null
+        if (playedFace == null && !cardComponent.typeLine.isLand) {
             return "You can only play land cards as lands"
+        }
+
+        // Filtered "players can't play <these> lands" lock (City in a Bottle). The blanket probe
+        // above deliberately ignores filtered locks, so the named card is asked about here — the
+        // mirror of PlayLandEnumerator's per-candidate check.
+        if (LandDropUtils.playerCantPlayLands(
+                state, action.playerId, cardRegistry, conditionEvaluator, landCardId = action.cardId
+            )
+        ) {
+            return "You can't play ${cardComponent.name}"
         }
 
         // Check card is in hand, on top of library with PlayFromTopOfLibrary, in exile with MayPlayPermission,
@@ -138,7 +158,7 @@ class PlayLandHandler(
         val container = state.getEntity(action.cardId)
             ?: return ExecutionResult.error(state, "Card not found")
 
-        val cardComponent = container.get<CardComponent>()
+        val printedCardComponent = container.get<CardComponent>()
             ?: return ExecutionResult.error(state, "Not a card")
 
         var newState = state
@@ -206,6 +226,23 @@ class PlayLandHandler(
         newState = newState.updateEntity(action.cardId) { c ->
             c.with(ControllerComponent(action.playerId))
         }
+
+        // CR 712.12 — a modal double-faced card played as a land chooses a land face *before*
+        // putting it onto the battlefield, and it enters with that face up. So the face swap
+        // happens here, ahead of everything that reads the permanent's characteristics: the
+        // ETB-by-type record below, the static/replacement registration, the enters-tapped and
+        // as-enters replacements, and the entry event's name. Choosing a face is not a transform
+        // (CR 712.9 excludes modal DFCs from transforming), so this fires no transform trigger and
+        // no "can't transform" effect can stop it — which is why it uses [setDfcFace] directly
+        // rather than the flip helper.
+        if (action.asBackFace) {
+            newState = stampDoubleFacedFrontFace(newState, cardRegistry, action.cardId)
+            newState = setDfcFace(
+                newState, cardRegistry, action.cardId,
+                com.wingedsheep.engine.state.components.identity.DoubleFacedComponent.Face.BACK
+            ) ?: return ExecutionResult.error(state, "Card has no back face to play")
+        }
+
         newState = com.wingedsheep.engine.handlers.effects.BattlefieldEntry
             .place(newState, action.playerId, action.cardId)
 
@@ -308,6 +345,11 @@ class PlayLandHandler(
             newState = newState.removeMayPlayPermissionsForCard(action.cardId)
         }
 
+        // CR 712.8f — a modal double-faced permanent has only the characteristics of the face
+        // that's up. Everything below (the entry event's name, enters-tapped, the as-enters
+        // replacements) has to read the face actually played, not the printed front.
+        val cardComponent = newState.getEntity(action.cardId)?.get<CardComponent>()
+            ?: printedCardComponent
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
 
         // OnEnterRunEffect — generic "as ~ enters, run [effect]" replacement.

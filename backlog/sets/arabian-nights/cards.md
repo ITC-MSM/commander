@@ -2,7 +2,7 @@
 
 **Set Size:** 78 cards
 **Release Date:** December 17, 1993
-**Implemented:** 75 / 78
+**Implemented:** 76 / 78
 | Color | Count |
 |-------|-------|
 | White | 11 |
@@ -74,7 +74,7 @@
 - [x] Aladdin's Ring
 - [x] Bottle of Suleiman
 - [x] Brass Man
-- [ ] City in a Bottle
+- [x] City in a Bottle
 - [x] Dancing Scimitar
 - [x] Ebony Horse
 - [x] Flying Carpet

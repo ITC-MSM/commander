@@ -306,11 +306,16 @@ object DynamicAmounts {
     // Graveyard counting
     // =========================================================================
 
-    fun cardsInYourGraveyard(): DynamicAmount =
-        DynamicAmount.Count(Player.You, Zone.GRAVEYARD)
+    fun cardsInYourGraveyard(player: Player = Player.You): DynamicAmount =
+        DynamicAmount.Count(player, Zone.GRAVEYARD)
 
-    fun creatureCardsInYourGraveyard(): DynamicAmount =
-        DynamicAmount.Count(Player.You, Zone.GRAVEYARD, GameObjectFilter.Creature)
+    /**
+     * Creature cards in [player]'s graveyard. Defaults to [Player.You] ("creature cards in your
+     * graveyard"); pass [Player.Each] for the "in **all** graveyards" wording — Undergrowth
+     * Scavenger's entry counter count.
+     */
+    fun creatureCardsInYourGraveyard(player: Player = Player.You): DynamicAmount =
+        DynamicAmount.Count(player, Zone.GRAVEYARD, GameObjectFilter.Creature)
 
     // =========================================================================
     // Hand counting

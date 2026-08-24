@@ -4605,58 +4605,6 @@
     ]
 }
 
-// Gideon's Reproach
-{
-    "name": "Gideon's Reproach",
-    "manaCost": "{1}{W}",
-    "typeLine": "Instant",
-    "oracleText": "Gideon's Reproach deals 4 damage to target attacking or blocking creature.",
-    "script": {
-        "spellEffect": {
-            "type": "DealDamage",
-            "amount": {
-                "type": "Fixed",
-                "amount": 4
-            },
-            "target": {
-                "type": "BoundVariable",
-                "name": "target"
-            }
-        },
-        "targetRequirements": [
-            {
-                "type": "TargetObject",
-                "filter": {
-                    "baseFilter": {
-                        "cardPredicates": [
-                            "IsCreature"
-                        ],
-                        "statePredicates": [
-                            {
-                                "type": "StateOr",
-                                "predicates": [
-                                    "IsAttacking",
-                                    "IsBlocking"
-                                ]
-                            }
-                        ]
-                    }
-                },
-                "id": "target"
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "19",
-        "artist": "Izzy",
-        "flavorText": "\"On Amonkhet, Gideon lost both his sural and his faith in himself. But he can still throw a punch.\"",
-        "imageUri": "https://cards.scryfall.io/normal/front/7/b/7b771f44-ce32-41a2-b219-738924b7f42d.jpg?1562738270"
-    },
-    "colorIdentityOverride": [
-        "WHITE"
-    ]
-}
-
 // Gift of Growth
 {
     "name": "Gift of Growth",

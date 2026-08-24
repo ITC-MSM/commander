@@ -131,6 +131,43 @@
     ]
 }
 
+// Cryptic Serpent
+{
+    "name": "Cryptic Serpent",
+    "manaCost": "{5}{U}{U}",
+    "typeLine": "Creature — Serpent",
+    "oracleText": "This spell costs {1} less to cast for each instant and sorcery card in your graveyard.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "CardsInGraveyardMatchingFilter",
+                        "filter": "instant|sorcery"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "rarity": "UNCOMMON",
+        "artist": "Lius Lasahido",
+        "flavorText": "It slithers through the senses, constricting consciousness and poisoning perceptions.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/3/43d11a24-8abf-46ff-8cc6-57b8ac3013f6.jpg?1783936524"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Doomed Dissenter
 {
     "name": "Doomed Dissenter",

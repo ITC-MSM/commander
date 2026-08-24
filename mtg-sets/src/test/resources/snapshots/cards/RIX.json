@@ -610,6 +610,69 @@
     ]
 }
 
+// Reckless Rage
+{
+    "name": "Reckless Rage",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Reckless Rage deals 4 damage to target creature you don't control and 2 damage to target creature you control.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you don't control"
+                    }
+                },
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:opponent"
+                },
+                "id": "target creature you don't control"
+            },
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "target creature you control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "110",
+        "rarity": "UNCOMMON",
+        "artist": "Slawomir Maniak",
+        "flavorText": "\"Hard to starboard! Starb— Abandon ship! Abandon ship!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/e/0e4b97a3-8f6f-461e-aa55-ab752752f539.jpg?1783935296"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Seafloor Oracle
 {
     "name": "Seafloor Oracle",

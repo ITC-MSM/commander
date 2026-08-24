@@ -186,6 +186,38 @@
     ]
 }
 
+// Giant Strength
+{
+    "name": "Giant Strength",
+    "manaCost": "{R}{R}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature gets +2/+2.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "149",
+        "artist": "Justin Hampton",
+        "flavorText": "\"O! it is excellent/ To have a giant's strength, but it is tyrannous/ To use it like a giant.\" —William Shakespeare, *Measure for Measure*",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a86190bb-1f41-4128-b9fb-dfb1d178359d.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Greed
 {
     "name": "Greed",

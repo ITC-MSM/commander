@@ -101,6 +101,30 @@ class EnumerationContext(
                 .playerCantPlayLands(state, playerId, cardRegistry)
     }
 
+    // Whether any battlefield permanent carries a *filtered* land-play lock at all — a cheap guard
+    // so [cantPlayLand] stays O(1) when none exists (the common case). The land-play mirror of
+    // [perSpellCastRestrictionPresent], and it matters more here: land enumeration reaches every
+    // card in hand on every priority pass and every AI/MCTS node.
+    private val filteredLandLockPresent: Boolean by lazy {
+        com.wingedsheep.engine.legalactions.utils.LandDropUtils
+            .anyFilteredLandLockPresent(state, cardRegistry)
+    }
+
+    /**
+     * Whether a *filtered* [com.wingedsheep.sdk.scripting.PlayersCantPlayLands] lock forbids this
+     * player from playing the specific land [cardId] (City in a Bottle's "players can't … play
+     * lands with a name originally printed in the Arabian Nights expansion").
+     *
+     * The per-card sibling of [canPlayLand]'s blanket probe, mirroring how [cantCastSpell] sits
+     * beside [cantCastSpells]: the blanket flag suppresses the land drop wholesale, this one only
+     * removes the lands the lock actually names. Consulted by every PlayLand enumeration branch,
+     * and mirrored in `PlayLandHandler` so the offered list and the handler agree.
+     */
+    fun cantPlayLand(cardId: EntityId): Boolean =
+        filteredLandLockPresent &&
+            com.wingedsheep.engine.legalactions.utils.LandDropUtils
+                .playerCantPlayLands(state, playerId, cardRegistry, landCardId = cardId)
+
     // Cast restrictions — blanket, spell-independent locks (a Silence-style CantCastSpellsComponent
     // or a RestrictSpellsCastPerTurn per-turn limit). Cached once per enumeration pass.
     val cantCastSpells: Boolean by lazy {
