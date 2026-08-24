@@ -4,6 +4,7 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.effects.PreventionScope
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
@@ -22,8 +23,10 @@ val Restrain = card("Restrain") {
 
     spell {
         target("target attacking creature", Targets.AttackingCreature)
-        effect = Effects.PreventAllDamageDealtBy(EffectTarget.ContextTarget(0)) then
-            Effects.DrawCards(1)
+        effect = Effects.PreventAllDamageDealtBy(
+            EffectTarget.ContextTarget(0),
+            scope = PreventionScope.CombatOnly
+        ) then Effects.DrawCards(1)
     }
 
     metadata {
