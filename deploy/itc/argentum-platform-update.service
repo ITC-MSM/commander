@@ -1,0 +1,11 @@
+[Unit]
+Description=Update the Argentum Commander platform
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=morten
+WorkingDirectory=/opt/mtg/argentum
+ExecStart=/opt/mtg/argentum/deploy/itc/update.sh
+
