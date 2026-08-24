@@ -40,6 +40,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "1",
         "rarity": "UNCOMMON",
@@ -101,6 +102,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "34",
         "rarity": "RARE",
@@ -201,6 +203,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "56",
         "rarity": "RARE",
@@ -252,6 +255,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "57",
         "rarity": "RARE",
@@ -301,6 +305,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "35",
         "rarity": "UNCOMMON",
@@ -328,6 +333,7 @@
             "LifeLossFloor"
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "36",
         "rarity": "RARE",
@@ -382,6 +388,7 @@
             }
         }
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "2",
         "artist": "Brian Snõddy",
@@ -454,6 +461,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "70",
         "rarity": "UNCOMMON",
@@ -476,6 +484,7 @@
     "keywords": [
         "FLYING"
     ],
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "37",
         "artist": "Kaja Foglio",
@@ -537,6 +546,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "58",
         "rarity": "RARE",
@@ -585,6 +595,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "59",
         "rarity": "UNCOMMON",
@@ -628,6 +639,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "3",
         "artist": "Sandra Everingham",
@@ -637,6 +649,114 @@
     "colorIdentityOverride": [
         "WHITE"
     ]
+}
+
+// City in a Bottle
+{
+    "name": "City in a Bottle",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever one or more other nontoken permanents with a name originally printed in the Arabian Nights expansion are on the battlefield, their controllers sacrifice them.\nPlayers can't cast spells or play lands with a name originally printed in the Arabian Nights expansion.",
+    "script": {
+        "stateTriggeredAbilities": [
+            {
+                "id": "ability_1",
+                "condition": {
+                    "type": "Exists",
+                    "player": "Each",
+                    "zone": "Battlefield",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsPermanent",
+                            "IsNontoken",
+                            {
+                                "type": "OriginallyPrintedInSet",
+                                "setCode": "ARN"
+                            }
+                        ]
+                    },
+                    "excludeSelf": true
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsPermanent",
+                                        "IsNontoken",
+                                        {
+                                            "type": "OriginallyPrintedInSet",
+                                            "setCode": "ARN"
+                                        }
+                                    ]
+                                },
+                                "excludeSelf": true,
+                                "excludeTriggering": true
+                            },
+                            "storeAs": "sacrificeAll_gathered"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "sacrificeAll_gathered",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Sacrifice"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever one or more other nontoken permanents with a name originally printed in the Arabian Nights expansion are on the battlefield, their controllers sacrifice them"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "PlayersCantCastSpells",
+                "affected": "Each",
+                "spellFilter": {
+                    "cardPredicates": [
+                        {
+                            "type": "OriginallyPrintedInSet",
+                            "setCode": "ARN"
+                        }
+                    ]
+                }
+            },
+            {
+                "type": "PlayersCantPlayLands",
+                "landFilter": {
+                    "cardPredicates": [
+                        {
+                            "type": "OriginallyPrintedInSet",
+                            "setCode": "ARN"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "setCode": "ARN",
+    "metadata": {
+        "collectorNumber": "60",
+        "rarity": "RARE",
+        "artist": "Drew Tucker",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/5/9598b346-a47d-4c4c-9571-156824e86b9c.jpg?1783948377",
+        "rulings": [
+            {
+                "date": "2014-02-01",
+                "text": "Any time a player receives priority to cast spells or activate abilities, check to see whether any permanents on the battlefield were originally printed in the Arabian Nights expansion (even if the physical card representing that permanent is a reprint with a different expansion symbol). If there are any such permanents, the ability will trigger and those permanents will be sacrificed."
+            },
+            {
+                "date": "2004-10-04",
+                "text": "Token creatures and counters created by Arabian Nights cards are not removed."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // City of Brass
@@ -670,6 +790,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "71",
         "rarity": "UNCOMMON",
@@ -735,6 +856,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "23",
         "artist": "Kaja Foglio",
@@ -861,6 +983,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "45",
         "rarity": "UNCOMMON",
@@ -885,6 +1008,7 @@
     "keywords": [
         "FLYING"
     ],
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "61",
         "rarity": "RARE",
@@ -934,6 +1058,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "12",
         "artist": "Drew Tucker",
@@ -997,6 +1122,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "72",
         "artist": "Jesper Myrfors",
@@ -1033,6 +1159,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "38",
         "artist": "Christopher Rush",
@@ -1069,6 +1196,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "46",
         "rarity": "UNCOMMON",
@@ -1114,6 +1242,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "73",
         "rarity": "RARE",
@@ -1203,6 +1332,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "47",
         "rarity": "RARE",
@@ -1271,6 +1401,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "62",
         "rarity": "RARE",
@@ -1304,6 +1435,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "24",
         "rarity": "RARE",
@@ -1358,6 +1490,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "74",
         "rarity": "RARE",
@@ -1427,6 +1560,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "25",
         "artist": "Dameon Willich",
@@ -1484,6 +1618,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "48",
         "rarity": "RARE",
@@ -1516,6 +1651,7 @@
             "preventDamage": false
         }
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "4",
         "rarity": "UNCOMMON",
@@ -1547,6 +1683,7 @@
             }
         }
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "13",
         "artist": "Anson Maddocks",
@@ -1601,6 +1738,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "63",
         "rarity": "UNCOMMON",
@@ -1622,6 +1760,7 @@
     "keywords": [
         "FLYING"
     ],
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "14",
         "artist": "Christopher Rush",
@@ -1659,6 +1798,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "49",
         "artist": "Jesper Myrfors",
@@ -1700,6 +1840,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "15",
         "artist": "Kaja Foglio",
@@ -1796,6 +1937,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "26",
         "rarity": "RARE",
@@ -1843,6 +1985,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "27",
         "artist": "Dan Frazier",
@@ -1887,6 +2030,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "39",
         "artist": "Drew Tucker",
@@ -1964,6 +2108,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "50",
         "rarity": "RARE",
@@ -2043,6 +2188,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "16",
         "rarity": "RARE",
@@ -2089,6 +2235,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "75",
         "rarity": "RARE",
@@ -2133,6 +2280,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "64",
         "rarity": "RARE",
@@ -2194,6 +2342,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "65",
         "rarity": "RARE",
@@ -2269,6 +2418,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "5",
         "rarity": "RARE",
@@ -2316,6 +2466,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "28",
         "rarity": "RARE",
@@ -2357,6 +2508,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "29",
         "rarity": "RARE",
@@ -2410,6 +2562,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "30",
         "rarity": "UNCOMMON",
@@ -2485,6 +2638,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "6",
         "rarity": "RARE",
@@ -2529,6 +2683,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "40",
         "artist": "Ken Meyer, Jr.",
@@ -2612,6 +2767,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "76",
         "rarity": "UNCOMMON",
@@ -2718,6 +2874,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "41",
         "rarity": "UNCOMMON",
@@ -2782,6 +2939,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "17",
         "rarity": "UNCOMMON",
@@ -2826,6 +2984,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "51",
         "artist": "Christopher Rush",
@@ -2880,6 +3039,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "42",
         "rarity": "RARE",
@@ -2904,6 +3064,7 @@
     "keywords": [
         "TRAMPLE"
     ],
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "7",
         "artist": "Dameon Willich",
@@ -2969,6 +3130,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "52",
         "artist": "Christopher Rush",
@@ -3027,6 +3189,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "78",
         "rarity": "UNCOMMON",
@@ -3085,6 +3248,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "18",
         "rarity": "RARE",
@@ -3136,6 +3300,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "31",
         "artist": "Douglas Shuler",
@@ -3175,6 +3340,7 @@
             }
         }
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "8",
         "artist": "Mark Poole",
@@ -3264,6 +3430,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "67",
         "rarity": "RARE",
@@ -3291,6 +3458,7 @@
             }
         }
     ],
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "9",
         "rarity": "RARE",
@@ -3367,6 +3535,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "68",
         "rarity": "RARE",
@@ -3422,6 +3591,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "43",
         "artist": "Christopher Rush",
@@ -3500,6 +3670,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "69",
         "rarity": "UNCOMMON",
@@ -3533,6 +3704,7 @@
             }
         }
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "53",
         "artist": "Brian Snõddy",
@@ -3616,6 +3788,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "19",
         "rarity": "RARE",
@@ -3660,6 +3833,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "20",
         "rarity": "RARE",
@@ -3745,6 +3919,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "21",
         "rarity": "UNCOMMON",
@@ -3795,6 +3970,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "54",
         "rarity": "RARE",
@@ -3850,6 +4026,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "32",
         "rarity": "UNCOMMON",
@@ -3874,6 +4051,7 @@
     "keywords": [
         "FIRST_STRIKE"
     ],
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "33",
         "artist": "Ken Meyer, Jr.",
@@ -3922,6 +4100,7 @@
             }
         }
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "22",
         "artist": "Douglas Shuler",
@@ -3946,6 +4125,7 @@
         "TRAMPLE",
         "BANDING"
     ],
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "11",
         "artist": "Kristen Bishop",
@@ -3999,6 +4179,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "55",
         "artist": "Susan Van Camp",
@@ -4045,6 +4226,7 @@
             }
         ]
     },
+    "setCode": "ARN",
     "metadata": {
         "collectorNumber": "44",
         "rarity": "RARE",

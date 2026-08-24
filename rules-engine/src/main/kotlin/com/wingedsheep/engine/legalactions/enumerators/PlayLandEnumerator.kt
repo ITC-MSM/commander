@@ -49,6 +49,7 @@ class PlayLandEnumerator : ActionEnumerator {
                 if (cardId !in discardedThisTurn) continue
                 val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: continue
                 if (!cardComponent.typeLine.isLand) continue
+                if (context.cantPlayLand(cardId)) continue
                 val cardDef = context.cardRegistry.getCard(cardComponent.cardDefinitionId) ?: continue
                 if (com.wingedsheep.engine.mechanics.MayhemGrants.effectiveMayhem(state, cardId, cardDef) == null) continue
                 result.add(LegalAction(
@@ -104,6 +105,12 @@ class PlayLandEnumerator : ActionEnumerator {
         // two booleans already on the CardComponent keeps the registry lookup below off the common
         // path entirely.
         if (!cardComponent.typeLine.isLand && !cardComponent.isDoubleFaced) return emptyList()
+
+        // A filtered "players can't play <these> lands" lock (City in a Bottle). Whole-card, not
+        // per-face: the predicates it can carry — an originally-printed-in set, a name — belong to
+        // the card, so a locked modal DFC offers neither of its faces. Cheap in the common case,
+        // where `EnumerationContext` has already cached that no filtered lock is in play at all.
+        if (context.cantPlayLand(cardId)) return emptyList()
 
         val result = mutableListOf<LegalAction>()
         if (cardComponent.typeLine.isLand) {

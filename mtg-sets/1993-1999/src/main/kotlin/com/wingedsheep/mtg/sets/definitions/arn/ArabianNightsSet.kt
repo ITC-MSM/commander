@@ -12,9 +12,12 @@ import com.wingedsheep.sdk.model.TokenPrinting
  *
  * The first Magic: The Gathering expansion. 78 cards, no block. Many of its
  * mechanics (banding, landwalk variants, coin flips, control-changing effects,
- * subgames, ante) predate or stress the modern rules, so a handful of cards
- * require engine work and are tracked separately in
- * `backlog/sets/arabian-nights/cards.md`.
+ * subgames, ante) predate or stress the modern rules.
+ *
+ * Complete: every card we intend to build is built. The two that remain are policy
+ * exclusions listed in `coverage/card-exclusions.json` — Jeweled Bird needs the ante
+ * zone the engine doesn't have, and Shahrazad needs a full Magic subgame — so the set
+ * is draftable and no longer carries `incomplete`.
  *
  * Set Code: ARN
  * Release Date: December 17, 1993
@@ -26,11 +29,14 @@ object ArabianNightsSet : MtgSet {
     override val displayName = "Arabian Nights"
     override val releaseDate = "1993-12-17"
     override val basicLandsFallback = PortalSet
-    override val incomplete = true
     override val sealedSupported = true
 
     override val cards: List<CardDefinition> by lazy {
-        CardDiscovery.findIn(CARDS_PACKAGE)
+        // Self-stamp [code] onto every card, honouring the MtgSet contract that `cards` is already
+        // set-stamped. This makes `CardDefinition.setCode` a reliable "originally printed in ARN"
+        // signal for every consumer (engine tests included), not only the game-server load path —
+        // which is what City in a Bottle's OriginallyPrintedInSet("ARN") predicate reads.
+        CardDiscovery.findIn(CARDS_PACKAGE).map { if (it.setCode == null) it.copy(setCode = code) else it }
     }
 
     /**
