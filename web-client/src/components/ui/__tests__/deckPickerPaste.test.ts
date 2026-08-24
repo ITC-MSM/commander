@@ -36,6 +36,21 @@ describe('DeckPicker paste parsing', () => {
     expect(parsed.sideboard).toEqual({ Counterspell: 1 })
   })
 
+  // The rescue reads the *preprocessed* line. Reading the raw one instead produced a card named
+  // "SB: Counterspell", which then silently vanished: the server drops it as unknown, after the
+  // paste box has already counted it in the sideboard total.
+  it('strips the SB: prefix when rescuing a bare name, rather than baking it into the name', () => {
+    const parsed = parseDeckText('4 Lightning Bolt\nSB: Counterspell')
+    expect(parsed.cards).toEqual({ 'Lightning Bolt': 4 })
+    expect(parsed.sideboard).toEqual({ Counterspell: 1 })
+  })
+
+  it('strips Moxfield decorations when rescuing a bare name', () => {
+    const parsed = parseDeckText('Lightning Bolt *F*\nSideboard\nCounterspell #tag')
+    expect(parsed.cards).toEqual({ 'Lightning Bolt': 1 })
+    expect(parsed.sideboard).toEqual({ Counterspell: 1 })
+  })
+
   it('leaves the sideboard empty when the list has no sideboard section', () => {
     expect(parseDeckText('4 Lightning Bolt').sideboard).toEqual({})
   })

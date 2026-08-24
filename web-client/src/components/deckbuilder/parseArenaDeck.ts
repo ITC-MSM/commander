@@ -40,11 +40,22 @@ export interface ParseResult {
    */
   commander: ParsedEntry[]
   /**
-   * Lines that looked like card entries but couldn't be parsed. `section` records which
-   * board the line sat under, so a caller that rescues unparseable lines (the lobby's paste
-   * box tolerates a bare card name as one copy) can rescue them onto the right board.
+   * Lines that looked like card entries but couldn't be parsed.
+   *
+   * `raw` is the verbatim line, for showing the user what it couldn't read. `cleaned` is the
+   * same line with the `SB:` prefix and the Moxfield decorations (`*F*`, `#tag`) stripped —
+   * a caller that *rescues* an unparseable line (the lobby's paste box tolerates a bare card
+   * name as one copy) must read `cleaned`, or it will manufacture a card named
+   * `"SB: Counterspell"`. `section` records which board the line sat under, so the rescue
+   * lands on the right one.
    */
-  errors: Array<{ line: number; raw: string; reason: string; section: CardSection }>
+  errors: Array<{
+    line: number
+    raw: string
+    cleaned: string
+    reason: string
+    section: CardSection
+  }>
   /**
    * Deck name pulled from an Arena-style `Name <…>` line in the leading
    * `About` block, if present.
@@ -154,6 +165,7 @@ export function parseArenaDeckList(text: string): ParseResult {
       errors.push({
         line: i + 1,
         raw: trimmed,
+        cleaned,
         reason: 'unrecognised line format',
         section: targetSection,
       })
@@ -161,7 +173,13 @@ export function parseArenaDeckList(text: string): ParseResult {
     }
     const count = parseInt(match[1]!, 10)
     if (!Number.isFinite(count) || count <= 0) {
-      errors.push({ line: i + 1, raw: trimmed, reason: 'invalid card count', section: targetSection })
+      errors.push({
+        line: i + 1,
+        raw: trimmed,
+        cleaned,
+        reason: 'invalid card count',
+        section: targetSection,
+      })
       continue
     }
     const entry: ParsedEntry = {

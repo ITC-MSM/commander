@@ -33,12 +33,13 @@ export function parseDeckText(text: string): ParsedPaste {
   for (const entry of parsed.sideboard) {
     sideboard[entry.name] = (sideboard[entry.name] ?? 0) + entry.count
   }
-  // Tolerate the "bare card name = 1 copy" shorthand the old parser supported,
-  // since the picker's textarea never required a leading count. The rescued line
-  // stays on whichever board it was written under.
+  // Tolerate the "bare card name = 1 copy" shorthand the old parser supported, since the
+  // picker's textarea never required a leading count. Read `cleaned`, not `raw`: `raw` still
+  // carries the `SB:` prefix and any Moxfield decorations, which would become part of the card
+  // name and then fail to resolve. The rescued line stays on whichever board it was written under.
   for (const err of parsed.errors) {
     if (err.reason !== 'unrecognised line format') continue
-    const name = err.raw.trim()
+    const name = err.cleaned.trim()
     if (!name) continue
     const board = err.section === 'side' ? sideboard : cards
     board[name] = (board[name] ?? 0) + 1

@@ -328,6 +328,10 @@ export function DeckbuilderPage() {
       setDeckName(existing.name)
       setDeckCards(mergeCommanderIntoCards(existing.cards, existing.commander ?? null))
       setCommander(existing.commander ?? null)
+      // Without this a refresh (or a deep link to /deckbuilder/<id>) rehydrates the deck with an
+      // empty sideboard, and the next Save writes that emptiness back — `saveDeck` replaces the
+      // stored record wholesale rather than merging, so the sideboard is destroyed.
+      setSideboardCards(existing.sideboard ? { ...existing.sideboard } : {})
       setActiveDeckId(existing.id)
       setPinnedPrintings(pinnedPrintingsFromEntries(existing.entries))
       if (existing.format) {
@@ -1031,6 +1035,9 @@ export function DeckbuilderPage() {
     }
     setDeckCards({ ...ex.cards })
     setCommander(ex.commander ?? null)
+    // Examples carry no sideboard; clear rather than leave the previous deck's attached, which
+    // would follow the example into a save and into a game.
+    setSideboardCards({})
     setActiveDeckId(null)
     // Pre-fill pinned printings from the example. The commander's pin is keyed by name
     // alongside the rest — same shape `pinnedPrintingsFromEntries` produces on saved-deck
