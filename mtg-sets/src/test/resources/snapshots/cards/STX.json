@@ -1,3 +1,139 @@
+// Academic Dispute
+{
+    "name": "Academic Dispute",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature blocks this turn if able. You may have it gain reach until end of turn.\nLearn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MarkMustBlockThisTurn",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GrantKeyword",
+                        "keyword": "REACH",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    },
+                    "descriptionOverride": "You may have it gain reach until end of turn."
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "91",
+        "rarity": "UNCOMMON",
+        "artist": "Manuel Castañón",
+        "flavorText": "\"I'll show you original research, you hack!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/6/4620cc3b-e401-4096-b310-fed080806344.jpg?1783927359"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Ageless Guardian
 {
     "name": "Ageless Guardian",

@@ -3179,6 +3179,18 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
 - `rummage(count?)` — discard then draw.
 - `connive(target?)` — draw 1, discard 1, then put a +1/+1 counter on `target` (default Self) if the discard was a nonland (CR 701.50). Also exposed as `Effects.Connive(target)`. Returns the pipeline wrapped in `ConniveEffect(subject = target, body = …)`: the wrapper names the keyword action and its subject, which is what lets `ModifyKeywordAction` replace it and what makes it emit `PermanentConnivedEvent` (CR 701.50f). The pipeline itself is unchanged.
 - `conniveTargeting(requirement, storeAs?)` — connive whose +1/+1 counter lands on a *reflexively chosen* target: "draw a card, then discard a card. When you discard a nonland card this way, put a +1/+1 counter on target creature you control" (Teo, Spirited Glider). The recipient is selected at resolution via `SelectTargetEffect` *inside* the nonland gate — so the player never chooses up front or when the discard is a land. Pass the recipient's `TargetRequirement` (e.g. `Targets.CreatureYouControl`); do **not** also declare it as a cast-time `target(...)`. Exposed as `Effects.ConniveTargeting(requirement)`. Deliberately **not** wrapped in `ConniveEffect` — Teo's printed text spells the looting out and never says "connive", so it is not the keyword action: it fires no connive triggers and is not touched by "if a creature you control would connive" replacements.
+- `Patterns.Mechanic.learn()` — **Learn** (CR 701.48, Strixhaven), the keyword action printed as a
+  bare "Learn." with reminder text. CR 701.48a is sequential, not a choose-one: *"You may discard a
+  card. If you do, draw a card. If you didn't discard a card, you may reveal a Lesson card you own
+  from outside the game and put it into your hand."* — discarding **forecloses** the Lesson.
+  Composed as `GatherCards(FromZone(HAND, You))` → `SelectFromCollection(ChooseUpTo 1)` →
+  `MoveCollection(→ graveyard, MoveType.Discard)` →
+  `ConditionalOnCollection(ifNotEmpty = DrawCards(1), ifEmpty = Patterns.Sideboard.wish(Lesson))`.
+  Both printed "may"s are `ChooseUpTo(1)` declines rather than yes/no prompts, so an empty hand or a
+  Lesson-less sideboard raises no decision at all. The discard is a real discard
+  (`MoveType.Discard`), so madness and "whenever you discard a card" payoffs see it. Collection
+  names are `learn_`-prefixed so a nested Learn can't collide with its host pipeline's `hand` /
+  `discarded`. Academic Dispute.
 - `Patterns.Mechanic.recruit()` — **Recruit** (The Hobbit): "draw a card, then discard a card. If you
   discarded a nonland card, create a 1/1 white Human Soldier creature token." A keyword *action* with
   fixed reminder text, not a keyword ability, so there is no `Keyword.RECRUIT` — it is connive's pipeline
