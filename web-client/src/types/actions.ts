@@ -301,6 +301,12 @@ export interface PlayLandAction {
   readonly type: 'PlayLand'
   readonly playerId: EntityId
   readonly cardId: EntityId
+  /**
+   * Play a modal double-faced card as its back face (CR 712.12 — the Zendikar Rising Pathway
+   * cycle). The server sends one PlayLand action per land face; this is the flag that tells them
+   * apart. Absent for every ordinary land.
+   */
+  readonly asBackFace?: boolean
 }
 
 // =============================================================================

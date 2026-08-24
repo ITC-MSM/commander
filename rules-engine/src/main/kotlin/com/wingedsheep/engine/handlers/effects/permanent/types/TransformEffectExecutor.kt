@@ -124,30 +124,79 @@ internal fun flipDfcInPlace(
     }
     val nextCardDef = cardRegistry.getCard(nextDefinitionId) ?: return null
 
-    // CR 712.8e: a nonmodal DFC keeps its *front* face's mana value while the back is up.
-    // `currentCard` is the front face on the way in, so its mana value is that number; flipping to
-    // the front instead clears the override, since the front's own cost is the answer again.
-    val swappedCard = buildCardComponentForDfcFace(
-        currentCard,
-        nextCardDef,
-        manaValueOverride = if (intoBackFace) {
-            dfcBackFaceManaValue(cardRegistry.getCard(dfc.frontCardDefinitionId), currentCard.manaValue)
-        } else null,
-    )
     // A DFC on the battlefield always has a controller; fall back to owner, and treat a truly
     // owner-less object as un-flippable (null → the caller's no-op contract) rather than fabricate an id.
     val controllerId = container.get<ControllerComponent>()?.playerId ?: currentCard.ownerId ?: return null
 
+    // CR 712.8e: a nonmodal DFC keeps its *front* face's mana value while the back is up.
+    // `currentCard` is the front face on the way in, so its mana value is that number; flipping to
+    // the front instead clears the override, since the front's own cost is the answer again.
+    val newState = setDfcFace(
+        state, cardRegistry, entityId, nextFace,
+        manaValueOverride = if (intoBackFace) {
+            dfcBackFaceManaValue(cardRegistry.getCard(dfc.frontCardDefinitionId), currentCard.manaValue)
+        } else null,
+    ) ?: return null
+
+    return newState to TransformedEvent(
+        entityId = entityId,
+        intoBackFace = intoBackFace,
+        newFaceName = nextCardDef.name,
+        controllerId = controllerId
+    )
+}
+
+/**
+ * Put the double-faced permanent [entityId] onto [nextFace] **in place**: swap its
+ * [CardComponent] to that face's definition, record the face on its [DoubleFacedComponent], and
+ * re-register the face's static / replacement effects so layer projection picks them up on the
+ * next projection. Returns null when [entityId] is not a face-tracked card or the face's
+ * definition is not in the registry.
+ *
+ * Deliberately says nothing about *why* the face changed: it emits no event, checks no
+ * "can't transform" restriction, and does not care whether the target face is the current one.
+ * The two callers want different things around it —
+ *
+ *  - [flipDfcInPlace] adds the CR 701.27b restriction check and the [TransformedEvent] that
+ *    "whenever this transforms" triggers key on;
+ *  - the play-land path (CR 712.12 — *"A player playing a modal double-faced card as a land
+ *    chooses one of its faces that's a land before putting it onto the battlefield. It enters the
+ *    battlefield with that face up."*) wants neither. Choosing a face on the way in is not a
+ *    transform (CR 712.9 excludes modal DFCs from transforming at all), so it must not fire
+ *    transform triggers and must not be stoppable by a "can't transform" effect.
+ *
+ * @param manaValueOverride Pins the resulting [CardComponent]'s mana value, for the CR 712.8e case
+ *   where a nonmodal DFC's back face keeps the *front* face's mana value. Null leaves the face's
+ *   own cost to answer, which is what CR 712.8f says for a modal DFC.
+ */
+internal fun setDfcFace(
+    state: GameState,
+    cardRegistry: CardRegistry,
+    entityId: EntityId,
+    nextFace: DoubleFacedComponent.Face,
+    manaValueOverride: Int? = null,
+): GameState? {
+    val container = state.getEntity(entityId) ?: return null
+    val dfc = container.get<DoubleFacedComponent>() ?: return null
+    val currentCard = container.get<CardComponent>() ?: return null
+
+    val nextDefinitionId = when (nextFace) {
+        DoubleFacedComponent.Face.FRONT -> dfc.frontCardDefinitionId
+        DoubleFacedComponent.Face.BACK -> dfc.backCardDefinitionId
+    }
+    val nextCardDef = cardRegistry.getCard(nextDefinitionId) ?: return null
+
+    val swappedCard = buildCardComponentForDfcFace(currentCard, nextCardDef, manaValueOverride)
+
     // Rule 712.8a: save the front face card so ZoneTransitionService can restore it
     // without a registry lookup when the DFC leaves the battlefield on its back face.
-    val updatedDfc = if (intoBackFace) {
-        dfc.copy(currentFace = nextFace, frontFaceCard = currentCard)
-    } else {
-        dfc.copy(currentFace = nextFace, frontFaceCard = null)
+    val updatedDfc = when (nextFace) {
+        DoubleFacedComponent.Face.BACK -> dfc.copy(currentFace = nextFace, frontFaceCard = currentCard)
+        DoubleFacedComponent.Face.FRONT -> dfc.copy(currentFace = nextFace, frontFaceCard = null)
     }
 
     val staticAbilityHandler = StaticAbilityHandler(cardRegistry)
-    val newState = state.updateEntity(entityId) { c ->
+    return state.updateEntity(entityId) { c ->
         var updated = c
             .with(swappedCard)
             .with(updatedDfc)
@@ -162,13 +211,6 @@ internal fun flipDfcInPlace(
         updated = withDfcFaceSelfRedirects(updated, nextCardDef)
         updated
     }
-
-    return newState to TransformedEvent(
-        entityId = entityId,
-        intoBackFace = intoBackFace,
-        newFaceName = nextCardDef.name,
-        controllerId = controllerId
-    )
 }
 
 /**

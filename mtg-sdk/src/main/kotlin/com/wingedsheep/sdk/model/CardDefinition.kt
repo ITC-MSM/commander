@@ -795,6 +795,43 @@ data class CardDefinition(
         }
 
         /**
+         * Creates a **modal double-faced land** — a modal DFC (CR 712.3) both of whose faces are
+         * lands, the Zendikar Rising Pathway cycle (Riverglide Pathway // Lavaglide Pathway and its
+         * nine siblings).
+         *
+         * The rule that makes this its own shape is CR 712.12: *"A player playing a modal
+         * double-faced card or a copy of a modal double-faced card as a land chooses one of its
+         * faces that's a land before putting it onto the battlefield. It enters the battlefield
+         * with that face up."* So neither face is ever cast — the card is **played**, and the
+         * choice is made on the way in — which is exactly why it can't use
+         * [modalDoubleFacedPermanent]: that factory requires the back face to carry its own mana
+         * cost because it is castable (CR 712.11b), and a land has none.
+         *
+         * Once on the battlefield the permanent has only the played face's characteristics
+         * (CR 712.8f) and can never turn over — CR 712.9 excludes modal DFCs from transforming.
+         *
+         * @param frontFace The front face (must be a land with no mana cost).
+         * @param backFace The back face (must be a land with no mana cost).
+         */
+        fun modalDoubleFacedLand(
+            frontFace: CardDefinition,
+            backFace: CardDefinition
+        ): CardDefinition {
+            for (face in listOf(frontFace, backFace)) {
+                require(face.typeLine.isLand) {
+                    "Modal double-faced land face '${face.name}' must be a land (CR 712.12)"
+                }
+                require(face.manaCost.isEmpty()) {
+                    "Modal double-faced land face '${face.name}' is played, not cast — it takes no mana cost"
+                }
+                require(face.colorIndicator == null) {
+                    "Modal double-faced land face '${face.name}' takes no color indicator; a land face is colorless"
+                }
+            }
+            return frontFace.copy(backFace = backFace, layout = CardLayout.MODAL_DFC)
+        }
+
+        /**
          * Creates a planeswalker card.
          * @param name Card name
          * @param manaCost Mana cost
