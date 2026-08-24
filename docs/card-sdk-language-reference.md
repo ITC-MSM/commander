@@ -1887,6 +1887,12 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `CreateEldraziSpawn(count?, controller?, imageUri?)` — 0/1 colorless Eldrazi Spawn creature tokens
   ("Sacrifice this creature: Add {C}."). `count` accepts an `Int` (default 1) or a `DynamicAmount`
   evaluated at resolution, such as `DynamicAmount.XValue` for Kozilek's Command.
+- `CreatePest(count?, controller?)` — 1/1 **black and green** Pest creature tokens with "When this
+  creature dies, you gain 1 life." (`PredefinedTokens.Pest`) — Strixhaven's Witherbloom token
+  (Hunt for Specimens, Pest Summoning, Sedgemoor Witch, …). Predefined rather than inline because
+  the token is *named* and carries its own triggered ability, which the inline `CreateToken` facade
+  cannot express; its two colors come from a color indicator (CR 204) via `colorIdentity` on the
+  token definition, since a token has no mana cost for `colors` to derive from.
 - `CreateBlood(count?, controller?)` — Blood tokens (artifact with "{1}, {T}, Discard a card, Sacrifice this artifact: Draw a card."). `count` accepts an `Int` or a `DynamicAmount` (the latter evaluated at resolution, e.g. `CreateBlood(DynamicAmount.EntityProperty(EntityReference.Target(0), EntityNumericProperty.ExcessMarkedDamage))` for Lacerate Flesh's "create a number of Blood tokens equal to the amount of excess damage dealt").
 - `CreateClue(count?, controller?)` / `Investigate(count?, controller?)` — Clue tokens (artifact with
   "{2}, Sacrifice this token: Draw a card."). `Investigate` is the keyword-action spelling (CR 701.36) so

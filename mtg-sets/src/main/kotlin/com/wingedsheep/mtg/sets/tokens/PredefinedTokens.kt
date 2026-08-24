@@ -903,6 +903,37 @@ object PredefinedTokens {
     }
 
     /**
+     * Pest token — the 1/1 black **and** green Pest with "When this creature dies, you gain 1
+     * life." that Strixhaven's Witherbloom cards hand out (Hunt for Specimens, Pest Summoning,
+     * Sedgemoor Witch, …).
+     *
+     * A predefined token rather than an inline one because it is a *named* token carrying its own
+     * triggered ability, and because a dozen-odd STX cards mint the identical body — the registry
+     * is what keeps them from each re-declaring the dies trigger.
+     *
+     * Its two colors come from a color indicator (CR 204), stored via the `colorIdentity` DSL
+     * setter → `colorIdentityOverride`: a token has no mana cost, so a bare `colors` would read
+     * colorless.
+     */
+    val Pest = card("Pest") {
+        typeLine = "Creature — Pest"
+        colorIdentity = "BG"
+        power = 1
+        toughness = 1
+
+        triggeredAbility {
+            trigger = Triggers.Dies
+            effect = Effects.GainLife(1)
+            description = "When this creature dies, you gain 1 life."
+        }
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/d/0/d0ddbe3e-4a66-494d-9304-7471232549bf.jpg?1783927190"
+            artist = "Ilse Gort"
+        }
+    }
+
+    /**
      * All predefined token definitions.
      * Register these in the CardRegistry so token abilities are resolved.
      */
@@ -932,6 +963,7 @@ object PredefinedTokens {
         Munitions,
         Mutagen,
         Frog,
+        Pest,
         Vehicle,
         TheVoid,
         Redwing,

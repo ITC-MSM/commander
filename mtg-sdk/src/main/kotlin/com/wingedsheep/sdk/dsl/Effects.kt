@@ -2746,6 +2746,16 @@ object Effects {
         CreatePredefinedTokenEffect("Eldrazi Spawn", count, controller, imageUri = imageUri)
 
     /**
+     * Create N 1/1 black and green Pest creature tokens with "When this creature dies, you gain 1
+     * life." — Strixhaven's Witherbloom token (`PredefinedTokens.Pest`).
+     *
+     * Predefined rather than inline because the token is named and carries a triggered ability,
+     * which the inline [CreateToken] facade does not expose.
+     */
+    fun CreatePest(count: Int = 1, controller: EffectTarget? = null): Effect =
+        CreatePredefinedTokenEffect("Pest", count, controller)
+
+    /**
      * Create a dynamic number of 0/1 colorless Eldrazi Spawn creature tokens.
      * The count is evaluated at resolution time.
      */
