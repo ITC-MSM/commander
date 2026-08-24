@@ -828,6 +828,40 @@
     ]
 }
 
+// Death Ward
+{
+    "name": "Death Ward",
+    "manaCost": "{W}",
+    "typeLine": "Instant",
+    "oracleText": "Regenerate target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "Regenerate",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "17",
+        "artist": "Mark Poole",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/a/fa5466cc-aa57-4a7f-8b21-d92b2fe02e13.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Deathgrip
 {
     "name": "Deathgrip",

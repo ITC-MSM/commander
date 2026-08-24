@@ -219,7 +219,9 @@ export function buildActionOptions(
   const typecycleAction = legalActions.find((a) => a.action.type === 'TypecycleCard')
   const plotAction = legalActions.find((a) => a.action.type === 'PlotCard')
   const suspendAction = legalActions.find((a) => a.action.type === 'SuspendCardFromHand')
-  const playLandAction = legalActions.find((a) => a.action.type === 'PlayLand')
+  // A modal double-faced land (the Zendikar Rising Pathway cycle) sends *two* PlayLand actions
+  // for one card — one per land face, CR 712.12 — so this is a filter, not a find.
+  const playLandActions = legalActions.filter((a) => a.action.type === 'PlayLand')
 
   // 1. Modal spell modes — show one button per mode instead of a single "Cast" button
   const modeActions = legalActions.filter((a) => a.actionType === 'CastSpellMode')
@@ -355,14 +357,19 @@ export function buildActionOptions(
   }
 
   // 2. Play land (for land cards)
-  if (playLandAction) {
-    options.push({
-      key: 'playLand',
-      label: `Play ${cardInfo.name}`,
-      manaCost: null,
-      isAvailable: playLandAction.isAffordable !== false,
-      action: playLandAction,
-      actionType: 'playLand',
+  if (playLandActions.length > 0) {
+    playLandActions.forEach((playLandAction, index) => {
+      options.push({
+        // One entry per land face. The server's description already names the face being
+        // played ("Play Lavaglide Pathway"), which is the only thing telling the two apart —
+        // `cardInfo.name` is the front face's name for both.
+        key: index === 0 ? 'playLand' : `playLand-${index}`,
+        label: playLandActions.length > 1 ? playLandAction.description : `Play ${cardInfo.name}`,
+        manaCost: null,
+        isAvailable: playLandAction.isAffordable !== false,
+        action: playLandAction,
+        actionType: 'playLand',
+      })
     })
   } else if (cycleAction && cardInfo.cardTypes.includes('LAND')) {
     // Land with cycling but no PlayLand action (already played a land this turn)

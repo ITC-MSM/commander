@@ -44,6 +44,189 @@
     ]
 }
 
+// Barkchannel Pathway
+{
+    "name": "Barkchannel Pathway",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {G}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Tidechannel Pathway",
+        "manaCost": "",
+        "typeLine": "Land",
+        "oracleText": "{T}: Add {U}.",
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_2",
+                    "cost": "CostTap",
+                    "effect": {
+                        "type": "AddMana",
+                        "color": "BLUE"
+                    },
+                    "timing": "ManaAbility",
+                    "isManaAbility": true
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "251",
+            "rarity": "RARE",
+            "artist": "Daniel Ljunggren",
+            "imageUri": "https://cards.scryfall.io/normal/back/b/6/b6de14ae-0132-4261-af00-630bf15918cd.jpg?1783928184"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "251",
+        "rarity": "RARE",
+        "artist": "Daniel Ljunggren",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b6de14ae-0132-4261-af00-630bf15918cd.jpg?1783928184"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ],
+    "layout": "MODAL_DFC"
+}
+
+// Blightstep Pathway
+{
+    "name": "Blightstep Pathway",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {B}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Searstep Pathway",
+        "manaCost": "",
+        "typeLine": "Land",
+        "oracleText": "{T}: Add {R}.",
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_2",
+                    "cost": "CostTap",
+                    "effect": {
+                        "type": "AddMana",
+                        "color": "RED"
+                    },
+                    "timing": "ManaAbility",
+                    "isManaAbility": true
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "252",
+            "rarity": "RARE",
+            "artist": "Ravenna Tran",
+            "imageUri": "https://cards.scryfall.io/normal/back/0/c/0ce39a19-f51d-4a35-ae80-5b82eb15fcff.jpg?1783928185"
+        },
+        "colorIdentityOverride": [
+            "RED"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "252",
+        "rarity": "RARE",
+        "artist": "Ravenna Tran",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/c/0ce39a19-f51d-4a35-ae80-5b82eb15fcff.jpg?1783928185"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ],
+    "layout": "MODAL_DFC"
+}
+
+// Darkbore Pathway
+{
+    "name": "Darkbore Pathway",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {B}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Slitherbore Pathway",
+        "manaCost": "",
+        "typeLine": "Land",
+        "oracleText": "{T}: Add {G}.",
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_2",
+                    "cost": "CostTap",
+                    "effect": {
+                        "type": "AddMana",
+                        "color": "GREEN"
+                    },
+                    "timing": "ManaAbility",
+                    "isManaAbility": true
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "254",
+            "rarity": "RARE",
+            "artist": "Johannes Voss",
+            "imageUri": "https://cards.scryfall.io/normal/back/8/7/87a4e5fe-161f-42da-9ca2-67c8e8970e94.jpg?1783928184"
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "254",
+        "rarity": "RARE",
+        "artist": "Johannes Voss",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/7/87a4e5fe-161f-42da-9ca2-67c8e8970e94.jpg?1783928184"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ],
+    "layout": "MODAL_DFC"
+}
+
 // Demon Bolt
 {
     "name": "Demon Bolt",
@@ -306,6 +489,67 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Hengegate Pathway
+{
+    "name": "Hengegate Pathway",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {W}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Mistgate Pathway",
+        "manaCost": "",
+        "typeLine": "Land",
+        "oracleText": "{T}: Add {U}.",
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_2",
+                    "cost": "CostTap",
+                    "effect": {
+                        "type": "AddMana",
+                        "color": "BLUE"
+                    },
+                    "timing": "ManaAbility",
+                    "isManaAbility": true
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "260",
+            "rarity": "RARE",
+            "artist": "Yeong-Hao Han",
+            "imageUri": "https://cards.scryfall.io/normal/back/7/e/7ef37cb3-d803-47d7-8a01-9c803aa2eadc.jpg?1783928182"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "260",
+        "rarity": "RARE",
+        "artist": "Yeong-Hao Han",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/e/7ef37cb3-d803-47d7-8a01-9c803aa2eadc.jpg?1783928182"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ],
+    "layout": "MODAL_DFC"
 }
 
 // Highland Forest

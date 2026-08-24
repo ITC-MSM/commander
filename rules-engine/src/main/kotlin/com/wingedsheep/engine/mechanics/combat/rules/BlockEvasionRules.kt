@@ -68,18 +68,21 @@ class HorsemanshipRule : BlockEvasionRule {
 }
 
 /**
- * Shadow: Can only be blocked by creatures with shadow.
+ * Shadow: shadow and non-shadow creatures can't block one another.
+ *
+ * CR 702.28b — "A creature with shadow can't be blocked by creatures without shadow, and a
+ * creature without shadow can't be blocked by creatures with shadow." Both halves matter: the
+ * reminder text on every shadow card reads "can block **or be blocked by** only creatures with
+ * shadow", so a shadow blocker is just as restricted as a shadow attacker.
  */
 class ShadowRule : BlockEvasionRule {
     override fun check(ctx: BlockCheckContext): String? {
-        if (ctx.projected.hasKeyword(ctx.attackerId, Keyword.SHADOW)) {
-            if (!ctx.projected.hasKeyword(ctx.blockerId, Keyword.SHADOW)) {
-                val blockerName = ctx.state.getEntity(ctx.blockerId)?.get<CardComponent>()?.name ?: "Creature"
-                val attackerName = ctx.state.getEntity(ctx.attackerId)?.get<CardComponent>()?.name ?: "Creature"
-                return "$blockerName cannot block $attackerName (shadow)"
-            }
-        }
-        return null
+        val attackerHasShadow = ctx.projected.hasKeyword(ctx.attackerId, Keyword.SHADOW)
+        val blockerHasShadow = ctx.projected.hasKeyword(ctx.blockerId, Keyword.SHADOW)
+        if (attackerHasShadow == blockerHasShadow) return null
+        val blockerName = ctx.state.getEntity(ctx.blockerId)?.get<CardComponent>()?.name ?: "Creature"
+        val attackerName = ctx.state.getEntity(ctx.attackerId)?.get<CardComponent>()?.name ?: "Creature"
+        return "$blockerName cannot block $attackerName (shadow)"
     }
 }
 
@@ -98,6 +101,30 @@ class FearRule : BlockEvasionRule {
             }
         }
         return null
+    }
+}
+
+/**
+ * Intimidate: Can only be blocked by artifact creatures and/or creatures that share a color with it.
+ *
+ * CR 702.13b — "A creature with intimidate can't be blocked except by artifact creatures and/or
+ * creatures that share a color with it." Both halves of the test read *projected* characteristics:
+ * a creature turned artifact or recoloured by a continuous effect satisfies the exception, and a
+ * colorless intimidator (nothing to share) can only be blocked by artifact creatures.
+ */
+class IntimidateRule : BlockEvasionRule {
+    override fun check(ctx: BlockCheckContext): String? {
+        if (!ctx.projected.hasKeyword(ctx.attackerId, Keyword.INTIMIDATE)) return null
+
+        if (ctx.projected.hasType(ctx.blockerId, "ARTIFACT")) return null
+
+        val attackerColors = ctx.projected.getColors(ctx.attackerId)
+        val blockerColors = ctx.projected.getColors(ctx.blockerId)
+        if (attackerColors.any { it in blockerColors }) return null
+
+        val blockerName = ctx.state.getEntity(ctx.blockerId)?.get<CardComponent>()?.name ?: "Creature"
+        val attackerName = ctx.state.getEntity(ctx.attackerId)?.get<CardComponent>()?.name ?: "Creature"
+        return "$blockerName cannot block $attackerName (intimidate)"
     }
 }
 
@@ -690,6 +717,7 @@ fun defaultBlockEvasionRules(
     HorsemanshipRule(),
     ShadowRule(),
     FearRule(),
+    IntimidateRule(),
     LandwalkRule(),
     CantBeBlockedByRule(predicateEvaluator),
     CantBeBlockedExceptByColorRule(),

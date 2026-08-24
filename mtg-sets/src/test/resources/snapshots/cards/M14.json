@@ -1,3 +1,27 @@
+// Accursed Spirit
+{
+    "name": "Accursed Spirit",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Intimidate (This creature can't be blocked except by artifact creatures and/or creatures that share a color with it.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "INTIMIDATE"
+    ],
+    "metadata": {
+        "collectorNumber": "83",
+        "artist": "Kev Walker",
+        "flavorText": "Many have heard the slither of dragging armor and the soft squelch of its voice. But only its victims ever meet its icy gaze.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/f/cf08313b-14c9-4e0b-aad7-05cbd90b1ed8.jpg?1783939927"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Barrage of Expendables
 {
     "name": "Barrage of Expendables",
@@ -54,6 +78,41 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Elvish Mystic
+{
+    "name": "Elvish Mystic",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Elf Druid",
+    "oracleText": "{T}: Add {G}.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "169",
+        "artist": "Wesley Burt",
+        "flavorText": "\"Life grows everywhere. My kin merely find those places where it grows strongest.\"\n—Nissa Revane",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/0/60d0e6a6-629a-45a7-bfcb-25ba7156788b.jpg?1783939906"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -516,6 +575,42 @@
         "imageUri": "https://cards.scryfall.io/normal/front/3/1/3129645a-221c-4eb5-88fd-12cc742a1dfe.jpg?1783939893"
     },
     "colorIdentityOverride": []
+}
+
+// Soulmender
+{
+    "name": "Soulmender",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "{T}: You gain 1 life.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "37",
+        "artist": "James Ryman",
+        "flavorText": "\"Healing is more art than magic. Well, there is still quite a bit of magic.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/7/37f45133-6134-4664-9952-67c03d60f9a0.jpg?1783939939"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }
 
 // Sporemound

@@ -15,6 +15,11 @@ import com.wingedsheep.sdk.scripting.TimingRule
  * Written with the plain [card] DSL rather than the `basicLand` helper: that helper hardcodes the
  * "Basic Land — <type>" type line and cannot carry the Snow supertype. The intrinsic mana ability is
  * spelled out here to match what `basicLand` would have generated.
+ *
+ * `inBooster = false` is load-bearing rather than cosmetic: `CardDiscovery.findBasicLandsIn` splits
+ * on `typeLine.isBasicLand`, which a Basic *Snow* Land satisfies, so without the flag
+ * `BoosterGenerator.getBasicLands` would offer this as a freely-addable basic during limited deck
+ * building — which the card's own ruling forbids.
  */
 val SnowCoveredIsland = card("Snow-Covered Island") {
     manaCost = ""
@@ -34,6 +39,7 @@ val SnowCoveredIsland = card("Snow-Covered Island") {
         collectorNumber = "371"
         artist = "Anson Maddocks"
         imageUri = "https://cards.scryfall.io/normal/front/a/d/ad8b77cf-b53e-4da3-9c27-3851b7b25a98.jpg?1783947448"
+        inBooster = false
         ruling("2021-02-05", "Snow is a supertype, not a card type. It has no rules meaning or function by itself, but spells and abilities may refer to it.")
         ruling("2021-02-05", "The {S} symbol is a generic mana symbol. It represents a cost that can be paid by one mana that was produced by a snow source. That mana can be any color or colorless.")
         ruling("2021-02-05", "Snow isn't a type of mana. If an effect says you may spend mana as though it were any type, you can't pay for {S} using mana that wasn't produced by a snow source.")

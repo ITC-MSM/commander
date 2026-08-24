@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.tmp
 
-import com.wingedsheep.mtg.sets.definitions.por.PortalSet
 import com.wingedsheep.mtg.sets.discovery.CardDiscovery
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.MtgSet
@@ -23,11 +22,14 @@ object TempestSet : MtgSet {
     override val displayName = "Tempest"
     override val releaseDate = "1997-10-14"
     override val block = "Tempest"
-    override val basicLandsFallback = PortalSet
     override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)
+    }
+
+    override val basicLands: List<CardDefinition> by lazy {
+        CardDiscovery.findBasicLandsIn(CARDS_PACKAGE, code)
     }
 
     override val printings: List<Printing> by lazy {

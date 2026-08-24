@@ -110,7 +110,6 @@ Remaining:
 - **Replacement / redirection**: Ali from Cairo (life can't drop below 1),
   Eye for an Eye (redirect damage to its source's controller).
 - **Opponent-chosen target**: Cuombajj Witches (1 dmg you choose + 1 dmg an opponent chooses).
-- **Set-membership effects**: City in a Bottle (destroy/lock out "Arabian Nights" cards).
 - **Untap-cost lock**: Magnetic Mountain (blue creatures don't untap unless {4} each).
 - **Cumulative counters dealing damage**: Cyclone.
 - **Card-from-outside-the-game**: Ring of Ma'rûf (wish-style).
