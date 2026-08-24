@@ -2282,6 +2282,58 @@
     ]
 }
 
+// Righteous Blow
+{
+    "name": "Righteous Blow",
+    "manaCost": "{W}",
+    "typeLine": "Instant",
+    "oracleText": "Righteous Blow deals 2 damage to target attacking or blocking creature.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "StateOr",
+                                "predicates": [
+                                    "IsAttacking",
+                                    "IsBlocking"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "34",
+        "artist": "Clint Cearley",
+        "flavorText": "\"Monsters will no longer find safety under the mists of Morkrut!\"\n—Bruna, Light of Alabaster",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/b/9b640fdc-7a19-475e-858f-e159f61e154e.jpg?1783940729"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Scrapskin Drake
 {
     "name": "Scrapskin Drake",
