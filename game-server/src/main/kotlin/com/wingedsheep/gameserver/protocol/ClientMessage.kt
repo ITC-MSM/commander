@@ -596,6 +596,14 @@ sealed interface ClientMessage {
         val cardEntries: List<DeckEntryDTO>? = null,
         /** Optional pinned printing for [commander]. Ignored when [commander] is null. */
         val commanderPrinting: PrintingRef? = null,
+        /**
+         * Constructed sideboard ("outside the game", CR 400.11a), card name → count — the cards a
+         * wish effect can fetch. Null / empty for a random pool, which has no constructed sideboard
+         * (a Limited sideboard is derived from the pool instead; see `SideboardDerivation`).
+         *
+         * Names the card registry doesn't know are dropped on arrival — see `SideboardSanitizer`.
+         */
+        val sideboard: Map<String, Int>? = null,
     ) : ClientMessage
 
     /** Toggle this player's ready flag. The server starts the game when both players are ready. */

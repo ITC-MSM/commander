@@ -45,6 +45,7 @@ function detailToUnified(detail: DeckDetail): UnifiedDeck {
     ...(d.commander ? { commander: d.commander } : {}),
     ...(d.commanderPrinting ? { commanderPrinting: d.commanderPrinting } : {}),
     ...(entries ? { entries } : {}),
+    ...(d.sideboard && Object.keys(d.sideboard).length > 0 ? { sideboard: d.sideboard } : {}),
     updatedAt: Date.parse(detail.updatedAt) || 0,
   }
 }
