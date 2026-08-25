@@ -831,6 +831,57 @@
     ]
 }
 
+// Unknown Shores
+{
+    "name": "Unknown Shores",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{1}, {T}: Add one mana of any color.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "229",
+        "artist": "Seb McKinnon",
+        "flavorText": "Philosophers speak of a place where myths wash like tides upon the shores of the real.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/f/fff118a5-765b-4ba1-8f12-ce6f24b2459b.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
 // Voyage's End
 {
     "name": "Voyage's End",

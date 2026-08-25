@@ -5329,38 +5329,9 @@
         "FLANKING"
     ],
     "script": {
-        "triggeredAbilities": [
-            {
-                "id": "ability_1",
-                "trigger": {
-                    "type": "BecomesBlockedEvent",
-                    "filter": {
-                        "cardPredicates": [
-                            "IsCreature",
-                            {
-                                "type": "NotKeyword",
-                                "keyword": "FLANKING"
-                            }
-                        ]
-                    }
-                },
-                "effect": {
-                    "type": "ModifyStats",
-                    "powerModifier": {
-                        "type": "Fixed",
-                        "amount": -1
-                    },
-                    "toughnessModifier": {
-                        "type": "Fixed",
-                        "amount": -1
-                    },
-                    "target": "TriggeringEntity"
-                }
-            }
-        ],
         "activatedAbilities": [
             {
-                "id": "ability_2",
+                "id": "ability_1",
                 "cost": {
                     "type": "CostAtomWrapper",
                     "atom": {

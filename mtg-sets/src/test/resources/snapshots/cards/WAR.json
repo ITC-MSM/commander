@@ -1220,3 +1220,59 @@
         "RED"
     ]
 }
+
+// Unlikely Aid
+{
+    "name": "Unlikely Aid",
+    "manaCost": "{1}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +2/+0 and gains indestructible until end of turn. (Damage and effects that say \"destroy\" don't destroy it.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "INDESTRUCTIBLE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "109",
+        "artist": "Viktor Titov",
+        "flavorText": "\"No one will ever ride me again, Gideon. Expect no further favors.\"\n—Rakdos",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9c260c5c-e796-4f81-9e15-0c5be75106b9.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}

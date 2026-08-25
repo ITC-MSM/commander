@@ -8,8 +8,8 @@ import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.addFloatingEffect
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.nameVisibleToAll
 import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.sdk.scripting.effects.GrantProtectionFromChosenColorEffect
 import kotlin.reflect.KClass
 
@@ -47,7 +47,7 @@ class GrantProtectionFromChosenColorExecutor : EffectExecutor<GrantProtectionFro
             context = context
         )
 
-        val displayName = if (container.has<FaceDownComponent>()) "Face-down creature" else cardComponent.name
+        val displayName = nameVisibleToAll(state, targetId, cardComponent.name)
         val sourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name } ?: "Unknown"
         val events = listOf(
             KeywordGrantedEvent(

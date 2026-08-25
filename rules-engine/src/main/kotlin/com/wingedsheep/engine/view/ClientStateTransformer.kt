@@ -20,7 +20,10 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantChosenColor
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.ProtectionScope
+import com.wingedsheep.engine.state.FACE_DOWN_CARD_DISPLAY_NAME
+import com.wingedsheep.engine.state.FACE_DOWN_DISPLAY_NAME
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.nameVisibleTo
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.*
 import com.wingedsheep.engine.state.components.battlefield.*
@@ -190,7 +193,7 @@ class ClientStateTransformer(
             for (entityId in state.stack) {
                 if (entityId !in cards) {
                     val clientCard = transformCard(state, entityId, stackZoneKey, projectedState, viewingPlayerId, isSpectator)
-                        ?: transformAbilityOnStack(state, entityId, viewingPlayerId)
+                        ?: transformAbilityOnStack(state, entityId, viewingPlayerId, isSpectator)
                     if (clientCard != null) {
                         cards[entityId] = clientCard
                     }
@@ -531,7 +534,8 @@ class ClientStateTransformer(
     private fun transformAbilityOnStack(
         state: GameState,
         entityId: EntityId,
-        viewingPlayerId: EntityId
+        viewingPlayerId: EntityId,
+        isSpectator: Boolean
     ): ClientCard? {
         val container = state.getEntity(entityId) ?: return null
 
@@ -641,7 +645,8 @@ class ClientStateTransformer(
                         triggeredAbility.chosenModes,
                         triggeredAbility.modeTargetsOrdered,
                         triggeredModeDescriptions,
-                        viewingPlayerId
+                        viewingPlayerId,
+                        isSpectator
                     )
                 } else emptyList()
 
@@ -853,7 +858,7 @@ class ClientStateTransformer(
             if (zoneKey.zoneType == Zone.EXILE) {
                 return ClientCard(
                     id = entityId,
-                    name = "Face-down card",
+                    name = FACE_DOWN_CARD_DISPLAY_NAME,
                     manaCost = "",
                     manaValue = 0,
                     typeLine = "",
@@ -914,7 +919,7 @@ class ClientStateTransformer(
             val faceDownKeywordsWithProtection = if (faceDownProtections.isNotEmpty()) faceDownKeywords + Keyword.PROTECTION else faceDownKeywords
             return ClientCard(
                 id = entityId,
-                name = "Face-down creature",
+                name = FACE_DOWN_DISPLAY_NAME,
                 manaCost = "",
                 manaValue = 0,
                 typeLine = "Creature",
@@ -1055,7 +1060,8 @@ class ClientStateTransformer(
                 spellOnStack.chosenModes,
                 spellOnStack.modeTargetsOrdered,
                 chosenModeDescriptions,
-                viewingPlayerId
+                viewingPlayerId,
+                isSpectator
             )
         } else emptyList()
 
@@ -1739,14 +1745,17 @@ class ClientStateTransformer(
     /**
      * Build per-mode target groups for a modal spell on the stack, aligned with
      * [SpellOnStackComponent.modeTargetsOrdered]. Hidden-zone targets are redacted to a generic
-     * "a card in X's hand/library" string when the viewer does not own the zone.
+     * "a card in X's hand/library" string when the viewer does not own the zone, and a face-down
+     * object is redacted for every viewer but the one who may look at it (see
+     * [resolveTargetDisplayName]).
      */
     private fun buildPerModeTargetGroups(
         state: GameState,
         chosenModes: List<Int>,
         modeTargetsOrdered: List<List<ChosenTarget>>,
         modeDescriptions: List<String>,
-        viewingPlayerId: EntityId
+        viewingPlayerId: EntityId,
+        isSpectator: Boolean
     ): List<ClientPerModeTargetGroup> {
         if (chosenModes.isEmpty()) return emptyList()
         return chosenModes.mapIndexed { index, modeIndex ->
@@ -1760,7 +1769,7 @@ class ClientStateTransformer(
                 }
             }
             val targetNames = rawTargets.map { target ->
-                resolveTargetDisplayName(state, target, viewingPlayerId)
+                resolveTargetDisplayName(state, target, viewingPlayerId, isSpectator)
             }
             ClientPerModeTargetGroup(
                 modeIndex = modeIndex,
@@ -1778,14 +1787,24 @@ class ClientStateTransformer(
     private fun resolveTargetDisplayName(
         state: GameState,
         target: ChosenTarget,
-        viewingPlayerId: EntityId
+        viewingPlayerId: EntityId,
+        isSpectator: Boolean
     ): String = when (target) {
         is ChosenTarget.Player -> state.getEntity(target.playerId)
             ?.get<PlayerComponent>()?.name ?: "a player"
+        // A face-down object is nameless (CR 708.2a / 708.4), but this label has an audience, so
+        // it is masked per viewer rather than for everyone: a player may look at a face-down
+        // object they control (CR 708.5). That also keeps modal spells consistent with non-modal
+        // ones, whose targets ship as bare entity ids and are named client-side from the card
+        // view — which applies exactly this gate.
         is ChosenTarget.Permanent -> state.getEntity(target.entityId)
-            ?.get<CardComponent>()?.name ?: "a permanent"
+            ?.get<CardComponent>()?.name
+            ?.let { nameVisibleTo(state, target.entityId, it, viewingPlayerId, isSpectator) }
+            ?: "a permanent"
         is ChosenTarget.Spell -> state.getEntity(target.spellEntityId)
-            ?.get<CardComponent>()?.name ?: "a spell"
+            ?.get<CardComponent>()?.name
+            ?.let { nameVisibleTo(state, target.spellEntityId, it, viewingPlayerId, isSpectator) }
+            ?: "a spell"
         is ChosenTarget.Card -> {
             val hiddenZone = target.zone == Zone.HAND || target.zone == Zone.LIBRARY
             if (hiddenZone && target.ownerId != viewingPlayerId) {
@@ -1793,7 +1812,9 @@ class ClientStateTransformer(
                     ?.get<PlayerComponent>()?.name ?: "opponent"
                 "a card in ${ownerName}'s ${target.zone.name.lowercase()}"
             } else {
-                state.getEntity(target.cardId)?.get<CardComponent>()?.name ?: "a card"
+                state.getEntity(target.cardId)?.get<CardComponent>()?.name
+                    ?.let { nameVisibleTo(state, target.cardId, it, viewingPlayerId, isSpectator) }
+                    ?: "a card"
             }
         }
     }

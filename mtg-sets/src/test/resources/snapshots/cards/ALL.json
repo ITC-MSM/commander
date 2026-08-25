@@ -42,6 +42,56 @@
     ]
 }
 
+// Pillage
+{
+    "name": "Pillage",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy target artifact or land. It can't be regenerated.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "CantBeRegenerated",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "artifact|land"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "76",
+        "rarity": "UNCOMMON",
+        "artist": "Richard Kane Ferguson",
+        "flavorText": "\"Were they to reduce us to ash, we would clog their throats and sting their eyes in payment.\"\n—Lovisa Coldeyes, Balduvian Chieftain",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/8/389ecb50-b007-4086-89fb-ec2daa5afdcf.jpg?1783947176"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Storm Crow
 {
     "name": "Storm Crow",

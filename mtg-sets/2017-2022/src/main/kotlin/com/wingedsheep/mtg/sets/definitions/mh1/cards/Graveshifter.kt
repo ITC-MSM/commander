@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.ecl.cards
+package com.wingedsheep.mtg.sets.definitions.mh1.cards
 
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
@@ -41,9 +41,9 @@ val Graveshifter = card("Graveshifter") {
 
     metadata {
         rarity = Rarity.UNCOMMON
-        collectorNumber = "104"
-        artist = "Deborah Garcia"
-        flavorText = "We'll see a changeling at their funeral\n—Kithkin saying meaning \"they won't be forgotten\""
-        imageUri = "https://cards.scryfall.io/normal/front/d/a/dadb02b9-d3a0-4b51-bbc3-53b2316cd70d.jpg?1767873656"
+        collectorNumber = "94"
+        artist = "Jakub Kasper"
+        flavorText = "\"Why throw away a perfectly good identity?\""
+        imageUri = "https://cards.scryfall.io/normal/front/1/2/128c516b-7eb1-4f81-8b54-428bd0649d92.jpg"
     }
 }

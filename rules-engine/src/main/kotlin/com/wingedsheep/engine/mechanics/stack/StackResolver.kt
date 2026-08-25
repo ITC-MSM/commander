@@ -38,6 +38,8 @@ import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.handlers.effects.FaceDownTurnUp
 import com.wingedsheep.engine.handlers.effects.library.ChooseCreatureTypePipelineExecutor
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
+import com.wingedsheep.engine.state.FACE_DOWN_DISPLAY_NAME
+import com.wingedsheep.engine.state.nameVisibleToAll
 import com.wingedsheep.engine.state.components.identity.FaceDownModeComponent
 import com.wingedsheep.engine.state.components.identity.HasMorphAbilityComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
@@ -470,17 +472,25 @@ class StackResolver(
         } else {
             cardComponent.name
         }
-        // For face-down creatures, use a generic name in the event
-        val eventName = if (castFaceDown) "Face-down creature" else spellName
+        // For face-down creatures, use a generic name in the event (CR 708.2a)
+        val eventName = if (castFaceDown) FACE_DOWN_DISPLAY_NAME else spellName
 
         // Collect target names for the cast event log
         val targetNames = effectiveTargets.mapNotNull { target ->
             when (target) {
+                // A face-down permanent is no more nameable as a *target* than as a source —
+                // "cast Igneous Inspiration targeting Aurelia's Vindicator" gave away a disguised
+                // creature just as completely as the enters line did.
                 is ChosenTarget.Permanent -> newState.getEntity(target.entityId)?.get<CardComponent>()?.name
+                    ?.let { nameVisibleToAll(newState, target.entityId, it) }
                 is ChosenTarget.Player -> if (target.playerId == casterId) "themselves" else "opponent"
                 is ChosenTarget.Spell -> newState.getEntity(target.spellEntityId)?.get<CardComponent>()?.name
+                    ?.let { nameVisibleToAll(newState, target.spellEntityId, it) }
                     ?: "spell"
+                // A card lying face down in exile is hidden too, and reads as "Face-down card"
+                // rather than "Face-down creature" — it has no characteristics to show.
                 is ChosenTarget.Card -> newState.getEntity(target.cardId)?.get<CardComponent>()?.name
+                    ?.let { nameVisibleToAll(newState, target.cardId, it) }
             }
         }
 
@@ -660,10 +670,15 @@ class StackResolver(
         newState = newState.pushToStack(abilityId)
             .copy(priorityPassedBy = emptySet())
 
+        // The only ability a face-down permanent can put on the stack is the ward its face-down
+        // mode grants (CR 702.168a disguise / 701.58a cloak), and reporting `ability.sourceName`
+        // for it announced exactly which card had just refused to be targeted.
+        val sourceDisplayName = nameVisibleToAll(state, ability.sourceId, ability.sourceName)
+
         val events = mutableListOf<GameEvent>(
             AbilityTriggeredEvent(
                 ability.sourceId,
-                ability.sourceName,
+                sourceDisplayName,
                 ability.controllerId,
                 ability.description,
                 abilityEntityId = abilityId,
@@ -672,12 +687,12 @@ class StackResolver(
         )
 
         if (CrimeDetector.isCrime(newState, ability.controllerId, targets)) {
-            events.add(CommitCrimeEvent(ability.controllerId, abilityId, ability.sourceName))
+            events.add(CommitCrimeEvent(ability.controllerId, abilityId, sourceDisplayName))
             newState = recordCrime(newState, ability.controllerId)
         }
 
         if (targets.isNotEmpty()) {
-            events.add(TargetsChosenEvent(ability.controllerId, abilityId, ability.sourceName))
+            events.add(TargetsChosenEvent(ability.controllerId, abilityId, sourceDisplayName))
         }
 
         // Emit BecomesTargetEvent for each permanent, spell, or player target
@@ -989,7 +1004,13 @@ class StackResolver(
             }
             newState = permanentResult.state
             events.addAll(permanentResult.events)
-            val permanentName = cardComponent?.name ?: "Unknown"
+            // CR 708.2a — a permanent that entered face down has no name, so neither the
+            // "resolved" line nor the "entered the battlefield" line may carry the printed one.
+            // The cast line was already masked at `eventName` above; leaving these two unmasked
+            // made the log contradict it and told the opponent exactly what they were looking at.
+            // Read the resolved entity rather than `spellComponent.castFaceDown` so every route
+            // that lands a permanent face down is covered, not only a face-down cast.
+            val permanentName = nameVisibleToAll(newState, spellId, cardComponent?.name ?: "Unknown")
             events.add(ResolvedEvent(spellId, permanentName))
             events.add(
                 ZoneChangeEvent(
