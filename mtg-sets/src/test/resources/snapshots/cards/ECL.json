@@ -1648,63 +1648,6 @@
     ]
 }
 
-// Blossoming Defense
-{
-    "name": "Blossoming Defense",
-    "manaCost": "{G}",
-    "typeLine": "Instant",
-    "oracleText": "Target creature you control gets +2/+2 and gains hexproof until end of turn. (It can't be the target of spells or abilities your opponents control.)",
-    "script": {
-        "spellEffect": {
-            "type": "Composite",
-            "effects": [
-                {
-                    "type": "ModifyStats",
-                    "powerModifier": {
-                        "type": "Fixed",
-                        "amount": 2
-                    },
-                    "toughnessModifier": {
-                        "type": "Fixed",
-                        "amount": 2
-                    },
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "creature you control"
-                    }
-                },
-                {
-                    "type": "GrantKeyword",
-                    "keyword": "HEXPROOF",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "creature you control"
-                    }
-                }
-            ]
-        },
-        "targetRequirements": [
-            {
-                "type": "TargetObject",
-                "filter": {
-                    "baseFilter": "creature ctrl:you"
-                },
-                "id": "creature you control"
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "167",
-        "rarity": "UNCOMMON",
-        "artist": "Eelis Kyttanen",
-        "flavorText": "To survive Shadowmoor's wilds, safewrights must carry an unassailable seed of beauty within their heart.",
-        "imageUri": "https://cards.scryfall.io/normal/front/3/c/3cce80d0-b937-4325-a603-1278c110f244.jpg?1767658356"
-    },
-    "colorIdentityOverride": [
-        "GREEN"
-    ]
-}
-
 // Boggart Cursecrafter
 {
     "name": "Boggart Cursecrafter",
@@ -3324,7 +3267,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Kithkin ctrl:you",
+                    "baseFilter": "permanent Kithkin ctrl:you",
                     "excludeSelf": true
                 }
             }
@@ -5041,7 +4984,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Merfolk ctrl:you",
+                    "baseFilter": "permanent Merfolk ctrl:you",
                     "excludeSelf": true
                 }
             }
@@ -5086,7 +5029,7 @@
                     "space": {
                         "type": "IterationSpace.Group",
                         "filter": {
-                            "baseFilter": "creature Merfolk ctrl:you",
+                            "baseFilter": "permanent Merfolk ctrl:you",
                             "excludeSelf": true
                         }
                     },
@@ -5106,7 +5049,7 @@
                     "powerBonus": 1,
                     "toughnessBonus": 0,
                     "filter": {
-                        "baseFilter": "creature Merfolk ctrl:you"
+                        "baseFilter": "permanent Merfolk ctrl:you"
                     }
                 },
                 "condition": {
@@ -12599,7 +12542,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Elf ctrl:you",
+                    "baseFilter": "permanent Elf ctrl:you",
                     "excludeSelf": true
                 }
             }

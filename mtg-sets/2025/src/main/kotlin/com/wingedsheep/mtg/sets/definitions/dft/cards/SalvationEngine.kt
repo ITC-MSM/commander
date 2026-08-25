@@ -46,7 +46,7 @@ val SalvationEngine = card("Salvation Engine") {
             "target",
             TargetObject(
                 optional = true,
-                filter = TargetFilter(GameObjectFilter.Artifact.ownedByYou(), zone = Zone.GRAVEYARD)
+                filter = TargetFilter.ArtifactInYourGraveyard
             )
         )
         effect = Effects.Move(t, Zone.BATTLEFIELD)

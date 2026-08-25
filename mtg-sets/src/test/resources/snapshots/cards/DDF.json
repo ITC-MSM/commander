@@ -1,0 +1,42 @@
+// Kemba's Skyguard
+{
+    "name": "Kemba's Skyguard",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Creature — Cat Knight",
+    "oracleText": "Flying\nWhen this creature enters, you gain 2 life.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "When this creature enters, you gain 2 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "13",
+        "artist": "Whit Brachna",
+        "flavorText": "\"We're now to dispense aid to any Mirran we see battling anything . . . 'strange.' Regent's orders.\"\n—Ranya, skyhunter captain",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/66ce7c11-09bf-4884-893c-fc8bdbe776d4.jpg?1783941769"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}

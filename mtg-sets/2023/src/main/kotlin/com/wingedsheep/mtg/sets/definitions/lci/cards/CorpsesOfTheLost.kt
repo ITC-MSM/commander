@@ -52,7 +52,7 @@ val CorpsesOfTheLost = card("Corpses of the Lost") {
         ability = ModifyStats(
             powerBonus = 1,
             toughnessBonus = 0,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.SKELETON).youControl())
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.SKELETON).youControl())
         )
     }
 
@@ -60,7 +60,7 @@ val CorpsesOfTheLost = card("Corpses of the Lost") {
     staticAbility {
         ability = GrantKeyword(
             keyword = Keyword.HASTE,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.SKELETON).youControl())
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.SKELETON).youControl())
         )
     }
 

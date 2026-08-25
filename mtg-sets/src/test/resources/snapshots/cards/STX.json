@@ -1,3 +1,139 @@
+// Academic Dispute
+{
+    "name": "Academic Dispute",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature blocks this turn if able. You may have it gain reach until end of turn.\nLearn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MarkMustBlockThisTurn",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GrantKeyword",
+                        "keyword": "REACH",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    },
+                    "descriptionOverride": "You may have it gain reach until end of turn."
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "91",
+        "rarity": "UNCOMMON",
+        "artist": "Manuel Castañón",
+        "flavorText": "\"I'll show you original research, you hack!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/6/4620cc3b-e401-4096-b310-fed080806344.jpg?1783927359"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Ageless Guardian
 {
     "name": "Ageless Guardian",
@@ -15,6 +151,136 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Arcane Subtraction
+{
+    "name": "Arcane Subtraction",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets -4/-0 until end of turn.\nLearn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -4
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "36",
+        "artist": "Anastasia Ovchinnikova",
+        "flavorText": "The class learned little that day.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/8/68cdb00c-ea86-4b72-8f62-570820edfa1b.jpg?1783927381"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -218,6 +484,120 @@
     ]
 }
 
+// Cram Session
+{
+    "name": "Cram Session",
+    "manaCost": "{1}{B/G}",
+    "typeLine": "Sorcery",
+    "oracleText": "You gain 4 life.\nLearn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "170",
+        "artist": "Marta Nael",
+        "flavorText": "The only thing more delicious than a top grade is Gyome's signature cake.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/5/c59a249f-35ed-447a-845b-32ba5a53124e.jpg?1783927323"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Deadly Brew
 {
     "name": "Deadly Brew",
@@ -292,6 +672,661 @@
     "colorIdentityOverride": [
         "BLACK",
         "GREEN"
+    ]
+}
+
+// Dream Strix
+{
+    "name": "Dream Strix",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Bird Illusion",
+    "oracleText": "Flying\nWhen this creature becomes the target of a spell, sacrifice it.\nWhen this creature dies, learn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "BecomesTargetEvent",
+                    "spellsOnly": true
+                },
+                "effect": {
+                    "type": "SacrificeTarget",
+                    "target": "Self"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "42",
+        "rarity": "RARE",
+        "artist": "YW Tang",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/31d82f7a-64f1-463f-bb6b-936c3e49bf2b.jpg?1783927380"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Enthusiastic Study
+{
+    "name": "Enthusiastic Study",
+    "manaCost": "{2}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +3/+1 and gains trample until end of turn.\nLearn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "TRAMPLE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "99",
+        "artist": "Jesper Ejsing",
+        "flavorText": "\"If the pen is mightier than the sword, just think what a giant tome could do!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/4/543c64ff-2c51-4a63-a940-dc8645717c85.jpg?1783927356"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Eyetwitch
+{
+    "name": "Eyetwitch",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Eye Bat",
+    "oracleText": "Flying\nWhen this creature dies, learn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "70",
+        "rarity": "UNCOMMON",
+        "artist": "Karl Kopinski",
+        "flavorText": "Oculomancers see the ideal potion ingredient. The bats don't see it that way.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/f/1f4d1bb6-cb8f-4d01-9879-0b3a0585cbf4.jpg?1783927368"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Field Trip
+{
+    "name": "Field Trip",
+    "manaCost": "{2}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Search your library for a basic Forest card, put that card onto the battlefield tapped, then shuffle.\nLearn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Library",
+                        "filter": "basicland Forest"
+                    },
+                    "storeAs": "searchable"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "searchable",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "found"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "found",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield",
+                        "placement": "Tapped"
+                    }
+                },
+                "ShuffleLibrary",
+                "EmitLibrarySearchedEvent",
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "131",
+        "artist": "Piotr Dura",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/2/f235060a-eb49-4a73-bb5f-01228c3c4070.jpg?1783927343"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// First Day of Class
+{
+    "name": "First Day of Class",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Whenever a creature you control enters this turn, put a +1/+1 counter on it and it gains haste until end of turn.\nLearn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "CreateDelayedTrigger",
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": "TriggeringEntity"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "HASTE",
+                                "target": "TriggeringEntity"
+                            }
+                        ]
+                    },
+                    "trigger": {
+                        "event": {
+                            "type": "ZoneChangeEvent",
+                            "filter": "creature ctrl:you",
+                            "to": "Battlefield"
+                        },
+                        "binding": "ANY"
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "102",
+        "artist": "Paul Scott Canavan",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/9/091eb13d-9318-4b12-9f94-6276b11981d1.jpg?1783927356"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -410,6 +1445,884 @@
     ]
 }
 
+// Gnarled Professor
+{
+    "name": "Gnarled Professor",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Creature — Treefolk Druid",
+    "oracleText": "Trample\nWhen this creature enters, learn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "133",
+        "rarity": "RARE",
+        "artist": "Simon Dominic",
+        "flavorText": "\"Class is in season.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/3/a32338e8-1f6a-49b9-bd93-26578adab6b3.jpg?1783927342"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Guiding Voice
+{
+    "name": "Guiding Voice",
+    "manaCost": "{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Put a +1/+1 counter on target creature.\nLearn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "artist": "Steve Argyle",
+        "flavorText": "When honormancers work together, their compliments are complementary.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d6fb3163-12ca-4a7f-a0c7-b8ddfc9408a0.jpg?1783927388"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Hunt for Specimens
+{
+    "name": "Hunt for Specimens",
+    "manaCost": "{1}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create a 1/1 black and green Pest creature token with \"When this token dies, you gain 1 life.\"\nLearn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Pest"
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "73",
+        "artist": "Randy Vargas",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/f/8ff0f47f-75cb-42b0-ba4d-78522cad9861.jpg?1783927367"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Igneous Inspiration
+{
+    "name": "Igneous Inspiration",
+    "manaCost": "{2}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Igneous Inspiration deals 3 damage to any target.\nLearn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    },
+                    "damageSource": "Self"
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "AnyTarget",
+                "id": "any target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "107",
+        "rarity": "UNCOMMON",
+        "artist": "PINDURSKI",
+        "flavorText": "Prismari fosters a burning need to create.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/7/5781ad7b-dc1b-4cc1-9e72-6e714b9ba1de.jpg?1783927354"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Overgrown Arch
+{
+    "name": "Overgrown Arch",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Plant Wall",
+    "oracleText": "Defender\n{T}: You gain 1 life.\n{2}, Sacrifice this creature: Learn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 4
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "139",
+        "rarity": "UNCOMMON",
+        "artist": "Simon Dominic",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/7/a71dddf5-8f72-4018-9cc8-5f63a17f1ee5.jpg?1783927339"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Poet's Quill
+{
+    "name": "Poet's Quill",
+    "manaCost": "{1}{B}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "When this Equipment enters, learn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)\nEquipped creature gets +1/+1 and has lifelink.\nEquip {1}{B}",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{B}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "LIFELINK"
+            }
+        ]
+    },
+    "equipCost": "{1}{B}",
+    "metadata": {
+        "collectorNumber": "82",
+        "rarity": "RARE",
+        "artist": "Anna Fehr",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/7/e7006f43-0b10-4693-b06f-e7cf86ab4129.jpg?1783927363"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Pop Quiz
+{
+    "name": "Pop Quiz",
+    "manaCost": "{2}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Draw a card.\nLearn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "49",
+        "artist": "Matt Stewart",
+        "flavorText": "\"Today is hydromancy? I thought it was amplimancy! I studied for amplimancy!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d16892d8-9d10-45de-ab79-0e645c4b5588.jpg?1783927376"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Prismari Campus
 {
     "name": "Prismari Campus",
@@ -476,6 +2389,406 @@
     ]
 }
 
+// Professor of Symbology
+{
+    "name": "Professor of Symbology",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Kor Cleric",
+    "oracleText": "When this creature enters, learn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "24",
+        "rarity": "UNCOMMON",
+        "artist": "Jason Rainville",
+        "flavorText": "\"A language isn't dead until we stop learning from it.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/4/f427cf73-9f5e-4ef5-bc4f-29ffbfda9d57.jpg?1783927387"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Rise of Extus
+{
+    "name": "Rise of Extus",
+    "manaCost": "{4}{W/B}{W/B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Exile target creature. Exile up to one target instant or sorcery card from a graveyard.\nLearn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "destination": "Exile"
+                },
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 1
+                    },
+                    "destination": "Exile"
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            },
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "instant|sorcery",
+                    "zone": "Graveyard"
+                },
+                "id": "up to one target instant or sorcery card from a graveyard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "226",
+        "artist": "Wylie Beckert",
+        "flavorText": "With one lethal strike, Extus took control of the Oriq and took his first step towards vengeance.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/b/bbf97a71-485e-4d47-98de-bdf6f6dae0c2.jpg?1783927296"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
+}
+
+// Sparring Regimen
+{
+    "name": "Sparring Regimen",
+    "manaCost": "{2}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, learn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)\nWhenever you attack, put a +1/+1 counter on target attacking creature and untap it.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": "YouAttackEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target attacking creature"
+                            }
+                        },
+                        {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target attacking creature"
+                            },
+                            "tap": false
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature attacking"
+                    },
+                    "id": "target attacking creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "29",
+        "rarity": "RARE",
+        "artist": "Tomasz Jedruszek",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/b/ab7c80d3-3e0c-4510-9ed0-bb9fe39d838f.jpg?1783927388"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Spined Karok
 {
     "name": "Spined Karok",
@@ -493,6 +2806,134 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Study Break
+{
+    "name": "Study Break",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Tap up to two target creatures.\nLearn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "TapUntap",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "count": 2,
+                "optional": true,
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "up to two target creatures"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "34",
+        "artist": "Cristi Balanescu",
+        "flavorText": "\"You've been cramming all night. You're taking a nap whether you like it or not.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/f/ef7cd813-0781-4fd7-8748-2716e1eeb4b9.jpg?1783927382"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

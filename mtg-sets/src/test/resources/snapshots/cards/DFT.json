@@ -3871,7 +3871,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Zombie ctrl:you"
+                    "baseFilter": "permanent Zombie ctrl:you"
                 }
             }
         ]
@@ -8428,7 +8428,7 @@
                 "type": "GrantKeyword",
                 "keyword": "HASTE",
                 "filter": {
-                    "baseFilter": "creature Goblin ctrl:you",
+                    "baseFilter": "permanent Goblin ctrl:you",
                     "excludeSelf": true
                 }
             }

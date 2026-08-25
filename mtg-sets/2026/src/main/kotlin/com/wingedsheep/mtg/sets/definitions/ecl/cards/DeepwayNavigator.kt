@@ -37,7 +37,7 @@ val DeepwayNavigator = card("Deepway Navigator") {
         trigger = Triggers.EntersBattlefield
         effect = Patterns.Group.untapGroup(
             filter = GroupFilter(
-                GameObjectFilter.Creature.youControl().withSubtype("Merfolk"),
+                GameObjectFilter.Permanent.youControl().withSubtype("Merfolk"),
                 excludeSelf = true
             )
         )
@@ -48,7 +48,7 @@ val DeepwayNavigator = card("Deepway Navigator") {
             ability = ModifyStats(
                 powerBonus = 1,
                 toughnessBonus = 0,
-                filter = GroupFilter(GameObjectFilter.Creature.withSubtype("Merfolk").youControl())
+                filter = GroupFilter(GameObjectFilter.Permanent.withSubtype("Merfolk").youControl())
             ),
             condition = Conditions.YouAttackedWithCreaturesThisTurn(
                 filter = GameObjectFilter.Creature.withSubtype("Merfolk").youControl(),

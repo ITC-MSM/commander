@@ -1,0 +1,68 @@
+{
+  "player1Name": "You",
+  "player2Name": "AI",
+  "mode": "AI",
+  "aiPlayer": 2,
+  "player1": {
+    "lifeTotal": 20,
+    "hand": [
+      "Field Trip",
+      "Hill Giant",
+      "Grizzly Bears"
+    ],
+    "battlefield": [
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Forest",
+      "Craw Wurm",
+      "Forest",
+      "Grizzly Bears"
+    ],
+    "sideboard": [
+      "Seismic Sense",
+      "Origin of Metalbending",
+      "Aang's Journey",
+      "Hill Giant"
+    ]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": [
+      "Grizzly Bears"
+    ],
+    "battlefield": [
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Craw Wurm"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Hill Giant",
+      "Grizzly Bears",
+      "Craw Wurm"
+    ]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1,
+  "player1StopAtSteps": [],
+  "player2StopAtSteps": [],
+  "player1OpponentStopAtSteps": [],
+  "player2OpponentStopAtSteps": []
+}

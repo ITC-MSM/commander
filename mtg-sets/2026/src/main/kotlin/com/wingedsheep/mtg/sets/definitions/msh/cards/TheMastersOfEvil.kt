@@ -42,7 +42,7 @@ val TheMastersOfEvil = card("The Masters of Evil") {
             powerBonus = 2,
             toughnessBonus = 1,
             filter = GroupFilter(
-                GameObjectFilter.Creature.withSubtype(Subtype.VILLAIN).youControl(),
+                GameObjectFilter.Permanent.withSubtype(Subtype.VILLAIN).youControl(),
                 excludeSelf = true
             )
         )

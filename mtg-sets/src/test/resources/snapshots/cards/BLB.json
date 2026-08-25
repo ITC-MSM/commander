@@ -2744,7 +2744,7 @@
                     "space": {
                         "type": "IterationSpace.Group",
                         "filter": {
-                            "baseFilter": "creature Squirrel ctrl:you",
+                            "baseFilter": "permanent Squirrel ctrl:you",
                             "excludeSelf": true
                         }
                     },
@@ -2762,7 +2762,7 @@
                 "type": "GrantKeyword",
                 "keyword": "MENACE",
                 "filter": {
-                    "baseFilter": "creature Squirrel ctrl:you",
+                    "baseFilter": "permanent Squirrel ctrl:you",
                     "excludeSelf": true
                 }
             }
@@ -6676,42 +6676,6 @@
     },
     "colorIdentityOverride": [
         "BLACK",
-        "RED"
-    ]
-}
-
-// Flame Lash
-{
-    "name": "Flame Lash",
-    "manaCost": "{3}{R}",
-    "typeLine": "Instant",
-    "oracleText": "Flame Lash deals 4 damage to any target.",
-    "script": {
-        "spellEffect": {
-            "type": "DealDamage",
-            "amount": {
-                "type": "Fixed",
-                "amount": 4
-            },
-            "target": {
-                "type": "BoundVariable",
-                "name": "any"
-            }
-        },
-        "targetRequirements": [
-            {
-                "type": "AnyTarget",
-                "id": "any"
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "391",
-        "artist": "Viktor Titov",
-        "imageUri": "https://cards.scryfall.io/normal/front/c/6/c6440439-7178-4a97-9e18-7fdef4b02678.jpg?1721428094",
-        "inBooster": false
-    },
-    "colorIdentityOverride": [
         "RED"
     ]
 }
@@ -11443,7 +11407,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Mouse ctrl:you",
+                    "baseFilter": "permanent Mouse ctrl:you",
                     "excludeSelf": true
                 }
             }

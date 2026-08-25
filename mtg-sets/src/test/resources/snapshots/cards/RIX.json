@@ -323,6 +323,30 @@
     ]
 }
 
+// Mist-Cloaked Herald
+{
+    "name": "Mist-Cloaked Herald",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Merfolk Warrior",
+    "oracleText": "This creature can't be blocked.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "flags": [
+        "CANT_BE_BLOCKED"
+    ],
+    "metadata": {
+        "collectorNumber": "43",
+        "artist": "Anthony Palumbo",
+        "flavorText": "With matchless stealth, the River Heralds fought a running battle against the three enemy forces.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/8/18c1368e-114b-4618-922b-1d824ba0d1d5.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Moment of Craving
 {
     "name": "Moment of Craving",
@@ -720,6 +744,30 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Sun Sentinel
+{
+    "name": "Sun Sentinel",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Soldier",
+    "oracleText": "Vigilance (Attacking doesn't cause this creature to tap.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "metadata": {
+        "collectorNumber": "26",
+        "artist": "James Ryman",
+        "flavorText": "\"I will not sleep until Orazca is ours once more.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/8/6867fd5a-3bbe-416d-96a6-1db0b341260e.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

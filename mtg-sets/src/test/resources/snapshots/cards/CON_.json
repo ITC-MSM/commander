@@ -204,6 +204,46 @@
     ]
 }
 
+// Infectious Horror
+{
+    "name": "Infectious Horror",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Zombie Horror",
+    "oracleText": "Whenever this creature attacks, each opponent loses 2 life.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "EachOpponent"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "47",
+        "artist": "Pete Venters",
+        "flavorText": "Not once in the history of Grixis has anyone died of old age.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/b/bb460855-f09d-4460-9d3f-1bfcc7f3e626.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Progenitus
 {
     "name": "Progenitus",

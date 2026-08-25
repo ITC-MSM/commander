@@ -1952,6 +1952,44 @@
     ]
 }
 
+// Demolish
+{
+    "name": "Demolish",
+    "manaCost": "{3}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy target artifact or land.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "artifact|land"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "183",
+        "rarity": "UNCOMMON",
+        "artist": "Gary Ruddell",
+        "flavorText": "\"Pound the steel until it fits. Doesn't work? Bash to bits.\"\n—Dwarven forging song",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/1/9162a4df-ca6d-4f07-ae48-d333f1cb74b9.jpg?1783945234"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Deserted Temple
 {
     "name": "Deserted Temple",

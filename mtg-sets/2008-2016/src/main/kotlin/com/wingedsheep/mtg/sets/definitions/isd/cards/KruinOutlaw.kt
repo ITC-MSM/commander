@@ -60,7 +60,7 @@ private val TerrorOfKruinPass = card("Terror of Kruin Pass") {
     staticAbility {
         ability = GrantKeyword(
             Keyword.MENACE,
-            GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.WEREWOLF).youControl())
+            GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.WEREWOLF).youControl())
         )
     }
     triggeredAbility {

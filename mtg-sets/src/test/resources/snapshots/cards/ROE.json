@@ -246,6 +246,30 @@
     ]
 }
 
+// Daggerback Basilisk
+{
+    "name": "Daggerback Basilisk",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Basilisk",
+    "oracleText": "Deathtouch (Any amount of damage this deals to a creature is enough to destroy it.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "DEATHTOUCH"
+    ],
+    "metadata": {
+        "collectorNumber": "182",
+        "artist": "Jesper Ejsing",
+        "flavorText": "\"Petrifying gaze, deadly fangs, knifelike dorsal spines, venomous saliva . . . Am I missing anything? . . . Toxic bones? Seriously?\"\n—Samila, Murasa Expeditionary House",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/4/d4343cb0-6490-496c-9d58-ac1f7d3a91c6.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Dreamstone Hedron
 {
     "name": "Dreamstone Hedron",

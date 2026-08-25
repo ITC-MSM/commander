@@ -53,7 +53,7 @@ val DropkickBomber = card("Dropkick Bomber") {
             powerBonus = 1,
             toughnessBonus = 1,
             filter = GroupFilter(
-                GameObjectFilter.Creature.withSubtype(Subtype.GOBLIN).youControl(),
+                GameObjectFilter.Permanent.withSubtype(Subtype.GOBLIN).youControl(),
                 excludeSelf = true
             )
         )

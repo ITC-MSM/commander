@@ -126,7 +126,7 @@ private val DionBahamutsDominantFront = card("Dion, Bahamut's Dominant") {
         ability = GrantKeyword(
             Keyword.FLYING,
             GroupFilter(
-                GameObjectFilter.Creature.withSubtype("Knight").youControl(),
+                GameObjectFilter.Permanent.withSubtype("Knight").youControl(),
                 excludeSelf = true,
             ),
         )

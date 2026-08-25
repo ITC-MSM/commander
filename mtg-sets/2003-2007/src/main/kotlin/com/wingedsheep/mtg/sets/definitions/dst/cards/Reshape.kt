@@ -27,7 +27,9 @@ val Reshape = card("Reshape") {
     additionalCost(Costs.additional.SacrificePermanent(GameObjectFilter.Artifact))
     spell {
         effect = Patterns.Library.searchLibrary(
-            filter = GameObjectFilter.Artifact,
+            // "with mana value X or less" — `manaValueAtMostX` reads the X announced for this
+            // spell. Without it the search fetched *any* artifact regardless of what X was paid.
+            filter = GameObjectFilter.Artifact.manaValueAtMostX(),
             destination = SearchDestination.BATTLEFIELD
         )
     }

@@ -258,6 +258,7 @@ private fun compile(flags: Flags): Int {
         is CompileResult.Compiled -> {
             println(CardSerialization.json.encodeToString(CardDefinition.serializer(), result.definition))
             result.warnings.forEach { System.err.println("warning: $it") }
+            printingProvenanceNote(result.definition)
             0
         }
 
@@ -270,6 +271,31 @@ private fun compile(flags: Flags): Int {
             1
         }
     }
+}
+
+
+/**
+ * `setCode` and `metadata.imageUri` are *provenance*, not placement.
+ *
+ * The compiler reads whichever printing the Oracle bulk happened to carry for a name, so a card
+ * whose canonical belongs in Morningtide can compile tagged `CMR`. Authors reading the JSON as a
+ * spec have repeatedly taken those two fields for an instruction about where the card goes — on
+ * one 73-card sweep every reviewer flagged it independently. The model is authoritative; these two
+ * fields are not, so say so next to the output rather than in a doc nobody has open.
+ *
+ * Written to stderr on purpose: stdout stays pure JSON, because the documented way to compile a
+ * batch is a shell loop redirecting stdout per card.
+ */
+private fun printingProvenanceNote(definition: CardDefinition) {
+    val setCode = definition.setCode?.takeIf { it.isNotBlank() } ?: return
+    System.err.println(
+        "note: setCode \"$setCode\"" + (if (definition.metadata.imageUri != null) " and metadata.imageUri" else "") +
+            " describe the printing the Oracle bulk carried, NOT where this card's canonical belongs."
+    )
+    System.err.println(
+        "      Place the canonical in the card's earliest real printing, and take rarity / " +
+            "collectorNumber / artist / imageUri from that set's own Scryfall payload."
+    )
 }
 
 /**

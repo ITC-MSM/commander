@@ -48,7 +48,7 @@ val ShadowfaxLordOfHorses = card("Shadowfax, Lord of Horses") {
     staticAbility {
         ability = GrantKeyword(
             keyword = Keyword.HASTE,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.HORSE).youControl())
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.HORSE).youControl())
         )
     }
 

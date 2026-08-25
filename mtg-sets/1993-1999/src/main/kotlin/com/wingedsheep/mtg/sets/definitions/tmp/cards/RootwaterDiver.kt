@@ -1,11 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.tmp.cards
 
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 
@@ -28,7 +26,7 @@ val RootwaterDiver = card("Rootwater Diver") {
         cost = Costs.Composite(Costs.Tap, Costs.SacrificeSelf)
         val artifact = target(
             "target artifact card from your graveyard",
-            TargetObject(filter = TargetFilter(GameObjectFilter.Artifact.ownedByYou(), zone = Zone.GRAVEYARD))
+            TargetObject(filter = TargetFilter.ArtifactInYourGraveyard)
         )
         effect = Effects.ReturnToHand(artifact)
         description = "{T}, Sacrifice this creature: Return target artifact card from your graveyard to your hand."

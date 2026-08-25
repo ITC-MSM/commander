@@ -446,6 +446,38 @@
     ]
 }
 
+// Oakenform
+{
+    "name": "Oakenform",
+    "manaCost": "{2}{G}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature gets +3/+3.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 3,
+                "toughnessBonus": 3
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "197",
+        "artist": "Wayne Reynolds",
+        "flavorText": "\"When the beast cloaks itself in the mighty oak, what good is a bow? When the oak wraps itself around the snarling beast, what good is a hatchet?\"\n—Dionus, elvish archdruid",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/42df372a-af2b-464a-b54c-039132f70d00.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Rootbound Crag
 {
     "name": "Rootbound Crag",

@@ -61,7 +61,7 @@ data class DynamicHint(
  *
  *  1. Targets for [then] / [otherwise] are locked when the ability is put on the stack
  *     (trigger time, CR 603.3d) — independent of the gate, before the gate is resolved.
- *  2. The gate is resolved at resolution time (CR 117.3a) via [decisionMaker].
+ *  2. The gate is resolved at resolution time (CR 608.2c) via [decisionMaker].
  *  3. On success → [then]; on failure → [otherwise].
  *
  * This is the "composition over enumeration" replacement for the wrapper-per-concern

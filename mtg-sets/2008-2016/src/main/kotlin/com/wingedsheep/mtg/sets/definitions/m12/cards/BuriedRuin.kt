@@ -1,11 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.m12.cards
 
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 
@@ -31,7 +29,7 @@ val BuriedRuin = card("Buried Ruin") {
         cost = Costs.Composite(Costs.Mana("{2}"), Costs.Tap, Costs.SacrificeSelf)
         val card = target(
             "target artifact card in your graveyard",
-            TargetObject(filter = TargetFilter(GameObjectFilter.Artifact.ownedByYou(), zone = Zone.GRAVEYARD)),
+            TargetObject(filter = TargetFilter.ArtifactInYourGraveyard),
         )
         effect = Effects.ReturnToHand(card)
         description = "{2}, {T}, Sacrifice this land: Return target artifact card from your graveyard " +

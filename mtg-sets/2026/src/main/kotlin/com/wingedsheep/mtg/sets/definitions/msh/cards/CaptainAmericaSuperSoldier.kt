@@ -73,7 +73,7 @@ val CaptainAmericaSuperSoldier = card("Captain America, Super-Soldier") {
             ability = GrantKeyword(
                 Keyword.HEXPROOF,
                 GroupFilter(
-                    GameObjectFilter.Creature.withSubtype(Subtype.HERO).youControl(),
+                    GameObjectFilter.Permanent.withSubtype(Subtype.HERO).youControl(),
                     excludeSelf = true,
                 ),
             ),

@@ -40,7 +40,7 @@ val DoctorOctopusMasterPlanner = card("Doctor Octopus, Master Planner") {
             powerBonus = 2,
             toughnessBonus = 2,
             filter = GroupFilter(
-                GameObjectFilter.Creature.withSubtype("Villain").youControl(),
+                GameObjectFilter.Permanent.withSubtype("Villain").youControl(),
                 excludeSelf = true,
             ),
         )

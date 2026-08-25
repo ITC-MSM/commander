@@ -15697,7 +15697,7 @@
                 "type": "GrantKeyword",
                 "keyword": "HASTE",
                 "filter": {
-                    "baseFilter": "creature Horse ctrl:you"
+                    "baseFilter": "permanent Horse ctrl:you"
                 }
             }
         ]

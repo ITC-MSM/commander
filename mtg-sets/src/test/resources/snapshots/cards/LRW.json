@@ -1388,7 +1388,7 @@
                 "type": "AdditionalAtom",
                 "atom": {
                     "type": "AtomReturnToHand",
-                    "filter": "creature ctrl:you"
+                    "filter": "creature"
                 }
             }
         ]
@@ -2306,7 +2306,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Elf ctrl:you",
+                    "baseFilter": "permanent Elf ctrl:you",
                     "excludeSelf": true
                 }
             }
