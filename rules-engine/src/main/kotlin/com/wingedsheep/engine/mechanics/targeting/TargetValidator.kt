@@ -995,8 +995,11 @@ class TargetValidator {
     /**
      * Validate a target for TargetSpellOrPermanent.
      * Accepts either a spell on the stack or a permanent on the battlefield.
-     * If [requirement.permanentFilter] is set, permanent targets must also match it
-     * (e.g., "target spell or creature" restricts the permanent side to creatures).
+     * Each half carries its own optional filter, and a target must match the one for its
+     * side: [requirement.permanentFilter] for battlefield targets (e.g. "target spell or
+     * creature" restricts the permanent side to creatures) and [requirement.spellFilter]
+     * for stack targets (Divide by Zero's "with mana value 1 or greater" restricts both,
+     * so it passes the same filter to each).
      */
     private fun validateSpellOrPermanentTarget(
         state: GameState,
@@ -1026,6 +1029,14 @@ class TargetValidator {
             is ChosenTarget.Spell -> {
                 if (target.spellEntityId !in state.stack) {
                     return "Target spell not on the stack"
+                }
+                val spellFilter = requirement.spellFilter
+                if (spellFilter != null) {
+                    val projected = state.projectedState
+                    val context = PredicateContext(controllerId = casterId, sourceId = sourceId, xValue = xValue)
+                    if (!predicateEvaluator.matches(state, projected, target.spellEntityId, spellFilter, context)) {
+                        return "Target does not match ${spellFilter.description}"
+                    }
                 }
                 null
             }

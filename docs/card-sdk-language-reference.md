@@ -2351,7 +2351,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `ReselectTargetRandomlyEffect(spell)` — re-choose targets at random.
 - `Effects.ChangeTriggeringObjectTargets(chooser = RetargetChooser.Controller)` — the player named by `chooser` may change the target or targets of the triggering spell/ability (`context.triggeringEntityId`); the player-chosen, multi-target counterpart of `ReselectTargetRandomly`. `RetargetChooser.Controller` = the effect's controller; `RetargetChooser.OwnerOfStored(name)` = the owner of the single card in pipeline collection `name` (≠1 card → no chooser → no-op). Reselection is offered slot-by-slot among the original object's legal targets (legality judged from *its* controller, current target kept as a "keep" option, no target chosen twice). **Psychic Battle** composes from atoms: `Composite(GatherCards(TopOfLibrary(1, Player.Each), revealed=true, storeAs="revealed"), FilterCollection("revealed", GreatestManaValue, storeMatching="w"), ChangeTriggeringObjectTargets(RetargetChooser.OwnerOfStored("w")))` — a tie keeps several greatest cards so `OwnerOfStored` finds no unique owner and the targets stay put.
 - `ReturnSpellToOwnersHandEffect` / `Effects.ReturnSpellToOwnersHand()` — return the targeted spell (`ContextTarget`) from the stack to its owner's hand. Not a counter (CR 701.27 / 701.5b), so "can't be countered" doesn't block it. Pair with `Targets.Spell` (Reprieve, Hullbreaker Horror).
-- `Effects.ReturnSpellOrPermanentToOwnersHand(target = ContextTarget(0))` (`ReturnSpellOrPermanentToOwnersHandEffect`) — bounce one target to its owner's hand, dispatching on what it resolves to: a **spell on the stack** is removed from the stack to hand (does not resolve; not a counter), a **permanent** is bounced normally (delegates to the standard `MoveToZone(HAND)` path with its full leave-the-battlefield cleanup). The bounce counterpart of `PutOnLibraryPositionOfChoiceEffect`. Pair with `TargetSpellOrPermanent` for "return target spell or nonland permanent…" cards (Press the Enemy). To cap a follow-up free-cast at the bounced object's mana value, capture it first with `Effects.StoreNumber("mv", DynamicAmount.EntityProperty(EntityReference.Target(0), EntityNumericProperty.ManaValue))` before bouncing, then read it via `DynamicAmount.VariableReference("mv")`.
+- `Effects.ReturnSpellOrPermanentToOwnersHand(target = ContextTarget(0))` (`ReturnSpellOrPermanentToOwnersHandEffect`) — bounce one target to its owner's hand, dispatching on what it resolves to: a **spell on the stack** is removed from the stack to hand (does not resolve; not a counter), a **permanent** is bounced normally (delegates to the standard `MoveToZone(HAND)` path with its full leave-the-battlefield cleanup). The bounce counterpart of `PutOnLibraryPositionOfChoiceEffect`. Pair with `TargetSpellOrPermanent` for "return target spell or nonland permanent…" cards (Press the Enemy); that requirement filters its two halves independently via `permanentFilter` / `spellFilter` (see *Spell-or-permanent targets*). To cap a follow-up free-cast at the bounced object's mana value, capture it first with `Effects.StoreNumber("mv", DynamicAmount.EntityProperty(EntityReference.Target(0), EntityNumericProperty.ManaValue))` before bouncing, then read it via `DynamicAmount.VariableReference("mv")`.
 
 ### Combat-shape & misc
 
@@ -3751,6 +3751,41 @@ effect = Effects.Composite(Effects.ReturnToHand(t), Effects.AddMana(Color.RED))
 `Keyword.FLASHBACK` to the card's base keywords, so the predicate matches even on a card sitting in
 exile (no projection needed). The client routes a union to its cross-zone card picker, grouping the
 valid targets into per-(owner, zone) tabs — "Your Graveyard", "Your Exile", etc.
+
+### Spell-or-permanent targets (`TargetSpellOrPermanent`)
+
+One target that may be either a spell on the stack **or** a permanent on the battlefield —
+"target spell or permanent" (Artificial Evolution, the lace effects, Venser, Shaper Savant).
+Distinct from the cross-zone union above: this is a fixed two-sided union the engine dispatches
+on directly, not a list of `TargetFilter` clauses.
+
+Each side carries its own optional `GameObjectFilter`, and either may be left null to mean
+"anything of that kind":
+
+| Field | Restricts | Example |
+|---|---|---|
+| `permanentFilter` | the battlefield half | `GameObjectFilter.Creature` → "target spell or creature" (Swat Away) |
+| `spellFilter` | the stack half | `GameObjectFilter.Any.manaValueAtLeast(1)` → the stack half of Divide by Zero |
+
+Most printed cards in this shape restrict neither side or only the permanent one. A card whose
+single restriction applies to *both* halves spells it by passing the same filter to each:
+
+```kotlin
+// Divide by Zero — "target spell or permanent with mana value 1 or greater"
+val t = target(
+    "target spell or permanent with mana value 1 or greater",
+    TargetSpellOrPermanent(
+        permanentFilter = GameObjectFilter.Permanent.manaValueAtLeast(1),
+        spellFilter = GameObjectFilter.Any.manaValueAtLeast(1)
+    )
+)
+effect = Effects.ReturnSpellOrPermanentToOwnersHand(t) then Patterns.Mechanic.learn()
+```
+
+A filter is matched against a stack spell the same way it is against a permanent, through the
+predicate evaluator. Stack entities have no projection entry, so the matchers fall back to the
+base card characteristics on their own — which also means a spell's mana value reads off the card
+rather than off a chosen `{X}` (CR 202.3b).
 
 ### Named multi-target binding
 

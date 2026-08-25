@@ -373,9 +373,19 @@ data class TargetCreatureOrPlaneswalker(
  * Used by text-changing effects like Artificial Evolution and bounce-to-library
  * effects like Swat Away ("target spell or creature").
  *
- * The [permanentFilter] restricts which permanents are valid. When null, any
- * permanent may be targeted. For "target spell or creature", pass
- * [GameObjectFilter.Creature].
+ * The two halves are filtered independently, and either may be left null to mean
+ * "anything of that kind":
+ *  - [permanentFilter] restricts the battlefield half. For "target spell or creature",
+ *    pass [GameObjectFilter.Creature].
+ *  - [spellFilter] restricts the stack half. Most printed cards in this shape don't
+ *    restrict it (the lace effects, Artificial Evolution, Venser, Shaper Savant), but
+ *    some do: Divide by Zero's "target spell or permanent with mana value 1 or greater"
+ *    and Aether Gust's "target spell or permanent that's red or green" apply one
+ *    restriction to *both* halves, which is spelled here by passing the same filter twice.
+ *
+ * A filter is matched against a spell on the stack the same way it is against a permanent,
+ * via the predicate evaluator; stack entities have no projection entry, so the matchers fall
+ * back to the base card characteristics on their own.
  */
 @SerialName("TargetSpellOrPermanent")
 @Serializable
@@ -383,16 +393,21 @@ data class TargetSpellOrPermanent(
     override val count: Int = 1,
     override val optional: Boolean = false,
     override val id: String? = null,
-    val permanentFilter: GameObjectFilter? = null
+    val permanentFilter: GameObjectFilter? = null,
+    val spellFilter: GameObjectFilter? = null
 ) : TargetRequirement {
     override val description: String = run {
         val permanentNoun = permanentFilter?.description ?: "permanent"
-        if (count == 1) "target spell or $permanentNoun"
-        else "$count target spells or ${permanentNoun}s"
+        val spellNoun = spellFilter?.let { "${it.description} spell" } ?: "spell"
+        if (count == 1) "target $spellNoun or $permanentNoun"
+        else "$count target ${spellNoun}s or ${permanentNoun}s"
     }
     override fun applyTextReplacement(replacer: TextReplacer): TargetRequirement {
-        val newFilter = permanentFilter?.applyTextReplacement(replacer)
-        return if (newFilter !== permanentFilter) copy(permanentFilter = newFilter) else this
+        val newPermanentFilter = permanentFilter?.applyTextReplacement(replacer)
+        val newSpellFilter = spellFilter?.applyTextReplacement(replacer)
+        return if (newPermanentFilter !== permanentFilter || newSpellFilter !== spellFilter) {
+            copy(permanentFilter = newPermanentFilter, spellFilter = newSpellFilter)
+        } else this
     }
 }
 
