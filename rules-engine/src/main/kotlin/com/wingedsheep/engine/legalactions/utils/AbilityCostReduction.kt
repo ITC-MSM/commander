@@ -95,6 +95,30 @@ object AbilityCostReduction {
         }
     }
 
+    /**
+     * The menu label for [ability] given the [effectiveCost] it will actually be charged.
+     *
+     * Rebuilt from the effective cost only when that differs from [baselineCost] — otherwise the
+     * printed label is already right — and never when the ability carries an explicit
+     * `descriptionOverride`, since a custom label such as Renew's "Renew — …" has no safe place to
+     * splice a cost into. Both enumerators render the label the same way, so the rule lives here
+     * rather than in each of them.
+     *
+     * [baselineCost] defaults to the printed cost. The battlefield enumerator passes its
+     * text-replaced cost instead ("Sacrifice a Goblin" → "Sacrifice a Bird"), so that a replacement
+     * alone — which does not change what the player pays — doesn't count as a cost change.
+     */
+    fun describe(
+        ability: ActivatedAbility,
+        effectiveCost: AbilityCost,
+        baselineCost: AbilityCost = ability.cost,
+    ): String =
+        if (effectiveCost != baselineCost && ability.descriptionOverride == null) {
+            ability.describeWithCost(effectiveCost)
+        } else {
+            ability.description
+        }
+
     /** [cost] with [amount] shaved off the generic part of its first mana component. */
     private fun reduceGeneric(cost: AbilityCost, amount: Int): AbilityCost = when (cost) {
         is AbilityCost.Atom -> cost.manaCostOrNull

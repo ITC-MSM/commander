@@ -124,6 +124,25 @@ data class GameObjectFilter(
         val NonbasicLand = GameObjectFilter(
             cardPredicates = listOf(CardPredicate.IsLand, CardPredicate.Not(CardPredicate.IsBasicLand))
         )
+        /**
+         * A land with one of the five basic land types (CR 205.3i) — Boseiju, Who Endures' "a
+         * land card with a basic land type". Deliberately *not* [BasicLand]: a shockland
+         * (`Land — Forest Island`) or Dryad Arbor qualifies, and a basic is only the common case.
+         */
+        val LandWithBasicLandType = GameObjectFilter(
+            cardPredicates = listOf(
+                CardPredicate.IsLand,
+                CardPredicate.Or(
+                    listOf(
+                        CardPredicate.HasBasicLandType(Subtype.PLAINS.value),
+                        CardPredicate.HasBasicLandType(Subtype.ISLAND.value),
+                        CardPredicate.HasBasicLandType(Subtype.SWAMP.value),
+                        CardPredicate.HasBasicLandType(Subtype.MOUNTAIN.value),
+                        CardPredicate.HasBasicLandType(Subtype.FOREST.value),
+                    )
+                )
+            )
+        )
         val Artifact = GameObjectFilter(cardPredicates = listOf(CardPredicate.IsArtifact))
         val Enchantment = GameObjectFilter(cardPredicates = listOf(CardPredicate.IsEnchantment))
         val Planeswalker = GameObjectFilter(cardPredicates = listOf(CardPredicate.IsPlaneswalker))

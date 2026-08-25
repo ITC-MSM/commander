@@ -175,6 +175,14 @@ object DynamicAmounts {
     fun creaturesYouControl(): DynamicAmount =
         battlefield(Player.You, GameObjectFilter.Creature).count()
 
+    /**
+     * Legendary creatures you control — the Kamigawa channel lands' "costs {1} less to activate
+     * for each legendary creature you control", and the same count the legendary-matters payoffs
+     * read. Counts creatures only: a legendary land or artifact does not qualify.
+     */
+    fun legendaryCreaturesYouControl(): DynamicAmount =
+        battlefield(Player.You, GameObjectFilter.Creature.legendary()).count()
+
     fun allCreatures(): DynamicAmount =
         battlefield(Player.Each, GameObjectFilter.Creature).count()
 

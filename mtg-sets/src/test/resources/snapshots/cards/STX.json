@@ -796,7 +796,8 @@
                             "min": 1
                         }
                     ]
-                }
+                },
+                "descriptionOverride": "target spell or permanent with mana value 1 or greater"
             }
         ]
     },

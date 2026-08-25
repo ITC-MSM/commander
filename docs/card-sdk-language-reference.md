@@ -3767,6 +3767,10 @@ Each side carries its own optional `GameObjectFilter`, and either may be left nu
 | `permanentFilter` | the battlefield half | `GameObjectFilter.Creature` → "target spell or creature" (Swat Away) |
 | `spellFilter` | the stack half | `GameObjectFilter.Any.manaValueAtLeast(1)` → the stack half of Divide by Zero |
 
+`descriptionOverride` supplies the printed wording when the generated one reads badly — the same
+escape hatch `TargetPermanentOrPlayer` carries. A restriction covering *both* halves is printed once
+but has to be passed to each filter separately, so the generated text otherwise repeats it per side.
+
 Most printed cards in this shape restrict neither side or only the permanent one. A card whose
 single restriction applies to *both* halves spells it by passing the same filter to each:
 
@@ -3776,7 +3780,8 @@ val t = target(
     "target spell or permanent with mana value 1 or greater",
     TargetSpellOrPermanent(
         permanentFilter = GameObjectFilter.Permanent.manaValueAtLeast(1),
-        spellFilter = GameObjectFilter.Any.manaValueAtLeast(1)
+        spellFilter = GameObjectFilter.Any.manaValueAtLeast(1),
+        descriptionOverride = "target spell or permanent with mana value 1 or greater"
     )
 )
 effect = Effects.ReturnSpellOrPermanentToOwnersHand(t) then Patterns.Mechanic.learn()
@@ -4110,6 +4115,10 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   the land base (`GameObjectFilter.Land.nonbasic()`), or use the named constant `GameObjectFilter.NonbasicLand`
   / `TargetFilter.NonbasicLand` (Rocket Volley, Shivan Harvest, Encroaching Wastes). `TargetFilter.Land.nonbasic()`
   is the target-side passthrough.
+- `GameObjectFilter.LandWithBasicLandType` — a land with one of the five basic land types
+  (CR 205.3i): "a land card with a basic land type" (Boseiju, Who Endures). Deliberately *not*
+  `GameObjectFilter.BasicLand` — a shockland (`Land — Forest Island`) or Dryad Arbor qualifies, and a
+  basic is only the common case.
 - `.withChosenColor()` — `CardPredicate.HasChosenColor`: matches the color chosen during the current
   effect's resolution (read from `EffectContext.chosenColor`, set by `Effects.ChooseColorThen`). Use with
   `AggregateBattlefield(Player.Each, …)` for "for each permanent of that color" (Coalition Dragon cycle).
@@ -10549,6 +10558,16 @@ both spellings, and the ability its bare-noun line grants says "Regenerate this 
   as a `ForEachInGroup` over `Creature.youControl().powerGreaterThanBase()` reading the amount off
   `EntityReference.IterationEntity`. Not projected — always the printed base.
 - `CardNumericProperty(card, property)` — generic numeric property accessor.
+
+### Board-count shortcuts (`DynamicAmounts.*` facades)
+
+`DynamicAmounts.creaturesYouControl()`, `.landsYouControl()`, `.otherCreaturesYouControl()`,
+`.attackingCreaturesYouControl()`, `.equipmentYouControl()` — each a named `battlefield(…).count()`.
+
+`DynamicAmounts.legendaryCreaturesYouControl()` is the same shape over
+`GameObjectFilter.Creature.legendary()`: the Kamigawa channel lands' "costs {1} less to activate for
+each legendary creature you control", fed to `ActivatedAbility.genericCostReduction`. Counts creatures
+only — a legendary land or artifact does not qualify.
 
 ### Triggering-entity shortcuts (`DynamicAmounts.*` facades)
 

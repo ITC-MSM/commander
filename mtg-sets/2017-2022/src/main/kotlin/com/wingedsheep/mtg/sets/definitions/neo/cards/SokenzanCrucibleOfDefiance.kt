@@ -50,8 +50,7 @@ val SokenzanCrucibleOfDefiance = card("Sokenzan, Crucible of Defiance") {
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{3}{R}"), Costs.DiscardSelf)
         activateFromZone = Zone.HAND
-        genericCostReduction =
-            DynamicAmounts.battlefield(Player.You, GameObjectFilter.Creature.legendary()).count()
+        genericCostReduction = DynamicAmounts.legendaryCreaturesYouControl()
         effect = Effects.Composite(
             listOf(
                 Effects.CreateToken(

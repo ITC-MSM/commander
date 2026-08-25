@@ -394,11 +394,18 @@ data class TargetSpellOrPermanent(
     override val optional: Boolean = false,
     override val id: String? = null,
     val permanentFilter: GameObjectFilter? = null,
-    val spellFilter: GameObjectFilter? = null
+    val spellFilter: GameObjectFilter? = null,
+    /**
+     * Printed wording, when the generated one reads badly. A restriction that applies to
+     * *both* halves is printed once ("target spell or permanent with mana value 1 or greater")
+     * but has to be passed to each filter separately, and the generated text then repeats it on
+     * both sides. Same escape hatch [TargetPermanentOrPlayer] carries, for the same reason.
+     */
+    private val descriptionOverride: String? = null
 ) : TargetRequirement {
-    override val description: String = run {
+    override val description: String = descriptionOverride ?: run {
         val permanentNoun = permanentFilter?.description ?: "permanent"
-        val spellNoun = spellFilter?.let { "${it.description} spell" } ?: "spell"
+        val spellNoun = spellFilter?.let { "spell ${it.description}" } ?: "spell"
         if (count == 1) "target $spellNoun or $permanentNoun"
         else "$count target ${spellNoun}s or ${permanentNoun}s"
     }

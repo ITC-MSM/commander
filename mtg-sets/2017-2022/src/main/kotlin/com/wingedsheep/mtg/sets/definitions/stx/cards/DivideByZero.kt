@@ -41,7 +41,9 @@ val DivideByZero = card("Divide by Zero") {
             "target spell or permanent with mana value 1 or greater",
             TargetSpellOrPermanent(
                 permanentFilter = GameObjectFilter.Permanent.manaValueAtLeast(1),
-                spellFilter = GameObjectFilter.Any.manaValueAtLeast(1)
+                spellFilter = GameObjectFilter.Any.manaValueAtLeast(1),
+                // One restriction, printed once — the generated text would repeat it per half.
+                descriptionOverride = "target spell or permanent with mana value 1 or greater"
             )
         )
         effect = Effects.ReturnSpellOrPermanentToOwnersHand(t) then Patterns.Mechanic.learn()

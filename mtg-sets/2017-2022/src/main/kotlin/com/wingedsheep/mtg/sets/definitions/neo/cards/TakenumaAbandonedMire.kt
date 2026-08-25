@@ -59,8 +59,7 @@ val TakenumaAbandonedMire = card("Takenuma, Abandoned Mire") {
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{3}{B}"), Costs.DiscardSelf)
         activateFromZone = Zone.HAND
-        genericCostReduction =
-            DynamicAmounts.battlefield(Player.You, GameObjectFilter.Creature.legendary()).count()
+        genericCostReduction = DynamicAmounts.legendaryCreaturesYouControl()
         effect = Effects.Composite(
             listOf(
                 Patterns.Library.mill(3),

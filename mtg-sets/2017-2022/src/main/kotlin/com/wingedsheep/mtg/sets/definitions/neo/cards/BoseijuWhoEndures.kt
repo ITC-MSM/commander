@@ -13,7 +13,6 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.sdk.scripting.effects.SearchDestination
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
-import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.TargetPermanent
 
@@ -38,7 +37,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetPermanent
  *
  * "A land card **with a basic land type**" is deliberately not "a basic land card" — a shockland
  * (`Land — Forest Island`) or Dryad Arbor qualifies and a basic is merely the common case. Hence
- * the explicit [CardPredicate.HasBasicLandType] union rather than [GameObjectFilter.BasicLand].
+ * [GameObjectFilter.LandWithBasicLandType] rather than [GameObjectFilter.BasicLand].
  */
 val BoseijuWhoEndures = card("Boseiju, Who Endures") {
     typeLine = "Legendary Land"
@@ -59,8 +58,7 @@ val BoseijuWhoEndures = card("Boseiju, Who Endures") {
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{1}{G}"), Costs.DiscardSelf)
         activateFromZone = Zone.HAND
-        genericCostReduction =
-            DynamicAmounts.battlefield(Player.You, GameObjectFilter.Creature.legendary()).count()
+        genericCostReduction = DynamicAmounts.legendaryCreaturesYouControl()
         val t = target(
             "target artifact, enchantment, or nonbasic land an opponent controls",
             TargetPermanent(
@@ -77,20 +75,7 @@ val BoseijuWhoEndures = card("Boseiju, Who Endures") {
                 listOf(
                     MayEffect(
                         Patterns.Library.searchLibrary(
-                            filter = GameObjectFilter(
-                                cardPredicates = listOf(
-                                    CardPredicate.IsLand,
-                                    CardPredicate.Or(
-                                        listOf(
-                                            CardPredicate.HasBasicLandType("Plains"),
-                                            CardPredicate.HasBasicLandType("Island"),
-                                            CardPredicate.HasBasicLandType("Swamp"),
-                                            CardPredicate.HasBasicLandType("Mountain"),
-                                            CardPredicate.HasBasicLandType("Forest")
-                                        )
-                                    )
-                                )
-                            ),
+                            filter = GameObjectFilter.LandWithBasicLandType,
                             count = 1,
                             destination = SearchDestination.BATTLEFIELD
                         )

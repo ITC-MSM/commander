@@ -44,8 +44,7 @@ val EiganjoSeatOfTheEmpire = card("Eiganjo, Seat of the Empire") {
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{2}{W}"), Costs.DiscardSelf)
         activateFromZone = Zone.HAND
-        genericCostReduction =
-            DynamicAmounts.battlefield(Player.You, GameObjectFilter.Creature.legendary()).count()
+        genericCostReduction = DynamicAmounts.legendaryCreaturesYouControl()
         val t = target(
             "target attacking or blocking creature",
             TargetCreature(filter = TargetFilter.AttackingOrBlockingCreature)

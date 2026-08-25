@@ -97,16 +97,7 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
                         .applyDefinedXValue(ability.cost, ability, state, entityId, playerId),
                     ability, state, entityId, playerId, context.targetUtils
                 )
-                // Description shown to the player. Mirrors ActivatedAbilityEnumerator: rebuild the
-                // label from [effectiveCost] only when it differs from the printed cost, and never
-                // when the ability carries an explicit descriptionOverride — a custom label such as
-                // Renew's "Renew — …" has no safe place to splice a cost into.
-                val displayDescription =
-                    if (effectiveCost != ability.cost && ability.descriptionOverride == null) {
-                        ability.describeWithCost(effectiveCost)
-                    } else {
-                        ability.description
-                    }
+                val displayDescription = AbilityCostReduction.describe(ability, effectiveCost)
 
                 var costCanBePaid = true
                 val handCards = state.getZone(playerId, Zone.HAND)

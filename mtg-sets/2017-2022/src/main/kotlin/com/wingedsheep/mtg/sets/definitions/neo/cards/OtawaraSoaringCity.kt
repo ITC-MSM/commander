@@ -56,8 +56,7 @@ val OtawaraSoaringCity = card("Otawara, Soaring City") {
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{3}{U}"), Costs.DiscardSelf)
         activateFromZone = Zone.HAND
-        genericCostReduction =
-            DynamicAmounts.battlefield(Player.You, GameObjectFilter.Creature.legendary()).count()
+        genericCostReduction = DynamicAmounts.legendaryCreaturesYouControl()
         val t = target(
             "target artifact, creature, enchantment, or planeswalker",
             TargetPermanent(

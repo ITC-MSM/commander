@@ -191,14 +191,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 // prefix from [effectiveCost] so the menu reflects what the player will actually pay.
                 // Cards with an explicit descriptionOverride keep it (we can't safely splice a cost
                 // into custom text).
-                val displayDescription =
-                    if (effectiveCost != rawCost && ability.descriptionOverride == null) {
-                        // Rebuild from the effective cost, preserving any keyword-action prefixes
-                        // ("Exhaust — ", "Waterbend ") and rendering a fully-discounted cost as "{0}".
-                        ability.describeWithCost(effectiveCost)
-                    } else {
-                        ability.description
-                    }
+                val displayDescription = AbilityCostReduction.describe(ability, effectiveCost, rawCost)
 
                 // Ability payment context — lets the solver consider restricted mana that's
                 // only spendable on this kind of activation (e.g., Steelswarm Operator's mana
