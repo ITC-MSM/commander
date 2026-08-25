@@ -9,6 +9,7 @@ import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.handlers.effects.permanent.types.setDfcFace
 import com.wingedsheep.engine.handlers.effects.permanent.types.stampDoubleFacedFrontFace
+import com.wingedsheep.engine.mechanics.StateBasedActionChecker
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -57,6 +58,7 @@ class PlayLandHandler(
                                  com.wingedsheep.sdk.scripting.effects.Effect,
                                  com.wingedsheep.engine.handlers.EffectContext) ->
         com.wingedsheep.engine.core.EffectResult,
+    private val sbaChecker: StateBasedActionChecker,
 ) : ActionHandler<PlayLand> {
     override val actionType: KClass<PlayLand> = PlayLand::class
 
@@ -154,7 +156,39 @@ class PlayLandHandler(
         else execute(state, action)
     }
 
+    /**
+     * Playing a land is a special action (CR 116.2a) — it uses no stack and the player keeps
+     * priority afterwards. State-based actions are still checked before that player receives
+     * priority again (CR 704.3), and this is the only path onto the battlefield that doesn't go
+     * through spell resolution, so the check has to happen here or not at all.
+     *
+     * Without it a second copy of a legendary land simply stayed on the battlefield: the legend
+     * rule (CR 704.5j) is a state-based action, so playing the land was correctly legal, but
+     * nothing ever culled the duplicate. Casting a second legendary *spell* was unaffected, since
+     * PassPriorityHandler checks SBAs after resolution — which is why LegendRuleTest passed
+     * throughout.
+     */
     override fun execute(state: GameState, action: PlayLand): ExecutionResult {
+        val played = executePlay(state, action)
+        if (!played.isSuccess) return played
+
+        val sbaResult = sbaChecker.checkAndApply(played.state)
+        // An SBA that needs input (the legend rule's "which one do you keep?") pauses the action;
+        // the land is already on the battlefield, so the decision resolves against the real board.
+        if (sbaResult.isPaused) {
+            return ExecutionResult.paused(
+                sbaResult.state,
+                sbaResult.pendingDecision!!,
+                played.events + sbaResult.events,
+            )
+        }
+        return ExecutionResult.success(
+            sbaResult.state,
+            played.events + sbaResult.events,
+        ).copy(triggersAlreadyProcessed = played.triggersAlreadyProcessed)
+    }
+
+    private fun executePlay(state: GameState, action: PlayLand): ExecutionResult {
         val container = state.getEntity(action.cardId)
             ?: return ExecutionResult.error(state, "Card not found")
 
@@ -822,6 +856,7 @@ class PlayLandHandler(
                 services.triggerProcessor,
                 services.conditionEvaluator,
                 services.effectExecutorRegistry::execute,
+                services.sbaChecker,
             )
         }
     }
