@@ -675,6 +675,143 @@
     ]
 }
 
+// Divide by Zero
+{
+    "name": "Divide by Zero",
+    "manaCost": "{2}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Return target spell or permanent with mana value 1 or greater to its owner's hand.\nLearn. (You may reveal a Lesson card you own from outside the game and put it into your hand, or discard a card to draw a card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ReturnSpellOrPermanentToOwnersHand",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target spell or permanent with mana value 1 or greater"
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "learn_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "learn_hand",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "learn_discarded",
+                            "prompt": "Learn — you may discard a card to draw a card"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "learn_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "learn_discarded",
+                            "ifNotEmpty": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "ifEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Sideboard",
+                                            "filter": "Lesson"
+                                        },
+                                        "storeAs": "learn_lessons"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "learn_lessons",
+                                        "selection": {
+                                            "type": "ChooseUpTo",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "learn_lessonsFound"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "learn_lessonsFound",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Hand"
+                                        },
+                                        "revealed": true
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Learn"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetSpellOrPermanent",
+                "id": "target spell or permanent with mana value 1 or greater",
+                "permanentFilter": {
+                    "cardPredicates": [
+                        "IsPermanent",
+                        {
+                            "type": "ManaValueAtLeast",
+                            "min": 1
+                        }
+                    ]
+                },
+                "spellFilter": {
+                    "cardPredicates": [
+                        {
+                            "type": "ManaValueAtLeast",
+                            "min": 1
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "41",
+        "rarity": "UNCOMMON",
+        "artist": "Liiga Smilshkalne",
+        "flavorText": "\"Misery. Inadequacy. Failure. The common denominator is you.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/9/1958d96e-ec44-48ab-80b1-5b01a24ac7b8.jpg?1783927380"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Dream Strix
 {
     "name": "Dream Strix",

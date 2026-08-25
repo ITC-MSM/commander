@@ -1,3 +1,189 @@
+// Boseiju, Who Endures
+{
+    "name": "Boseiju, Who Endures",
+    "manaCost": "",
+    "typeLine": "Legendary Land",
+    "oracleText": "{T}: Add {G}.\nChannel — {1}{G}, Discard this card: Destroy target artifact, enchantment, or nonbasic land an opponent controls. That player may search their library for a land card with a basic land type, put it onto the battlefield, then shuffle. This ability costs {1} less to activate for each legendary creature you control.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{G}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target artifact, enchantment, or nonbasic land an opponent controls"
+                            },
+                            "destination": "Graveyard",
+                            "byDestruction": true
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Players",
+                                "players": {
+                                    "type": "ControllerOf",
+                                    "targetDescription": "the destroyed permanent"
+                                }
+                            },
+                            "body": {
+                                "type": "Gated",
+                                "gate": "Gate.MayDecide",
+                                "then": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "GatherCards",
+                                            "source": {
+                                                "type": "FromZone",
+                                                "zone": "Library",
+                                                "filter": {
+                                                    "cardPredicates": [
+                                                        "IsLand",
+                                                        {
+                                                            "type": "Or",
+                                                            "predicates": [
+                                                                {
+                                                                    "type": "HasBasicLandType",
+                                                                    "landType": "Plains"
+                                                                },
+                                                                {
+                                                                    "type": "HasBasicLandType",
+                                                                    "landType": "Island"
+                                                                },
+                                                                {
+                                                                    "type": "HasBasicLandType",
+                                                                    "landType": "Swamp"
+                                                                },
+                                                                {
+                                                                    "type": "HasBasicLandType",
+                                                                    "landType": "Mountain"
+                                                                },
+                                                                {
+                                                                    "type": "HasBasicLandType",
+                                                                    "landType": "Forest"
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "storeAs": "searchable"
+                                        },
+                                        {
+                                            "type": "SelectFromCollection",
+                                            "from": "searchable",
+                                            "selection": {
+                                                "type": "ChooseUpTo",
+                                                "count": {
+                                                    "type": "Fixed",
+                                                    "amount": 1
+                                                }
+                                            },
+                                            "storeSelected": "found"
+                                        },
+                                        {
+                                            "type": "MoveCollection",
+                                            "from": "found",
+                                            "destination": {
+                                                "type": "ToZone",
+                                                "zone": "Battlefield"
+                                            }
+                                        },
+                                        "ShuffleLibrary",
+                                        "EmitLibrarySearchedEvent"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    {
+                                        "type": "Or",
+                                        "predicates": [
+                                            {
+                                                "type": "Or",
+                                                "predicates": [
+                                                    "IsArtifact",
+                                                    "IsEnchantment"
+                                                ]
+                                            },
+                                            {
+                                                "type": "And",
+                                                "predicates": [
+                                                    "IsLand",
+                                                    {
+                                                        "type": "Not",
+                                                        "predicate": "IsBasicLand"
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "controllerPredicate": "ControlledByOpponent"
+                            }
+                        },
+                        "id": "target artifact, enchantment, or nonbasic land an opponent controls"
+                    }
+                ],
+                "activateFromZone": "Hand",
+                "genericCostReduction": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            "IsLegendary"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "266",
+        "rarity": "RARE",
+        "artist": "Chris Ostrowski",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/1/2135ac5a-187b-4dc9-8f82-34e8d1603416.jpg?1783923818"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Circuit Mender
 {
     "name": "Circuit Mender",
@@ -50,6 +236,97 @@
         "imageUri": "https://cards.scryfall.io/normal/front/d/e/defaeb68-3f8a-4740-b13f-8c71c7e9c8b4.jpg?1783923827"
     },
     "colorIdentityOverride": []
+}
+
+// Eiganjo, Seat of the Empire
+{
+    "name": "Eiganjo, Seat of the Empire",
+    "manaCost": "",
+    "typeLine": "Legendary Land",
+    "oracleText": "{T}: Add {W}.\nChannel — {2}{W}, Discard this card: It deals 4 damage to target attacking or blocking creature. This ability costs {1} less to activate for each legendary creature you control.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{W}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target attacking or blocking creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    {
+                                        "type": "StateOr",
+                                        "predicates": [
+                                            "IsAttacking",
+                                            "IsBlocking"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        "id": "target attacking or blocking creature"
+                    }
+                ],
+                "activateFromZone": "Hand",
+                "genericCostReduction": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            "IsLegendary"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "268",
+        "rarity": "RARE",
+        "artist": "Julian Kok Joon Wen",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c375a022-5b57-496d-a802-e4ea8376e9e4.jpg?1783923818"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }
 
 // Experimental Synthesizer
@@ -178,6 +455,81 @@
     ]
 }
 
+// Otawara, Soaring City
+{
+    "name": "Otawara, Soaring City",
+    "manaCost": "",
+    "typeLine": "Legendary Land",
+    "oracleText": "{T}: Add {U}.\nChannel — {3}{U}, Discard this card: Return target artifact, creature, enchantment, or planeswalker to its owner's hand. This ability costs {1} less to activate for each legendary creature you control.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}{U}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact, creature, enchantment, or planeswalker"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact|creature|enchantment|planeswalker"
+                        },
+                        "id": "target artifact, creature, enchantment, or planeswalker"
+                    }
+                ],
+                "activateFromZone": "Hand",
+                "genericCostReduction": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            "IsLegendary"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "271",
+        "rarity": "RARE",
+        "artist": "Alayna Danner",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/8/486d7edc-d983-41f0-8b78-c99aecd72996.jpg?1783923816"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Secluded Courtyard
 {
     "name": "Secluded Courtyard",
@@ -223,6 +575,95 @@
     "colorIdentityOverride": []
 }
 
+// Sokenzan, Crucible of Defiance
+{
+    "name": "Sokenzan, Crucible of Defiance",
+    "manaCost": "",
+    "typeLine": "Legendary Land",
+    "oracleText": "{T}: Add {R}.\nChannel — {3}{R}, Discard this card: Create two 1/1 colorless Spirit creature tokens. They gain haste until end of turn. This ability costs {1} less to activate for each legendary creature you control.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}{R}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "power": 1,
+                            "toughness": 1,
+                            "colors": [],
+                            "creatureTypes": [
+                                "Spirit"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/c/a/ca20548f-6324-4858-adbe-87303ff1ca52.jpg?1783923715"
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Collection",
+                                "collection": "createdTokens"
+                            },
+                            "body": {
+                                "type": "GrantKeyword",
+                                "keyword": "HASTE",
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                },
+                "activateFromZone": "Hand",
+                "genericCostReduction": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            "IsLegendary"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "276",
+        "rarity": "RARE",
+        "artist": "Lucas Staniec",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/a/aa548dcd-c1dd-492d-a69f-c65dfeef0633.jpg?1783923814"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Spirited Companion
 {
     "name": "Spirited Companion",
@@ -259,6 +700,125 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Takenuma, Abandoned Mire
+{
+    "name": "Takenuma, Abandoned Mire",
+    "manaCost": "",
+    "typeLine": "Legendary Land",
+    "oracleText": "{T}: Add {B}.\nChannel — {3}{B}, Discard this card: Mill three cards, then return a creature or planeswalker card from your graveyard to your hand. This ability costs {1} less to activate for each legendary creature you control.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}{B}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "TopOfLibrary",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 3
+                                        },
+                                        "isMill": true
+                                    },
+                                    "storeAs": "milled"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "milled",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "filter": "creature|planeswalker"
+                            },
+                            "storeAs": "takenumaGraveyard"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "takenumaGraveyard",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "takenumaReturned",
+                            "prompt": "Choose a creature or planeswalker card to return to your hand",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "takenumaReturned",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ]
+                },
+                "activateFromZone": "Hand",
+                "genericCostReduction": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            "IsLegendary"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "278",
+        "rarity": "RARE",
+        "artist": "Sam Burley",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/9/499037cc-a577-41cb-8ca2-5e117945634f.jpg?1783923812"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
