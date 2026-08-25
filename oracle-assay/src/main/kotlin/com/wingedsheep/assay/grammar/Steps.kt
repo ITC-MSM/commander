@@ -8,7 +8,9 @@ import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.assay.syntax.separated
 import com.wingedsheep.sdk.core.AbilityFlag
+import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.dsl.DynamicAmounts
@@ -17,7 +19,9 @@ import com.wingedsheep.sdk.dsl.Targets as SdkTargets
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.effects.AddCountersEffect
+import com.wingedsheep.sdk.scripting.effects.BecomeCreatureEffect
 import com.wingedsheep.sdk.scripting.effects.AddDynamicCountersEffect
 import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
@@ -961,6 +965,126 @@ object Steps {
     }
 
     /**
+     * "Until end of turn, target creature becomes a blue Serpent with base power and toughness
+     * 5/5." — the **animate**, and the first rule of the band [Durations] named when it measured
+     * what sits behind the fronted duration (54 lines animate a permanent into a creature).
+     *
+     * It is [pumpTargetPermanent]'s shape with a different payload, and it takes
+     * [Targets.singularQuantifiers] for that family's stated reason: Oracle's plural here is "each
+     * creature target player controls becomes …" (Polymorphist's Jest), which names a *group* rather
+     * than several targets, so the plural rows would read a group model as this one.
+     *
+     * The duration is the template's, with [frontedDuration] supplying the spelling 14 of the 17
+     * printed lines actually use — trailing stays canonical because it is corpus-wide canonical, and
+     * this rule inherits that decision rather than re-taking it per family.
+     *
+     * ### Two slots are singular on purpose, and it is a `Set` ordering finding
+     *
+     * `BecomeCreatureEffect` carries `creatureTypes: Set<String>` and `colors: Set<String>?`, and a
+     * set has no order for a printer to recover. For one member that costs nothing; for two, Oracle
+     * prints "a blue **Dragon Illusion**" (Dance of the Skywise) and nothing in the model says which
+     * word leads. [Tokens] settles the same question for *colours* — WUBRG is the printed order and
+     * [Color]'s declaration order is WUBRG — but there is no such order for creature types, so this
+     * rule reads exactly one of each and a multi-type animate declines. That is the honest verdict:
+     * the reading exists and the *spelling* is underdetermined, which is a decline rather than a
+     * guess. Colour reuses one leaf rather than [Tokens]' run for the same reason the count is
+     * singular — the corpus prints no two-colour animate — and widening it is one row the day it does.
+     *
+     * ### The colour clause is a layer with an empty row
+     *
+     * "becomes a **blue** Serpent" and "becomes a Dragon" are one sentence with and without a colour,
+     * and `colors = null` is the SDK's distinct value for the second (the permanent keeps its own
+     * colours). So the clause is an axis of the shape with an absent row, not template text — the
+     * omissible-modifier test in `AGENTS.md`, whose *yes, no* answer makes it a row of a shared layer.
+     *
+     * ### What is deliberately not here
+     *
+     * Every other rider Oracle prints on this sentence is a **different model field**, and each is a
+     * row of this shape the day it is written rather than something to approximate now: "loses all
+     * abilities" (Turn // Burn), "and gains flying" (Mordenkainen's Polymorph, `keywords`), "in
+     * addition to its other types" (Halsin, which is `addTypes` plus an additive subtype — see
+     * Relic's Roar for why that one cannot use `creatureTypes` at all). A template that quietly
+     * dropped any of them would read a different card; the reconstruct-and-compare in `match` is what
+     * makes the omission a decline instead.
+     */
+    private val animateTargetPermanent: List<Phrase<CardScript>> =
+        Targets.singularQuantifiers.flatMap { quantifier ->
+            listOf(true, false).map { coloured ->
+                fun scriptFor(
+                    count: Int,
+                    filter: GameObjectFilter,
+                    colour: Color?,
+                    type: Subtype,
+                    stats: Pair<Int, Int>,
+                ) = CardScript(
+                    spellEffect = quantifier.effectOver {
+                        Effects.BecomeCreature(
+                            target = it,
+                            power = stats.first,
+                            toughness = stats.second,
+                            creatureTypes = setOf(type.value),
+                            colors = colour?.let { c -> setOf(c.name) },
+                            duration = Duration.EndOfTurn,
+                        )
+                    },
+                    targetRequirements = listOf(quantifier.requirement(count, filter)),
+                )
+                val colourWord = if (coloured) "{colour} " else ""
+                val template = quantifier.splice(
+                    "{q}target {filter} becomes a $colourWord{type} with base power and " +
+                        "toughness {p}/{t} until end of turn"
+                )
+                phrase(
+                    template,
+                    name = "animate, ${quantifier.name}" + if (coloured) " (coloured)" else "",
+                ) {
+                    frontedDuration()
+                    if (quantifier.counted) slot(Targets.COUNT_SLOT, Cardinals.word)
+                    slot("filter", Filters.filter)
+                    if (coloured) slot("colour", Primitives.color)
+                    slot("type", Primitives.creatureSubtype)
+                    slot("p", Primitives.cardinal)
+                    slot("t", Primitives.cardinal)
+                    build {
+                        scriptFor(
+                            if (quantifier.counted) it.int(Targets.COUNT_SLOT) else 1,
+                            it.value("filter"),
+                            if (coloured) it.value<Color>("colour") else null,
+                            it.value("type"),
+                            it.int("p") to it.int("t"),
+                        )
+                    }
+                    match { script ->
+                        val animate = quantifier.memberOf(script.spellEffect) as? BecomeCreatureEffect
+                            ?: return@match null
+                        val colour = animate.colors?.singleOrNull()
+                            ?.let { name -> Color.entries.firstOrNull { it.name == name } }
+                        if (coloured != (colour != null)) return@match null
+                        val type = animate.creatureTypes.singleOrNull() ?: return@match null
+                        val power = (animate.power as? DynamicAmount.Fixed)?.amount ?: return@match null
+                        val toughness = (animate.toughness as? DynamicAmount.Fixed)?.amount
+                            ?: return@match null
+                        val requirement = script.targetRequirements.singleOrNull() ?: return@match null
+                        val filter = Targets.targetedFilter(requirement) ?: return@match null
+                        val count = if (quantifier.counted) requirement.count else 1
+                        if (quantifier.counted && !Cardinals.spellable(count)) return@match null
+                        if (script != scriptFor(count, filter, colour, Subtype(type), power to toughness)) {
+                            return@match null
+                        }
+                        bind(
+                            Targets.COUNT_SLOT to count,
+                            "filter" to filter,
+                            "colour" to colour,
+                            "type" to Subtype(type),
+                            "p" to power,
+                            "t" to toughness,
+                        )
+                    }
+                }
+            }
+        }
+
+    /**
      * "Put a +1/+1 counter on target creature.", "Put two -1/-1 counters on target Sliver you
      * control." — the counter verb over a noun phrase this clause chooses.
      *
@@ -1208,22 +1332,33 @@ object Steps {
     }
 
     /**
-     * "Destroy that creature. It can't be regenerated." — Dripping Dead, Phage, Toxin Sliver.
+     * "Destroy that creature." / "Destroy that creature. It can't be regenerated." — Vampire Slayer,
+     * East-Mark Cavalier, Dripping Dead, Phage, Toxin Sliver.
      *
      * "That creature" here is the creature the *trigger* named, not a target the spell chose, which
      * is a third anaphor beside [SelfSteps]' "it" and [Continuations]' "that creature": the sentence
-     * follows "Whenever ~ deals combat damage to a creature", and the model says
+     * follows "Whenever ~ deals damage to a Vampire", and the model says
      * `EffectTarget.TriggeringEntity`. It is reachable as an ordinary first clause because it
      * introduces nothing — the trigger already did — and it cannot collide with [Continuations],
      * which is only reachable from a *later* clause position.
+     *
+     * The regeneration rider is the **row axis**, not template text, and it is `AGENTS.md`'s *yes,
+     * yes* case: Oracle prints the sentence without the clause, and the SDK carries a distinct value
+     * for the version that has it (`Effects.Destroy(noRegenerate = …)`, which composes the destroy
+     * with the CR 701.15 shield in one facade call). So the two spellings are two rows of one shape
+     * over disjoint models rather than one rule with an optional tail — which is what the bare form
+     * needed, because a template that spelled the rider could not read "Destroy that creature." at
+     * all. It is the same defect shape the `.` band named, caught before it was frozen.
      */
-    private val destroyTriggeringNoRegenerate: Phrase<CardScript> = run {
+    private fun destroyTriggering(noRegenerate: Boolean): Phrase<CardScript> {
+        val rider = if (noRegenerate) ". it can't be regenerated" else ""
+        val tag = if (noRegenerate) " without regeneration" else ""
         val script = CardScript(
-            spellEffect = Effects.Destroy(EffectTarget.TriggeringEntity, noRegenerate = true)
+            spellEffect = Effects.Destroy(EffectTarget.TriggeringEntity, noRegenerate = noRegenerate)
         )
-        phrase(
-            "destroy that creature. it can't be regenerated",
-            name = "destroy the triggering creature without regeneration",
+        return phrase(
+            "destroy that creature$rider",
+            name = "destroy the triggering creature$tag",
         ) {
             build { script }
             match { if (it == script) bind() else null }
@@ -1333,7 +1468,8 @@ object Steps {
 
     private val permanentSteps: List<Phrase<CardScript>> = listOf(
         destroyTargetNoRegenerate,
-        destroyTriggeringNoRegenerate,
+        destroyTriggering(noRegenerate = true),
+        destroyTriggering(noRegenerate = false),
         sacrificeFiltered,
         sacrificeAnyNumber(excludeSource = false),
         sacrificeAnyNumber(excludeSource = true),
@@ -1866,6 +2002,7 @@ object Steps {
                 fixed = DynamicAmount.XValue,
             ) +
             pumpTargetPermanent +
+            animateTargetPermanent +
             grantToTargetPermanent +
             pumpAndGrantTarget +
             putCountersOnTargetPermanent +

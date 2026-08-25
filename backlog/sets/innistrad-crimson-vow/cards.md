@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 211 / 273
+**Implemented:** 216 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [ ] Aim for the Head
@@ -84,7 +84,7 @@
 - [x] Dreamroot Cascade
 - [ ] Dreamshackle Geist
 - [ ] Drogskol Infantry
-- [ ] Dying to Serve
+- [x] Dying to Serve
 - [x] Edgar's Awakening
 - [x] Edgar, Charmed Groom
 - [x] End the Festivities
@@ -166,7 +166,7 @@
 - [ ] Mischievous Catgeist
 - [x] Moldgraf Millipede
 - [x] Mountain
-- [ ] Mulch
+- [x] Mulch
 - [x] Nature's Embrace
 - [x] Nebelgast Beguiler
 - [x] Necroduality
@@ -210,7 +210,7 @@
 - [x] Scattered Thoughts
 - [ ] Screaming Swarm
 - [x] Selhoff Entomber
-- [ ] Serpentine Ambush
+- [x] Serpentine Ambush
 - [x] Shattered Sanctum
 - [x] Sheltering Boughs
 - [x] Sigarda's Imprisonment
@@ -223,7 +223,7 @@
 - [ ] Sorin the Mirthless
 - [x] Soulcipher Board
 - [x] Spiked Ripsaw
-- [ ] Splendid Reclamation
+- [x] Splendid Reclamation
 - [x] Spore Crawler
 - [x] Sporeback Wolf
 - [x] Steelclad Spirit
@@ -250,7 +250,7 @@
 - [x] Unhallowed Phalanx
 - [x] Unholy Officiant
 - [x] Valorous Stance
-- [ ] Vampire Slayer
+- [x] Vampire Slayer
 - [x] Vampire's Kiss
 - [x] Vampires' Vengeance
 - [x] Vilespawn Spider

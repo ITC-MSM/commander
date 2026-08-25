@@ -4256,6 +4256,49 @@
     ]
 }
 
+// Splendid Reclamation
+{
+    "name": "Splendid Reclamation",
+    "manaCost": "{3}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return all land cards from your graveyard to the battlefield tapped.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Graveyard",
+                        "filter": "land"
+                    },
+                    "storeAs": "graveyard_lands"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "graveyard_lands",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield",
+                        "placement": "Tapped"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "171",
+        "rarity": "RARE",
+        "artist": "Wesley Burt",
+        "flavorText": "\"No matter how much a plane has suffered, there is a way to restore it.\"\n—Nissa Revane",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/e/7e17e172-3a46-4957-b711-edc53f70a284.jpg?1783937436"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Spontaneous Mutation
 {
     "name": "Spontaneous Mutation",
