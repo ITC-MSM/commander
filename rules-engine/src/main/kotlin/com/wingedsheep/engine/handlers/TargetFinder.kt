@@ -573,7 +573,16 @@ class TargetFinder(
 
         // Add all spells on the stack — only actual spells (CR 112.1), never abilities
         // on the stack (CR 113.3b/c, 113.7a), consistent with findSpellTargets above.
-        targets.addAll(state.stack.filter { spellId -> state.isSpellOnStack(spellId) })
+        // The stack half carries its own filter (Divide by Zero: "with mana value 1 or
+        // greater"), independent of the battlefield half's.
+        val spellFilter = requirement.spellFilter
+        targets.addAll(
+            state.stack.filter { spellId ->
+                state.isSpellOnStack(spellId) &&
+                    (spellFilter == null ||
+                        predicateEvaluator.matches(state, projected, spellId, spellFilter, predicateContext))
+            }
+        )
 
         return targets
     }
