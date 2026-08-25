@@ -779,6 +779,14 @@ object Triggers {
                 "for the first time each turn",
             SdkTriggers.Valiant,
         ),
+        // The second row of the family the note above predicted, and the shape it predicted:
+        // Stormchaser Drake prints a different sentence, so it gets a different constant rather than
+        // turning "or ability" and "for the first time each turn" into optional slots the model has
+        // no field to decide.
+        triggerRule(
+            "whenever ${Normalizer.SELF} becomes the target of a spell you control",
+            SdkTriggers.BecomesTargetOfYourSpell,
+        ),
         // Morph's payoff. "Is turned face up" is a `When` rather than a `Whenever` because it can
         // happen once to a permanent, which is the property that decides the word (see [rules]).
         triggerRule("when ${Normalizer.SELF} is turned face up", SdkTriggers.TurnedFaceUp),

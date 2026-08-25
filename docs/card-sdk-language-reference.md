@@ -5714,6 +5714,11 @@ Triggers.youCastSpell(
 - `BecomesTargetByOpponent` — the self-bound counterpart of the above: source becomes the target of a
   spell or ability **an opponent controls** (Cactarantula's "Whenever this creature becomes the target
   of a spell or ability an opponent controls, you may draw a card").
+- `BecomesTargetOfYourSpell` — the source becomes the target of a **spell you control** (Stormchaser
+  Drake: "Whenever this creature becomes the target of a spell you control, draw a card"). Self-bound
+  `BecomesTargetEvent(byYou = true, spellsOnly = true)` — the same two axes `BecomesTargetOfSpell` and
+  `BecomesTargetOfAbility` read, crossed. It is `Valiant` without the once-a-turn limit and without
+  abilities.
 - `BecomesTargetOfSpell(filter)` — a permanent matching `filter` becomes the target of a **spell**
   only (not an ability). Sets `BecomesTargetEvent(spellsOnly = true)`, which matches only when the
   targeting source is a spell on the stack (`sourceIsSpell`). ANY-bound; a filter like "a Spirit you

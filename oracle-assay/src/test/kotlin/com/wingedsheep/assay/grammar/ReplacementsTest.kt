@@ -9,7 +9,9 @@ import com.wingedsheep.sdk.scripting.CardNamePool
 import com.wingedsheep.sdk.scripting.ChoiceType
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.EntersWithChoice
+import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.ModifyLifeGain
 import com.wingedsheep.sdk.scripting.ModeOption
 import com.wingedsheep.sdk.scripting.conditions.IsYourTurn
 import com.wingedsheep.sdk.scripting.references.Player
@@ -198,6 +200,43 @@ class ReplacementsTest : StringSpec({
             EntersWithChoice(ChoiceType.COLOR, chooser = Player.EachOpponent),
             EntersWithChoice(ChoiceType.CREATURE_TYPE, allowedCreatureTypes = listOf("Elf")),
             EntersWithChoice(ChoiceType.MODE, modeOptions = listOf(ModeOption("khans", "Khans"))),
+        ).forEach { value ->
+            Grammar.abilityLine.printLine(
+                CardFragment(script = CardScript(replacementEffects = listOf(value)))
+            ) shouldBe null
+        }
+    }
+
+    // Heron of Hope, Leyline of Hope, Angel of Vitality: the additive form, spelled the way
+    // `ModifyLifeGain.description` spells it.
+    "the life-gain replacement is the type's two arithmetic fields" {
+        fragment("If you would gain life, you gain that much life plus 1 instead.") shouldBe CardFragment(
+            script = CardScript(
+                replacementEffects = listOf(
+                    ModifyLifeGain(
+                        multiplier = 1,
+                        modifier = 1,
+                        appliesTo = EventPattern.LifeGainEvent(player = Player.You),
+                    )
+                )
+            )
+        )
+        roundTrips("If you would gain life, you gain that much life plus 1 instead.")
+        roundTrips("If you would gain life, you gain twice that much life instead.")
+    }
+
+    // The two spellings the SDK has for "gains no life" — this family builds neither, so a zeroed
+    // `ModifyLifeGain` refuses to print rather than colliding with `PreventLifeGain`. And a value
+    // carrying a `restrictions` gate (Phial of Galadriel) has nowhere to put it.
+    "a zeroed or gated life-gain modification refuses to print" {
+        listOf(
+            ModifyLifeGain(multiplier = 0, modifier = 0, appliesTo = EventPattern.LifeGainEvent(Player.You)),
+            ModifyLifeGain(
+                multiplier = 2,
+                appliesTo = EventPattern.LifeGainEvent(Player.You),
+                restrictions = listOf(Conditions.LifeAtMost(5)),
+            ),
+            ModifyLifeGain(multiplier = 2, appliesTo = EventPattern.LifeGainEvent(Player.Each)),
         ).forEach { value ->
             Grammar.abilityLine.printLine(
                 CardFragment(script = CardScript(replacementEffects = listOf(value)))

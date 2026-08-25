@@ -12,6 +12,8 @@ import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.EntersWithCounters
 import com.wingedsheep.sdk.scripting.EntersWithDynamicCounters
+import com.wingedsheep.sdk.scripting.EventPattern
+import com.wingedsheep.sdk.scripting.ModifyLifeGain
 import com.wingedsheep.sdk.scripting.ReplacementEffect
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.references.Player
@@ -357,6 +359,71 @@ object Replacements {
         listOf(announced, defined)
     }
 
+    /**
+     * "If you would gain life, you gain that much life plus 1 instead." — Heron of Hope, Leyline of
+     * Hope, Angel of Vitality; and "…you gain twice that much life instead." — Alhammarret's
+     * Archive, the Wind Crystal.
+     *
+     * The first replacement family here that is not about the source's own entry, and the first
+     * whose sentence has a *subject* at all. Both rows are one shape over `ModifyLifeGain`'s two
+     * arithmetic fields, spelled the way the type's own `description` spells them — the additive
+     * form as "that much life plus {n}" and the multiplicative as "twice that much life" — so a
+     * future card printing "three times that much life" is a row and not a rewrite.
+     *
+     * ### The subject is a constant, and the corpus is why
+     *
+     * `appliesTo` could take any `Player`, so this looks like a slot. It is not, because the other
+     * subjects Oracle prints are **not this type**: "If a player would gain life, that player gains
+     * no life instead." is `PreventLifeGain` (Sulfuric Vortex) and "If an opponent would gain life,
+     * that player loses that much life instead." is a life-*loss* conversion (Tainted Remedy) — two
+     * models this family cannot build and must not approximate. Every one of the 14 corpus lines
+     * `ModifyLifeGain` can hold says "you", so the word is in the template and the day a card prints
+     * another gainer for this model it becomes a slot with a real second value in it.
+     *
+     * ### `ModifyLifeGain(0, 0)` is a spelling this rule never emits
+     *
+     * "gains no life" is expressible twice in the SDK — as this type with both fields zeroed, and as
+     * `PreventLifeGain`, which is what the 8 hand-written cards write. That is the module's
+     * two-spellings rule: the grammar prints the majority and reports the other, so the `build`
+     * halves below refuse a zero multiplier rather than acquiring a third row that would collide
+     * with a `PreventLifeGain` family the day someone writes one.
+     *
+     * The `match` halves are the family's usual reconstruct-and-compare, so a value carrying a
+     * `restrictions` gate — Phial of Galadriel's "while you have 5 or less life" — declines rather
+     * than printing a sentence with no room for it.
+     */
+    private val modifyLifeGain: List<Phrase<ReplacementEffect>> = run {
+        fun effectFor(multiplier: Int, modifier: Int): ReplacementEffect = ModifyLifeGain(
+            multiplier = multiplier,
+            modifier = modifier,
+            appliesTo = EventPattern.LifeGainEvent(player = Player.You),
+        )
+        /** The two fields, or null on any value this family cannot say. */
+        fun readFields(effect: ReplacementEffect): Pair<Int, Int>? {
+            val gain = effect as? ModifyLifeGain ?: return null
+            if (gain.multiplier == 0) return null
+            if (gain != effectFor(gain.multiplier, gain.modifier)) return null
+            return gain.multiplier to gain.modifier
+        }
+        val plus = phrase<ReplacementEffect>(
+            "if you would gain life, you gain that much life plus {n} instead.",
+            name = "gain that much life plus a number instead",
+        ) {
+            slot("n", Primitives.cardinal)
+            build { if (it.int("n") >= 1) effectFor(multiplier = 1, modifier = it.int("n")) else null }
+            match { effect ->
+                val (multiplier, modifier) = readFields(effect) ?: return@match null
+                if (multiplier != 1 || modifier < 1) return@match null
+                bind("n" to modifier)
+            }
+        }
+        val twice = constant<ReplacementEffect>(
+            "if you would gain life, you gain twice that much life instead.",
+            effectFor(multiplier = 2, modifier = 0),
+        )
+        listOf(plus, twice)
+    }
+
     val replacement: Phrase<ReplacementEffect> = oneOf(
         "a replacement effect",
         listOf(
@@ -366,6 +433,6 @@ object Replacements {
             entersWithChosenNumber,
             entersWithLookedUpCardName,
         ) + choiceNouns.map { (noun, value) -> entersWithChoice(noun, value) } +
-            entersWithCounters + entersWithDynamicCounters,
+            entersWithCounters + entersWithDynamicCounters + modifyLifeGain,
     )
 }

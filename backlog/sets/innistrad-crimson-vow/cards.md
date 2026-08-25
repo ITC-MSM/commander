@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 207 / 273
+**Implemented:** 211 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [ ] Aim for the Head
@@ -49,7 +49,7 @@
 - [x] Chandra, Dressed to Kill
 - [ ] Change of Fortune
 - [x] Child of the Pack
-- [ ] Chill of the Grave
+- [x] Chill of the Grave
 - [ ] Circle of Confinement
 - [x] Cloaked Cadet
 - [x] Cobbled Lancer
@@ -122,7 +122,7 @@
 - [x] Headless Rider
 - [x] Henrika Domnathi
 - [x] Hero's Downfall
-- [ ] Heron of Hope
+- [x] Heron of Hope
 - [x] Heron-Blessed Geist
 - [x] Hiveheart Shaman
 - [x] Honeymoon Hearse
@@ -189,7 +189,7 @@
 - [x] Piercing Light
 - [x] Plains
 - [x] Pointed Discussion
-- [ ] Pyre Spawn
+- [x] Pyre Spawn
 - [ ] Radiant Grace
 - [ ] Ragged Recluse
 - [x] Reckless Impulse
@@ -230,7 +230,7 @@
 - [x] Stensia Uprising
 - [x] Stitched Assistant
 - [x] Stormcarved Coast
-- [ ] Stormchaser Drake
+- [x] Stormchaser Drake
 - [x] Sundown Pass
 - [ ] Supernatural Rescue
 - [x] Sure Strike

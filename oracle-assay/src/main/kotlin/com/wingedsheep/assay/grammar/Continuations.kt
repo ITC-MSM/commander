@@ -5,10 +5,12 @@ import com.wingedsheep.assay.syntax.Phrase
 import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
+import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.model.CardScript
+import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
@@ -59,6 +61,33 @@ object Continuations {
 
     private val tapThatCreature: Phrase<CardScript> =
         referringStep("tap that creature", "tap that creature") { Effects.Tap(Targets.bound()) }
+
+    /**
+     * "It doesn't untap during its controller's next untap step." — the rider on a tap.
+     *
+     * The clause after "Tap target creature." on Crippling Chill, Chill of the Grave, Frost Lynx and
+     * their whole cycle, and it is a continuation for the file's reason rather than a second
+     * spelling of anything: the "it" is the creature the *previous* sentence tapped, and the
+     * sentence means nothing on its own — no card prints it as its first line.
+     *
+     * It is one row rather than a shape because the axis a shape would slot is not in the sentence.
+     * `Duration.UntilAfterAffectedControllersNextUntap`'s own KDoc says it exists for this clause and
+     * nothing else, and `AbilityFlag.DOESNT_UNTAP` is the flag the SDK names for it; the pair is the
+     * whole model, so the printed words are all constant. The *stronger* restriction — "can't become
+     * untapped", `AbilityFlag.CANT_BE_UNTAPPED` — is a different flag with a different duration and
+     * becomes its own row where a card prints it.
+     */
+    private val itDoesntUntap: Phrase<CardScript> =
+        referringStep(
+            "it doesn't untap during its controller's next untap step",
+            "the target doesn't untap next turn",
+        ) {
+            Effects.GrantKeyword(
+                AbilityFlag.DOESNT_UNTAP,
+                Targets.bound(),
+                Duration.UntilAfterAffectedControllersNextUntap,
+            )
+        }
 
     /**
      * "~ deals 2 damage to that creature." — the counted verb over the anaphor.
@@ -226,6 +255,7 @@ object Continuations {
     val all: List<Phrase<CardScript>> = listOf(
         untapThatCreature,
         tapThatCreature,
+        itDoesntUntap,
         damageToThatCreature,
         itGets,
         ownerGainsLife,
