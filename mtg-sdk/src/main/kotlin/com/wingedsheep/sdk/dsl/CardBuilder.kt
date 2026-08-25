@@ -925,6 +925,7 @@ class CardBuilder(private val name: String) {
         } else {
             rawSpellEffect
         }
+        spellBuilder?.validateResolutionDestination(name)
         val script = CardScript(
             spellEffect = spellEffect,
             targetRequirements = spellBuilder?.targetRequirements ?: emptyList(),
@@ -1086,6 +1087,20 @@ class SpellBuilder {
     }
 
     internal val shufflesIntoLibraryOnResolve: Boolean get() = selfShuffleIntoLibraryOnResolve
+
+    /**
+     * A card prints "Exile <card name>." or "Shuffle <card name> into its owner's library.", never
+     * both — they are two spellings of the same slot, the CR 608.2n destination. Setting both is a
+     * card-authoring mistake, and without this it resolves silently to whichever clause
+     * `StackResolver` happens to check first. Order-independent, so it also catches
+     * [paradigm] (which implies [selfExile]) paired with [selfShuffleIntoLibrary] either way round.
+     */
+    internal fun validateResolutionDestination(cardName: String) {
+        require(!(selfExileOnResolve && selfShuffleIntoLibraryOnResolve)) {
+            "$cardName sets both selfExile() and selfShuffleIntoLibrary(); a spell has one " +
+                "CR 608.2n destination, so pick the clause the card actually prints"
+        }
+    }
 
     private var paradigm: Boolean = false
 
@@ -2130,6 +2145,7 @@ class CardFaceBuilder(private val name: String) {
         } else {
             rawSpellEffect
         }
+        spellBuilder?.validateResolutionDestination(name)
         val script = CardScript(
             spellEffect = spellEffect,
             targetRequirements = spellBuilder?.targetRequirements ?: emptyList(),

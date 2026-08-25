@@ -25,9 +25,11 @@ import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.SelectionMode
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 
 /**
  * `spell { selfShuffleIntoLibrary() }` — the card-intrinsic "Shuffle <card name> into its owner's
@@ -306,6 +308,24 @@ class SelfShuffleIntoLibraryOnResolveScenarioTest : FunSpec({
                 shufflesBefore + 1
             driver.getGraveyardCardNames(you).contains("Test Zenith Plain") shouldBe false
         }
+    }
+
+    test("a card can't print both destination clauses") {
+        // Two spellings of one slot (the CR 608.2n destination). Without the guard this resolves
+        // silently to whichever clause StackResolver checks first, which is not something a card
+        // author should have to know.
+        val ex = shouldThrow<IllegalArgumentException> {
+            card("Test Zenith Contradictory") {
+                manaCost = "{1}"
+                typeLine = "Sorcery"
+                spell {
+                    effect = Effects.GainLife(2)
+                    selfExile()
+                    selfShuffleIntoLibrary()
+                }
+            }
+        }
+        ex.message shouldContain "Test Zenith Contradictory"
     }
 
     test("without the clause the same spell goes to the graveyard — the control") {
