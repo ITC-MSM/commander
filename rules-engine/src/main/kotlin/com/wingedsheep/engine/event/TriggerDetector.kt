@@ -25,6 +25,7 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.nameVisibleToAll
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
@@ -670,7 +671,11 @@ class TriggerDetector(
                 effect = com.wingedsheep.sdk.dsl.Effects.SacrificeTarget(
                     com.wingedsheep.sdk.scripting.targets.EffectTarget.Self
                 ),
-                descriptionOverride = "Evoke — Sacrifice ${cardComponent.name}"
+                // The name is interpolated into the text, so the mask has to be applied here —
+                // masking AbilityTriggeredEvent.sourceName downstream would leave it in the
+                // description. Evoke can't apply to a face-down cast today; Decayed below can.
+                descriptionOverride =
+                    "Evoke — Sacrifice ${nameVisibleToAll(state, event.entityId, cardComponent.name)}"
             )
             triggers.add(
                 PendingTrigger(
@@ -717,7 +722,8 @@ class TriggerDetector(
                         com.wingedsheep.sdk.scripting.targets.EffectTarget.Self
                     )
                 ),
-                descriptionOverride = "Decayed — When ${cardComponent.name} attacks, " +
+                descriptionOverride = "Decayed — When " +
+                    "${nameVisibleToAll(state, attackerId, cardComponent.name)} attacks, " +
                     "sacrifice it at end of combat."
             )
             triggers.add(

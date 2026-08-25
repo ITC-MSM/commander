@@ -8,6 +8,7 @@ import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.mechanics.StateBasedActionChecker
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.nameVisibleToAll
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Step
 import kotlin.reflect.KClass
@@ -359,8 +360,11 @@ class SubmitDecisionHandler(
             }
 
             pending is ChooseTargetsDecision && response is TargetsResponse -> {
+                // A face-down permanent or spell has no name (CR 708.2a / 708.4) — naming it here
+                // would leak a morphed or disguised card the moment somebody targeted it.
                 val targetNames = response.selectedTargets.values.flatten().mapNotNull { targetId ->
                     state.getEntity(targetId)?.get<CardComponent>()?.name
+                        ?.let { nameVisibleToAll(state, targetId, it) }
                         ?: if (state.turnOrder.contains(targetId)) "player" else null
                 }
                 if (targetNames.isNotEmpty()) {
@@ -371,6 +375,7 @@ class SubmitDecisionHandler(
             pending is DistributeDecision && response is DistributionResponse -> {
                 val parts = response.distribution.mapNotNull { (targetId, amount) ->
                     val name = state.getEntity(targetId)?.get<CardComponent>()?.name
+                        ?.let { nameVisibleToAll(state, targetId, it) }
                         ?: if (state.turnOrder.contains(targetId)) "player" else null
                     name?.let { "$amount to $it" }
                 }
