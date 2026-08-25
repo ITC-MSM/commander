@@ -3,10 +3,8 @@ package com.wingedsheep.mtg.sets.definitions.mir.cards
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
-import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
@@ -19,9 +17,9 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * creature gets -1/-1 until end of turn.)
  * {W}{W}: This creature gains first strike until end of turn.
  *
- * The Flanking keyword on the [Keyword] enum is display-only; per-card cards in
- * Mirage block wire the trigger explicitly here so the `withoutKeyword(FLANKING)`
- * filter excludes other flanking creatures correctly.
+ * Flanking needs no per-card wiring: `TriggerAbilityResolver.getFlankingTriggeredAbilities`
+ * synthesizes [com.wingedsheep.sdk.scripting.Flanking.blockedByNonFlankerTrigger] for any
+ * creature with the projected keyword (CR 702.25b), the same way ward and suspend are derived.
  */
 val ZhalfirinKnight = card("Zhalfirin Knight") {
     manaCost = "{2}{W}"
@@ -34,13 +32,6 @@ val ZhalfirinKnight = card("Zhalfirin Knight") {
         "{W}{W}: This creature gains first strike until end of turn."
 
     keywords(Keyword.FLANKING)
-
-    triggeredAbility {
-        trigger = Triggers.becomesBlocked(
-            filter = GameObjectFilter.Creature.withoutKeyword(Keyword.FLANKING)
-        )
-        effect = Effects.ModifyStats(-1, -1, EffectTarget.TriggeringEntity)
-    }
 
     activatedAbility {
         cost = Costs.Mana("{W}{W}")
