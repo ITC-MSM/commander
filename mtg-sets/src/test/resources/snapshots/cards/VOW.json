@@ -11387,6 +11387,55 @@
     ]
 }
 
+// Serpentine Ambush
+{
+    "name": "Serpentine Ambush",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Until end of turn, target creature becomes a blue Serpent with base power and toughness 5/5.",
+    "script": {
+        "spellEffect": {
+            "type": "BecomeCreature",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            },
+            "power": {
+                "type": "Fixed",
+                "amount": 5
+            },
+            "toughness": {
+                "type": "Fixed",
+                "amount": 5
+            },
+            "creatureTypes": [
+                "Serpent"
+            ],
+            "colors": [
+                "BLUE"
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "77",
+        "artist": "Jokubas Uogintas",
+        "flavorText": "The merchant did guarantee the new bait would bring in something big.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/8/b8214b1c-29f8-4986-89ac-2d7fc929edf3.jpg?1783924884"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Shattered Sanctum
 {
     "name": "Shattered Sanctum",
