@@ -888,3 +888,54 @@
         "BLUE"
     ]
 }
+
+// Tower Defense
+{
+    "name": "Tower Defense",
+    "manaCost": "{1}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Creatures you control get +0/+5 and gain reach until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            },
+            "body": {
+                "type": "Composite",
+                "effects": [
+                    {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 5
+                        },
+                        "target": "Self"
+                    },
+                    {
+                        "type": "GrantKeyword",
+                        "keyword": "REACH",
+                        "target": "Self"
+                    }
+                ]
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "137",
+        "rarity": "UNCOMMON",
+        "artist": "Seb McKinnon",
+        "flavorText": "\"The drakes are practice. We may one day need to bring down a sky swallower, or maybe even Rakdos himself.\"\n—Korun Nar, Rubblebelt hunter",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/5/857e1eb2-f3f2-4c7f-9965-da9d7e385223.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}

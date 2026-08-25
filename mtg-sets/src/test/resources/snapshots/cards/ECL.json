@@ -9033,62 +9033,6 @@
     ]
 }
 
-// Graveshifter
-{
-    "name": "Graveshifter",
-    "manaCost": "{3}{B}",
-    "typeLine": "Creature — Shapeshifter",
-    "oracleText": "Changeling (This card is every creature type.)\nWhen this creature enters, you may return target creature card from your graveyard to your hand.",
-    "creatureStats": {
-        "power": 2,
-        "toughness": 2
-    },
-    "keywords": [
-        "CHANGELING"
-    ],
-    "script": {
-        "triggeredAbilities": [
-            {
-                "id": "ability_1",
-                "trigger": {
-                    "type": "ZoneChangeEvent",
-                    "to": "Battlefield"
-                },
-                "effect": {
-                    "type": "Gated",
-                    "gate": "Gate.MayDecide",
-                    "then": {
-                        "type": "MoveToZone",
-                        "target": {
-                            "type": "BoundVariable",
-                            "name": "target creature card from your graveyard"
-                        },
-                        "destination": "Hand"
-                    }
-                },
-                "targetRequirement": {
-                    "type": "TargetObject",
-                    "filter": {
-                        "baseFilter": "creature own:you",
-                        "zone": "Graveyard"
-                    },
-                    "id": "target creature card from your graveyard"
-                }
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "104",
-        "rarity": "UNCOMMON",
-        "artist": "Deborah Garcia",
-        "flavorText": "We'll see a changeling at their funeral\n—Kithkin saying meaning \"they won't be forgotten\"",
-        "imageUri": "https://cards.scryfall.io/normal/front/d/a/dadb02b9-d3a0-4b51-bbc3-53b2316cd70d.jpg?1767873656"
-    },
-    "colorIdentityOverride": [
-        "BLACK"
-    ]
-}
-
 // Great Forest Druid
 {
     "name": "Great Forest Druid",

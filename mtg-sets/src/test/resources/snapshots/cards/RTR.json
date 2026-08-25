@@ -212,6 +212,30 @@
     ]
 }
 
+// Concordia Pegasus
+{
+    "name": "Concordia Pegasus",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Pegasus",
+    "oracleText": "Flying",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "metadata": {
+        "collectorNumber": "8",
+        "artist": "Winona Nelson",
+        "flavorText": "\"A kick from its hooves is like a bolt of lightning. I'd know. I've been hit by both.\"\n—Rencz, Izzet chemister's aide",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/0/f0333d0b-ae42-48aa-83d8-a4f2c7483a46.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Desecration Demon
 {
     "name": "Desecration Demon",

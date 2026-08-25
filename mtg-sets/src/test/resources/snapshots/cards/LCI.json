@@ -15355,46 +15355,6 @@
     ]
 }
 
-// Rumbling Rockslide
-{
-    "name": "Rumbling Rockslide",
-    "manaCost": "{3}{R}",
-    "typeLine": "Sorcery",
-    "oracleText": "Rumbling Rockslide deals damage to target creature equal to the number of lands you control.",
-    "script": {
-        "spellEffect": {
-            "type": "DealDamage",
-            "amount": {
-                "type": "AggregateBattlefield",
-                "player": "You",
-                "filter": "land"
-            },
-            "target": {
-                "type": "BoundVariable",
-                "name": "target creature"
-            }
-        },
-        "targetRequirements": [
-            {
-                "type": "TargetObject",
-                "filter": {
-                    "baseFilter": "creature"
-                },
-                "id": "target creature"
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "163",
-        "artist": "Johann Bodin",
-        "flavorText": "Sometimes an expedition reaches a natural conclusion. Sometimes it all just comes crashing down.",
-        "imageUri": "https://cards.scryfall.io/normal/front/4/f/4f06b53f-ec82-4d7f-bee3-6ca04583f023.jpg?1782694478"
-    },
-    "colorIdentityOverride": [
-        "RED"
-    ]
-}
-
 // Runaway Boulder
 {
     "name": "Runaway Boulder",

@@ -2913,6 +2913,36 @@
     ]
 }
 
+// Ivy Elemental
+{
+    "name": "Ivy Elemental",
+    "manaCost": "{X}{G}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "This creature enters with X +1/+1 counters on it.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersWithDynamicCounters",
+                "count": "XValue"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "245",
+        "rarity": "RARE",
+        "artist": "Ron Spencer",
+        "flavorText": "In the gardens of the centaurs, many travelers have mysteriously vanished while admiring the elaborate topiaries.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/c/fc441d3a-e917-4dd6-b5f9-f99075ec398f.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Kamahl, Pit Fighter
 {
     "name": "Kamahl, Pit Fighter",
@@ -3863,6 +3893,60 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Nimble Mongoose
+{
+    "name": "Nimble Mongoose",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Mongoose",
+    "oracleText": "Shroud (This creature can't be the target of spells or abilities.)\nThreshold — This creature gets +2/+2 as long as there are seven or more cards in your graveyard.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "SHROUD"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 2,
+                    "toughnessBonus": 2,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Graveyard"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 7
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "258",
+        "rarity": "UNCOMMON",
+        "artist": "Terese Nielsen",
+        "flavorText": "Faster than a cobra's bite.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/9/99e5ecf5-a662-4df0-a6ba-9177c62b6503.jpg?1783945213"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
