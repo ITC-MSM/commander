@@ -746,26 +746,34 @@ function QuickGameDeckPicker({
 
   const pendingDeckRef = useRef<Record<string, number> | null>(null)
   const pendingCommanderRef = useRef<string | null>(null)
+  const pendingSideboardRef = useRef<Record<string, number>>({})
   const lastSubmittedKeyRef = useRef<string | null>(null)
   const debounceRef = useRef<number | null>(null)
 
   const handleDeckChange = useCallback(
-    (deckList: Record<string, number>, commander?: string | null) => {
-      // The commander rides in the dedupe key, so swapping commanders on otherwise-identical deck
-      // contents still resubmits.
-      const key = `${serializeDeck(deckList)}|${commander ?? ''}`
+    (
+      deckList: Record<string, number>,
+      commander?: string | null,
+      sideboard?: Record<string, number>,
+    ) => {
+      // The commander and the sideboard ride in the dedupe key, so swapping either on otherwise-
+      // identical deck contents still resubmits — editing only the sideboard is a real change.
+      const board = sideboard ?? {}
+      const key = `${serializeDeck(deckList)}|${commander ?? ''}|${serializeDeck(board)}`
       if (key === lastSubmittedKeyRef.current) return
       pendingDeckRef.current = deckList
       pendingCommanderRef.current = commander ?? null
+      pendingSideboardRef.current = board
       if (debounceRef.current !== null) window.clearTimeout(debounceRef.current)
       debounceRef.current = window.setTimeout(() => {
         const pending = pendingDeckRef.current
         if (!pending) return
         const pendingCmdr = pendingCommanderRef.current
-        const pendingKey = `${serializeDeck(pending)}|${pendingCmdr ?? ''}`
+        const pendingSide = pendingSideboardRef.current
+        const pendingKey = `${serializeDeck(pending)}|${pendingCmdr ?? ''}|${serializeDeck(pendingSide)}`
         if (pendingKey === lastSubmittedKeyRef.current) return
         lastSubmittedKeyRef.current = pendingKey
-        submitDeck(pending, pendingCmdr)
+        submitDeck(pending, pendingCmdr, pendingSide)
       }, 250)
     },
     [submitDeck],
@@ -777,8 +785,13 @@ function QuickGameDeckPicker({
       if (debounceRef.current !== null) window.clearTimeout(debounceRef.current)
       const pending = pendingDeckRef.current
       const pendingCmdr = pendingCommanderRef.current
-      const pendingKey = pending ? `${serializeDeck(pending)}|${pendingCmdr ?? ''}` : null
-      if (pending && pendingKey !== lastSubmittedKeyRef.current) submitDeck(pending, pendingCmdr)
+      const pendingSide = pendingSideboardRef.current
+      const pendingKey = pending
+        ? `${serializeDeck(pending)}|${pendingCmdr ?? ''}|${serializeDeck(pendingSide)}`
+        : null
+      if (pending && pendingKey !== lastSubmittedKeyRef.current) {
+        submitDeck(pending, pendingCmdr, pendingSide)
+      }
     }
   }, [submitDeck])
 

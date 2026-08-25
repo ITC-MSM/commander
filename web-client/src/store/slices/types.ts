@@ -1004,7 +1004,11 @@ export type GameStore = {
   removeQuickGameAi: () => void
   joinQuickGameLobby: (lobbyId: string) => void
   leaveQuickGameLobby: () => void
-  submitQuickGameLobbyDeck: (deckList: Record<string, number>, commander?: string | null) => void
+  submitQuickGameLobbyDeck: (
+    deckList: Record<string, number>,
+    commander?: string | null,
+    sideboard?: Record<string, number>,
+  ) => void
   setQuickGameLobbyReady: (ready: boolean) => void
   setQuickGameLobbySetCode: (setCodes: readonly string[]) => void
   setQuickGameLobbyPublic: (isPublic: boolean) => void

@@ -2,6 +2,7 @@ package com.wingedsheep.gameserver.handler
 
 import com.wingedsheep.gameserver.ai.AiGameManager
 import com.wingedsheep.gameserver.ai.AiWebSocketSession
+import com.wingedsheep.gameserver.deck.SideboardSanitizer
 import com.wingedsheep.ai.engine.SealedDeckGenerator
 import com.wingedsheep.gameserver.protocol.ClientMessage
 import com.wingedsheep.gameserver.protocol.ErrorCode
@@ -51,6 +52,21 @@ class GamePlayHandler(
     private val deckProfiler: com.wingedsheep.gameserver.stats.DeckProfiler
 ) {
     private val logger = LoggerFactory.getLogger(GamePlayHandler::class.java)
+
+    /**
+     * Drop sideboard cards this engine hasn't implemented before they reach the engine, which
+     * would throw on the first one and fail the whole game start. See [SideboardSanitizer] for
+     * why unknown names are dropped rather than the submission rejected.
+     */
+    private fun sanitizeSideboard(sideboard: Map<String, Int>?, playerName: String): Map<String, Int> =
+        SideboardSanitizer.sanitize(sideboard.orEmpty(), cardRegistry).also { result ->
+            if (result.hasDrops) {
+                logger.info(
+                    "Dropped ${result.dropped.size} unknown sideboard card(s) from $playerName's " +
+                        "submission: ${result.dropped}",
+                )
+            }
+        }.kept
 
     @Volatile
     var waitingGameSession: GameSession? = null
@@ -138,7 +154,13 @@ class GamePlayHandler(
         )
         gameSession.quickGameSetCode = quickGameSetCode
         // A generated random/quick deck has no sideboard; only a real submitted deck carries one.
-        val sideboard = if (quickGameSetCode != null) emptyMap() else message.sideboard
+        // Sanitize whatever the client sent: an unimplemented name would throw out of
+        // GameInitializer and fail the game creation outright (see SideboardSanitizer).
+        val sideboard = if (quickGameSetCode != null) {
+            emptyMap()
+        } else {
+            sanitizeSideboard(message.sideboard, playerSession.playerName)
+        }
         gameSession.addPlayer(playerSession, deckList, sideboard = sideboard)
 
         // Store player info for persistence
@@ -279,7 +301,11 @@ class GamePlayHandler(
         )
 
         // A generated random deck (empty submission) has no sideboard.
-        val sideboard = if (message.deckList.isEmpty()) emptyMap() else message.sideboard
+        val sideboard = if (message.deckList.isEmpty()) {
+            emptyMap()
+        } else {
+            sanitizeSideboard(message.sideboard, playerSession.playerName)
+        }
         gameSession.addPlayer(playerSession, deckList, sideboard = sideboard)
 
         // Store player info for persistence
