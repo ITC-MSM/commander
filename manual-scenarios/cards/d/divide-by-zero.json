@@ -1,0 +1,36 @@
+{
+  "player1Name": "Alice",
+  "player2Name": "Bob",
+  "player1": {
+    "lifeTotal": 20,
+    "hand": ["Divide by Zero", "Hill Giant"],
+    "battlefield": [
+      {"name": "Island"},
+      {"name": "Island"},
+      {"name": "Island"}
+    ],
+    "graveyard": [],
+    "sideboard": ["Boomerang Basics", "Hill Giant"],
+    "library": ["Island", "Grizzly Bears", "Island"]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": ["Ornithopter", "Memnite"],
+    "battlefield": [
+      {"name": "Centaur Courser"},
+      {"name": "Ornithopter"},
+      {"name": "Forest"},
+      {"name": "Forest"}
+    ],
+    "graveyard": [],
+    "library": ["Forest", "Hill Giant", "Forest"]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 2,
+  "priorityPlayer": 2,
+  "player1StopAtSteps": [],
+  "player2StopAtSteps": [],
+  "player1OpponentStopAtSteps": [],
+  "player2OpponentStopAtSteps": [],
+  "mode": "AI"
+}

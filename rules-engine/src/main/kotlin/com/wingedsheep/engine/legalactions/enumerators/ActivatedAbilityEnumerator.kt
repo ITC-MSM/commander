@@ -6,6 +6,7 @@ import com.wingedsheep.engine.handlers.effects.permanent.counters.resolveCounter
 import com.wingedsheep.engine.mechanics.SummoningSicknessRules
 import com.wingedsheep.engine.mechanics.mana.TapForGeneric
 import com.wingedsheep.engine.legalactions.*
+import com.wingedsheep.engine.legalactions.utils.AbilityCostReduction
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.*
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -174,7 +175,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                     context.castPermissionUtils.applyFreeFirstEquipDiscount(
                         context.castPermissionUtils.applyEquipCostReduction(
                             context.castPermissionUtils.applyActivatedAbilityCostReduction(
-                                applyAbilityGenericCostReduction(costWithDefinedX, ability, state, entityId, playerId, context),
+                                AbilityCostReduction.apply(costWithDefinedX, ability, state, entityId, playerId, context.targetUtils),
                                 state, entityId, ability.isExhaust, ability.isPowerUp
                             ),
                             ability, state, playerId, abilitySourceId = entityId
@@ -190,14 +191,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 // prefix from [effectiveCost] so the menu reflects what the player will actually pay.
                 // Cards with an explicit descriptionOverride keep it (we can't safely splice a cost
                 // into custom text).
-                val displayDescription =
-                    if (effectiveCost != rawCost && ability.descriptionOverride == null) {
-                        // Rebuild from the effective cost, preserving any keyword-action prefixes
-                        // ("Exhaust — ", "Waterbend ") and rendering a fully-discounted cost as "{0}".
-                        ability.describeWithCost(effectiveCost)
-                    } else {
-                        ability.description
-                    }
+                val displayDescription = AbilityCostReduction.describe(ability, effectiveCost, rawCost)
 
                 // Ability payment context — lets the solver consider restricted mana that's
                 // only spendable on this kind of activation (e.g., Steelswarm Operator's mana
@@ -1456,74 +1450,6 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
     }
 
     /**
-     * Apply [ActivatedAbility.genericCostReduction] to the mana portion of [cost].
-     * The reduction is evaluated against the activating entity (e.g., the equipped creature
-     * for The Dominion Bracelet, where X = the creature's power).
-     *
-     * When the ability requires a target, the player hasn't chosen one yet at enumeration time,
-     * so a reduction that reads the chosen target (e.g. Dragonfire Blade — "costs {1} less to
-     * activate for each color of the creature it targets") can't resolve a specific target here.
-     * We gate affordability on the *cheapest* reachable cost — the largest reduction over the
-     * currently-legal targets — so the ability is offered (and its displayed cost shown) whenever
-     * it's payable for at least one target. The handler re-derives the exact reduction from the
-     * target the player actually chose (ActivateAbilityHandler.applyGenericCostReduction), and in
-     * auto-tap mode pays that exact per-target cost. The reduction only ever lowers the cost, so a
-     * best-case preview never causes the client to under-tap for the chosen target in auto-tap mode.
-     */
-    private fun applyAbilityGenericCostReduction(
-        cost: AbilityCost,
-        ability: ActivatedAbility,
-        state: com.wingedsheep.engine.state.GameState,
-        sourceId: EntityId,
-        controllerId: EntityId,
-        enumerationContext: EnumerationContext
-    ): AbilityCost {
-        val reduction = ability.genericCostReduction ?: return cost
-        val evaluator = com.wingedsheep.engine.handlers.DynamicAmountEvaluator()
-        val baseContext = com.wingedsheep.engine.handlers.EffectContext(
-            sourceId = sourceId,
-            controllerId = controllerId,
-        )
-        val amount = if (ability.targetRequirements.isNotEmpty()) {
-            maxReductionOverLegalTargets(reduction, ability, state, sourceId, controllerId, enumerationContext, evaluator)
-        } else {
-            evaluator.evaluate(state, reduction, baseContext)
-        }
-        if (amount <= 0) return cost
-        return reduceGenericInAbilityCost(cost, amount)
-    }
-
-    /**
-     * Largest [reduction] achievable across the ability's currently-legal first-requirement
-     * targets. Evaluates the reduction once per legal target (as if that target were chosen) and
-     * keeps the maximum. For a reduction that doesn't read the target this collapses to a constant,
-     * so it stays correct for non-target-dependent reductions on targeted abilities too. Returns 0
-     * when there are no legal targets (the ability won't be offered anyway).
-     */
-    private fun maxReductionOverLegalTargets(
-        reduction: com.wingedsheep.sdk.scripting.values.DynamicAmount,
-        ability: ActivatedAbility,
-        state: com.wingedsheep.engine.state.GameState,
-        sourceId: EntityId,
-        controllerId: EntityId,
-        enumerationContext: EnumerationContext,
-        evaluator: com.wingedsheep.engine.handlers.DynamicAmountEvaluator
-    ): Int {
-        val validTargets = enumerationContext.targetUtils
-            .buildTargetInfos(state, controllerId, ability.targetRequirements, sourceId = sourceId)
-            .firstOrNull()?.validTargets ?: emptyList()
-        if (validTargets.isEmpty()) return 0
-        return validTargets.maxOf { targetId ->
-            val targetContext = com.wingedsheep.engine.handlers.EffectContext(
-                sourceId = sourceId,
-                controllerId = controllerId,
-                targets = listOf(ChosenTarget.Permanent(targetId))
-            )
-            evaluator.evaluate(state, reduction, targetContext)
-        }
-    }
-
-    /**
      * Is [granterId] a permanent that is on the battlefield and untapped? The payability gate for
      * [AbilityCost.TapGrantingPermanent]; an unresolved granter (null) is treated as unpayable,
      * since the cost names a specific permanent that must still be there to tap (CR 201.5a).
@@ -1535,19 +1461,4 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
         return !granter.has<TappedComponent>()
     }
 
-    private fun reduceGenericInAbilityCost(cost: AbilityCost, amount: Int): AbilityCost = when (cost) {
-        is AbilityCost.Atom -> cost.manaCostOrNull
-            ?.let { AbilityCost.Atom(CostAtom.Mana(it.reduceGeneric(amount))) } ?: cost
-        is AbilityCost.Composite -> {
-            var applied = false
-            AbilityCost.Composite(cost.costs.map { sub ->
-                val subMana = sub.manaCostOrNull
-                if (!applied && subMana != null) {
-                    applied = true
-                    AbilityCost.Atom(CostAtom.Mana(subMana.reduceGeneric(amount)))
-                } else sub
-            })
-        }
-        else -> cost
-    }
 }

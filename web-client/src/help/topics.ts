@@ -579,7 +579,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
         '`1 Cardname (SET) *F* *A* 42 #tag` — Moxfield bulk edit. Foil, alter and tag markers are read and discarded.',
         '`SB: 2 Counterspell` — the MTGO sideboard prefix.',
       ] },
-      { kind: 'p', text: 'Section headers are case-insensitive: `Deck` / `Mainboard` / `Main Deck` / `Maindeck`, `Sideboard` / `Side` / `SB`, `Commander` / `Commanders` / `EDH`, `Companion`, and `About`. Only the main deck and commander are imported. Blank lines and lines starting with `//` or `#` are ignored.' },
+      { kind: 'p', text: 'Section headers are case-insensitive: `Deck` / `Mainboard` / `Main Deck` / `Maindeck`, `Sideboard` / `Side` / `SB`, `Commander` / `Commanders` / `EDH`, `Companion`, and `About`. The main deck, the sideboard and the commander are all imported; `Companion` and `About` are skipped. Blank lines and lines starting with `//` or `#` are ignored.' },
       { kind: 'p', text: 'A line that looks like a card but cannot be matched is reported rather than dropped, so an import never silently loses cards. Export writes the plain `4 Lightning Bolt` shape, which every one of the above tools reads.' },
     ],
     related: ['deckbuilder', 'deck-sharing'],

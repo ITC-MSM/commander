@@ -104,7 +104,13 @@ class TargetEnumerationUtils(
                         predicateEvaluator.matches(state, projected, entityId, permanentFilter, context)
                     }
                 }
-                val spells = findValidSpellTargets(state, playerId, TargetFilter.SpellOnStack)
+                val spellFilter = requirement.spellFilter
+                val allSpells = findValidSpellTargets(state, playerId, TargetFilter.SpellOnStack)
+                val spells = if (spellFilter == null) allSpells else {
+                    val projected = state.projectedState
+                    val context = PredicateContext(controllerId = playerId, sourceId = sourceId)
+                    allSpells.filter { predicateEvaluator.matches(state, projected, it, spellFilter, context) }
+                }
                 permanents + spells
             }
         }

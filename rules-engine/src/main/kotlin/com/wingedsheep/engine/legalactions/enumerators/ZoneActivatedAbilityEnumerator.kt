@@ -5,6 +5,7 @@ import com.wingedsheep.engine.legalactions.ActionEnumerator
 import com.wingedsheep.engine.legalactions.AdditionalCostData
 import com.wingedsheep.engine.legalactions.EnumerationContext
 import com.wingedsheep.engine.legalactions.LegalAction
+import com.wingedsheep.engine.legalactions.utils.AbilityCostReduction
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.Zone
@@ -83,12 +84,21 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
                 }
                 if (!restrictionsMet) continue
 
-                // Check cost requirements and build cost info. A *defined* {X} (CR 107.3c) is
-                // resolved here for the same reason the battlefield enumerator resolves it: the
-                // affordability check below and the cost shown in the menu both have to be the
-                // number the handler will charge, not an unresolved `{X}`.
-                val effectiveCost = context.castPermissionUtils
-                    .applyDefinedXValue(ability.cost, ability, state, entityId, playerId)
+                // Check cost requirements and build cost info. A *defined* {X} (CR 107.3c) and
+                // the ability's generic cost reduction are both resolved here for the same reason
+                // the battlefield enumerator resolves them: the affordability check below and the
+                // cost shown in the menu have to be the number the handler will charge, not an
+                // unresolved `{X}` or an unreduced cost. Without the reduction, a channel land
+                // ("costs {1} less to activate for each legendary creature you control", activated
+                // by discarding it from hand) is hidden from the menu whenever the player can
+                // afford only the reduced price.
+                val effectiveCost = AbilityCostReduction.apply(
+                    context.castPermissionUtils
+                        .applyDefinedXValue(ability.cost, ability, state, entityId, playerId),
+                    ability, state, entityId, playerId, context.targetUtils
+                )
+                val displayDescription = AbilityCostReduction.describe(ability, effectiveCost)
+
                 var costCanBePaid = true
                 val handCards = state.getZone(playerId, Zone.HAND)
                 var hasDiscardCost = false
@@ -193,7 +203,7 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
                 } else null
 
                 // Calculate X cost info
-                val abilityManaCost = when (val c = ability.cost) {
+                val abilityManaCost = when (val c = effectiveCost) {
                     is AbilityCost.Atom -> c.manaCostOrNull
                     is AbilityCost.Composite -> c.costs.firstNotNullOfOrNull { it.manaCostOrNull }
                     else -> null
@@ -227,7 +237,7 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
                         result.add(
                             LegalAction(
                                 actionType = "ActivateAbility",
-                                description = ability.description,
+                                description = displayDescription,
                                 action = ActivateAbility(
                                     playerId, entityId, ability.id,
                                     targets = listOf(autoSelectedTarget)
@@ -243,7 +253,7 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
                         result.add(
                             LegalAction(
                                 actionType = "ActivateAbility",
-                                description = ability.description,
+                                description = displayDescription,
                                 action = ActivateAbility(playerId, entityId, ability.id),
                                 validTargets = firstInfo.validTargets,
                                 requiresTargets = true,
@@ -263,7 +273,7 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
                     result.add(
                         LegalAction(
                             actionType = "ActivateAbility",
-                            description = ability.description,
+                            description = displayDescription,
                             action = ActivateAbility(playerId, entityId, ability.id),
                             additionalCostInfo = costInfo,
                             hasXCost = abilityHasXCost,

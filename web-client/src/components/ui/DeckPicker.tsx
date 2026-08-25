@@ -43,7 +43,7 @@ import {
   deckColors,
   rarestCard,
 } from '@/components/deck/DeckTile'
-import { parseArenaDeckList } from '../deckbuilder/parseArenaDeck'
+import { formatDeckText, parseDeckText } from './deckPasteText'
 import type { CardSummary } from '../deckbuilder/cardFilter'
 import { SetSelector, rollRandomSet } from './SetSelector'
 import styles from './DeckPicker.module.css'
@@ -130,33 +130,6 @@ interface ExampleDeck {
 }
 
 type ValidationResult = DeckValidationResult
-
-function parseDeckText(text: string): { cards: Record<string, number>; deckName?: string } {
-  // Delegate to the shared Arena/Moxfield/plain-text parser so section headers
-  // (`About`, `Deck`, `Sideboard`, …) and Arena's `Name <deck-name>` metadata
-  // line don't end up as bogus card entries.
-  const parsed = parseArenaDeckList(text)
-  const cards: Record<string, number> = {}
-  for (const entry of parsed.entries) {
-    cards[entry.name] = (cards[entry.name] ?? 0) + entry.count
-  }
-  // Tolerate the "bare card name = 1 copy" shorthand the old parser supported,
-  // since the picker's textarea never required a leading count.
-  for (const err of parsed.errors) {
-    if (err.reason !== 'unrecognised line format') continue
-    const name = err.raw.trim()
-    if (!name) continue
-    cards[name] = (cards[name] ?? 0) + 1
-  }
-  return parsed.deckName !== undefined ? { cards, deckName: parsed.deckName } : { cards }
-}
-
-function formatDeckText(cards: Record<string, number>): string {
-  return Object.entries(cards)
-    .filter(([, n]) => n > 0)
-    .map(([name, n]) => `${n} ${name}`)
-    .join('\n')
-}
 
 const ALL_TABS: ReadonlyArray<Tab> = ['saved', 'examples', 'paste', 'random']
 
@@ -411,17 +384,18 @@ export function DeckPicker({
     return null
   }, [tab, decks, selectedSavedId, pasteCommander])
 
-  // The constructed sideboard ("outside the game", CR 100.4a) the wish effects fetch from. Only
-  // saved decks carry one (the deckbuilder persists it); paste/random/examples have none. The
-  // server ignores it for Limited lobbies (those derive pool − maindeck) and uses it for
-  // constructed/premade ones.
+  // The constructed sideboard ("outside the game", CR 400.11a) the wish effects fetch from.
+  // Saved decks carry one (the deckbuilder persists it) and a pasted list carries whatever sat
+  // under its `Sideboard` / `SB:` section; Random and Examples have none. The server ignores it
+  // for Limited lobbies (those derive pool − maindeck) and uses it for constructed/premade ones.
   const currentSideboard: Record<string, number> = useMemo(() => {
     if (tab === 'saved') {
       const saved = decks.find((d) => d.id === selectedSavedId)
       return saved?.sideboard ?? {}
     }
+    if (tab === 'paste') return parsedPaste.sideboard
     return {}
-  }, [tab, decks, selectedSavedId])
+  }, [tab, decks, selectedSavedId, parsedPaste])
 
   // Strip the commander out of `currentDeck` before crossing the network boundary. `currentDeck`
   // keeps the commander baked in so the totalCards display reads "100 cards" for a Commander
@@ -483,6 +457,12 @@ export function DeckPicker({
 
   const stats = useMemo(() => computeDeckStats(currentDeck, cards), [currentDeck, cards])
   const totalCards = Object.values(currentDeck).reduce((a, b) => a + b, 0)
+  // Shown under the paste box so a pasted `Sideboard` section is visibly accounted for rather
+  // than looking dropped — it deliberately isn't part of `totalCards` (CR 400.11a).
+  const pasteSideboardCount = useMemo(
+    () => Object.values(parsedPaste.sideboard).reduce((a, b) => a + b, 0),
+    [parsedPaste],
+  )
 
   const handleLoadExample = (ex: ExampleDeck) => {
     setPasteText(formatDeckText(ex.cards))
@@ -494,7 +474,11 @@ export function DeckPicker({
   const handleSaveCurrent = async () => {
     if (!pendingName.trim() || Object.keys(currentDeck).length === 0) return
     // Routes to the account when signed in (then refresh so the new cloud deck appears), else local.
-    const { id } = await saveDeckRouted({ name: pendingName.trim(), cards: currentDeck })
+    const { id } = await saveDeckRouted({
+      name: pendingName.trim(),
+      cards: currentDeck,
+      ...(Object.keys(currentSideboard).length > 0 ? { sideboard: currentSideboard } : {}),
+    })
     reloadDecks()
     setSelectedSavedId(id)
     setPendingName('')
@@ -562,7 +546,9 @@ export function DeckPicker({
               // Show the full deck in the paste editor — including the commander,
               // which is stored separately on `SavedDeck` but should appear in the
               // text the user can edit.
-              setPasteText(formatDeckText(mergeCommanderIntoCards(d.cards, d.commander ?? null)))
+              setPasteText(
+                formatDeckText(mergeCommanderIntoCards(d.cards, d.commander ?? null), d.sideboard),
+              )
               setPendingName(d.name)
               setTab('paste')
             }}
@@ -593,7 +579,13 @@ export function DeckPicker({
               className={styles.textarea}
               placeholder={'4 Lightning Bolt\n4 Goblin Guide\n12 Mountain\n…'}
             />
-            <p className={styles.helperText}>One card per line. Format: "4 Card Name" or "Card Name x4".</p>
+            <p className={styles.helperText}>
+              One card per line. Format: "4 Card Name" or "Card Name x4". A{' '}
+              <code>Sideboard</code> header (or per-line <code>SB:</code>) starts the sideboard.
+              {pasteSideboardCount > 0
+                ? ` Sideboard: ${pasteSideboardCount} card${pasteSideboardCount === 1 ? '' : 's'}.`
+                : ''}
+            </p>
             <div className={styles.actionsRow}>
               <input
                 value={pendingName}

@@ -30,6 +30,9 @@ export function savedDeckToShared(input: SaveDeckInput): SharedDeck {
     ...(input.format ? { format: input.format } : {}),
     ...(input.commander ? { commander: input.commander } : {}),
     ...(input.commanderPrinting ? { commanderPrinting: input.commanderPrinting } : {}),
+    ...(input.sideboard && Object.keys(input.sideboard).length > 0
+      ? { sideboard: input.sideboard }
+      : {}),
   }
 }
 

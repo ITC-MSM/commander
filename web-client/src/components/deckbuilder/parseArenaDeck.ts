@@ -11,8 +11,10 @@
  *
  * Section headers (case-insensitive) include `Deck` / `Mainboard` / `Main Deck`
  * / `Maindeck`, `Sideboard` / `Side` / `SB`, `Commander` / `Commanders` / `EDH`,
- * `Companion`, and `About` (the latter three are skipped — only the main deck
- * is imported). Blank lines and lines starting with `//` or `#` are ignored.
+ * `Companion`, and `About`. Main deck, sideboard, and commander are returned as
+ * separate lists; `Companion` and `About` are skipped (the latter only donates
+ * its `Name <…>` line). Blank lines and lines starting with `//` or `#` are
+ * ignored.
  */
 import type { CardSummary } from './cardFilter'
 
@@ -30,15 +32,30 @@ export interface ParsedEntry {
 export interface ParseResult {
   /** Main-deck entries, in source order. */
   entries: ParsedEntry[]
-  /** Sideboard entries (recognised but not imported into the working deck). */
+  /** Sideboard entries — the constructed "outside the game" board (CR 400.11a). */
   sideboard: ParsedEntry[]
   /**
    * Commander entries — cards listed under a `Commander` / `Commanders` /
    * `EDH` header. Most decks have exactly one; partner pairs etc. produce two.
    */
   commander: ParsedEntry[]
-  /** Lines that looked like card entries but couldn't be parsed. */
-  errors: Array<{ line: number; raw: string; reason: string }>
+  /**
+   * Lines that looked like card entries but couldn't be parsed.
+   *
+   * `raw` is the verbatim line, for showing the user what it couldn't read. `cleaned` is the
+   * same line with the `SB:` prefix and the Moxfield decorations (`*F*`, `#tag`) stripped —
+   * a caller that *rescues* an unparseable line (the lobby's paste box tolerates a bare card
+   * name as one copy) must read `cleaned`, or it will manufacture a card named
+   * `"SB: Counterspell"`. `section` records which board the line sat under, so the rescue
+   * lands on the right one.
+   */
+  errors: Array<{
+    line: number
+    raw: string
+    cleaned: string
+    reason: string
+    section: CardSection
+  }>
   /**
    * Deck name pulled from an Arena-style `Name <…>` line in the leading
    * `About` block, if present.
@@ -51,7 +68,10 @@ export interface ParseResult {
 // (`*F*`, `*A*`, `#tag`, trailing `*`) before this regex runs.
 const ENTRY_RE = /^(\d+)x?\s+(.+?)(?:\s+\(([A-Za-z0-9]{2,5})\)(?:\s+(\S+))?)?\s*$/
 
-type Section = 'main' | 'side' | 'commander' | 'ignore'
+/** A board a parsed entry can land on. */
+export type CardSection = 'main' | 'side' | 'commander'
+
+type Section = CardSection | 'ignore'
 
 const SECTION_HEADERS: Record<string, Section> = {
   deck: 'main',
@@ -142,12 +162,24 @@ export function parseArenaDeckList(text: string): ParseResult {
 
     const match = ENTRY_RE.exec(cleaned)
     if (!match) {
-      errors.push({ line: i + 1, raw: trimmed, reason: 'unrecognised line format' })
+      errors.push({
+        line: i + 1,
+        raw: trimmed,
+        cleaned,
+        reason: 'unrecognised line format',
+        section: targetSection,
+      })
       continue
     }
     const count = parseInt(match[1]!, 10)
     if (!Number.isFinite(count) || count <= 0) {
-      errors.push({ line: i + 1, raw: trimmed, reason: 'invalid card count' })
+      errors.push({
+        line: i + 1,
+        raw: trimmed,
+        cleaned,
+        reason: 'invalid card count',
+        section: targetSection,
+      })
       continue
     }
     const entry: ParsedEntry = {

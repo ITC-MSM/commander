@@ -164,4 +164,11 @@ data class QuickGameLobbyPlayer(
      * shape. Resubmitted by the client alongside the deck list.
      */
     var commander: String? = null,
+    /**
+     * Constructed sideboard ("outside the game", CR 400.11a), card name → count. Submitted
+     * alongside the deck list and handed to the engine at game start, so wish effects have
+     * something to fetch. Empty for a random pool and for Momir Basic, neither of which has a
+     * constructed sideboard.
+     */
+    var sideboard: Map<String, Int> = emptyMap(),
 )
