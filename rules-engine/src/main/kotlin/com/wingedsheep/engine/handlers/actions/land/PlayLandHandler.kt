@@ -172,6 +172,11 @@ class PlayLandHandler(
         val played = executePlay(state, action)
         if (!played.isSuccess) return played
 
+        // Ordering: the land's own ETB triggers (landfall) are already detected and on the stack
+        // by this point — `executePlay` does that before returning — which is the order CR 603.10
+        // wants and the one PassPriorityHandler arranges explicitly for the resolution path. Moving
+        // this check earlier would drop a landfall trigger whose permanent the legend rule then
+        // removes, and no test here would notice.
         val sbaResult = sbaChecker.checkAndApply(played.state)
         // An SBA that needs input (the legend rule's "which one do you keep?") pauses the action;
         // the land is already on the battlefield, so the decision resolves against the real board.
