@@ -2913,6 +2913,36 @@
     ]
 }
 
+// Ivy Elemental
+{
+    "name": "Ivy Elemental",
+    "manaCost": "{X}{G}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "This creature enters with X +1/+1 counters on it.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersWithDynamicCounters",
+                "count": "XValue"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "245",
+        "rarity": "RARE",
+        "artist": "Ron Spencer",
+        "flavorText": "In the gardens of the centaurs, many travelers have mysteriously vanished while admiring the elaborate topiaries.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/c/fc441d3a-e917-4dd6-b5f9-f99075ec398f.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Kamahl, Pit Fighter
 {
     "name": "Kamahl, Pit Fighter",

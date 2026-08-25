@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.lci.cards
+package com.wingedsheep.mtg.sets.definitions.iko.cards
 
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
@@ -34,9 +34,9 @@ val RumblingRockslide = card("Rumbling Rockslide") {
 
     metadata {
         rarity = Rarity.COMMON
-        collectorNumber = "163"
-        artist = "Johann Bodin"
-        flavorText = "Sometimes an expedition reaches a natural conclusion. Sometimes it all just comes crashing down."
-        imageUri = "https://cards.scryfall.io/normal/front/4/f/4f06b53f-ec82-4d7f-bee3-6ca04583f023.jpg?1782694478"
+        collectorNumber = "134"
+        artist = "Adam Paquette"
+        flavorText = "\"When monsters walk, the earth knows its place and yields.\"\n—Rielle, the Everwise"
+        imageUri = "https://cards.scryfall.io/normal/front/9/6/96f9aaa7-11c7-4cd0-9803-9471c14ab846.jpg"
     }
 }
