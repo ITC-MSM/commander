@@ -2417,6 +2417,81 @@
     ]
 }
 
+// Chill of the Grave
+{
+    "name": "Chill of the Grave",
+    "manaCost": "{2}{U}",
+    "typeLine": "Instant",
+    "oracleText": "This spell costs {1} less to cast if you control a Zombie.\nTap target creature. It doesn't untap during its controller's next untap step.\nDraw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "DOESNT_UNTAP",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "duration": "UntilAfterAffectedControllersNextUntap"
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                },
+                "gating": {
+                    "type": "OnlyIf",
+                    "condition": {
+                        "type": "Exists",
+                        "player": "You",
+                        "zone": "Battlefield",
+                        "filter": "permanent Zombie"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "artist": "Olivier Bernard",
+        "flavorText": "Frozen is frozen, whether it's with cold, terror, or both.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/0/60222e91-a688-4113-a8c2-ab08f52bb6e1.jpg?1783924898"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Cloaked Cadet
 {
     "name": "Cloaked Cadet",
@@ -6153,6 +6228,66 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Heron of Hope
+{
+    "name": "Heron of Hope",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Bird",
+    "oracleText": "Flying\nIf you would gain life, you gain that much life plus 1 instead.\n{1}{W}: This creature gains lifelink until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK",
+                    "target": "Self"
+                },
+                "descriptionOverride": "{1}{W}: This creature gains lifelink until end of turn."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "ModifyLifeGain",
+                "multiplier": 1,
+                "modifier": 1
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "18",
+        "artist": "Daarken",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/a/fa7e6933-5c64-4fcd-bb7f-740767a149cb.jpg?1783924918",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "If you control two Heron of Hopes and you would gain life, you gain that much life plus 2. A third Heron of Hope has you gain that much life plus 3, and so on."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "The middle ability applies just once to each life-gaining event. If you gain an amount of life \"for each\" of something or \"equal to the number\" of something, that life is gained as one event and the ability applies only once."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -10092,6 +10227,54 @@
     ]
 }
 
+// Pyre Spawn
+{
+    "name": "Pyre Spawn",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "When this creature dies, it deals 3 damage to any target.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "173",
+        "artist": "Nicholas Gregory",
+        "flavorText": "Memories of the Harvesttide tragedy festered until they grew into an incarnate rage that set the world ablaze.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/0/80255777-de00-4ffa-a8a0-f522bf4198fb.jpg?1783924827"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Reckless Impulse
 {
     "name": "Reckless Impulse",
@@ -12285,6 +12468,51 @@
     "colorIdentityOverride": [
         "BLUE",
         "RED"
+    ]
+}
+
+// Stormchaser Drake
+{
+    "name": "Stormchaser Drake",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Drake",
+    "oracleText": "Flying\nWhenever this creature becomes the target of a spell you control, draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "BecomesTargetEvent",
+                    "byYou": true,
+                    "spellsOnly": true
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever this creature becomes the target of a spell you control, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "rarity": "UNCOMMON",
+        "artist": "Brent Hollowell",
+        "flavorText": "\"Blasted drake's interfering with the conductivity again. Garl! Go chase it away.\"\n—Ludevic, necro-alchemist",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/d/3dd5c860-9d27-40d9-af38-aaf40bd52423.jpg?1783924883"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

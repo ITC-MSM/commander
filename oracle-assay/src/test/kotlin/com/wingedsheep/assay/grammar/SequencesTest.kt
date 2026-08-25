@@ -3,7 +3,9 @@ package com.wingedsheep.assay.grammar
 import com.wingedsheep.assay.syntax.ParseOutcome
 import com.wingedsheep.assay.syntax.parseLine
 import com.wingedsheep.assay.syntax.printLine
+import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
@@ -133,6 +135,32 @@ class SequencesTest : StringSpec({
     // A continuation cannot start a line: the thing it names has not been introduced.
     "a dangling anaphor is not a line" {
         Grammar.abilityLine.parseLine("Untap that creature.").shouldBeInstanceOf<ParseOutcome.Declined>()
+    }
+
+    // Crippling Chill's second sentence, and the reason it is a continuation: the "it" is the
+    // creature the first clause tapped, not the source.
+    "the doesn't-untap rider reads the creature the previous clause tapped" {
+        fragment("Tap target creature. It doesn't untap during its controller's next untap step.") shouldBe
+            CardFragment(
+                script = CardScript(
+                    spellEffect = Effects.Composite(
+                        listOf(
+                            Effects.Tap(Targets.bound()),
+                            Effects.GrantKeyword(
+                                AbilityFlag.DOESNT_UNTAP,
+                                Targets.bound(),
+                                Duration.UntilAfterAffectedControllersNextUntap,
+                            ),
+                        )
+                    ),
+                    targetRequirements = listOf(Targets.permanent(GameObjectFilter.Creature)),
+                )
+            )
+        roundTrips("Tap target creature. It doesn't untap during its controller's next untap step.")
+        roundTrips(
+            "When ~ enters, tap target creature an opponent controls. " +
+                "It doesn't untap during its controller's next untap step."
+        )
     }
 
     // The wrappers are clauses, so a trigger and an activated ability get sequences for free.

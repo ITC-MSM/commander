@@ -194,6 +194,15 @@ class TriggersTest : StringSpec({
         )
     }
 
+    // Stormchaser Drake — the second row of the same family, and a different printed sentence
+    // rather than the same one with two optional phrases the model could not choose between.
+    "the targeted-by-your-spell trigger is its own row beside valiant" {
+        fragment("Whenever ~ becomes the target of a spell you control, draw a card.")
+            .script.triggeredAbilities.single().trigger shouldBe SdkTriggers.BecomesTargetOfYourSpell.event
+
+        roundTrips("Whenever ~ becomes the target of a spell you control, draw a card.")
+    }
+
     // The id is not in the text, so it must not stop a card's own ability from printing — the one
     // field the fail-closed comparison deliberately exempts.
     "an ability's arbitrary id does not stop it printing" {
