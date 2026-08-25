@@ -18,6 +18,60 @@
     ]
 }
 
+// Bishop of Rebirth
+{
+    "name": "Bishop of Rebirth",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Creature — Vampire Cleric",
+    "oracleText": "Vigilance\nWhenever this creature attacks, you may return target creature card with mana value 3 or less from your graveyard to the battlefield.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Battlefield",
+                        "fromZone": "Graveyard"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature mv<=3 own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "5",
+        "rarity": "RARE",
+        "artist": "Tommy Arnold",
+        "flavorText": "\"In the death of the foe lies the resurrection of the faithful.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/d/3d654bec-4eb2-4df6-b71e-ce59a718f903.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Bishop's Soldier
 {
     "name": "Bishop's Soldier",
@@ -39,6 +93,190 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Blinding Fog
+{
+    "name": "Blinding Fog",
+    "manaCost": "{2}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Prevent all damage that would be dealt to creatures this turn. Creatures you control gain hexproof until end of turn. (They can't be the targets of spells or abilities your opponents control.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "PreventDamageShield",
+                    "recipientGroup": {
+                        "baseFilter": "creature"
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "GrantKeyword",
+                        "keyword": "HEXPROOF",
+                        "target": "Self"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "177",
+        "artist": "Igor Kieryluk",
+        "flavorText": "\"I see you, shiny soldiers, but you won't see me.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/a/bae7d501-72a1-43c2-9f72-d768ac5e9320.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Blossom Dryad
+{
+    "name": "Blossom Dryad",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Dryad",
+    "oracleText": "{T}: Untap target land.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "tap": false
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "land"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "178",
+        "artist": "Shreya Shetty",
+        "flavorText": "The only force on Ixalan not interested in finding the golden city is Ixalan itself.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/66a3645f-2b71-4816-a1f2-6cd4e987882f.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Call to the Feast
+{
+    "name": "Call to the Feast",
+    "manaCost": "{2}{W}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create three 1/1 white Vampire creature tokens with lifelink.",
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": {
+                "type": "Fixed",
+                "amount": 3
+            },
+            "power": 1,
+            "toughness": 1,
+            "colors": [
+                "WHITE"
+            ],
+            "creatureTypes": [
+                "Vampire"
+            ],
+            "keywords": [
+                "LIFELINK"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "219",
+        "rarity": "UNCOMMON",
+        "artist": "Yongjae Choi",
+        "flavorText": "By the law of church and crown, vampires feed only on the blood of the guilty—those declared heretics, rebels, or enemies of war.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/7/f7226de1-0e05-4baf-8c2f-54297fee43c1.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "WHITE"
+    ]
+}
+
+// Carnage Tyrant
+{
+    "name": "Carnage Tyrant",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "This spell can't be countered.\nTrample, hexproof",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 6
+    },
+    "keywords": [
+        "TRAMPLE",
+        "HEXPROOF"
+    ],
+    "script": {
+        "cantBeCountered": true
+    },
+    "metadata": {
+        "collectorNumber": "179",
+        "rarity": "MYTHIC",
+        "artist": "Yeong-Hao Han",
+        "flavorText": "Sun Empire commanders are well versed in advanced martial strategy. Still, the correct maneuver is usually to deploy the giant, implacable death lizard.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/b/3bd78731-949c-464a-826a-92f86d784911.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Charging Monstrosaur
+{
+    "name": "Charging Monstrosaur",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Trample, haste",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "TRAMPLE",
+        "HASTE"
+    ],
+    "metadata": {
+        "collectorNumber": "138",
+        "rarity": "UNCOMMON",
+        "artist": "Zack Stella",
+        "flavorText": "\"I knew I should have stayed with the boat. Always stay with the boat!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/5/d5222448-95d1-4b63-ab76-d5060febcf38.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -155,6 +393,109 @@
     ]
 }
 
+// Contract Killing
+{
+    "name": "Contract Killing",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy target creature. Create two Treasure tokens. (They're artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure",
+                    "count": 2
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "95",
+        "artist": "Winona Nelson",
+        "flavorText": "For a price, the floating city of High and Dry offers all the amenities a pirate could want: rest, recreation, and revenge.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d1f20feb-b1ed-4d80-bef9-f3cc44ffb7b0.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Crash the Ramparts
+{
+    "name": "Crash the Ramparts",
+    "manaCost": "{2}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +3/+3 and gains trample until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "TRAMPLE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "182",
+        "artist": "Mark Behm",
+        "flavorText": "The Legion's conquistadors could endure Ixalan's sun. Their forts could withstand a charging ceratops. But nothing can stop a ceratops strengthened by the sun.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/0/20b52d17-7efb-4c6e-9e6a-4763d1ef1daa.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Crushing Canopy
 {
     "name": "Crushing Canopy",
@@ -218,6 +559,440 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Dark Nourishment
+{
+    "name": "Dark Nourishment",
+    "manaCost": "{4}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Dark Nourishment deals 3 damage to any target. You gain 3 life.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "AnyTarget",
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "97",
+        "rarity": "UNCOMMON",
+        "artist": "Josh Hass",
+        "flavorText": "Demons lurk in the shadows of ancient ruins, spreading plague and corruption across the land.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/5/053c4cf0-992b-4f76-b8d1-cd67f894172c.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Deadeye Plunderers
+{
+    "name": "Deadeye Plunderers",
+    "manaCost": "{3}{U}{B}",
+    "typeLine": "Creature — Human Pirate",
+    "oracleText": "This creature gets +1/+1 for each artifact you control.\n{2}{U}{B}: Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{U}{B}"
+                    }
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                },
+                "powerBonus": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "artifact"
+                },
+                "toughnessBonus": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "artifact"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "220",
+        "rarity": "UNCOMMON",
+        "artist": "Greg Opalinski",
+        "flavorText": "\"Keep your friends close and your enemies within range.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/3/63a7a1a4-aec2-467d-91a1-1a2605718c7c.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "BLUE"
+    ]
+}
+
+// Deathless Ancient
+{
+    "name": "Deathless Ancient",
+    "manaCost": "{4}{B}{B}",
+    "typeLine": "Creature — Vampire Knight",
+    "oracleText": "Flying\nTap three untapped Vampires you control: Return this card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "count": 3,
+                        "filter": "permanent Vampire"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand",
+                    "fromZone": "Graveyard"
+                },
+                "activateFromZone": "Graveyard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "100",
+        "rarity": "UNCOMMON",
+        "artist": "Nils Hamm",
+        "flavorText": "\"Ancient one, we have reached the promised shore. The Immortal Sun is near. Drink and awake.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/a/8adc1cd9-22ff-4263-856b-0aaa990a3893.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Deeproot Champion
+{
+    "name": "Deeproot Champion",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Merfolk Shaman",
+    "oracleText": "Whenever you cast a noncreature spell, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "185",
+        "rarity": "RARE",
+        "artist": "Raymond Swanland",
+        "flavorText": "\"No good will come from what you seek. Turn back now or suffer an ignoble death far from your home.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/a/ea1e7fed-e6f3-4445-8d01-dca3971f726f.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Deeproot Warrior
+{
+    "name": "Deeproot Warrior",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Merfolk Warrior",
+    "oracleText": "Whenever this creature becomes blocked, it gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "BecomesBlockedEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "186",
+        "artist": "Slawomir Maniak",
+        "flavorText": "\"We breathe from our soul and bones to give strength to the jungle. The jungle breathes from its roots and rivers to give strength to us.\"\n—Shaper Falani",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/c/7c1a1963-ec46-4ed3-9be1-e4cc09687922.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Deeproot Waters
+{
+    "name": "Deeproot Waters",
+    "manaCost": "{2}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever you cast a Merfolk spell, create a 1/1 blue Merfolk creature token with hexproof. (A creature with hexproof can't be the target of spells or abilities your opponents control.)",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasSubtype",
+                                "subtype": "Merfolk"
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLUE"
+                    ],
+                    "creatureTypes": [
+                        "Merfolk"
+                    ],
+                    "keywords": [
+                        "HEXPROOF"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "rarity": "UNCOMMON",
+        "artist": "Zezhou Chen",
+        "flavorText": "A visit to the Deeproot Tree and its ancient spring replenishes a merfolk's connection to nature.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/4/24bec3b7-5dfc-4b48-ae8f-5bf49470d030.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Depths of Desire
+{
+    "name": "Depths of Desire",
+    "manaCost": "{2}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Return target creature to its owner's hand. Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Hand"
+                },
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "52",
+        "artist": "John Stanko",
+        "flavorText": "Pockets full of gold, lungs full of brine.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/3/63420437-76a9-40cf-aedc-0ca1e73fcc0b.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Dinosaur Stampede
+{
+    "name": "Dinosaur Stampede",
+    "manaCost": "{2}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Attacking creatures get +2/+0 until end of turn. Dinosaurs you control gain trample until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature attacking"
+                        }
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": "Self"
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "permanent Dinosaur ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "GrantKeyword",
+                        "keyword": "TRAMPLE",
+                        "target": "Self"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "140",
+        "rarity": "UNCOMMON",
+        "artist": "Bram Sels",
+        "flavorText": "If you're in the way of a ceratops charge and you're made of mere flesh and bone, then you're not really in the way.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/3/a31bda74-8455-45ab-8142-65fbde2f39c3.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Dire Fleet Hoarder
+{
+    "name": "Dire Fleet Hoarder",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Human Pirate",
+    "oracleText": "When this creature dies, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "102",
+        "artist": "Deruchenko Alexander",
+        "flavorText": "Among the pirates of the Brazen Coalition, the only thing more dangerous than failure is success.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/f/0fcd719e-fa21-42bb-968b-ccc0cd3829c6.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -327,6 +1102,150 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Dusk Legion Dreadnought
+{
+    "name": "Dusk Legion Dreadnought",
+    "manaCost": "{5}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Vigilance\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 6
+    },
+    "keywords": [
+        "VIGILANCE",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "236",
+        "rarity": "UNCOMMON",
+        "artist": "Titus Lunter",
+        "flavorText": "It loomed up over the horizon, silent and dark as a grave.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/e/aec26144-9acf-43b7-8614-1a2952df613d.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
+// Encampment Keeper
+{
+    "name": "Encampment Keeper",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Dog",
+    "oracleText": "First strike\n{7}{W}, {T}, Sacrifice this creature: Creatures you control get +2/+2 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FIRST_STRIKE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{7}{W}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": "Self"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "11",
+        "artist": "Craig J Spearing",
+        "flavorText": "Paladins of the Sanctum Seeker order are an adventurous lot, venturing into the wilds with monstrous mastiffs at their side.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/f/6fe64569-c1b6-4bd4-a742-6ee46ea5181c.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Fathom Fleet Firebrand
+{
+    "name": "Fathom Fleet Firebrand",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Pirate",
+    "oracleText": "{1}{R}: This creature gets +1/+0 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "142",
+        "artist": "Zezhou Chen",
+        "flavorText": "As she charges into battle, her arcane tattoos stir and crawl like fiery serpents.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/2/52280963-ba5b-4735-b5cb-67866f8624c9.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -500,6 +1419,86 @@
     ]
 }
 
+// Glorifier of Dusk
+{
+    "name": "Glorifier of Dusk",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Creature — Vampire Soldier",
+    "oracleText": "Pay 2 life: This creature gains flying until end of turn.\nPay 2 life: This creature gains vigilance until end of turn.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomPayLife",
+                        "amount": 2
+                    }
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "target": "Self"
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomPayLife",
+                        "amount": 2
+                    }
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "VIGILANCE",
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "12",
+        "rarity": "UNCOMMON",
+        "artist": "Viktor Titov",
+        "flavorText": "\"The blood of the enemy is a sacrament. The strength it gives is proof that our cause is just.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/a/aaf87f95-1c77-455a-8feb-57bfd4d159c9.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Grazing Whiptail
+{
+    "name": "Grazing Whiptail",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Reach",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "metadata": {
+        "collectorNumber": "190",
+        "artist": "Gabor Szikszai",
+        "flavorText": "Often found browsing on the upper canopies of Ixalan's jungles, whiptails are known to absently bat away anything foolish enough to interrupt their meal.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/5/75cbd690-4d6e-49a7-bded-e6ecee2c76b6.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Growing Rites of Itlimoc
 {
     "name": "Growing Rites of Itlimoc",
@@ -666,6 +1665,73 @@
     ]
 }
 
+// Huatli's Snubhorn
+{
+    "name": "Huatli's Snubhorn",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Vigilance (Attacking doesn't cause this creature to tap.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "metadata": {
+        "collectorNumber": "286",
+        "artist": "Randy Vargas",
+        "flavorText": "Don't make the mistake of thinking blunt horns can't kill.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/2/e2d88e6c-4aa8-4175-9f5d-a4c0182cdf74.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Imperial Lancer
+{
+    "name": "Imperial Lancer",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human Knight",
+    "oracleText": "This creature has double strike as long as you control a Dinosaur.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "DOUBLE_STRIKE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "permanent Dinosaur"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "15",
+        "rarity": "UNCOMMON",
+        "artist": "Viktor Titov",
+        "flavorText": "\"Together my mount and I are stronger than either of us apart.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/e/7ed3784a-2dc0-4626-aa6a-268c1e2ac83c.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Inspiring Cleric
 {
     "name": "Inspiring Cleric",
@@ -704,6 +1770,313 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Ixalli's Keeper
+{
+    "name": "Ixalli's Keeper",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Human Shaman",
+    "oracleText": "{7}{G}, {T}, Sacrifice this creature: Target creature gets +5/+5 and gains trample until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{7}{G}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 5
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 5
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "TRAMPLE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "193",
+        "artist": "Lake Hurwitz",
+        "flavorText": "The people of the Sun Empire worship the sun in three aspects. Ixalli is the Verdant Sun, who fosters growth in all things.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/5/e5b98537-abf4-46cb-853f-9561811ab439.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Jade Guardian
+{
+    "name": "Jade Guardian",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Merfolk Shaman",
+    "oracleText": "Hexproof (This creature can't be the target of spells or abilities your opponents control.)\nWhen this creature enters, put a +1/+1 counter on target Merfolk you control.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "HEXPROOF"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent Merfolk ctrl:you"
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "194",
+        "artist": "Chris Seaman",
+        "flavorText": "The River Heralds believe that jade gives weight to their magic.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/c/aca83e48-6e32-477f-8714-6103e77c06df.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Jungle Delver
+{
+    "name": "Jungle Delver",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Merfolk Warrior",
+    "oracleText": "{3}{G}: Put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "195",
+        "artist": "Kieran Yanner",
+        "flavorText": "\"There is no power too great to be used in the defense of our ancestral lands.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/e/be0e3547-d8cb-4b68-a396-8c8fbc3b2b1c.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Kinjalli's Caller
+{
+    "name": "Kinjalli's Caller",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "Dinosaur spells you cast cost {1} less to cast.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "Dinosaur"
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "18",
+        "artist": "Sara Winters",
+        "flavorText": "The people of the Sun Empire worship the sun in three aspects. Kinjalli is the Wakening Sun, who created humans from clay and baked them in the sun's warmth.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/2/625211d4-c89c-4aee-a0b0-4bfabd3509ad.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Legion's Judgment
+{
+    "name": "Legion's Judgment",
+    "manaCost": "{2}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy target creature with power 4 or greater.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature pow>=4"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "21",
+        "artist": "Lucas Graciano",
+        "flavorText": "\"My lance was once wielded by Venerable Tarrian. In his name and by his might, I cast you down!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/8/385bea20-c196-4da8-bc3e-36f8d50dcc17.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Lightning-Rig Crew
+{
+    "name": "Lightning-Rig Crew",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Goblin Pirate",
+    "oracleText": "{T}: This creature deals 1 damage to each opponent.\nWhenever you cast a Pirate spell, untap this creature.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasSubtype",
+                                "subtype": "Pirate"
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "TapUntap",
+                    "target": "Self",
+                    "tap": false
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "EachOpponent"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "150",
+        "rarity": "UNCOMMON",
+        "artist": "Filip Burburan",
+        "flavorText": "A pirate ship in battle is a storm of activity.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/b/eb4a34ce-94d5-4e4d-97cc-1326cf5241f5.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -925,6 +2298,149 @@
     ]
 }
 
+// Otepec Huntmaster
+{
+    "name": "Otepec Huntmaster",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Shaman",
+    "oracleText": "Dinosaur spells you cast cost {1} less to cast.\n{T}: Target Dinosaur gains haste until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "permanent Dinosaur"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "Dinosaur"
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "153",
+        "rarity": "UNCOMMON",
+        "artist": "Daarken",
+        "flavorText": "\"Forward! Let the Burning Sun's light guide you to deserving prey!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c334e6f3-1378-4429-b4f1-fa8ed7ab7123.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Overflowing Insight
+{
+    "name": "Overflowing Insight",
+    "manaCost": "{4}{U}{U}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Target player draws seven cards.",
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 7
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "rarity": "MYTHIC",
+        "artist": "Lucas Graciano",
+        "flavorText": "The truth came to Kumena like the Great River's torrent: the only way to keep his enemies away from the hidden city was to claim its power for himself.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/6/f6b3dd8f-902e-45b8-a422-370705621294.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Paladin of the Bloodstained
+{
+    "name": "Paladin of the Bloodstained",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Vampire Knight",
+    "oracleText": "When this creature enters, create a 1/1 white Vampire creature token with lifelink.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Vampire"
+                    ],
+                    "keywords": [
+                        "LIFELINK"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "25",
+        "artist": "Bastien L. Deharme",
+        "flavorText": "Closely linked to the Church of Dusk, the paladins of the Bloodstained order are devout to the point of fanaticism.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/a/5a0385d5-d0f4-40b8-af28-6557ffdfb625.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Pirate's Cutlass
 {
     "name": "Pirate's Cutlass",
@@ -1001,6 +2517,41 @@
     }
 }
 
+// Pirate's Prize
+{
+    "name": "Pirate's Prize",
+    "manaCost": "{3}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Draw two cards. Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "68",
+        "artist": "Deruchenko Alexander",
+        "flavorText": "Nothing warms the heart like plunder.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/8/48d97373-9b55-4eb7-99b6-8912f09bd0bb.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Prosperous Pirates
 {
     "name": "Prosperous Pirates",
@@ -1038,6 +2589,48 @@
     ]
 }
 
+// Pterodon Knight
+{
+    "name": "Pterodon Knight",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Human Knight",
+    "oracleText": "This creature has flying as long as you control a Dinosaur.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "permanent Dinosaur"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "28",
+        "artist": "Anthony Palumbo",
+        "flavorText": "\"To rise like the sun—there is no greater feeling.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/1/41f00a04-1336-4830-a6c2-514848afefd2.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Queen's Bay Soldier
 {
     "name": "Queen's Bay Soldier",
@@ -1058,6 +2651,43 @@
     ]
 }
 
+// Queen's Commission
+{
+    "name": "Queen's Commission",
+    "manaCost": "{2}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create two 1/1 white Vampire creature tokens with lifelink.",
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "power": 1,
+            "toughness": 1,
+            "colors": [
+                "WHITE"
+            ],
+            "creatureTypes": [
+                "Vampire"
+            ],
+            "keywords": [
+                "LIFELINK"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "29",
+        "artist": "Mark Behm",
+        "flavorText": "\"Let the blood of the impure flow through you. Only the blessings of the golden city will purge its acrid taste from your mouth.\"\n—High Marshal Arguel",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/0/f06c0007-299e-4d71-99c3-f905d942759d.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Raptor Companion
 {
     "name": "Raptor Companion",
@@ -1075,6 +2705,184 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Raptor Hatchling
+{
+    "name": "Raptor Hatchling",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Enrage — Whenever this creature is dealt damage, create a 3/3 green Dinosaur creature token with trample.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DamageReceivedEvent",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 3,
+                    "toughness": 3,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Dinosaur"
+                    ],
+                    "keywords": [
+                        "TRAMPLE"
+                    ]
+                },
+                "descriptionOverride": "Enrage — Whenever this creature is dealt damage, create a 3/3 green Dinosaur creature token with trample."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "155",
+        "rarity": "UNCOMMON",
+        "artist": "Even Amundsen",
+        "flavorText": "\"Every little hatchling has a parent's claws to guard it.\"\n—Sun Empire saying",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/0/8093e88d-fd3c-43d3-a025-9ebb9f02a84f.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Ravenous Daggertooth
+{
+    "name": "Ravenous Daggertooth",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Enrage — Whenever this creature is dealt damage, you gain 2 life.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DamageReceivedEvent",
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "Enrage — Whenever this creature is dealt damage, you gain 2 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "202",
+        "artist": "Jakub Kasper",
+        "flavorText": "A daggertooth's triumphant roar makes all the sounds of jungle life fall silent.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/0/309b204b-774a-47bc-aead-c78db90f3be2.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Regisaur Alpha
+{
+    "name": "Regisaur Alpha",
+    "manaCost": "{3}{R}{G}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Other Dinosaurs you control have haste.\nWhen this creature enters, create a 3/3 green Dinosaur creature token with trample.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 3,
+                    "toughness": 3,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Dinosaur"
+                    ],
+                    "keywords": [
+                        "TRAMPLE"
+                    ]
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "HASTE",
+                "filter": {
+                    "baseFilter": "permanent Dinosaur ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "227",
+        "rarity": "RARE",
+        "artist": "Jonathan Kuo",
+        "flavorText": "\"Seeing a pack of these monsters hunt together, I'm at a loss to imagine the size of their prey.\"\n—Adrian Adanto of Lujio",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d6a322c5-aa4c-4a99-a3ca-48c1353104f0.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "RED"
+    ]
+}
+
+// Ripjaw Raptor
+{
+    "name": "Ripjaw Raptor",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Enrage — Whenever this creature is dealt damage, draw a card.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DamageReceivedEvent",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Enrage — Whenever this creature is dealt damage, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "203",
+        "rarity": "RARE",
+        "artist": "Ryan Pancoast",
+        "flavorText": "Raptors are clever enough to tear away a hard metal shell to get at the tasty morsel inside.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/c/7c5368c6-87e0-4f83-aaf7-f4af96d2bf30.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -1347,6 +3155,165 @@
     ]
 }
 
+// Sheltering Light
+{
+    "name": "Sheltering Light",
+    "manaCost": "{W}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gains indestructible until end of turn. Scry 1. (Damage and effects that say \"destroy\" don't destroy the creature.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "INDESTRUCTIBLE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                {
+                    "type": "Scry",
+                    "count": 1
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "35",
+        "rarity": "UNCOMMON",
+        "artist": "Gabor Szikszai",
+        "flavorText": "Those who wield the power of the sun protect the Empire from darkness.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/0/b0c945c7-6c31-4c4f-9203-3dc2aef50820.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Shining Aerosaur
+{
+    "name": "Shining Aerosaur",
+    "manaCost": "{4}{W}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Flying",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "metadata": {
+        "collectorNumber": "36",
+        "artist": "Dan Murayama Scott",
+        "flavorText": "\"The invaders cloak themselves in the shadows of dusk. Aerosaurs hide in the brilliance of the noonday sun.\"\n—Caparocti Sunborn",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/e/8e900d0d-6f35-4e5d-9365-6ade227d218d.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Shore Keeper
+{
+    "name": "Shore Keeper",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Trilobite",
+    "oracleText": "{7}{U}, {T}, Sacrifice this creature: Draw three cards.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{7}{U}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "77",
+        "artist": "YW Tang",
+        "flavorText": "Over their long life spans, the larger trilobites accumulate vast treasure troves in their guts.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/135d1145-8640-44e1-8079-45832fa2556d.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Skittering Heartstopper
+{
+    "name": "Skittering Heartstopper",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Insect",
+    "oracleText": "{B}: This creature gains deathtouch until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{B}"
+                    }
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "DEATHTOUCH",
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "122",
+        "artist": "Aaron Miller",
+        "flavorText": "It flows like water over the forest floor, as deadly as the swiftest current.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/7/0722fbdf-c092-4e80-913f-29390177cdcb.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Skulduggery
 {
     "name": "Skulduggery",
@@ -1414,6 +3381,179 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Sky Terror
+{
+    "name": "Sky Terror",
+    "manaCost": "{R}{W}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Flying, menace",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "MENACE"
+    ],
+    "metadata": {
+        "collectorNumber": "229",
+        "rarity": "UNCOMMON",
+        "artist": "Johann Bodin",
+        "flavorText": "\"Wherever the Threefold Sun shines, great wings may go.\"\n—Emperor Apatzec Intli III",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/6/167ed739-2953-47af-841f-bc1a092b3aa6.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
+// Skyblade of the Legion
+{
+    "name": "Skyblade of the Legion",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Vampire Soldier",
+    "oracleText": "Flying",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "metadata": {
+        "collectorNumber": "37",
+        "artist": "Daarken",
+        "flavorText": "Vampires call the gift of flight \"exultation.\" For their enemies, it brings only sorrow.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/67e788e2-12e9-4041-8210-753aaef2576c.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Slash of Talons
+{
+    "name": "Slash of Talons",
+    "manaCost": "{W}",
+    "typeLine": "Instant",
+    "oracleText": "Slash of Talons deals 2 damage to target attacking or blocking creature.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "StateOr",
+                                "predicates": [
+                                    "IsAttacking",
+                                    "IsBlocking"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "38",
+        "artist": "Magali Villeneuve",
+        "flavorText": "\"The amber sun smokes with fury, gazing on foes that gather like ants invading our home. We are ready! Blade and claw strike as one.\"\n—Huatli",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/9/a97d474e-83b6-4969-81b4-51f5315057d7.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Sleek Schooner
+{
+    "name": "Sleek Schooner",
+    "manaCost": "{3}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Crew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 1
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "247",
+        "rarity": "UNCOMMON",
+        "artist": "Mark Winters",
+        "flavorText": "The pirates had left the open sea behind, but they were still in their element: reckless adventure.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/6/767e2bfb-bcf5-442c-b092-bdb1f4f13561.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
+// Snapping Sailback
+{
+    "name": "Snapping Sailback",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Flash\nEnrage — Whenever this creature is dealt damage, put a +1/+1 counter on it. (It must survive the damage to get the counter.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DamageReceivedEvent",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Enrage — Whenever this creature is dealt damage, put a +1/+1 counter on it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "208",
+        "rarity": "UNCOMMON",
+        "artist": "Dan Murayama Scott",
+        "flavorText": "Lurking beneath the murky waters of Ixalan's rivers, sailbacks can rip a meal off the shore in the blink of an eye.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0af1eadf-f7ea-40be-a0cc-b79e4161db34.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -1503,6 +3643,51 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Sun-Crowned Hunters
+{
+    "name": "Sun-Crowned Hunters",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Enrage — Whenever this creature is dealt damage, it deals 3 damage to target opponent or planeswalker.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DamageReceivedEvent",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponentOrPlaneswalker",
+                    "id": "target"
+                },
+                "descriptionOverride": "Enrage — Whenever this creature is dealt damage, it deals 3 damage to target opponent or planeswalker."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "164",
+        "artist": "Aaron Miller",
+        "flavorText": "One alone is dangerous, and they are never alone.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/c/3cab793e-0e17-4940-9cab-a30d62df5c20.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -1624,6 +3809,85 @@
     ]
 }
 
+// Swashbuckling
+{
+    "name": "Swashbuckling",
+    "manaCost": "{1}{R}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature gets +2/+2 and has haste.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "HASTE"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "167",
+        "artist": "Josu Hernaiz",
+        "flavorText": "The pirates of the Brazen Coalition are the descendants of those displaced by the Legion of Dusk, and they are eager for vengeance.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/1/01ed59b1-968b-4297-9e98-42d940f9478c.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Territorial Hammerskull
+{
+    "name": "Territorial Hammerskull",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Whenever this creature attacks, tap target creature an opponent controls.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "41",
+        "artist": "Lars Grant-West",
+        "flavorText": "From the eyes up, it's solid bone and stubbornness.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/f/af5a237a-31e7-43ee-8d47-3eb12dd1a60c.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Thundering Spineback
 {
     "name": "Thundering Spineback",
@@ -1683,6 +3947,53 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Tilonalli's Knight
+{
+    "name": "Tilonalli's Knight",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Knight",
+    "oracleText": "Whenever this creature attacks, if you control a Dinosaur, this creature gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "interveningIf": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "permanent Dinosaur"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "169",
+        "artist": "Lius Lasahido",
+        "flavorText": "The people of the Sun Empire worship the sun in three aspects. Tilonalli is the Burning Sun, associated with ferocity, fire, and passion.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/2/b25c2f33-1707-4ff3-a22e-58f51936b733.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -1829,6 +4140,42 @@
     }
 }
 
+// Unfriendly Fire
+{
+    "name": "Unfriendly Fire",
+    "manaCost": "{4}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Unfriendly Fire deals 4 damage to any target.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 4
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "AnyTarget",
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "172",
+        "artist": "Josu Hernaiz",
+        "flavorText": "Disputes within the Brazen Coalition can escalate from insult to broadside in the blink of an eye.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7a61b274-0499-4cb6-a2e4-f5e18ad7fd2d.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Vanquish the Weak
 {
     "name": "Vanquish the Weak",
@@ -1863,5 +4210,268 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Vicious Conquistador
+{
+    "name": "Vicious Conquistador",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Vampire Soldier",
+    "oracleText": "Whenever this creature attacks, each opponent loses 1 life.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "EachOpponent"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "128",
+        "rarity": "UNCOMMON",
+        "artist": "Kieran Yanner",
+        "flavorText": "\"He is ambitious. Tireless. And utterly ruthless. Ideal for the frontier.\"\n—Viceroy Elia Sotonores, report to the queen",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/a/2a4b6ced-e8d3-47e9-bd27-3e0cb644afe4.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Vona, Butcher of Magan
+{
+    "name": "Vona, Butcher of Magan",
+    "manaCost": "{3}{W}{B}",
+    "typeLine": "Legendary Creature — Vampire Knight",
+    "oracleText": "Vigilance, lifelink\n{T}, Pay 7 life: Destroy target nonland permanent. Activate only during your turn.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "VIGILANCE",
+        "LIFELINK"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomPayLife",
+                                "amount": 7
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "nonland permanent"
+                        },
+                        "id": "target"
+                    }
+                ],
+                "restrictions": [
+                    "OnlyDuringYourTurn"
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "231",
+        "rarity": "MYTHIC",
+        "artist": "Volkan Baǵa",
+        "flavorText": "\"For four hundred years, I have led armies of conquest. These lands hold nothing that can stand against me.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c1fd4101-d531-43aa-9cb6-79e36a8121d8.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "WHITE"
+    ]
+}
+
+// Vraska's Contempt
+{
+    "name": "Vraska's Contempt",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Exile target creature or planeswalker. You gain 2 life.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Exile"
+                },
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetCreatureOrPlaneswalker",
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "129",
+        "rarity": "RARE",
+        "artist": "Clint Cearley",
+        "flavorText": "It wasn't long before the taverns of High and Dry were full of whispers about the new captain who could turn a person to stone with a glance.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/d/bd7550dd-dfc5-43cd-a117-1244ee3086a8.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Walk the Plank
+{
+    "name": "Walk the Plank",
+    "manaCost": "{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy target non-Merfolk creature.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "NotSubtype",
+                                "subtype": "Merfolk"
+                            }
+                        ]
+                    }
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "130",
+        "rarity": "UNCOMMON",
+        "artist": "Kieran Yanner",
+        "flavorText": "When Captain Thorn adds a new ship to his fleet, he gives the crew a simple choice: follow me, or fall in the sea.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/0/0038ac6a-318f-44fb-bb64-7ae172c4aca3.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Wily Goblin
+{
+    "name": "Wily Goblin",
+    "manaCost": "{R}{R}",
+    "typeLine": "Creature — Goblin Pirate",
+    "oracleText": "When this creature enters, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "174",
+        "rarity": "UNCOMMON",
+        "artist": "Steve Prescott",
+        "flavorText": "Goblins climb and swing with ease, whether through a pirate ship's rigging or a tree's branches.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/1/a175b24c-c256-45a8-b24a-6b83e42d5efa.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Wind Strider
+{
+    "name": "Wind Strider",
+    "manaCost": "{4}{U}",
+    "typeLine": "Creature — Merfolk Wizard",
+    "oracleText": "Flash (You may cast this spell any time you could cast an instant.)\nFlying",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING"
+    ],
+    "metadata": {
+        "collectorNumber": "88",
+        "artist": "Magali Villeneuve",
+        "flavorText": "\"Currents are currents, whether in sea or sky.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/1/613a8ab1-9c5e-4b56-aa51-daeb8c1983b9.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }

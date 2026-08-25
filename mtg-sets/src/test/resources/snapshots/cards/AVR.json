@@ -1221,6 +1221,36 @@
     ]
 }
 
+// Favorable Winds
+{
+    "name": "Favorable Winds",
+    "manaCost": "{1}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "Creatures you control with flying get +1/+1.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature kw:flying ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "rarity": "UNCOMMON",
+        "artist": "Winona Nelson",
+        "flavorText": "Long thought to be extinct, flocks of gryffs reappeared with Avacyn's return.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/c/4cbd57f1-9883-40a4-9b52-1649cee83815.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Ghostform
 {
     "name": "Ghostform",
