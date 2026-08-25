@@ -13425,6 +13425,48 @@
     ]
 }
 
+// Vampire Slayer
+{
+    "name": "Vampire Slayer",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Soldier",
+    "oracleText": "Whenever this creature deals damage to a Vampire, destroy that creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "recipient": {
+                        "type": "RecipientMatching",
+                        "filter": "permanent Vampire"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "TriggeringEntity",
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "descriptionOverride": "Whenever this creature deals damage to a Vampire, destroy that creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "43",
+        "artist": "Tomas Duchek",
+        "flavorText": "When Kaya saved her village, Berit realized even vampires could be killed. When she brought one down herself, she realized she had found her calling.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a8f6f03b-5a4e-4532-9c9e-24c75df2769f.jpg?1783924905"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Vampire's Kiss
 {
     "name": "Vampire's Kiss",
