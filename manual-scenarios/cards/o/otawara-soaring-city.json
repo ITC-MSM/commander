@@ -1,0 +1,37 @@
+{
+  "player1Name": "Alice",
+  "player2Name": "Bob",
+  "player1": {
+    "lifeTotal": 20,
+    "hand": ["Otawara, Soaring City"],
+    "battlefield": [
+      {"name": "Otawara, Soaring City"},
+      {"name": "Island"},
+      {"name": "Island"},
+      {"name": "Mirri, Cat Warrior"},
+      {"name": "Squee, Goblin Nabob"}
+    ],
+    "graveyard": [],
+    "library": ["Island", "Grizzly Bears", "Island"]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": [],
+    "battlefield": [
+      {"name": "Centaur Courser"},
+      {"name": "Sol Ring"},
+      {"name": "Glorious Anthem"},
+      {"name": "Forest"},
+      {"name": "Forest"}
+    ],
+    "graveyard": [],
+    "library": ["Forest", "Hill Giant", "Forest"]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1,
+  "player1StopAtSteps": [],
+  "player2StopAtSteps": [],
+  "player1OpponentStopAtSteps": [],
+  "player2OpponentStopAtSteps": []
+}
