@@ -4102,6 +4102,51 @@
     ]
 }
 
+// Dying to Serve
+{
+    "name": "Dying to Serve",
+    "manaCost": "{2}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever you discard one or more cards, create a tapped 2/2 black Zombie creature token. This ability triggers only once each turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DiscardEvent",
+                    "batch": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Zombie"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/c/8/c84e21cd-079d-493f-ab8d-e62f16ec1581.jpg?1782739822",
+                    "tapped": true
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever you discard one or more cards, create a tapped 2/2 black Zombie creature token. This ability triggers only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "109",
+        "rarity": "RARE",
+        "artist": "Steven Belledin",
+        "flavorText": "\"I used to have hired hands, but I discovered they make better waitstaff with the rest of the body attached.\"\n—Olivia Voldaren",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c2ea16cd-801e-478a-b924-5431582b70d1.jpg?1783924866"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Edgar's Awakening
 {
     "name": "Edgar's Awakening",
