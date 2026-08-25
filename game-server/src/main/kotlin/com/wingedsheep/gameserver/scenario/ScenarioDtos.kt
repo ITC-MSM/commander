@@ -117,6 +117,12 @@ data class PlayerConfig(
     val library: List<String>? = null,
     val exile: List<String>? = null,
     /**
+     * Cards "outside the game" (CR 400.11) — the player's sideboard. Needed by any card that
+     * reaches outside the game: the wish cycle, and Strixhaven's **Learn** (CR 701.48), whose
+     * Lesson half is simply unreachable without one.
+     */
+    val sideboard: List<String>? = null,
+    /**
      * Commander card names. Each name becomes a card in the player's command zone with
      * [CommanderComponent] attached and registered in [CommanderRegistryComponent].
      * Provide one name for a standard commander, two for Partner / Background.

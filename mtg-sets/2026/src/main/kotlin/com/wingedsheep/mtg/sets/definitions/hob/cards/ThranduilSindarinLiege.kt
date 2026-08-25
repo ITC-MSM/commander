@@ -58,7 +58,7 @@ val ThranduilSindarinLiege = card("Thranduil, Sindarin Liege") {
             powerBonus = 1,
             toughnessBonus = 1,
             filter = GroupFilter(
-                GameObjectFilter.Creature.withSubtype(Subtype.ELF).youControl(),
+                GameObjectFilter.Permanent.withSubtype(Subtype.ELF).youControl(),
                 excludeSelf = true
             )
         )

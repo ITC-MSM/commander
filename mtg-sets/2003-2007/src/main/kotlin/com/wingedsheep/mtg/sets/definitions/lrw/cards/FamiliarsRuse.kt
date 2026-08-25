@@ -24,7 +24,9 @@ val FamiliarsRuse = card("Familiar's Ruse") {
     oracleText = "As an additional cost to cast this spell, return a creature you control to its " +
         "owner's hand.\nCounter target spell."
 
-    additionalCost(Costs.additional.ReturnToHand(GameObjectFilter.Creature.youControl()))
+    // `CostAtom.ReturnToHand`'s domain is already `controlledMatching(state, payerId, …)`, so a
+    // `youControl()` here would restate the atom's own scope rather than narrow it.
+    additionalCost(Costs.additional.ReturnToHand(GameObjectFilter.Creature))
 
     spell {
         target = Targets.Spell

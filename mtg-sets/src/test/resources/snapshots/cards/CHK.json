@@ -1456,7 +1456,7 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomSacrifice",
-                                "filter": "creature Rat"
+                                "filter": "permanent Rat"
                             }
                         }
                     ]
@@ -1484,7 +1484,7 @@
                 "type": "GrantKeyword",
                 "keyword": "FEAR",
                 "filter": {
-                    "baseFilter": "creature Rat"
+                    "baseFilter": "permanent Rat"
                 }
             }
         ]

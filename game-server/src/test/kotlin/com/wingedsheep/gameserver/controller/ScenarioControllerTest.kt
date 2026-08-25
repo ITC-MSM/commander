@@ -30,7 +30,7 @@ import java.net.http.HttpResponse
  * Production scenario endpoint `POST /api/scenarios`. Unlike the dev endpoint this is NOT
  * gated behind `game.dev-endpoints.enabled` (note its absence below), so these tests double as
  * the proof that the feature ships to all players. Covers: hotseat (SELF) wiring, the exile
- * zone, and validation of unknown card names.
+ * and sideboard zones, and validation of unknown card names.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ScenarioControllerTest(
@@ -108,6 +108,33 @@ class ScenarioControllerTest(
         val exile = state.getZone(ZoneKey(p1Id, Zone.EXILE))
         exile.shouldNotBeNull()
         val names = exile.mapNotNull { state.getEntity(it)?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()?.name }
+        names shouldContain "Grizzly Bears"
+    }
+
+    test("sideboard zone is populated from the request") {
+        // Without this zone nothing can reach "outside the game" (CR 400.11), so Strixhaven's
+        // Learn (CR 701.48) could only ever take its discard branch and every wish was a blank.
+        val response = post(
+            """
+            {
+              "player1": { "lifeTotal": 20, "sideboard": ["Boomerang Basics", "Grizzly Bears"] },
+              "player2": { "lifeTotal": 20 },
+              "mode": "TWO_PLAYER"
+            }
+            """.trimIndent()
+        )
+        response.statusCode() shouldBe 200
+        val body = json.parseToJsonElement(response.body()).jsonObject
+        val sessionId = body["sessionId"]!!.jsonPrimitive.content
+        val p1Id = EntityId.of(body["player1"]!!.jsonObject["playerId"]!!.jsonPrimitive.content)
+
+        val state = gameRepository.findById(sessionId).shouldNotBeNull().getStateForTesting().shouldNotBeNull()
+        val sideboard = state.getZone(ZoneKey(p1Id, Zone.SIDEBOARD))
+        sideboard.shouldNotBeNull()
+        val names = sideboard.mapNotNull {
+            state.getEntity(it)?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()?.name
+        }
+        names shouldContain "Boomerang Basics"
         names shouldContain "Grizzly Bears"
     }
 

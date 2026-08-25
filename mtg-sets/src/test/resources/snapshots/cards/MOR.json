@@ -34,6 +34,42 @@
     ]
 }
 
+// Disperse
+{
+    "name": "Disperse",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Return target nonland permanent to its owner's hand.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target nonland permanent"
+            },
+            "destination": "Hand"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "nonland permanent"
+                },
+                "id": "target nonland permanent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "31",
+        "artist": "Steve Ellis",
+        "flavorText": "Gryffid scowled at the sky. A perfect day for the hunt tainted by clouds. He wished them gone. High above, the clouds looked down, scowled, and made a wish of their own.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0ae239b2-1596-4906-9711-1d180a246d35.jpg?1783942800"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Indomitable Ancients
 {
     "name": "Indomitable Ancients",

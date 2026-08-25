@@ -27,13 +27,13 @@ val LordOfAtlantis = card("Lord of Atlantis") {
         ability = ModifyStats(
             powerBonus = 1,
             toughnessBonus = 1,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.MERFOLK), excludeSelf = true)
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.MERFOLK), excludeSelf = true)
         )
     }
     staticAbility {
         ability = GrantKeyword(
             Keyword.ISLANDWALK,
-            GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.MERFOLK), excludeSelf = true)
+            GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.MERFOLK), excludeSelf = true)
         )
     }
     metadata {

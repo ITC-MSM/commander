@@ -41,7 +41,7 @@ val CamelliaTheSeedmiser = card("Camellia, the Seedmiser") {
         ability = GrantKeyword(
             keyword = Keyword.MENACE,
             filter = GroupFilter(
-                GameObjectFilter.Creature.withSubtype("Squirrel").youControl(),
+                GameObjectFilter.Permanent.withSubtype("Squirrel").youControl(),
                 excludeSelf = true
             )
         )
@@ -67,7 +67,7 @@ val CamelliaTheSeedmiser = card("Camellia, the Seedmiser") {
         )
         effect = Effects.ForEachInGroup(
             filter = GroupFilter(
-                GameObjectFilter.Creature.withSubtype("Squirrel").youControl(),
+                GameObjectFilter.Permanent.withSubtype("Squirrel").youControl(),
                 excludeSelf = true
             ),
             effect = AddCountersEffect(

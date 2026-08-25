@@ -2,6 +2,7 @@ package com.wingedsheep.sdk.dsl
 
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Counters
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.AddCountersEffect
@@ -40,7 +41,8 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
- * Named MTG keyword-mechanic recipes (Blight, Bolster, Explore, Forage, Gift, Incubate, Recruit).
+ * Named MTG keyword-mechanic recipes (Blight, Bolster, Explore, Forage, Gift, Incubate, Learn,
+ * Recruit).
  *
  * Reached through the [Patterns] index — `Patterns.Mechanic.blight(...)`. Each composes existing
  * atomic effects into the printed keyword behaviour; they live here (rather than a zone-based
@@ -366,6 +368,62 @@ object MechanicPatterns {
     // =========================================================================
     // Recruit Pattern (The Hobbit)
     // =========================================================================
+
+    /**
+     * **Learn** (CR 701.48) — the Strixhaven keyword action, printed as a bare "Learn." with
+     * reminder text.
+     *
+     * CR 701.48a spells it out, and the order is load-bearing rather than a "choose one":
+     *
+     * > "Learn" means "You may discard a card. If you do, draw a card. If you didn't discard a
+     * > card, you may reveal a Lesson card you own from outside the game and put it into your
+     * > hand."
+     *
+     * So the discard is offered *first*, and taking it forecloses the Lesson — a player who
+     * discards never gets the sideboard option. The composition follows that shape literally:
+     *
+     * 1. Gather the controller's hand and let them choose **up to one** card to discard. The
+     *    `ChooseUpTo(1)` is where the printed "you may" lives: choosing none is declining, and an
+     *    empty hand auto-resolves to none without a prompt.
+     * 2. If they discarded, draw a card; if they didn't, run a Lesson-restricted
+     *    [SideboardPatterns.wish], whose own `ChooseUpTo(1)` carries the second "may" — declining,
+     *    or owning no Lesson at all, simply does nothing.
+     *
+     * The discard is a real discard ([MoveType.Discard]), so madness and "whenever you discard a
+     * card" triggers see it.
+     *
+     * Collection names are `learn_`-prefixed so a Learn nested inside another pipeline can't
+     * collide with that pipeline's own `hand` / `discarded` collections.
+     */
+    fun learn(): CompositeEffect = CompositeEffect(
+        listOf(
+            GatherCardsEffect(
+                source = CardSource.FromZone(Zone.HAND, Player.You),
+                storeAs = "learn_hand"
+            ),
+            SelectFromCollectionEffect(
+                from = "learn_hand",
+                selection = SelectionMode.ChooseUpTo(DynamicAmount.Fixed(1)),
+                chooser = Chooser.Controller,
+                storeSelected = "learn_discarded",
+                prompt = "Learn — you may discard a card to draw a card"
+            ),
+            MoveCollectionEffect(
+                from = "learn_discarded",
+                destination = CardDestination.ToZone(Zone.GRAVEYARD, Player.You),
+                moveType = MoveType.Discard
+            ),
+            ConditionalOnCollectionEffect(
+                collection = "learn_discarded",
+                ifNotEmpty = DrawCardsEffect(1, EffectTarget.Controller),
+                ifEmpty = SideboardPatterns.wish(
+                    filter = GameObjectFilter.Any.withSubtype(Subtype.LESSON),
+                    storeAs = "learn_lessons"
+                )
+            )
+        ),
+        descriptionOverride = "Learn"
+    )
 
     /**
      * Recruit (The Hobbit) — "Draw a card, then discard a card. If you discarded a nonland card,

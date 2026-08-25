@@ -5248,7 +5248,7 @@
                     "type": "GrantKeyword",
                     "keyword": "FLYING",
                     "filter": {
-                        "baseFilter": "creature Knight ctrl:you",
+                        "baseFilter": "permanent Knight ctrl:you",
                         "excludeSelf": true
                     }
                 },

@@ -5086,7 +5086,7 @@
                 "type": "GrantKeyword",
                 "keyword": "FLYING",
                 "filter": {
-                    "baseFilter": "creature Zombie ctrl:you"
+                    "baseFilter": "permanent Zombie ctrl:you"
                 }
             }
         ]

@@ -228,6 +228,22 @@ data class TargetFilter(
          */
         val PermanentInYourGraveyard = TargetFilter(GameObjectFilter.Companion.Permanent.ownedByYou(), zone = Zone.GRAVEYARD)
 
+        /**
+         * Target artifact card in your graveyard — the "return target artifact card from your
+         * graveyard" family (Ritual of Restoration, Myr Retriever, Refurbish, Fortuitous Find).
+         *
+         * `GameObjectFilter.Artifact` is a lone `IsArtifact` predicate, so this is **inclusive**, not
+         * exclusive: an artifact creature card in your graveyard satisfies this filter *and*
+         * [CreatureInYourGraveyard]. A card printing both as separate modes still can't recur one
+         * such card twice — the two targets are chosen at the same time and must be different
+         * objects — but either mode alone will happily take it.
+         *
+         * Ownership, not control, is the axis: a card in a graveyard represents neither a permanent
+         * nor a spell and so has no controller, only the owner whose graveyard it sits in. Use
+         * `TargetFilter.Artifact` (battlefield, `youControl()`) when the wording means a permanent.
+         */
+        val ArtifactInYourGraveyard = TargetFilter(GameObjectFilter.Companion.Artifact.ownedByYou(), zone = Zone.GRAVEYARD)
+
         /** Target instant or sorcery card in a graveyard */
         val InstantOrSorceryInGraveyard = TargetFilter(GameObjectFilter.Companion.InstantOrSorcery, zone = Zone.GRAVEYARD)
 

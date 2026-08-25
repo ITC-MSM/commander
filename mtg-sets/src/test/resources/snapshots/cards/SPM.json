@@ -1978,7 +1978,7 @@
                 "powerBonus": 2,
                 "toughnessBonus": 2,
                 "filter": {
-                    "baseFilter": "creature Villain ctrl:you",
+                    "baseFilter": "permanent Villain ctrl:you",
                     "excludeSelf": true
                 }
             },
@@ -10422,7 +10422,7 @@
                 "type": "GrantKeyword",
                 "keyword": "RIOT",
                 "filter": {
-                    "baseFilter": "creature Spider ctrl:you",
+                    "baseFilter": "permanent Spider ctrl:you",
                     "excludeSelf": true
                 }
             },
@@ -13607,7 +13607,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Spider ctrl:you"
+                    "baseFilter": "permanent Spider ctrl:you"
                 }
             },
             {
@@ -13622,7 +13622,7 @@
                     ]
                 },
                 "filter": {
-                    "baseFilter": "creature Spider ctrl:you"
+                    "baseFilter": "permanent Spider ctrl:you"
                 }
             }
         ]

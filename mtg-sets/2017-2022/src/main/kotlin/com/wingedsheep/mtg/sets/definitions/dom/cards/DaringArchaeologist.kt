@@ -6,7 +6,6 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetObject
@@ -30,10 +29,7 @@ val DaringArchaeologist = card("Daring Archaeologist") {
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
         val t = target("target", TargetObject(
-            filter = TargetFilter(
-                GameObjectFilter.Artifact.ownedByYou(),
-                zone = Zone.GRAVEYARD
-            )
+            filter = TargetFilter.ArtifactInYourGraveyard
         ))
         // The "you may" is consent to *do it*, not permission to skip choosing a target. CR 603.3d
         // routes a trigger's targets through CR 601.2c, which requires a choice for each target, and

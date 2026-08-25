@@ -232,6 +232,38 @@
     ]
 }
 
+// Chief of the Foundry
+{
+    "name": "Chief of the Foundry",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "Other artifact creatures you control get +1/+1.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "artifact creature ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "225",
+        "rarity": "UNCOMMON",
+        "artist": "Daniel Ljunggren",
+        "flavorText": "The foundries of Kaladesh run like clockwork under the supervision of their formidable overseers.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/2/f2c65947-bc1d-4f47-b60b-2f76ab5ebde9.jpg?1783938311"
+    }
+}
+
 // Demonic Pact
 {
     "name": "Demonic Pact",

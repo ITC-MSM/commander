@@ -1,8 +1,8 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
-import com.wingedsheep.engine.core.ChooseOptionDecision
-import com.wingedsheep.engine.core.OptionChosenResponse
+import com.wingedsheep.engine.core.YesNoDecision
+import com.wingedsheep.engine.core.YesNoResponse
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
@@ -22,7 +22,11 @@ import io.kotest.matchers.types.shouldBeInstanceOf
  *
  * Exercises the new [com.wingedsheep.sdk.scripting.AbilityCost.PayXLife] cost — the X-linked life
  * payment must equal the X chosen for the `{X}{B}` mana cost — and that the endure amount reads
- * the same X. Both endure modes are checked (counters and Spirit token).
+ * the same X. Both endure branches are checked (counters and Spirit token).
+ *
+ * Endure is CR 701.63's consent gate — "creates an N/N Spirit **unless** they put N +1/+1 counters
+ * on it" — so the pause is a [YesNoDecision], not a mode pick: yes takes the counters, no falls
+ * through to the token.
  */
 class KrumarInitiateScenarioTest : ScenarioTestBase() {
 
@@ -60,13 +64,13 @@ class KrumarInitiateScenarioTest : ScenarioTestBase() {
                     game.getLifeTotal(1) shouldBe 17
                 }
 
-                // Resolve the ability off the stack; endure pauses mid-resolution for the
-                // choose-one (counters vs token). Pick counters (option 0).
+                // Resolve the ability off the stack; endure pauses mid-resolution for its consent
+                // gate. Accept it — that is the +1/+1 counters branch.
                 game.resolveStack()
                 val decision = game.getPendingDecision()
                 decision.shouldNotBeNull()
-                decision.shouldBeInstanceOf<ChooseOptionDecision>()
-                game.submitDecision(OptionChosenResponse(decision.id, 0))
+                decision.shouldBeInstanceOf<YesNoDecision>()
+                game.submitDecision(YesNoResponse(decision.id, true))
                 game.resolveStack()
 
                 val counters = game.state.getEntity(krumar)?.get<CountersComponent>()
@@ -102,12 +106,13 @@ class KrumarInitiateScenarioTest : ScenarioTestBase() {
                     game.getLifeTotal(1) shouldBe 18
                 }
 
-                // Resolve the ability; endure pauses for the choose-one. Choose token mode (option 1).
+                // Resolve the ability; endure pauses for its consent gate. Decline the counters —
+                // CR 701.63a's "unless" branch is the Spirit token.
                 game.resolveStack()
                 val decision = game.getPendingDecision()
                 decision.shouldNotBeNull()
-                decision.shouldBeInstanceOf<ChooseOptionDecision>()
-                game.submitDecision(OptionChosenResponse(decision.id, 1))
+                decision.shouldBeInstanceOf<YesNoDecision>()
+                game.submitDecision(YesNoResponse(decision.id, false))
                 game.resolveStack()
 
                 val spirit = game.findPermanent("Spirit Token")

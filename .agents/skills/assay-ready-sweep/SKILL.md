@@ -108,7 +108,10 @@ Four mechanics that matter:
   sharing that name: `compile "Savage Lands"` returned an FMSC art card, empty type line, 359 bytes
   against ~1700 for its siblings.
 - **Take metadata from the set's own Scryfall payload, not from the compile.** Its `setCode` and
-  `metadata.imageUri` are whatever printing the Oracle bulk happened to carry.
+  `metadata.imageUri` are whatever printing the Oracle bulk happened to carry — a card whose canonical
+  belongs in Morningtide compiles tagged `CMR`. `compile` now says this on **stderr** after each card
+  (stdout stays pure JSON, so a redirecting loop is unaffected); if you fan the batch out, put the rule
+  in the brief anyway, because an agent reading only the JSON file never sees the stderr line.
 - **When the JSON shows a field the corpus rarely writes** (`prompt`, `showAllCards`, `restOrder`, a
   nested `Composite`), find the `Patterns.*` facade whose defaults produce it — grep the assay `grammar/`
   sources for `Patterns.<X>.<fn>` and it names the function directly.
@@ -133,14 +136,25 @@ sys.modules["mr"] = mr; loader.exec_module(mr)
 for name in ["<Card One>", "<Card Two>"]:
     mr.fetch_printings(name)
 PY
-scripts/generate-reprints.py --set <CODE> --dry-run
-scripts/generate-reprints.py --set <CODE>
+scripts/generate-reprints.py --since main --dry-run     # scope it to YOUR canonicals
+scripts/generate-reprints.py --since main
 ```
+
+**Scope the run, or it will hand you the whole corpus's backlog.** `--set` filters the set a row is
+written *into*, not which canonicals are considered, so a bare run also emits every pre-existing reprint
+gap anywhere in the repo — M19's sweep was offered **333 rows across 53 sets when only 94 were its own**.
+Use `--since <ref>` (canonicals whose file differs from that git ref, untracked files included, so it
+works before you commit), or `--cards-from <file>` / `--card "<Name>"` when you have the name list. The
+run prints the scope it resolved and names any requested card with no canonical in the checkout.
 
 **`generate-reprints.py` silently skips any card whose `~/.cache/scryfall/printings/<slug>.json` is past
 its 30-day TTL** — `load_card_printings` returns `None` and `continue`s, and the skip does not appear in
 the summary. 40 of JMP's 79 were stale and would have been dropped without a word. Refresh first, then
 diff the generated file count against the bucket count.
+
+**Re-run the scoped generate after a merge.** A set scaffolded by someone else's PR turns a row nobody
+owed into a row you owe: merging main mid-sweep made M19's Mighty Leap owe a DDF row that did not exist
+when the batch was generated.
 
 `just coverage-relocate <CODE>` exists and does the `elsewhere` move mechanically, but it emits *mtgish*
 drafts rather than Assay's reading — treat its output as a starting skeleton, not as authored cards.

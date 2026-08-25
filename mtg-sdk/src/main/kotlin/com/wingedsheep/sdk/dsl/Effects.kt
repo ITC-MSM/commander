@@ -29,6 +29,7 @@ import com.wingedsheep.sdk.scripting.effects.OpenLifeBidEffect
 import com.wingedsheep.sdk.scripting.effects.AddCountersEffect
 import com.wingedsheep.sdk.scripting.effects.AddCountersUpToEffect
 import com.wingedsheep.sdk.scripting.effects.AddDynamicCountersEffect
+import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.sdk.scripting.effects.MoveAllLastKnownCountersEffect
 import com.wingedsheep.sdk.scripting.effects.AddSubtypeEffect
 import com.wingedsheep.sdk.scripting.effects.SetLandTypeEffect
@@ -1241,6 +1242,12 @@ object Effects {
 
     /**
      * Return to hand.
+     *
+     * Also the right facade for a **targeted** return out of a graveyard ("Return target creature
+     * card from your graveyard to your hand"): the target requirement's own `zone = GRAVEYARD` is
+     * re-checked at resolution under CR 608.2b, so the clause needs no `fromZone` guard.
+     * [ReturnToHandFromGraveyard] is for the *self*-return, which has no target to re-check — see
+     * its KDoc for why the two sentences take different effects.
      */
     fun ReturnToHand(target: EffectTarget): Effect =
         MoveToZoneEffect(target, Zone.HAND)
@@ -1476,8 +1483,25 @@ object Effects {
      * graveyard by the time the ability resolves. `ActivateAbilityHandler` checks an ability's
      * `activateFromZone` when it is *activated* and nothing re-checks it on resolution, so without
      * the guard a card exiled from the graveyard in response to its own ability still comes back —
-     * from exile. Every card whose printed line names the graveyard should say so here; Argentum
-     * Assay builds this for the sentence, so one that does not shows up in the differential.
+     * from exile.
+     *
+     * **This is the self-return facade, and only the self-return.** The clause it exists for names no
+     * target — the ability reaches for its own source, so nothing re-examines the card at resolution
+     * and the guard is the only thing that can. Argentum Assay builds exactly this effect for that
+     * sentence (`Recursion.kt`'s move table), so a *self*-return that omits the guard shows up in the
+     * differential — every caller of this facade passes `EffectTarget.Self`, and the self-returns that
+     * once omitted the guard were a live bug.
+     *
+     * A **targeted** graveyard return — "Return target creature card from your graveyard to your
+     * hand" — writes plain [ReturnToHand] instead, and that is correct rather than a missing guard.
+     * The requirement's own `zone = GRAVEYARD` is re-checked at resolution under CR 608.2b
+     * (`StackResolver` re-validates, `TargetValidator` rejects a card no longer in that zone), so a
+     * card exiled in response is no longer a legal target and the spell fizzles without needing
+     * `fromZone`. Assay's `Graveyard.kt` row therefore builds no guard for that sentence —
+     * deliberately, and the corpus's targeted returns agree — so writing one here would *create* a
+     * divergence rather than fix one. The asymmetry with
+     * [PutOntoBattlefieldFromGraveyard], whose targeted row does keep the guard, is empirical:
+     * dropping it there was tried and the differential answered by breaking six cards.
      */
     fun ReturnToHandFromGraveyard(target: EffectTarget): Effect =
         MoveToZoneEffect(target, Zone.HAND, fromZone = Zone.GRAVEYARD)
@@ -2744,6 +2768,16 @@ object Effects {
      */
     fun CreateEldraziSpawn(count: Int = 1, controller: EffectTarget? = null, imageUri: String? = null): Effect =
         CreatePredefinedTokenEffect("Eldrazi Spawn", count, controller, imageUri = imageUri)
+
+    /**
+     * Create N 1/1 black and green Pest creature tokens with "When this creature dies, you gain 1
+     * life." — Strixhaven's Witherbloom token (`PredefinedTokens.Pest`).
+     *
+     * Predefined rather than inline because the token is named and carries a triggered ability,
+     * which the inline [CreateToken] facade does not expose.
+     */
+    fun CreatePest(count: Int = 1, controller: EffectTarget? = null): Effect =
+        CreatePredefinedTokenEffect("Pest", count, controller)
 
     /**
      * Create a dynamic number of 0/1 colorless Eldrazi Spawn creature tokens.
@@ -5042,17 +5076,31 @@ object Effects {
     ): Effect = GrantTriggeredAbilityEffect(firebendingAttackTrigger(n), target, duration)
 
     /**
-     * Endure N (Tarkir: Dragonstorm keyword action) — the enduring permanent's
-     * controller chooses one: put N +1/+1 counters on the enduring permanent,
-     * or create an N/N white Spirit creature token.
+     * Endure N (CR 701.63) — *"that permanent's controller creates an N/N white Spirit creature
+     * token **unless** they put N +1/+1 counters on that permanent."*
      *
      * Modeled as data — no new keyword. "Endure N" never appears in a card's
      * keyword line; it is always the effect of a triggered or activated ability
-     * ("Whenever this attacks, endure 2"), so it composes a
-     * [ModalEffect.chooseOne] of the two existing halves: an
-     * [AddDynamicCountersEffect] on the enduring permanent and a single N/N
-     * white Spirit [CreateTokenEffect]. The mode choice is made by the ability's
-     * controller at resolution time (the modal executor's resolution-time path).
+     * ("Whenever this attacks, endure 2"), so it composes the two existing
+     * halves: an [AddDynamicCountersEffect] on the enduring permanent and a
+     * single N/N white Spirit [CreateTokenEffect].
+     *
+     * **A gate, not a modal — and the distinction is load-bearing.** Endure is a keyword *action*
+     * (CR 701.63, the 701 series), not a modal ability: its printed rule is "creates a token
+     * unless they put counters on it", which is a consent gate whose decision is made **as the
+     * effect is applied**, i.e. on resolution. This was a [ModalEffect.chooseOne] until it was
+     * found to be wrong: [com.wingedsheep.engine.event.TriggerProcessor] intercepts a *top-level*
+     * `ModalEffect` on a triggered ability and runs CR 603.3c mode selection **as the ability is
+     * put onto the stack**, which is correct for a genuinely modal ability and wrong here. Every
+     * endure card whose ability is a plain `triggeredAbility { effect = Effects.Endure(n) }` was
+     * therefore locking the choice in at trigger-announce time — so an opponent who killed the
+     * creature in response saw the decision already made, instead of the controller switching to
+     * the Spirit. (The activated-ability and nested-effect users were unaffected: a modal nested
+     * inside another effect already falls through to the resolution-time picker.)
+     *
+     * [Fabricate][com.wingedsheep.sdk.scripting.Fabricate] is the same shape for the same reason.
+     * The polarity follows the printed rule: the counters are the "may", the Spirit is the
+     * "unless".
      *
      * @param amount N — [DynamicAmount.Fixed] for "endure 2",
      *   [DynamicAmount.XValue] for "endures X" (Krumar Initiate), or any other
@@ -5065,25 +5113,24 @@ object Effects {
     fun Endure(
         amount: DynamicAmount,
         target: EffectTarget = EffectTarget.Self
-    ): Effect = ModalEffect.chooseOne(
-        Mode.noTarget(
-            AddDynamicCountersEffect(Counters.PLUS_ONE_PLUS_ONE, amount, target),
-            "Put ${amount.description} +1/+1 counter(s) on ${target.description}"
+    ): Effect = MayEffect(
+        effect = AddDynamicCountersEffect(Counters.PLUS_ONE_PLUS_ONE, amount, target),
+        otherwise = CreateTokenEffect(
+            count = DynamicAmount.Fixed(1),
+            power = 0,
+            toughness = 0,
+            colors = setOf(Color.WHITE),
+            creatureTypes = setOf("Spirit"),
+            dynamicPower = amount,
+            dynamicToughness = amount,
+            imageUri = ENDURE_SPIRIT_TOKEN_IMAGE
         ),
-        Mode.noTarget(
-            CreateTokenEffect(
-                count = DynamicAmount.Fixed(1),
-                power = 0,
-                toughness = 0,
-                colors = setOf(Color.WHITE),
-                creatureTypes = setOf("Spirit"),
-                dynamicPower = amount,
-                dynamicToughness = amount,
-                imageUri = ENDURE_SPIRIT_TOKEN_IMAGE
-            ),
-            "Create a ${amount.description}/${amount.description} white Spirit creature token"
-        ),
-        countsAsModalSpell = false
+        hint = "Put ${amount.description} +1/+1 counter(s) on ${target.description}? " +
+            "If you don't, create a ${amount.description}/${amount.description} white Spirit " +
+            "creature token.",
+        descriptionOverride = "Put ${amount.description} +1/+1 counter(s) on " +
+            "${target.description}. If you don't, create a " +
+            "${amount.description}/${amount.description} white Spirit creature token."
     )
 
     /** Endure N with a fixed [amount] — sugar for `Endure(DynamicAmount.Fixed(amount), target)`. */

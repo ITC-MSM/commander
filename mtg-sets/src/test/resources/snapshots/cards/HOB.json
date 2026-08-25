@@ -1004,7 +1004,7 @@
                 "powerBonus": 2,
                 "toughnessBonus": 2,
                 "filter": {
-                    "baseFilter": "creature Bear ctrl:you",
+                    "baseFilter": "permanent Bear ctrl:you",
                     "excludeSelf": true
                 }
             }
@@ -13257,7 +13257,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Elf ctrl:you",
+                    "baseFilter": "permanent Elf ctrl:you",
                     "excludeSelf": true
                 }
             }

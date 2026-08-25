@@ -49,7 +49,7 @@ val SpiderPunk = card("Spider-Punk") {
     staticAbility {
         ability = GrantKeyword(
             Keyword.RIOT,
-            GroupFilter(GameObjectFilter.Creature.withSubtype("Spider").youControl(), excludeSelf = true),
+            GroupFilter(GameObjectFilter.Permanent.withSubtype("Spider").youControl(), excludeSelf = true),
         )
     }
 

@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.eoe.cards
 
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.dsl.Patterns
@@ -44,7 +43,7 @@ val ScourForScrap = card("Scour for Scrap") {
                 val artifact = target(
                     "artifact card in your graveyard",
                     TargetObject(
-                        filter = TargetFilter(GameObjectFilter.Artifact.ownedByYou(), zone = Zone.GRAVEYARD)
+                        filter = TargetFilter.ArtifactInYourGraveyard
                     ),
                 )
                 effect = Effects.ReturnToHand(artifact)

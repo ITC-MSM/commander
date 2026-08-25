@@ -27,13 +27,13 @@ val GoblinKing = card("Goblin King") {
         ability = ModifyStats(
             powerBonus = 1,
             toughnessBonus = 1,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.GOBLIN), excludeSelf = true)
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.GOBLIN), excludeSelf = true)
         )
     }
     staticAbility {
         ability = GrantKeyword(
             Keyword.MOUNTAINWALK,
-            GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.GOBLIN), excludeSelf = true)
+            GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.GOBLIN), excludeSelf = true)
         )
     }
     metadata {

@@ -1064,7 +1064,12 @@
                     "source": {
                         "type": "FromZone",
                         "zone": "Library",
-                        "filter": "artifact"
+                        "filter": {
+                            "cardPredicates": [
+                                "IsArtifact",
+                                "ManaValueAtMostX"
+                            ]
+                        }
                     },
                     "storeAs": "searchable"
                 },

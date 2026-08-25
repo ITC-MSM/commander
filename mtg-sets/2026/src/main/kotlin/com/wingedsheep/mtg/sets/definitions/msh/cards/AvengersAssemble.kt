@@ -57,7 +57,7 @@ val AvengersAssemble = card("Avengers Assemble!") {
         ability = ModifyStats(
             powerBonus = 2,
             toughnessBonus = 2,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.HERO).youControl()),
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.HERO).youControl()),
         )
     }
 

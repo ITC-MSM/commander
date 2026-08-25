@@ -1,0 +1,68 @@
+// Hellkite Overlord
+{
+    "name": "Hellkite Overlord",
+    "manaCost": "{4}{B}{R}{R}{G}",
+    "typeLine": "Creature — Dragon",
+    "oracleText": "Flying, trample, haste\n{R}: This creature gets +1/+0 until end of turn.\n{B}{G}: Regenerate this creature.",
+    "creatureStats": {
+        "power": 8,
+        "toughness": 8
+    },
+    "keywords": [
+        "FLYING",
+        "TRAMPLE",
+        "HASTE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{R}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{B}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "8",
+        "rarity": "RARE",
+        "artist": "Justin Sweet",
+        "flavorText": "\"The dragon has no pretense of compassion, no false mask of civilization—just hunger, heat, and need.\"\n—Sarkhan Vol",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/e/7e3c4f96-4a43-440d-b75f-2cdb7c24b92e.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED",
+        "GREEN"
+    ]
+}

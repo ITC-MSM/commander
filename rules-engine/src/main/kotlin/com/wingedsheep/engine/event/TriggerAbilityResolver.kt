@@ -111,9 +111,14 @@ class TriggerAbilityResolver(
         // projected keywords, so granted vanishing works and "loses all abilities" strips it.
         val vanishingAbilities = getVanishingTriggeredAbilities(entityId, state)
 
+        // Fabricate N (CR 702.123) — the enters-the-battlefield choice is intrinsic to the keyword,
+        // printed on no card as a separate line. Same derivation shape as vanishing.
+        val fabricateAbilities = getFabricateTriggeredAbilities(entityId, cardDefinitionId, state)
+
         val allGranted = grantedAbilities + staticGrantedAbilities + attachedGrantedAbilities +
             selfGrantedAbilities + wardAbilities + flankingAbilities + ringBearerAbilities +
-            suspendAbilities + paradigmAbilities + siegeAbilities + vanishingAbilities
+            suspendAbilities + paradigmAbilities + siegeAbilities + vanishingAbilities +
+            fabricateAbilities
         val combined = if (allGranted.isNotEmpty()) base + allGranted else base
 
         // Apply text replacement if the entity has one
@@ -304,9 +309,14 @@ class TriggerAbilityResolver(
         // projected keywords, so granted vanishing works and "loses all abilities" strips it.
         val vanishingAbilities = getVanishingTriggeredAbilities(entityId, state)
 
+        // Fabricate N (CR 702.123) — the enters-the-battlefield choice is intrinsic to the keyword,
+        // printed on no card as a separate line. Same derivation shape as vanishing.
+        val fabricateAbilities = getFabricateTriggeredAbilities(entityId, cardDefinitionId, state)
+
         val allGranted = grantedAbilities + staticGrantedAbilities + attachedGrantedAbilities +
             selfGrantedAbilities + wardAbilities + flankingAbilities + ringBearerAbilities +
-            suspendAbilities + paradigmAbilities + siegeAbilities + vanishingAbilities
+            suspendAbilities + paradigmAbilities + siegeAbilities + vanishingAbilities +
+            fabricateAbilities
         val combined = if (allGranted.isNotEmpty()) base + allGranted else base
 
         val textReplacement = state.getEntity(entityId)?.get<TextReplacementComponent>()
@@ -735,6 +745,36 @@ class TriggerAbilityResolver(
         } else {
             emptyList()
         }
+
+    /**
+     * Fabricate N (CR 702.123) as the keyword-derived enters-the-battlefield ability it is. A
+     * fabricate card prints one keyword line and a reminder, never the ability itself, so the
+     * engine supplies it — the same shape as vanishing, flanking, ward and the Siege defeat
+     * trigger. See [com.wingedsheep.sdk.scripting.Fabricate] for the modal shape and why CR
+     * 702.123a's "you may … if you don't …" is modeled as the reminder line's choose-one.
+     *
+     * **Two sources, deliberately.** The *gate* is the projected keyword, so a permanent that has
+     * lost all abilities has no fabricate trigger; the *parameter* is the printed
+     * [KeywordAbility.Numeric], because a projected keyword set carries no N. Nothing in the corpus
+     * grants fabricate to a permanent that doesn't print it, so the two never disagree.
+     *
+     * **One trigger per printed instance**, not one per summed N — CR 702.123b: *"If a permanent
+     * has multiple instances of fabricate, each triggers separately."*
+     */
+    private fun getFabricateTriggeredAbilities(
+        entityId: EntityId,
+        cardDefinitionId: String,
+        state: GameState,
+    ): List<TriggeredAbility> {
+        if (!state.projectedState.hasKeyword(entityId, com.wingedsheep.sdk.core.Keyword.FABRICATE)) {
+            return emptyList()
+        }
+        val cardDef = cardRegistry.getCard(cardDefinitionId) ?: return emptyList()
+        return com.wingedsheep.sdk.scripting.Fabricate.printedCounts(cardDef)
+            .mapIndexed { instance, n ->
+                com.wingedsheep.sdk.scripting.Fabricate.etbChoice(n, instance)
+            }
+    }
 
     private fun createWardTriggeredAbility(cost: WardCost, source: String): TriggeredAbility {
         return TriggeredAbility(

@@ -267,6 +267,9 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
         staticAbilities = script.staticAbilities,
         replacementEffects = script.replacementEffects,
         auraTarget = script.auraTarget,
+        castRestrictions = script.castRestrictions,
+        additionalCosts = script.additionalCosts,
+        cantBeCountered = script.cantBeCountered,
     )
 
     private fun unmodelledSlots(script: CardScript) = script.copy(
@@ -277,6 +280,9 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
         staticAbilities = emptyList(),
         replacementEffects = emptyList(),
         auraTarget = null,
+        castRestrictions = emptyList(),
+        additionalCosts = emptyList(),
+        cantBeCountered = false,
     )
 
     /**

@@ -15093,7 +15093,8 @@
                 "type": "BoundVariable",
                 "name": "target"
             },
-            "destination": "Battlefield"
+            "destination": "Battlefield",
+            "fromZone": "Graveyard"
         },
         "targetRequirements": [
             {

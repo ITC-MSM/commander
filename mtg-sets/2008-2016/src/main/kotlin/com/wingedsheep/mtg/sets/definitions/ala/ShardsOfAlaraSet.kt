@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.ala
 
-import com.wingedsheep.mtg.sets.definitions.por.PortalSet
 import com.wingedsheep.mtg.sets.discovery.CardDiscovery
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.MtgSet
@@ -23,11 +22,14 @@ object ShardsOfAlaraSet : MtgSet {
     override val displayName = "Shards of Alara"
     override val releaseDate = "2008-10-03"
     override val block = "Alara"
-    override val basicLandsFallback = PortalSet
     override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)
+    }
+
+    override val basicLands: List<CardDefinition> by lazy {
+        CardDiscovery.findBasicLandsIn(CARDS_PACKAGE, code)
     }
 
     override val printings: List<Printing> by lazy {

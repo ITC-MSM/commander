@@ -47,7 +47,7 @@ val CallDamageControl = card("Call Damage Control") {
         modal(chooseCount = 2, minChooseCount = 0) {
             mode("Return target artifact card from your graveyard to your hand") {
                 target = TargetObject(
-                    filter = TargetFilter(GameObjectFilter.Artifact.ownedByYou(), zone = Zone.GRAVEYARD)
+                    filter = TargetFilter.ArtifactInYourGraveyard
                 )
                 effect = Effects.ReturnToHand(EffectTarget.ContextTarget(0))
             }

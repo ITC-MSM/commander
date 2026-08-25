@@ -36,7 +36,7 @@ val GoblinWarchief = card("Goblin Warchief") {
     staticAbility {
         ability = GrantKeyword(
             keyword = Keyword.HASTE,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype("Goblin"))
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype("Goblin").youControl())
         )
     }
 

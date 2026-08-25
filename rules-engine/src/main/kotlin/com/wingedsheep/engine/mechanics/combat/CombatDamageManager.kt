@@ -968,7 +968,7 @@ internal class CombatDamageManager(
         var newState = state
 
         // Replace with counters (Force Bubble)
-        val counterResult = DamageUtils.applyReplaceDamageWithCounters(newState, targetId, amplifiedAmount, sourceId)
+        val counterResult = DamageUtils.applyReplaceDamageWithCounters(newState, targetId, amplifiedAmount, sourceId, isCombatDamage = true)
         if (counterResult != null) {
             newState = counterResult.state
             events.addAll(counterResult.events)
@@ -1213,7 +1213,7 @@ internal class CombatDamageManager(
         // Damage-to-counters self-replacement (Anti-Venom): "if damage would be dealt to <this
         // creature>, prevent it and put that many +1/+1 counters on him." Replaces the damage
         // entirely (CR 615) — checked before redirection and final marking.
-        val counterResult = DamageUtils.applyReplaceDamageWithCounters(newState, targetId, effectiveAmount, sourceId)
+        val counterResult = DamageUtils.applyReplaceDamageWithCounters(newState, targetId, effectiveAmount, sourceId, isCombatDamage = true)
         if (counterResult != null) {
             newState = counterResult.state
             events.addAll(counterResult.events)

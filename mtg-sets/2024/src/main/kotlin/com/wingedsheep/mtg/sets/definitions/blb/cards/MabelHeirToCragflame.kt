@@ -33,7 +33,7 @@ val MabelHeirToCragflame = card("Mabel, Heir to Cragflame") {
             powerBonus = 1,
             toughnessBonus = 1,
             filter = GroupFilter(
-                GameObjectFilter.Creature.withSubtype("Mouse").youControl(),
+                GameObjectFilter.Permanent.withSubtype("Mouse").youControl(),
                 excludeSelf = true
             )
         )

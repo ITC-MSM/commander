@@ -39,7 +39,7 @@ val PalanisHatcher = card("Palani's Hatcher") {
         ability = GrantKeyword(
             keyword = Keyword.HASTE,
             filter = GroupFilter(
-                GameObjectFilter.Creature.withSubtype("Dinosaur").youControl(),
+                GameObjectFilter.Permanent.withSubtype("Dinosaur").youControl(),
                 excludeSelf = true
             )
         )

@@ -99,6 +99,7 @@ class ScenarioBuilderService(
             checkZone("$label graveyard", config.graveyard)
             checkZone("$label library", config.library)
             checkZone("$label exile", config.exile)
+            checkZone("$label sideboard", config.sideboard)
             checkZone("$label commanders", config.commanders)
             val battlefield = config.battlefield ?: emptyList()
             total += battlefield.size
@@ -187,6 +188,7 @@ class ScenarioBuilderService(
         config.graveyard?.forEach { builder.withCardInGraveyard(n, it) }
         config.library?.forEach { builder.withCardInLibrary(n, it) }
         config.exile?.forEach { builder.withCardInExile(n, it) }
+        config.sideboard?.forEach { builder.withCardInSideboard(n, it) }
     }
 
     private fun phaseToDefaultStep(phase: Phase): Step = when (phase) {
@@ -237,7 +239,10 @@ class ScenarioBuilderService(
 
             // Initialize empty zones for every player
             for (playerId in playerIds) {
-                for (zoneType in listOf(Zone.HAND, Zone.LIBRARY, Zone.GRAVEYARD, Zone.BATTLEFIELD, Zone.EXILE, Zone.COMMAND)) {
+                for (zoneType in listOf(
+                    Zone.HAND, Zone.LIBRARY, Zone.GRAVEYARD, Zone.BATTLEFIELD,
+                    Zone.EXILE, Zone.COMMAND, Zone.SIDEBOARD
+                )) {
                     val zoneKey = ZoneKey(playerId, zoneType)
                     state = state.copy(zones = state.zones + (zoneKey to emptyList()))
                 }
@@ -380,6 +385,14 @@ class ScenarioBuilderService(
             val playerId = playerFor(playerNumber)
             val cardId = createCard(cardName, playerId)
             state = state.addToZone(ZoneKey(playerId, Zone.EXILE), cardId)
+            return this
+        }
+
+        /** Put a card in the player's sideboard — "outside the game" (CR 400.11). */
+        fun withCardInSideboard(playerNumber: Int, cardName: String): ScenarioBuilder {
+            val playerId = playerFor(playerNumber)
+            val cardId = createCard(cardName, playerId)
+            state = state.addToZone(ZoneKey(playerId, Zone.SIDEBOARD), cardId)
             return this
         }
 
