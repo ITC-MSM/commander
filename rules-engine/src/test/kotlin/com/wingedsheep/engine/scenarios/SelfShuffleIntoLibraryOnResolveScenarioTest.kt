@@ -1,0 +1,323 @@
+package com.wingedsheep.engine.scenarios
+
+import com.wingedsheep.engine.core.CastSpell
+import com.wingedsheep.engine.core.LibraryShuffledEvent
+import com.wingedsheep.engine.core.PaymentStrategy
+import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.state.components.stack.ChosenTarget
+import com.wingedsheep.engine.support.GameTestDriver
+import com.wingedsheep.engine.support.TestCards
+import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Patterns
+import com.wingedsheep.sdk.dsl.Targets
+import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.model.Deck
+import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.effects.AfterResolveDestination
+import com.wingedsheep.sdk.scripting.effects.CardSource
+import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
+import com.wingedsheep.sdk.scripting.effects.SearchDestination
+import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
+import com.wingedsheep.sdk.scripting.effects.SelectionMode
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import io.kotest.assertions.withClue
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
+
+/**
+ * `spell { selfShuffleIntoLibrary() }` — the card-intrinsic "Shuffle <card name> into its owner's
+ * library." clause printed on the Mirrodin Besieged Zenith cycle.
+ *
+ * The sibling of `selfExile()`: both replace the destination of **CR 608.2n** ("as the final part of
+ * an instant or sorcery spell's resolution, the spell is put into its owner's graveyard"), read by
+ * `StackResolver` at the same seam. What makes it worth its own test file is that the seam is
+ * **duplicated**: `StackResolver` decides the destination once on the full-resolve path and again on
+ * the paused-resolve path, and each then places the card at its own site. A card whose effect never
+ * pauses exercises only the first pair — and Green Sun's Zenith, the cycle's headline card, pauses
+ * for its library search and so takes the *other* one. Wiring one and not the other fails silently:
+ * the card simply turns up in the graveyard.
+ *
+ * The negative cases matter as much as the positive ones. Unlike the cast-this-way rider
+ * ([com.wingedsheep.engine.state.components.identity.AfterResolveDestinationComponent], covered by
+ * [AfterResolveDestinationScenarioTest]), this clause is part of the spell's *effect*, so a spell
+ * that never resolves never performs it:
+ *
+ * - **Countered** (CR 701.5a) — the spell is put into its owner's graveyard, and no part of its
+ *   effect happens. Graveyard, not library.
+ * - **Fizzled** (CR 608.2b) — a spell whose every target is illegal doesn't resolve. Same answer.
+ *
+ * That is the exact opposite of the rider's answer to the same two questions, which is why both
+ * files exist.
+ */
+class SelfShuffleIntoLibraryOnResolveScenarioTest : FunSpec({
+
+    /** Targetless and non-pausing: the full-resolve path, with nothing else going on. */
+    val plainZenith = card("Test Zenith Plain") {
+        manaCost = "{1}"
+        typeLine = "Sorcery"
+        spell {
+            effect = Effects.GainLife(2)
+            selfShuffleIntoLibrary()
+        }
+    }
+
+    /** The control — same card, same effect, no clause. Proves the assertions are the flag's doing. */
+    val plainNoClause = card("Test Zenith No Clause") {
+        manaCost = "{1}"
+        typeLine = "Sorcery"
+        spell { effect = Effects.GainLife(2) }
+    }
+
+    /**
+     * Green Sun's Zenith's shape: a library search pauses resolution for a card-selection decision,
+     * so the spell leaves the stack via the **paused-resolve** path rather than the full one.
+     */
+    val searchingZenith = card("Test Zenith Searching") {
+        manaCost = "{1}"
+        typeLine = "Sorcery"
+        spell {
+            effect = Patterns.Library.searchLibrary(
+                filter = GameObjectFilter.Creature,
+                count = 1,
+                destination = SearchDestination.BATTLEFIELD,
+            )
+            selfShuffleIntoLibrary()
+        }
+    }
+
+    /** Targets, so its target can be removed in response and the spell can fizzle (CR 608.2b). */
+    val targetedZenith = card("Test Zenith Targeted") {
+        manaCost = "{1}"
+        typeLine = "Sorcery"
+        spell {
+            target("target creature", Targets.Creature)
+            effect = Effects.DealDamage(1, EffectTarget.ContextTarget(0))
+            selfShuffleIntoLibrary()
+        }
+    }
+
+    /**
+     * Kylox's Voltstrider's shape: casts a spell from a graveyard under the rider "if that spell
+     * would be put into a graveyard, put it on the bottom of its owner's library instead."
+     */
+    val bottomGranter = card("Test Bottom Granter For Zenith") {
+        manaCost = "{1}"
+        typeLine = "Sorcery"
+        spell {
+            effect = Effects.Composite(
+                GatherCardsEffect(
+                    source = CardSource.FromZone(
+                        zone = Zone.GRAVEYARD,
+                        filter = GameObjectFilter.InstantOrSorcery,
+                    ),
+                    storeAs = "pool",
+                ),
+                SelectFromCollectionEffect(
+                    from = "pool",
+                    selection = SelectionMode.ChooseUpTo(DynamicAmount.Fixed(1)),
+                    storeSelected = "pick",
+                ),
+                Effects.CastFromCollectionWithoutPayingCost(
+                    from = "pick",
+                    insteadOfGraveyard = AfterResolveDestination.BOTTOM_OF_LIBRARY,
+                ),
+            )
+        }
+    }
+
+    fun newDriver(): GameTestDriver {
+        val driver = GameTestDriver()
+        driver.registerCards(TestCards.all)
+        driver.registerCards(
+            listOf(plainZenith, plainNoClause, searchingZenith, targetedZenith, bottomGranter)
+        )
+        driver.initMirrorMatch(deck = Deck.of("Island" to 40), skipMulligans = true, startingPlayer = 0)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        return driver
+    }
+
+    fun GameTestDriver.settle() {
+        var guard = 0
+        while (guard++ < 30) {
+            when {
+                isPaused -> autoResolveDecision()
+                state.stack.isNotEmpty() -> bothPass()
+                else -> break
+            }
+        }
+    }
+
+    fun GameTestDriver.cast(
+        you: EntityId,
+        cardName: String,
+        targets: List<ChosenTarget> = emptyList(),
+    ): EntityId {
+        val cardId = putCardInHand(you, cardName)
+        giveMana(you, Color.BLUE, 4)
+        submit(
+            CastSpell(you, cardId, targets = targets, paymentStrategy = PaymentStrategy.FromPool)
+        ).error shouldBe null
+        return cardId
+    }
+
+    test("a resolved spell is shuffled into its owner's library — the full-resolve path") {
+        val driver = newDriver()
+        val you = driver.player1
+        val librarySizeBefore = driver.state.getZone(ZoneKey(you, Zone.LIBRARY)).size
+        val lifeBefore = driver.getLifeTotal(you)
+
+        val cardId = driver.cast(you, "Test Zenith Plain")
+        driver.settle()
+
+        withClue("the spell resolved — its effect happened") {
+            driver.getLifeTotal(you) shouldBe lifeBefore + 2
+        }
+        withClue("CR 608.2n's graveyard destination was replaced by the library") {
+            driver.state.getZone(ZoneKey(you, Zone.LIBRARY)).contains(cardId) shouldBe true
+            driver.state.getZone(ZoneKey(you, Zone.LIBRARY)).size shouldBe librarySizeBefore + 1
+            driver.getGraveyardCardNames(you).contains("Test Zenith Plain") shouldBe false
+            driver.getExile(you).contains(cardId) shouldBe false
+        }
+    }
+
+    test("it is shuffled in, not put on the bottom") {
+        val driver = newDriver()
+        val you = driver.player1
+        val shufflesBefore = driver.events.count { it is LibraryShuffledEvent && it.playerId == you }
+
+        driver.cast(you, "Test Zenith Plain")
+        driver.settle()
+
+        withClue("the library is randomized and the shuffle announced, so a later effect that " +
+            "looks at the top of the library can't be steered by casting this spell") {
+            driver.events.count { it is LibraryShuffledEvent && it.playerId == you } shouldBe
+                shufflesBefore + 1
+        }
+    }
+
+    test("a spell that pauses mid-resolution is still shuffled in — the paused-resolve path") {
+        val driver = newDriver()
+        val you = driver.player1
+        val creatureId = driver.putCardOnTopOfLibrary(you, "Grizzly Bears")
+        val librarySizeBefore = driver.state.getZone(ZoneKey(you, Zone.LIBRARY)).size
+        val shufflesBefore = driver.events.count { it is LibraryShuffledEvent && it.playerId == you }
+
+        val cardId = driver.cast(you, "Test Zenith Searching")
+        // The search pauses for a card-selection decision; take the creature.
+        var guard = 0
+        while (!driver.isPaused && driver.state.stack.isNotEmpty() && guard++ < 10) driver.bothPass()
+        driver.submitCardSelection(you, listOf(creatureId))
+        driver.settle()
+
+        withClue("the search resolved — the creature is on the battlefield") {
+            driver.state.getZone(ZoneKey(you, Zone.BATTLEFIELD)).contains(creatureId) shouldBe true
+        }
+        withClue("the paused-resolve path honours the clause too (Green Sun's Zenith's own shape)") {
+            driver.state.getZone(ZoneKey(you, Zone.LIBRARY)).contains(cardId) shouldBe true
+            driver.getGraveyardCardNames(you).contains("Test Zenith Searching") shouldBe false
+        }
+        withClue("net library change: the searched creature left, the spell came back") {
+            driver.state.getZone(ZoneKey(you, Zone.LIBRARY)).size shouldBe librarySizeBefore
+        }
+        withClue("two separate shuffles, per the Green Sun's Zenith ruling: the search's own " +
+            "shuffle and then the spell's. Shuffling once would be enough to randomize the " +
+            "library, but effects that count shuffles (Psychogenic Probe) must see both") {
+            driver.events.count { it is LibraryShuffledEvent && it.playerId == you } shouldBe
+                shufflesBefore + 2
+        }
+    }
+
+    test("a countered spell goes to the graveyard — CR 701.5a, the effect never happened") {
+        val driver = newDriver()
+        val you = driver.player1
+        val opponent = driver.getOpponent(you)
+        val counter = driver.putCardInHand(opponent, "Counterspell")
+        driver.giveMana(opponent, Color.BLUE, 2)
+
+        val cardId = driver.cast(you, "Test Zenith Plain")
+        driver.passPriority(you)
+        driver.submit(
+            CastSpell(
+                opponent, counter,
+                targets = listOf(ChosenTarget.Spell(cardId)),
+                paymentStrategy = PaymentStrategy.FromPool,
+            )
+        ).error shouldBe null
+        driver.settle()
+
+        withClue("it really was countered — no life gained") {
+            driver.getLifeTotal(you) shouldBe 20
+        }
+        withClue("the shuffle is part of the effect, so a countered spell never performs it — " +
+            "the opposite of the cast-this-way rider, which applies on the countered path too") {
+            driver.getGraveyardCardNames(you).contains("Test Zenith Plain") shouldBe true
+            driver.state.getZone(ZoneKey(you, Zone.LIBRARY)).contains(cardId) shouldBe false
+        }
+    }
+
+    test("a fizzled spell goes to the graveyard — CR 608.2b") {
+        val driver = newDriver()
+        val you = driver.player1
+        val bear = driver.putCreatureOnBattlefield(you, "Grizzly Bears")
+
+        val cardId = driver.cast(
+            you, "Test Zenith Targeted",
+            targets = listOf(ChosenTarget.Permanent(bear)),
+        )
+        withClue("the spell waits on the stack with its target chosen") {
+            driver.state.stack.contains(cardId) shouldBe true
+        }
+
+        // Break the only target: every target is now illegal, so the spell is removed from the
+        // stack without resolving and none of its instructions are followed.
+        driver.moveToGraveyard(bear)
+        driver.settle()
+
+        withClue("a spell that doesn't resolve never reaches CR 608.2n's replaced destination") {
+            driver.getGraveyardCardNames(you).contains("Test Zenith Targeted") shouldBe true
+            driver.state.getZone(ZoneKey(you, Zone.LIBRARY)).contains(cardId) shouldBe false
+        }
+    }
+
+    test("the printed clause beats a conditional cast-this-way rider") {
+        val driver = newDriver()
+        val you = driver.player1
+        val zenithId = driver.putCardInGraveyard(you, "Test Zenith Plain")
+        val shufflesBefore = driver.events.count { it is LibraryShuffledEvent && it.playerId == you }
+
+        val granterId = driver.putCardInHand(you, "Test Bottom Granter For Zenith")
+        driver.giveMana(you, Color.BLUE, 4)
+        driver.submit(
+            CastSpell(you, granterId, paymentStrategy = PaymentStrategy.FromPool)
+        ).error shouldBe null
+        var guard = 0
+        while (!driver.isPaused && driver.state.stack.isNotEmpty() && guard++ < 10) driver.bothPass()
+        driver.submitCardSelection(you, listOf(zenithId))
+        driver.settle()
+
+        withClue("the rider replaces 'would be put into a graveyard', and this spell never would " +
+            "be — so it is shuffled in, not laid on the bottom unshuffled") {
+            driver.events.count { it is LibraryShuffledEvent && it.playerId == you } shouldBe
+                shufflesBefore + 1
+            driver.getGraveyardCardNames(you).contains("Test Zenith Plain") shouldBe false
+        }
+    }
+
+    test("without the clause the same spell goes to the graveyard — the control") {
+        val driver = newDriver()
+        val you = driver.player1
+
+        val cardId = driver.cast(you, "Test Zenith No Clause")
+        driver.settle()
+
+        withClue("nothing replaced the destination, so CR 608.2n applies unchanged") {
+            driver.getGraveyardCardNames(you).contains("Test Zenith No Clause") shouldBe true
+            driver.state.getZone(ZoneKey(you, Zone.LIBRARY)).contains(cardId) shouldBe false
+        }
+    }
+})

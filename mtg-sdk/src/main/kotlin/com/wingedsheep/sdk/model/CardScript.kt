@@ -272,6 +272,40 @@ data class CardScript(
     val selfExileOnResolve: Boolean = false,
 
     /**
+     * Whether this spell shuffles itself into its owner's library on resolution instead of going to
+     * the graveyard. Used for cards that say "Shuffle <card name> into its owner's library." — the
+     * Mirrodin Besieged Zenith cycle (Green Sun's Zenith and its four siblings).
+     *
+     * The sibling of [selfExileOnResolve], and the same seam: both replace the destination of
+     * CR 608.2n ("as the final part of an instant or sorcery spell's resolution, the spell is put
+     * into its owner's graveyard"). The two are mutually exclusive — a card prints one clause or the
+     * other, never both — and this one wins if a card somehow sets both, because `StackResolver`
+     * checks it first (see the precedence note below).
+     *
+     * Three things this deliberately is **not**:
+     *  - not a zone-change replacement — [com.wingedsheep.sdk.scripting.ReplacementEffect] shapes
+     *    such as `RedirectZoneChange` apply to any card heading to a graveyard from anywhere, while
+     *    this is one printed instruction about the spell's own resolution;
+     *  - not the cast-this-way rider
+     *    ([com.wingedsheep.sdk.scripting.effects.AfterResolveDestination]), which another effect
+     *    stamps onto a spell *it* is casting — and which this **outranks**, uniquely among the
+     *    card-intrinsic destinations: those riders are written "if that spell *would be put into a
+     *    graveyard*, [somewhere] instead" (Kylox's Voltstrider), and a spell that shuffles itself
+     *    into its owner's library never would be, so the rider has nothing to replace. On the
+     *    countered and fizzled paths, where the card really is put into a graveyard, the rider
+     *    still wins;
+     *  - not "put it on the bottom of its owner's library" — the card is shuffled in, so the
+     *    library is randomized and a `LibraryShuffledEvent` is emitted (contrast
+     *    [com.wingedsheep.sdk.scripting.effects.AfterResolveDestination.BOTTOM_OF_LIBRARY], which
+     *    does not shuffle).
+     *
+     * Read at resolution-destination time, so — like [selfExileOnResolve] — it is correctly inert
+     * when the spell is countered or fizzles: those paths never reach CR 608.2n, and the card goes
+     * to its owner's graveyard as usual.
+     */
+    val selfShuffleIntoLibraryOnResolve: Boolean = false,
+
+    /**
      * Paradigm (Secrets of Strixhaven). When true, this spell exiles itself on resolution
      * (implies [selfExileOnResolve]) and is tagged with the paradigm marker as it lands in
      * exile, so the engine synthesizes the recurring free-recast triggered ability

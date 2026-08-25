@@ -9131,6 +9131,23 @@ composite abilities).
     `manaCost == ManaCost.ZERO` — a printed `{0}` parses to a non-empty one-symbol cost and stays normally castable,
     and plenty of engine test fixtures construct `ManaCost.ZERO` directly as shorthand for "free," which must not
     trip this gate.
+- `selfShuffleIntoLibrary()` — `spell { effect = …; selfShuffleIntoLibrary() }` for a card that prints
+  "Shuffle <card name> into its owner's library." (the Mirrodin Besieged Zenith cycle: Green Sun's Zenith,
+  Blue/White/Black/Red Sun's Zenith). Sets `CardScript.selfShuffleIntoLibraryOnResolve`, the sibling of
+  `selfExileOnResolve`: both replace the destination of **CR 608.2n** ("as the final part of an instant or
+  sorcery spell's resolution, the spell is put into its owner's graveyard"), and `StackResolver` reads them
+  at the same seam on both the full-resolve and paused-resolve paths. The card is added to its owner's
+  library and the library is then shuffled, emitting `LibraryShuffledEvent` — the same tail the Omen face
+  uses. A card prints one clause or the other, so don't set both (this one wins if you do — it is checked
+  first). Deliberately **not** a zone-change replacement (`RedirectZoneChange` is that, and applies to any
+  card heading to a graveyard from anywhere), and **not** `AfterResolveDestination.BOTTOM_OF_LIBRARY` (which
+  also lands in `Zone.LIBRARY` but does not shuffle). It is also **not** the cast-this-way rider
+  `AfterResolveDestination` — and it *outranks* one, uniquely among the card-intrinsic destinations: those
+  riders read "if that spell would be put into a graveyard, [somewhere] instead" (Kylox's Voltstrider), and a
+  spell that shuffles itself in never would be, so the rider has nothing to replace. On the countered and
+  fizzled paths, where the card really is put into a graveyard, the rider still wins. Because it is read at resolution-destination
+  time it is correctly inert when the spell is countered or fizzles — those paths never reach CR 608.2n, so
+  the card goes to its owner's graveyard as usual.
 - `Paradigm` (Secrets of Strixhaven) — `spell { effect = …; paradigm() }` on a Lesson spell. An **exile-zone
   recurrence** mechanic, modelled exactly like Suspend (a marker the engine reads off an exiled card), differing
   only in that it casts a **copy** rather than the card itself, so the original recurs forever. Oracle: "[effect]

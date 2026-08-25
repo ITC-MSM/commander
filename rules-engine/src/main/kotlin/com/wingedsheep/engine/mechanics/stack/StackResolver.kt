@@ -2249,9 +2249,20 @@ class StackResolver(
                     spellComponent.faceIndex != null
                 val pausedOmenFaceShuffle = pausedCardDef?.layout == com.wingedsheep.sdk.model.CardLayout.OMEN &&
                     spellComponent.faceIndex != null
+                // "Shuffle <name> into its owner's library." printed on the card itself (the
+                // Mirrodin Besieged Zenith cycle). Same seam as pausedSelfExile — it replaces the
+                // CR 608.2n destination — but lands in the library shuffled rather than in exile.
+                val pausedSelfShuffleIntoLibrary = pausedResolvedScript?.selfShuffleIntoLibraryOnResolve == true
                 val pausedReboundExile = spellComponent.castFromZone == Zone.HAND &&
                     spellHasRebound(effectResult.state, spellId, pausedCardDef)
                 val pausedIntended = when {
+                    // Above the rider, unlike every other clause here: the cast-this-way riders are
+                    // written "if that spell *would be put into a graveyard*, [somewhere] instead"
+                    // (Kylox's Voltstrider), and a spell that shuffles itself in never would be — so
+                    // the rider has nothing to replace and the printed clause stands. The countered
+                    // and fizzled paths, which really do put the card into a graveyard, don't read
+                    // this flag at all, so the rider still wins there, as it should.
+                    pausedSelfShuffleIntoLibrary -> Zone.LIBRARY
                     // The cast-this-way rider is the most specific instruction on this one spell,
                     // so it outranks the card-intrinsic exile reasons below rather than being
                     // OR'd into them — it is the only one that can name a zone other than exile.
@@ -2314,8 +2325,13 @@ class StackResolver(
                     pausedState = applyExileCounters(pausedState, spellId, pausedExileAfterResolveComp.withCounters, pausedCounterEvents)
                 }
 
-                // Omen (Tarkir: Dragonstorm): shuffle the just-added card into its owner's library.
-                if (pausedOmenFaceShuffle && pausedDestZone == Zone.LIBRARY) {
+                // Omen (Tarkir: Dragonstorm), and the Zenith cycle's printed "Shuffle <name> into
+                // its owner's library.": shuffle the just-added card into its owner's library.
+                // Gated on the *final* destination for the same two reasons as the resolved twin —
+                // a RedirectZoneChange may have sent the card elsewhere, and
+                // AfterResolveDestination.BOTTOM_OF_LIBRARY also lands in Zone.LIBRARY but must
+                // not shuffle.
+                if ((pausedOmenFaceShuffle || pausedSelfShuffleIntoLibrary) && pausedDestZone == Zone.LIBRARY) {
                     pausedState = shuffleOwnerLibrary(pausedState, ownerId)
                     pausedCounterEvents.add(LibraryShuffledEvent(ownerId))
                 }
@@ -2401,14 +2417,22 @@ class StackResolver(
         // library instead of putting it in the graveyard. No cast-from-exile linkage.
         val omenFaceShuffle = cardDef?.layout == com.wingedsheep.sdk.model.CardLayout.OMEN &&
             spellComponent.faceIndex != null
+        // "Shuffle <name> into its owner's library." printed on the card itself (the Mirrodin
+        // Besieged Zenith cycle). Same seam as selfExile — it replaces the CR 608.2n destination —
+        // but lands in the library shuffled rather than in exile.
+        val selfShuffleIntoLibrary = resolvedScript?.selfShuffleIntoLibraryOnResolve == true
         // Rebound (CR 702.88): a spell cast from hand that has rebound (printed or granted) exiles
         // on resolution instead of going to the graveyard, and arms a next-upkeep free recast.
         val reboundExile = spellComponent.castFromZone == Zone.HAND &&
             spellHasRebound(newState, spellId, cardDef)
         val intendedDestination = when {
-            // See the paused-resolve twin above: the rider wins over the intrinsic exile reasons
-            // because it is the only one that can send the card somewhere other than exile
-            // (Kylox's Voltstrider — "put it on the bottom of its owner's library instead").
+            // See the paused-resolve twin above: this one clause sits *above* the rider, because
+            // the riders replace "would be put into a graveyard" and a spell that shuffles itself
+            // into its owner's library never would be.
+            selfShuffleIntoLibrary -> Zone.LIBRARY
+            // The rider otherwise wins over the intrinsic exile reasons because it is the only one
+            // that can send the card somewhere other than exile (Kylox's Voltstrider — "put it on
+            // the bottom of its owner's library instead").
             exileAfterResolveComp != null -> exileAfterResolveComp.zone
             selfExile || flashbackExile || adventureFaceExile || reboundExile -> Zone.EXILE
             omenFaceShuffle -> Zone.LIBRARY
@@ -2467,9 +2491,13 @@ class StackResolver(
             )
         }
 
-        // Omen (Tarkir: Dragonstorm): the card was just added to the bottom of its owner's
-        // library above — now shuffle that library and announce it.
-        if (omenFaceShuffle && destinationZone == Zone.LIBRARY) {
+        // Omen (Tarkir: Dragonstorm), and the Zenith cycle's printed "Shuffle <name> into its
+        // owner's library.": the card was just added to the bottom of its owner's library above —
+        // now shuffle that library and announce it. Gated on the *final* destination so a
+        // RedirectZoneChange that sent the card elsewhere doesn't shuffle for nothing, and so
+        // AfterResolveDestination.BOTTOM_OF_LIBRARY (which also lands in Zone.LIBRARY, but must
+        // not shuffle) is left alone.
+        if ((omenFaceShuffle || selfShuffleIntoLibrary) && destinationZone == Zone.LIBRARY) {
             newState = shuffleOwnerLibrary(newState, ownerId)
             events.add(LibraryShuffledEvent(ownerId))
         }

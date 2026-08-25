@@ -948,6 +948,7 @@ class CardBuilder(private val name: String) {
             classLevels = classLevelsList.toList(),
             sagaChapters = sagaChaptersList.toList(),
             selfExileOnResolve = spellBuilder?.exilesOnResolve ?: false,
+            selfShuffleIntoLibraryOnResolve = spellBuilder?.shufflesIntoLibraryOnResolve ?: false,
             paradigm = spellBuilder?.isParadigm ?: false,
             returnTransformedFromGraveyardOnResolve = spellBuilder?.returnTransformedFromGraveyardMarker,
             selfAlternativeCost = selfAlternativeCost,
@@ -1070,6 +1071,21 @@ class SpellBuilder {
     }
 
     internal val exilesOnResolve: Boolean get() = selfExileOnResolve
+
+    private var selfShuffleIntoLibraryOnResolve: Boolean = false
+
+    /**
+     * Mark this spell to shuffle itself into its owner's library on resolution instead of going to
+     * the graveyard. Used for cards that say "Shuffle <card name> into its owner's library."
+     *
+     * The sibling of [selfExile]; both replace the CR 608.2n destination. A card prints one clause
+     * or the other, so don't set both.
+     */
+    fun selfShuffleIntoLibrary() {
+        selfShuffleIntoLibraryOnResolve = true
+    }
+
+    internal val shufflesIntoLibraryOnResolve: Boolean get() = selfShuffleIntoLibraryOnResolve
 
     private var paradigm: Boolean = false
 
@@ -2123,6 +2139,7 @@ class CardFaceBuilder(private val name: String) {
             staticAbilities = staticAbilities.toList(),
             additionalCosts = additionalCostsList.toList(),
             selfExileOnResolve = spellBuilder?.exilesOnResolve ?: false,
+            selfShuffleIntoLibraryOnResolve = spellBuilder?.shufflesIntoLibraryOnResolve ?: false,
             paradigm = spellBuilder?.isParadigm ?: false,
         )
         return CardFace(
