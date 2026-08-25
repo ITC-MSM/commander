@@ -33,6 +33,7 @@
   "priorityPlayer": 2,
   "player1StopAtSteps": [],
   "player2StopAtSteps": [],
-  "player1OpponentStopAtSteps": ["DECLARE_ATTACKERS", "DECLARE_BLOCKERS"],
-  "player2OpponentStopAtSteps": []
+  "player1OpponentStopAtSteps": [],
+  "player2OpponentStopAtSteps": [],
+  "mode": "AI"
 }

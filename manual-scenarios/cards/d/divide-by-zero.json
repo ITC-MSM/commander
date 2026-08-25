@@ -15,7 +15,7 @@
   },
   "player2": {
     "lifeTotal": 20,
-    "hand": ["Grizzly Bears", "Memnite"],
+    "hand": ["Ornithopter", "Memnite"],
     "battlefield": [
       {"name": "Centaur Courser"},
       {"name": "Ornithopter"},
@@ -30,6 +30,7 @@
   "priorityPlayer": 2,
   "player1StopAtSteps": [],
   "player2StopAtSteps": [],
-  "player1OpponentStopAtSteps": ["PRECOMBAT_MAIN"],
-  "player2OpponentStopAtSteps": []
+  "player1OpponentStopAtSteps": [],
+  "player2OpponentStopAtSteps": [],
+  "mode": "AI"
 }

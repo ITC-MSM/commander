@@ -32,5 +32,6 @@
   "player1StopAtSteps": [],
   "player2StopAtSteps": [],
   "player1OpponentStopAtSteps": [],
-  "player2OpponentStopAtSteps": []
+  "player2OpponentStopAtSteps": [],
+  "mode": "AI"
 }
