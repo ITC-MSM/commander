@@ -13,8 +13,10 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.CardOrder
 import com.wingedsheep.sdk.scripting.effects.CardSource
+import com.wingedsheep.sdk.scripting.effects.CollectionFilter
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.sdk.scripting.effects.FilterCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.MayPlayExpiry
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
@@ -248,6 +250,19 @@ object TopOfLibrary {
     private fun movedTo(steps: List<Effect>, from: String): Disposition? =
         steps.filterIsInstance<MoveCollectionEffect>().singleOrNull { it.from == from }
             ?.let { Disposition(it.destination, it.order) }
+
+    /**
+     * The filter of the one **choice-free** partition step in a pipeline, or null when it has none.
+     *
+     * [selection] reads a `SelectFromCollection` — the player choosing — and this reads the step
+     * that routes every matching card automatically. They are the two halves of the same question
+     * ("which of the cards you saw end up where") and the grammar keeps them apart because English
+     * does: "you may reveal a creature card **from among them**" is a choice and "put **all** land
+     * cards revealed this way" is not.
+     */
+    private fun partition(steps: List<Effect>): GameObjectFilter? =
+        steps.filterIsInstance<FilterCollectionEffect>().singleOrNull()
+            ?.let { (it.filter as? CollectionFilter.MatchesFilter)?.filter }
 
     // ---------------------------------------------------------------------------------------
     // The sentences
@@ -518,8 +533,60 @@ object TopOfLibrary {
         alternate(constant("them", true)),
     )
 
+    /**
+     * "Reveal the top four cards of your library. Put all land cards revealed this way into your
+     * hand and the rest into your graveyard." — Mulch, Beast Hunt, Chromescale Drake, and
+     * `Patterns.Library`'s own `revealTopPutAllMatchingToHand`.
+     *
+     * The **mandatory** twin of [lookAtTopRevealMatchingToHand], and the pair is a good statement of
+     * what this file means by a layer: the two sentences share the count layer and the disposition
+     * layer whole, and differ in the one step between them. There the player *may* reveal up to one
+     * matching card, which is a `SelectFromCollection`; here every matching card goes to hand with
+     * no choice at all, which is a `FilterCollection` partition. English marks the difference with
+     * "you may reveal **a**" against "put **all**", and the model marks it with two different step
+     * types — so they are two rules over disjoint models rather than one rule with a quantifier slot.
+     *
+     * It follows that this rule needs **no derived prompt**: nothing pauses, so there is no decision
+     * to label, and the field [lookAtTopRevealMatchingToHand] has to invent simply is not in the
+     * recipe.
+     *
+     * The kept pile's destination is frozen at the hand because the facade freezes it, which is the
+     * same SDK finding the file KDoc records against `lookAtTopRevealMatchingToHand`: "reveal the top
+     * five cards, put all Dinosaur cards **onto the battlefield**" would need `keepDestination` as a
+     * parameter, and adding one is `add-feature` work rather than a pipeline hand-built here.
+     */
+    private val revealTopPutAllMatchingToHand: Phrase<CardScript> = run {
+        fun scriptFor(count: DynamicAmount, filter: GameObjectFilter, rest: Disposition) = CardScript(
+            spellEffect = Patterns.Library.revealTopPutAllMatchingToHand(
+                count = count,
+                filter = filter,
+                restDestination = rest.destination,
+                restOrder = rest.order,
+            ),
+        )
+        phrase(
+            "reveal {top} of your library. put all {filter} revealed this way into your hand and " +
+                "the rest {rest}",
+            name = "reveal the top cards and take every matching card",
+        ) {
+            slot("top", topCards)
+            slot("filter", Filters.pluralCards)
+            slot("rest", disposition)
+            build { scriptFor(it.value("top"), it.value("filter"), it.value("rest")) }
+            match { script ->
+                val steps = steps(script) ?: return@match null
+                val count = gatheredCount(steps) ?: return@match null
+                val filter = partition(steps) ?: return@match null
+                val rest = movedTo(steps, "rest") ?: return@match null
+                if (script != scriptFor(count, filter, rest)) return@match null
+                bind("top" to count, "filter" to filter, "rest" to rest)
+            }
+        }
+    }
+
     val clauses: List<Phrase<CardScript>> = listOf(
         lookAtTopRevealMatchingToHand,
+        revealTopPutAllMatchingToHand,
         lookAtTopAndKeepAllButOne,
         lookAtTopAndKeep,
         exileTop,

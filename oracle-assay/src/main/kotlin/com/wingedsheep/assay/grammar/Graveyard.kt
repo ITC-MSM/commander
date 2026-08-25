@@ -265,8 +265,71 @@ object Graveyard {
         }
     }
 
+    /**
+     * "Return all land cards from your graveyard to the battlefield tapped." — Splendid Reclamation,
+     * Resurgent Belief, Wake the Past, Triumphant Reckoning, and the resolution half of Aftermath
+     * Analyst.
+     *
+     * The **mass** counterpart of this file's targeted returns, and it is a different model rather
+     * than a plural spelling of one: nothing is targeted, so there is no `TargetRequirement` at all
+     * and the cards are collected on resolution by a gather → move pipeline. That is also why the
+     * noun is [Filters.pluralCards] and not the targeted rows' [Filters.cardNoun] — "all land cards"
+     * names a set, not a chosen one.
+     *
+     * `tapped` is the row axis, exactly as it is on [Tokens]' create clause: Oracle prints the
+     * sentence with and without the word (Splendid Reclamation against Resurgent Belief),
+     * `ZonePlacement` carries a distinct value for each, and freezing either into the template would
+     * make the other a rule nobody had written. So it is two instantiations of one shape.
+     *
+     * ### Finding: `storeAs` is a presentation-class field the differential still compares
+     *
+     * A pipeline's collection name is wiring — it links the gather to the move and no printed word
+     * determines it — but it is not in `Folds.dropPresentation`, so the grammar has to guess the
+     * *same string* a hand-written card happened to pick. The corpus spells this sentence's
+     * collection `graveyard_lands` on both cards that write it (Aftermath Analyst, Summon Titan) and
+     * nothing else, so that is the canonical here, filter-general rule and land-specific name
+     * notwithstanding. Canonicalizing collection names positionally in the differential would retire
+     * the guess for every pipeline family at once; that is its own change, and this rule is one more
+     * argument for it.
+     */
+    private fun returnAllFromYourGraveyard(tapped: Boolean): Phrase<CardScript> {
+        val suffix = if (tapped) " tapped" else ""
+        val placement = if (tapped) ZonePlacement.Tapped else ZonePlacement.Default
+        fun scriptFor(filter: GameObjectFilter) = CardScript(
+            spellEffect = Effects.Composite(
+                GatherCardsEffect(
+                    source = CardSource.FromZone(Zone.GRAVEYARD, Player.You, filter),
+                    storeAs = COLLECTED,
+                ),
+                MoveCollectionEffect(
+                    from = COLLECTED,
+                    destination = CardDestination.ToZone(Zone.BATTLEFIELD, placement = placement),
+                ),
+            )
+        )
+        return phrase(
+            "return all {filter} from your graveyard to the battlefield$suffix",
+            name = "return every matching card from your graveyard to the battlefield$suffix",
+        ) {
+            slot("filter", Filters.pluralCards)
+            build { scriptFor(it.value("filter")) }
+            match { script ->
+                val steps = (script.spellEffect as? CompositeEffect)?.effects ?: return@match null
+                val gather = steps.firstOrNull() as? GatherCardsEffect ?: return@match null
+                val filter = (gather.source as? CardSource.FromZone)?.filter ?: return@match null
+                if (script != scriptFor(filter)) return@match null
+                bind("filter" to filter)
+            }
+        }
+    }
+
+    /** The collection name [returnAllFromYourGraveyard] shares with the corpus; see its KDoc. */
+    private const val COLLECTED = "graveyard_lands"
+
     val clauses: List<Phrase<CardScript>> = listOf(
         exileAnyCardFromAGraveyard,
+        returnAllFromYourGraveyard(tapped = true),
+        returnAllFromYourGraveyard(tapped = false),
         shuffleChosenTypeFromGraveyard,
         returnUpToSeveralFromGraveyard,
         putTargetFromThatPlayersGraveyard,
