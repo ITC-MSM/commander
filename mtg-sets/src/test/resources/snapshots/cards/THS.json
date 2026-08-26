@@ -113,6 +113,42 @@
     "colorIdentityOverride": []
 }
 
+// Fade into Antiquity
+{
+    "name": "Fade into Antiquity",
+    "manaCost": "{2}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Exile target artifact or enchantment.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "artifact or enchantment"
+            },
+            "destination": "Exile"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "artifact|enchantment"
+                },
+                "id": "artifact or enchantment"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "157",
+        "artist": "Noah Bradley",
+        "flavorText": "\"Are the gods angry at our discontent with what they give us, or jealous that we made a thing they cannot?\"\n—Kleon the Iron-Booted",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/4/e43e46a6-f7de-482a-a386-73932d1d9002.jpg?1783939747"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Felhide Minotaur
 {
     "name": "Felhide Minotaur",
