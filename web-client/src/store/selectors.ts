@@ -18,6 +18,7 @@ import {
   visibleStackDepth,
   groupCards,
 } from './cardGrouping'
+import { teamLabel } from './teamLabel'
 
 /**
  * Select the game state (works for both normal play and spectating).
@@ -378,16 +379,7 @@ export function useIdentityColor(playerId: EntityId | null): SeatColor {
   return useMemo(() => identitySeatColor(teamMap, playerId, seatIndex), [teamMap, playerId, seatIndex])
 }
 
-/**
- * The name to print for a team: "Your Team" / "Opponents" from the viewer's seat, and the
- * neutral "Team N" when there is no viewer team to be relative to (spectator, replay). Same
- * vocabulary the rail's two team sections already use, so the center HUD and the rail agree.
- */
-export function teamLabel(teamIndex: number | null, viewerTeam: number | null): string {
-  if (teamIndex == null) return ''
-  if (viewerTeam == null) return `Team ${teamIndex + 1}`
-  return teamIndex === viewerTeam ? 'Your Team' : 'Opponents'
-}
+export { teamLabel } from './teamLabel'
 
 /** Hook form of [teamLabel] for a player's team. */
 export function useTeamLabelFor(playerId: EntityId | null): string {

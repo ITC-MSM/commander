@@ -7,7 +7,7 @@ import { hand } from '@/types'
 import { useRevealedLibraryTopCard, useIdentityColor, useIsSharedLifeTeamGame } from '@/store/selectors'
 import { useResponsiveContext } from './shared'
 import { Battlefield } from './Battlefield'
-import { CardRow } from './HandZone'
+import { CardRow, HAND_FAN_EDGE_MARGIN } from './HandZone'
 import { CommandZone } from './CommandZone'
 import { ZonePile } from './ZonePiles'
 import { styles } from './styles'
@@ -17,11 +17,14 @@ import { isLoneTargetRequirement } from '@/utils/targeting.ts'
 export const CELL_PLATE_BAND = 34
 
 /**
- * How far an inverted [HandFan] paints above the top of the box it is placed in — its own
- * negative `marginTop` plus the cards' negative `top` edge margin. Pushing an inverted cell hand
- * down by this much is what keeps it clear of the name plate above it.
+ * How far a [HandFan] paints past the edge it hangs from — its own negative margin plus the
+ * cards' negative edge offset. Symmetric: an inverted fan spills this far *above* its box, a
+ * normal one this far *below*. Either way the band a cell hand sits in has to reserve it, or the
+ * fan draws through the name plate above (inverted) or the battlefield below (normal) — and
+ * because an ally's cell hand is click-through-able, an unreserved overhang also swallows clicks
+ * meant for the permanents underneath it.
  */
-const INVERTED_FAN_LIFT = 30
+const FAN_EDGE_OVERHANG = HAND_FAN_EDGE_MARGIN * 2
 
 /**
  * Sizing for the hand a board renders *inside* a shared-strip cell (table overview, team-split
@@ -30,16 +33,18 @@ const INVERTED_FAN_LIFT = 30
  * from that — deliberately smaller than a fan that merely fits, because with every board on
  * screen at once the battlefields are what the width is for.
  *
- * [handHeight] is an upper bound (`calculateFittingCardWidth` only ever shrinks the cap), which
- * is what makes it safe to reserve as a fixed band above the board. Exported so the viewer's own
- * bottom-row cell — which has no cell hand, its fan being the full-width one at the screen
- * bottom — can reserve the identical band and stay aligned with its neighbours.
+ * [handHeight] is the fan's own box and an upper bound on it (`calculateFittingCardWidth` only
+ * ever shrinks the cap). [handBand] is what a cell must actually reserve: that box plus the
+ * [FAN_EDGE_OVERHANG] the fan spills past whichever edge it hangs from. Exported so the viewer's
+ * own bottom-row cell — which has no cell hand, its fan being the full-width one at the screen
+ * bottom — reserves the identical band and stays aligned with its neighbours.
  */
 export function useCellHandMetrics(): {
   cellRef: RefObject<HTMLDivElement | null>
   cellWidth: number
   cardWidth: number
   handHeight: number
+  handBand: number
 } {
   const responsive = useResponsiveContext()
   const cellRef = useRef<HTMLDivElement | null>(null)
@@ -59,7 +64,8 @@ export function useCellHandMetrics(): {
     22,
     Math.min(Math.round(responsive.smallCardWidth * 0.72), Math.round(cellWidth / 9) || 999),
   )
-  return { cellRef, cellWidth, cardWidth, handHeight: Math.round(cardWidth * 1.4) + 12 }
+  const handHeight = Math.round(cardWidth * 1.4) + 12
+  return { cellRef, cellWidth, cardWidth, handHeight, handBand: handHeight + FAN_EDGE_OVERHANG }
 }
 
 /**
@@ -137,7 +143,7 @@ export function OpponentBoardArea({
   hijackedSurfaceStyle?: React.CSSProperties
   /**
    * Two-Headed Giant (CR 810): this board belongs to your teammate. You may see their hand
-   * (CR 810.5b), so it renders face-up, and the cell gets an "ALLY" marker so it never reads as
+   * (CR 810.5), so it renders face-up, and the cell gets an "ALLY" marker so it never reads as
    * an enemy board. You still can't act with their cards — only its controller plays from it.
    */
   isAlly?: boolean
@@ -155,8 +161,13 @@ export function OpponentBoardArea({
     () => (revealedTopCard ? [revealedTopCard] : []),
     [revealedTopCard]
   )
-  const { cellRef, cellWidth, cardWidth: cellHandCardWidth, handHeight: cellHandHeight } =
-    useCellHandMetrics()
+  const {
+    cellRef,
+    cellWidth,
+    cardWidth: cellHandCardWidth,
+    handHeight: cellHandHeight,
+    handBand: cellHandBand,
+  } = useCellHandMetrics()
   // A bottom-half cell's board is oriented like a player's own, so its hand hangs the same way
   // as yours (face toward the bottom edge) rather than inverted like an opponent's.
   const cellHandInverted = !bottomHalf
@@ -301,17 +312,17 @@ export function OpponentBoardArea({
       )}
       {/* Shared-strip view: this seat's hand, scaled down to the cell and sitting under the
           name plate. Knowing how many cards each player is holding — and, for a Two-Headed
-          Giant ally whose hand is open to you (CR 810.5b), *which* cards — is board state you
+          Giant ally whose hand is open to you (CR 810.5), *which* cards — is board state you
           shouldn't have to slide the camera onto a board to read. */}
       {hideHand && !isHijacking && (
         <div
           data-zone="opponent-hand"
           style={{
             position: 'absolute',
-            // An inverted fan lifts itself 30px above its box (HandFan's negative marginTop plus
-            // the cards' own edge margin) — without matching that offset the top row's cards
-            // would be drawn straight through the name plate.
-            top: CELL_PLATE_BAND + (cellHandInverted ? INVERTED_FAN_LIFT : 0),
+            // Only the inverted fan spills *upward*; pushing it down by the overhang is what
+            // keeps its top row from drawing straight through the name plate. A normal fan
+            // spills downward instead — that half is reserved in the band below.
+            top: CELL_PLATE_BAND + (cellHandInverted ? FAN_EDGE_OVERHANG : 0),
             left: 0,
             right: 0,
             height: cellHandHeight,
@@ -389,7 +400,7 @@ export function OpponentBoardArea({
           height: hideHand
             ? (isHijacking
                 ? handReservation
-                : cellHandHeight + (cellHandInverted ? INVERTED_FAN_LIFT : 0)) + CELL_PLATE_BAND
+                : cellHandBand) + CELL_PLATE_BAND
             : handReservation,
           flexShrink: 0,
         }}

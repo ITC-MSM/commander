@@ -11,6 +11,14 @@ import { CARD_BACK_IMAGE_URL } from '@/utils/cardImages.ts'
  * Row of cards (hand or other horizontal zone).
  * Cards in hand are NOT grouped - each card is shown individually.
  */
+/**
+ * How far a [HandFan] lets its cards spill past the edge it hangs from, in px — applied twice
+ * (once as the box's negative margin, once as the cards' own negative edge offset), so a fan
+ * paints `2 × HAND_FAN_EDGE_MARGIN` beyond the box it is placed in. Exported because a fan
+ * rendered inside a fixed band has to reserve that overhang; see `useCellHandMetrics`.
+ */
+export const HAND_FAN_EDGE_MARGIN = 15
+
 export function CardRow({
   zoneId,
   faceDown = false,
@@ -226,7 +234,7 @@ export function HandFan({
   const totalWidth = cardSpacing * (cardCount - 1) + fittingWidth
 
   // Allow cards to extend slightly beyond the visible area to save vertical space
-  const edgeMargin = -15
+  const edgeMargin = -HAND_FAN_EDGE_MARGIN
 
   // For inverted fan, flip the arc and rotation direction
   const rotationMultiplier = inverted ? -1 : 1

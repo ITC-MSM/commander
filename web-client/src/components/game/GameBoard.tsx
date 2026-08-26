@@ -2187,7 +2187,7 @@ function SelfBottomCell({
   spectatorMode: boolean
   hijackedSurfaceStyle?: React.CSSProperties
 }) {
-  const { cellRef, handHeight } = useCellHandMetrics()
+  const { cellRef, handBand } = useCellHandMetrics()
   return (
     <div
       ref={cellRef}
@@ -2216,7 +2216,7 @@ function SelfBottomCell({
       )}
       {/* Reservation band mirrors the other cells' name-plate + cell-hand bands so all bottom
           boards line up. */}
-      <div style={{ height: CELL_PLATE_BAND + handHeight, flexShrink: 0 }} aria-hidden />
+      <div style={{ height: CELL_PLATE_BAND + handBand, flexShrink: 0 }} aria-hidden />
       <div style={{ ...styles.playerRowWithZones, alignItems: 'flex-start', flex: 1 }}>
         <CommandZone player={player} />
         <div style={{ ...styles.playerMainArea, ...(hijackedSurfaceStyle ?? null) }}>

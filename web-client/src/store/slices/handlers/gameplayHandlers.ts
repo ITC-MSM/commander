@@ -185,11 +185,14 @@ interface StateUpdateEnvelope {
  * Takes the resolved (full) ClientGameState and the envelope fields.
  */
 /**
- * Stamp the seat → team map from the state's own team fields, unless it already matches. Skipped
- * entirely for the overwhelmingly common non-team game (no seat carries a `teamIndex`), so the
- * comparison never runs there.
+ * Stamp the seat → team map from the state's own team fields, unless it already matches. In the
+ * overwhelmingly common non-team game no seat carries a `teamIndex`, so this settles into
+ * comparing two empty maps and returning without ever writing to the store.
+ *
+ * Exported for its own tests: this is the whole of the reconnect fix, and the bug it replaced
+ * (team state riding only on the one-shot game-start roster) is an easy one to reintroduce.
  */
-function syncSeatTeams(state: ClientGameState, get: GetState): void {
+export function syncSeatTeams(state: ClientGameState, get: GetState): void {
   const next: Record<EntityId, number> = {}
   for (const p of state.players) {
     if (p.teamIndex != null) next[p.playerId] = p.teamIndex

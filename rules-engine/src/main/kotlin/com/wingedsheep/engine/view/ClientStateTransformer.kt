@@ -2027,7 +2027,10 @@ class ClientStateTransformer(
             playerId = playerId,
             name = playerComponent?.name ?: "Unknown",
             life = displayedLife ?: 20,
-            poisonCounters = container?.get<CountersComponent>()?.getCount(CounterType.POISON) ?: 0,
+            // CR 810.10a — a player's displayed poison is the team's pooled total in Two-Headed
+            // Giant, the same way [life] above is the team's shared total. The team orb and the
+            // 15-counter loss check (CR 810.8d) must read the same number.
+            poisonCounters = state.teamPoison(playerId),
             handSize = handSize,
             maxHandSize = maxHandSize,
             librarySize = librarySize,
@@ -2044,9 +2047,7 @@ class ClientStateTransformer(
             energyCounters = container?.get<CountersComponent>()?.getCount(CounterType.ENERGY) ?: 0,
             // Team variants (CR 810 / CR 808). Public information, and absent from every
             // non-team game, so both fields serialize away by default.
-            teamIndex = container
-                ?.get<com.wingedsheep.engine.state.components.identity.TeamComponent>()
-                ?.teamIndex,
+            teamIndex = container?.get<TeamComponent>()?.teamIndex,
             teamSharedLife = state.format.sharesTeamLife
         )
     }
