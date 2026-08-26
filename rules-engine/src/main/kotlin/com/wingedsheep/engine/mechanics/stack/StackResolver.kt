@@ -2255,19 +2255,23 @@ class StackResolver(
                 val pausedSelfShuffleIntoLibrary = pausedResolvedScript?.selfShuffleIntoLibraryOnResolve == true
                 val pausedReboundExile = spellComponent.castFromZone == Zone.HAND &&
                     spellHasRebound(effectResult.state, spellId, pausedCardDef)
+                // See the resolved twin below for why this isn't a plain priority order.
                 val pausedIntended = when {
-                    // Above the rider, unlike every other clause here: the cast-this-way riders are
-                    // written "if that spell *would be put into a graveyard*, [somewhere] instead"
-                    // (Kylox's Voltstrider), and a spell that shuffles itself in never would be — so
-                    // the rider has nothing to replace and the printed clause stands. The countered
-                    // and fizzled paths, which really do put the card into a graveyard, don't read
-                    // this flag at all, so the rider still wins there, as it should.
-                    pausedSelfShuffleIntoLibrary -> Zone.LIBRARY
                     // The cast-this-way rider is the most specific instruction on this one spell,
                     // so it outranks the card-intrinsic exile reasons below rather than being
                     // OR'd into them — it is the only one that can name a zone other than exile.
-                    pausedExileAfterResolveComp != null -> pausedExileAfterResolveComp.zone
-                    pausedSelfExile || pausedFlashbackExile || pausedAdventureFaceExile || pausedReboundExile -> Zone.EXILE
+                    // It replaces "would be put into a graveyard", though (Kylox's Voltstrider),
+                    // and a spell that shuffles itself into its owner's library never would be —
+                    // hence the guard, which hands that case to the printed clause below.
+                    pausedExileAfterResolveComp != null && !pausedSelfShuffleIntoLibrary ->
+                        pausedExileAfterResolveComp.zone
+                    // Flashback (CR 702.34a) and harmonize (CR 702.180a) are the two replacements
+                    // here worded "instead of putting it anywhere else any time it would leave the
+                    // stack" rather than naming the graveyard, so they outrank even the printed
+                    // clause: a flashbacked spell that shuffles itself in is exiled instead.
+                    pausedFlashbackExile -> Zone.EXILE
+                    pausedSelfShuffleIntoLibrary -> Zone.LIBRARY
+                    pausedSelfExile || pausedAdventureFaceExile || pausedReboundExile -> Zone.EXILE
                     pausedOmenFaceShuffle -> Zone.LIBRARY
                     else -> Zone.GRAVEYARD
                 }
@@ -2425,16 +2429,31 @@ class StackResolver(
         // on resolution instead of going to the graveyard, and arms a next-upkeep free recast.
         val reboundExile = spellComponent.castFromZone == Zone.HAND &&
             spellHasRebound(newState, spellId, cardDef)
+        // Not a plain priority order, because the underlying replacements aren't totally ordered:
+        // the rider loses to the printed self-shuffle clause, the self-shuffle clause loses to
+        // flashback, and flashback loses to the rider. What breaks the cycle is *what each
+        // replacement is worded to replace*, which is what the guards below encode:
+        //
+        //  - the rider and rebound/adventure/omen all replace "…instead of putting it into its
+        //    owner's **graveyard**", so a spell that shuffles itself into its owner's library
+        //    gives them nothing to replace;
+        //  - flashback and harmonize replace "…instead of putting it **anywhere else** any time it
+        //    would leave the stack", which covers the library move too, so they still apply.
+        //
+        // Countered and fizzled spells really are put into a graveyard, and those paths don't read
+        // the self-shuffle flag at all, so every clause here applies to them as usual.
         val intendedDestination = when {
-            // See the paused-resolve twin above: this one clause sits *above* the rider, because
-            // the riders replace "would be put into a graveyard" and a spell that shuffles itself
-            // into its owner's library never would be.
+            // The rider is the most specific instruction on this one spell, so it outranks the
+            // card-intrinsic exile reasons below rather than being OR'd into them — it is the only
+            // one that can send the card somewhere other than exile (Kylox's Voltstrider — "put it
+            // on the bottom of its owner's library instead"). The guard is the graveyard wording.
+            exileAfterResolveComp != null && !selfShuffleIntoLibrary -> exileAfterResolveComp.zone
+            // Flashback (CR 702.34a) / harmonize (CR 702.180a) — "anywhere else". Above the printed
+            // clause, below the rider, which leaves the pre-existing rider-vs-flashback precedence
+            // exactly as it was.
+            flashbackExile -> Zone.EXILE
             selfShuffleIntoLibrary -> Zone.LIBRARY
-            // The rider otherwise wins over the intrinsic exile reasons because it is the only one
-            // that can send the card somewhere other than exile (Kylox's Voltstrider — "put it on
-            // the bottom of its owner's library instead").
-            exileAfterResolveComp != null -> exileAfterResolveComp.zone
-            selfExile || flashbackExile || adventureFaceExile || reboundExile -> Zone.EXILE
+            selfExile || adventureFaceExile || reboundExile -> Zone.EXILE
             omenFaceShuffle -> Zone.LIBRARY
             else -> Zone.GRAVEYARD
         }

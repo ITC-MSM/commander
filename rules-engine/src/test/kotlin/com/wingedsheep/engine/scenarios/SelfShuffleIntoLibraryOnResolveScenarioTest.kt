@@ -14,9 +14,13 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.scripting.RedirectZoneChange
 import com.wingedsheep.sdk.scripting.effects.AfterResolveDestination
 import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
@@ -55,6 +59,22 @@ import io.kotest.matchers.string.shouldContain
  *
  * That is the exact opposite of the rider's answer to the same two questions, which is why both
  * files exist.
+ *
+ * Two things about the seam are worth knowing before adding a card here:
+ *
+ * - **Flashback and harmonize still win.** They are the only replacements at this seam worded
+ *   "exile this card instead of putting it *anywhere else* any time it would leave the stack"
+ *   (CR 702.34a, CR 702.180a); every other clause — the cast-this-way rider, rebound, Adventure,
+ *   Omen — names the *graveyard*, which is why the printed clause beats those and not these.
+ *
+ * - **The paused path moves the card early.** `StackResolver` puts the spell in the library and
+ *   shuffles while the decision is still pending, so the remainder of that same resolution sees the
+ *   card already in the library. Harmless for Green Sun's Zenith — a search's candidate list is
+ *   built during effect execution, before the move, so the Zenith can never find itself — but it is
+ *   a sharper edge than the same early move is for `selfExile()`, because a library card can be
+ *   drawn or searched. A future pausing self-shuffling spell whose later steps draw cards would
+ *   need this revisited (Blue Sun's Zenith's own ruling — "you won't be able to draw the same Blue
+ *   Sun's Zenith that you cast" — depends on the ordering).
  */
 class SelfShuffleIntoLibraryOnResolveScenarioTest : FunSpec({
 
@@ -103,6 +123,53 @@ class SelfShuffleIntoLibraryOnResolveScenarioTest : FunSpec({
         }
     }
 
+    /** The clause plus flashback, the one replacement at this seam that still outranks it. */
+    val flashbackZenith = card("Test Zenith Flashback") {
+        manaCost = "{1}"
+        typeLine = "Sorcery"
+        spell {
+            effect = Effects.GainLife(2)
+            selfShuffleIntoLibrary()
+        }
+        keywordAbility(KeywordAbility.flashback("{1}"))
+    }
+
+    /** The same, but pausing mid-resolution, so the paused-resolve path is checked too. */
+    val flashbackSearchingZenith = card("Test Zenith Flashback Searching") {
+        manaCost = "{1}"
+        typeLine = "Sorcery"
+        spell {
+            effect = Patterns.Library.searchLibrary(
+                filter = GameObjectFilter.Creature,
+                count = 1,
+                destination = SearchDestination.BATTLEFIELD,
+            )
+            selfShuffleIntoLibrary()
+        }
+        keywordAbility(KeywordAbility.flashback("{1}"))
+    }
+
+    /**
+     * Progenitus' shape, pointed at the library: a card-intrinsic self-replacement that catches the
+     * spell on its way to the destination this clause chose. Proves the shuffle tail is gated on the
+     * *final* zone rather than on the flag.
+     */
+    val redirectedZenith = card("Test Zenith Redirected") {
+        manaCost = "{1}"
+        typeLine = "Sorcery"
+        spell {
+            effect = Effects.GainLife(2)
+            selfShuffleIntoLibrary()
+        }
+        replacementEffect(
+            RedirectZoneChange(
+                newDestination = Zone.EXILE,
+                appliesTo = EventPattern.ZoneChangeEvent(to = Zone.LIBRARY),
+                selfOnly = true,
+            )
+        )
+    }
+
     /**
      * Kylox's Voltstrider's shape: casts a spell from a graveyard under the rider "if that spell
      * would be put into a graveyard, put it on the bottom of its owner's library instead."
@@ -136,7 +203,10 @@ class SelfShuffleIntoLibraryOnResolveScenarioTest : FunSpec({
         val driver = GameTestDriver()
         driver.registerCards(TestCards.all)
         driver.registerCards(
-            listOf(plainZenith, plainNoClause, searchingZenith, targetedZenith, bottomGranter)
+            listOf(
+                plainZenith, plainNoClause, searchingZenith, targetedZenith, bottomGranter,
+                flashbackZenith, flashbackSearchingZenith, redirectedZenith,
+            )
         )
         driver.initMirrorMatch(deck = Deck.of("Island" to 40), skipMulligans = true, startingPlayer = 0)
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
@@ -310,6 +380,114 @@ class SelfShuffleIntoLibraryOnResolveScenarioTest : FunSpec({
         }
     }
 
+    test("flashback outranks the printed clause — CR 702.34a's \"anywhere else\"") {
+        val driver = newDriver()
+        val you = driver.player1
+        val librarySizeBefore = driver.state.getZone(ZoneKey(you, Zone.LIBRARY)).size
+        val shufflesBefore = driver.events.count { it is LibraryShuffledEvent && it.playerId == you }
+        val lifeBefore = driver.getLifeTotal(you)
+
+        val cardId = driver.putCardInGraveyard(you, "Test Zenith Flashback")
+        driver.giveMana(you, Color.BLUE, 4)
+        driver.submit(
+            CastSpell(
+                you, cardId,
+                paymentStrategy = PaymentStrategy.FromPool,
+                useAlternativeCost = true,
+            )
+        ).error shouldBe null
+        driver.settle()
+
+        withClue("it resolved — the clause's own effect happened") {
+            driver.getLifeTotal(you) shouldBe lifeBefore + 2
+        }
+        withClue("flashback replaces 'anywhere else any time it would leave the stack', not just " +
+            "the graveyard, so it applies to the library move the printed clause asks for — " +
+            "unlike the rider, rebound, Adventure and Omen, which all name the graveyard") {
+            driver.getExile(you).contains(cardId) shouldBe true
+            driver.state.getZone(ZoneKey(you, Zone.LIBRARY)).contains(cardId) shouldBe false
+            driver.state.getZone(ZoneKey(you, Zone.LIBRARY)).size shouldBe librarySizeBefore
+        }
+        withClue("and nothing was shuffled — the tail is gated on the final destination") {
+            driver.events.count { it is LibraryShuffledEvent && it.playerId == you } shouldBe
+                shufflesBefore
+        }
+    }
+
+    test("flashback outranks it on the paused-resolve path too") {
+        val driver = newDriver()
+        val you = driver.player1
+        val creatureId = driver.putCardOnTopOfLibrary(you, "Grizzly Bears")
+
+        val cardId = driver.putCardInGraveyard(you, "Test Zenith Flashback Searching")
+        driver.giveMana(you, Color.BLUE, 4)
+        driver.submit(
+            CastSpell(
+                you, cardId,
+                paymentStrategy = PaymentStrategy.FromPool,
+                useAlternativeCost = true,
+            )
+        ).error shouldBe null
+        var guard = 0
+        while (!driver.isPaused && driver.state.stack.isNotEmpty() && guard++ < 10) driver.bothPass()
+        driver.submitCardSelection(you, listOf(creatureId))
+        driver.settle()
+
+        withClue("the search still resolved") {
+            driver.state.getZone(ZoneKey(you, Zone.BATTLEFIELD)).contains(creatureId) shouldBe true
+        }
+        withClue("the duplicated seam has to agree with itself — wiring the precedence into only " +
+            "one of the two paths is the silent half-fix this file exists to catch") {
+            driver.getExile(you).contains(cardId) shouldBe true
+            driver.state.getZone(ZoneKey(you, Zone.LIBRARY)).contains(cardId) shouldBe false
+        }
+    }
+
+    test("a redirect away from the library suppresses the shuffle") {
+        val driver = newDriver()
+        val you = driver.player1
+        val shufflesBefore = driver.events.count { it is LibraryShuffledEvent && it.playerId == you }
+
+        val cardId = driver.cast(you, "Test Zenith Redirected")
+        driver.settle()
+
+        withClue("the self-replacement caught the card on its way to the library") {
+            driver.getExile(you).contains(cardId) shouldBe true
+            driver.state.getZone(ZoneKey(you, Zone.LIBRARY)).contains(cardId) shouldBe false
+        }
+        withClue("so no library was shuffled — the tail is gated on the destination the card " +
+            "actually reached, not on the flag that asked for it") {
+            driver.events.count { it is LibraryShuffledEvent && it.playerId == you } shouldBe
+                shufflesBefore
+        }
+    }
+
+    test("the printed clause beats the rider on the paused-resolve path too") {
+        val driver = newDriver()
+        val you = driver.player1
+        driver.putCardOnTopOfLibrary(you, "Grizzly Bears")
+        val zenithId = driver.putCardInGraveyard(you, "Test Zenith Searching")
+        val shufflesBefore = driver.events.count { it is LibraryShuffledEvent && it.playerId == you }
+
+        val granterId = driver.putCardInHand(you, "Test Bottom Granter For Zenith")
+        driver.giveMana(you, Color.BLUE, 8)
+        driver.submit(
+            CastSpell(you, granterId, paymentStrategy = PaymentStrategy.FromPool)
+        ).error shouldBe null
+        var guard = 0
+        while (!driver.isPaused && driver.state.stack.isNotEmpty() && guard++ < 10) driver.bothPass()
+        driver.submitCardSelection(you, listOf(zenithId))
+        driver.settle()
+
+        withClue("the rider case was only ever checked on the full-resolve path; the paused one " +
+            "has its own copy of the precedence and must answer the same way") {
+            driver.state.getZone(ZoneKey(you, Zone.LIBRARY)).contains(zenithId) shouldBe true
+            driver.getGraveyardCardNames(you).contains("Test Zenith Searching") shouldBe false
+            driver.events.count { it is LibraryShuffledEvent && it.playerId == you } shouldBe
+                (shufflesBefore + 2)
+        }
+    }
+
     test("a card can't print both destination clauses") {
         // Two spellings of one slot (the CR 608.2n destination). Without the guard this resolves
         // silently to whichever clause StackResolver checks first, which is not something a card
@@ -326,6 +504,15 @@ class SelfShuffleIntoLibraryOnResolveScenarioTest : FunSpec({
             }
         }
         ex.message shouldContain "Test Zenith Contradictory"
+    }
+
+    test("nor can a CardScript built directly set both") {
+        // The DSL guard above never runs for a script assembled by hand — test fixtures and the
+        // Assay compiler both do that — so the type itself has to refuse the pair.
+        val ex = shouldThrow<IllegalArgumentException> {
+            CardScript(selfExileOnResolve = true, selfShuffleIntoLibraryOnResolve = true)
+        }
+        ex.message shouldContain "CR 608.2n destination"
     }
 
     test("without the clause the same spell goes to the graveyard — the control") {

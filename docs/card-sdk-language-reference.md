@@ -9138,16 +9138,22 @@ composite abilities).
   sorcery spell's resolution, the spell is put into its owner's graveyard"), and `StackResolver` reads them
   at the same seam on both the full-resolve and paused-resolve paths. The card is added to its owner's
   library and the library is then shuffled, emitting `LibraryShuffledEvent` — the same tail the Omen face
-  uses. A card prints one clause or the other, so don't set both (this one wins if you do — it is checked
-  first). Deliberately **not** a zone-change replacement (`RedirectZoneChange` is that, and applies to any
+  uses. A card prints one clause or the other, and setting both is **rejected at card-construction time**
+  (in the DSL, with a message naming the card, and again in `CardScript`'s own `init` for scripts built
+  directly). Deliberately **not** a zone-change replacement (`RedirectZoneChange` is that, and applies to any
   card heading to a graveyard from anywhere), and **not** `AfterResolveDestination.BOTTOM_OF_LIBRARY` (which
   also lands in `Zone.LIBRARY` but does not shuffle). It is also **not** the cast-this-way rider
-  `AfterResolveDestination` — and it *outranks* one, uniquely among the card-intrinsic destinations: those
-  riders read "if that spell would be put into a graveyard, [somewhere] instead" (Kylox's Voltstrider), and a
-  spell that shuffles itself in never would be, so the rider has nothing to replace. On the countered and
-  fizzled paths, where the card really is put into a graveyard, the rider still wins. Because it is read at resolution-destination
+  `AfterResolveDestination` — and it *outranks* one: those riders read "if that spell would be put into a
+  graveyard, [somewhere] instead" (Kylox's Voltstrider), and a spell that shuffles itself in never would be,
+  so the rider has nothing to replace. On the countered and fizzled paths, where the card really is put into
+  a graveyard, the rider still wins. Because it is read at resolution-destination
   time it is correctly inert when the spell is countered or fizzles — those paths never reach CR 608.2n, so
   the card goes to its owner's graveyard as usual.
+  **It does not outrank flashback (CR 702.34a) or harmonize (CR 702.180a)**, printed or granted. Every other
+  clause at this seam — the rider, rebound, Adventure, Omen — is worded "instead of putting it into its
+  owner's *graveyard*", which is why the printed clause beats them; those two are worded "exile this card
+  instead of putting it *anywhere else* any time it would leave the stack", which covers the library move,
+  so they still apply. A Blue Sun's Zenith flashbacked off Snapcaster Mage is exiled, not shuffled in.
 - `Paradigm` (Secrets of Strixhaven) — `spell { effect = …; paradigm() }` on a Lesson spell. An **exile-zone
   recurrence** mechanic, modelled exactly like Suspend (a marker the engine reads off an exiled card), differing
   only in that it casts a **copy** rather than the card itself, so the original recurs forever. Oracle: "[effect]

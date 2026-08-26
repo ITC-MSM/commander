@@ -1080,7 +1080,11 @@ class SpellBuilder {
      * the graveyard. Used for cards that say "Shuffle <card name> into its owner's library."
      *
      * The sibling of [selfExile]; both replace the CR 608.2n destination. A card prints one clause
-     * or the other, so don't set both.
+     * or the other, so don't set both — setting both is rejected at card-construction time.
+     *
+     * Does not outrank flashback (CR 702.34a) or harmonize (CR 702.180a): those replace "anywhere
+     * else any time it would leave the stack" rather than naming the graveyard, so a flashbacked
+     * spell with this clause is exiled. See [com.wingedsheep.sdk.model.CardScript.selfShuffleIntoLibraryOnResolve].
      */
     fun selfShuffleIntoLibrary() {
         selfShuffleIntoLibraryOnResolve = true
@@ -1094,6 +1098,9 @@ class SpellBuilder {
      * card-authoring mistake, and without this it resolves silently to whichever clause
      * `StackResolver` happens to check first. Order-independent, so it also catches
      * [paradigm] (which implies [selfExile]) paired with [selfShuffleIntoLibrary] either way round.
+     *
+     * [com.wingedsheep.sdk.model.CardScript]'s own `init` rejects the same pair; this one runs first
+     * for anything built through the DSL, purely so the message can name the offending card.
      */
     internal fun validateResolutionDestination(cardName: String) {
         require(!(selfExileOnResolve && selfShuffleIntoLibraryOnResolve)) {
