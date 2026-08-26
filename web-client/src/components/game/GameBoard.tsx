@@ -458,12 +458,12 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
     if (!teamBannerSeats || !playerId || !gameState) return null
     const id = teamBannerSeats.mine.find((m) => m !== playerId)
     if (!id) return null
-    // Hotseat (and a Mindslaver-style hijack) puts this client in the ally's seat, and their cell
-    // then renders the real, interactive fan. Lifting a second read-only copy to the bottom of the
-    // screen would show the same hand twice — the driving one wins.
-    if (hijackControlledOpponentId === id) return null
     return gameState.players.find((p) => p.playerId === id) ?? null
-  }, [teamBannerSeats, playerId, gameState, hijackControlledOpponentId])
+  }, [teamBannerSeats, playerId, gameState])
+  // Hotseat (and a Mindslaver-style hijack) puts this client in the ally's seat. Their hand stays
+  // lifted where it always is — beside yours — and becomes the interactive one there, rather than
+  // snapping back into their cell, where a bottom-row hand lands mid-screen.
+  const allyIsDriven = allySeat != null && hijackControlledOpponentId === allySeat.playerId
   // Widths for the paired bottom hands. Your own fan is sized from the *viewport* everywhere else,
   // so a second fan beside it can only avoid overlapping by both of them being given explicit
   // widths out of one shared budget — the same budget CardRow would have used on its own (the
@@ -745,7 +745,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           gap: teamHandRow.gap,
         }}
       >
-        <AllyHandFan player={allySeat} width={teamHandRow.allyWidth} />
+        <AllyHandFan player={allySeat} width={teamHandRow.allyWidth} interactive={allyIsDriven} />
         {ownHand}
       </div>
     )
@@ -1469,6 +1469,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                 // (CR 810.5) — is lifted out to render full-size beside your own.
                 plateAtBottom={teamBannersActive}
                 cellHand={teamBannersActive ? 'none' : 'fan'}
+                liftHand={teamBannersActive}
                 plateCarriesAnchors={
                   p.playerId !== bottomHudPlayer?.playerId &&
                   (teamBannersActive || p.playerId !== centerOrbOpponentId)
@@ -2367,29 +2368,57 @@ const TEAM_STRIP_TOP = 10
 function AllyHandFan({
   player,
   width,
+  interactive = false,
 }: {
   player: import('@/types').ClientPlayer
   width: number
+  /**
+   * This client is currently driving that seat (hotseat / Mindslaver), so the lifted fan *is* the
+   * playable one. It stays here rather than snapping back into their board cell: a bottom-row
+   * cell draws its hand at the cell's top, which is the middle of the screen.
+   */
+  interactive?: boolean
 }) {
   return (
     <div
       data-zone="ally-hand"
+      data-hijack-controlled={interactive || undefined}
       aria-label={`${player.name}'s hand`}
-      title={`${player.name}'s hand — visible to you (CR 810.5), but only they can play from it`}
+      title={
+        interactive
+          ? `${player.name}'s hand — you are playing this seat`
+          : `${player.name}'s hand — visible to you (CR 810.5), but only they can play from it`
+      }
       style={{
         width,
         display: 'flex',
         justifyContent: 'center',
+        ...(interactive
+          ? {
+              borderRadius: 12,
+              outline: '2px solid #a855f7',
+              outlineOffset: -2,
+              background: 'rgba(76, 29, 149, 0.18)',
+            }
+          : null),
         // A hand fan is drawn to bleed past the edge it hangs from, which is right for the one you
         // play from (you only ever need its top half) and wrong for one you are reading. Lift the
         // ally's clear of the screen edge so whole cards are visible; there is nothing below it.
         marginBottom: 26,
-        // Readable, not playable (CR 810.5) — clicks fall through to whatever is behind it.
-        pointerEvents: 'none',
+        // Readable, not playable (CR 810.5) — clicks fall through to whatever is behind it. The
+        // exception is a seat this client is driving, which is the one hand here you may act with.
+        ...(interactive ? null : { pointerEvents: 'none' as const }),
         userSelect: 'none',
       }}
     >
-      <CardRow zoneId={hand(player.playerId)} faceDown={false} fan fitWidth={width} maxCardWidth={72} />
+      <CardRow
+        zoneId={hand(player.playerId)}
+        faceDown={false}
+        fan
+        interactive={interactive}
+        fitWidth={width}
+        maxCardWidth={interactive ? 96 : 72}
+      />
     </div>
   )
 }

@@ -106,6 +106,7 @@ export function OpponentBoardArea({
   bottomHalf = false,
   cellHand = 'fan',
   plateAtBottom = false,
+  liftHand = false,
   controlsTop,
 }: {
   opponent: ClientPlayer
@@ -194,6 +195,14 @@ export function OpponentBoardArea({
    * below that row.
    */
   controlsTop?: number
+  /**
+   * This seat's hand is rendered *outside* the cell — the Two-Headed Giant ally fan at the bottom
+   * of the screen. Without this, a cell being driven by this client (hotseat / Mindslaver) forces
+   * its own full-size fan back into the cell, which for a bottom-row cell means the hand lands at
+   * the *top* of that cell, floating in the middle of the screen, and pushes the name plate off
+   * the bottom edge it shares with the team-life banner.
+   */
+  liftHand?: boolean
 }) {
   const revealedTopCard = useRevealedLibraryTopCard(opponent.playerId)
   const ghostCards = useMemo(
@@ -210,6 +219,10 @@ export function OpponentBoardArea({
   // A bottom-half cell's board is oriented like a player's own, so its hand hangs the same way
   // as yours (face toward the bottom edge) rather than inverted like an opponent's.
   const cellHandInverted = !bottomHalf
+  // A driven seat normally reclaims its full-size interactive fan inside the cell — unless the
+  // hand has been lifted out of the cell entirely ([liftHand]), in which case the lifted copy is
+  // the interactive one and the cell must not draw a second.
+  const drivesOwnHand = isHijacking && !liftHand
   // A face-down hand can still hold cards *you* can see — Peek, Duress, Telepathy, anything that
   // reveals from an opponent's hand. [CardRow] draws those face-up among the face-down placeholders,
   // which a bare count would throw away, so a hand with anything revealed always gets the fan.
@@ -219,7 +232,7 @@ export function OpponentBoardArea({
   // hand keeps the full grid-row-1 reservation (it renders the real interactive fan); otherwise it
   // is the plate band plus the fan's own band, the count strip, or nothing at all.
   const cellHandOwn =
-    isHijacking ? handReservation
+    drivesOwnHand ? handReservation
       : effectiveCellHand === 'fan' ? cellHandBand
         : effectiveCellHand === 'count' ? CELL_HAND_COUNT_BAND
           : 0
@@ -350,7 +363,7 @@ export function OpponentBoardArea({
       )}
       {/* A hijack-controlled hand must stay visible even in shared-strip views —
           this client is playing from it, so it keeps the full-size interactive fan. */}
-      {(!hideHand || isHijacking) && handBlock}
+      {(!hideHand || drivesOwnHand) && handBlock}
       {/* Shared-strip view: the board's "face" — name (+ life outside a shared-life team
           game) at the top of the cell. Sits below the hand when a hijack forces the fan
           visible. */}
@@ -358,7 +371,7 @@ export function OpponentBoardArea({
         <BoardNamePlate
           player={opponent}
           carriesAnchors={plateCarriesAnchors}
-          top={(isHijacking ? handReservation : 0) + 6}
+          top={(drivesOwnHand ? handReservation : 0) + 6}
           anchor={plateAtBottom ? 'bottom' : 'top'}
           isAlly={isAlly}
           {...(
@@ -366,7 +379,7 @@ export function OpponentBoardArea({
                even when a reveal forces the fan back, so the number doesn't appear and vanish as
                cards become known — and it is then the only place the hand's *full* size shows,
                the fan being a mix of face-up cards and backs. */
-            cellHand === 'count' && !isHijacking ? { handCount: opponent.handSize ?? 0 } : {}
+            cellHand === 'count' && !drivesOwnHand ? { handCount: opponent.handSize ?? 0 } : {}
           )}
           {...(allyColor ? { allyColor } : {})}
         />
@@ -375,7 +388,7 @@ export function OpponentBoardArea({
           name plate. Knowing how many cards each player is holding — and, for a Two-Headed
           Giant ally whose hand is open to you (CR 810.5), *which* cards — is board state you
           shouldn't have to slide the camera onto a board to read. */}
-      {hideHand && !isHijacking && effectiveCellHand === 'fan' && (
+      {hideHand && !drivesOwnHand && effectiveCellHand === 'fan' && (
         <div
           data-zone="opponent-hand"
           style={{
@@ -417,7 +430,7 @@ export function OpponentBoardArea({
           title={`Collapse ${opponent.name}'s board`}
           style={{
             position: 'absolute',
-            top: controlsTop ?? (isHijacking ? handReservation : 0) + 6,
+            top: controlsTop ?? (drivesOwnHand ? handReservation : 0) + 6,
             right: 8,
             zIndex: 56,
             width: 24,
