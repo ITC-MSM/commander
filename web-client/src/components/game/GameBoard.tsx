@@ -1023,7 +1023,13 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
               // Fullscreen/Concede button row (single view centers one full-width
               // board below the hand reservation, so no clash there).
               paddingLeft: multiView ? railReservedWidth(responsive) : 0,
-              paddingTop: multiView ? 48 : 0,
+              // The 48px clears the Fullscreen / Concede button row, which only occupies the two
+              // top *corners*. A team table has just two enemy cells, and their plates sit at the
+              // quarter marks with the shared-life banner between them — none of the three is in a
+              // corner, so the band is dead space and the enemy boards can have it. The per-cell
+              // collapse control does live in a corner, so it keeps the old offset via
+              // `controlsTop` rather than riding up with the plate.
+              paddingTop: multiView ? (teamBannersActive ? TEAM_STRIP_TOP : 48) : 0,
               boxSizing: 'border-box',
             }}
             onTouchStart={(e) => {
@@ -1080,6 +1086,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                       // that one renders beside your own. An enemy's face-down arc says nothing a
                       // count doesn't, so it gives its height back to the battlefields.
                       cellHand={teamBannersActive && !oIsAlly ? 'count' : 'fan'}
+                      {...(teamBannersActive ? { controlsTop: 48 - TEAM_STRIP_TOP + 6 } : {})}
                       // The center-HUD orb's player keeps their anchors on that orb; every other
                       // expanded board's plate takes over from its rail chip. Normally that's the
                       // viewed board, but a Two-Headed Giant HUD points its orb at the enemy team
@@ -2350,6 +2357,13 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
  * ally-side head of the shared-life banner — already names them and marks them as your ally; a
  * second caption right below it was the same fact printed twice.
  */
+/**
+ * Top padding of the opponent strip in a Two-Headed Giant table — see the `paddingTop` comment at
+ * the strip. Small enough that the enemy plates, their hands and their boards all sit near the top
+ * edge where they belong; the corner controls compensate with `controlsTop`.
+ */
+const TEAM_STRIP_TOP = 10
+
 function AllyHandFan({
   player,
   width,

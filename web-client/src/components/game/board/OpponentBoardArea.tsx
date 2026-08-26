@@ -106,6 +106,7 @@ export function OpponentBoardArea({
   bottomHalf = false,
   cellHand = 'fan',
   plateAtBottom = false,
+  controlsTop,
 }: {
   opponent: ClientPlayer
   layout: 'grid' | 'strip'
@@ -186,6 +187,13 @@ export function OpponentBoardArea({
    * shared team-life banner and belong at the screen edge, beside the life total they share.
    */
   plateAtBottom?: boolean
+  /**
+   * Shared-strip view only: vertical offset for this cell's corner controls (the collapse button),
+   * overriding the plate's own. The two top screen corners belong to Fullscreen and Concede, so a
+   * strip that has moved its plate up near the top edge still has to keep anything in a *corner*
+   * below that row.
+   */
+  controlsTop?: number
 }) {
   const revealedTopCard = useRevealedLibraryTopCard(opponent.playerId)
   const ghostCards = useMemo(
@@ -353,9 +361,13 @@ export function OpponentBoardArea({
           top={(isHijacking ? handReservation : 0) + 6}
           anchor={plateAtBottom ? 'bottom' : 'top'}
           isAlly={isAlly}
-          {...(effectiveCellHand === 'count' && !isHijacking
-            ? { handCount: opponent.handSize ?? 0 }
-            : {})}
+          {...(
+            /* Keyed on what was *asked for*, not what is rendered: the badge stays on the plate
+               even when a reveal forces the fan back, so the number doesn't appear and vanish as
+               cards become known — and it is then the only place the hand's *full* size shows,
+               the fan being a mix of face-up cards and backs. */
+            cellHand === 'count' && !isHijacking ? { handCount: opponent.handSize ?? 0 } : {}
+          )}
           {...(allyColor ? { allyColor } : {})}
         />
       )}
@@ -405,7 +417,7 @@ export function OpponentBoardArea({
           title={`Collapse ${opponent.name}'s board`}
           style={{
             position: 'absolute',
-            top: (isHijacking ? handReservation : 0) + 6,
+            top: controlsTop ?? (isHijacking ? handReservation : 0) + 6,
             right: 8,
             zIndex: 56,
             width: 24,

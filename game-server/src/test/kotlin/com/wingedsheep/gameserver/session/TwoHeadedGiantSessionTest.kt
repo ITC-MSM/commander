@@ -6,6 +6,7 @@ import com.wingedsheep.gameserver.protocol.ServerMessage
 import com.wingedsheep.sdk.core.Format
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
@@ -159,6 +160,43 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
             val baton = session.getStateForTesting()!!.priorityPlayerId!!
             session.getLegalActions(baton) shouldNotBe emptyList<Any>()
             ids.filter { it != baton }.forEach { session.getLegalActions(it) shouldBe emptyList() }
+        }
+
+        test("a revealed card in an opponent's hand still reaches the viewer, count and all") {
+            // The client collapses a *fully* face-down opponent hand to a count and falls back to a
+            // real fan the moment any of it is revealed. That decision reads `zone.cardIds`, so this
+            // pins the contract it reads: a hidden hand ships the revealed cards' ids (and their
+            // details) while `size` stays the true hand size. Revealed cards in hand are routine —
+            // anything returned to hand from the battlefield, a graveyard or the stack stays known
+            // to the table until its owner plays a same-named card (RevealedInHandTracker).
+            val (session, ids) = started2hg()
+            val viewer = ids[0]
+            val opponent = ids[2]
+
+            var s = session.getStateForTesting()!!
+            val opponentHand = s.getZone(com.wingedsheep.engine.state.ZoneKey(opponent, Zone.HAND))
+            val known = opponentHand.first()
+            s = s.updateEntity(known) {
+                it.with(com.wingedsheep.engine.state.components.identity.RevealedToComponent.to(viewer))
+            }
+            session.injectStateForDevScenario(s)
+
+            val update = session.createStateUpdate(viewer, emptyList()) as ServerMessage.StateUpdate
+            val hand = update.state.zones.single {
+                it.zoneId.zoneType == Zone.HAND && it.zoneId.ownerId == opponent
+            }
+
+            // Exactly the revealed card comes through, and its details are populated — that is what
+            // the fan draws face-up. The hand's real size is unchanged, so the count on the name
+            // plate and the face-down placeholders beside it both stay honest.
+            hand.cardIds shouldContainExactly listOf(known)
+            update.state.cards[known] shouldNotBe null
+            hand.size shouldBe opponentHand.size
+            hand.size shouldBe 7
+            // The other seat on that team revealed nothing, so it still collapses to a count.
+            update.state.zones.single {
+                it.zoneId.zoneType == Zone.HAND && it.zoneId.ownerId == ids[3]
+            }.cardIds.shouldBeEmpty()
         }
 
         test("non-team game is unchanged: no team index, every other seat is an opponent") {

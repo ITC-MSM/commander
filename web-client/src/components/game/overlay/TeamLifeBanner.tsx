@@ -60,7 +60,10 @@ export function TeamLifeBanner({
       aria-label={`${label}: ${life} life${members ? ` (${members})` : ''}`}
       style={{
         position: 'absolute',
-        ...(anchor === 'bottom' ? { bottom: 0 } : { top: 0 }),
+        // The top banner sits level with the two board plates it spans, not above them — that row
+        // is the enemy team's whole header, and giving the banner a line of its own pushed their
+        // boards down for nothing.
+        ...(anchor === 'bottom' ? { bottom: 0 } : { top: 12 }),
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 57,
