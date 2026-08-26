@@ -18,6 +18,7 @@ import {
   visibleStackDepth,
   groupCards,
 } from './cardGrouping'
+import { teamLabel } from './teamLabel'
 
 /**
  * Select the game state (works for both normal play and spectating).
@@ -376,6 +377,34 @@ export function useIdentityColor(playerId: EntityId | null): SeatColor {
   const seatIndex = useSeatIndex(playerId)
   const teamMap = useGameStore(selectTeamMap)
   return useMemo(() => identitySeatColor(teamMap, playerId, seatIndex), [teamMap, playerId, seatIndex])
+}
+
+export { teamLabel } from './teamLabel'
+
+/** Hook form of [teamLabel] for a player's team. */
+export function useTeamLabelFor(playerId: EntityId | null): string {
+  const teamMap = useGameStore(selectTeamMap)
+  const viewerTeam = useViewerTeamIndex()
+  const t = playerId != null ? teamMap[playerId] ?? null : null
+  return teamLabel(t, viewerTeam)
+}
+
+/**
+ * The living members of `playerId`'s team, in turn order — the tooltip behind a team-labelled
+ * orb ("Opponents" → "Bob & Carol") and the source of the team's single shared life total.
+ */
+export function useTeammateNames(playerId: EntityId | null): string {
+  const gameState = useGameStore(selectGameState)
+  const teamMap = useGameStore(selectTeamMap)
+  return useMemo(() => {
+    if (!gameState || playerId == null) return ''
+    const t = teamMap[playerId]
+    if (t == null) return gameState.players.find((p) => p.playerId === playerId)?.name ?? ''
+    return gameState.players
+      .filter((p) => teamMap[p.playerId] === t && !p.hasLost)
+      .map((p) => p.name)
+      .join(' & ')
+  }, [gameState, teamMap, playerId])
 }
 
 /**

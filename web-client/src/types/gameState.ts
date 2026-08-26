@@ -664,6 +664,15 @@ export interface ClientPlayer {
    * badge is rendered.
    */
   readonly energyCounters?: number
+  /**
+   * Team membership in a team variant (Two-Headed Giant — CR 810; Team vs. Team — CR 808):
+   * players sharing a `teamIndex` are teammates. Absent in every non-team game. Carried on the
+   * state (not just the game-start seat roster) so a client that joins by reconnecting — hotseat,
+   * a scenario, a dropped connection resuming — still knows it's in a team game.
+   */
+  readonly teamIndex?: number | null
+  /** True when the format pools life per team (Two-Headed Giant, CR 810.4). */
+  readonly teamSharedLife?: boolean
 }
 
 /**

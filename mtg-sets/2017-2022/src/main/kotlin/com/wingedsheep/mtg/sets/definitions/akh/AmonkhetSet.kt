@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.akh
 
-import com.wingedsheep.mtg.sets.definitions.por.PortalSet
 import com.wingedsheep.mtg.sets.discovery.CardDiscovery
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.MtgSet
@@ -18,11 +17,14 @@ object AmonkhetSet : MtgSet {
     override val displayName = "Amonkhet"
     override val releaseDate = "2017-04-28"
     override val block = "Amonkhet"
-    override val basicLandsFallback = PortalSet
     override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)
+    }
+
+    override val basicLands: List<CardDefinition> by lazy {
+        CardDiscovery.findBasicLandsIn(CARDS_PACKAGE, code)
     }
 
     override val printings: List<Printing> by lazy {

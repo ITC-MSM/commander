@@ -11,6 +11,14 @@ import { CARD_BACK_IMAGE_URL } from '@/utils/cardImages.ts'
  * Row of cards (hand or other horizontal zone).
  * Cards in hand are NOT grouped - each card is shown individually.
  */
+/**
+ * How far a [HandFan] lets its cards spill past the edge it hangs from, in px — applied twice
+ * (once as the box's negative margin, once as the cards' own negative edge offset), so a fan
+ * paints `2 × HAND_FAN_EDGE_MARGIN` beyond the box it is placed in. Exported because a fan
+ * rendered inside a fixed band has to reserve that overhang; see `useCellHandMetrics`.
+ */
+export const HAND_FAN_EDGE_MARGIN = 15
+
 export function CardRow({
   zoneId,
   faceDown = false,
@@ -18,6 +26,9 @@ export function CardRow({
   small = false,
   inverted = false,
   ghostCards = [],
+  fitWidth,
+  maxCardWidth,
+  fan = false,
 }: {
   zoneId: ZoneId
   faceDown?: boolean
@@ -25,6 +36,25 @@ export function CardRow({
   small?: boolean
   inverted?: boolean
   ghostCards?: readonly ClientCard[]
+  /**
+   * Fit the fan into this width instead of the viewport, and don't shift it toward the game
+   * log — a hand rendered *inside* a multiplayer strip cell is centered on its own cell, not
+   * on the screen. Undefined for the full-width hands (yours at the bottom, the viewed
+   * opponent's at the top), which keep the viewport-relative sizing.
+   */
+  fitWidth?: number
+  /**
+   * Cap the card width here instead of at the responsive small/normal width. A strip cell's
+   * hand has to give most of its cell back to the board, so it renders deliberately smaller
+   * than a fan that fits the width would.
+   */
+  maxCardWidth?: number
+  /**
+   * Render as a fan even when the built-in rules wouldn't. Those rules key off face-down-ness
+   * and interactivity, which between them miss a face-up hand you may read but not play from —
+   * a Two-Headed Giant ally's (CR 810.5). It's still a hand and should look like one.
+   */
+  fan?: boolean
 }) {
   const cards = useZoneCards(zoneId)
   const zone = useZone(zoneId)
@@ -53,16 +83,18 @@ export function CardRow({
     ? (isOwnHand ? 110 : 8)
     : responsive.pileWidth + 20
   const availableWidth =
-    responsive.viewportWidth - (responsive.containerPadding * 2) - leftReserve - rightReserve
+    fitWidth ??
+    (responsive.viewportWidth - (responsive.containerPadding * 2) - leftReserve - rightReserve)
   // Centering the fan with this much right margin places it exactly between
   // the reserves (left edge ≥ leftReserve, right edge clear of the buttons).
-  const fanShift = rightReserve - leftReserve
+  // A cell-scoped fan is already centered on its cell, so it never shifts.
+  const fanShift = fitWidth != null ? 0 : rightReserve - leftReserve
 
   // Calculate card width that fits all cards (revealed + unrevealed + ghost)
   const totalCardCount = (faceDown ? zoneSize : cards.length) + ghostCards.length
   const cardCount = showPlaceholders ? zoneSize : totalCardCount
-  const baseWidth = small ? responsive.smallCardWidth : responsive.cardWidth
-  const minWidth = small ? 30 : 45
+  const baseWidth = maxCardWidth ?? (small ? responsive.smallCardWidth : responsive.cardWidth)
+  const minWidth = Math.min(small ? 30 : 45, baseWidth)
   const fittingWidth = calculateFittingCardWidth(
     cardCount,
     availableWidth,
@@ -82,7 +114,7 @@ export function CardRow({
 
   // For opponent's hand: show revealed cards face-up, plus placeholders for unrevealed cards
   const hasRevealedCards = faceDown && cards.length > 0
-  const shouldShowFan = isPlayerHand || isOpponentHand || isSpectatorBottomHand
+  const shouldShowFan = fan || isPlayerHand || isOpponentHand || isSpectatorBottomHand
 
   if (shouldShowFan && (cards.length > 0 || showPlaceholders || unrevealedCount > 0 || ghostCards.length > 0)) {
     return (
@@ -202,7 +234,7 @@ export function HandFan({
   const totalWidth = cardSpacing * (cardCount - 1) + fittingWidth
 
   // Allow cards to extend slightly beyond the visible area to save vertical space
-  const edgeMargin = -15
+  const edgeMargin = -HAND_FAN_EDGE_MARGIN
 
   // For inverted fan, flip the arc and rotation direction
   const rotationMultiplier = inverted ? -1 : 1

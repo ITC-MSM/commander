@@ -16,22 +16,26 @@ import com.wingedsheep.sdk.model.EntityId
  * projected controller (which already reflects every Layer 2 control-changing effect, plus
  * Old Man of the Sea's post-Layer-7 power gate) to the player it should be fighting for:
  *
- * - Attackers must remain controlled by the active player (the only player who has
- *   declared attackers this turn). A projected controller that is no longer the active
- *   player → removed from combat.
- * - Blockers must remain controlled by a non-active player (the defender who declared
- *   them). A projected controller that has become the active player → removed from combat.
+ * - Attackers must remain controlled by the *active team* — every player who could have
+ *   declared an attacker this turn. A projected controller off that team → removed from combat.
+ * - Blockers must remain controlled by the defending team. A projected controller that has
+ *   joined the active team → removed from combat.
  *
- * The two-player approximation is sufficient for current scope; multi-player formats
- * can extend this once they're modelled. Removal uses [CombatRemovalHelper] so dependent
- * `BlockedComponent` / `BlockingComponent` references stay consistent.
+ * Asked through [GameState.isActiveTurnFor], which is the team-aware form of
+ * `controller == activePlayerId`: in Two-Headed Giant the attacking team declares one combined
+ * attack (CR 805.10a), so both teammates' creatures are legitimately attacking even though the
+ * engine names only one of them [GameState.activePlayerId] (CR 805.9). Comparing against that
+ * single id swept the non-active teammate's entire attack out of combat on the next SBA pass.
+ * Every format without shared team turns reduces to the plain equality, unchanged.
+ *
+ * Removal uses [CombatRemovalHelper] so dependent `BlockedComponent` / `BlockingComponent`
+ * references stay consistent.
  */
 class ControlChangedRemovesFromCombatCheck : StateBasedActionCheck {
     override val name = "506.4 Controller-Changed Combat Removal"
     override val order = SbaOrder.CONTROL_CHANGED_COMBAT
 
     override fun check(state: GameState): ExecutionResult {
-        val activePlayerId = state.activePlayerId
         val projected = state.projectedState
 
         val toRemove = mutableListOf<EntityId>()
@@ -43,8 +47,8 @@ class ControlChangedRemovesFromCombatCheck : StateBasedActionCheck {
 
             val controllerId = projected.getController(entityId) ?: continue
             val mismatched = when {
-                isAttacking -> controllerId != activePlayerId
-                isBlocking -> controllerId == activePlayerId
+                isAttacking -> !state.isActiveTurnFor(controllerId)
+                isBlocking -> state.isActiveTurnFor(controllerId)
                 else -> false
             }
             if (mismatched) toRemove.add(entityId)

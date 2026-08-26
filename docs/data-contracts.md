@@ -491,9 +491,15 @@ sealed, or premade), then one N-player game".
     individually (CR 104.3b), and a team loses only once all its members have left (CR 104.2c).
     `maxPlayers` caps at 8.
 
-  The seat roster (`PlayerSeatInfo`) carries `teamIndex` for grouping and a game-level
-  `teamSharedLife` flag (`true` for 2HG, `false` for Team vs. Team) so the client renders either a
-  single shared-life team header or per-player life. Ignored outside a team mode.
+  Both facts reach the client twice. The seat roster (`PlayerSeatInfo`) carries `teamIndex` for
+  grouping and a game-level `teamSharedLife` flag (`true` for 2HG, `false` for Team vs. Team), and
+  **`ClientPlayer` carries the same two fields on every state update**. The roster alone is not
+  enough: it rides a one-shot game-start message, so a client that joins by *reconnecting*
+  (hotseat, scenario, a dropped connection resuming) never sees it and would render a team game as
+  a free-for-all. The client re-derives its seat → team map from the state on each update, which
+  covers every entry path into live play; spectate and replay still seed theirs from their own
+  rosters. Both `ClientPlayer` fields are additive with defaults (`null` / `false`), so they
+  serialize away entirely outside a team mode.
 - **Free mulligan.** A game that begins with more than two players (any FFA pod) uses the CR 800.6
   multiplayer mulligan: a player's *first* mulligan is free — it bottoms 0 cards and doesn't count
   toward the mulligan limit. This is engine-internal; the existing `MulliganDecision.cardsToPutOnBottom`

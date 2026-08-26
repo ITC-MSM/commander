@@ -8,8 +8,9 @@ import com.wingedsheep.sdk.model.Printing
 /**
  * Zendikar (2009)
  *
- * mtgish-tooling auto-generated seed: only the cards relocated here as their canonical
- * earliest printing. Intentionally incomplete relative to the official set.
+ * Intentionally incomplete relative to the official set: the cards whose canonical earliest
+ * printing is Zendikar, plus `Printing` rows for the reprints it carries and the set's own
+ * full-art basic lands.
  *
  * Set Code: ZEN
  * Release Date: 2009-10-02

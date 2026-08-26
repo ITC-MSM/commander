@@ -1,0 +1,64 @@
+// Beast Hunt
+{
+    "name": "Beast Hunt",
+    "manaCost": "{3}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Reveal the top three cards of your library. Put all creature cards revealed this way into your hand and the rest into your graveyard.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 3
+                        }
+                    },
+                    "storeAs": "looked"
+                },
+                {
+                    "type": "RevealCollection",
+                    "from": "looked"
+                },
+                {
+                    "type": "FilterCollection",
+                    "from": "looked",
+                    "filter": {
+                        "type": "MatchesFilter",
+                        "filter": "creature"
+                    },
+                    "storeMatching": "kept",
+                    "storeNonMatching": "rest"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "kept",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "rest",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "68",
+        "artist": "Kieran Yanner",
+        "flavorText": "\"Surely we could tame something besides hurdas and pillarfield oxen!\"\n—Sheyda, Ondu gamekeeper",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/b/db385ec5-a33a-45df-a1db-e99dd3f62f6d.jpg?1783942320"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}

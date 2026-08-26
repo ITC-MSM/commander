@@ -1,15 +1,72 @@
-import { useMemo } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
+import type { RefObject } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import type { ClientPlayer } from '@/types'
 import { hand } from '@/types'
-import { useRevealedLibraryTopCard, useIdentityColor } from '@/store/selectors'
+import { useRevealedLibraryTopCard, useIdentityColor, useIsSharedLifeTeamGame } from '@/store/selectors'
+import { useResponsiveContext } from './shared'
 import { Battlefield } from './Battlefield'
-import { CardRow } from './HandZone'
+import { CardRow, HAND_FAN_EDGE_MARGIN } from './HandZone'
 import { CommandZone } from './CommandZone'
 import { ZonePile } from './ZonePiles'
 import { styles } from './styles'
 import { isLoneTargetRequirement } from '@/utils/targeting.ts'
+
+/** Height of a shared-strip cell's name-plate band (the pill plus its top margin). */
+export const CELL_PLATE_BAND = 34
+
+/**
+ * How far a [HandFan] paints past the edge it hangs from — its own negative margin plus the
+ * cards' negative edge offset. Symmetric: an inverted fan spills this far *above* its box, a
+ * normal one this far *below*. Either way the band a cell hand sits in has to reserve it, or the
+ * fan draws through the name plate above (inverted) or the battlefield below (normal) — and
+ * because an ally's cell hand is click-through-able, an unreserved overhang also swallows clicks
+ * meant for the permanents underneath it.
+ */
+const FAN_EDGE_OVERHANG = HAND_FAN_EDGE_MARGIN * 2
+
+/**
+ * Sizing for the hand a board renders *inside* a shared-strip cell (table overview, team-split
+ * bottom row, combat defender-focus split). The full-width fan is viewport-relative and would
+ * run straight over the neighbouring cells, so the cell measures itself and the fan is capped
+ * from that — deliberately smaller than a fan that merely fits, because with every board on
+ * screen at once the battlefields are what the width is for.
+ *
+ * [handHeight] is the fan's own box and an upper bound on it (`calculateFittingCardWidth` only
+ * ever shrinks the cap). [handBand] is what a cell must actually reserve: that box plus the
+ * [FAN_EDGE_OVERHANG] the fan spills past whichever edge it hangs from. Exported so the viewer's
+ * own bottom-row cell — which has no cell hand, its fan being the full-width one at the screen
+ * bottom — reserves the identical band and stays aligned with its neighbours.
+ */
+export function useCellHandMetrics(): {
+  cellRef: RefObject<HTMLDivElement | null>
+  cellWidth: number
+  cardWidth: number
+  handHeight: number
+  handBand: number
+} {
+  const responsive = useResponsiveContext()
+  const cellRef = useRef<HTMLDivElement | null>(null)
+  const [cellWidth, setCellWidth] = useState(0)
+  useLayoutEffect(() => {
+    const node = cellRef.current
+    if (!node) return
+    setCellWidth(node.getBoundingClientRect().width)
+    const obs = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (entry) setCellWidth(entry.contentRect.width)
+    })
+    obs.observe(node)
+    return () => obs.disconnect()
+  }, [])
+  const cardWidth = Math.max(
+    22,
+    Math.min(Math.round(responsive.smallCardWidth * 0.72), Math.round(cellWidth / 9) || 999),
+  )
+  const handHeight = Math.round(cardWidth * 1.4) + 12
+  return { cellRef, cellWidth, cardWidth, handHeight, handBand: handHeight + FAN_EDGE_OVERHANG }
+}
 
 /**
  * One opponent's half of the board: hand fan (top), command zone | battlefield |
@@ -86,7 +143,7 @@ export function OpponentBoardArea({
   hijackedSurfaceStyle?: React.CSSProperties
   /**
    * Two-Headed Giant (CR 810): this board belongs to your teammate. You may see their hand
-   * (CR 810.5b), so it renders face-up, and the cell gets an "ALLY" marker so it never reads as
+   * (CR 810.5), so it renders face-up, and the cell gets an "ALLY" marker so it never reads as
    * an enemy board. You still can't act with their cards — only its controller plays from it.
    */
   isAlly?: boolean
@@ -104,6 +161,16 @@ export function OpponentBoardArea({
     () => (revealedTopCard ? [revealedTopCard] : []),
     [revealedTopCard]
   )
+  const {
+    cellRef,
+    cellWidth,
+    cardWidth: cellHandCardWidth,
+    handHeight: cellHandHeight,
+    handBand: cellHandBand,
+  } = useCellHandMetrics()
+  // A bottom-half cell's board is oriented like a player's own, so its hand hangs the same way
+  // as yours (face toward the bottom edge) rather than inverted like an opponent's.
+  const cellHandInverted = !bottomHalf
 
   /* Opponent hand — fixed at top of screen in grid layout; absolute inside the
      strip cell in strip layout (a strip cell starts at the viewport top, so the
@@ -184,6 +251,7 @@ export function OpponentBoardArea({
 
   return (
     <div
+      ref={cellRef}
       data-opponent-board={opponent.playerId}
       data-ally={isAlly || undefined}
       style={{
@@ -199,7 +267,7 @@ export function OpponentBoardArea({
     >
       {/* Two-Headed Giant ally marker — a team-colored corner badge so a teammate's board (with
           its face-up hand) is never mistaken for an opponent's. */}
-      {isAlly && (
+      {isAlly && !hideHand && (
         <div
           aria-hidden
           style={{
@@ -228,16 +296,57 @@ export function OpponentBoardArea({
         </div>
       )}
       {/* A hijack-controlled hand must stay visible even in shared-strip views —
-          this client is playing from it. */}
+          this client is playing from it, so it keeps the full-size interactive fan. */}
       {(!hideHand || isHijacking) && handBlock}
-      {/* Shared-strip view: the board's "face" — name + life at the top of the cell.
-          Sits below the hand when a hijack forces the fan visible. */}
+      {/* Shared-strip view: the board's "face" — name (+ life outside a shared-life team
+          game) at the top of the cell. Sits below the hand when a hijack forces the fan
+          visible. */}
       {hideHand && (
         <BoardNamePlate
           player={opponent}
           carriesAnchors={plateCarriesAnchors}
           top={(isHijacking ? handReservation : 0) + 6}
+          isAlly={isAlly}
+          {...(allyColor ? { allyColor } : {})}
         />
+      )}
+      {/* Shared-strip view: this seat's hand, scaled down to the cell and sitting under the
+          name plate. Knowing how many cards each player is holding — and, for a Two-Headed
+          Giant ally whose hand is open to you (CR 810.5), *which* cards — is board state you
+          shouldn't have to slide the camera onto a board to read. */}
+      {hideHand && !isHijacking && (
+        <div
+          data-zone="opponent-hand"
+          style={{
+            position: 'absolute',
+            // Only the inverted fan spills *upward*; pushing it down by the overhang is what
+            // keeps its top row from drawing straight through the name plate. A normal fan
+            // spills downward instead — that half is reserved in the band below.
+            top: CELL_PLATE_BAND + (cellHandInverted ? FAN_EDGE_OVERHANG : 0),
+            left: 0,
+            right: 0,
+            height: cellHandHeight,
+            display: 'flex',
+            // Anchor the fan at the edge it hangs from, so the arc grows into the band rather
+            // than out of it: down from the top for an opponent-side hand, up from the bottom
+            // for a bottom-row one.
+            alignItems: cellHandInverted ? 'flex-start' : 'flex-end',
+            justifyContent: 'center',
+            zIndex: 50,
+            pointerEvents: isAlly ? 'auto' : 'none',
+          }}
+        >
+          <CardRow
+            zoneId={hand(opponent.playerId)}
+            faceDown={!isAlly}
+            small
+            inverted={cellHandInverted}
+            fan
+            fitWidth={Math.max(60, cellWidth - 16)}
+            maxCardWidth={cellHandCardWidth}
+            ghostCards={[]}
+          />
+        </div>
       )}
       {/* Fold-away control (table overview): collapse this cell to a tab so the
           other boards grow. Top-right corner, clear of the centered name plate. */}
@@ -288,7 +397,11 @@ export function OpponentBoardArea({
           vertical space back. */}
       <div
         style={{
-          height: hideHand ? (isHijacking ? handReservation : 0) + 34 : handReservation,
+          height: hideHand
+            ? (isHijacking
+                ? handReservation
+                : cellHandBand) + CELL_PLATE_BAND
+            : handReservation,
           flexShrink: 0,
         }}
         aria-hidden
@@ -405,13 +518,26 @@ function BoardNamePlate({
   player,
   carriesAnchors,
   top,
+  isAlly = false,
+  allyColor,
 }: {
   player: ClientPlayer
   carriesAnchors: boolean
   top: number
+  /**
+   * Two-Headed Giant: mark this board as your teammate's. The floating corner badge stands down
+   * wherever a plate renders — two labels naming the same player is one too many — so the plate
+   * carries the marker instead.
+   */
+  isAlly?: boolean
+  allyColor?: string
 }) {
   const seat = useIdentityColor(player.playerId)
   const playerId = player.playerId
+  // Two-Headed Giant (CR 810): the team's single shared life lives on the center-HUD team orb,
+  // so repeating it on every teammate's plate would print the same number up to four times.
+  // The plate keeps the name (which is the thing a plate is for) and drops the life.
+  const sharedLifeTeam = useIsSharedLifeTeamGame()
 
   const combatState = useGameStore((state) => state.combatState)
   const assignDefender = useGameStore((state) => state.assignDefenderToSelectedAttackers)
@@ -551,18 +677,39 @@ function BoardNamePlate({
       >
         {player.name}
       </span>
-      <span
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 3,
-          fontVariantNumeric: 'tabular-nums',
-          color: lifeDanger ? '#ff5555' : '#ffffff',
-        }}
-      >
-        <span aria-hidden style={{ color: '#ff6b6b', fontSize: 11 }}>❤</span>
-        {player.life}
-      </span>
+      {isAlly && (
+        <span
+          aria-hidden
+          title="Your teammate"
+          style={{
+            fontSize: 9,
+            fontWeight: 800,
+            letterSpacing: '0.1em',
+            color: allyColor ?? seat.bright,
+            border: `1px solid ${allyColor ?? seat.base}`,
+            padding: '0 4px',
+            borderRadius: 3,
+            lineHeight: '13px',
+            flexShrink: 0,
+          }}
+        >
+          ALLY
+        </span>
+      )}
+      {!sharedLifeTeam && (
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 3,
+            fontVariantNumeric: 'tabular-nums',
+            color: lifeDanger ? '#ff5555' : '#ffffff',
+          }}
+        >
+          <span aria-hidden style={{ color: '#ff6b6b', fontSize: 11 }}>❤</span>
+          {player.life}
+        </span>
+      )}
     </div>
   )
 }

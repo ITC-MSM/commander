@@ -6,6 +6,7 @@ import com.wingedsheep.engine.core.DeclareBlockers
 import com.wingedsheep.engine.core.GameConfig
 import com.wingedsheep.engine.core.GameInitializer
 import com.wingedsheep.engine.core.PlayerConfig
+import com.wingedsheep.engine.mechanics.StateBasedActionChecker
 import com.wingedsheep.engine.mechanics.combat.CombatDefenders
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
@@ -13,6 +14,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.combat.AttackersDeclaredThisCombatComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
+import com.wingedsheep.engine.state.components.combat.BlockingComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
@@ -149,5 +151,53 @@ class TwoHeadedGiantCombatTest : FunSpec({
 
         // p1 is on the attacking team, so it may not block (the active team never blocks).
         proc.process(state, DeclareBlockers(p[1], mapOf(blkP1 to listOf(atk)))).result.isSuccess.shouldBeFalse()
+    }
+    /*
+     * CR 506.4 removes a permanent from combat when its controller changes. The engine names one
+     * [GameState.activePlayerId] (CR 805.9), but in Two-Headed Giant the attacking *team* declares
+     * one combined attack (CR 805.10a), so the non-active teammate's attackers are legitimately
+     * attacking while controlled by somebody who is not that id. Comparing against it directly
+     * swept their whole attack out of combat on the next state-based-action pass — which any
+     * flash spell cast during combat forces.
+     */
+    test("the teammate's attackers survive a state-based-action pass (CR 805.10a / CR 506.4)") {
+        val (base, p) = init2hg()
+        val (s1, atkActive) = base.withBear(p[0], attacking = p[2])
+        val (s2, atkTeammate) = s1.withBear(p[1], attacking = p[3]) // the NON-active teammate's
+        val state = s2.copy(step = Step.DECLARE_ATTACKERS, phase = Phase.COMBAT)
+
+        val after = StateBasedActionChecker(cardRegistry = registry()).checkAndApply(state).newState
+
+        after.getEntity(atkActive)!!.has<AttackingComponent>().shouldBeTrue()
+        after.getEntity(atkTeammate)!!.has<AttackingComponent>().shouldBeTrue()
+    }
+
+    test("both defenders' blockers survive a state-based-action pass (CR 805.10d / CR 506.4)") {
+        val (base, p) = init2hg()
+        val (s1, atk) = base.withBear(p[0], attacking = p[2])
+        val (s2, blkP2) = s1.withBear(p[2])
+        val (s3, blkP3) = s2.withBear(p[3])
+        val state = s3
+            .updateEntity(blkP2) { it.with(BlockingComponent(listOf(atk))) }
+            .updateEntity(blkP3) { it.with(BlockingComponent(listOf(atk))) }
+            .copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT)
+
+        val after = StateBasedActionChecker(cardRegistry = registry()).checkAndApply(state).newState
+
+        after.getEntity(blkP2)!!.has<BlockingComponent>().shouldBeTrue()
+        after.getEntity(blkP3)!!.has<BlockingComponent>().shouldBeTrue()
+    }
+
+    test("an attacker stolen by the DEFENDING team is still removed from combat (CR 506.4)") {
+        val (base, p) = init2hg()
+        val (s1, atk) = base.withBear(p[0], attacking = p[2])
+        // Control moves across the table: p2 is on the defending team, so CR 506.4 still applies.
+        val state = s1
+            .updateEntity(atk) { it.with(ControllerComponent(p[2])) }
+            .copy(step = Step.DECLARE_ATTACKERS, phase = Phase.COMBAT)
+
+        val after = StateBasedActionChecker(cardRegistry = registry()).checkAndApply(state).newState
+
+        after.getEntity(atk)!!.has<AttackingComponent>().shouldBeFalse()
     }
 })
