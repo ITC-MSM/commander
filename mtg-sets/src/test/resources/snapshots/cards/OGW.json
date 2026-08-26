@@ -144,6 +144,62 @@
     ]
 }
 
+// Brute Strength
+{
+    "name": "Brute Strength",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +3/+1 and gains trample until end of turn. (It can deal excess combat damage to the player or planeswalker it's attacking.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "TRAMPLE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "103",
+        "artist": "Wayne Reynolds",
+        "flavorText": "It's not the size of the rock. It's how badly you want to lift it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/ec60192a-19b3-447c-b732-bbcb2d275df6.jpg?1783937908"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Canopy Gorger
 {
     "name": "Canopy Gorger",
