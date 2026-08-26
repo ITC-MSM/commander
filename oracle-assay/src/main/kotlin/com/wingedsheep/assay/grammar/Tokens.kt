@@ -49,6 +49,17 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * field from both sides before comparing, alongside `descriptionOverride`, `message` and `prompt`:
  * a parser can never produce a URL, so a card that inlines one would otherwise diverge for ever over
  * its picture while agreeing about its token.
+ *
+ * ### "tapped" is an axis of the shape, not a rider
+ *
+ * "Create a **tapped** 2/2 black Zombie creature token." is one adjective in front of the stats and
+ * `CreateTokenEffect.tapped` is one boolean, so it passes both halves of `AGENTS.md`'s
+ * omissible-modifier test: Oracle prints the sentence without the word far more often than with it
+ * (70 lines carry it), and the SDK has a distinct value for the version that does. It is therefore an
+ * axis of [createToken] instantiated in both states rather than template text or a suffix — which is
+ * also what keeps it multiplicative, since it crosses the count and the keyword run without being
+ * told and "create **two** tapped 1/1 black Bat creature tokens **with flying**" is a cell of the
+ * same product rather than a fourth rule.
  */
 object Tokens {
 
@@ -193,12 +204,15 @@ object Tokens {
     private fun createToken(
         count: Count,
         keywords: Boolean,
+        tapped: Boolean = false,
         suffix: String = "",
         suffixName: String = "",
     ): Phrase<CardScript> {
         val noun = if (count.plural) "creature tokens" else "creature token"
         val rider = if (keywords) " with {kws}" else ""
+        val entry = if (tapped) "tapped " else ""
         val name = "create " + (if (count.plural) "tokens" else "a token") +
+            (if (tapped) " tapped" else "") +
             (if (keywords) " with keywords" else "") + suffixName
 
         fun scriptFor(
@@ -216,10 +230,11 @@ object Tokens {
                 colors = colours,
                 creatureTypes = setOf(type.value),
                 keywords = granted,
+                tapped = tapped,
             )
         )
 
-        return phrase("create ${count.surface} {p}/{t} {color} {type} $noun$rider$suffix", name = name) {
+        return phrase("create ${count.surface} $entry{p}/{t} {color} {type} $noun$rider$suffix", name = name) {
             if (count.words != null) slot("n", count.words)
             slot("p", Primitives.cardinal)
             slot("t", Primitives.cardinal)
@@ -241,6 +256,7 @@ object Tokens {
                 val token = script.spellEffect as? CreateTokenEffect ?: return@match null
                 if (!count.spells(token.count)) return@match null
                 if (keywords == token.keywords.isEmpty()) return@match null
+                if (token.tapped != tapped) return@match null
                 val type = token.creatureTypes.singleOrNull() ?: return@match null
                 if (script != scriptFor(
                         token.count,
@@ -328,7 +344,14 @@ object Tokens {
     val clause: Phrase<CardScript> get() = oneOf("a token clause", clauses)
 
     val clauses: List<Phrase<CardScript>> =
-        counts.flatMap { count -> listOf(createToken(count, keywords = false), createToken(count, keywords = true)) } +
+        counts.flatMap { count ->
+            listOf(false, true).flatMap { tapped ->
+                listOf(
+                    createToken(count, keywords = false, tapped = tapped),
+                    createToken(count, keywords = true, tapped = tapped),
+                )
+            }
+        } +
             // Caller of the Claw. The tally is a *turn* tracker rather than a battlefield count, which
             // is why it is a row here and not one in [Amounts.count]: nothing about the phrase is a
             // noun the filter vocabulary could spell, and the whole clause names one tracked quantity.

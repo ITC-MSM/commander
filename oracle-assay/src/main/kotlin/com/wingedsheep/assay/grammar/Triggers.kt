@@ -7,6 +7,7 @@ import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.sdk.scripting.events.DamageType
+import com.wingedsheep.sdk.scripting.events.RecipientFilter
 import com.wingedsheep.sdk.scripting.events.SpellCastPredicate
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.AbilityId
@@ -767,6 +768,32 @@ object Triggers {
             "whenever ${Normalizer.SELF} deals combat damage",
             SdkTriggers.dealsDamage(damageType = DamageType.Combat),
         ),
+        // "Whenever this creature deals damage to a Vampire, …" — the *recipient* as a noun phrase
+        // rather than one of the two nouns the three constants above freeze ("a player", "a
+        // creature"). `RecipientFilter.Matching` is the SDK's own slot for it, so this is one
+        // [slottedTriggerRule] over the whole filter vocabulary and not a row per tribe: Vampire
+        // Slayer, Dinosaur Hunter, Spider-Slayer and East-Mark Cavalier's "a Goblin or Orc" are four
+        // values of one slot.
+        //
+        // It is `DamageType.Any` and there is no combat-scoped twin, because none is printed: every
+        // card that narrows this to combat spells the *recipient* as the frozen noun instead
+        // ("deals combat damage to a creature"), which is what those constants are. A row here that
+        // also carried a damage type would be able to print "deals combat damage to a creature" a
+        // second way, and the printer would have no field to choose between them.
+        //
+        // The effect clause is [Steps.triggeredStep] for [filteredTriggerRule]'s reason — the event
+        // names an object of its own, and "that creature" in the payoff is that object.
+        slottedTriggerRule(
+            surface = "whenever ${Normalizer.SELF} deals damage to {filter}",
+            name = "whenever the source deals damage to a filtered recipient",
+            noun = Filters.indefinite,
+            effect = Steps.triggeredStep,
+            valueOf = { spec ->
+                ((spec.event as? EventPattern.DealsDamageEvent)?.recipient as? RecipientFilter.Matching)
+                    ?.filter
+            },
+            spec = { SdkTriggers.dealsDamage(recipient = RecipientFilter.Matching(it)) },
+        ),
         triggerRule("whenever ${Normalizer.SELF} is dealt damage", SdkTriggers.TakesDamage),
         // Valiant, and one row rather than a shape over `BecomesTargetEvent`'s six flags: the SDK
         // publishes the whole configuration as `Triggers.Valiant`, which is the lowering this file's
@@ -778,6 +805,14 @@ object Triggers {
             "whenever ${Normalizer.SELF} becomes the target of a spell or ability you control " +
                 "for the first time each turn",
             SdkTriggers.Valiant,
+        ),
+        // The second row of the family the note above predicted, and the shape it predicted:
+        // Stormchaser Drake prints a different sentence, so it gets a different constant rather than
+        // turning "or ability" and "for the first time each turn" into optional slots the model has
+        // no field to decide.
+        triggerRule(
+            "whenever ${Normalizer.SELF} becomes the target of a spell you control",
+            SdkTriggers.BecomesTargetOfYourSpell,
         ),
         // Morph's payoff. "Is turned face up" is a `When` rather than a `Whenever` because it can
         // happen once to a permanent, which is the property that decides the word (see [rules]).
@@ -799,6 +834,16 @@ object Triggers {
         // writes, and reading it as an intervening-if would mean a different card.
         triggerRule("whenever you gain life", SdkTriggers.YouGainLife),
         triggerRule("whenever you lose life", SdkTriggers.YouLoseLife),
+        // The discard batch (CR 603.2c). `YouDiscardOneOrMore` is a whole spec the SDK publishes, so
+        // this is a constant beside the life triggers rather than a shape — and it is the *batch*
+        // reading rather than a plural spelling of the per-card `YouDiscard`: a resolution that
+        // discards three cards fires this once and the per-card trigger three times, which is two
+        // events and not two ways of writing one. The per-card sentence ("whenever you discard a
+        // card") is a row of its own the day a card needs it; nothing here should grow a number slot,
+        // because "one or more" is the constant English uses for *every* batch and carries no count.
+        // The batch also binds no discarded card, which is why the effect stays on the source cascade:
+        // there is no single "it" for one-or-more, so the third anaphor is unreachable and must be.
+        triggerRule("whenever you discard one or more cards", SdkTriggers.YouDiscardOneOrMore),
         // Expend — "you spend your Nth total mana to cast spells this turn". A trigger event with
         // a number in it, so it is the [slottedTriggerRule] shape rather than a constant per
         // threshold: the corpus prints 4 and 8 and nothing in the sentence says those are the only

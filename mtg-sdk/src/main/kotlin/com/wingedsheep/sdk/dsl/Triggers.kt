@@ -1994,6 +1994,17 @@ object Triggers {
     )
 
     /**
+     * Whenever this permanent becomes the target of a **spell you control** (Stormchaser Drake).
+     * Self-bound; abilities you control don't count, which is the `spellsOnly` half, and an
+     * opponent's spell doesn't either, which is the `byYou` half. The unrestricted-timing sibling
+     * of [Valiant], which is the same trigger limited to the first time each turn.
+     */
+    val BecomesTargetOfYourSpell: TriggerSpec = TriggerSpec(
+        event = BecomesTargetEvent(byYou = true, spellsOnly = true),
+        binding = TriggerBinding.SELF
+    )
+
+    /**
      * Whenever a creature you control with a specific filter becomes the target
      * of a spell or ability.
      */
