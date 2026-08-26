@@ -2041,7 +2041,13 @@ class ClientStateTransformer(
             // CR 702.179 — public information, and 0 for the overwhelming majority of games.
             speed = state.speed(playerId),
             // CR 107.14 — public information like poison counters, and 0 outside energy decks.
-            energyCounters = container?.get<CountersComponent>()?.getCount(CounterType.ENERGY) ?: 0
+            energyCounters = container?.get<CountersComponent>()?.getCount(CounterType.ENERGY) ?: 0,
+            // Team variants (CR 810 / CR 808). Public information, and absent from every
+            // non-team game, so both fields serialize away by default.
+            teamIndex = container
+                ?.get<com.wingedsheep.engine.state.components.identity.TeamComponent>()
+                ?.teamIndex,
+            teamSharedLife = state.format.sharesTeamLife
         )
     }
 

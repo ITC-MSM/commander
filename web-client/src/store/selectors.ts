@@ -379,6 +379,43 @@ export function useIdentityColor(playerId: EntityId | null): SeatColor {
 }
 
 /**
+ * The name to print for a team: "Your Team" / "Opponents" from the viewer's seat, and the
+ * neutral "Team N" when there is no viewer team to be relative to (spectator, replay). Same
+ * vocabulary the rail's two team sections already use, so the center HUD and the rail agree.
+ */
+export function teamLabel(teamIndex: number | null, viewerTeam: number | null): string {
+  if (teamIndex == null) return ''
+  if (viewerTeam == null) return `Team ${teamIndex + 1}`
+  return teamIndex === viewerTeam ? 'Your Team' : 'Opponents'
+}
+
+/** Hook form of [teamLabel] for a player's team. */
+export function useTeamLabelFor(playerId: EntityId | null): string {
+  const teamMap = useGameStore(selectTeamMap)
+  const viewerTeam = useViewerTeamIndex()
+  const t = playerId != null ? teamMap[playerId] ?? null : null
+  return teamLabel(t, viewerTeam)
+}
+
+/**
+ * The living members of `playerId`'s team, in turn order — the tooltip behind a team-labelled
+ * orb ("Opponents" → "Bob & Carol") and the source of the team's single shared life total.
+ */
+export function useTeammateNames(playerId: EntityId | null): string {
+  const gameState = useGameStore(selectGameState)
+  const teamMap = useGameStore(selectTeamMap)
+  return useMemo(() => {
+    if (!gameState || playerId == null) return ''
+    const t = teamMap[playerId]
+    if (t == null) return gameState.players.find((p) => p.playerId === playerId)?.name ?? ''
+    return gameState.players
+      .filter((p) => teamMap[p.playerId] === t && !p.hasLost)
+      .map((p) => p.name)
+      .join(' & ')
+  }, [gameState, teamMap, playerId])
+}
+
+/**
  * True when `playerId` is the viewing player's teammate (same team, not self) in a team game —
  * i.e. an ally whose board/hand you may see and whom you can't attack.
  */

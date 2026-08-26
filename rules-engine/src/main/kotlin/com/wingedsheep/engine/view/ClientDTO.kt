@@ -824,7 +824,26 @@ data class ClientPlayer(
      * information like poison counters, so it is not masked. Defaulted so every non-energy game
      * serializes it away and the field costs nothing.
      */
-    val energyCounters: Int = 0
+    val energyCounters: Int = 0,
+
+    /**
+     * Team membership in a team variant (Two-Headed Giant — CR 810; Team vs. Team — CR 808):
+     * players sharing a [teamIndex] are teammates. `null` in every non-team game, where each
+     * player is their own team.
+     *
+     * Carried on the *state* rather than only on the seat roster because the roster is a
+     * one-shot game-start message: a client that joins by reconnecting (hotseat, scenario, a
+     * dropped connection resuming) never sees it, and without this would render a team game as
+     * a free-for-all — four separate life totals, no ally board, no team colors.
+     */
+    val teamIndex: Int? = null,
+
+    /**
+     * True when this game's format pools life per team (Two-Headed Giant, CR 810.4). A game-level
+     * fact, repeated per player so the client can read it off any seat. Team vs. Team is a team
+     * game with per-player life, so it sets [teamIndex] but leaves this false.
+     */
+    val teamSharedLife: Boolean = false
 )
 
 /**

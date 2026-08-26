@@ -184,6 +184,30 @@ interface StateUpdateEnvelope {
  * Process a state update — shared between full StateUpdate and StateDeltaUpdate.
  * Takes the resolved (full) ClientGameState and the envelope fields.
  */
+/**
+ * Stamp the seat → team map from the state's own team fields, unless it already matches. Skipped
+ * entirely for the overwhelmingly common non-team game (no seat carries a `teamIndex`), so the
+ * comparison never runs there.
+ */
+function syncSeatTeams(state: ClientGameState, get: GetState): void {
+  const next: Record<EntityId, number> = {}
+  for (const p of state.players) {
+    if (p.teamIndex != null) next[p.playerId] = p.teamIndex
+  }
+  const sharedLife = state.players.some((p) => p.teamSharedLife === true)
+  const store = get()
+  const current = store.teamByPlayerId
+  const keys = Object.keys(next)
+  if (
+    keys.length === Object.keys(current).length &&
+    keys.every((k) => current[k as EntityId] === next[k as EntityId]) &&
+    store.teamSharedLife === sharedLife
+  ) {
+    return
+  }
+  store.setSeatTeams(next, sharedLife)
+}
+
 function processStateUpdate(
   resolvedState: ClientGameState,
   msg: StateUpdateEnvelope,
@@ -191,6 +215,13 @@ function processStateUpdate(
   get: GetState
 ): void {
   const { playerId, addBeholdPulse, reconcileBeholdPulses } = get()
+
+  // Two-Headed Giant (CR 810) / Team vs. Team (CR 808): re-derive the seat → team map from the
+  // state itself. The game-start roster also carries it, but that message is a one-shot — a
+  // client that joined by *reconnecting* (hotseat, a scenario, a dropped connection resuming)
+  // never receives it and would render a team game as a free-for-all. Doing it here covers every
+  // entry path with one write, and it's a no-op (reference-stable) once the map already matches.
+  syncSeatTeams(resolvedState, get)
 
   // Animations spawned by this update are collected here and committed with the state itself,
   // in one store write. Each separate write re-runs every subscriber's selector across the
