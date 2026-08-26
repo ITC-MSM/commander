@@ -109,6 +109,41 @@
     ]
 }
 
+// Foresee
+{
+    "name": "Foresee",
+    "manaCost": "{3}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Scry 4, then draw two cards.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Scry",
+                    "count": 4
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "36",
+        "artist": "Ron Spears",
+        "flavorText": "Wind time's watch, and watch time unwind.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/0/c0bd95b5-1e90-41c5-8a9f-f3009f3f504a.jpg?1783943122"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Mass of Ghouls
 {
     "name": "Mass of Ghouls",

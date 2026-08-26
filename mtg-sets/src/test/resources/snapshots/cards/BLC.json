@@ -1304,66 +1304,6 @@
     ]
 }
 
-// Garruk's Packleader
-{
-    "name": "Garruk's Packleader",
-    "manaCost": "{4}{G}",
-    "typeLine": "Creature — Beast",
-    "oracleText": "Whenever another creature you control with power 3 or greater enters, you may draw a card.",
-    "creatureStats": {
-        "power": 4,
-        "toughness": 4
-    },
-    "script": {
-        "triggeredAbilities": [
-            {
-                "id": "ability_1",
-                "trigger": {
-                    "type": "ZoneChangeEvent",
-                    "filter": "creature pow>=3 ctrl:you",
-                    "to": "Battlefield"
-                },
-                "binding": "OTHER",
-                "effect": {
-                    "type": "Gated",
-                    "gate": "Gate.MayDecide",
-                    "then": {
-                        "type": "DrawCards",
-                        "count": {
-                            "type": "Fixed",
-                            "amount": 1
-                        }
-                    }
-                }
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "218",
-        "rarity": "UNCOMMON",
-        "artist": "Nils Hamm",
-        "flavorText": "\"He has learned much in his long years. And unlike selfish humans, he's willing to share.\"\n—Garruk Wildspeaker",
-        "imageUri": "https://cards.scryfall.io/normal/front/1/0/109dee37-5de5-40fa-9405-8645be6c5076.jpg?1721429269",
-        "rulings": [
-            {
-                "date": "2012-07-01",
-                "text": "The ability checks the power of each creature as it enters. It will take into account counters the permanent enters with and static abilities that affect its power. After the creature is on the battlefield, raising its power won't cause this ability to retroactively trigger."
-            },
-            {
-                "date": "2012-07-01",
-                "text": "The creature's power is checked only to see if the ability triggers. It doesn't matter what the creature's power is when the ability resolves."
-            },
-            {
-                "date": "2010-08-15",
-                "text": "If Garruk's Packleader and another creature with power 3 or greater enter under your control at the same time, the ability will trigger."
-            }
-        ]
-    },
-    "colorIdentityOverride": [
-        "GREEN"
-    ]
-}
-
 // Ghalta, Primal Hunger
 {
     "name": "Ghalta, Primal Hunger",

@@ -45,6 +45,106 @@
     ]
 }
 
+// Baneslayer Angel
+{
+    "name": "Baneslayer Angel",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Creature — Angel",
+    "oracleText": "Flying, first strike, lifelink, protection from Demons and from Dragons",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING",
+        "FIRST_STRIKE",
+        "LIFELINK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Protection",
+            "scope": {
+                "type": "ProtectionScope.Subtype",
+                "subtype": "Demon"
+            }
+        },
+        {
+            "type": "Protection",
+            "scope": {
+                "type": "ProtectionScope.Subtype",
+                "subtype": "Dragon"
+            }
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "4",
+        "rarity": "MYTHIC",
+        "artist": "Greg Staples",
+        "flavorText": "Some angels protect the meek and innocent. Others seek out and smite evil wherever it lurks.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/6764ea7b-ccb3-4f39-b8ba-654a186210b9.jpg?1783942404"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Blinding Mage
+{
+    "name": "Blinding Mage",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "{W}, {T}: Tap target creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{W}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "5",
+        "artist": "Eric Deschamps",
+        "flavorText": "\"I carry the light of truth. Do not pity those it blinds, for they never had eyes to see.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/420de077-7ee0-446c-aefc-ca8d7ac698b5.jpg?1783942404"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Centaur Courser
 {
     "name": "Centaur Courser",
@@ -83,6 +183,83 @@
         "artist": "Ash Wood",
         "flavorText": "A vampire enacts vengeance on the entire world, claiming her debt two tiny pinpricks at a time.",
         "imageUri": "https://cards.scryfall.io/normal/front/e/1/e1f7a9a7-3679-4a18-a52a-e3a8ab16ad32.jpg?1783942385"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Cudgel Troll
+{
+    "name": "Cudgel Troll",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Creature — Troll",
+    "oracleText": "{G}: Regenerate this creature. (The next time this creature would be destroyed this turn, instead tap it, remove it from combat, and heal all damage on it.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                },
+                "descriptionOverride": "{G}: Regenerate this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "174",
+        "rarity": "UNCOMMON",
+        "artist": "Jesper Ejsing",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/7/d779b14c-a100-4382-9e7c-0969efda73ec.jpg?1783942365"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Disentomb
+{
+    "name": "Disentomb",
+    "manaCost": "{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return target creature card from your graveyard to your hand.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            },
+            "destination": "Hand"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "92",
+        "artist": "Alex Horley-Orlandelli",
+        "flavorText": "\"Stop complaining. You can rest when you're dead. Oh—sorry.\"\n—Liliana Vess",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/9/99a329a0-a14a-49b9-adcd-397b566211ee.jpg?1783942383"
     },
     "colorIdentityOverride": [
         "BLACK"
@@ -150,6 +327,51 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Doom Blade
+{
+    "name": "Doom Blade",
+    "manaCost": "{1}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Destroy target nonblack creature.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "NotColor",
+                                "color": "BLACK"
+                            }
+                        ]
+                    }
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "93",
+        "artist": "Chippy",
+        "flavorText": "The void is without substance but cuts like steel.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/e/6e19acff-f3dd-417a-a9ab-ea3e36c1ba61.jpg?1783942383"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -384,6 +606,53 @@
     ]
 }
 
+// Fiery Hellhound
+{
+    "name": "Fiery Hellhound",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Creature — Elemental Dog",
+    "oracleText": "{R}: This creature gets +1/+0 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{R}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "135",
+        "artist": "Ted Galaday",
+        "flavorText": "Once a barbarian army has conquered a region, their shamans summon hellhounds that keep undesirables out and prisoners in.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/d/6d6b2c8a-8019-4e4b-8f4e-058ab5284153.jpg?1783942374"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Glacial Fortress
 {
     "name": "Glacial Fortress",
@@ -445,6 +714,129 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLUE"
+    ]
+}
+
+// Honor of the Pure
+{
+    "name": "Honor of the Pure",
+    "manaCost": "{1}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "White creatures you control get +1/+1.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature white ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "16",
+        "rarity": "RARE",
+        "artist": "Greg Staples",
+        "flavorText": "Together the soldiers were like a golden blade, cutting down their enemies and scarring the darkness.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/35a40f09-d16a-43c7-b4fd-244f45883a47.jpg?1783942401"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Magma Phoenix
+{
+    "name": "Magma Phoenix",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Creature — Phoenix",
+    "oracleText": "Flying\nWhen this creature dies, it deals 3 damage to each creature and each player.\n{3}{R}{R}: Return this card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature"
+                                }
+                            },
+                            "body": {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                },
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Players",
+                                "players": "Each"
+                            },
+                            "body": {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                },
+                                "target": "Controller"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature dies, it deals 3 damage to each creature and each player."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{R}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand",
+                    "fromZone": "Graveyard"
+                },
+                "activateFromZone": "Graveyard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "148",
+        "rarity": "RARE",
+        "artist": "Raymond Swanland",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/3/63466db8-270e-4c68-8823-963f993de783.jpg?1783942370"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -690,6 +1082,32 @@
     ]
 }
 
+// Safe Passage
+{
+    "name": "Safe Passage",
+    "manaCost": "{2}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Prevent all damage that would be dealt to you and creatures you control this turn.",
+    "script": {
+        "spellEffect": {
+            "type": "PreventDamageShield",
+            "recipientGroup": {
+                "baseFilter": "creature ctrl:you"
+            },
+            "recipientGroupIncludesController": true
+        }
+    },
+    "metadata": {
+        "collectorNumber": "28",
+        "artist": "Christopher Moeller",
+        "flavorText": "With one flap of her wings, the angel beat back the fires of war.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/d/4d8528ef-5e7d-46da-a454-395cd38c213f.jpg?1783942398"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Seismic Strike
 {
     "name": "Seismic Strike",
@@ -813,6 +1231,30 @@
         "artist": "Sam Wood",
         "flavorText": "\"A relic donation is suggested.\"\n\"The suggestion is mandatory.\"\n—Temple signs",
         "imageUri": "https://cards.scryfall.io/normal/front/6/7/67aafbcc-113e-4816-95d2-a192f32ea9ea.jpg?1783942398"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Stormfront Pegasus
+{
+    "name": "Stormfront Pegasus",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Pegasus",
+    "oracleText": "Flying",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "metadata": {
+        "collectorNumber": "35",
+        "artist": "rk post",
+        "flavorText": "\"At summer's end, the pegasus herd stampedes across the sky. Their silent footfalls taunt the clouds and bid the rains to come.\"\n—Stormfront fable",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/2/d2429a15-ccbe-463c-9218-968709d9e878.jpg?1783942397"
     },
     "colorIdentityOverride": [
         "WHITE"
