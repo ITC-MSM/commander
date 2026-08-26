@@ -336,10 +336,25 @@
             "type": "Composite",
             "effects": [
                 {
-                    "type": "MarkExileOnDeath",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "any target"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": "XValue",
+                            "operator": "GT",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 0
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "MarkExileOnDeath",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "any target"
+                        }
                     }
                 },
                 {
