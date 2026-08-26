@@ -1,3 +1,169 @@
+// Atsushi, the Blazing Sky
+{
+    "name": "Atsushi, the Blazing Sky",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Legendary Creature — Dragon Spirit",
+    "oracleText": "Flying, trample\nWhen Atsushi dies, choose one —\n• Exile the top two cards of your library. Until the end of your next turn, you may play those cards.\n• Create three Treasure tokens.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "TopOfLibrary",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 2
+                                            }
+                                        },
+                                        "storeAs": "impulseExiled"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "impulseExiled",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Exile"
+                                        }
+                                    },
+                                    {
+                                        "type": "GrantMayPlayFromExile",
+                                        "from": "impulseExiled",
+                                        "expiry": {
+                                            "type": "UntilControllerStep",
+                                            "step": "CLEANUP",
+                                            "includeCurrentTurn": false
+                                        }
+                                    }
+                                ]
+                            },
+                            "description": "Exile the top two cards of your library. Until the end of your next turn, you may play those cards."
+                        },
+                        {
+                            "effect": {
+                                "type": "CreatePredefinedToken",
+                                "tokenType": "Treasure",
+                                "count": 3
+                            },
+                            "description": "Create three Treasure tokens."
+                        }
+                    ]
+                },
+                "descriptionOverride": "When Atsushi dies, choose one — • Exile the top two cards of your library. Until the end of your next turn, you may play those cards. • Create three Treasure tokens."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "134",
+        "rarity": "MYTHIC",
+        "artist": "Victor Adame Minguez",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/3/73b64c17-8a52-4d9d-a28b-7e0e945be059.jpg?1783923871"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Automated Artificer
+{
+    "name": "Automated Artificer",
+    "manaCost": "{2}",
+    "typeLine": "Artifact Creature — Artificer",
+    "oracleText": "{T}: Add {C}. Spend this mana only to activate an ability or cast an artifact spell.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "restriction": {
+                        "type": "AnyOf",
+                        "restrictions": [
+                            "AbilityActivationOnly",
+                            {
+                                "type": "CardTypeSpellsOrAbilitiesOnly",
+                                "cardType": "ARTIFACT"
+                            }
+                        ]
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {C}. Spend this mana only to activate an ability or cast an artifact spell."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "239",
+        "artist": "Izzy",
+        "flavorText": "\"I sometimes watch them build more of their kind and wonder: Will there come a day when they no longer need us?\"\n—Saku, Futurist technician",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/8/b8c30ffb-b4f5-40b0-87b8-800a42bded2b.jpg?1783923828"
+    },
+    "colorIdentityOverride": []
+}
+
+// Blade-Blizzard Kitsune
+{
+    "name": "Blade-Blizzard Kitsune",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Fox Ninja",
+    "oracleText": "Ninjutsu {3}{W} ({3}{W}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nDouble strike",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "DOUBLE_STRIKE",
+        "NINJUTSU"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ninjutsu",
+            "cost": "{3}{W}"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "5",
+        "rarity": "UNCOMMON",
+        "artist": "Andrew Mar",
+        "flavorText": "In the time it takes most to master one blade, he mastered two.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/8/d8419d27-8c6e-4f38-98b4-60dd9a910c43.jpg?1783923926"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Boseiju, Who Endures
 {
     "name": "Boseiju, Who Endures",
@@ -184,6 +350,36 @@
     ]
 }
 
+// Brute Suit
+{
+    "name": "Brute Suit",
+    "manaCost": "{3}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Vigilance\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "VIGILANCE",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 1
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "241",
+        "artist": "Raymond Swanland",
+        "flavorText": "\"Send them a message they can't ignore.\"\n—Satoru Umezawa",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/6/363cb43a-e358-4380-a42f-9b095ca522c6.jpg?1783923827"
+    },
+    "colorIdentityOverride": []
+}
+
 // Circuit Mender
 {
     "name": "Circuit Mender",
@@ -234,6 +430,175 @@
         "artist": "Hector Ortiz",
         "flavorText": "Inspired by industrious silkworms, its maker crafted it to restore the broken pieces of the world.",
         "imageUri": "https://cards.scryfall.io/normal/front/d/e/defaeb68-3f8a-4740-b13f-8c71c7e9c8b4.jpg?1783923827"
+    },
+    "colorIdentityOverride": []
+}
+
+// Dokuchi Shadow-Walker
+{
+    "name": "Dokuchi Shadow-Walker",
+    "manaCost": "{4}{B}{B}",
+    "typeLine": "Creature — Ogre Ninja",
+    "oracleText": "Ninjutsu {3}{B} ({3}{B}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "NINJUTSU"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ninjutsu",
+            "cost": "{3}{B}"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "94",
+        "artist": "Manuel Castañón",
+        "flavorText": "Don't fear the blade, fear the shadows.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/1/81496a81-c986-4749-a28c-45341764e28f.jpg?1783923888"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Dragonfly Suit
+{
+    "name": "Dragonfly Suit",
+    "manaCost": "{2}{W}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Flying\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 1
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "9",
+        "artist": "Darren Tan",
+        "flavorText": "Cutting-edge Imperial sentinel mechs patrol the skies over Eiganjo.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/9/4900862f-90f4-450b-a775-219da4ce67ef.jpg?1783923925"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Ecologist's Terrarium
+{
+    "name": "Ecologist's Terrarium",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "When this artifact enters, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle.\n{2}, {T}, Sacrifice this artifact: Put a +1/+1 counter on target creature. Activate only as a sorcery.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "basicland"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    },
+                    "descriptionOverride": "When this artifact enters, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle."
+                },
+                "descriptionOverride": "When this artifact enters, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature to grow"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "creature to grow"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "{2}, {T}, Sacrifice this artifact: Put a +1/+1 counter on target creature. Activate only as a sorcery."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "246",
+        "artist": "Daniel Ljunggren",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/d/1d981026-b2df-4d8d-a9b4-296b011d9925.jpg?1783923825"
     },
     "colorIdentityOverride": []
 }
@@ -326,6 +691,47 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Enthusiastic Mechanaut
+{
+    "name": "Enthusiastic Mechanaut",
+    "manaCost": "{U}{R}",
+    "typeLine": "Artifact Creature — Goblin Artificer",
+    "oracleText": "Flying\nArtifact spells you cast cost {1} less to cast.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "artifact"
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "218",
+        "rarity": "UNCOMMON",
+        "artist": "Anna Steinbauer",
+        "flavorText": "\"Greetings, fellow inventors!\" the akki shouted, attempting a friendly smile. To her dismay, the greeting was met only with shrieks and alarms being activated.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/c/ac00521f-1b7d-478d-afe8-6761ea512d8d.jpg?1783923839"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
     ]
 }
 
@@ -455,6 +861,872 @@
     ]
 }
 
+// Explosive Entry
+{
+    "name": "Explosive Entry",
+    "manaCost": "{1}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy up to one target artifact. Put a +1/+1 counter on up to one target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "artifact to destroy"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature to grow"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "artifact"
+                },
+                "id": "artifact to destroy"
+            },
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "creature to grow"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "139",
+        "artist": "Marta Nael",
+        "flavorText": "Kaito and Tamiyo charged headlong into Jin-Gitaxias's secret lab, unaware that the praetor was eagerly awaiting their arrival.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/b/7ba639ff-fe82-4ac3-9fb4-eac168bef053.jpg?1783923869"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Fang of Shigeki
+{
+    "name": "Fang of Shigeki",
+    "manaCost": "{G}",
+    "typeLine": "Enchantment Creature — Snake Ninja",
+    "oracleText": "Deathtouch",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "DEATHTOUCH"
+    ],
+    "metadata": {
+        "collectorNumber": "183",
+        "artist": "Yigit Koroglu",
+        "flavorText": "\"Let me give you a taste of the poison you've poured into our land.\"\n—Shigeki, founder of the Order of Jukai",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/d/2dd0fef1-209f-4de5-a736-8f9bca2faa0a.jpg?1783923851"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Futurist Sentinel
+{
+    "name": "Futurist Sentinel",
+    "manaCost": "{3}{U}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Crew 3 (Tap any number of creatures you control with total power 3 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 3
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "54",
+        "artist": "Daniel Ljunggren",
+        "flavorText": "\"I folded a model in paper first to test the relative tensile strength of the plates.\"\n—Katsumasa, the Animator",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/6/8672f626-3e46-447b-841f-6a04cd380653.jpg?1783923903"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Generous Visitor
+{
+    "name": "Generous Visitor",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Whenever you cast an enchantment spell, put a +1/+1 counter on target creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsEnchantment"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature to grow"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "creature to grow"
+                },
+                "descriptionOverride": "Whenever you cast an enchantment spell, put a +1/+1 counter on target creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "185",
+        "rarity": "UNCOMMON",
+        "artist": "Iris Compiet",
+        "flavorText": "It is said that one must modestly refuse a gift three times before accepting it to show humility before the kami.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d1066ccd-a932-4d05-98da-11ae4675364e.jpg?1783923849"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Golden-Tail Disciple
+{
+    "name": "Golden-Tail Disciple",
+    "manaCost": "{2}{W}",
+    "typeLine": "Enchantment Creature — Fox Monk",
+    "oracleText": "Lifelink (Damage dealt by this creature also causes you to gain that much life.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "metadata": {
+        "collectorNumber": "15",
+        "artist": "Jesper Ejsing",
+        "flavorText": "Students of the kitsune-led Golden-Tail Academy in Eiganjo are unparalleled in both martial skill and dedication to the Imperial cause.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d631e7da-bd71-424a-a349-9bce0fd16b1f.jpg?1783923923"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// High-Speed Hoverbike
+{
+    "name": "High-Speed Hoverbike",
+    "manaCost": "{2}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Flash\nFlying\nWhen this Vehicle enters, tap up to one target creature.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature to tap"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "creature to tap"
+                },
+                "descriptionOverride": "When this Vehicle enters, tap up to one target creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "247",
+        "rarity": "UNCOMMON",
+        "artist": "Julian Kok Joon Wen",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/c/7c619116-1eae-439d-9b1f-639643458a23.jpg?1783923825"
+    },
+    "colorIdentityOverride": []
+}
+
+// Imperial Oath
+{
+    "name": "Imperial Oath",
+    "manaCost": "{5}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create three 2/2 white Samurai creature tokens with vigilance. Scry 3.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Samurai"
+                    ],
+                    "keywords": [
+                        "VIGILANCE"
+                    ]
+                },
+                {
+                    "type": "Scry",
+                    "count": 3
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "17",
+        "artist": "Nicholas Elias",
+        "flavorText": "Those chosen to guard the Imperial Palace are not only unrivaled warriors but also lionhearted champions of the Imperial cause.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/d/3d6750dd-2303-493b-885d-1bfb5787b16c.jpg?1783923922"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Inkrise Infiltrator
+{
+    "name": "Inkrise Infiltrator",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Human Ninja",
+    "oracleText": "Flying\n{3}{B}: This creature gets +2/+2 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{B}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{3}{B}: This creature gets +2/+2 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "100",
+        "artist": "Campbell White",
+        "flavorText": "\"They can't follow your footprints if you never touch the ground.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/b/cbb6e447-5f40-4039-8a17-257b4a55382c.jpg?1783923885"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Jukai Naturalist
+{
+    "name": "Jukai Naturalist",
+    "manaCost": "{G}{W}",
+    "typeLine": "Enchantment Creature — Human Monk",
+    "oracleText": "Lifelink\nEnchantment spells you cast cost {1} less to cast.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "enchantment"
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "225",
+        "rarity": "UNCOMMON",
+        "artist": "Anna Steinbauer",
+        "flavorText": "He had heard rumors of the cities—the constant noise, the stagnant air, the tainted water—and he had no wish to learn if they were true.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/3/5366900b-2abf-4e5c-8507-f51aca9c7ce8.jpg?1783923833"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
+// Lucky Offering
+{
+    "name": "Lucky Offering",
+    "manaCost": "{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy target artifact with mana value 3 or less. You gain 3 life.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "cheap artifact"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "artifact mv<=3"
+                },
+                "id": "cheap artifact"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "27",
+        "artist": "Fiona Hsieh",
+        "flavorText": "The playful kami reserved its greatest blessings for those who brought not wealth or rare delicacies, but particularly amusing trinkets.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/4/24bbdeb0-9165-4874-a853-d19c20c250ef.jpg?1783923916"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Moonsnare Specialist
+{
+    "name": "Moonsnare Specialist",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Human Ninja",
+    "oracleText": "Ninjutsu {2}{U} ({2}{U}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nWhen this creature enters, return up to one target creature to its owner's hand.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "NINJUTSU"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ninjutsu",
+            "cost": "{2}{U}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature to bounce"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "creature to bounce"
+                },
+                "descriptionOverride": "When this creature enters, return up to one target creature to its owner's hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "70",
+        "artist": "Lie Setiawan",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/e/1e8b209f-f577-45cc-9d18-03c1d67d391e.jpg?1783923897"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Mothrider Patrol
+{
+    "name": "Mothrider Patrol",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Fox Warrior",
+    "oracleText": "Flying\n{3}{W}, {T}: Tap target creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}{W}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature to tap"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "creature to tap"
+                    }
+                ],
+                "descriptionOverride": "{3}{W}, {T}: Tap target creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "30",
+        "artist": "Ilse Gort",
+        "flavorText": "\"Be proud, young pup! You've earned your wings. Rise and become the western wind.\"\n—Swift-Arm, Golden-Tail headmaster",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/6/f657f2dc-adc8-4a66-b081-a71b3a127389.jpg?1783923915"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Mukotai Ambusher
+{
+    "name": "Mukotai Ambusher",
+    "manaCost": "{3}{B}",
+    "typeLine": "Artifact Creature — Rat Ninja",
+    "oracleText": "Ninjutsu {1}{B} ({1}{B}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nLifelink",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "LIFELINK",
+        "NINJUTSU"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ninjutsu",
+            "cost": "{1}{B}"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "112",
+        "artist": "Raymond Swanland",
+        "flavorText": "The Mukotai Reckoners specialize in stealth and subterfuge.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0adf3293-c1e0-447c-8231-26fa9476a262.jpg?1783923879"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Network Disruptor
+{
+    "name": "Network Disruptor",
+    "manaCost": "{U}",
+    "typeLine": "Artifact Creature — Moonfolk Rogue",
+    "oracleText": "Flying\nWhen this creature enters, tap target permanent.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "permanent to tap"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent"
+                    },
+                    "id": "permanent to tap"
+                },
+                "descriptionOverride": "When this creature enters, tap target permanent."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "71",
+        "artist": "Viko Menezes",
+        "flavorText": "\"Just as I suspected. They thought they'd hidden the terminal, so they got lazy with the encryption.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/a/5a37719a-2a87-4870-8f25-12544ca2f2cf.jpg?1783923897"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Network Terminal
+{
+    "name": "Network Terminal",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "{T}: Add one mana of any color.\n{1}, {T}, Tap another untapped artifact you control: Draw a card, then discard a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add one mana of any color."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomTapPermanents",
+                                "filter": "artifact",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "descriptionOverride": "{1}, {T}, Tap another untapped artifact you control: Draw a card, then discard a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "251",
+        "artist": "Andreas Zafiratos",
+        "flavorText": "Public access terminals around Towashi provide residents with up-to-date information on everything from traffic delays to hostile kami sightings.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d61e596f-97ef-4eb3-af42-ddfe50d07667.jpg?1783923824"
+    },
+    "colorIdentityOverride": []
+}
+
+// Nezumi Bladeblesser
+{
+    "name": "Nezumi Bladeblesser",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Rat Samurai",
+    "oracleText": "This creature has deathtouch as long as you control an artifact.\nThis creature has menace as long as you control an enchantment. (It can't be blocked except by two or more creatures.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "DEATHTOUCH",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "artifact"
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "MENACE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "enchantment"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "115",
+        "artist": "Ilse Gort",
+        "flavorText": "\"It's not one or the other, kami or technology. Both offer power. I will not limit myself.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/a/9a03d3f5-b32b-4814-b485-25f24e51609c.jpg?1783923878"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Nezumi Prowler
+{
+    "name": "Nezumi Prowler",
+    "manaCost": "{1}{B}",
+    "typeLine": "Artifact Creature — Rat Ninja",
+    "oracleText": "Ninjutsu {1}{B} ({1}{B}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nWhen this creature enters, target creature you control gains deathtouch and lifelink until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "NINJUTSU"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ninjutsu",
+            "cost": "{1}{B}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "DEATHTOUCH",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "creature you control"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "LIFELINK",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "creature you control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "creature you control"
+                },
+                "descriptionOverride": "When this creature enters, target creature you control gains deathtouch and lifelink until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "116",
+        "rarity": "UNCOMMON",
+        "artist": "Joseph Weston",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/a/ca911e9a-bd04-4531-a81e-3485e9cbe89e.jpg?1783923879"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Otawara, Soaring City
 {
     "name": "Otawara, Soaring City",
@@ -530,6 +1802,345 @@
     ]
 }
 
+// Papercraft Decoy
+{
+    "name": "Papercraft Decoy",
+    "manaCost": "{2}",
+    "typeLine": "Artifact Creature — Frog",
+    "oracleText": "When this creature leaves the battlefield, you may pay {2}. If you do, draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}"
+                        }
+                    },
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                },
+                "descriptionOverride": "When this creature leaves the battlefield, you may pay {2}. If you do, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "253",
+        "artist": "Brian Valeza",
+        "flavorText": "\"And what, precisely, was so important that you left the entrance unguarded?\"\n—Fumika, Imperial enforcer",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/4/3453084c-42cc-4241-b244-c79e704f96c8.jpg?1783923824"
+    },
+    "colorIdentityOverride": []
+}
+
+// Patchwork Automaton
+{
+    "name": "Patchwork Automaton",
+    "manaCost": "{2}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "Ward {2} (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {2}.)\nWhenever you cast an artifact spell, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{2}"
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsArtifact"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you cast an artifact spell, put a +1/+1 counter on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "254",
+        "rarity": "UNCOMMON",
+        "artist": "Donato Giancola",
+        "flavorText": "It dwells happily near the ever-burning forges of Sokenzan City, crafting small things of beauty from discarded scraps.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7a4e1580-dd26-4f4b-ac98-3e6fa7b879d5.jpg?1783923821"
+    },
+    "colorIdentityOverride": []
+}
+
+// Repel the Vile
+{
+    "name": "Repel the Vile",
+    "manaCost": "{3}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Exile target creature with power 4 or greater.\n• Exile target enchantment.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "big creature"
+                        },
+                        "destination": "Exile"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature pow>=4"
+                            },
+                            "id": "big creature"
+                        }
+                    ],
+                    "description": "Exile target creature with power 4 or greater."
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "enchantment"
+                        },
+                        "destination": "Exile"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "enchantment"
+                            },
+                            "id": "enchantment"
+                        }
+                    ],
+                    "description": "Exile target enchantment."
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "33",
+        "artist": "Dominik Mayer",
+        "flavorText": "\"You are a guest in this realm, and you've overstayed your welcome.\"\n—Yui, Imperial intercessor",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/a/9a37d5b4-af3a-48b0-895f-91b652108ef6.jpg?1783923914"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Scrapyard Steelbreaker
+{
+    "name": "Scrapyard Steelbreaker",
+    "manaCost": "{3}{R}",
+    "typeLine": "Artifact Creature — Human Warrior",
+    "oracleText": "{1}, Sacrifice another artifact: This creature gets +2/+1 until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "artifact",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{1}, Sacrifice another artifact: This creature gets +2/+1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "160",
+        "artist": "Eric Wilkerson",
+        "flavorText": "\"You've got about three seconds to get out of here before you get a faceful of metal.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/7/5776e576-5562-45ea-a29b-185410317e17.jpg?1783923860"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Searchlight Companion
+{
+    "name": "Searchlight Companion",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Drone",
+    "oracleText": "Flying\nWhen this creature enters, create a 1/1 colorless Spirit creature token.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Spirit"
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, create a 1/1 colorless Spirit creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "258",
+        "artist": "Rudy Siswanto",
+        "flavorText": "The merging of the spirit and material realms has resulted in some unusual friendships.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/b/0b79b30e-e7aa-490e-b130-de7533e6e13b.jpg?1783923821"
+    },
+    "colorIdentityOverride": []
+}
+
+// Season of Renewal
+{
+    "name": "Season of Renewal",
+    "manaCost": "{2}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one or both —\n• Return target creature card from your graveyard to your hand.\n• Return target enchantment card from your graveyard to your hand.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "creature card in your graveyard"
+                        },
+                        "destination": "Hand"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature own:you",
+                                "zone": "Graveyard"
+                            },
+                            "id": "creature card in your graveyard"
+                        }
+                    ],
+                    "description": "Return target creature card from your graveyard to your hand."
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "enchantment card in your graveyard"
+                        },
+                        "destination": "Hand"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "enchantment own:you",
+                                "zone": "Graveyard"
+                            },
+                            "id": "enchantment card in your graveyard"
+                        }
+                    ],
+                    "description": "Return target enchantment card from your graveyard to your hand."
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1
+        }
+    },
+    "metadata": {
+        "collectorNumber": "205",
+        "artist": "Rovina Cai",
+        "flavorText": "Pavement ripped like paper as the ancient kami awoke from her long slumber beneath the city.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/4/841f0ec2-94c7-4cec-94bb-b365084ca45f.jpg?1783923842"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Secluded Courtyard
 {
     "name": "Secluded Courtyard",
@@ -573,6 +2184,38 @@
         "imageUri": "https://cards.scryfall.io/normal/front/0/5/0539b1a5-8704-476f-ba1f-2fe01190e157.jpg?1783923815"
     },
     "colorIdentityOverride": []
+}
+
+// Sky-Blessed Samurai
+{
+    "name": "Sky-Blessed Samurai",
+    "manaCost": "{6}{W}",
+    "typeLine": "Enchantment Creature — Human Samurai",
+    "oracleText": "Affinity for enchantments (This spell costs {1} less to cast for each enchantment you control.)\nFlying",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "AFFINITY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Affinity",
+            "forType": "ENCHANTMENT"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "37",
+        "rarity": "UNCOMMON",
+        "artist": "Victor Adame Minguez",
+        "flavorText": "Imperial samurai who show exceptional honor and dexterity are invited to train as mothriders, elite guards charged with protecting the skies of Eiganjo.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/9/c9c7ba6f-c58e-4347-92e4-51ae8f2d5a88.jpg?1783923912"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }
 
 // Sokenzan, Crucible of Defiance
@@ -703,6 +2346,65 @@
     ]
 }
 
+// Spring-Leaf Avenger
+{
+    "name": "Spring-Leaf Avenger",
+    "manaCost": "{3}{G}{G}",
+    "typeLine": "Creature — Insect Ninja",
+    "oracleText": "Ninjutsu {3}{G} ({3}{G}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nWhenever this creature deals combat damage to a player, return target permanent card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "keywords": [
+        "NINJUTSU"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ninjutsu",
+            "cost": "{3}{G}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "permanent card in your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "permanent card in your graveyard"
+                },
+                "descriptionOverride": "Whenever this creature deals combat damage to a player, return target permanent card from your graveyard to your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "208",
+        "rarity": "RARE",
+        "artist": "Wisnu Tan",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/4/74b1ba9c-ee62-461f-8422-f791274e2f1c.jpg?1783923840"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Takenuma, Abandoned Mire
 {
     "name": "Takenuma, Abandoned Mire",
@@ -822,6 +2524,140 @@
     ]
 }
 
+// Tamiyo's Safekeeping
+{
+    "name": "Tamiyo's Safekeeping",
+    "manaCost": "{G}",
+    "typeLine": "Instant",
+    "oracleText": "Target permanent you control gains hexproof and indestructible until end of turn. You gain 2 life. (A permanent with hexproof and indestructible can't be the target of spells or abilities your opponents control. Damage and effects that say \"destroy\" don't destroy it.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "HEXPROOF",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "permanent you control"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "INDESTRUCTIBLE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "permanent you control"
+                    }
+                },
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "permanent ctrl:you"
+                },
+                "id": "permanent you control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "211",
+        "artist": "Aurore Folny",
+        "flavorText": "To keep the Reality Chip out of Jin-Gitaxias's hands, the Wanderer entrusted it to Tamiyo.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fd4b7ee2-de65-4288-872d-486065a4f226.jpg?1783923839"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Thundersteel Colossus
+{
+    "name": "Thundersteel Colossus",
+    "manaCost": "{7}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Trample, haste\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 7
+    },
+    "keywords": [
+        "TRAMPLE",
+        "HASTE",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "261",
+        "artist": "Victor Adame Minguez",
+        "flavorText": "\"*This* is what I needed all that alloy for.\"\n—Arima, to Emire",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/7/b7d49f9c-2dd3-4aed-9b78-e1bcad354a35.jpg?1783923820"
+    },
+    "colorIdentityOverride": []
+}
+
+// Towashi Songshaper
+{
+    "name": "Towashi Songshaper",
+    "manaCost": "{1}{R}",
+    "typeLine": "Artifact Creature — Human Artificer",
+    "oracleText": "Whenever another artifact you control enters, this creature gets +1/+0 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever another artifact you control enters, this creature gets +1/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "167",
+        "artist": "Fajareka Setiawan",
+        "flavorText": "Most Uprisers augment their bodies for speed, strength, or protection, but a few just want to be one with the music.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/7/f7ff9be1-765f-4001-a0ac-39c8099924eb.jpg?1783923857"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Uncharted Haven
 {
     "name": "Uncharted Haven",
@@ -856,4 +2692,177 @@
         "imageUri": "https://cards.scryfall.io/normal/front/1/d/1d4ad89a-3a00-4bf4-a357-4a8a089d4a82.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Unstoppable Ogre
+{
+    "name": "Unstoppable Ogre",
+    "manaCost": "{2}{R}",
+    "typeLine": "Artifact Creature — Ogre Warrior",
+    "oracleText": "When this creature enters, target creature can't block this turn.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CantBlockTargetCreatures",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature that can't block"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "creature that can't block"
+                },
+                "descriptionOverride": "When this creature enters, target creature can't block this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "169",
+        "artist": "Xavier Ribeiro",
+        "flavorText": "Touma never met a door he didn't hate.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/1/719f20d9-2baa-49b3-8c6a-89f21a07d538.jpg?1783923857"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Virus Beetle
+{
+    "name": "Virus Beetle",
+    "manaCost": "{1}{B}",
+    "typeLine": "Artifact Creature — Insect",
+    "oracleText": "When this creature enters, each opponent discards a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "EachOpponent"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "discarded"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "When this creature enters, each opponent discards a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "128",
+        "artist": "Dan Murayama Scott",
+        "flavorText": "\"They'll be debugging their code for days before they figure out what happened!\"\n—Eita, Futurist agent",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/8/488ee202-0d28-4cc0-8a7d-644d9878e952.jpg?1783923873"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Wanderer's Intervention
+{
+    "name": "Wanderer's Intervention",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Wanderer's Intervention deals 4 damage to target attacking or blocking creature.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 4
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "attacking or blocking creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "StateOr",
+                                "predicates": [
+                                    "IsAttacking",
+                                    "IsBlocking"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "id": "attacking or blocking creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "41",
+        "artist": "Cristi Balanescu",
+        "flavorText": "Just as Jin-Gitaxias's victory seemed certain, the Wanderer appeared, her blade already in motion. One mighty slash was enough to take the praetor out of the fight.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/3/43708ec9-a85a-4244-86b4-67b30b41d854.jpg?1783923911"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }
