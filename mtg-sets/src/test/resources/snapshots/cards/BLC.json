@@ -1712,42 +1712,6 @@
     ]
 }
 
-// Lotus Cobra
-{
-    "name": "Lotus Cobra",
-    "manaCost": "{1}{G}",
-    "typeLine": "Creature — Snake",
-    "oracleText": "Landfall — Whenever a land you control enters, add one mana of any color.",
-    "creatureStats": {
-        "power": 2,
-        "toughness": 1
-    },
-    "script": {
-        "triggeredAbilities": [
-            {
-                "id": "ability_1",
-                "trigger": {
-                    "type": "ZoneChangeEvent",
-                    "filter": "land ctrl:you",
-                    "to": "Battlefield"
-                },
-                "binding": "ANY",
-                "effect": "AddManaOfChoice"
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "229",
-        "rarity": "RARE",
-        "artist": "Sam Rowan",
-        "flavorText": "Its hood blossoms as a warning: receive your gift, but stray no closer.",
-        "imageUri": "https://cards.scryfall.io/normal/front/3/e/3e9cc3c4-82e2-43ba-892d-91836e6ac6fc.jpg?1721429332"
-    },
-    "colorIdentityOverride": [
-        "GREEN"
-    ]
-}
-
 // Prosperous Bandit
 {
     "name": "Prosperous Bandit",

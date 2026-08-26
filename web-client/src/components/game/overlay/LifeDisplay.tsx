@@ -22,6 +22,8 @@ export function LifeDisplay({
   commanderDamage,
   seatColor,
   isAlly = false,
+  teamName,
+  teamMembers,
   handSize,
   maxHandSize,
 }: {
@@ -51,6 +53,15 @@ export function LifeDisplay({
    * their board is viewed). The role tag reads "Ally" so it never reads as an opponent.
    */
   isAlly?: boolean
+  /**
+   * Two-Headed Giant (CR 810): print the *team's* name here instead of the player's. Both
+   * teammates share one life total, so the center HUD reads team-vs-team — one orb per team,
+   * one life total per team — and the individual seats keep their identity on the rail chips
+   * and board name plates. Undefined outside a shared-life team game.
+   */
+  teamName?: string
+  /** Team members behind [teamName], for the orb's tooltip ("Bob & Carol"). */
+  teamMembers?: string
 }) {
   const responsive = useResponsiveContext()
   const targetingState = useGameStore((state) => state.targetingState)
@@ -196,11 +207,20 @@ export function LifeDisplay({
             ? '0 0 16px rgba(255, 68, 68, 0.7), 0 0 32px rgba(255, 68, 68, 0.4)'
             : 'none'
 
-  const nameText = playerName ? playerName.toUpperCase() : (isPlayer ? 'YOU' : 'OPPONENT')
+  // A team orb stands for the whole team, so it may only carry team-scoped facts. Life and
+  // poison are pooled in Two-Headed Giant (CR 810.4, CR 810.10) and stay; the hand-limit badge
+  // is one player's (CR 402.2) and would read as the team's, so it stands down — the seat's own
+  // rail chip still carries it.
+  const effectiveMaxHandSize = teamName ? undefined : maxHandSize
+
+  const nameText = teamName
+    ? teamName.toUpperCase()
+    : playerName ? playerName.toUpperCase() : (isPlayer ? 'YOU' : 'OPPONENT')
   // Only show the "YOU" / "OPPONENT" role tag when a custom name is rendered
   // (otherwise the name itself already carries the same information) and when
-  // not spectating (there's no "you" in spectator mode).
-  const showRoleTag = !spectatorMode && !!playerName
+  // not spectating (there's no "you" in spectator mode). A team name already says
+  // "yours" or "theirs", so it replaces the tag rather than doubling it.
+  const showRoleTag = !spectatorMode && !!playerName && !teamName
   // Seat-tinted in multiplayer (SEAT_COLORS are 6-digit hex, so appending an alpha byte gives the
   // translucent variants the tag uses). A supplied seatColor wins for both roles; otherwise fall
   // back to the fixed 2-player blue (player) / orange (opponent).
@@ -239,7 +259,7 @@ export function LifeDisplay({
           textOverflow: 'ellipsis',
           textShadow: '0 1px 2px rgba(0, 0, 0, 0.6)',
         }}
-        title={playerName}
+        title={teamName ? `${teamName}${teamMembers ? ` — ${teamMembers}` : ''}` : playerName}
       >
         {nameText}
       </span>
@@ -450,7 +470,7 @@ export function LifeDisplay({
           ⚡ {energyCounters}
         </div>
       )}
-      <MaxHandSizeBadge handSize={handSize} maxHandSize={maxHandSize} />
+      <MaxHandSizeBadge handSize={handSize} maxHandSize={effectiveMaxHandSize} />
       <CommanderDamageBadges entries={commanderDamage ?? []} />
     </div>
   )
