@@ -138,6 +138,14 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
   const teamHoldsPriority = useTeamHasPriority(playerId ?? null)
   // ...and is it the viewer's *team's* turn (CR 805.4)? Also false outside a shared-turns format.
   const teamActiveTurn = useIsMyTeamTurn()
+  // The teammate currently on the baton. Read off the priority holder rather than "the ally",
+  // because the ally seat is suppressed while this client is the one driving it (hotseat) — and
+  // that is exactly a case where naming who is acting matters most.
+  const batonHolderName = useGameStore(
+    (state) =>
+      state.gameState?.players.find((p) => p.playerId === state.gameState?.priorityPlayerId)?.name ??
+      null,
+  )
   const isTeamGame = viewerTeam != null && Object.keys(teamMap).length > 0
   // The seat anchoring the bottom row: you when playing, the spectator's chosen/first seat, or —
   // for an eliminated spectator, whose own board left the game with them — the survivor sitting
@@ -1279,7 +1287,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
             <span aria-hidden style={{ fontSize: 11 }}>🤝</span>
             <span>
               Team priority
-              {allySeat ? ` — ${allySeat.name} is acting` : ''}
+              {batonHolderName ? ` — ${batonHolderName} is acting` : ''}
             </span>
           </div>
         )}
