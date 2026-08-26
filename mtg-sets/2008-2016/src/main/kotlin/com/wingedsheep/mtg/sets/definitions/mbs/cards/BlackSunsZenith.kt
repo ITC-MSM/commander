@@ -4,7 +4,6 @@ import com.wingedsheep.sdk.core.Counters
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.AddDynamicCountersEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -30,7 +29,7 @@ val BlackSunsZenith = card("Black Sun's Zenith") {
     spell {
         effect = Effects.ForEachInGroup(
             filter = GroupFilter.AllCreatures,
-            effect = AddDynamicCountersEffect(
+            effect = Effects.AddDynamicCounters(
                 counterType = Counters.MINUS_ONE_MINUS_ONE,
                 amount = DynamicAmount.XValue,
                 target = EffectTarget.Self,
