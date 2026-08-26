@@ -770,6 +770,48 @@
     ]
 }
 
+// River Boa
+{
+    "name": "River Boa",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Snake",
+    "oracleText": "Islandwalk (This creature can't be blocked as long as defending player controls an Island.)\n{G}: Regenerate this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "ISLANDWALK"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "118",
+        "artist": "Steve White",
+        "flavorText": "\"But no one heard the snake's gentle hiss for peace over the elephant's trumpeting of war.\"\n—Afari, *Tales*",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/e/2e9d5aaf-b7e8-4676-aec8-7d29a0169a2c.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Simoon
 {
     "name": "Simoon",
