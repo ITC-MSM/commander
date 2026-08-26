@@ -1,3 +1,174 @@
+// Black Sun's Zenith
+{
+    "name": "Black Sun's Zenith",
+    "manaCost": "{X}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Put X -1/-1 counters on each creature. Shuffle Black Sun's Zenith into its owner's library.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            },
+            "body": {
+                "type": "AddDynamicCounters",
+                "counterType": "-1/-1",
+                "amount": "XValue",
+                "target": "Self"
+            }
+        },
+        "selfShuffleIntoLibraryOnResolve": true
+    },
+    "metadata": {
+        "collectorNumber": "39",
+        "rarity": "RARE",
+        "artist": "Daniel Ljunggren",
+        "flavorText": "\"Under the suns, Mirrodin kneels and begs us for perfection.\"\n—Geth, Lord of the Vault",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/3/03bdcf52-50b8-42c0-9665-931d83f5f314.jpg?1783941385",
+        "rulings": [
+            {
+                "date": "2011-06-01",
+                "text": "If this spell doesn't resolve, none of its effects occur. In particular, it will go to the graveyard rather than to its owner's library."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Blue Sun's Zenith
+{
+    "name": "Blue Sun's Zenith",
+    "manaCost": "{X}{U}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Target player draws X cards. Shuffle Blue Sun's Zenith into its owner's library.",
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": "XValue",
+            "target": {
+                "type": "ContextTarget",
+                "index": 0
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "target player"
+            }
+        ],
+        "selfShuffleIntoLibraryOnResolve": true
+    },
+    "metadata": {
+        "collectorNumber": "20",
+        "rarity": "RARE",
+        "artist": "Izzy",
+        "flavorText": "\"The Origin Query will wait. We must ensure we survive to return to it.\"\n—Pelyus, vedalken ordinar",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a8150f78-e187-4949-9746-fec64d1675d1.jpg?1783941389",
+        "rulings": [
+            {
+                "date": "2011-06-01",
+                "text": "If this spell doesn't resolve, none of its effects occur. In particular, it will go to the graveyard rather than to its owner's library."
+            },
+            {
+                "date": "2018-03-16",
+                "text": "Because you follow the spell's instructions in order, you won't be able to draw the same Blue Sun's Zenith that you cast."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Green Sun's Zenith
+{
+    "name": "Green Sun's Zenith",
+    "manaCost": "{X}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Search your library for a green creature card with mana value X or less, put it onto the battlefield, then shuffle. Shuffle Green Sun's Zenith into its owner's library.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Library",
+                        "filter": {
+                            "cardPredicates": [
+                                "IsCreature",
+                                {
+                                    "type": "HasColor",
+                                    "color": "GREEN"
+                                },
+                                "ManaValueAtMostX"
+                            ]
+                        }
+                    },
+                    "storeAs": "searchable"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "searchable",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "found"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "found",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield"
+                    }
+                },
+                "ShuffleLibrary",
+                "EmitLibrarySearchedEvent"
+            ]
+        },
+        "selfShuffleIntoLibraryOnResolve": true
+    },
+    "metadata": {
+        "collectorNumber": "81",
+        "rarity": "RARE",
+        "artist": "David Rapoza",
+        "flavorText": "As the green sun crowned, Phyrexian prophecies glowed on the Tree of Tales.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/2/02335747-54e3-4827-ae19-4e362863da9b.jpg?1783941375",
+        "rulings": [
+            {
+                "date": "2011-06-01",
+                "text": "If this spell doesn't resolve, none of its effects occur. In particular, it will go to the graveyard rather than to its owner's library."
+            },
+            {
+                "date": "2016-06-08",
+                "text": "If Green Sun's Zenith is countered, none of its effects will happen. Notably, it will be put into its owner's graveyard rather than shuffled into its owner's library."
+            },
+            {
+                "date": "2016-06-08",
+                "text": "In most cases, if you own Green Sun's Zenith and cast it, you'll shuffle your library twice. In practice, shuffling once is sufficient, but effects that care about you shuffling your library (like Psychogenic Probe, for example) will see that you've shuffled twice."
+            },
+            {
+                "date": "2016-06-08",
+                "text": "If you own Green Sun's Zenith, but an opponent casts it (due to Knowledge Pool's effect, for example), that opponent searches their library for an appropriate creature card, then shuffles that library. That opponent then shuffles Green Sun's Zenith into your library. You won't shuffle any library in this case."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Hexplate Golem
 {
     "name": "Hexplate Golem",
@@ -154,6 +325,73 @@
     ]
 }
 
+// Red Sun's Zenith
+{
+    "name": "Red Sun's Zenith",
+    "manaCost": "{X}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Red Sun's Zenith deals X damage to any target. If a creature dealt damage this way would die this turn, exile it instead. Shuffle Red Sun's Zenith into its owner's library.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": "XValue",
+                            "operator": "GT",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 0
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "MarkExileOnDeath",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "any target"
+                        }
+                    }
+                },
+                {
+                    "type": "DealDamage",
+                    "amount": "XValue",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "AnyTarget",
+                "id": "any target"
+            }
+        ],
+        "selfShuffleIntoLibraryOnResolve": true
+    },
+    "metadata": {
+        "collectorNumber": "74",
+        "rarity": "RARE",
+        "artist": "Svetlin Velinov",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/7/373eb109-0e30-41c1-b2df-6bc78d968890.jpg?1783941377",
+        "rulings": [
+            {
+                "date": "2011-06-01",
+                "text": "If this spell doesn't resolve, none of its effects occur. In particular, it will go to the graveyard rather than to its owner's library."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Slagstorm
 {
     "name": "Slagstorm",
@@ -276,4 +514,44 @@
         ]
     },
     "colorIdentityOverride": []
+}
+
+// White Sun's Zenith
+{
+    "name": "White Sun's Zenith",
+    "manaCost": "{X}{W}{W}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Create X 2/2 white Cat creature tokens. Shuffle White Sun's Zenith into its owner's library.",
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": "XValue",
+            "power": 2,
+            "toughness": 2,
+            "colors": [
+                "WHITE"
+            ],
+            "creatureTypes": [
+                "Cat"
+            ],
+            "imageUri": "https://cards.scryfall.io/normal/front/7/d/7d400b41-813d-4a63-848f-5eb4db4bf3bb.jpg?1783903575"
+        },
+        "selfShuffleIntoLibraryOnResolve": true
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "rarity": "RARE",
+        "artist": "Mike Bierek",
+        "flavorText": "After the Battle of Liet Field, the white sun crested above Taj-Nar, bringing hope to all who survived the carnage.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a879940e-6632-47c5-a30e-d29a82d16e9d.jpg?1783941389",
+        "rulings": [
+            {
+                "date": "2011-06-01",
+                "text": "If this spell doesn't resolve, none of its effects occur. In particular, it will go to the graveyard rather than to its owner's library."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }
