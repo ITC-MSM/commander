@@ -49,8 +49,9 @@ export function ReplayPage() {
         setMetadata(data.metadata)
         setSnapshots(reconstructSnapshots(data.initialSnapshot, data.deltas))
         // Stamp the seat → team map from the replay roster so a team-game replay lights up the
-        // team-grouped rail, ally treatment, and team-split layout (team membership only rides
-        // in the roster, never the per-frame board state).
+        // team-grouped rail, ally treatment, and team-split layout (replay frames are fed
+        // straight into the store, bypassing the state-update handler that re-derives this in
+        // live play).
         const roster = data.initialSnapshot.players
         if (roster?.some((p) => p.teamIndex != null)) {
           const teams: Record<string, number> = {}
