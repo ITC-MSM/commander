@@ -210,7 +210,7 @@ class CastSpellHandler(
     )
 
     override fun validate(state: GameState, action: CastSpell): String? {
-        if (state.priorityPlayerId != action.playerId) {
+        if (!state.hasPriority(action.playerId)) {
             return "You don't have priority"
         }
 

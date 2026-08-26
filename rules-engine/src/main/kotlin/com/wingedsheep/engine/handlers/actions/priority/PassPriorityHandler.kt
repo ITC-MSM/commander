@@ -48,7 +48,7 @@ class PassPriorityHandler(
     override val actionType: KClass<PassPriority> = PassPriority::class
 
     override fun validate(state: GameState, action: PassPriority): String? {
-        if (state.priorityPlayerId != action.playerId) {
+        if (!state.hasPriority(action.playerId)) {
             return "You don't have priority"
         }
         // Cannot pass priority while there's a pending decision
@@ -59,14 +59,17 @@ class PassPriorityHandler(
         // Cannot pass priority during combat declaration steps until the declaration is submitted.
         // During DECLARE_ATTACKERS, the active player must submit DeclareAttackers before passing.
         // During DECLARE_BLOCKERS, the defending player must submit DeclareBlockers before passing.
-        if (state.step == Step.DECLARE_ATTACKERS && action.playerId == state.activePlayerId) {
+        // CR 805.10a — every player on the active team is an attacking player and stamps their own
+        // declaration, so the gate is team-wide turn ownership, not the single [activePlayerId].
+        // [isActiveTurnFor] is plain equality outside a shared-turns format.
+        if (state.step == Step.DECLARE_ATTACKERS && state.isActiveTurnFor(action.playerId)) {
             val attackersDeclared = state.getEntity(action.playerId)
                 ?.get<AttackersDeclaredThisCombatComponent>() != null
             if (!attackersDeclared) {
                 return "You must declare attackers before passing priority"
             }
         }
-        if (state.step == Step.DECLARE_BLOCKERS && action.playerId != state.activePlayerId) {
+        if (state.step == Step.DECLARE_BLOCKERS && !state.isActiveTurnFor(action.playerId)) {
             // Only a defending player (one being attacked) must declare blockers before
             // passing. In a multiplayer combat, players who aren't being attacked pass
             // freely — they have no blocks to declare (CR 509.1).
@@ -140,8 +143,11 @@ class PassPriorityHandler(
             }
         }
 
-        // Pass to next player
-        val nextPlayer = state.getNextPlayer(action.playerId)
+        // Pass the baton. Identical to `getNextPlayer` whenever passing is strictly round-robin —
+        // every non-team game. Under team priority (CR 805.5) a teammate may pass out of baton
+        // order, and then the baton stays put (its holder still owes a pass) and later skips the
+        // seats that have already passed. See [GameState.nextPriorityAfterPass].
+        val nextPlayer = newState.nextPriorityAfterPass(action.playerId)
         return ExecutionResult.success(
             newState.copy(priorityPlayerId = nextPlayer),
             listOf(PriorityChangedEvent(nextPlayer))

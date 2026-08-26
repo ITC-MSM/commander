@@ -105,7 +105,7 @@ class PlotCardHandler(
     }
 
     override fun validate(state: GameState, action: PlotCard): String? {
-        if (state.priorityPlayerId != action.playerId) {
+        if (!state.hasPriority(action.playerId)) {
             return "You don't have priority"
         }
         if (!state.step.isMainPhase || state.stack.isNotEmpty() ||

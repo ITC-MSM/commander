@@ -843,7 +843,21 @@ data class ClientPlayer(
      * fact, repeated per player so the client can read it off any seat. Team vs. Team is a team
      * game with per-player life, so it sets [teamIndex] but leaves this false.
      */
-    val teamSharedLife: Boolean = false
+    val teamSharedLife: Boolean = false,
+
+    /**
+     * True when this game's format gives the team one shared turn and one shared priority
+     * (CR 805 / 810.2). A game-level fact, repeated per player exactly like [teamSharedLife] so the
+     * client can read it off any seat — and, like it, carried on the *state* so a reconnecting
+     * client is never without it.
+     *
+     * The client needs it to answer "may I act?": under shared team turns a player holds priority
+     * whenever any member of their team does (CR 805.5), so the UI can't derive that from
+     * `priorityPlayerId == me` alone. Team vs. Team sets [teamIndex] but takes individual turns
+     * (CR 808.4), so it leaves this false — which is exactly why it can't be folded into
+     * [teamSharedLife] or into "has a team".
+     */
+    val teamSharedTurns: Boolean = false
 )
 
 /**

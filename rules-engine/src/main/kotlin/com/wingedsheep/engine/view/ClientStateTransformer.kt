@@ -2048,7 +2048,8 @@ class ClientStateTransformer(
             // Team variants (CR 810 / CR 808). Public information, and absent from every
             // non-team game, so both fields serialize away by default.
             teamIndex = container?.get<TeamComponent>()?.teamIndex,
-            teamSharedLife = state.format.sharesTeamLife
+            teamSharedLife = state.format.sharesTeamLife,
+            teamSharedTurns = state.format.sharesTeamTurns
         )
     }
 

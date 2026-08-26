@@ -69,7 +69,7 @@ class ForetellCardHandler(
     }
 
     override fun validate(state: GameState, action: ForetellCard): String? {
-        if (state.priorityPlayerId != action.playerId) {
+        if (!state.hasPriority(action.playerId)) {
             return "You don't have priority"
         }
         // CR 116.2h / 702.143a: any time you have priority during your own turn.
