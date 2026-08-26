@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.blc.cards
+package com.wingedsheep.mtg.sets.definitions.m11.cards
 
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
@@ -39,10 +39,11 @@ val GarruksPackleader = card("Garruk's Packleader") {
 
     metadata {
         rarity = Rarity.UNCOMMON
-        collectorNumber = "218"
+        collectorNumber = "177"
         artist = "Nils Hamm"
-        flavorText = "\"He has learned much in his long years. And unlike selfish humans, he's willing to share.\"\n—Garruk Wildspeaker"
-        imageUri = "https://cards.scryfall.io/normal/front/1/0/109dee37-5de5-40fa-9405-8645be6c5076.jpg?1721429269"
+        flavorText = "\"He has learned much in his long years. And unlike selfish humans, he's willing to " +
+            "share.\"\n—Garruk Wildspeaker"
+        imageUri = "https://cards.scryfall.io/normal/front/d/f/dfaef299-7879-4f52-8ee4-701ed150b930.jpg?1783941798"
 
         ruling("2012-07-01", "The ability checks the power of each creature as it enters. It will take into account counters the permanent enters with and static abilities that affect its power. After the creature is on the battlefield, raising its power won't cause this ability to retroactively trigger.")
         ruling("2012-07-01", "The creature's power is checked only to see if the ability triggers. It doesn't matter what the creature's power is when the ability resolves.")

@@ -1,3 +1,50 @@
+// Angel's Feather
+{
+    "name": "Angel's Feather",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever a player casts a white spell, you may gain 1 life.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasColor",
+                                "color": "WHITE"
+                            }
+                        ]
+                    },
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "92",
+        "rarity": "UNCOMMON",
+        "artist": "Alan Pollack",
+        "flavorText": "If taken, it cuts the hand that clutches it. If given, it heals the hand that holds it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/a/4a11d101-2e82-42d5-b4a1-8f0c520441ab.jpg?1783944431"
+    },
+    "colorIdentityOverride": []
+}
+
 // Crazed Goblin
 {
     "name": "Crazed Goblin",
@@ -213,6 +260,100 @@
         "collectorNumber": "113",
         "artist": "Terese Nielsen",
         "imageUri": "https://cards.scryfall.io/normal/front/9/c/9c1bac5f-c41a-49f0-94b0-79653b6fa67a.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
+// Demon's Horn
+{
+    "name": "Demon's Horn",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever a player casts a black spell, you may gain 1 life.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasColor",
+                                "color": "BLACK"
+                            }
+                        ]
+                    },
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "116",
+        "rarity": "UNCOMMON",
+        "artist": "Alan Pollack",
+        "flavorText": "Its curve mimics the twists of life and death.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/1/41d40eb4-643a-4e22-a15f-eda45a48cfd6.jpg?1783944425"
+    },
+    "colorIdentityOverride": []
+}
+
+// Dragon's Claw
+{
+    "name": "Dragon's Claw",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever a player casts a red spell, you may gain 1 life.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasColor",
+                                "color": "RED"
+                            }
+                        ]
+                    },
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "117",
+        "rarity": "UNCOMMON",
+        "artist": "Alan Pollack",
+        "flavorText": "Though no longer attached to the hand, it still holds its adversary in its grasp.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7a46bbcc-b287-47bb-b252-5dd3217f61a9.jpg?1783944425"
     },
     "colorIdentityOverride": []
 }
@@ -503,6 +644,53 @@
     "colorIdentityOverride": [
         "BLUE"
     ]
+}
+
+// Kraken's Eye
+{
+    "name": "Kraken's Eye",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever a player casts a blue spell, you may gain 1 life.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasColor",
+                                "color": "BLUE"
+                            }
+                        ]
+                    },
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "126",
+        "rarity": "UNCOMMON",
+        "artist": "Alan Pollack",
+        "flavorText": "Bright as a mirror, dark as the sea.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cc767637-627a-4ea2-873b-d8a80ccc925b.jpg?1783944423"
+    },
+    "colorIdentityOverride": []
 }
 
 // Krark-Clan Stoker
@@ -1888,6 +2076,53 @@
         "collectorNumber": "160",
         "artist": "Luca Zontini",
         "imageUri": "https://cards.scryfall.io/normal/front/a/c/ac4fdefd-8774-400d-bea6-4064d87383f1.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
+// Wurm's Tooth
+{
+    "name": "Wurm's Tooth",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever a player casts a green spell, you may gain 1 life.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasColor",
+                                "color": "GREEN"
+                            }
+                        ]
+                    },
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "162",
+        "rarity": "UNCOMMON",
+        "artist": "Alan Pollack",
+        "flavorText": "A wurm knows nothing of deception. If it opens its mouth, it plans to eat you.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/8/482cdbe0-b865-4e09-bd30-61ab93739b53.jpg?1783944414"
     },
     "colorIdentityOverride": []
 }

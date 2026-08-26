@@ -189,6 +189,53 @@
     ]
 }
 
+// Bloodthrone Vampire
+{
+    "name": "Bloodthrone Vampire",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Vampire",
+    "oracleText": "Sacrifice a creature: This creature gets +2/+2 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "creature"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "98",
+        "artist": "Steve Argyle",
+        "flavorText": "Some humans willingly offered up their blood, hoping it would grant the vampire families the strength to stave off the Eldrazi.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/8/48bf0233-1d2e-40cb-9a69-8eeeeb2959ca.jpg?1783941988"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Cadaver Imp
 {
     "name": "Cadaver Imp",
@@ -527,6 +574,52 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Goblin Tunneler
+{
+    "name": "Goblin Tunneler",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Goblin Rogue",
+    "oracleText": "{T}: Target creature with power 2 or less can't be blocked this turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "CANT_BE_BLOCKED",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature pow<=2"
+                        },
+                        "id": "target creature"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "148",
+        "artist": "Jesper Ejsing",
+        "flavorText": "\"You never know what's going to be in goblin tunnels. Even in the best case, there will still be goblins.\"\n—Sachir, Akoum Expeditionary House",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/b/0b2e4a34-6255-4f89-a62d-941996c573e1.jpg?1783941975"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
