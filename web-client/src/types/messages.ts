@@ -140,6 +140,12 @@ export interface PlayerSeatInfo {
    * team header vs. per-player life.
    */
   readonly teamSharedLife?: boolean
+  /**
+   * True when the team takes one shared turn and holds priority as a unit (CR 805 / 810.2), so any
+   * member may act while their team has priority (CR 805.5a). False for Team vs. Team's individual
+   * turns (CR 808.4). Game-level, like `teamSharedLife`.
+   */
+  readonly teamSharedTurns?: boolean
 }
 
 /**

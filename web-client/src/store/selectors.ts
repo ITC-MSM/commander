@@ -88,7 +88,10 @@ export const selectConnectionStatus = (state: GameStore) => state.connectionStat
 export const selectIsMyTurn = (state: GameStore): boolean => {
   const { gameState, playerId } = state
   if (!gameState || !playerId) return false
-  return gameState.activePlayerId === playerId
+  if (gameState.activePlayerId === playerId) return true
+  // CR 805.4 — a team takes one turn together, so your ally's turn is your turn: you untap, draw,
+  // play a land and act at sorcery speed on it. False in every format that doesn't share turns.
+  return selectSharesTeamTurn(state, gameState.activePlayerId, playerId)
 }
 
 /**
@@ -97,7 +100,30 @@ export const selectIsMyTurn = (state: GameStore): boolean => {
 export const selectHasPriority = (state: GameStore): boolean => {
   const { gameState, playerId } = state
   if (!gameState || !playerId) return false
-  return gameState.priorityPlayerId === playerId
+  if (gameState.priorityPlayerId === playerId) return true
+  // CR 805.5 — under shared team turns the whole team holds priority, so a teammate's baton is
+  // ours too. `selectSharesTeamTurn` is false in every format that doesn't share turns.
+  return selectSharesTeamTurn(state, gameState.priorityPlayerId, playerId)
+}
+
+/**
+ * True when two seats act as one side for the turn *and* for priority: a shared-team-turns game
+ * (CR 805) and the same team. One helper for both because CR 805 makes them one axis — a team that
+ * takes its turn together holds priority together (805.4 / 805.5). Reads the store's own seat →
+ * team map rather than the state's per-seat `teamIndex` so it matches every other team read in the
+ * client.
+ */
+export const selectSharesTeamTurn = (
+  state: GameStore,
+  a: EntityId | null | undefined,
+  b: EntityId | null | undefined,
+): boolean => {
+  if (!a || !b) return false
+  if (a === b) return true
+  if (!state.teamSharedTurns) return false
+  const map = state.teamByPlayerId ?? EMPTY_TEAM_MAP
+  const teamA = map[a]
+  return teamA != null && map[b] === teamA
 }
 
 /**
@@ -340,6 +366,41 @@ export function useIsTeamGame(): boolean {
  */
 export function useIsSharedLifeTeamGame(): boolean {
   return useGameStore((state) => selectIsTeamGame(state) && state.teamSharedLife)
+}
+
+/**
+ * True only for a team game whose teams take one shared turn and hold priority together
+ * (Two-Headed Giant — CR 805 / 810.2). This is the flag that decides whether a teammate may act in
+ * your priority window; Team vs. Team is a team game that takes individual turns (CR 808.4), so it
+ * is false there.
+ */
+export function useIsSharedTurnTeamGame(): boolean {
+  return useGameStore((state) => selectIsTeamGame(state) && state.teamSharedTurns)
+}
+
+/**
+ * True when the active player is the viewer's teammate — i.e. it is the viewer's team's turn but
+ * not their own seat's (CR 805.4). False in every format that doesn't share team turns.
+ */
+export function useIsMyTeamTurn(): boolean {
+  return useGameStore((state) => {
+    const active = state.gameState?.activePlayerId
+    if (!active || active === state.playerId) return false
+    return selectSharesTeamTurn(state, active, state.playerId)
+  })
+}
+
+/**
+ * True when [playerId] is on the team that currently holds priority, but is not the baton holder
+ * themselves (CR 805.5) — the *widening* that team priority buys, which is what the UI wants to
+ * talk about. False in every non-team game and false when you simply hold priority yourself.
+ */
+export function useTeamHasPriority(playerId: EntityId | null): boolean {
+  return useGameStore((state) => {
+    const holder = state.gameState?.priorityPlayerId
+    if (!holder || holder === playerId) return false
+    return selectSharesTeamTurn(state, holder, playerId)
+  })
 }
 
 /** Team index of a player, or null in a non-team game / unknown player. */

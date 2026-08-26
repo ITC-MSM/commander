@@ -121,6 +121,13 @@ export interface BoardViewSliceState {
    * the rail shows a single shared-life team header or per-player life.
    */
   teamSharedLife: boolean
+  /**
+   * True when the format gives each team one shared turn and one shared priority (Two-Headed
+   * Giant — CR 805 / 810.2). False for Team vs. Team (CR 808.4), whose teammates take individual
+   * turns. Drives whether the client offers actions while a *teammate* holds the priority baton
+   * (CR 805.5a) — see `hasPriority` in types/gameState.
+   */
+  teamSharedTurns: boolean
 }
 
 export interface BoardViewSliceActions {
@@ -155,9 +162,17 @@ export interface BoardViewSliceActions {
   /**
    * Stamp the seat → team map from the game-start roster (2HG / Team vs. Team). Pass an empty map
    * for a non-team game (the default). [sharedLife] is true only when the team shares one life total
-   * (2HG); Team vs. Team passes false. Persists until the next reset.
+   * (2HG); Team vs. Team passes false. [sharedTurns] likewise for the shared turn + shared priority
+   * (CR 805). Persists until the next reset.
+   *
+   * The spectator and replay rosters don't carry [sharedTurns] and leave it false; neither surface
+   * can act, and `syncSeatTeams` corrects it from the first state update regardless.
    */
-  setSeatTeams: (teamByPlayerId: Record<EntityId, number>, sharedLife?: boolean) => void
+  setSeatTeams: (
+    teamByPlayerId: Record<EntityId, number>,
+    sharedLife?: boolean,
+    sharedTurns?: boolean,
+  ) => void
   /** Reset on game start / leave. */
   resetBoardView: () => void
 }
@@ -175,6 +190,7 @@ export const createBoardViewSlice: SliceCreator<BoardViewSlice> = (set, get) => 
   spectatorBottomSeatId: null,
   teamByPlayerId: {},
   teamSharedLife: false,
+  teamSharedTurns: false,
 
   viewOpponent: (playerId, opts) => {
     const { gameState, playerId: ownId } = get()
@@ -247,8 +263,8 @@ export const createBoardViewSlice: SliceCreator<BoardViewSlice> = (set, get) => 
   setSpectatorBottomSeat: (playerId) =>
     set({ spectatorBottomSeatId: playerId, viewedOpponentId: null, viewPinned: false }),
 
-  setSeatTeams: (teamByPlayerId, sharedLife = false) =>
-    set({ teamByPlayerId, teamSharedLife: sharedLife }),
+  setSeatTeams: (teamByPlayerId, sharedLife = false, sharedTurns = false) =>
+    set({ teamByPlayerId, teamSharedLife: sharedLife, teamSharedTurns: sharedTurns }),
 
   resetBoardView: () =>
     set({
@@ -261,5 +277,6 @@ export const createBoardViewSlice: SliceCreator<BoardViewSlice> = (set, get) => 
       spectatorBottomSeatId: null,
       teamByPlayerId: {},
       teamSharedLife: false,
+      teamSharedTurns: false,
     }),
 })

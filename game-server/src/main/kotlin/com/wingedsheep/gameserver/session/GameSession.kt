@@ -512,6 +512,7 @@ class GameSession(
                 // Prefer the running game's format (set for scenario/hotseat pods too), falling back
                 // to the configured format before the game state exists.
                 teamSharedLife = (state?.format ?: engineFormat).sharesTeamLife,
+                teamSharedTurns = (state?.format ?: engineFormat).sharesTeamTurns,
             )
         }.sortedBy { it.seatIndex }
     }

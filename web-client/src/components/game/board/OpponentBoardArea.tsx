@@ -4,7 +4,7 @@ import type { RefObject } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import type { ClientPlayer } from '@/types'
 import { hand } from '@/types'
-import { useRevealedLibraryTopCard, useIdentityColor, useIsSharedLifeTeamGame } from '@/store/selectors'
+import { useRevealedLibraryTopCard, useIdentityColor, useIsSharedLifeTeamGame, useZoneCards } from '@/store/selectors'
 import { useResponsiveContext } from './shared'
 import { Battlefield } from './Battlefield'
 import { CardRow, HAND_FAN_EDGE_MARGIN } from './HandZone'
@@ -25,6 +25,9 @@ export const CELL_PLATE_BAND = 34
  * meant for the permanents underneath it.
  */
 const FAN_EDGE_OVERHANG = HAND_FAN_EDGE_MARGIN * 2
+
+/** Height of the compact face-down hand strip (`cellHand: 'count'`), plus its margin. */
+export const CELL_HAND_COUNT_BAND = 30
 
 /**
  * Sizing for the hand a board renders *inside* a shared-strip cell (table overview, team-split
@@ -97,6 +100,8 @@ export function OpponentBoardArea({
   isAlly = false,
   allyColor,
   bottomHalf = false,
+  cellHand = 'fan',
+  plateAtBottom = false,
 }: {
   opponent: ClientPlayer
   layout: 'grid' | 'strip'
@@ -155,6 +160,28 @@ export function OpponentBoardArea({
    * instead of the opponent orientation. The name plate still pins to the top of the cell.
    */
   bottomHalf?: boolean
+  /**
+   * Shared-strip view only: how this cell shows the seat's hand.
+   *
+   * - `'fan'` — the scaled-down fan under the name plate (the default, and what a Free-for-All
+   *   pod uses for every board).
+   * - `'count'` — a compact face-down stack with the card count. All you can learn from a
+   *   *fully* face-down fan is how many cards it holds, and a nine-card arc costs a whole band of
+   *   height to say a number; with four boards on screen that height is better spent on
+   *   battlefields. The moment anything in that hand is revealed to you (Peek, Duress, Telepathy)
+   *   the cell falls back to `'fan'` — a count would hide exactly the information the reveal was
+   *   for.
+   * - `'none'` — no hand and no band at all. Two-Headed Giant's ally, whose hand is open to you
+   *   (CR 810.5) and therefore renders full-size beside your own at the bottom of the screen
+   *   rather than shrunk into their cell.
+   */
+  cellHand?: 'fan' | 'count' | 'none'
+  /**
+   * Shared-strip view only: hang the name plate from the *bottom* of the cell instead of the top.
+   * Used for the bottom row of a Two-Headed Giant table, where the plates are the two heads of the
+   * shared team-life banner and belong at the screen edge, beside the life total they share.
+   */
+  plateAtBottom?: boolean
 }) {
   const revealedTopCard = useRevealedLibraryTopCard(opponent.playerId)
   const ghostCards = useMemo(
@@ -171,6 +198,20 @@ export function OpponentBoardArea({
   // A bottom-half cell's board is oriented like a player's own, so its hand hangs the same way
   // as yours (face toward the bottom edge) rather than inverted like an opponent's.
   const cellHandInverted = !bottomHalf
+  // A face-down hand can still hold cards *you* can see — Peek, Duress, Telepathy, anything that
+  // reveals from an opponent's hand. [CardRow] draws those face-up among the face-down placeholders,
+  // which a bare count would throw away, so a hand with anything revealed always gets the fan.
+  const revealedInHand = useZoneCards(hand(opponent.playerId)).length > 0
+  const effectiveCellHand = cellHand === 'count' && revealedInHand ? 'fan' : cellHand
+  // How much vertical room this cell owes to the plate + whatever it shows of the hand. A hijacked
+  // hand keeps the full grid-row-1 reservation (it renders the real interactive fan); otherwise it
+  // is the plate band plus the fan's own band, the count strip, or nothing at all.
+  const cellHandOwn =
+    isHijacking ? handReservation
+      : effectiveCellHand === 'fan' ? cellHandBand
+        : effectiveCellHand === 'count' ? CELL_HAND_COUNT_BAND
+          : 0
+  const reservationBand = hideHand ? cellHandOwn + CELL_PLATE_BAND : handReservation
 
   /* Opponent hand — fixed at top of screen in grid layout; absolute inside the
      strip cell in strip layout (a strip cell starts at the viewport top, so the
@@ -306,6 +347,7 @@ export function OpponentBoardArea({
           player={opponent}
           carriesAnchors={plateCarriesAnchors}
           top={(isHijacking ? handReservation : 0) + 6}
+          anchor={plateAtBottom ? 'bottom' : 'top'}
           isAlly={isAlly}
           {...(allyColor ? { allyColor } : {})}
         />
@@ -314,7 +356,14 @@ export function OpponentBoardArea({
           name plate. Knowing how many cards each player is holding — and, for a Two-Headed
           Giant ally whose hand is open to you (CR 810.5), *which* cards — is board state you
           shouldn't have to slide the camera onto a board to read. */}
-      {hideHand && !isHijacking && (
+      {hideHand && !isHijacking && effectiveCellHand === 'count' && (
+        <CellHandCount
+          handSize={opponent.handSize ?? 0}
+          name={opponent.name}
+          {...(plateAtBottom ? { bottom: CELL_PLATE_BAND } : { top: CELL_PLATE_BAND })}
+        />
+      )}
+      {hideHand && !isHijacking && effectiveCellHand === 'fan' && (
         <div
           data-zone="opponent-hand"
           style={{
@@ -395,18 +444,13 @@ export function OpponentBoardArea({
           exactly with the 2-player opponent area (grid row 2). Shared-strip views
           replace it with room for the name plate — the board gets the rest of the
           vertical space back. */}
-      <div
-        style={{
-          height: hideHand
-            ? (isHijacking
-                ? handReservation
-                : cellHandBand) + CELL_PLATE_BAND
-            : handReservation,
-          flexShrink: 0,
-        }}
-        aria-hidden
-      />
+      {/* Reservation band mirrors grid row 1 so the board area below aligns exactly with the
+          2-player opponent area (grid row 2). Shared-strip views replace it with room for the name
+          plate and whatever the cell shows of the hand — and put it *after* the board when the
+          plate hangs from the bottom edge. */}
+      {!plateAtBottom && <div style={{ height: reservationBand, flexShrink: 0 }} aria-hidden />}
       {boardBlock}
+      {plateAtBottom && <div style={{ height: reservationBand, flexShrink: 0 }} aria-hidden />}
     </div>
   )
 }
@@ -514,16 +558,110 @@ export const COLLAPSED_TAB_WIDTH = 30
  * while declaring attackers, player targeting during a selection (same handling as the
  * rail chip's crosshair).
  */
-function BoardNamePlate({
+/**
+ * A shared-strip cell's hand rendered as a compact face-down stack plus its count
+ * (`cellHand: 'count'`).
+ *
+ * A face-down fan tells you exactly one thing — how many cards the seat is holding — and spends a
+ * whole band of cell height saying it. With four boards on screen that height is worth more to the
+ * battlefields, so an opponent's hand collapses to the number and a stack glyph that still reads
+ * as "cards in hand" at a glance. A hand you can actually *read* (your Two-Headed Giant ally's,
+ * CR 810.5) never comes through here — it renders full-size beside your own.
+ */
+function CellHandCount({
+  handSize,
+  name,
+  top,
+  bottom,
+}: {
+  handSize: number
+  name: string
+  top?: number
+  bottom?: number
+}) {
+  return (
+    <div
+      data-zone="opponent-hand"
+      aria-label={`${name}: ${handSize} ${handSize === 1 ? 'card' : 'cards'} in hand`}
+      title={`${name} — ${handSize} ${handSize === 1 ? 'card' : 'cards'} in hand`}
+      style={{
+        position: 'absolute',
+        ...(bottom != null ? { bottom } : { top: top ?? 0 }),
+        left: 0,
+        right: 0,
+        height: CELL_HAND_COUNT_BAND,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 50,
+        pointerEvents: 'none',
+        userSelect: 'none',
+      }}
+    >
+      <div
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 7,
+          padding: '3px 10px 3px 6px',
+          borderRadius: 999,
+          border: '1px solid #2f3646',
+          background: 'rgba(10, 12, 20, 0.72)',
+        }}
+      >
+        {/* Three stacked card backs, fanned just enough to read as a hand rather than one card. */}
+        <span aria-hidden style={{ position: 'relative', width: 26, height: 18, flexShrink: 0 }}>
+          {[-1, 0, 1].map((i) => (
+            <span
+              key={i}
+              style={{
+                position: 'absolute',
+                left: 9 + i * 6,
+                top: Math.abs(i) * 1.5,
+                width: 11,
+                height: 16,
+                borderRadius: 2,
+                border: '1px solid #4a5570',
+                background: 'linear-gradient(160deg, #2a3350 0%, #171d2e 100%)',
+                transform: `rotate(${i * 9}deg)`,
+              }}
+            />
+          ))}
+        </span>
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: handSize === 0 ? '#6b7488' : '#c8d2e6',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          {handSize}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+export function BoardNamePlate({
   player,
   carriesAnchors,
   top,
+  anchor = 'top',
   isAlly = false,
   allyColor,
 }: {
   player: ClientPlayer
   carriesAnchors: boolean
+  /** Distance from the cell edge named by [anchor]. */
   top: number
+  /**
+   * Which cell edge the plate hangs from. `'top'` for an opponent-oriented board (the plate sits
+   * above the cards, on the far side of the table). `'bottom'` for a board on your own side of a
+   * two-row table: its plate belongs next to *you*, at the screen edge, where it also joins the
+   * shared team-life banner ([TeamLifeBanner]) instead of floating in the middle of the screen.
+   */
+  anchor?: 'top' | 'bottom'
   /**
    * Two-Headed Giant: mark this board as your teammate's. The floating corner badge stands down
    * wherever a plate renders — two labels naming the same player is one too many — so the plate
@@ -629,7 +767,7 @@ function BoardNamePlate({
       onClick={interactive ? handleClick : undefined}
       style={{
         position: 'absolute',
-        top,
+        ...(anchor === 'bottom' ? { bottom: top } : { top }),
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 56,

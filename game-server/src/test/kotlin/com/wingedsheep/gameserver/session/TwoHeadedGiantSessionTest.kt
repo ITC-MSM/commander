@@ -115,6 +115,52 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
             }
         }
 
+        test("the seat roster carries the shared-turn flag, which the client needs to answer \"may I act?\"") {
+            val (session, ids) = started2hg()
+
+            // Two axes, not one: 2HG shares life *and* turns, Team vs. Team shares neither, and the
+            // client can't derive "a teammate may act in my priority window" (CR 805.5a) from
+            // either "has a team" or "pools life".
+            session.seatInfos(viewerId = ids[0]).forEach {
+                it.teamSharedLife shouldBe true
+                it.teamSharedTurns shouldBe true
+            }
+        }
+
+        test("a teammate is offered their OWN actions while their partner holds the baton (CR 805.5)") {
+            val (session, ids) = started2hg()
+            val state = session.getStateForTesting()!!
+            val baton = state.priorityPlayerId!!
+            val teammate = state.teamOf(baton).single { it != baton }
+            val opponent = state.getOpponents(baton).first()
+
+            // The baton holder gets actions, as always.
+            session.getLegalActions(baton) shouldNotBe emptyList<Any>()
+
+            // So does their teammate — this is the whole of team priority from the server's side.
+            // The actions must be enumerated for the *teammate's* seat: it is their hand and their
+            // mana, and an action tagged with the baton holder's id would be rejected as theirs.
+            val teammateActions = session.getLegalActions(teammate)
+            teammateActions shouldNotBe emptyList<Any>()
+            teammateActions.forEach { it.action.playerId shouldBe teammate }
+
+            // The opposing team is still shut out — team priority widens the team, not the table.
+            session.getLegalActions(opponent) shouldBe emptyList()
+        }
+
+        test("a Free-for-All pod stays one seat at a time — only the baton holder is offered actions") {
+            val session = GameSession(cardRegistry = cardRegistry, maxPlayers = 4)
+            val ids = (1..4).map { EntityId.of("ffa-$it") }
+            ids.forEachIndexed { i, id ->
+                session.addPlayer(PlayerSession(mockWs("f$i"), id, "P${i + 1}"), mapOf("Forest" to 40))
+            }
+            session.startGame()
+
+            val baton = session.getStateForTesting()!!.priorityPlayerId!!
+            session.getLegalActions(baton) shouldNotBe emptyList<Any>()
+            ids.filter { it != baton }.forEach { session.getLegalActions(it) shouldBe emptyList() }
+        }
+
         test("non-team game is unchanged: no team index, every other seat is an opponent") {
             // No teams / Standard format — the degenerate case of the same code path.
             val session = GameSession(cardRegistry = cardRegistry, maxPlayers = 2)
@@ -124,7 +170,10 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
             }
             session.startGame()
 
-            session.seatInfos(viewerId = ids[0]).forEach { it.teamIndex shouldBe null }
+            session.seatInfos(viewerId = ids[0]).forEach {
+                it.teamIndex shouldBe null
+                it.teamSharedTurns shouldBe false
+            }
             session.getOpponentIds(ids[0]) shouldContainExactly listOf(ids[1])
         }
     }
