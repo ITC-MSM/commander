@@ -26,8 +26,12 @@ export const CELL_PLATE_BAND = 34
  */
 const FAN_EDGE_OVERHANG = HAND_FAN_EDGE_MARGIN * 2
 
-/** Height of the compact face-down hand strip (`cellHand: 'count'`), plus its margin. */
-export const CELL_HAND_COUNT_BAND = 30
+/**
+ * Height a `cellHand: 'count'` cell owes its hand — zero, because the count rides *inside* the
+ * name plate rather than under it. A number and a stack glyph fit on the plate beside the seat's
+ * name, and a whole extra band to carry them was a row of screen height spent on two characters.
+ */
+export const CELL_HAND_COUNT_BAND = 0
 
 /**
  * Sizing for the hand a board renders *inside* a shared-strip cell (table overview, team-split
@@ -349,6 +353,9 @@ export function OpponentBoardArea({
           top={(isHijacking ? handReservation : 0) + 6}
           anchor={plateAtBottom ? 'bottom' : 'top'}
           isAlly={isAlly}
+          {...(effectiveCellHand === 'count' && !isHijacking
+            ? { handCount: opponent.handSize ?? 0 }
+            : {})}
           {...(allyColor ? { allyColor } : {})}
         />
       )}
@@ -356,13 +363,6 @@ export function OpponentBoardArea({
           name plate. Knowing how many cards each player is holding — and, for a Two-Headed
           Giant ally whose hand is open to you (CR 810.5), *which* cards — is board state you
           shouldn't have to slide the camera onto a board to read. */}
-      {hideHand && !isHijacking && effectiveCellHand === 'count' && (
-        <CellHandCount
-          handSize={opponent.handSize ?? 0}
-          name={opponent.name}
-          {...(plateAtBottom ? { bottom: CELL_PLATE_BAND } : { top: CELL_PLATE_BAND })}
-        />
-      )}
       {hideHand && !isHijacking && effectiveCellHand === 'fan' && (
         <div
           data-zone="opponent-hand"
@@ -559,87 +559,47 @@ export const COLLAPSED_TAB_WIDTH = 30
  * rail chip's crosshair).
  */
 /**
- * A shared-strip cell's hand rendered as a compact face-down stack plus its count
+ * A face-down hand reduced to a stack glyph and its count, sized to sit on a board's name plate
  * (`cellHand: 'count'`).
  *
- * A face-down fan tells you exactly one thing — how many cards the seat is holding — and spends a
- * whole band of cell height saying it. With four boards on screen that height is worth more to the
- * battlefields, so an opponent's hand collapses to the number and a stack glyph that still reads
- * as "cards in hand" at a glance. A hand you can actually *read* (your Two-Headed Giant ally's,
- * CR 810.5) never comes through here — it renders full-size beside your own.
+ * All you can learn from a fully face-down fan is how many cards the seat is holding, and a
+ * nine-card arc spends a whole band of cell height saying it. On the plate it costs nothing: the
+ * plate is already there, and in a shared-life team game it has room going spare where the life
+ * total used to be.
  */
-function CellHandCount({
-  handSize,
-  name,
-  top,
-  bottom,
-}: {
-  handSize: number
-  name: string
-  top?: number
-  bottom?: number
-}) {
+function HandCountBadge({ count }: { count: number }) {
   return (
-    <div
-      data-zone="opponent-hand"
-      aria-label={`${name}: ${handSize} ${handSize === 1 ? 'card' : 'cards'} in hand`}
-      title={`${name} — ${handSize} ${handSize === 1 ? 'card' : 'cards'} in hand`}
+    <span
       style={{
-        position: 'absolute',
-        ...(bottom != null ? { bottom } : { top: top ?? 0 }),
-        left: 0,
-        right: 0,
-        height: CELL_HAND_COUNT_BAND,
-        display: 'flex',
+        display: 'inline-flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 50,
-        pointerEvents: 'none',
-        userSelect: 'none',
+        gap: 5,
+        flexShrink: 0,
+        color: count === 0 ? '#6b7488' : '#c8d2e6',
+        fontVariantNumeric: 'tabular-nums',
       }}
     >
-      <div
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 7,
-          padding: '3px 10px 3px 6px',
-          borderRadius: 999,
-          border: '1px solid #2f3646',
-          background: 'rgba(10, 12, 20, 0.72)',
-        }}
-      >
-        {/* Three stacked card backs, fanned just enough to read as a hand rather than one card. */}
-        <span aria-hidden style={{ position: 'relative', width: 26, height: 18, flexShrink: 0 }}>
-          {[-1, 0, 1].map((i) => (
-            <span
-              key={i}
-              style={{
-                position: 'absolute',
-                left: 9 + i * 6,
-                top: Math.abs(i) * 1.5,
-                width: 11,
-                height: 16,
-                borderRadius: 2,
-                border: '1px solid #4a5570',
-                background: 'linear-gradient(160deg, #2a3350 0%, #171d2e 100%)',
-                transform: `rotate(${i * 9}deg)`,
-              }}
-            />
-          ))}
-        </span>
-        <span
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: handSize === 0 ? '#6b7488' : '#c8d2e6',
-            fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          {handSize}
-        </span>
-      </div>
-    </div>
+      {/* Three card backs, fanned just enough to read as a hand rather than one card. */}
+      <span aria-hidden style={{ position: 'relative', width: 20, height: 14, flexShrink: 0 }}>
+        {[-1, 0, 1].map((i) => (
+          <span
+            key={i}
+            style={{
+              position: 'absolute',
+              left: 7 + i * 4.5,
+              top: Math.abs(i),
+              width: 8,
+              height: 12,
+              borderRadius: 2,
+              border: '1px solid #4a5570',
+              background: 'linear-gradient(160deg, #2a3350 0%, #171d2e 100%)',
+              transform: `rotate(${i * 9}deg)`,
+            }}
+          />
+        ))}
+      </span>
+      {count}
+    </span>
   )
 }
 
@@ -650,6 +610,7 @@ export function BoardNamePlate({
   anchor = 'top',
   isAlly = false,
   allyColor,
+  handCount,
 }: {
   player: ClientPlayer
   carriesAnchors: boolean
@@ -669,6 +630,11 @@ export function BoardNamePlate({
    */
   isAlly?: boolean
   allyColor?: string
+  /**
+   * Render this seat's hand size on the plate (`cellHand: 'count'`). Undefined leaves it off — the
+   * cell is drawing a real fan and the fan already says how many cards there are.
+   */
+  handCount?: number
 }) {
   const seat = useIdentityColor(player.playerId)
   const playerId = player.playerId
@@ -762,7 +728,9 @@ export function BoardNamePlate({
           ? `Attack ${player.name}`
           : isPlayerTargetable || isPlayerTargetSelected
             ? (isPlayerTargetSelected ? `Unselect ${player.name}` : `Target ${player.name}`)
-            : player.name
+            : handCount != null
+              ? `${player.name} — ${handCount} ${handCount === 1 ? 'card' : 'cards'} in hand`
+              : player.name
       }
       onClick={interactive ? handleClick : undefined}
       style={{
@@ -834,6 +802,7 @@ export function BoardNamePlate({
           ALLY
         </span>
       )}
+      {handCount != null && <HandCountBadge count={handCount} />}
       {!sharedLifeTeam && (
         <span
           style={{

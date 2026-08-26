@@ -745,7 +745,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           gap: teamHandRow.gap,
         }}
       >
-        <AllyHandFan player={allySeat} width={teamHandRow.allyWidth} color={selfSeatColor.base} />
+        <AllyHandFan player={allySeat} width={teamHandRow.allyWidth} />
         {ownHand}
       </div>
     )
@@ -2345,25 +2345,27 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
  * worth reading rather than counting. It renders at a readable scale next to yours instead of
  * shrunk into their board cell, but stays inert: "teammates can't manipulate each other's cards",
  * so only its controller ever plays from it.
+ *
+ * It carries no label of its own. It sits directly under their board cell, whose name plate — the
+ * ally-side head of the shared-life banner — already names them and marks them as your ally; a
+ * second caption right below it was the same fact printed twice.
  */
 function AllyHandFan({
   player,
   width,
-  color,
 }: {
   player: import('@/types').ClientPlayer
   width: number
-  color: string
 }) {
   return (
     <div
       data-zone="ally-hand"
+      aria-label={`${player.name}'s hand`}
+      title={`${player.name}'s hand — visible to you (CR 810.5), but only they can play from it`}
       style={{
         width,
         display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 2,
+        justifyContent: 'center',
         // A hand fan is drawn to bleed past the edge it hangs from, which is right for the one you
         // play from (you only ever need its top half) and wrong for one you are reading. Lift the
         // ally's clear of the screen edge so whole cards are visible; there is nothing below it.
@@ -2373,28 +2375,6 @@ function AllyHandFan({
         userSelect: 'none',
       }}
     >
-      <span
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 5,
-          padding: '1px 8px',
-          borderRadius: 999,
-          border: `1px solid ${color}`,
-          background: 'rgba(8, 11, 18, 0.85)',
-          color,
-          fontSize: 9,
-          fontWeight: 800,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          whiteSpace: 'nowrap',
-          maxWidth: '100%',
-          overflow: 'hidden',
-        }}
-        title={`${player.name}'s hand — visible to you (CR 810.5), but only they can play from it`}
-      >
-        Ally · {player.name}
-      </span>
       <CardRow zoneId={hand(player.playerId)} faceDown={false} fan fitWidth={width} maxCardWidth={72} />
     </div>
   )
