@@ -249,6 +249,71 @@
     ]
 }
 
+// Mulch
+{
+    "name": "Mulch",
+    "manaCost": "{1}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Reveal the top four cards of your library. Put all land cards revealed this way into your hand and the rest into your graveyard.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 4
+                        }
+                    },
+                    "storeAs": "looked"
+                },
+                {
+                    "type": "RevealCollection",
+                    "from": "looked"
+                },
+                {
+                    "type": "FilterCollection",
+                    "from": "looked",
+                    "filter": {
+                        "type": "MatchesFilter",
+                        "filter": "land"
+                    },
+                    "storeMatching": "kept",
+                    "storeNonMatching": "rest"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "kept",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "rest",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "110",
+        "artist": "Rebecca Guay",
+        "flavorText": "Hope is the one crop that can grow in any climate.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/c/4cf9e9a9-325a-4010-acb8-1406adcaeca9.jpg?1783946551"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Primal Rage
 {
     "name": "Primal Rage",

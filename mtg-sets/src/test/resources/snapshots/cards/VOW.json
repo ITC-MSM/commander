@@ -2417,6 +2417,81 @@
     ]
 }
 
+// Chill of the Grave
+{
+    "name": "Chill of the Grave",
+    "manaCost": "{2}{U}",
+    "typeLine": "Instant",
+    "oracleText": "This spell costs {1} less to cast if you control a Zombie.\nTap target creature. It doesn't untap during its controller's next untap step.\nDraw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "DOESNT_UNTAP",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "duration": "UntilAfterAffectedControllersNextUntap"
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                },
+                "gating": {
+                    "type": "OnlyIf",
+                    "condition": {
+                        "type": "Exists",
+                        "player": "You",
+                        "zone": "Battlefield",
+                        "filter": "permanent Zombie"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "artist": "Olivier Bernard",
+        "flavorText": "Frozen is frozen, whether it's with cold, terror, or both.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/0/60222e91-a688-4113-a8c2-ab08f52bb6e1.jpg?1783924898"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Cloaked Cadet
 {
     "name": "Cloaked Cadet",
@@ -4024,6 +4099,51 @@
     "colorIdentityOverride": [
         "GREEN",
         "BLUE"
+    ]
+}
+
+// Dying to Serve
+{
+    "name": "Dying to Serve",
+    "manaCost": "{2}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever you discard one or more cards, create a tapped 2/2 black Zombie creature token. This ability triggers only once each turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DiscardEvent",
+                    "batch": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Zombie"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/c/8/c84e21cd-079d-493f-ab8d-e62f16ec1581.jpg?1782739822",
+                    "tapped": true
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever you discard one or more cards, create a tapped 2/2 black Zombie creature token. This ability triggers only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "109",
+        "rarity": "RARE",
+        "artist": "Steven Belledin",
+        "flavorText": "\"I used to have hired hands, but I discovered they make better waitstaff with the rest of the body attached.\"\n—Olivia Voldaren",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c2ea16cd-801e-478a-b924-5431582b70d1.jpg?1783924866"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -6153,6 +6273,66 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Heron of Hope
+{
+    "name": "Heron of Hope",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Bird",
+    "oracleText": "Flying\nIf you would gain life, you gain that much life plus 1 instead.\n{1}{W}: This creature gains lifelink until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK",
+                    "target": "Self"
+                },
+                "descriptionOverride": "{1}{W}: This creature gains lifelink until end of turn."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "ModifyLifeGain",
+                "multiplier": 1,
+                "modifier": 1
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "18",
+        "artist": "Daarken",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/a/fa7e6933-5c64-4fcd-bb7f-740767a149cb.jpg?1783924918",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "If you control two Heron of Hopes and you would gain life, you gain that much life plus 2. A third Heron of Hope has you gain that much life plus 3, and so on."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "The middle ability applies just once to each life-gaining event. If you gain an amount of life \"for each\" of something or \"equal to the number\" of something, that life is gained as one event and the ability applies only once."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -10092,6 +10272,54 @@
     ]
 }
 
+// Pyre Spawn
+{
+    "name": "Pyre Spawn",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "When this creature dies, it deals 3 damage to any target.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "173",
+        "artist": "Nicholas Gregory",
+        "flavorText": "Memories of the Harvesttide tragedy festered until they grew into an incarnate rage that set the world ablaze.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/0/80255777-de00-4ffa-a8a0-f522bf4198fb.jpg?1783924827"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Reckless Impulse
 {
     "name": "Reckless Impulse",
@@ -11153,6 +11381,55 @@
         "artist": "Johann Bodin",
         "flavorText": "It knows one fundamental truth: bodies belong in graves.",
         "imageUri": "https://cards.scryfall.io/normal/front/f/8/f8805db2-5a26-43cf-9b74-f882c283e5e4.jpg?1782703138"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Serpentine Ambush
+{
+    "name": "Serpentine Ambush",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Until end of turn, target creature becomes a blue Serpent with base power and toughness 5/5.",
+    "script": {
+        "spellEffect": {
+            "type": "BecomeCreature",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            },
+            "power": {
+                "type": "Fixed",
+                "amount": 5
+            },
+            "toughness": {
+                "type": "Fixed",
+                "amount": 5
+            },
+            "creatureTypes": [
+                "Serpent"
+            ],
+            "colors": [
+                "BLUE"
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "77",
+        "artist": "Jokubas Uogintas",
+        "flavorText": "The merchant did guarantee the new bait would bring in something big.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/8/b8214b1c-29f8-4986-89ac-2d7fc929edf3.jpg?1783924884"
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -12288,6 +12565,51 @@
     ]
 }
 
+// Stormchaser Drake
+{
+    "name": "Stormchaser Drake",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Drake",
+    "oracleText": "Flying\nWhenever this creature becomes the target of a spell you control, draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "BecomesTargetEvent",
+                    "byYou": true,
+                    "spellsOnly": true
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever this creature becomes the target of a spell you control, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "rarity": "UNCOMMON",
+        "artist": "Brent Hollowell",
+        "flavorText": "\"Blasted drake's interfering with the conductivity again. Garl! Go chase it away.\"\n—Ludevic, necro-alchemist",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/d/3dd5c860-9d27-40d9-af38-aaf40bd52423.jpg?1783924883"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Sundown Pass
 {
     "name": "Sundown Pass",
@@ -13097,6 +13419,48 @@
         "artist": "Campbell White",
         "flavorText": "\"Is this twisted ceremony simply a mockery of the human rite, or has Olivia fallen for her own charade?\"\n—Sorin Markov",
         "imageUri": "https://cards.scryfall.io/normal/front/8/a/8a4c04a4-e68b-4d3d-89c8-29cdaaac36b2.jpg?1782703165"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Vampire Slayer
+{
+    "name": "Vampire Slayer",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Soldier",
+    "oracleText": "Whenever this creature deals damage to a Vampire, destroy that creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "recipient": {
+                        "type": "RecipientMatching",
+                        "filter": "permanent Vampire"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "TriggeringEntity",
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "descriptionOverride": "Whenever this creature deals damage to a Vampire, destroy that creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "43",
+        "artist": "Tomas Duchek",
+        "flavorText": "When Kaya saved her village, Berit realized even vampires could be killed. When she brought one down herself, she realized she had found her calling.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a8f6f03b-5a4e-4532-9c9e-24c75df2769f.jpg?1783924905"
     },
     "colorIdentityOverride": [
         "WHITE"

@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 207 / 273
+**Implemented:** 216 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [ ] Aim for the Head
@@ -49,7 +49,7 @@
 - [x] Chandra, Dressed to Kill
 - [ ] Change of Fortune
 - [x] Child of the Pack
-- [ ] Chill of the Grave
+- [x] Chill of the Grave
 - [ ] Circle of Confinement
 - [x] Cloaked Cadet
 - [x] Cobbled Lancer
@@ -84,7 +84,7 @@
 - [x] Dreamroot Cascade
 - [ ] Dreamshackle Geist
 - [ ] Drogskol Infantry
-- [ ] Dying to Serve
+- [x] Dying to Serve
 - [x] Edgar's Awakening
 - [x] Edgar, Charmed Groom
 - [x] End the Festivities
@@ -122,7 +122,7 @@
 - [x] Headless Rider
 - [x] Henrika Domnathi
 - [x] Hero's Downfall
-- [ ] Heron of Hope
+- [x] Heron of Hope
 - [x] Heron-Blessed Geist
 - [x] Hiveheart Shaman
 - [x] Honeymoon Hearse
@@ -166,7 +166,7 @@
 - [ ] Mischievous Catgeist
 - [x] Moldgraf Millipede
 - [x] Mountain
-- [ ] Mulch
+- [x] Mulch
 - [x] Nature's Embrace
 - [x] Nebelgast Beguiler
 - [x] Necroduality
@@ -189,7 +189,7 @@
 - [x] Piercing Light
 - [x] Plains
 - [x] Pointed Discussion
-- [ ] Pyre Spawn
+- [x] Pyre Spawn
 - [ ] Radiant Grace
 - [ ] Ragged Recluse
 - [x] Reckless Impulse
@@ -210,7 +210,7 @@
 - [x] Scattered Thoughts
 - [ ] Screaming Swarm
 - [x] Selhoff Entomber
-- [ ] Serpentine Ambush
+- [x] Serpentine Ambush
 - [x] Shattered Sanctum
 - [x] Sheltering Boughs
 - [x] Sigarda's Imprisonment
@@ -223,14 +223,14 @@
 - [ ] Sorin the Mirthless
 - [x] Soulcipher Board
 - [x] Spiked Ripsaw
-- [ ] Splendid Reclamation
+- [x] Splendid Reclamation
 - [x] Spore Crawler
 - [x] Sporeback Wolf
 - [x] Steelclad Spirit
 - [x] Stensia Uprising
 - [x] Stitched Assistant
 - [x] Stormcarved Coast
-- [ ] Stormchaser Drake
+- [x] Stormchaser Drake
 - [x] Sundown Pass
 - [ ] Supernatural Rescue
 - [x] Sure Strike
@@ -250,7 +250,7 @@
 - [x] Unhallowed Phalanx
 - [x] Unholy Officiant
 - [x] Valorous Stance
-- [ ] Vampire Slayer
+- [x] Vampire Slayer
 - [x] Vampire's Kiss
 - [x] Vampires' Vengeance
 - [x] Vilespawn Spider
