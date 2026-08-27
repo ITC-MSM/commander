@@ -197,6 +197,39 @@
     ]
 }
 
+// Ancient Lumberknot
+{
+    "name": "Ancient Lumberknot",
+    "manaCost": "{2}{B}{G}",
+    "typeLine": "Creature — Treefolk",
+    "oracleText": "Each creature you control with toughness greater than its power assigns combat damage equal to its toughness rather than its power.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "AssignDamageEqualToToughness",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "230",
+        "rarity": "UNCOMMON",
+        "artist": "Nicholas Gregory",
+        "flavorText": "The soft creak of trees in the wind is not always cause for comfort.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/2/22264087-bac4-4746-b6ce-0d44cce163e6.jpg?1783924797"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Angelic Quartermaster
 {
     "name": "Angelic Quartermaster",
@@ -6032,6 +6065,56 @@
     ]
 }
 
+// Hamlet Vanguard
+{
+    "name": "Hamlet Vanguard",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Human Warrior",
+    "oracleText": "Ward {2} (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {2}.)\nThis creature enters with two +1/+1 counters on it for each other nontoken Human you control.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{2}"
+            }
+        }
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersWithDynamicCounters",
+                "count": {
+                    "type": "Multiply",
+                    "amount": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "permanent Human nontoken",
+                        "excludeSelf": true
+                    },
+                    "multiplier": 2
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "201",
+        "rarity": "RARE",
+        "artist": "PINDURSKI",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/3/f31e108b-8cb5-4f30-b68b-274aa7ac2a81.jpg?1783924812"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Headless Rider
 {
     "name": "Headless Rider",
@@ -9541,6 +9624,77 @@
     "colorIdentityOverride": [
         "BLACK",
         "GREEN"
+    ]
+}
+
+// Olivia's Attendants
+{
+    "name": "Olivia's Attendants",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Creature — Vampire",
+    "oracleText": "Menace\nWhenever this creature deals damage, create that many Blood tokens. (They're artifacts with \"{1}, {T}, Discard a card, Sacrifice this token: Draw a card.\")\n{2}{R}: This creature deals 1 damage to any target.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DealsDamageEvent",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Blood",
+                    "dynamicCount": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_DAMAGE_AMOUNT"
+                    }
+                },
+                "descriptionOverride": "Whenever this creature deals damage, create that many Blood tokens."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ],
+                "descriptionOverride": "This creature deals 1 damage to any target."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "172",
+        "rarity": "RARE",
+        "artist": "Dmitry Burmak",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/9/d9702fa3-9323-4e2f-92c9-6c31df198af2.jpg?1783924826"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
