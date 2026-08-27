@@ -52,7 +52,7 @@ class CycleCardHandler(
     override val actionType: KClass<CycleCard> = CycleCard::class
 
     override fun validate(state: GameState, action: CycleCard): String? {
-        if (state.priorityPlayerId != action.playerId) {
+        if (!state.hasPriority(action.playerId)) {
             return "You don't have priority"
         }
 

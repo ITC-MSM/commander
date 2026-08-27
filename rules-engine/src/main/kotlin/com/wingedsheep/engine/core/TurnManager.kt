@@ -1013,8 +1013,10 @@ class TurnManager(
 
     fun canPlaySorcerySpeed(state: GameState, playerId: EntityId): Boolean {
         return state.step.allowsSorcerySpeed &&
-            state.priorityPlayerId == playerId &&
-            state.isActiveTurnFor(playerId) && // CR 805.5a — either teammate may act on the team's turn
+            // CR 805.5a — either teammate may act while their team holds priority, on their
+            // team's turn. Both gates collapse to plain equality outside a shared-turns format.
+            state.hasPriority(playerId) &&
+            state.isActiveTurnFor(playerId) &&
             state.stack.isEmpty()
     }
 

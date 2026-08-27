@@ -1,0 +1,51 @@
+// Satyr Hedonist
+{
+    "name": "Satyr Hedonist",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Satyr",
+    "oracleText": "{R}, Sacrifice this creature: Add {R}{R}{R}.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{R}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "47",
+        "artist": "Chase Stone",
+        "flavorText": "\"Any festival you can walk away from wasn't worth attending in the first place.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/c/4c6a5405-2bc8-4439-a09a-2c4844ba3a35.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}

@@ -43,7 +43,7 @@ class SaddleMountHandler(
     override val actionType: KClass<SaddleMount> = SaddleMount::class
 
     override fun validate(state: GameState, action: SaddleMount): String? {
-        if (state.priorityPlayerId != action.playerId) {
+        if (!state.hasPriority(action.playerId)) {
             return "You don't have priority"
         }
 

@@ -759,6 +759,43 @@
     ]
 }
 
+// Griptide
+{
+    "name": "Griptide",
+    "manaCost": "{3}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Put target creature on top of its owner's library.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            },
+            "destination": "Library",
+            "placement": "Top"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "38",
+        "artist": "Igor Kieryluk",
+        "flavorText": "\"Beware the seagrafs just off the shore. These waters are filled with hungry geists looking for an easy meal.\"\n—Captain Eberhart",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/7/27f92b74-86bb-4bb3-8f78-640984698f28.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Havengul Runebinder
 {
     "name": "Havengul Runebinder",
