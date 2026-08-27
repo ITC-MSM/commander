@@ -1,3 +1,854 @@
+// Akroma, Angel of Fury
+{
+    "name": "Akroma, Angel of Fury",
+    "manaCost": "{5}{R}{R}{R}",
+    "typeLine": "Legendary Creature — Angel",
+    "oracleText": "This spell can't be countered.\nFlying, trample, protection from white and from blue\n{R}: Akroma gets +1/+0 until end of turn.\nMorph {3}{R}{R}{R} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its morph cost.)",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLYING",
+        "TRAMPLE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Protection",
+            "scope": {
+                "type": "ProtectionScope.Color",
+                "color": "WHITE"
+            }
+        },
+        {
+            "type": "Protection",
+            "scope": {
+                "type": "ProtectionScope.Color",
+                "color": "BLUE"
+            }
+        },
+        {
+            "type": "Morph",
+            "morphCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{3}{R}{R}{R}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{R}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{R}: Akroma gets +1/+0 until end of turn."
+            }
+        ],
+        "cantBeCountered": true
+    },
+    "metadata": {
+        "collectorNumber": "94",
+        "rarity": "RARE",
+        "artist": "Daren Bader",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/8/3815de82-5ba9-4fb6-9259-d5e50e046890.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Aven Riftwatcher
+{
+    "name": "Aven Riftwatcher",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Bird Rebel Soldier",
+    "oracleText": "Flying\nVanishing 3 (This creature enters with three time counters on it. At the beginning of your upkeep, remove a time counter from it. When the last is removed, sacrifice it.)\nWhen this creature enters or leaves the battlefield, you gain 2 life.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "VANISHING"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "VANISHING",
+            "n": 3
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "1",
+        "artist": "Don Hazeltine",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/6/f6a4394a-9ce2-4876-8a04-38e3775123af.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Battering Sliver
+{
+    "name": "Battering Sliver",
+    "manaCost": "{5}{R}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Sliver creatures have trample.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "TRAMPLE",
+                "filter": {
+                    "baseFilter": "creature Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "95",
+        "artist": "Greg Staples",
+        "flavorText": "Covered with hard shell-like plates, these slivers burrow through solid rock to carve out new nests for their hives.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/0/d0dc86d6-aa3e-46c6-9405-86f1e1ee7844.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Big Game Hunter
+{
+    "name": "Big Game Hunter",
+    "manaCost": "{1}{B}{B}",
+    "typeLine": "Creature — Human Rebel Assassin",
+    "oracleText": "When this creature enters, destroy target creature with power 4 or greater. It can't be regenerated.\nMadness {B} (If you discard this card, discard it into exile. When you do, cast it for its madness cost or put it into your graveyard.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "MADNESS"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Madness",
+            "cost": "{B}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CantBeRegenerated",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            }
+                        },
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            },
+                            "destination": "Graveyard",
+                            "byDestruction": true
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature pow>=4"
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "63",
+        "rarity": "UNCOMMON",
+        "artist": "Carl Critchlow",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/6/a61f38a9-6f15-4186-a602-78cdb00f2d75.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Blightspeaker
+{
+    "name": "Blightspeaker",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Human Rebel Cleric",
+    "oracleText": "{T}: Target player loses 1 life.\n{4}, {T}: Search your library for a Rebel permanent card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target"
+                    }
+                ],
+                "descriptionOverride": "{T}: Target player loses 1 life."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{4}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "permanent Rebel mv<=3"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            }
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "descriptionOverride": "{4}, {T}: Search your library for a Rebel permanent card with mana value 3 or less, put it onto the battlefield, then shuffle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "64",
+        "artist": "Ron Spears",
+        "flavorText": "One croaked sermon spreads propaganda and plague.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/a/4ae24bc0-1217-4db9-a745-8860f23b6d57.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Blood Knight
+{
+    "name": "Blood Knight",
+    "manaCost": "{R}{R}",
+    "typeLine": "Creature — Human Knight",
+    "oracleText": "First strike, protection from white",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FIRST_STRIKE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Protection",
+            "scope": {
+                "type": "ProtectionScope.Color",
+                "color": "WHITE"
+            }
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "115",
+        "rarity": "UNCOMMON",
+        "artist": "Matt Cavotta",
+        "flavorText": "His is the fury of the wildfire, the boiling blood of the volcano. He fights you not because you've wronged him, but because you're there.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/f/0f2133c0-8561-4264-8802-1b2933abf186.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Brute Force
+{
+    "name": "Brute Force",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +3/+3 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": 3
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": 3
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "116",
+        "artist": "Wayne Reynolds",
+        "flavorText": "Blood, bone, and sinew are magnified, as is the rage that drives them. The brain, however, remains unchanged—a little bean, swinging by a strand in a cavernous, raving head.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/2/82d43220-1e4e-4b61-9844-51c8bb5dde35.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Calciderm
+{
+    "name": "Calciderm",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "Shroud (This creature can't be the target of spells or abilities.)\nVanishing 4 (This creature enters with four time counters on it. At the beginning of your upkeep, remove a time counter from it. When the last is removed, sacrifice it.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "SHROUD",
+        "VANISHING"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "VANISHING",
+            "n": 4
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "23",
+        "rarity": "UNCOMMON",
+        "artist": "Dave Kendall",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/0/f0159719-ccf4-4798-a394-b01f5e422a27.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Damnation
+{
+    "name": "Damnation",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy all creatures. They can't be regenerated.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "BattlefieldMatching",
+                        "filter": "creature"
+                    },
+                    "storeAs": "destroyAll_gathered"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "destroyAll_gathered",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    },
+                    "moveType": "Destroy",
+                    "noRegenerate": true
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "85",
+        "rarity": "RARE",
+        "artist": "Kev Walker",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/6/26c68473-70ca-40ba-b5c6-71ec30f88a2c.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Darkheart Sliver
+{
+    "name": "Darkheart Sliver",
+    "manaCost": "{B}{G}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Slivers have \"Sacrifice this permanent: You gain 3 life.\"",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": "CostSacrificeSelf",
+                    "effect": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
+                        }
+                    }
+                },
+                "filter": {
+                    "baseFilter": "permanent Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "155",
+        "rarity": "UNCOMMON",
+        "artist": "rk post",
+        "flavorText": "\"At first we thought we were in some haunted wood. Then the branches twisted and scuttled toward us.\"\n—Merrik Aidar, Benalish patrol",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/3541ff31-0043-49a9-abac-77369f95b942.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
+// Essence Warden
+{
+    "name": "Essence Warden",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Elf Shaman",
+    "oracleText": "Whenever another creature enters, you gain 1 life.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "145",
+        "artist": "Terese Nielsen",
+        "flavorText": "\"The more our numbers grow, the more I gain hope that Volrath and his cursed stronghold will one day fall.\"\n—Eladamri, Lord of Leaves",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/a/da2a65d6-0887-4fe8-a6e6-909208fddd90.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Evolution Charm
+{
+    "name": "Evolution Charm",
+    "manaCost": "{1}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Search your library for a basic land card, reveal it, put it into your hand, then shuffle.\n• Return target creature card from your graveyard to your hand.\n• Target creature gains flying until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "basicland"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    },
+                    "description": "Search your library for a basic land card, reveal it, put it into your hand, then shuffle"
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Hand"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature own:you",
+                                "zone": "Graveyard"
+                            },
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Return target creature card from your graveyard to your hand"
+                },
+                {
+                    "effect": {
+                        "type": "GrantKeyword",
+                        "keyword": "FLYING",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Target creature gains flying until end of turn"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "127",
+        "artist": "John Avon",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/4/e4546059-71fe-43c1-9272-3b054e668e3c.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Gaea's Anthem
+{
+    "name": "Gaea's Anthem",
+    "manaCost": "{1}{G}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Creatures you control get +1/+1.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "147",
+        "rarity": "RARE",
+        "artist": "Greg Staples",
+        "flavorText": "\"To those who can hear it, Gaea's battle song brings power as swift as sunlight and as enduring as the deep roots of the forest.\"\n—Gamelen, Citanul elder",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/a/ea9e0de1-2299-4ff9-b49a-88535a96bda0.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Ghost Tactician
+{
+    "name": "Ghost Tactician",
+    "manaCost": "{4}{W}",
+    "typeLine": "Creature — Spirit Spellshaper",
+    "oracleText": "{W}, {T}, Discard a card: Creatures you control get +1/+0 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{W}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomDiscard"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "{W}, {T}, Discard a card: Creatures you control get +1/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "6",
+        "artist": "Zoltan Boros & Gabor Szikszai",
+        "flavorText": "Its ethereal hand confers a lifetime of experience with combat and steel.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/56ab366c-085b-4b13-b5ad-918965c34d22.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Giant Dustwasp
+{
+    "name": "Giant Dustwasp",
+    "manaCost": "{3}{G}{G}",
+    "typeLine": "Creature — Insect",
+    "oracleText": "Flying\nSuspend 4—{1}{G} (Rather than cast this card from your hand, you may pay {1}{G} and exile it with four time counters on it. At the beginning of your upkeep, remove a time counter. When the last is removed, you may cast it without paying its mana cost. It has haste.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "SUSPEND"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Suspend",
+            "cost": "{1}{G}",
+            "timeCounters": 4
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "129",
+        "artist": "Greg Hildebrandt",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/13d6938b-89e6-4cf2-8372-17f1682124ec.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Groundbreaker
+{
+    "name": "Groundbreaker",
+    "manaCost": "{G}{G}{G}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "Trample, haste\nAt the beginning of the end step, sacrifice this creature.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 1
+    },
+    "keywords": [
+        "TRAMPLE",
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": "SacrificeSelf"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "148",
+        "rarity": "RARE",
+        "artist": "Matt Cavotta",
+        "flavorText": "The earth's memory is long, its retribution brief.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/4/f467cdea-6166-4289-918b-18f5038c94ed.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Harmonize
 {
     "name": "Harmonize",
@@ -22,6 +873,1160 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Healing Leaves
+{
+    "name": "Healing Leaves",
+    "manaCost": "{G}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Target player gains 3 life.\n• Prevent the next 3 damage that would be dealt to any target this turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetPlayer",
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Target player gains 3 life"
+                },
+                {
+                    "effect": {
+                        "type": "PreventDamageShield",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "AnyTarget",
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Prevent the next 3 damage that would be dealt to any target this turn"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "150",
+        "artist": "Michael Sutfin",
+        "flavorText": "The elves of Llanowar don't trust in alchemy. They rely instead on pure herbs harvested from the forest's sacred heart.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d6f58258-a1bd-4364-954e-c39938f7dab2.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Hedge Troll
+{
+    "name": "Hedge Troll",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Troll Cleric",
+    "oracleText": "This creature gets +1/+1 as long as you control a Plains.\n{W}: Regenerate this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{W}"
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                },
+                "descriptionOverride": "{W}: Regenerate this creature."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 1,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "land Plains"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "151",
+        "rarity": "UNCOMMON",
+        "artist": "Paolo Parente",
+        "flavorText": "His abode was clean and bare, not a morsel in sight. I asked him what he ate, fearing the answer. He smiled and said his faith alone sustained him.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/b/2b2e6027-598d-4ba0-93ae-f76d031de8af.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
+// Heroes Remembered
+{
+    "name": "Heroes Remembered",
+    "manaCost": "{6}{W}{W}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "You gain 20 life.\nSuspend 10—{W} (Rather than cast this card from your hand, you may pay {W} and exile it with ten time counters on it. At the beginning of your upkeep, remove a time counter. When the last is removed, you may cast it without paying its mana cost.)",
+    "keywords": [
+        "SUSPEND"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Suspend",
+            "cost": "{W}",
+            "timeCounters": 10
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "GainLife",
+            "amount": {
+                "type": "Fixed",
+                "amount": 20
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "7",
+        "rarity": "RARE",
+        "artist": "Michael Phillippi",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/9/9902b260-82cf-4b10-a353-321231824a3b.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Keldon Marauders
+{
+    "name": "Keldon Marauders",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Warrior",
+    "oracleText": "Vanishing 2 (This creature enters with two time counters on it. At the beginning of your upkeep, remove a time counter from it. When the last is removed, sacrifice it.)\nWhen this creature enters or leaves the battlefield, it deals 1 damage to target player or planeswalker.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "VANISHING"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "VANISHING",
+            "n": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayerOrPlaneswalker",
+                    "id": "target"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayerOrPlaneswalker",
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "102",
+        "artist": "Alex Horley-Orlandelli",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/677c28db-34d2-4325-99d1-9b689753802f.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Lavacore Elemental
+{
+    "name": "Lavacore Elemental",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "Vanishing 1 (This creature enters with a time counter on it. At the beginning of your upkeep, remove a time counter from it. When the last is removed, sacrifice it.)\nWhenever a creature you control deals combat damage to a player, put a time counter on this creature.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 3
+    },
+    "keywords": [
+        "VANISHING"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "VANISHING",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer",
+                    "sourceFilter": "creature ctrl:you"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "time",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "103",
+        "rarity": "UNCOMMON",
+        "artist": "E. M. Gist",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d6b2f4de-fc41-4e68-8655-577616b10c7e.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Magus of the Bazaar
+{
+    "name": "Magus of the Bazaar",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "{T}: Draw two cards, then discard three cards.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 3
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 3 cards to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "descriptionOverride": "{T}: Draw two cards, then discard three cards."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "43",
+        "rarity": "RARE",
+        "artist": "Rob Alexander",
+        "flavorText": "\"Some trade in goods, some in secrets. My soul has walked the futures, and I offer the rare coin of possibility.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a89762f8-70e0-414b-a788-532710129733.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Malach of the Dawn
+{
+    "name": "Malach of the Dawn",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Creature — Angel",
+    "oracleText": "Flying\n{W}{W}{W}: Regenerate this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{W}{W}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                },
+                "descriptionOverride": "{W}{W}{W}: Regenerate this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "24",
+        "rarity": "UNCOMMON",
+        "artist": "Steve Prescott",
+        "flavorText": "\"The sun rises, but the world still feels dark. Pray for the arrival of the malachim—they'll bring Dawn to the world and to our hearts.\"\n—Sister Betje, *Miracles of the Saints*",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/f/6f5df373-5dad-4e33-9e2b-351f1f4bdde4.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Mesa Enchantress
+{
+    "name": "Mesa Enchantress",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Creature — Human Druid",
+    "oracleText": "Whenever you cast an enchantment spell, you may draw a card.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsEnchantment"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "26",
+        "rarity": "RARE",
+        "artist": "Randy Gallegos",
+        "flavorText": "She shepherds mysteries and dust as others would a flock of sheep.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/0/4037d6de-f30b-483c-83a8-9a4e2978f7fc.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Midnight Charm
+{
+    "name": "Midnight Charm",
+    "manaCost": "{B}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Midnight Charm deals 1 damage to target creature and you gain 1 life.\n• Target creature gains first strike until end of turn.\n• Tap target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target"
+                                }
+                            },
+                            {
+                                "type": "GainLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Midnight Charm deals 1 damage to target creature and you gain 1 life"
+                },
+                {
+                    "effect": {
+                        "type": "GrantKeyword",
+                        "keyword": "FIRST_STRIKE",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Target creature gains first strike until end of turn"
+                },
+                {
+                    "effect": {
+                        "type": "TapUntap",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Tap target creature"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "74",
+        "artist": "John Avon",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/3/33f51f18-41af-4a2c-a353-48bebd697599.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Mire Boa
+{
+    "name": "Mire Boa",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Snake",
+    "oracleText": "Swampwalk (This creature can't be blocked as long as defending player controls a Swamp.)\n{G}: Regenerate this creature. (The next time this creature would be destroyed this turn, instead tap it, remove it from combat, and heal all damage on it.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "SWAMPWALK"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                },
+                "descriptionOverride": "{G}: Regenerate this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "135",
+        "artist": "Greg Hildebrandt",
+        "flavorText": "Mire slime courses through its veins in place of blood. No sooner does it bleed than it opens its mouth to replace the loss.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/9/190dffdc-9d85-430d-9aea-b75084104840.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Mirri the Cursed
+{
+    "name": "Mirri the Cursed",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Legendary Creature — Vampire Cat",
+    "oracleText": "Flying, first strike, haste\nWhenever Mirri deals combat damage to a creature, put a +1/+1 counter on Mirri.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "FIRST_STRIKE",
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyCreature"
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "75",
+        "rarity": "RARE",
+        "artist": "Kev Walker",
+        "flavorText": "A hero fails, a martyr falls. Time twists and destinies interchange.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/d/6da09233-952f-4784-995e-0d85d8b56637.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Mycologist
+{
+    "name": "Mycologist",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Druid",
+    "oracleText": "At the beginning of your upkeep, put a spore counter on this creature.\nRemove three spore counters from this creature: Create a 1/1 green Saproling creature token.\nSacrifice a Saproling: You gain 2 life.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "spore",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "At the beginning of your upkeep, put a spore counter on this creature."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomRemoveCounters",
+                        "counterType": "spore",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "self": true
+                    }
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Saproling"
+                    ]
+                },
+                "descriptionOverride": "Remove three spore counters from this creature: Create a 1/1 green Saproling creature token."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "permanent Saproling"
+                    }
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "Sacrifice a Saproling: You gain 2 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "27",
+        "rarity": "UNCOMMON",
+        "artist": "Kev Walker",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/56d8e9fa-e241-4a11-99b8-ffced81eb38b.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Necrotic Sliver
+{
+    "name": "Necrotic Sliver",
+    "manaCost": "{1}{W}{B}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Slivers have \"{3}, Sacrifice this permanent: Destroy target permanent.\"",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": {
+                        "type": "CostComposite",
+                        "costs": [
+                            {
+                                "type": "CostAtomWrapper",
+                                "atom": {
+                                    "type": "AtomMana",
+                                    "cost": "{3}"
+                                }
+                            },
+                            "CostSacrificeSelf"
+                        ]
+                    },
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "permanent"
+                            },
+                            "id": "target"
+                        }
+                    ]
+                },
+                "filter": {
+                    "baseFilter": "permanent Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "159",
+        "rarity": "UNCOMMON",
+        "artist": "Dave Allsop",
+        "flavorText": "Though Volrath is long dead, the slivers have become everything he wanted them to be: mindless instruments of destruction and despair.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/44e18843-06b4-480c-9291-c502542f72b1.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
+}
+
+// Needlepeak Spider
+{
+    "name": "Needlepeak Spider",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Spider",
+    "oracleText": "Reach",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "metadata": {
+        "collectorNumber": "105",
+        "artist": "Dany Orizio",
+        "flavorText": "\"It's a testament to the forests' devastation that giant spiders now make their homes amid Dominaria's barren spires.\"\n—Aznaph, greenseeker",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/a/6a4307e3-3138-4ccb-8aa3-2ffcfeb2948f.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Numot, the Devastator
+{
+    "name": "Numot, the Devastator",
+    "manaCost": "{3}{U}{R}{W}",
+    "typeLine": "Legendary Creature — Dragon",
+    "oracleText": "Flying\nWhenever Numot deals combat damage to a player, you may pay {2}{R}. If you do, destroy up to two target lands.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}{R}"
+                        }
+                    },
+                    "then": {
+                        "type": "ForEach",
+                        "space": "IterationSpace.Targets",
+                        "body": {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "destination": "Graveyard",
+                            "byDestruction": true
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "count": 2,
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "land"
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "160",
+        "rarity": "RARE",
+        "artist": "Dan Dos Santos",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d1bf777a-a232-4504-afbb-13d2f79b4355.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED",
+        "WHITE"
+    ]
+}
+
+// Oros, the Avenger
+{
+    "name": "Oros, the Avenger",
+    "manaCost": "{3}{R}{W}{B}",
+    "typeLine": "Legendary Creature — Dragon",
+    "oracleText": "Flying\nWhenever Oros deals combat damage to a player, you may pay {2}{W}. If you do, Oros deals 3 damage to each nonwhite creature.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}{W}"
+                        }
+                    },
+                    "then": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": {
+                                    "cardPredicates": [
+                                        "IsCreature",
+                                        {
+                                            "type": "NotColor",
+                                            "color": "WHITE"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        "body": {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "target": "Self"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "161",
+        "rarity": "RARE",
+        "artist": "Daren Bader",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c2790685-f6ae-4106-ae4d-fe97954bcb82.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE",
+        "BLACK"
+    ]
+}
+
+// Piracy Charm
+{
+    "name": "Piracy Charm",
+    "manaCost": "{U}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Target creature gains islandwalk until end of turn. (It can't be blocked as long as defending player controls an Island.)\n• Target creature gets +2/-1 until end of turn.\n• Target player discards a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "GrantKeyword",
+                        "keyword": "ISLANDWALK",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Target creature gains islandwalk until end of turn"
+                },
+                {
+                    "effect": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": -1
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Target creature gets +2/-1 until end of turn"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "storeAs": "hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "chooser": "TargetPlayer",
+                                "storeSelected": "discarded",
+                                "prompt": "Choose 1 card to discard"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetPlayer",
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Target player discards a card"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "58",
+        "artist": "John Avon",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/8/586a1d9f-59ae-41a7-8de7-d6c4553ea79e.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Poultice Sliver
+{
+    "name": "Poultice Sliver",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Slivers have \"{2}, {T}: Regenerate target Sliver.\" (The next time that Sliver would be destroyed this turn, instead tap it, remove it from combat, and heal all damage on it.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": {
+                        "type": "CostComposite",
+                        "costs": [
+                            {
+                                "type": "CostAtomWrapper",
+                                "atom": {
+                                    "type": "AtomMana",
+                                    "cost": "{2}"
+                                }
+                            },
+                            "CostTap"
+                        ]
+                    },
+                    "effect": {
+                        "type": "Regenerate",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "permanent Sliver"
+                            },
+                            "id": "target"
+                        }
+                    ]
+                },
+                "filter": {
+                    "baseFilter": "permanent Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "11",
+        "artist": "Randy Gallegos",
+        "flavorText": "\"Its broad claw suggests a chitinous shield, but in fact it conceals glands that secrete a remarkably swift healing agent.\"\n—Rukarumel, field journal",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/3/f3441ae0-4c20-487b-99b8-d6934dfb66ff.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -68,5 +2073,1006 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Psychotrope Thallid
+{
+    "name": "Psychotrope Thallid",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Fungus",
+    "oracleText": "At the beginning of your upkeep, put a spore counter on this creature.\nRemove three spore counters from this creature: Create a 1/1 green Saproling creature token.\n{1}, Sacrifice a Saproling: Draw a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "spore",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "At the beginning of your upkeep, put a spore counter on this creature."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomRemoveCounters",
+                        "counterType": "spore",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "self": true
+                    }
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Saproling"
+                    ]
+                },
+                "descriptionOverride": "Remove three spore counters from this creature: Create a 1/1 green Saproling creature token."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "permanent Saproling"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{1}, Sacrifice a Saproling: Draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "137",
+        "rarity": "UNCOMMON",
+        "artist": "Dave Kendall",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/2/e2803fdc-2ae1-438c-b5b1-559817e85fdb.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Radha, Heir to Keld
+{
+    "name": "Radha, Heir to Keld",
+    "manaCost": "{R}{G}",
+    "typeLine": "Legendary Creature — Elf Warrior",
+    "oracleText": "Whenever Radha attacks, you may add {R}{R}.\n{T}: Add {G}.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "AddMana",
+                        "color": "RED",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    }
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {G}."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "162",
+        "rarity": "RARE",
+        "artist": "Jim Murray",
+        "flavorText": "\"Run home, cur. I've already taken your master's head. Don't make me thrash you with it.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7fc23b2e-9124-4f88-b93e-8bfe90e6eb41.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
+// Rathi Trapper
+{
+    "name": "Rathi Trapper",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Human Rebel Rogue",
+    "oracleText": "{B}, {T}: Tap target creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{B}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ],
+                "descriptionOverride": "{B}, {T}: Tap target creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "90",
+        "artist": "Pete Venters",
+        "flavorText": "Tangling vines, fetid murk, paralyzing poisons, and crawling dead. The swamp is nature's trap waiting to be exploited by unnatural minds.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/2/b2968e01-2d04-4591-98de-24688bb087df.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Reckless Wurm
+{
+    "name": "Reckless Wurm",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Creature — Wurm",
+    "oracleText": "Trample\nMadness {2}{R} (If you discard this card, discard it into exile. When you do, cast it for its madness cost or put it into your graveyard.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "TRAMPLE",
+        "MADNESS"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Madness",
+            "cost": "{2}{R}"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "120",
+        "rarity": "UNCOMMON",
+        "artist": "Greg Staples",
+        "flavorText": "Bred for battle in the Grand Coliseum, these wurms annihilated whole ecosystems when released into the wild.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/7/17d4fd92-33d1-4f14-a4f4-7c7feaa18f93.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Reflex Sliver
+{
+    "name": "Reflex Sliver",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Sliver creatures have haste.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "HASTE",
+                "filter": {
+                    "baseFilter": "creature Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "138",
+        "artist": "Luca Zontini",
+        "flavorText": "\"This sliver comes into the world a perfect predator. It's ready to hunt and devour its first meal within seconds of hatching.\"\n—Rukarumel, field journal",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/0/9017d37d-f47d-405e-95d8-78a8eec8addc.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Revered Dead
+{
+    "name": "Revered Dead",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Spirit Soldier",
+    "oracleText": "{W}: Regenerate this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{W}"
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                },
+                "descriptionOverride": "{W}: Regenerate this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "29",
+        "artist": "Ron Spears",
+        "flavorText": "\"The mists coalesced into silent warriors. We charged them and broke through their lines, only to see them swirl and re-form behind us.\"\n—Golas Mahr, black knight",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/9/f9a78d5c-27f8-4061-be89-0246fb69e752.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Ridged Kusite
+{
+    "name": "Ridged Kusite",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Horror Spellshaper",
+    "oracleText": "{1}{B}, {T}, Discard a card: Target creature gets +1/+0 and gains first strike until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{B}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomDiscard"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FIRST_STRIKE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ],
+                "descriptionOverride": "{1}{B}, {T}, Discard a card: Target creature gets +1/+0 and gains first strike until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "78",
+        "artist": "rk post",
+        "flavorText": "\"It offers but a taste of the power that the shadows have to offer. But even that is a heady wine indeed.\"\n—Ratadrabik of Urborg",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/1/51b27919-6b36-49f2-a6df-d63e5db6de0b.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Saltblast
+{
+    "name": "Saltblast",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy target nonwhite permanent.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsPermanent",
+                            {
+                                "type": "NotColor",
+                                "color": "WHITE"
+                            }
+                        ]
+                    }
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "15",
+        "rarity": "UNCOMMON",
+        "artist": "Paolo Parente",
+        "flavorText": "Dominaria erodes with each passing gust.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/d/edd1833d-64b0-4c9b-8f6b-1cf15c29d473.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Saltfield Recluse
+{
+    "name": "Saltfield Recluse",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Human Rebel Cleric",
+    "oracleText": "{T}: Target creature gets -2/-0 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ],
+                "descriptionOverride": "{T}: Target creature gets -2/-0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "16",
+        "artist": "Brian Despain",
+        "flavorText": "He remembers a past of light and healing. But he lives the bitter present—parching salt, scouring wind, and the withering heat of the desert.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/f/5ffed4e4-0f54-4ab1-8563-ac4be7ae8309.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Seal of Primordium
+{
+    "name": "Seal of Primordium",
+    "manaCost": "{1}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Sacrifice this enchantment: Destroy target artifact or enchantment.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact|enchantment"
+                        },
+                        "id": "target"
+                    }
+                ],
+                "descriptionOverride": "Sacrifice this enchantment: Destroy target artifact or enchantment."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "153",
+        "artist": "Christopher Moeller",
+        "flavorText": "\"I am the simplifier, the root that drags all artifice to earth.\"\n—Seal inscription",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/2/b2ba91ee-1f8e-47db-bb2d-bbb62039db17.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Serra Sphinx
+{
+    "name": "Serra Sphinx",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Creature — Sphinx",
+    "oracleText": "Flying, vigilance",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "metadata": {
+        "collectorNumber": "62",
+        "rarity": "RARE",
+        "artist": "Daren Bader",
+        "flavorText": "Sphinxes drink from the mystic meres of Serra's realm, where their keen eyes watch reflections of what is and what is yet to come.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/9/f9a4d7ac-082b-4f66-9b7f-4d1d0fda78c7.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Shade of Trokair
+{
+    "name": "Shade of Trokair",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Shade",
+    "oracleText": "{W}: This creature gets +1/+1 until end of turn.\nSuspend 3—{W} (Rather than cast this card from your hand, you may pay {W} and exile it with three time counters on it. At the beginning of your upkeep, remove a time counter. When the last is removed, you may cast it without paying its mana cost. It has haste.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "SUSPEND"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Suspend",
+            "cost": "{W}",
+            "timeCounters": 3
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{W}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{W}: This creature gets +1/+1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "18",
+        "artist": "William O'Connor",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/b/2b90d62c-5b3e-4830-bdc9-c3e342fc8389.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Shivan Meteor
+{
+    "name": "Shivan Meteor",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Shivan Meteor deals 13 damage to target creature.\nSuspend 2—{1}{R}{R} (Rather than cast this card from your hand, you may pay {1}{R}{R} and exile it with two time counters on it. At the beginning of your upkeep, remove a time counter. When the last is removed, you may cast it without paying its mana cost.)",
+    "keywords": [
+        "SUSPEND"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Suspend",
+            "cost": "{1}{R}{R}",
+            "timeCounters": 2
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 13
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "106",
+        "rarity": "UNCOMMON",
+        "artist": "Chippy",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/0/108599c3-f641-48f1-af68-8e9a66c6afbc.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Sinew Sliver
+{
+    "name": "Sinew Sliver",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Sliver creatures get +1/+1.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "30",
+        "artist": "Steven Belledin",
+        "flavorText": "As the muscle cords of the creature twitched, Hanna saw an unsettling unanimity in the others' rippling flesh. She didn't know what it meant, but she urged Sisay to keep the ship at a safe distance.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/c/6cd2ed50-cd9a-45d9-a59a-6279be1ab308.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Spitting Sliver
+{
+    "name": "Spitting Sliver",
+    "manaCost": "{4}{B}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Sliver creatures have first strike.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "FIRST_STRIKE",
+                "filter": {
+                    "baseFilter": "creature Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "80",
+        "artist": "Steve Ellis",
+        "flavorText": "\"Our lances' reach had been our saving grace in our fight against the hive. Now even that advantage is taken from us.\"\n—Adom Capashen, Benalish knight",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/d/cd07649e-c7fc-44f7-ab23-0fb935aff8c7.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Sunlance
+{
+    "name": "Sunlance",
+    "manaCost": "{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Sunlance deals 3 damage to target nonwhite creature.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 3
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "NotColor",
+                                "color": "WHITE"
+                            }
+                        ]
+                    }
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "31",
+        "artist": "Volkan Baǵa",
+        "flavorText": "\"It's easy for the innocent to speak of justice. They seldom feel its terrible power.\"\n—Orim, Samite inquisitor",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/6/46144ca5-aa81-4314-a1e5-1716f8565d70.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Synchronous Sliver
+{
+    "name": "Synchronous Sliver",
+    "manaCost": "{4}{U}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Sliver creatures have vigilance.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "VIGILANCE",
+                "filter": {
+                    "baseFilter": "creature Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "artist": "E. M. Gist",
+        "flavorText": "\"With a twitch of its muscles, its timeline forks. Then, just as quickly, its two selves reintegrate. Causality, strangely, seems not to mind.\"\n—Rukarumel, field journal",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/0/c02fa57b-4b7f-46e1-b2b5-6b1a9e9d1643.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Vitaspore Thallid
+{
+    "name": "Vitaspore Thallid",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Fungus",
+    "oracleText": "At the beginning of your upkeep, put a spore counter on this creature.\nRemove three spore counters from this creature: Create a 1/1 green Saproling creature token.\nSacrifice a Saproling: Target creature gains haste until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "spore",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "At the beginning of your upkeep, put a spore counter on this creature."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomRemoveCounters",
+                        "counterType": "spore",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "self": true
+                    }
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Saproling"
+                    ]
+                },
+                "descriptionOverride": "Remove three spore counters from this creature: Create a 1/1 green Saproling creature token."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "permanent Saproling"
+                    }
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ],
+                "descriptionOverride": "Sacrifice a Saproling: Target creature gains haste until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "143",
+        "artist": "Christopher Moeller",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/a/cad14bc9-b90e-48e0-9e72-173874dab6bc.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Vorosh, the Hunter
+{
+    "name": "Vorosh, the Hunter",
+    "manaCost": "{3}{B}{G}{U}",
+    "typeLine": "Legendary Creature — Dragon",
+    "oracleText": "Flying\nWhenever Vorosh deals combat damage to a player, you may pay {2}{G}. If you do, put six +1/+1 counters on Vorosh.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}{G}"
+                        }
+                    },
+                    "then": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 6,
+                        "target": "Self"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "164",
+        "rarity": "RARE",
+        "artist": "Mark Zug",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/a/da4438fe-b11b-4adb-b8dd-b44e12ef6124.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN",
+        "BLUE"
+    ]
+}
+
+// Waning Wurm
+{
+    "name": "Waning Wurm",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Zombie Wurm",
+    "oracleText": "Vanishing 2 (This creature enters with two time counters on it. At the beginning of your upkeep, remove a time counter from it. When the last is removed, sacrifice it.)",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 6
+    },
+    "keywords": [
+        "VANISHING"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "VANISHING",
+            "n": 2
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "83",
+        "rarity": "UNCOMMON",
+        "artist": "Alan Pollack",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/2/b20b0048-f93a-4349-b5d1-201ab0a38d1b.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
