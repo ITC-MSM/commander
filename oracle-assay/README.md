@@ -20,7 +20,25 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is **the mana spend restriction** — "Spend this mana only to cast creature
+The most recent work is **three cards' worth of grammar** — the first band picked not off the tail
+ranking but off a *set's* backlog, which is a different question and gave a different answer. Three
+Innistrad: Crimson Vow cards were implemented by hand, and the grammar was extended until Assay read
+each of them whole: the Doran static, the counted entry, and the quantity anaphor "that many"
+(**+21 whole cards**, 8,618 → 8,639). Two of its findings generalize. **A quantity anaphor is a
+cascade instance, not a count** — "create that many Blood tokens" names the damage the trigger just
+reported, and the corpus prints the same three words after at least six different antecedents, so a
+row in `Tokens.counts` would have round-tripped byte-perfectly and meant a different card on forty
+lines; the answer is `Steps.damageStep`, a third `Cascade` beside the source and filtered-trigger
+ones, and every further antecedent is one line of `Steps` each. And **the printer is chosen by
+domain, not by frequency**: "…for each other creature you control" and "…where X is the number of
+other creatures you control" are one model, so the rule that can print the *whole* of
+`Amounts.count` stays canonical and the new family is an `alternate` — which is what let 21 cards
+start being read without moving a single card off its existing round trip. Its differential half
+found one card bug, and it is the shape this file keeps recording: Squad Captain was an unreviewed
+`mtgish-tooling` render counting `Creature.attacking()`, so it entered as a plain 2/2 on every
+main-phase cast. See [the set-backlog band](#the-set-backlog-band).
+
+Before it came **the mana spend restriction** — "Spend this mana only to cast creature
 spells.", the tail ranking's top family at **116 cards, 64 of them solely, over 118 lines**
 (**+58 whole cards**, 8,748 → 8,806) — and it is the band whose construct turns out **not to be a
 sentence at all**. Every printed instance is a second sentence after an "add …" clause, and what it
@@ -459,6 +477,84 @@ reading all of one means the grammar has no systematic hole in that era rather t
 family. Portal is a deliberately simple set, which is what makes it the right first one — and the
 318 alternate spellings above are mostly its doing, because a card printing "A and B" or "A, then B"
 now reads correctly and prints back as the full-stop form.
+
+## The set-backlog band
+
+Every band before this one was chosen off a ranking — the tail's top row, the family that blocks the
+most cards. This one was chosen off a *set's* backlog: three Innistrad: Crimson Vow cards were
+implemented by hand (Ancient Lumberknot, Hamlet Vanguard, Olivia's Attendants), and the grammar was
+extended until Assay read each of them whole. That is a weaker selection rule and it produced a
+sharper result than its size suggests — **8,618 → 8,639 whole cards for three families**, because a
+card nobody has implemented is a card whose sentences nobody has generalized either.
+
+`just assay-ready VOW` is what makes the pairing honest: it reported **0 Assay-ready** of the set's
+57 missing cards, so every card taken here was one the grammar could not read, and "did the grammar
+learn to read it" is a gate the card work cannot pass by accident.
+
+**The Doran static.** "Each creature you control with toughness greater than its power assigns
+combat damage equal to its toughness rather than its power." — `AssignDamageEqualToToughness`, a
+type the SDK has carried since Bedrock Tortoise and the grammar had never spelled. Two rules and one
+flag, and the flag is why it is two rules rather than a slot: `onlyWhenToughnessGreaterThanPower` is
+a boolean whose two values English spells in two different *places* — set, it is a clause inside the
+noun phrase; clear, it is nothing at all — and a slot has one position. The subject is the one thing
+in the family that is not shared with any other group static: every lord and every combat
+restriction prints its group as a plural ("creatures you control get +1/+1"), and this sentence
+prints a **distributive singular** ("each creature you control … assigns … *its* toughness"), so it
+slots `Filters.filter` where they slot `Filters.plural`. Same `GroupFilter` value, different number
+on the noun. Bark of Doran's attached form is a third row and a `constant`, because the attached
+subject does not merely change the noun — it moves the qualifier to the front of the sentence as an
+"as long as" clause and pronominalizes the subject, leaving no filter to slot.
+
+**The counted entry.** "~ enters with a +1/+1 counter on it for each other Ooze you control." —
+`EntersWithDynamicCounters` over a battlefield tally, 84 corpus lines, and the printed numeral is a
+*rate*: "two … for each" is `Multiply(tally, 2)`, which `Amounts.scaled` already lowered for
+`Statics`' pump family. So the lowering moved to `Amounts` and both families call it; a second copy
+is two halves that agree until someone edits one.
+
+Two things about it transfer. **"Other" belongs to the count**, which is the finding the
+conditional-tapped-entry band recorded for "two or fewer other lands" and twenty lands had written
+as arithmetic: `AggregateBattlefield.excludeSelf`, not a filter predicate — a filter that carried it
+would be printable in every position a filter is, and only a *counted* noun phrase says the word. It
+went into `Amounts.battlefieldCount` as a second layer crossed with `Amounts.scopes`, which is what
+made Stag Beetle and Custodi Soulbinders readable in the same change.
+
+And **the printer is chosen by domain, not by frequency.** Oracle prints both "…for each other
+creature you control" and "…where X is the number of other creatures on the battlefield" for the
+same model. The for-each spelling is the majority over the overlap (roughly 17 lines to 4), and it
+is still the one that yields: `entersWithDynamicCounters`' `defined` row can print the *whole* of
+`Amounts.count` — every zone count, life total and aggregate — while this family reaches only the
+battlefield tallies, so it is registered `alternate` and the cards that print it come back as
+variants. That is the counting band's rule applied unchanged, and the consequence is worth stating:
+21 cards started being read and **not one card moved off its existing round trip**.
+
+**The quantity anaphor.** "Whenever this creature deals damage, create that many Blood tokens." —
+Olivia's Attendants, and the half of this band that is a *scoping* problem rather than a vocabulary
+one. "That many" names the quantity the sentence before it reported, and the corpus prints those
+three words after at least six different antecedents: damage dealt, cards discarded, creatures
+attacking, counters removed, cards milled, permanents sacrificed. The SDK spells each as a different
+`ContextPropertyKey`. So a row in `Tokens.counts` would have had to pick one and would then read the
+other five into a value that evaluates to zero — round-tripping byte-for-byte and meaning a
+different card, on roughly forty lines. The reversible-but-wrong class in one phrase.
+
+The answer is the mechanism `SelfSteps.triggering` already uses for the object anaphor: register the
+clause only where the antecedent can be seen. `Steps.damageStep` is a third `Cascade` beside the
+source and filtered-trigger ones, `Tokens.damageClauses` is what it adds, and the four outgoing
+damage trigger prefixes are its only callers — including a new one, the bare "whenever ~ deals
+damage", which is a fourth event rather than a shorter spelling of the three combat rows. The
+distinction exists at parse time and no remap on the built ability could recover it, which is why it
+is a cascade instance and not a flag; every further antecedent is one line of `Steps` each.
+
+`Cascade` grew a `positionScoped` parameter rather than reusing `anaphora`, because these clauses
+belong in a *later* clause position too — "create that many 1/1 white Bird creature tokens, then put
+a +1/+1 counter on ~" — while the object anaphors deliberately do not, `Continuations` owning that
+position.
+
+**What the differential found.** One card bug, and it is the shape this file keeps recording. Squad
+Captain [M20] was an unreviewed `mtgish-tooling` render whose count was
+`AggregateBattlefield(You, Creature.attacking())` — no `excludeSelf`, and *attacking* rather than
+the printed "each other creature you control". Nothing is attacking during a main phase, so the card
+entered as a plain 2/2 every time it was cast. It was the only card the three families newly made
+comparable that disagreed.
 
 ## The Legions band
 

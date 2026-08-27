@@ -44,6 +44,7 @@ import com.wingedsheep.sdk.scripting.effects.BecomeCreatureEffect
 import com.wingedsheep.sdk.scripting.effects.BecomePreparedEffect
 import com.wingedsheep.sdk.scripting.effects.UnprepareEffect
 import com.wingedsheep.sdk.scripting.effects.BecomeSaddledEffect
+import com.wingedsheep.sdk.scripting.effects.BecomeRenownedEffect
 import com.wingedsheep.sdk.scripting.effects.BecomeSolvedEffect
 import com.wingedsheep.sdk.scripting.effects.EachPermanentBecomesCopyOfTargetEffect
 import com.wingedsheep.sdk.scripting.effects.SetBaseStatsEffect
@@ -5234,6 +5235,13 @@ object Effects {
      */
     fun BecomeSolved(target: EffectTarget = EffectTarget.Self): Effect =
         BecomeSolvedEffect(target)
+
+    /**
+     * Target permanent becomes renowned (CR 702.112b) — the designation half of renown. Sticky
+     * and one-way; see [com.wingedsheep.sdk.scripting.effects.BecomeRenownedEffect].
+     */
+    fun BecomeRenowned(target: EffectTarget = EffectTarget.Self): Effect =
+        BecomeRenownedEffect(target)
 
     /**
      * [target] becomes prepared (Secrets of Strixhaven). The target must be a PREPARE-layout

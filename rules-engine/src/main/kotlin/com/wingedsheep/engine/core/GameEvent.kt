@@ -1171,6 +1171,31 @@ data class CaseSolvedEvent(
 ) : GameEvent
 
 /**
+ * A creature became renowned (CR 702.112b) — its renown trigger resolved with the intervening-`if`
+ * still holding.
+ *
+ * Fires once per permanent: the designation is sticky and renown's intervening-`if` stops an
+ * already-renowned creature from triggering again (CR 702.112c), so there is no "already renowned"
+ * flag to carry.
+ *
+ * Emitted so the log and the client can show the moment a creature is renowned, and so "when this
+ * creature becomes renowned" (Relic Seeker) and "whenever a creature you control becomes renowned"
+ * (Valeron Wardens) payoffs have an event to match.
+ */
+@Serializable
+@SerialName("BecameRenownedEvent")
+data class BecameRenownedEvent(
+    val entityId: EntityId,
+    val entityName: String,
+    /**
+     * The renowned creature's controller as the renown trigger resolved. Carried on the event for
+     * the same reason [CaseSolvedEvent.controllerId] is: a "whenever a creature *you control*
+     * becomes renowned" payoff is matched after the fact.
+     */
+    val controllerId: EntityId
+) : GameEvent
+
+/**
  * An Aura, Equipment, or Fortification became attached to a permanent (CR 603.2e). Emitted only
  * at the moment of attaching — when the attachment moves onto a new host — not when an
  * already-attached state persists, and not on phasing in/out (CR 702.26j). Emitted from every

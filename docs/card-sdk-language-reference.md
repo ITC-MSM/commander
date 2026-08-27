@@ -2405,6 +2405,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   `imageUri =` the Fractal token's Scryfall art).
 - `BecomeArtifactEffect(target, cardTypes = {"ARTIFACT"}, subtypes = emptySet(), colors = emptySet(), loseAllAbilities = true, name?, grantedAbility?, grantedStaticAbilities = [], duration = Permanent)` — the general "becomes a Treasure/Food/Clue/artifact" transform: stacks continuous floating effects on `target` — Layer 3 `SetName` when `name` is set, Layer 4 `SetCardTypes` (replaces *all* card types) + `SetAllSubtypes` (replaces *all* subtypes), Layer 5 color (`emptySet()` = colorless), Layer 6 `RemoveAllAbilities` when `loseAllAbilities` — plus an optional single `grantedAbility` recorded durably in `grantedActivatedAbilities` (so it survives the ability wipe; the enumerators read it after the projected `lostAllAbilities` check). That durable record honours source-keyed durations as well as `Permanent`/`EndOfTurn`: it carries the granting permanent's id, and `EndedDurationExpiryCheck` prunes it the moment a `Duration.WhileSourceOnBattlefield` gate closes, so the granted ability dies with its granter instead of outliving it (**Kitesail Larcenist**: the chosen permanents stop being sacrificeable Treasures the instant Kitesail leaves). `name` renames per CR 612.8 ("loses any names it had and has only the specified name"); only supertypes survive, so LEGENDARY stays but the permanent can now collide with a same-named permanent under the legend rule. `grantedStaticAbilities` is the **static** counterpart to `grantedAbility` — a static ability only does anything if it *projects*, so these are lowered to `ContinuousEffectData` and appended to the permanent's own `ContinuousEffectSourceComponent` (the channel a printed static uses), which is also what exempts them from the wipe: `StateProjector` never suppresses a source's own continuous effects with that source's own `RemoveAllAbilities`. Because that channel is the permanent's component, the grant lives exactly as long as the permanent stays on the battlefield — pair it with `Duration.Permanent`. **The Irencrag**: "you may have this become a legendary Equipment artifact named Everflame, Heroes' Legacy. If you do, it gains equip {3} and \"Equipped creature gets +3/+3\" and loses all other abilities" — `name = "Everflame, Heroes' Legacy"`, `subtypes = {"Equipment"}`, `colors = null` (keep colorless without recolouring), `grantedAbility =` the equip {3} `ActivatedAbility`, `grantedStaticAbilities = listOf(ModifyStats(3, 3))` (whose default `GroupFilter.attachedCreature()` scope makes it the equipped creature's bonus). `Duration.Permanent` ends only when the permanent leaves the battlefield. Differs from `BecomeCreatureEffect` (which *adds* CREATURE + sets P/T): this fully replaces types/subtypes so the result is exactly the named artifact. `cardTypes = null` **keeps** the permanent's card types unchanged (only subtypes/color/abilities are touched) — used when a land "loses all land types and abilities" but stays a land and keeps any other card types (Ultima, Origin of Oblivion: `cardTypes = null, subtypes = emptySet(), colors = null, grantedAbility = {T}: Add {C}, duration = Durations.whileAffectedHasCounter(Counters.BLIGHT)`). `subtypes = null` is the same skip one layer down — it **keeps** the permanent's existing subtypes, as distinct from `emptySet()` which strips them all; reach for it when the transform only renames or grants (**Tenth District Hero**: "it becomes a legendary creature named Mileva, the Stalwart … and it gains \"Other creatures you control have indestructible\"" — `cardTypes = null, subtypes = null, colors = null, loseAllAbilities = false, name = "Mileva, the Stalwart", grantedStaticAbilities = listOf(GrantKeyword(INDESTRUCTIBLE, OtherCreaturesYouControl))`, leaving the Human Detective types the card's *first* ability set). Note that this effect — not `Effects.GrantStaticAbility` — is the route for a runtime static that has to **project**: `GrantStaticAbility` writes to the point-of-use `grantedStaticAbilities` store, which combat/cast checks consult but the layer projector never reads, so a `SetName`, `GrantKeyword`, or `ModifyStats` handed over that way is silently inert. (Vraska, the Silencer: a dead opponent's creature returns as a bare colorless Treasure with the sac-for-mana ability.)
 - `BecomeSaddledEffect(target = Self)` (facade `Effects.BecomeSaddled()`) — target permanent becomes saddled until end of turn (CR 702.171b). The resolving half of a Saddle ability: stamps the transient `SaddledComponent` marker (cleared at end of turn / on leaving the battlefield; not copiable) and emits `BecameSaddledEvent`. No P/T or type change — read the marker with `Conditions.SourceIsSaddled` / `.saddled()`.
+- `BecomeRenownedEffect(target = Self)` (facade `Effects.BecomeRenowned()`) — target permanent gains the **renowned** designation (CR 702.112b), the second half of the renown trigger the engine derives from `Keyword.RENOWN`. Stamps the sticky `RenownedComponent` marker and emits `BecameRenownedEvent` / `ClientEvent.PermanentRenowned`. Like solved it survives cleanup and lasts until the permanent leaves the battlefield, with no inverse effect; not a copiable value, so a copy of a renowned creature is not renowned, and re-renowning is a silent no-op. Read it with `Conditions.SourceIsRenowned` / `.renowned()`. Supplied by the keyword derivation rather than written on a card.
 - `BecomeSolvedEffect(target = Self)` (facade `Effects.BecomeSolved()`) — target permanent gains the **solved** designation (CR 719.3b), the resolving half of a Case's "To solve" trigger. Stamps the sticky `SolvedComponent` marker and emits `CaseSolvedEvent` / `ClientEvent.CaseSolved`. Unlike saddled the marker survives cleanup — it lasts until the permanent leaves the battlefield, and there is no inverse effect. Not a copiable value, so a copy of a solved Case enters unsolved; re-solving is a silent no-op. Read it with `Conditions.SourceIsSolved` / `.solved()`. Authored through `toSolve(condition)` rather than called directly.
 - `BecomePreparedEffect(target = Self)` (facade `Effects.BecomePrepared()`) — target permanent becomes prepared (Secrets of Strixhaven). The target must be a `CardLayout.PREPARE` permanent on the battlefield; becoming prepared creates a castable copy of its prepare spell in exile (shared `PreparationLogic.makePrepared`, the same path used when a `Keyword.PREPARED` creature enters prepared). A creature already prepared, not on the battlefield, or not a preparation card does nothing. This is the *only* way a card that lacks `Keyword.PREPARED` can become prepared — cards that "enter prepared" carry the keyword on a `PREPARE`-layout card instead, and the two are mutually exclusive (see `Keyword.PREPARED`). Used by Leech Collector ("Whenever you gain life for the first time each turn, this creature becomes prepared"), Joined Researchers (end-step trigger), and Emeritus of Truce (an ETB "Then if …" conditional).
 - `UnprepareEffect(target = Self)` (facade `Effects.Unprepare()`) — target permanent **becomes unprepared** (Secrets of Strixhaven), the inverse of `BecomePrepared`. Strips the target's `PreparedComponent` and removes the cast-from-exile permission for its exile prepare-spell copy; the now-orphaned copy is swept by the `PhantomCardCopiesCheck` state-based action (which removes prepare-spell copies whose source is no longer prepared). No-op if the target isn't prepared. Used by Biblioplex Tomekeeper ("Target creature becomes unprepared").
@@ -4435,6 +4436,11 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   doesn't matter who controlled the permanent when the damage landed, or whether it was on the battlefield
   then. Same lifetime and source-relative caveats as its mirror.
 - `.saddled()` — permanent is saddled (CR 702.171b); backed by `StatePredicate.IsSaddled`.
+- `.renowned()` — creature has the **renowned** designation (CR 702.112b); backed by
+  `StatePredicate.IsRenowned` and the engine's `RenownedComponent`. Component-backed and sticky
+  exactly like `.solved()`: it lasts until the permanent leaves the battlefield, there is no
+  "unrenown", and it is not a copiable value. Reads the state renown's own intervening-`if` negates
+  and its payoffs gate on ("as long as this creature is renowned", "if it's renowned").
 - `.solved()` — permanent has the **solved** designation (CR 719.3b); backed by `StatePredicate.IsSolved` and the engine's `SolvedComponent`. Component-backed like `.saddled()` rather than projected like `.suspected()`, and sticky: a Case stays solved until it leaves the battlefield, and there is no "unsolve". Not a copiable value.
 - `.suspected()` — permanent is suspected (CR 701.60a); backed by `StatePredicate.IsSuspected`. Unlike
   saddled it has **no duration** — a suspected permanent stays suspected until it changes zones. The
@@ -5767,6 +5773,14 @@ Triggers.youCastSpell(
   very card that was plotted while it sits face up in exile (Aloe Alchemist). Detected by
   `TriggerDetector.detectPlottedCardTriggers` off the plot special action's `CardPlottedEvent`, since
   the card is never on the battlefield for the index loop to see.
+- `becomesRenowned(filter = Any, binding = SELF)` — a permanent gains the renowned designation
+  (CR 702.112b). SELF = "when this creature becomes renowned" (Relic Seeker); ANY with a filter =
+  "whenever a creature you control becomes renowned" (Valeron Wardens). Backed by
+  `EventPattern.BecameRenownedEvent` + the engine `BecameRenownedEvent`, which carries the renowned
+  creature as the triggering entity and its controller as the triggering player. Fires at most once
+  per permanent object — the designation is sticky and renown's intervening-`if` blocks a repeat —
+  so there is no "first time each turn" axis. This is the *moment it flips*; the standing state is
+  `Conditions.SourceIsRenowned` / `.renowned()`.
 - `becomesSaddled(filter = Any, firstTimeEachTurn = false, binding = SELF)` — OTJ Saddle (CR 702.171b)
   — "whenever this creature becomes saddled". Fires when a Saddle ability resolves on the permanent
   (`BecameSaddledEvent`); the Mount stays on the battlefield while saddled, so it matches in the regular
@@ -8724,7 +8738,20 @@ composite abilities).
   abilities (unlike suspend, which fuses them): a vanishing permanent sits where instant-speed
   counter removal can reach it, and it is sacrificed whenever the last counter leaves, not only on
   an upkeep.
-- `Renown(n)` — first combat damage to a player grants renown counters.
+- `Renown(n)` — **engine-live.** Declare it and nothing else:
+  `keywordAbility(KeywordAbility.renown(1))` (Topan Freeblade). The engine supplies the CR 702.112
+  ability from [`Renown`](../mtg-sdk/src/main/kotlin/com/wingedsheep/sdk/scripting/Renown.kt): a
+  SELF "deals combat damage to a player" trigger whose **intervening-`if`** is
+  `Not(SourceIsRenowned)` and whose effect is `AddCounters(+1/+1, n, Self)` **then**
+  `BecomeRenowned(Self)`, in that order. The `if` is deliberately an intervening-`if` and not a
+  `ConditionalEffect` inside the effect: CR 603.4 tests it both on triggering and on resolution,
+  which is exactly what CR 702.112c's second instance relies on. Derived like fabricate: gated on
+  the **projected** keyword (so "loses all abilities" strips it) while N is read from the printed
+  `KeywordAbility.Numeric`, and each printed instance becomes its own trigger — the first to
+  resolve renowns the creature and the rest find their `if` false, so renown 1 + renown 2 is never
+  a summed renown 3. A *granted* renown (Aragorn, Hornburg Hero) derives nothing today, the same
+  limitation granted vanishing has for its entry counters. Do **not** hand-write the trigger; it
+  would stack with the engine's. Pinned by `RenownKeywordTest`.
 - `Fabricate(n)` — **engine-live.** Declare it and nothing else:
   `keywordAbility(KeywordAbility.fabricate(2))` (Weaponcraft Enthusiast). The engine supplies the
   CR 702.123 ability from
@@ -9723,6 +9750,10 @@ that works in both resolution and static-ability (projection) contexts.
 - `SourceEnteredThisTurn` — source entered the battlefield this turn.
 - `SourceIsSaddled` — source is saddled (CR 702.171b). Gates Mount payoffs on "while saddled" /
   "as long as it's saddled"; evaluates identically at resolution and during projection.
+- `SourceIsRenowned` — source has the renowned designation (CR 702.112b). The gate behind every
+  renown payoff — "as long as this creature is renowned, it has menace" (Goblin Glory Chaser),
+  "if it's renowned" (Consul's Lieutenant, Enshrouding Mist). Wrapped in `Conditions.Not(…)` it is
+  renown's own intervening-`if`, CR 702.112a's "if it isn't renowned".
 - `SourceIsSolved` — source has the solved designation (CR 719.3b). The gate behind every
   "Solved —" ability (CR 702.169); a Case author writes `solvedStaticAbility` /
   `solvedTriggeredAbility` / `solvedActivatedAbility` instead of applying it by hand. Wrapped in

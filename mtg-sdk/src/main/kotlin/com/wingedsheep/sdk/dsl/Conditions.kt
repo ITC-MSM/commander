@@ -1190,6 +1190,17 @@ object Conditions {
     val SourceIsSolved: ConditionInterface =
         SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.solved())
 
+    /**
+     * If this permanent has the renowned designation (CR 702.112b). The gate behind every renown
+     * payoff — "as long as this creature is renowned" (Goblin Glory Chaser, Honored Hierarch),
+     * "if it's renowned" (Consul's Lieutenant, Scab-Clan Berserker).
+     *
+     * Negated by [Not] it is renown's own intervening-`if`: CR 702.112a's "if it isn't renowned"
+     * (see `com.wingedsheep.sdk.scripting.Renown`).
+     */
+    val SourceIsRenowned: ConditionInterface =
+        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.renowned())
+
     /** If this creature is soulbond-paired with another creature (CR 702.95b). */
     val SourceIsPaired: ConditionInterface =
         SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.paired())

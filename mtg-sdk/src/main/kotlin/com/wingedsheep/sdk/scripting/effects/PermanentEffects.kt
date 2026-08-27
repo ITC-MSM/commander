@@ -305,6 +305,30 @@ data class BecomeSolvedEffect(
 }
 
 /**
+ * Target permanent becomes renowned (CR 702.112b) — the designation half of the renown trigger
+ * the engine derives from [com.wingedsheep.sdk.core.Keyword.RENOWN]. Stamps the engine's
+ * `RenownedComponent`, which renown payoffs read back through `Conditions.SourceIsRenowned` /
+ * `StatePredicate.IsRenowned`.
+ *
+ * Sticky and one-way like [BecomeSolvedEffect]: once a permanent becomes renowned it stays
+ * renowned until it leaves the battlefield, and there is no "unrenown". Renowned is neither an
+ * ability nor part of the permanent's copiable values (CR 702.112b), so a copy of a renowned
+ * creature is not itself renowned.
+ *
+ * Defaults to [EffectTarget.Self] because renown always renowns its own source; the [target] is
+ * parameterized anyway so an outside effect could reuse it.
+ *
+ * @property target The permanent to give the renowned designation
+ */
+@SerialName("BecomeRenowned")
+@Serializable
+data class BecomeRenownedEffect(
+    val target: EffectTarget = EffectTarget.Self
+) : Effect {
+    override val description: String = "${target.description} becomes renowned"
+}
+
+/**
  * Make [target] become prepared (Secrets of Strixhaven). The target must be a permanent whose
  * card has the [com.wingedsheep.sdk.model.CardLayout.PREPARE] layout. Becoming prepared creates a
  * copy of its prepare spell in the controller's exile that may be cast (paying that spell's cost);

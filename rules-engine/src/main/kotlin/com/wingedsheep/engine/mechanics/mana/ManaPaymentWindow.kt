@@ -81,7 +81,8 @@ object ManaPaymentWindow {
                     name = source.name,
                     producesColors = source.producesColors,
                     producesColorless = source.producesColorless,
-                    requiresSacrifice = source.requiresSacrifice
+                    requiresSacrifice = source.requiresSacrifice,
+                    manaAmount = source.manaAmount
                 )
             }
         val remaining = remainingAfterFloating(state, playerId, cost)
@@ -296,6 +297,7 @@ object ManaPaymentWindow {
                     producesColors = source.producesColors,
                     producesColorless = source.producesColorless,
                     requiresSacrifice = source.requiresSacrifice,
+                    manaAmount = source.manaAmount,
                     requiresTappingAnotherPermanent = source.tapPermanentsSubCost != null
                 )
             }

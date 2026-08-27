@@ -1,19 +1,15 @@
 import { useMemo } from 'react'
 import { useGameStore } from '@/store/gameStore.ts'
 import { useViewingPlayer } from '@/store/selectors'
-import {
-  applyManaPoolToCost,
-  getRemainingCostSymbols,
-  parseManaCost,
-  totalManaNeeded,
-} from '@/utils/manaCost'
+import { estimatedShortfall, getRemainingCostSymbols, parseManaCost } from '@/utils/manaCost'
 import { ManaSymbol } from './ManaSymbols'
 
 /**
  * Floating HUD bar for the Harmonize creature-tap step. The player may tap one creature
  * (selected directly on the battlefield) to reduce the generic harmonize cost by its power;
- * {X} is already expanded into the displayed cost. Tapping is optional — "Cast" stays
- * enabled whenever the (possibly-reduced) cost is affordable from lands + floating mana.
+ * {X} is already expanded into the displayed cost. Tapping is optional — "Cast" is always
+ * live; the reduced cost shown is the shared `utils/manaCost` estimate and the server, which
+ * validates the tapped creature and the payment, has the final say.
  */
 export function HarmonizeSelector() {
   const harmonizeSelectionState = useGameStore((state) => state.harmonizeSelectionState)
@@ -44,20 +40,14 @@ export function HarmonizeSelector() {
   // Conditional mana counts only where the server judged it eligible for this payment.
   const eligibleRestricted = harmonizeSelectionState?.actionInfo.eligibleRestrictedMana
 
-  const symbolsAfterPool = useMemo(
-    () => applyManaPoolToCost(remainingSymbols, manaPool, eligibleRestricted),
-    [remainingSymbols, manaPool, eligibleRestricted],
-  )
-
   if (!harmonizeSelectionState) return null
 
   const { cardName, selectedCreature, actionInfo } = harmonizeSelectionState
-  const manaNeeded = totalManaNeeded(symbolsAfterPool)
-  const manaFromSources = (actionInfo.availableManaSources ?? []).reduce((sum, s) => {
-    if (s.entityId && s.entityId === selectedCreature) return sum // tapped for harmonize, not mana
-    return sum + (s.manaAmount ?? 1)
-  }, 0)
-  const canAfford = manaNeeded <= manaFromSources
+  // The tapped creature pays with its power, not its mana ability.
+  const shortfall = estimatedShortfall(
+    remainingSymbols, manaPool, eligibleRestricted, actionInfo.availableManaSources,
+    new Set(selectedCreature ? [selectedCreature] : []),
+  )
 
   return (
     <div style={styles.bar}>
@@ -87,14 +77,16 @@ export function HarmonizeSelector() {
           </div>
         </>
       )}
+      {shortfall > 0 && (
+        <span style={styles.shortfall} title="An estimate — the server has the final say">
+          may be {shortfall} short
+        </span>
+      )}
       <span style={styles.divider} />
       <button onClick={cancelHarmonizeSelection} style={styles.cancelButton}>
         Cancel
       </button>
-      <button
-        onClick={canAfford ? confirmHarmonizeSelection : undefined}
-        style={canAfford ? styles.confirmButton : styles.confirmButtonDisabled}
-      >
+      <button onClick={confirmHarmonizeSelection} style={styles.confirmButton}>
         Cast
       </button>
     </div>
@@ -125,6 +117,10 @@ const styles: Record<string, React.CSSProperties> = {
   manaSymbols: { display: 'flex', alignItems: 'center', gap: 3 },
   arrow: { color: '#666', fontSize: 14 },
   freeCast: { color: '#4caf50', fontWeight: 'bold', fontSize: 13 },
+  shortfall: {
+    color: '#e0a83a',
+    fontSize: 12,
+  },
   cancelButton: {
     padding: '6px 14px', fontSize: 13, backgroundColor: '#444', color: '#fff',
     border: 'none', borderRadius: 6, cursor: 'pointer',
@@ -132,9 +128,5 @@ const styles: Record<string, React.CSSProperties> = {
   confirmButton: {
     padding: '6px 14px', fontSize: 13, backgroundColor: '#0066cc', color: '#fff',
     border: 'none', borderRadius: 6, cursor: 'pointer',
-  },
-  confirmButtonDisabled: {
-    padding: '6px 14px', fontSize: 13, backgroundColor: '#333', color: '#666',
-    border: 'none', borderRadius: 6, cursor: 'not-allowed',
   },
 }

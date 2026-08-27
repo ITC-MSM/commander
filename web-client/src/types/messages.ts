@@ -581,6 +581,8 @@ export interface ManaSourceOption {
    * Auto-pay never picks these; manual selection performs the sacrifice explicitly.
    */
   readonly requiresSacrifice?: boolean
+  /** How much mana one activation adds (Gilded Lotus: 3). Absent on older servers — read as 1. */
+  readonly manaAmount?: number
 }
 
 /**
@@ -1240,7 +1242,10 @@ export interface WaitingForOpponentMulliganMessage {
  */
 export interface GameOverMessage {
   readonly type: 'gameOver'
+  /** One representative of the winning side; kept for readers that predate teams. */
   readonly winnerId: EntityId | null
+  /** Every seat that won — the whole winning team in Two-Headed Giant (CR 810.8a). Empty for a draw. */
+  readonly winnerIds?: readonly EntityId[]
   readonly reason: GameOverReason
   readonly message?: string
   readonly gameId?: string

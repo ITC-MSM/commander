@@ -10,6 +10,7 @@ import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.mechanics.mana.ManaSource
 import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.mechanics.mana.TapForGeneric
+import com.wingedsheep.engine.mechanics.mana.projectedColorsOf
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -247,7 +248,9 @@ class CostEnumerationUtils(
             val cardComponent = container.get<CardComponent>() ?: return@mapNotNull null
             if (!projected.isCreature(entityId)) return@mapNotNull null
             if (container.has<TappedComponent>()) return@mapNotNull null
-            ConvokeCreatureData(entityId, cardComponent.name, cardComponent.colors)
+            // Projected colours, so the list offered here is the list `AlternativePaymentHandler`
+            // will accept — a creature turned another colour convokes for that colour.
+            ConvokeCreatureData(entityId, cardComponent.name, projectedColorsOf(projected, entityId))
         }
     }
 

@@ -62,6 +62,7 @@ export function KeywordIcons({
   hexproofFromMulticolored,
   isSuspected,
   isSolved,
+  isRenowned,
   topOffset,
   size,
 }: {
@@ -77,6 +78,8 @@ export function KeywordIcons({
   isSuspected?: boolean
   /** Whether the permanent is a solved Case (CR 719.3b). */
   isSolved?: boolean
+  /** Whether the creature has the renowned designation (CR 702.112b). */
+  isRenowned?: boolean
   /** Override the column's top offset (px) so it can clear the ring-bearer badge in the same corner. */
   topOffset?: number
   size: number
@@ -105,8 +108,9 @@ export function KeywordIcons({
   const hasKeywords = filteredKeywords.length > 0 || displayableFlags.length > 0
   const hasSuspected = isSuspected === true
   const hasSolved = isSolved === true
+  const hasRenowned = isRenowned === true
 
-  if (!hasKeywords && !hasProtections && !hasHexproofFrom && !hasSuspected && !hasSolved) return null
+  if (!hasKeywords && !hasProtections && !hasHexproofFrom && !hasSuspected && !hasSolved && !hasRenowned) return null
 
   return (
     <div style={topOffset === undefined ? styles.keywordIconsContainer : { ...styles.keywordIconsContainer, top: topOffset }}>
@@ -118,6 +122,11 @@ export function KeywordIcons({
       {hasSolved && (
         <div key="solved" style={styles.keywordIconWrapper} title="Solved (its Solved — ability is active)">
           <KeywordGlyph name="SOLVED" size={size} />
+        </div>
+      )}
+      {hasRenowned && (
+        <div key="renowned" style={styles.keywordIconWrapper} title="Renowned (its renown has resolved and can't trigger again)">
+          <KeywordGlyph name="RENOWNED" size={size} />
         </div>
       )}
       {filteredKeywords.map((keyword) => (

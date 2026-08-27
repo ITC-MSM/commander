@@ -166,14 +166,7 @@ export const createPipelineSlice: SliceCreator<PipelineSlice> = (set, get) => ({
     // cost shown to subsequent phases (each tapped permanent pays {1} generic). Mirrors convoke.
     if (result.type === 'tapForGeneric') {
       const originalSymbols = parseManaCostUtil(actionInfo.manaCostString ?? '')
-      const remainingSymbols = [...originalSymbols]
-      for (let i = 0; i < result.tapForGenericPermanents.length; i++) {
-        const gIdx = remainingSymbols.findIndex((s) => /^\d+$/.test(s))
-        if (gIdx < 0) break
-        const val = parseInt(remainingSymbols[gIdx]!, 10)
-        if (val > 1) remainingSymbols[gIdx] = String(val - 1)
-        else remainingSymbols.splice(gIdx, 1)
-      }
+      const remainingSymbols = getRemainingCostSymbols(originalSymbols, result.tapForGenericPermanents.length)
       const modifiedManaCost = remainingSymbols.map((s) => `{${s}}`).join('')
       const trimmedPreview: readonly EntityId[] | undefined =
         actionInfo.autoTapPreview && actionInfo.availableManaSources

@@ -96,6 +96,32 @@ class TeamVsTeamTest : FunSpec({
     // Life: each player has their own total (CR 808.5) — not a shared pool.
     // ---------------------------------------------------------------------------------------------
 
+    test("a randomly chosen first team starts with the seat left of its midpoint, and turn order wraps the table (CR 808.4)") {
+        val result = GameInitializer(registry()).initializeGame(
+            GameConfig(
+                format = Format.TeamVsTeam(),
+                players = (1..4).map { PlayerConfig("Player $it", Deck.of(forest to 40)) },
+                teams = listOf(listOf(0, 1), listOf(2, 3)),
+                startingPlayerIndex = null,
+                skipMulligans = true,
+                seed = 42L,
+            )
+        )
+        val p = result.playerIds
+        val order = result.state.turnOrder
+        val teamA = listOf(p[0], p[1])
+        val teamB = listOf(p[2], p[3])
+        val startTeam = if (order.first() in teamA) teamA else teamB
+        val otherTeam = if (startTeam === teamA) teamB else teamA
+        // Even-sized team: the player to the left of its midpoint (its second seat) goes first …
+        order.first() shouldBe startTeam[1]
+        // … turn order goes to the left through the other team, still seated together …
+        order.subList(1, 3) shouldBe otherTeam
+        // … and comes back round to the starting team's first seat last.
+        order.last() shouldBe startTeam[0]
+        result.state.activePlayerId shouldBe startTeam[1]
+    }
+
     test("each player has their own life total; damaging one teammate doesn't touch the other (CR 808.5)") {
         val (state, p, _) = boot()
         state.lifeTotal(p[0]) shouldBe 20

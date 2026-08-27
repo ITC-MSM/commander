@@ -2,6 +2,7 @@ package com.wingedsheep.assay.grammar
 
 import com.wingedsheep.assay.normalize.Normalizer
 import com.wingedsheep.assay.syntax.Phrase
+import com.wingedsheep.assay.syntax.alternate
 import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.constant
 import com.wingedsheep.assay.syntax.oneOf
@@ -13,6 +14,7 @@ import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.EntersWithCounters
 import com.wingedsheep.sdk.scripting.EntersWithDynamicCounters
 import com.wingedsheep.sdk.scripting.EventPattern
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.ModifyLifeGain
 import com.wingedsheep.sdk.scripting.ReplacementEffect
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
@@ -360,6 +362,120 @@ object Replacements {
     }
 
     /**
+     * "~ enters with a +1/+1 counter on it for each other Ooze you control." — Aeve, Kinsbaile
+     * Borderguard, Éomer; "~ enters with **two** +1/+1 counters on it for each other nontoken Human
+     * you control." — Hamlet Vanguard; "This enchantment enters with a hope counter on it for each
+     * creature you control." — Dawn of a New Age, and eighteen more.
+     *
+     * The third shape of the enters-with count, and the one Oracle spells as a *rate* rather than as
+     * a number: the printed numeral multiplies a battlefield tally, which [Amounts.scaled] lowers
+     * the way [Statics]' pump family already did. It is a family rather than a row of
+     * [entersWithDynamicCounters] because the count is a whole clause with its own two layers, not a
+     * `{n}` — and it cannot slot [Amounts.count], whose surface is "the number of …" and whose
+     * sentences say "equal to" in front of it. "For each" is the other half of the same model with
+     * a different English shape, exactly as [Amounts.drawForEach] is to [Amounts.count].
+     *
+     * ### "Other" is a row, and it belongs to the count
+     *
+     * `AggregateBattlefield.excludeSelf` is where the SDK puts it — not a filter predicate, which is
+     * the finding the conditional-tapped-entry band recorded for "two or fewer **other** lands" and
+     * the same one twenty goldens had written as arithmetic. So the word is a row of this family
+     * crossed with [Amounts.scopes], not a layer inside [Filters]: a filter that carried it would be
+     * printable in every position a filter is, and only a *counted* noun phrase says "other".
+     * Written inline here as the first family that needs it; when a second for-each family wants the
+     * word it becomes a published layer beside [Amounts.scopes], which is what happened to the scope
+     * clause itself.
+     *
+     * ### Why the singular row is not the counted row with n = 1
+     *
+     * [Amounts.scaled] maps a multiplier of 1 to the bare tally, so "a counter … for each X" and a
+     * hypothetical "one counter … for each X" would denote the same value — and English prints only
+     * the first. [Cardinals.word] therefore starts at two, as it does everywhere else in this
+     * grammar, and the article is its own row with no slot in it.
+     */
+    private fun entersWithCountersPerCount(
+        scope: Amounts.Scope,
+        other: Boolean,
+        counted: Boolean,
+    ): Phrase<ReplacementEffect> {
+        // The singular row spells no article: [Primitives.singularCounterKind] carries it, because
+        // English derives it from the counter's own name ("a +1/+1 counter", "an omen counter") —
+        // the same split [entersWithCounters]' two rows take.
+        val article = if (counted) "{n} " else ""
+        val noun = if (counted) "counters" else "counter"
+        val otherWord = if (other) "other " else ""
+
+        fun tallyOf(filter: GameObjectFilter) =
+            DynamicAmount.AggregateBattlefield(scope.player, filter, excludeSelf = other)
+
+        fun effectFor(kind: String, filter: GameObjectFilter, multiplier: Int): ReplacementEffect =
+            EntersWithDynamicCounters(
+                counterType = Primitives.counterFilter(kind),
+                count = Amounts.scaled(tallyOf(filter), multiplier),
+            )
+
+        return phrase(
+            "{self} enters with $article{kind} $noun on it for each $otherWord{counted}${scope.surface}.",
+            name = "enters with counters per ${if (other) "other " else ""}${scope.where}" +
+                if (counted) ", several each" else "",
+        ) {
+            slot("self", Primitives.self)
+            slot("kind", if (counted) Primitives.counterKind else Primitives.singularCounterKind)
+            if (counted) slot("n", Cardinals.word)
+            slot("counted", Filters.filter)
+            build { bindings ->
+                val filter = scope.narrowing(bindings.value("counted")) ?: return@build null
+                effectFor(bindings.value("kind"), filter, if (counted) bindings.int("n") else 1)
+            }
+            match { effect ->
+                val enters = effect as? EntersWithDynamicCounters ?: return@match null
+                val kind = Primitives.counterKindOf(enters.counterType) ?: return@match null
+                val tally = tallyIn(enters.count) ?: return@match null
+                if (tally != tallyOf(tally.filter)) return@match null
+                val multiplier = Amounts.multiplierOf(enters.count, tally) ?: return@match null
+                // The article row spells 1 and the counted row spells two and up, so exactly one of
+                // them answers for any value and printing is decided by the model.
+                if (counted != (multiplier >= 2 && Cardinals.spellable(multiplier))) return@match null
+                if (effect != effectFor(kind, tally.filter, multiplier)) return@match null
+                val narrowed = scope.narrowing(tally.filter) ?: return@match null
+                bind("self" to Unit, "kind" to kind, "n" to multiplier, "counted" to narrowed)
+            }
+        }
+    }
+
+    /** The battlefield tally inside a scaled count, or null when the amount is not one at all. */
+    private fun tallyIn(amount: DynamicAmount): DynamicAmount.AggregateBattlefield? = when (amount) {
+        is DynamicAmount.AggregateBattlefield -> amount
+        is DynamicAmount.Multiply -> amount.amount as? DynamicAmount.AggregateBattlefield
+        else -> null
+    }
+
+    /**
+     * The family: every [Amounts.scopes] row, crossed with "other", crossed with the article and the
+     * numeral — and **every row an alternate spelling**.
+     *
+     * Oracle prints both "~ enters with a +1/+1 counter on it for each other creature you control."
+     * (Squad Captain) and "~ enters with X +1/+1 counters on it, where X is the number of other
+     * creatures on the battlefield." (Stag Beetle, Custodi Soulbinders) for the *same* model, so one
+     * of the two rules has to be the printer. [entersWithDynamicCounters]' `defined` row is the one
+     * that can print the **whole** domain — every zone count, life total and battlefield aggregate
+     * [Amounts.count] spells — while this family reaches only the battlefield tallies, so it parses
+     * and never prints and the cards that spell it come back as variants.
+     *
+     * That is the counting band's rule applied unchanged ("check which rule can print the whole
+     * domain before deciding which is canonical"), and it is why this family raises the number of
+     * cards Assay *reads* without moving a single card off its existing round trip.
+     */
+    private val entersWithCountersPerCount: List<Phrase<ReplacementEffect>> =
+        listOf(false, true).flatMap { other ->
+            listOf(false, true).flatMap { counted ->
+                Amounts.scopes.map { scope ->
+                    alternate(entersWithCountersPerCount(scope, other, counted))
+                }
+            }
+        }
+
+    /**
      * "If you would gain life, you gain that much life plus 1 instead." — Heron of Hope, Leyline of
      * Hope, Angel of Vitality; and "…you gain twice that much life instead." — Alhammarret's
      * Archive, the Wind Crystal.
@@ -433,6 +549,7 @@ object Replacements {
             entersWithChosenNumber,
             entersWithLookedUpCardName,
         ) + choiceNouns.map { (noun, value) -> entersWithChoice(noun, value) } +
-            entersWithCounters + entersWithDynamicCounters + modifyLifeGain,
+            entersWithCounters + entersWithDynamicCounters + entersWithCountersPerCount +
+            modifyLifeGain,
     )
 }

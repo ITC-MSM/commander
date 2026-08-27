@@ -75,27 +75,38 @@ export function computeCoverage(
     }
   }
 
-  // Pass 2 — selected sources against the coloured pips still open.
+  // Pass 2 — selected sources against the coloured pips still open. A source that adds more
+  // than one mana (Gilded Lotus: "three mana of any one color") covers up to that many pips of
+  // one colour it produces — the colour that pays the most — and carries the rest into the
+  // generic pass. `manaAmount` is the server's number, the same one the cast path's
+  // `ManaSourceInfo` sends; without it a Lotus counted as one pip and Pay stayed dead on a cost
+  // the server would have accepted.
   const sourceById = new Map(availableSources.map((s) => [s.entityId, s]))
-  const flexibleSources: ManaSourceOption[] = []
+  let spareFromSources = 0
+  const openPipsPayableBy = (color: string) =>
+    pips.filter((pip) => !pip.floating && !pip.pending && pipColorOptions(pip.symbol).includes(color))
   for (const id of selectedIds) {
     const source = sourceById.get(id)
     if (!source) continue
+    const amount = source.manaAmount ?? 1
     const colors = (source.producesColors ?? []).map(toPip)
-    const match = pips.find(
-      (pip) =>
-        !pip.floating &&
-        !pip.pending &&
-        pipColorOptions(pip.symbol).some((option) => colors.includes(option)),
-    )
-    if (match) match.pending = true
-    else flexibleSources.push(source)
+    let best: { color: string; count: number } | undefined
+    for (const color of colors) {
+      const count = Math.min(amount, openPipsPayableBy(color).length)
+      if (count > 0 && (!best || count > best.count)) best = { color, count }
+    }
+    if (best) {
+      for (const pip of openPipsPayableBy(best.color).slice(0, best.count)) pip.pending = true
+      spareFromSources += amount - best.count
+    } else {
+      spareFromSources += amount
+    }
   }
 
-  // Pass 3 — whatever is left (leftover floating, sources that matched no coloured pip, Waterbend
-  // taps) pays generic pips, cheapest first.
+  // Pass 3 — whatever is left (leftover floating, mana from sources that matched no coloured pip
+  // or had some to spare, Waterbend taps) pays generic pips, cheapest first.
   let leftoverFloating = Object.values(floatingByColor).reduce((a, b) => a + b, 0)
-  let leftoverPending = flexibleSources.length + extraGeneric
+  let leftoverPending = spareFromSources + extraGeneric
   for (const pip of pips) {
     if (pip.floating || pip.pending) continue
     const amount = pipGenericAmount(pip.symbol)

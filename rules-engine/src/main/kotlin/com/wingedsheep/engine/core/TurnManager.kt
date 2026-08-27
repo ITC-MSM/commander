@@ -205,22 +205,26 @@ class TurnManager(
         // ruling, a scheduled hijack waits through any skipped turns and engages on the next turn
         // the affected player actually takes. Combat-phase-scoped hijacks (Secret of Bloodbending)
         // are ignored here — they engage at beginning of combat (see advanceStep) instead.
-        val scheduledHijack = newState.getEntity(playerId)?.get<PlayerTurnHijackedComponent>()
-        if (scheduledHijack != null &&
-            scheduledHijack.state == PlayerTurnHijackedComponent.HijackState.SCHEDULED &&
-            scheduledHijack.scope == HijackScope.NextTurn
-        ) {
-            newState = newState.updateEntity(playerId) { container ->
-                container.with(
-                    scheduledHijack.copy(state = PlayerTurnHijackedComponent.HijackState.ACTIVE)
+        // The turn is the whole active team's in a shared team turn (CR 805.4), and a hijack
+        // controls the team (CR 805.8), so every member's scheduled hijack engages — the second
+        // head is never `playerId` here, and reading only that seat left them un-hijacked.
+        for (member in newState.sharedTurnTeam(playerId)) {
+            val scheduledHijack = newState.getEntity(member)?.get<PlayerTurnHijackedComponent>() ?: continue
+            if (scheduledHijack.state == PlayerTurnHijackedComponent.HijackState.SCHEDULED &&
+                scheduledHijack.scope == HijackScope.NextTurn
+            ) {
+                newState = newState.updateEntity(member) { container ->
+                    container.with(
+                        scheduledHijack.copy(state = PlayerTurnHijackedComponent.HijackState.ACTIVE)
+                    )
+                }
+                events += TurnHijackedEvent(
+                    controllerId = scheduledHijack.controllerId,
+                    hijackedPlayerId = member,
+                    sourceId = member,
+                    sourceName = "Hijack engaged"
                 )
             }
-            events += TurnHijackedEvent(
-                controllerId = scheduledHijack.controllerId,
-                hijackedPlayerId = playerId,
-                sourceId = playerId,
-                sourceName = "Hijack engaged"
-            )
         }
 
         return ExecutionResult.success(newState, events)
@@ -313,10 +317,16 @@ class TurnManager(
      * `COMBAT_PHASE` skips all five combat steps one after another as this is consulted per step,
      * and `MAIN_PHASE` skips both main phases (CR 505.1).
      */
-    private fun skipsTurnPart(state: GameState, step: Step, playerId: EntityId): Boolean {
-        val parts = state.getEntity(playerId)?.get<SkippedTurnPartsComponent>()?.parts ?: return false
-        return parts.any { it.covers(step) }
-    }
+    /**
+     * Whether [playerId]'s turn skips [step]. CR 805.8 — in a shared team turn a step one teammate
+     * is made to skip is skipped by the team, so the marker is read off every member of the active
+     * team; outside shared team turns [GameState.sharedTurnTeam] is just the player.
+     */
+    private fun skipsTurnPart(state: GameState, step: Step, playerId: EntityId): Boolean =
+        state.sharedTurnTeam(playerId).any { member ->
+            state.getEntity(member)?.get<SkippedTurnPartsComponent>()?.parts
+                ?.any { it.covers(step) } == true
+        }
 
     private fun advanceStepFromEndedStep(incomingState: GameState): ExecutionResult {
         val currentStep = incomingState.step
@@ -329,12 +339,15 @@ class TurnManager(
         // combat phase follows — "their next combat phase" is a single phase, never the extra ones.
         var state = incomingState
         if (currentStep == Step.END_COMBAT) {
-            val combatHijack = state.getEntity(activePlayer)?.get<PlayerTurnHijackedComponent>()
-            if (combatHijack != null &&
-                combatHijack.state == PlayerTurnHijackedComponent.HijackState.ACTIVE &&
-                combatHijack.scope == HijackScope.NextCombatPhase
-            ) {
-                state = state.updateEntity(activePlayer) { it.without<PlayerTurnHijackedComponent>() }
+            // Every member of the active team — a combat hijack controls the team (CR 805.8).
+            for (member in state.sharedTurnTeam(activePlayer)) {
+                val combatHijack = state.getEntity(member)?.get<PlayerTurnHijackedComponent>()
+                if (combatHijack != null &&
+                    combatHijack.state == PlayerTurnHijackedComponent.HijackState.ACTIVE &&
+                    combatHijack.scope == HijackScope.NextCombatPhase
+                ) {
+                    state = state.updateEntity(member) { it.without<PlayerTurnHijackedComponent>() }
+                }
             }
         }
 
@@ -624,24 +637,26 @@ class TurnManager(
                 // active player: their combat phase is now beginning, so input authority moves to
                 // the hijacker for the duration of this phase. A hijack scheduled while combat was
                 // skipped stays SCHEDULED and waits for a combat phase they actually reach here.
-                val combatHijack = newState.getEntity(activePlayer)?.get<PlayerTurnHijackedComponent>()
-                if (combatHijack != null &&
-                    combatHijack.state == PlayerTurnHijackedComponent.HijackState.SCHEDULED &&
-                    combatHijack.scope == HijackScope.NextCombatPhase
-                ) {
-                    newState = newState.updateEntity(activePlayer) { container ->
-                        container.with(
-                            combatHijack.copy(state = PlayerTurnHijackedComponent.HijackState.ACTIVE)
+                // Every member of the active team — a combat hijack controls the team (CR 805.8).
+                for (member in newState.sharedTurnTeam(activePlayer)) {
+                    val combatHijack = newState.getEntity(member)?.get<PlayerTurnHijackedComponent>() ?: continue
+                    if (combatHijack.state == PlayerTurnHijackedComponent.HijackState.SCHEDULED &&
+                        combatHijack.scope == HijackScope.NextCombatPhase
+                    ) {
+                        newState = newState.updateEntity(member) { container ->
+                            container.with(
+                                combatHijack.copy(state = PlayerTurnHijackedComponent.HijackState.ACTIVE)
+                            )
+                        }
+                        events.add(
+                            TurnHijackedEvent(
+                                controllerId = combatHijack.controllerId,
+                                hijackedPlayerId = member,
+                                sourceId = member,
+                                sourceName = "Combat hijack engaged"
+                            )
                         )
                     }
-                    events.add(
-                        TurnHijackedEvent(
-                            controllerId = combatHijack.controllerId,
-                            hijackedPlayerId = activePlayer,
-                            sourceId = activePlayer,
-                            sourceName = "Combat hijack engaged"
-                        )
-                    )
                 }
                 newState = newState.withPriority(activePlayer)
             }
@@ -715,11 +730,14 @@ class TurnManager(
                 // an attacking creature only during the end of combat step (e.g. Desert) still
                 // have legal targets.
 
-                // Remove MustAttackPlayerComponent after combat (Taunt effect is consumed)
-                val mustAttack = newState.getEntity(activePlayer)?.get<MustAttackPlayerComponent>()
-                if (mustAttack != null && mustAttack.activeThisTurn) {
-                    newState = newState.updateEntity(activePlayer) { container ->
-                        container.without<MustAttackPlayerComponent>()
+                // Remove MustAttackPlayerComponent after combat (Taunt effect is consumed). Read
+                // off every member of the active team: a shared team turn is either head's turn.
+                for (member in newState.sharedTurnTeam(activePlayer)) {
+                    val mustAttack = newState.getEntity(member)?.get<MustAttackPlayerComponent>()
+                    if (mustAttack != null && mustAttack.activeThisTurn) {
+                        newState = newState.updateEntity(member) { container ->
+                            container.without<MustAttackPlayerComponent>()
+                        }
                     }
                 }
 
@@ -731,14 +749,26 @@ class TurnManager(
                 // alongside the paired "return it at the beginning of the next end step" triggers.
                 newState = cleanupPhaseManager.performNextEndStepExpiry(newState)
 
-                val loseComponent = newState.getEntity(activePlayer)?.get<LoseAtEndStepComponent>()
-                if (loseComponent != null) {
+                // "At the beginning of the next end step, you lose the game" (Final Fortune) is
+                // keyed to whoever took the extra turn. In a shared team turn (CR 805.8) that is
+                // either head, so every member of the active team is checked — not just the seat
+                // that happens to be [activePlayer]; outside shared team turns the team is the
+                // active player alone.
+                for (member in newState.sharedTurnTeam(activePlayer)) {
+                    val loseComponent = newState.getEntity(member)?.get<LoseAtEndStepComponent>() ?: continue
                     if (loseComponent.turnsUntilLoss <= 0) {
-                        newState = newState.updateEntity(activePlayer) { container ->
+                        // "You can't lose the game" (Platinum Angel — CR 104.3, and team-wide in
+                        // 2HG per CR 810.8a) stops this loss like every other: the delayed
+                        // trigger resolves and does nothing, so the marker is still consumed.
+                        if (com.wingedsheep.engine.mechanics.sba.player.playerCantLoseGame(newState, member)) {
+                            newState = newState.updateEntity(member) { it.without<LoseAtEndStepComponent>() }
+                            continue
+                        }
+                        newState = newState.updateEntity(member) { container ->
                             container.without<LoseAtEndStepComponent>()
                                 .with(PlayerLostComponent(LossReason.CARD_EFFECT))
                         }
-                        events.add(PlayerLostEvent(activePlayer, GameEndReason.CARD_EFFECT, loseComponent.message))
+                        events.add(PlayerLostEvent(member, GameEndReason.CARD_EFFECT, loseComponent.message))
                         val sbaResult = sbaChecker.checkAndApply(newState)
                         if (sbaResult.isPaused) {
                             return ExecutionResult.paused(
@@ -754,7 +784,7 @@ class TurnManager(
                             return ExecutionResult.success(newState, events)
                         }
                     } else {
-                        newState = newState.updateEntity(activePlayer) { container ->
+                        newState = newState.updateEntity(member) { container ->
                             container.without<LoseAtEndStepComponent>()
                                 .with(LoseAtEndStepComponent(loseComponent.turnsUntilLoss - 1, loseComponent.message))
                         }
@@ -817,6 +847,11 @@ class TurnManager(
             nextPlayer = cleanedState.getNextTeam(nextPlayer)
         }
 
+        // CR 800.4m — a departed player's "until your next turn" effects last until that turn
+        // would have begun. Their turn is skipped (800.4k), and this is the moment it would have
+        // started: the seat walk from the finished turn to the next one passes them over.
+        cleanedState = expireEffectsOfDepartedSeatsWhoseTurnWouldBeginNow(cleanedState, currentPlayer, nextPlayer)
+
         // Start the new turn (sets step to UNTAP with no priority)
         val turnResult = startTurn(cleanedState, nextPlayer)
         if (!turnResult.isSuccess) return turnResult
@@ -849,6 +884,59 @@ class TurnManager(
             advanceResult.newState,
             turnResult.events + untapResult.events + goadEvents + advanceResult.events
         )
+    }
+
+    /**
+     * CR 800.4m: when the turn passes from [from]'s team to [to]'s team, every player who has left
+     * the game and sits between them in seat order — plus any departed member of [to]'s own team,
+     * whose shared turn is beginning (CR 805.4) — is a player whose next turn "would have begun"
+     * right now. Their "until your next turn" / "until your next upkeep" / "until the end of your
+     * next turn" effects, their goads and their may-play permissions end here, the same hooks a
+     * living player's untap step runs for them. Nothing to do while nobody has left.
+     */
+    private fun expireEffectsOfDepartedSeatsWhoseTurnWouldBeginNow(
+        state: GameState,
+        from: EntityId,
+        to: EntityId
+    ): GameState {
+        val order = state.turnOrder
+        val departed = order.filter { state.getEntity(it)?.has<PlayerLostComponent>() == true }
+        if (departed.isEmpty()) return state
+
+        val fromTeam = state.teamOf(from).toHashSet()
+        val toTeam = state.teamOf(to).toHashSet()
+        val startIdx = order.indexOf(from)
+        if (startIdx < 0) return state
+        val passedOver = mutableListOf<EntityId>()
+        // Walk the seats after the finished team until the next team is reached.
+        for (step in 1 until order.size) {
+            val seat = order[(startIdx + step) % order.size]
+            if (seat in fromTeam) continue
+            if (seat in toTeam) break
+            if (seat in departed) passedOver += seat
+        }
+        // A departed member of the team now taking its turn: their turn is beginning too.
+        passedOver += toTeam.filter { it in departed && it !in fromTeam }
+
+        var s = state
+        for (leaver in passedOver.distinct()) {
+            s = cleanupPhaseManager.expireUntilYourNextTurnEffects(s, leaver)
+            s = cleanupPhaseManager.expireUntilYourNextUpkeepEffects(s, leaver)
+            s = cleanupPhaseManager.expireGoadedDesignationFor(s, leaver).first
+            // "Until the end of your next turn" is keyed to a turn the leaver will never take
+            // (a turn-number floor plus a controller guard); CR 800.4m ends it here as well.
+            s = s.copy(
+                floatingEffects = s.floatingEffects.filterNot { fe ->
+                    fe.duration is com.wingedsheep.sdk.scripting.Duration.EndOfYourNextTurn &&
+                        fe.controllerId == leaver
+                },
+                mayPlayPermissions = s.mayPlayPermissions.filterNot { permission ->
+                    !permission.permanent && permission.expiresAfterTurn != null &&
+                        (permission.expiryControllerId ?: permission.controllerId) == leaver
+                }
+            )
+        }
+        return s
     }
 
     /**

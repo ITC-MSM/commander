@@ -1,49 +1,8 @@
 import { useMemo } from 'react'
 import { useGameStore } from '@/store/gameStore.ts'
 import { useViewingPlayer } from '@/store/selectors'
-import { applyManaPoolToCost, totalManaNeeded } from '@/utils/manaCost'
+import { estimatedShortfall, getRemainingCostSymbols, parseManaCost } from '@/utils/manaCost'
 import { ManaSymbol } from './ManaSymbols'
-
-/**
- * Parse a mana cost string into individual symbols. e.g. "{2}{W}" -> ["2", "W"].
- */
-function parseManaCost(manaCost: string): string[] {
-  const symbols: string[] = []
-  const regex = /\{([^}]+)\}/g
-  let match
-  while ((match = regex.exec(manaCost)) !== null) {
-    symbols.push(match[1]!)
-  }
-  return symbols
-}
-
-/**
- * These payments pay only generic mana — each tapped permanent removes {1} of generic.
- */
-function reduceGenericBy(symbols: string[], count: number): string[] {
-  const remaining = [...symbols]
-  for (let i = 0; i < count; i++) {
-    const idx = remaining.findIndex((s) => /^\d+$/.test(s))
-    if (idx < 0) break
-    const value = parseInt(remaining[idx]!, 10)
-    if (value > 1) remaining[idx] = String(value - 1)
-    else remaining.splice(idx, 1)
-  }
-  return remaining
-}
-
-function totalManaAvailable(
-  sources: readonly { entityId?: string; manaAmount?: number }[] | undefined | null,
-  excludedIds: ReadonlySet<string> = new Set(),
-): number {
-  if (!sources) return 0
-  let total = 0
-  for (const s of sources) {
-    if (s.entityId && excludedIds.has(s.entityId)) continue
-    total += s.manaAmount ?? 1
-  }
-  return total
-}
 
 /**
  * Compact floating HUD bar for a **tap-for-generic** payment — improvise (CR 702.126) or a
@@ -52,6 +11,9 @@ function totalManaAvailable(
  * which are eligible: artifacts for improvise, artifacts or creatures for waterbend); this bar
  * shows progress and confirm/cancel. Confirming with nothing selected pays the cost entirely with
  * mana, which is legal for both — the taps are always optional ("you *may* tap").
+ *
+ * The cost readout is the shared `utils/manaCost` estimate and never disables Confirm: the server
+ * validates every tapped permanent and the payment itself, and says why when it declines.
  */
 export function TapForGenericSelector() {
   const tapForGenericSelectionState = useGameStore((state) => state.tapForGenericSelectionState)
@@ -67,16 +29,11 @@ export function TapForGenericSelector() {
 
   const remainingSymbols = useMemo(() => {
     if (!tapForGenericSelectionState) return []
-    return reduceGenericBy(originalSymbols, tapForGenericSelectionState.selectedPermanents.length)
+    return getRemainingCostSymbols(originalSymbols, tapForGenericSelectionState.selectedPermanents.length)
   }, [originalSymbols, tapForGenericSelectionState?.selectedPermanents])
 
   // Conditional mana counts only where the server judged it eligible for this payment.
   const eligibleRestricted = tapForGenericSelectionState?.actionInfo.eligibleRestrictedMana
-
-  const symbolsAfterPool = useMemo(
-    () => applyManaPoolToCost(remainingSymbols, manaPool, eligibleRestricted),
-    [remainingSymbols, manaPool, eligibleRestricted],
-  )
 
   const tappedIds = useMemo(
     () => new Set(tapForGenericSelectionState?.selectedPermanents ?? []),
@@ -87,9 +44,9 @@ export function TapForGenericSelector() {
 
   const { cardName, selectedPermanents, actionInfo, maxTaps, label } = tapForGenericSelectionState
 
-  const manaNeeded = totalManaNeeded(symbolsAfterPool)
-  const manaFromSources = totalManaAvailable(actionInfo.availableManaSources, tappedIds)
-  const canAfford = manaNeeded <= manaFromSources
+  const shortfall = estimatedShortfall(
+    remainingSymbols, manaPool, eligibleRestricted, actionInfo.availableManaSources, tappedIds,
+  )
 
   return (
     <div style={styles.bar}>
@@ -120,14 +77,16 @@ export function TapForGenericSelector() {
         )}
       </div>
       <span style={styles.count}>({selectedPermanents.length} tapped)</span>
+      {shortfall > 0 && (
+        <span style={styles.shortfall} title="An estimate — the server has the final say">
+          may be {shortfall} short
+        </span>
+      )}
       <span style={styles.divider} />
       <button onClick={cancelTapForGenericSelection} style={styles.cancelButton}>
         Cancel
       </button>
-      <button
-        onClick={canAfford ? confirmTapForGenericSelection : undefined}
-        style={canAfford ? styles.confirmButton : styles.confirmButtonDisabled}
-      >
+      <button onClick={confirmTapForGenericSelection} style={styles.confirmButton}>
         Confirm
       </button>
     </div>
@@ -158,6 +117,10 @@ const styles: Record<string, React.CSSProperties> = {
   arrow: { color: '#668', fontSize: 14 },
   freeCast: { color: '#4caf50', fontWeight: 'bold', fontSize: 13 },
   count: { color: '#668', fontSize: 12 },
+  shortfall: {
+    color: '#e0a83a',
+    fontSize: 12,
+  },
   cancelButton: {
     padding: '6px 14px', fontSize: 13, backgroundColor: '#444', color: '#fff',
     border: 'none', borderRadius: 6, cursor: 'pointer',
@@ -165,9 +128,5 @@ const styles: Record<string, React.CSSProperties> = {
   confirmButton: {
     padding: '6px 14px', fontSize: 13, backgroundColor: '#0088cc', color: '#fff',
     border: 'none', borderRadius: 6, cursor: 'pointer',
-  },
-  confirmButtonDisabled: {
-    padding: '6px 14px', fontSize: 13, backgroundColor: '#333', color: '#666',
-    border: 'none', borderRadius: 6, cursor: 'not-allowed',
   },
 }

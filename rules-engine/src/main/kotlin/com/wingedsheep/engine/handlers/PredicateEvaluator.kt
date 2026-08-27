@@ -22,6 +22,7 @@ import com.wingedsheep.engine.state.components.battlefield.WasDealtDamageThisTur
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.battlefield.SaddledComponent
 import com.wingedsheep.engine.state.components.battlefield.SolvedComponent
+import com.wingedsheep.engine.state.components.battlefield.RenownedComponent
 import com.wingedsheep.engine.state.components.combat.AttackedThisCombatComponent
 import com.wingedsheep.engine.state.components.combat.AttackersDeclaredThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
@@ -1813,6 +1814,9 @@ class PredicateEvaluator {
             // Solved marker — set by BecomeSolvedExecutor when a Case's "To solve" trigger
             // resolves (CR 719.3b). Sticky until the permanent leaves the battlefield.
             StatePredicate.IsSolved -> container.has<SolvedComponent>()
+            // Renowned marker — set by BecomeRenownedExecutor when a renown trigger resolves
+            // (CR 702.112b). Sticky until the permanent leaves the battlefield.
+            StatePredicate.IsRenowned -> container.has<RenownedComponent>()
 
             // Suspected designation (CR 701.60a) — a Layer-ability floating effect, so the answer
             // lives in the projection rather than on a component. Unlike saddled it never expires.
