@@ -11,6 +11,11 @@ interface StepStripProps {
   hasPriority: boolean
   priorityMode: PriorityMode
   activePlayerName?: string | undefined
+  /**
+   * Multiplayer: where the viewer sits in the turn order relative to the active player —
+   * "You're next" / "You in 2". Rendered after the status text; absent on your own turn.
+   */
+  turnQueueHint?: string | undefined
   /** Which side the active player sits on relative to the board: 'top' = opponent, 'bottom' = viewing player. */
   activeSide: 'top' | 'bottom'
   stopOverrides: { myTurnStops: Step[]; opponentTurnStops: Step[] }
@@ -98,6 +103,7 @@ export function StepStrip({
   hasPriority,
   priorityMode,
   activePlayerName,
+  turnQueueHint,
   activeSide,
   stopOverrides,
   onToggleStop,
@@ -213,6 +219,18 @@ export function StepStrip({
         }}>
           {statusText}
         </span>
+        {turnQueueHint && (
+          <span style={{
+            color: '#7d8494',
+            fontSize: isMobile ? 8 : 9,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            whiteSpace: 'nowrap',
+          }}>
+            · {turnQueueHint}
+          </span>
+        )}
         <span style={{
           color: '#555',
           fontSize: isMobile ? 7 : 9,

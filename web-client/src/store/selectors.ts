@@ -369,6 +369,27 @@ export function useIsSharedLifeTeamGame(): boolean {
 }
 
 /**
+ * Multiplayer: how far off the viewer's next turn is, counted in living seats around the turn
+ * order (`players` is the server's turn order) — "You're next" / "You in 2". Undefined on the
+ * viewer's own turn and when either seat is unknown or out. Callers skip it for shared-turn team
+ * games (CR 805.4), where a per-seat count would mislead.
+ */
+export function turnQueueHintFor(
+  players: readonly ClientPlayer[],
+  activePlayerId: EntityId | null | undefined,
+  viewerId: EntityId | null | undefined,
+): string | undefined {
+  if (!activePlayerId || !viewerId) return undefined
+  const living = players.filter((p) => !p.hasLost)
+  const from = living.findIndex((p) => p.playerId === activePlayerId)
+  const to = living.findIndex((p) => p.playerId === viewerId)
+  if (from < 0 || to < 0) return undefined
+  const distance = (to - from + living.length) % living.length
+  if (distance === 0) return undefined
+  return distance === 1 ? "You're next" : `You in ${distance}`
+}
+
+/**
  * True only for a team game whose teams take one shared turn and hold priority together
  * (Two-Headed Giant — CR 805 / 810.2). This is the flag that decides whether a teammate may act in
  * your priority window; Team vs. Team is a team game that takes individual turns (CR 808.4), so it

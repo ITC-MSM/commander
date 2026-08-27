@@ -35,6 +35,12 @@ export const SHORTCUTS: readonly Shortcut[] = [
     where: 'Everywhere',
   },
   {
+    id: 'strip-swipe',
+    keys: 'Swipe ← / →',
+    label: 'Slide to the previous or next opponent’s board',
+    where: 'Multiplayer games, on the opponent board (focused camera)',
+  },
+  {
     id: 'deck-browser',
     keys: 'D',
     label: 'Open or close the deck browser',
