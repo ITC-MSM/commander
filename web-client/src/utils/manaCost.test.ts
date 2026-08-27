@@ -7,6 +7,8 @@ import {
   playableWithinColors,
   reduceCostByHarmonizeTap,
   type TrimmableManaSource,
+  estimatedShortfall,
+  pickConvokeColor,
 } from './manaCost'
 
 const set = (...cs: string[]) => new Set(cs)
@@ -142,5 +144,43 @@ describe('cheapestCost', () => {
 
   it('no candidates means no cost to show', () => {
     expect(cheapestCost([])).toBeUndefined()
+  })
+})
+
+describe('pickConvokeColor', () => {
+  it('prefers an exact coloured pip over a hybrid one', () => {
+    expect(pickConvokeColor(['W/U', 'W'], ['WHITE'])).toBe('WHITE')
+  })
+
+  it('covers a hybrid pip with either half', () => {
+    expect(pickConvokeColor(['3', 'W/U'], ['BLUE'])).toBe('BLUE')
+  })
+
+  it('pays generic when none of its colours is still owed', () => {
+    expect(pickConvokeColor(['2', 'W'], ['GREEN'])).toBeNull()
+    expect(pickConvokeColor(['2'], [])).toBeNull()
+  })
+
+  it('walks the creature\'s colours in order for a multicolour creature', () => {
+    expect(pickConvokeColor(['G', 'W'], ['WHITE', 'GREEN'])).toBe('WHITE')
+  })
+})
+
+describe('estimatedShortfall', () => {
+  const sources = [
+    { entityId: 'forest', manaAmount: 1 },
+    { entityId: 'elves', manaAmount: 1 },
+  ]
+
+  it('is zero when floating mana and sources cover the rest', () => {
+    expect(estimatedShortfall(['1', 'G'], undefined, undefined, sources)).toBe(0)
+  })
+
+  it('does not count a source the player is tapping for another payment', () => {
+    expect(estimatedShortfall(['1', 'G'], undefined, undefined, sources, new Set(['elves']))).toBe(1)
+  })
+
+  it('never goes negative', () => {
+    expect(estimatedShortfall([], undefined, undefined, sources)).toBe(0)
   })
 })

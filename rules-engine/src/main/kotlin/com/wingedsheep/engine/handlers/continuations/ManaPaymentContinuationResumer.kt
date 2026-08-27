@@ -146,6 +146,7 @@ class ManaPaymentContinuationResumer(
                     producesColors = source.producesColors,
                     producesColorless = source.producesColorless,
                     requiresSacrifice = source.requiresSacrifice,
+                    manaAmount = source.manaAmount,
                     requiresTappingAnotherPermanent = source.tapPermanentsSubCost != null
                 )
             }
@@ -957,6 +958,7 @@ class ManaPaymentContinuationResumer(
                 producesColors = source.producesColors,
                 producesColorless = source.producesColorless,
                 requiresSacrifice = source.requiresSacrifice,
+                manaAmount = source.manaAmount,
                 requiresTappingAnotherPermanent = source.tapPermanentsSubCost != null
             )
         }
@@ -1160,6 +1162,7 @@ class ManaPaymentContinuationResumer(
                 producesColors = source.producesColors,
                 producesColorless = source.producesColorless,
                 requiresSacrifice = source.requiresSacrifice,
+                manaAmount = source.manaAmount,
                 requiresTappingAnotherPermanent = source.tapPermanentsSubCost != null
             )
         }
