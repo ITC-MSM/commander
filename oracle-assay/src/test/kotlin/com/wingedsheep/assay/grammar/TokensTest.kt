@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.effects.CreatePredefinedTokenEffect
 import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
+import com.wingedsheep.sdk.scripting.values.ContextPropertyKey
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -126,5 +127,27 @@ class TokensTest : StringSpec({
     "the token clause is the same clause inside a trigger" {
         roundTrips("When ~ enters, create a Food token.")
         roundTrips("When ~ enters, create two 1/1 white Rabbit creature tokens.")
+    }
+
+    // "That many" names the quantity the sentence before it reported, and the corpus prints it after
+    // six different antecedents. So the clause is registered only where the antecedent is known — a
+    // damage trigger's payoff — and the count is the damage that trigger carries.
+    "the that-many count is readable after a damage trigger and nowhere else" {
+        fragment("Whenever ~ deals damage, create that many Blood tokens.")
+            .script.triggeredAbilities.single().effect shouldBe Effects.CreateBlood(
+            DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT)
+        )
+        roundTrips("Whenever ~ deals damage, create that many Blood tokens.")
+        roundTrips("Whenever ~ deals combat damage to a player, create that many Treasure tokens.")
+        roundTrips(
+            "Whenever ~ deals combat damage to a player, create that many 1/1 green Saproling " +
+                "creature tokens."
+        )
+        // The same words after a trigger that reports no damage have no antecedent this grammar can
+        // read, so they decline rather than being read as the damage amount.
+        Grammar.abilityLine.parseLine("When ~ enters, create that many Blood tokens.")
+            .shouldBeInstanceOf<ParseOutcome.Declined>()
+        Grammar.abilityLine.parseLine("Whenever ~ attacks, create that many Treasure tokens.")
+            .shouldBeInstanceOf<ParseOutcome.Declined>()
     }
 })

@@ -753,13 +753,19 @@ object Triggers {
         triggerRule("whenever ${Normalizer.SELF} attacks", SdkTriggers.Attacks),
         triggerRule("whenever ${Normalizer.SELF} blocks", SdkTriggers.Blocks),
         triggerRule("whenever ${Normalizer.SELF} becomes blocked", SdkTriggers.BecomesBlocked),
+        // The four outgoing-damage prefixes take [Steps.damageStep] rather than [Steps.step]: their
+        // event reports how much damage was dealt, which is the antecedent of "that many" in the
+        // payoff. See [Tokens.damageClauses] for why that phrase is scoped to these positions and
+        // not registered as a count anywhere a count can appear.
         triggerRule(
             "whenever ${Normalizer.SELF} deals combat damage to a player",
             SdkTriggers.DealsCombatDamageToPlayer,
+            effect = Steps.damageStep,
         ),
         triggerRule(
             "whenever ${Normalizer.SELF} deals combat damage to a creature",
             SdkTriggers.DealsCombatDamageToCreature,
+            effect = Steps.damageStep,
         ),
         // "Whenever this creature deals combat damage, …" — no recipient clause at all, which is a
         // third event rather than a shorter spelling of either of the two above: Drinker of Sorrow
@@ -767,6 +773,16 @@ object Triggers {
         triggerRule(
             "whenever ${Normalizer.SELF} deals combat damage",
             SdkTriggers.dealsDamage(damageType = DamageType.Combat),
+            effect = Steps.damageStep,
+        ),
+        // …and the widest of the four: any damage, of any type, to any recipient. A fourth event
+        // rather than a shorter spelling of the three above — Olivia's Attendants triggers off its
+        // own pinger and off blocking as well as off an attack, which is the whole difference
+        // between it and the combat row.
+        triggerRule(
+            "whenever ${Normalizer.SELF} deals damage",
+            SdkTriggers.DealsDamage,
+            effect = Steps.damageStep,
         ),
         // "Whenever this creature deals damage to a Vampire, …" — the *recipient* as a noun phrase
         // rather than one of the two nouns the three constants above freeze ("a player", "a

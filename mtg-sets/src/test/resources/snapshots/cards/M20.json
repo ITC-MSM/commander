@@ -1345,7 +1345,8 @@
                 "count": {
                     "type": "AggregateBattlefield",
                     "player": "You",
-                    "filter": "creature attacking"
+                    "filter": "creature",
+                    "excludeSelf": true
                 }
             }
         ]
