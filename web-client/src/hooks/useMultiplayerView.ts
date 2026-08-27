@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import { selectGameState, selectViewingPlayerId, useViewedOpponent } from '@/store/selectors'
-import { hasPendingInputSelection } from '@/store/slices/ui/boardViewSlice'
+import { hasPendingInputSelection, isFollowingAction } from '@/store/slices/ui/boardViewSlice'
 import { MOBILE_BREAKPOINT } from '@/hooks/useResponsive'
 import type { ClientPlayer, EntityId } from '@/types'
 
@@ -156,7 +156,7 @@ export function useCombatDefenderFocus(enabled: boolean): readonly EntityId[] {
       // Entering (not updating) the split view respects the camera guards.
       if (prev.length === 0) {
         const store = useGameStore.getState()
-        if (!store.followAction || store.viewPinned || hasPendingInputSelection(store)) return prev
+        if (!isFollowingAction(store) || hasPendingInputSelection(store)) return prev
       }
       return prev.length === next.length && prev.every((id, i) => id === next[i]) ? prev : next
     })

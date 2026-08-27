@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useGameStore } from '@/store/gameStore.ts'
+import { useIsSharedLifeTeamGame } from '@/store/selectors'
 import { useResponsiveContext } from '../board/shared'
 
 /**
@@ -8,8 +9,14 @@ import { useResponsiveContext } from '../board/shared'
 export function ConcedeButton() {
   const concede = useGameStore((state) => state.concede)
   // In a pod, conceding eliminates *you* while the game goes on (CR 800.4a) — say so, since
-  // "Concede" reads as "end the game" everywhere else.
+  // "Concede" reads as "end the game" everywhere else. Two-Headed Giant is the exception: a team
+  // wins and loses together, so one concession takes the whole team out (CR 810.8b).
   const isPod = useGameStore((state) => (state.gameState?.players.length ?? 0) > 2)
+  const teamConcedes = useIsSharedLifeTeamGame()
+  const confirmLabel = teamConcedes ? 'Concede for the team' : isPod ? 'Concede & leave' : 'Confirm'
+  // Rides inside the button so the confirm row keeps its width — beside the buttons it ran into
+  // the top-right board's name plate, below them into that cell's collapse button.
+  const podNote = teamConcedes ? 'your team is out' : isPod ? 'the others play on' : null
   const [confirming, setConfirming] = useState(false)
   const responsive = useResponsiveContext()
 
@@ -24,12 +31,7 @@ export function ConcedeButton() {
 
   if (confirming) {
     return (
-      <div style={{ ...base, alignItems: 'center' }}>
-        {isPod && !responsive.isMobile && (
-          <span style={{ fontSize: 11, color: '#c9a0a0', whiteSpace: 'nowrap', marginRight: 4 }}>
-            You're out; the others play on.
-          </span>
-        )}
+      <div style={base}>
         <button
           onClick={() => { concede(); setConfirming(false) }}
           style={{
@@ -41,9 +43,16 @@ export function ConcedeButton() {
             borderRadius: 6,
             cursor: 'pointer',
             fontWeight: 600,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            lineHeight: 1.15,
           }}
         >
-          {isPod ? 'Concede & leave' : 'Confirm'}
+          <span>{confirmLabel}</span>
+          {podNote && !responsive.isMobile && (
+            <span style={{ fontSize: 9, fontWeight: 500, opacity: 0.85 }}>{podNote}</span>
+          )}
         </button>
         <button
           onClick={() => setConfirming(false)}

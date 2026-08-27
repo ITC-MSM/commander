@@ -889,6 +889,9 @@ function RailChip({
         title={chipTitle(opponent) + (isAttackRestricted ? "\nCan't be attacked this combat" : '')}
         onClick={handleChipClick}
         onKeyDown={(e) => {
+          // Only the chip itself: the crosshair and distribute buttons inside it are focusable
+          // and handle their own Enter, which must not also change the view.
+          if (e.target !== e.currentTarget) return
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
             handleChipClick()

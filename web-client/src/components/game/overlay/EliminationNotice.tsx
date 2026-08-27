@@ -21,7 +21,9 @@ interface Notice {
  * Derived from the roster (`hasLost` flipping true), not from the elimination message, so it
  * fires however the seat died — concede, damage, poison, decking — and for spectators too. The
  * seats already out when this mounts (a reconnect, a spectator joining late) are not announced.
- * Your own elimination is the defeat overlay's business, not a toast.
+ * Your own elimination is the defeat overlay's business, not a toast, and so is the elimination
+ * that ends the game — fewer than two teams left standing (CR 104.2a / 104.2c) — which in
+ * Two-Headed Giant is always both members of the losing team at once (CR 810.8a).
  */
 export function EliminationNotice({ topOffset = 0 }: { topOffset?: number }) {
   const gameState = useGameStore(selectGameState)
@@ -40,10 +42,12 @@ export function EliminationNotice({ topOffset = 0 }: { topOffset?: number }) {
       return
     }
     const seen = seenLost.current
+    const livingTeams = new Set(players.filter((p) => !p.hasLost).map((p) => teamMap[p.playerId] ?? p.playerId))
+    const gameOver = livingTeams.size < 2
     players.forEach((p, idx) => {
       if (!p.hasLost || seen.has(p.playerId)) return
       seen.add(p.playerId)
-      if (!isMulti || p.playerId === viewingPlayerId) return
+      if (!isMulti || gameOver || p.playerId === viewingPlayerId) return
       setNotice({ key: Date.now(), name: p.name, color: identitySeatColor(teamMap, p.playerId, idx).bright })
     })
   }, [players, isMulti, viewingPlayerId, teamMap])

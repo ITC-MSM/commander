@@ -1,7 +1,7 @@
 import { useMemo, useCallback, useRef, useEffect } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import { useInteraction } from '@/hooks/useInteraction'
-import { useViewingPlayer, useOpponent, useOpponents, useViewedOpponent, useStackCards, selectPriorityMode, useGhostCards, useBattlefieldCards, selectTeamMap, useIdentityColor, useViewerTeamIndex, useIsAlly, identitySeatColor, selectViewingPlayerId, useEliminatedBottomSeatId, useViewerEliminated, useIsSharedLifeTeamGame, useTeamLabelFor, useTeammateNames, useTeamHasPriority, useIsMyTeamTurn } from '@/store/selectors'
+import { useViewingPlayer, useOpponent, useOpponents, useViewedOpponent, useStackCards, selectPriorityMode, useGhostCards, useBattlefieldCards, selectTeamMap, useIdentityColor, useViewerTeamIndex, useIsAlly, identitySeatColor, selectViewingPlayerId, useEliminatedBottomSeatId, useViewerEliminated, useIsSharedLifeTeamGame, useTeamLabelFor, useTeammateNames, useTeamHasPriority, useIsMyTeamTurn, useIsSharedTurnTeamGame, turnQueueHintFor } from '@/store/selectors'
 import { useMultiplayerView, useCombatDefenderFocus } from '@/hooks/useMultiplayerView'
 import { OpponentRail, railReservedWidth } from './OpponentRail'
 import { hand, getNextStep, StepShortNames } from '@/types'
@@ -138,6 +138,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
   const teamHoldsPriority = useTeamHasPriority(playerId ?? null)
   // ...and is it the viewer's *team's* turn (CR 805.4)? Also false outside a shared-turns format.
   const teamActiveTurn = useIsMyTeamTurn()
+  const sharedTurnTeamGame = useIsSharedTurnTeamGame()
   // The teammate currently on the baton. Read off the priority holder rather than "the ally",
   // because the ally seat is suppressed while this client is the one driving it (hotseat) — and
   // that is exactly a case where naming who is acting matters most.
@@ -767,18 +768,12 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       // controls (combat declaration, sorcery-speed plays) light up for the driving client.
       (youAreHijacking != null && gameState.activePlayerId === youAreHijacking))
   // Multiplayer: how far off your next turn is, in living seats — "You're next" / "You in 2". The
-  // rail lists the table in turn order, but counting chips is the player's job today. Team games
-  // take one shared turn per team (CR 805.4), where a per-seat count would mislead, so none there.
-  const turnQueueHint = (() => {
-    if (!isMulti || isTeamGame || spectatorMode || isMyTurn || !viewingPlayer || viewingPlayer.hasLost) return undefined
-    const living = gameState.players.filter((p) => !p.hasLost)
-    const from = living.findIndex((p) => p.playerId === gameState.activePlayerId)
-    const to = living.findIndex((p) => p.playerId === viewingPlayer.playerId)
-    if (from < 0 || to < 0) return undefined
-    const distance = (to - from + living.length) % living.length
-    if (distance === 0) return undefined
-    return distance === 1 ? "You're next" : `You in ${distance}`
-  })()
+  // rail lists the table in turn order, but counting chips is the player's job today. Two-Headed
+  // Giant takes one shared turn per team (CR 805.4), where a per-seat count would mislead, so none
+  // there; Team vs. Team takes individual turns (CR 808.4) and keeps it.
+  const turnQueueHint = !isMulti || sharedTurnTeamGame || spectatorMode || isMyTurn
+    ? undefined
+    : turnQueueHintFor(gameState.players, gameState.activePlayerId, viewingPlayer?.playerId)
   const isInCombatMode = spectatorMode ? false : (combatState !== null)
   const isInDistributeMode = !spectatorMode && distributeState !== null
   const distributeTotalAllocated = distributeState
