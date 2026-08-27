@@ -306,6 +306,14 @@ data class TriggerContext(
                     triggeringEntityId = event.entityId,
                     triggeringPlayerId = event.controllerId
                 )
+                // Renown (CR 702.112b): the renowned creature is the triggering entity and its
+                // controller the triggering player, so "when this creature becomes renowned"
+                // (Relic Seeker) and "whenever a creature you control becomes renowned" (Valeron
+                // Wardens) can each name what they need.
+                is com.wingedsheep.engine.core.BecameRenownedEvent -> TriggerContext(
+                    triggeringEntityId = event.entityId,
+                    triggeringPlayerId = event.controllerId
+                )
                 // Manifest dread (CR 701.60): the cards put into the graveyard this way are
                 // carried as capturedEntityIds, seeded into the resolving trigger's pipeline under
                 // TRIGGER_CAPTURED_COLLECTION so "a card you put into your graveyard this way"

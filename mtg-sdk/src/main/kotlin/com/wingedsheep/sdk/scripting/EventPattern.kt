@@ -1439,6 +1439,31 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     }
 
     /**
+     * When a permanent becomes renowned (CR 702.112b) — a renown trigger resolved on it.
+     *
+     * Binding SELF = "when this creature becomes renowned" (Relic Seeker); ANY = "whenever a
+     * [filter] becomes renowned" (Valeron Wardens: "Whenever a creature you control becomes
+     * renowned, draw a card"). The renowned creature stays on the battlefield, so this matches in
+     * the regular battlefield trigger loop, the same as the saddled designation.
+     *
+     * Fires once per permanent by construction: the designation is sticky and renown's own
+     * intervening-`if` stops an already-renowned creature from triggering again (CR 702.112c), so
+     * there is no "first time each turn" axis to carry.
+     */
+    @SerialName("BecameRenownedEvent")
+    @Serializable
+    data class BecameRenownedEvent(
+        val filter: GameObjectFilter = GameObjectFilter.Any
+    ) : EventPattern {
+        override val description: String = describeObjectForEvent(filter) + " becomes renowned"
+
+        override fun applyTextReplacement(replacer: TextReplacer): EventPattern {
+            val newFilter = filter.applyTextReplacement(replacer)
+            return if (newFilter !== filter) copy(filter = newFilter) else this
+        }
+    }
+
+    /**
      * When an Aura, Equipment, or Fortification becomes attached to a permanent or player
      * (CR 603.2e — "becomes" triggers fire only at the moment of attaching, not on a state that
      * already exists, and not on phasing in/out per CR 702.26j).

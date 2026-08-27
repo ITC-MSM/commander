@@ -303,6 +303,10 @@ export interface ClientCard {
   /** Whether this Case has the solved designation (CR 719.3b — its "Solved —" abilities are on). Battlefield only. */
   readonly isSolved?: boolean
 
+  /** Whether this creature has the renowned designation (CR 702.112b — renown can't trigger again
+   * and its renown payoffs are on). Battlefield only. */
+  readonly isRenowned?: boolean
+
   /** Whether this card is plotted in exile (CR 718 — Plot keyword, castable for free on a later turn). Exile only. */
   readonly isPlotted?: boolean
 
