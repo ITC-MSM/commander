@@ -5,6 +5,8 @@ import com.wingedsheep.engine.core.GameEndReason
 import com.wingedsheep.engine.core.PlayerLeftGameEvent
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.mechanics.combat.CombatRemovalHelper
+import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.combat.BlockedComponent
 import com.wingedsheep.engine.state.components.combat.BlockingComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -13,6 +15,7 @@ import com.wingedsheep.engine.state.components.player.PlayerLostComponent
 import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent
 import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.Duration
 
 /**
  * Applies the "leaving the game" processing for a player who has lost (CR 800.4a–c).
@@ -85,16 +88,39 @@ object PlayerLeavesGameProcessor {
         //    vanish, the rest of combat proceeds).
         s = clearCombatReferences(s, toRemove)
 
+        // 3b. CR 800.4e — combat damage that would be assigned to a player who has left isn't.
+        //     Creatures attacking the leaver (or a planeswalker / battle of theirs, which has just
+        //     left too) are removed from combat: nothing is left for them to hit, and leaving
+        //     them "attacking" a seat that is gone would still fire lifelink and
+        //     "deals combat damage to a player" triggers off a dead life total in the damage step.
+        s = removeAttackersAimedAt(s, leaver, toRemove)
+
         // 4. Remove the objects from the game entirely.
         for (id in toRemove) {
             s = s.removeEntity(id)
         }
 
-        // 5. End floating effects the leaver controlled or that were sourced by an object
-        //    that just left (their continuous effects end with them — CR 800.4a).
+        // 5. End the continuous effects that depended on a departed object. Only those: the
+        //    effect of a spell or ability the leaver already *resolved* persists (CR 611.2c) — a
+        //    Giant Growth on someone else's creature outlives its caster's concession — so nothing
+        //    is dropped for having the leaver as its controller. What ends is an effect whose
+        //    duration is tied to its source staying on the battlefield (611.2b/611.3) when that
+        //    source just left, or one that lasts while the leaver controls the affected object,
+        //    which they no longer do. The leaver's "until your next turn" effects are neither —
+        //    CR 800.4m has them last until that turn would have begun (TurnManager.endTurn).
         s = s.copy(
             floatingEffects = s.floatingEffects.filterNot { fe ->
-                fe.controllerId == leaver || (fe.sourceId != null && fe.sourceId in toRemove)
+                val sourceLeft = fe.sourceId != null && fe.sourceId in toRemove
+                when (fe.duration) {
+                    is Duration.WhileSourceOnBattlefield,
+                    is Duration.WhileYouControlSource,
+                    is Duration.WhileSourceTapped,
+                    is Duration.WhileSourceTappedAndAffectedPowerAtMostSource,
+                    is Duration.WhileYouControlSourceAndSourceTapped,
+                    Duration.WhileSourceAttachedToAffected -> sourceLeft
+                    Duration.WhileControlledByController -> fe.controllerId == leaver
+                    else -> false
+                }
             }
         )
 
@@ -135,6 +161,22 @@ object PlayerLeavesGameProcessor {
             .clearPendingDecision()
             .copy(continuationStack = emptyList())
             .withPriority(state.activePlayerId)
+    }
+
+    /**
+     * Remove from combat every remaining attacker whose declared defender is [leaver] or one of
+     * the [removed] objects (their planeswalkers and battles). Their own attackers are already
+     * gone, so this only ever touches other players' creatures.
+     */
+    private fun removeAttackersAimedAt(state: GameState, leaver: EntityId, removed: Set<EntityId>): GameState {
+        var s = state
+        for (id in s.getBattlefield()) {
+            val defender = s.getEntity(id)?.get<AttackingComponent>()?.defenderId ?: continue
+            if (defender == leaver || defender in removed) {
+                s = CombatRemovalHelper.removeFromCombat(s, id)
+            }
+        }
+        return s
     }
 
     /**

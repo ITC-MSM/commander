@@ -66,10 +66,13 @@ internal class AttackPhaseManager(
     ): ExecutionResult {
         // Validate each attacker
         val projected = state.projectedState
-        // CR 805.10a/b — a creature attacks the opposing team; never a teammate. Exclude the whole
-        // attacking team from legal player targets (in a non-team game this is just the attacker).
+        // CR 805.10a/b — a creature attacks the opposing team; never a teammate. [getOpponents]
+        // excludes the whole attacking team (in a non-team game just the attacker) and — unlike the
+        // raw turn order — every seat that has left the game (CR 800.4a): a departed player is no
+        // longer anyone's opponent, so they can't be attacked. The enumerator already reads the
+        // same set; the handler has to agree with it because actions are client-supplied.
         val attackingTeam = state.teamOf(attackingPlayer)
-        val opponents = state.turnOrder.filter { it !in attackingTeam }
+        val opponents = state.getOpponents(attackingPlayer)
 
         // Validate band declarations (CR 702.22c).
         val bandValidation = validateBands(state, attackers, bands, projected)
@@ -235,28 +238,36 @@ internal class AttackPhaseManager(
         // so the fact is stamped here. `defenderId in turnOrder` is the player-identity idiom.
         val attackersAgainstPlayer = attackers.filterValues { it in state.turnOrder }.keys
 
-        newState = newState.updateEntity(attackingPlayer) { container ->
-            // Both markers are stamped even for an empty declaration: they record that the step
-            // happened, which is what tells "declared nothing" apart from "never got the chance".
-            var updated = container
-                .with(AttackersDeclaredThisCombatComponent)
-                .with(AttackersDeclaredThisTurnComponent)
-            if (attackers.isNotEmpty()) {
-                updated = updated.with(PlayerAttackedThisTurnComponent)
-                val previous = container.get<PlayerAttackersThisTurnComponent>()?.attackerIds ?: emptySet()
-                updated = updated.with(PlayerAttackersThisTurnComponent(previous + attackers.keys))
-                if (defendingPlayers.isNotEmpty()) {
-                    val previousDefenders = container
-                        .get<com.wingedsheep.engine.state.components.combat.PlayerAttackedPlayersThisTurnComponent>()
-                        ?.defendingPlayerIds ?: emptySet()
-                    updated = updated.with(
-                        com.wingedsheep.engine.state.components.combat.PlayerAttackedPlayersThisTurnComponent(
-                            previousDefenders + defendingPlayers
+        // CR 805.10b — the active team has ONE combined attack, and CR 805.10a makes every
+        // player on it an attacking player. So the declaration is recorded on every member of
+        // the attacking team, not just the seat that submitted it: the teammate is not asked to
+        // declare a second wave (PassPriorityHandler / CombatEnumerator read this marker), and
+        // "you attacked this turn" is true for both heads. Outside shared team turns the team
+        // is the declaring player alone.
+        for (member in state.sharedTurnTeam(attackingPlayer)) {
+            newState = newState.updateEntity(member) { container ->
+                // Both markers are stamped even for an empty declaration: they record that the step
+                // happened, which is what tells "declared nothing" apart from "never got the chance".
+                var updated = container
+                    .with(AttackersDeclaredThisCombatComponent)
+                    .with(AttackersDeclaredThisTurnComponent)
+                if (attackers.isNotEmpty()) {
+                    updated = updated.with(PlayerAttackedThisTurnComponent)
+                    val previous = container.get<PlayerAttackersThisTurnComponent>()?.attackerIds ?: emptySet()
+                    updated = updated.with(PlayerAttackersThisTurnComponent(previous + attackers.keys))
+                    if (defendingPlayers.isNotEmpty()) {
+                        val previousDefenders = container
+                            .get<com.wingedsheep.engine.state.components.combat.PlayerAttackedPlayersThisTurnComponent>()
+                            ?.defendingPlayerIds ?: emptySet()
+                        updated = updated.with(
+                            com.wingedsheep.engine.state.components.combat.PlayerAttackedPlayersThisTurnComponent(
+                                previousDefenders + defendingPlayers
+                            )
                         )
-                    )
+                    }
                 }
+                updated
             }
-            updated
         }
 
         val attackerNames = attackers.keys.map { state.getEntity(it)?.get<CardComponent>()?.name ?: "Creature" }
@@ -619,7 +630,10 @@ internal class AttackPhaseManager(
         attackingPlayer: EntityId,
         attackers: Map<EntityId, EntityId>
     ): String? {
-        val mustAttack = state.getEntity(attackingPlayer)?.get<MustAttackPlayerComponent>()
+        // Taunt marks the player it was aimed at; in a shared team turn the team's one combined
+        // attack (CR 805.10b) has to satisfy a requirement placed on either head.
+        val mustAttack = state.sharedTurnTeam(attackingPlayer)
+            .firstNotNullOfOrNull { member -> state.getEntity(member)?.get<MustAttackPlayerComponent>() }
             ?: return null
 
         if (!mustAttack.activeThisTurn) {

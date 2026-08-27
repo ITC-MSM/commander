@@ -263,7 +263,19 @@ class GameInitializer(
                 state = shuffledState
                 shuffled
             }
-            orderedTeams.flatten()
+            val seating = orderedTeams.flatten()
+            if (startTeam == null && !config.format.sharesTeamTurns) {
+                // CR 808.4 (Team vs. Team): the randomly chosen team's first player is its *centre*
+                // seat when the team is odd-sized and the seat to the left of its midpoint when it
+                // is even — index size/2 either way, since turn order runs to the left (CR 103.7b).
+                // Turn order then continues around the table from that seat, so the rest of that
+                // team comes last. With shared team turns (CR 805) the team takes one turn and its
+                // first-listed member is just the representative, so the seating stays as built.
+                val firstSeat = orderedTeams.first().size / 2
+                seating.subList(firstSeat, seating.size) + seating.subList(0, firstSeat)
+            } else {
+                seating
+            }
         } else if (config.startingPlayerIndex != null) {
             val idx = config.startingPlayerIndex
             playerIds.subList(idx, playerIds.size) + playerIds.subList(0, idx)

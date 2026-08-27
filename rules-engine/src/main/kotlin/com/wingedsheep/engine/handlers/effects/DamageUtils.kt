@@ -1170,9 +1170,14 @@ object DamageUtils {
      */
     fun isLifeGainPrevented(state: GameState, playerId: EntityId): Boolean {
         // Durable, source-independent lock conferred directly on the player
-        // (LockLifeGainEffect — Screaming Nemesis).
-        if (state.getEntity(playerId)
-                ?.has<com.wingedsheep.engine.state.components.player.CantGainLifeComponent>() == true
+        // (LockLifeGainEffect — Screaming Nemesis). CR 810.9g: where the life total is the team's,
+        // "that player can't gain life" means no player on their team can — a lock on either head
+        // closes the shared pool. Outside a shared-life format the team is the player alone.
+        val lockedSeats = if (state.format.sharesTeamLife) state.teamOf(playerId) else listOf(playerId)
+        if (lockedSeats.any { seat ->
+                state.getEntity(seat)
+                    ?.has<com.wingedsheep.engine.state.components.player.CantGainLifeComponent>() == true
+            }
         ) {
             return true
         }
@@ -1190,9 +1195,10 @@ object DamageUtils {
                 when (lifeGainEvent.player) {
                     Player.Each, Player.Any -> return true
                     Player.You -> if (playerId == sourceControllerId) return true
-                    // "Your opponents can't gain life." — Gríma Wormtongue (LTR).
+                    // "Your opponents can't gain life." — Gríma Wormtongue (LTR). A real opponent
+                    // test: the controller's teammate is not their opponent (CR 102.3 / 810.9g).
                     Player.EachOpponent ->
-                        if (playerId != sourceControllerId) return true
+                        if (sourceControllerId != null && state.isOpponentOf(playerId, sourceControllerId)) return true
                     // "Enchanted player can't gain life." — Grievous Wound. The host is an Aura
                     // attached to the locked player; compare against its attachment target.
                     Player.EnchantedPlayer -> {
@@ -2461,7 +2467,8 @@ object DamageUtils {
                 val playerMatches = when (pattern.player) {
                     Player.Each, Player.Any -> true
                     Player.You -> losingPlayerId == sourceControllerId
-                    Player.EachOpponent -> losingPlayerId != sourceControllerId
+                    // Not `!= sourceControllerId`: a teammate is not an opponent (CR 102.3).
+                    Player.EachOpponent -> state.isOpponentOf(losingPlayerId, sourceControllerId)
                     else -> false
                 }
                 if (!playerMatches) continue
