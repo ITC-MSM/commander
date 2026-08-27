@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 216 / 273
+**Implemented:** 219 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [ ] Aim for the Head
@@ -10,7 +10,7 @@
 - [x] Alchemist's Retrieval
 - [ ] Alluring Suitor
 - [x] Ancestral Anger
-- [ ] Ancient Lumberknot
+- [x] Ancient Lumberknot
 - [x] Angelic Quartermaster
 - [x] Anje, Maid of Dishonor
 - [x] Apprentice Sharpshooter
@@ -118,7 +118,7 @@
 - [ ] Gutter Skulker
 - [x] Halana and Alena, Partners
 - [x] Hallowed Haunting
-- [ ] Hamlet Vanguard
+- [x] Hamlet Vanguard
 - [x] Headless Rider
 - [x] Henrika Domnathi
 - [x] Hero's Downfall
@@ -174,7 +174,7 @@
 - [x] Oakshade Stalker
 - [ ] Odric, Blood-Cursed
 - [x] Old Rutstein
-- [ ] Olivia's Attendants
+- [x] Olivia's Attendants
 - [ ] Olivia, Crimson Bride
 - [x] Ollenbock Escort
 - [x] Overcharged Amalgam
