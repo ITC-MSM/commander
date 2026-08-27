@@ -2299,7 +2299,11 @@ object Steps {
      *
      * @param tag suffixes the rule names so an ambiguity diagnostic can say which cascade it found.
      */
-    private class Cascade(anaphora: List<Phrase<CardScript>>, val tag: String) {
+    private class Cascade(
+        anaphora: List<Phrase<CardScript>>,
+        val tag: String,
+        positionScoped: List<Phrase<CardScript>> = emptyList(),
+    ) {
 
         /**
          * The atoms alone, for the rules that wrap or join clauses without being one.
@@ -2307,7 +2311,7 @@ object Steps {
          * Declared before everything built from it — initializers run in declaration order, and a
          * `val` reaching a later one reads a null out of a half-initialized instance.
          */
-        private val atom: Phrase<CardScript> = oneOf("a spell effect$tag", nonAnaphoric + anaphora)
+        private val atom: Phrase<CardScript> = oneOf("a spell effect$tag", nonAnaphoric + anaphora + positionScoped)
 
         /**
          * The clauses a *gate's consequence* can be made of — atoms and [Continuations], joined.
@@ -2327,7 +2331,7 @@ object Steps {
          */
         private val laterAtom: Phrase<CardScript> = oneOf(
             "a later spell effect$tag",
-            nonAnaphoric + Continuations.all,
+            nonAnaphoric + Continuations.all + positionScoped,
         )
 
         private val gatedConsequence: Phrase<CardScript> = oneOf(
@@ -2456,7 +2460,7 @@ object Steps {
          * that can follow them.
          */
         private val simpleClause: Phrase<CardScript> =
-            oneOf("a spell effect$tag", nonAnaphoric + anaphora + mayClause)
+            oneOf("a spell effect$tag", nonAnaphoric + anaphora + positionScoped + mayClause)
 
         /**
          * A clause that can only be a *later* one: it refers back to something an earlier clause
@@ -2466,7 +2470,7 @@ object Steps {
             "a later spell effect$tag",
             // Everything except the source-anaphora: once a clause has introduced a target, "it" means
             // that target, and [Continuations] owns the pronoun from here on. See [SelfSteps.anaphoric].
-            nonAnaphoric + mayClause + Continuations.all,
+            nonAnaphoric + mayClause + positionScoped + Continuations.all,
         )
 
         /** A whole line's clauses, joined. The shape and its KDoc are [clauseRun]. */
@@ -2571,6 +2575,24 @@ object Steps {
     /** The cascade a filtered trigger's effect takes; see [SelfSteps.triggering]. */
     private val triggeredCascade = Cascade(SelfSteps.triggering, tag = " in a filtered trigger")
 
+    /**
+     * The cascade a **damage** trigger's effect takes — the source anaphor, plus the clauses whose
+     * count is "that many", meaning the damage the event just reported.
+     *
+     * The third instance, and the first whose extra vocabulary is a *quantity* anaphor rather than
+     * an object one. Its argument is [Tokens.damageClauses]' and the mechanism is the same one
+     * [triggeredCascade] uses: a phrase whose meaning is fixed by the sentence above it is
+     * registered only where that sentence can be seen, because the distinction exists at parse time
+     * and no remap on the built ability could recover it.
+     *
+     * `positionScoped` rather than `anaphora` because these clauses belong in a *later* position
+     * too — "create that many 1/1 white Bird creature tokens, then put a +1/+1 counter on ~"
+     * (Falcon and Redwing) — while the object anaphors deliberately do not, [Continuations] owning
+     * that position.
+     */
+    private val damageCascade =
+        Cascade(SelfSteps.anaphoric, tag = " after damage", positionScoped = Tokens.damageClauses)
+
     val step: Phrase<CardScript> = sourceCascade.step
 
     /**
@@ -2579,6 +2601,13 @@ object Steps {
      * what keeps the third anaphor unreachable from every other position.
      */
     val triggeredStep: Phrase<CardScript> = triggeredCascade.step
+
+    /**
+     * The same vocabulary for a trigger whose event reports an **amount of damage**, where "that
+     * many" is that amount. [Triggers]' damage prefixes are the only callers, which is what keeps
+     * the quantity anaphor unreachable from every other position.
+     */
+    val damageStep: Phrase<CardScript> = damageCascade.step
 
     // ---------------------------------------------------------------------------------------
     // Model helpers — the `match` side, kept out of the rules so like rules read alike

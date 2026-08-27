@@ -6,6 +6,7 @@ import com.wingedsheep.assay.syntax.printLine
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardScript
+import com.wingedsheep.sdk.scripting.AssignDamageEqualToToughness
 import com.wingedsheep.sdk.scripting.CantBlock
 import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -159,6 +160,46 @@ class StaticsTest : StringSpec({
         roundTrips("~ gets +3/+0 as long as there are seven or more cards in your graveyard.")
     }
 
+    // The Doran family. Two rules and one flag: the qualifier is a clause inside the noun phrase
+    // when `onlyWhenToughnessGreaterThanPower` is set and nothing at all when it is clear, which is
+    // why the boolean is a row rather than a slot. The subject is a distributive singular — "each
+    // creature you control … assigns … its toughness" — so it slots `Filters.filter`, unlike every
+    // other group static in this file.
+    "assigning damage by toughness is a group static over the distributive singular" {
+        fragment(
+            "Each creature you control with toughness greater than its power assigns combat " +
+                "damage equal to its toughness rather than its power."
+        ).script.staticAbilities shouldBe listOf(
+            AssignDamageEqualToToughness(
+                filter = GroupFilter.AllCreaturesYouControl,
+                onlyWhenToughnessGreaterThanPower = true,
+            )
+        )
+        // Doran, the Siege Tower — no controller clause and no qualifier.
+        fragment("Each creature assigns combat damage equal to its toughness rather than its power.")
+            .script.staticAbilities shouldBe listOf(
+            AssignDamageEqualToToughness(
+                filter = GroupFilter(GameObjectFilter.Creature),
+                onlyWhenToughnessGreaterThanPower = false,
+            )
+        )
+        roundTrips("Each creature assigns combat damage equal to its toughness rather than its power.")
+        roundTrips(
+            "Each creature you control assigns combat damage equal to its toughness rather than " +
+                "its power."
+        )
+        roundTrips(
+            "Each creature you control with toughness greater than its power assigns combat " +
+                "damage equal to its toughness rather than its power."
+        )
+        // Bark of Doran: the attached subject fronts the qualifier and pronominalizes the subject,
+        // which is why it is a constant on the whole default value rather than a third row.
+        roundTrips(
+            "As long as enchanted creature's toughness is greater than its power, it assigns " +
+                "combat damage equal to its toughness rather than its power."
+        )
+    }
+
     // Every rule in the family can print what it parses — the meta-test each family gets, because a
     // `match` half that quietly matches nothing compiles, parses, and surfaces as a print mismatch
     // far from its cause.
@@ -168,6 +209,8 @@ class StaticsTest : StringSpec({
             "Enchanted creature has flying.",
             "Enchanted creature gets +2/+2 and has flying.",
             "~ can't attack unless defending player controls an Island.",
+            "Each creature you control with toughness greater than its power assigns combat " +
+                "damage equal to its toughness rather than its power.",
         )
         lines.forEach { line -> Grammar.abilityLine.printLine(fragment(line)) shouldBe line }
     }

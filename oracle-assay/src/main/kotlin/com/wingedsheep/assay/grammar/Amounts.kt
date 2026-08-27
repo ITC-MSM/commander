@@ -124,6 +124,38 @@ object Amounts {
     fun <T> perScope(rule: (Scope) -> Phrase<T>): List<Phrase<T>> =
         scopes.map { scope -> rule(scope).let { if (scope.canonical) it else alternate(it) } }
 
+    // ---------------------------------------------------------------------------------------
+    // The multiplier layer for a counted clause — published because two families take it
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * A tally multiplied by the number the sentence printed in front of it.
+     *
+     * Three cases and not one, because the SDK spells the three numbers three ways and the corpus is
+     * unanimous about which: "+1/+0" is the bare aggregate beside a `Fixed(0)` — Nim Lasher's
+     * golden, and every other card in [Statics]' pump family — while "+2/+2" is a `Multiply`.
+     * Writing `Multiply(count, 1)` for the common half would be a model no hand-written card
+     * carries, which the differential would report on every card the rule reads.
+     *
+     * Published here rather than kept in [Statics] because the second family arrived:
+     * [Replacements]' "enters with **two** +1/+1 counters on it for each …" spells the identical
+     * multiplier over the identical tally, and a second copy of a lowering is two halves that agree
+     * until someone edits one.
+     */
+    fun scaled(count: DynamicAmount, multiplier: Int): DynamicAmount = when (multiplier) {
+        0 -> DynamicAmount.Fixed(0)
+        1 -> count
+        else -> DynamicAmount.Multiply(count, multiplier)
+    }
+
+    /** [scaled]'s inverse against a known tally; null when the amount is not that tally scaled at all. */
+    fun multiplierOf(amount: DynamicAmount, count: DynamicAmount): Int? = when {
+        amount == DynamicAmount.Fixed(0) -> 0
+        amount == count -> 1
+        amount is DynamicAmount.Multiply && amount.amount == count -> amount.multiplier
+        else -> null
+    }
+
     /**
      * "the number of Elves on the battlefield", "the number of Zombies you control" — a battlefield
      * tally over a noun phrase.
@@ -140,20 +172,42 @@ object Amounts {
      * below: `Count` is canonical off the battlefield, where `AggregateZone`'s default aggregation
      * restates it 17 times against `Count`'s 236.
      */
-    private fun battlefieldCount(scope: Scope): Phrase<DynamicAmount> =
-        phrase("the number of {filter}${scope.surface}", name = "a count of ${scope.where}") {
+    /**
+     * …and **"other"** is a second layer over the same tally, owning one field.
+     *
+     * "the number of other creatures on the battlefield" (Stag Beetle, Custodi Soulbinders), "the
+     * number of other creatures you control" (Printlifter Ooze) — `AggregateBattlefield.excludeSelf`
+     * and nothing else. It is a field on the *amount* rather than a predicate on the filter, which
+     * is the finding the conditional-tapped-entry band recorded when twenty lands had written the
+     * arithmetic instead: "other X" equals "X minus one" only while the source itself matches the
+     * filter, and a filter predicate would be printable in every position a filter is while only a
+     * counted noun phrase says the word.
+     *
+     * A parameter of this rule rather than a row of [scopes] because the two layers are orthogonal —
+     * `excludeSelf` is a fact about the counted set and the scope is a fact about whose battlefield —
+     * so the product is six rows out of two axes, which is what the axes cost.
+     */
+    private fun battlefieldCount(scope: Scope, other: Boolean = false): Phrase<DynamicAmount> {
+        val otherWord = if (other) "other " else ""
+        fun amountFor(filter: GameObjectFilter) =
+            DynamicAmount.AggregateBattlefield(scope.player, filter, excludeSelf = other)
+        return phrase(
+            "the number of $otherWord{filter}${scope.surface}",
+            name = "a count of $otherWord${scope.where}",
+        ) {
             slot("filter", Filters.plural)
             build { bindings ->
-                val filter = scope.narrowing(bindings.value("filter")) ?: return@build null
-                DynamicAmount.AggregateBattlefield(scope.player, filter)
+                amountFor(scope.narrowing(bindings.value("filter")) ?: return@build null)
             }
             match { amount ->
                 val aggregate = amount as? DynamicAmount.AggregateBattlefield ?: return@match null
                 if (aggregate.player != scope.player) return@match null
-                if (amount != DynamicAmount.AggregateBattlefield(scope.player, aggregate.filter)) return@match null
+                if (aggregate.excludeSelf != other) return@match null
+                if (amount != amountFor(aggregate.filter)) return@match null
                 bind("filter" to (scope.narrowing(aggregate.filter) ?: return@match null))
             }
         }
+    }
 
     /**
      * "the number of creature cards in your graveyard", "the number of instant cards in all
@@ -253,7 +307,7 @@ object Amounts {
      */
     private val plainCount: Phrase<DynamicAmount> = oneOf(
         "a plain count",
-        perScope(::battlefieldCount) + listOf(
+        perScope { battlefieldCount(it) } + perScope { battlefieldCount(it, other = true) } + listOf(
             zoneCardCount("in your graveyard", Player.You, Zone.GRAVEYARD, "a count of your graveyard"),
             zoneCardCount("in all graveyards", Player.Each, Zone.GRAVEYARD, "a count of every graveyard"),
             bareZoneCount("in your graveyard", Player.You, Zone.GRAVEYARD),

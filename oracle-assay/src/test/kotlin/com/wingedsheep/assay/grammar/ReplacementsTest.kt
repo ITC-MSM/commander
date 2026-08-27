@@ -3,18 +3,21 @@ package com.wingedsheep.assay.grammar
 import com.wingedsheep.assay.syntax.ParseOutcome
 import com.wingedsheep.assay.syntax.parseLine
 import com.wingedsheep.assay.syntax.printLine
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.CardNamePool
 import com.wingedsheep.sdk.scripting.ChoiceType
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.EntersWithChoice
+import com.wingedsheep.sdk.scripting.EntersWithDynamicCounters
 import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.ModifyLifeGain
 import com.wingedsheep.sdk.scripting.ModeOption
 import com.wingedsheep.sdk.scripting.conditions.IsYourTurn
 import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -242,6 +245,52 @@ class ReplacementsTest : StringSpec({
                 CardFragment(script = CardScript(replacementEffects = listOf(value)))
             ) shouldBe null
         }
+    }
+
+    // The counters-per-count family. The printed numeral is a *multiplier* over a battlefield
+    // tally, which `Amounts.scaled` lowers to the bare aggregate at 1 and a `Multiply` above it —
+    // so the article row and the numeral row take disjoint halves of the model and printing is
+    // decided by the value rather than by the alternation's order.
+    "entering counters can be a rate over a battlefield tally" {
+        fragment("~ enters with a +1/+1 counter on it for each other creature you control.")
+            .script.replacementEffects shouldBe listOf(
+            EntersWithDynamicCounters(
+                count = DynamicAmount.AggregateBattlefield(
+                    player = Player.You,
+                    filter = GameObjectFilter.Creature,
+                    excludeSelf = true,
+                ),
+            )
+        )
+        // Hamlet Vanguard: "two … for each" is the multiplier, and "other" is the tally's own field
+        // rather than a filter predicate.
+        fragment("~ enters with two +1/+1 counters on it for each other nontoken Human you control.")
+            .script.replacementEffects shouldBe listOf(
+            EntersWithDynamicCounters(
+                count = DynamicAmount.Multiply(
+                    DynamicAmount.AggregateBattlefield(
+                        player = Player.You,
+                        filter = GameObjectFilter.Permanent.withSubtype(Subtype.HUMAN).nontoken(),
+                        excludeSelf = true,
+                    ),
+                    2,
+                ),
+            )
+        )
+        // Every row is an alternate spelling: Oracle prints the same model as "…X counters on it,
+        // where X is the number of …" too, and that rule can print the whole `Amounts.count` domain
+        // while this family reaches only the battlefield tallies. So these parse and come back as
+        // variants — the model survives, the spelling normalizes onto the printer that covers more.
+        Grammar.abilityLine.printLine(
+            fragment("~ enters with a hope counter on it for each creature you control.")
+        ) shouldBe "~ enters with X hope counters on it, where X is the number of creatures you control."
+
+        fragment("~ enters with a time counter on it for each Island you control.")
+            .script.replacementEffects.single().shouldBeInstanceOf<EntersWithDynamicCounters>()
+        fragment("~ enters with three +1/+1 counters on it for each artifact you control.")
+            .script.replacementEffects.single().shouldBeInstanceOf<EntersWithDynamicCounters>()
+        fragment("~ enters with a +1/+1 counter on it for each creature on the battlefield.")
+            .script.replacementEffects.single().shouldBeInstanceOf<EntersWithDynamicCounters>()
     }
 
     "every as-it-enters choice rule prints what it parses" {
