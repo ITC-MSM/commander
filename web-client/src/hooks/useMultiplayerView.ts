@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import { selectGameState, selectViewingPlayerId, useViewedOpponent } from '@/store/selectors'
 import { hasPendingInputSelection } from '@/store/slices/ui/boardViewSlice'
+import { MOBILE_BREAKPOINT } from '@/hooks/useResponsive'
 import type { ClientPlayer, EntityId } from '@/types'
 
 /**
@@ -70,6 +71,10 @@ export function useMultiplayerView(enabled: boolean, opponents: readonly ClientP
         if (picked) store.viewOpponent(picked.playerId)
       } else if (e.key === '0') {
         if (store.selectedCardId) return
+        // The overview is desktop / landscape-tablet only (the rail hides its button on phones);
+        // toggling it from the keyboard used to leave the store in a mode the layout only half
+        // honoured.
+        if (window.innerWidth < MOBILE_BREAKPOINT) return
         store.toggleOverviewMode()
       } else if (e.key === 'Escape') {
         // Esc means "cancel" inside selection modes; only unpin when idle.

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useGameStore } from '@/store/gameStore.ts'
-import { selectGameState, selectViewingPlayerId, useViewedOpponent } from '@/store/selectors.ts'
-import { seatColor } from '@/styles/seatColors'
+import { selectGameState, selectViewingPlayerId, useViewedOpponent, selectTeamMap, identitySeatColor } from '@/store/selectors.ts'
 import type { EntityId } from '@/types'
 import { Step, ZoneType } from '@/types'
 
@@ -259,6 +258,7 @@ export function CombatArrows() {
   const currentStep = gameState?.currentStep
   const cards = gameState?.cards
   const players = gameState?.players
+  const teamMap = useGameStore(selectTeamMap)
   const viewingPlayerId = useGameStore(selectViewingPlayerId)
   const viewedOpponent = useViewedOpponent()
   const viewedOpponentId = viewedOpponent?.playerId ?? null
@@ -330,10 +330,11 @@ export function CombatArrows() {
 
       // Seat-identity color for a defending player ("whose seat is this hitting").
       // Attacks against the viewing player stay combat red, as do all 2-player arrows.
+      // Identity colour (the team hue in 2HG), so an arrow matches the chip and plate it points at.
       const seatColorOf = (defenderId: EntityId): string => {
         if (!isMulti || !players || defenderId === viewingPlayerId) return '#ff4444'
         const idx = players.findIndex((p) => p.playerId === defenderId)
-        return idx >= 0 ? seatColor(idx).base : '#ff4444'
+        return idx >= 0 ? identitySeatColor(teamMap, defenderId, idx).base : '#ff4444'
       }
 
       // Card anchor that survives the multiplayer board strip: a card on a
@@ -611,7 +612,7 @@ export function CombatArrows() {
     updateArrows()
     const interval = setInterval(updateArrows, 100)
     return () => clearInterval(interval)
-  }, [combatState, gameStateCombat, opponentAttackerTargets, opponentBlockerAssignments, isDeclaringBlockers, isInCombatPhase, cards, isSpectating, isSelectingDamageOrder, players, isMulti, viewedOpponentId, viewingPlayerId])
+  }, [combatState, gameStateCombat, opponentAttackerTargets, opponentBlockerAssignments, isDeclaringBlockers, isInCombatPhase, cards, isSpectating, isSelectingDamageOrder, players, teamMap, isMulti, viewedOpponentId, viewingPlayerId])
 
   // Don't render during full-screen overlay decisions
   if (hasOverlayDecision) {

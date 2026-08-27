@@ -7,6 +7,9 @@ import { useResponsiveContext } from '../board/shared'
  */
 export function ConcedeButton() {
   const concede = useGameStore((state) => state.concede)
+  // In a pod, conceding eliminates *you* while the game goes on (CR 800.4a) — say so, since
+  // "Concede" reads as "end the game" everywhere else.
+  const isPod = useGameStore((state) => (state.gameState?.players.length ?? 0) > 2)
   const [confirming, setConfirming] = useState(false)
   const responsive = useResponsiveContext()
 
@@ -21,7 +24,12 @@ export function ConcedeButton() {
 
   if (confirming) {
     return (
-      <div style={base}>
+      <div style={{ ...base, alignItems: 'center' }}>
+        {isPod && !responsive.isMobile && (
+          <span style={{ fontSize: 11, color: '#c9a0a0', whiteSpace: 'nowrap', marginRight: 4 }}>
+            You're out; the others play on.
+          </span>
+        )}
         <button
           onClick={() => { concede(); setConfirming(false) }}
           style={{
@@ -35,7 +43,7 @@ export function ConcedeButton() {
             fontWeight: 600,
           }}
         >
-          Confirm
+          {isPod ? 'Concede & leave' : 'Confirm'}
         </button>
         <button
           onClick={() => setConfirming(false)}

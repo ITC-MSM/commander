@@ -308,20 +308,35 @@ are gated on `players.length > 2`).
   name, life (also the floating ±delta anchor via `data-life-display`), hand count, poison,
   commander-damage warning, active-turn ring, priority dot, deciding spinner
   (`opponentDecisionStatus.playerId`), attention pulses, and a tombstone once a player has
-  left the game. The *viewed* opponent additionally keeps a full-size life orb in the
-  center HUD (seat-tinted to match their chip) — the familiar, biggest click target for
-  targeting and defender assignment. Anchors (`data-player-id` / `data-life-id` /
+  left the game, and (desktop) a `kbd` badge with the digit that focuses the board — the
+  same living-opponent index `useMultiplayerView` maps keys 1–9 to, so a tombstone takes
+  no key and the team rail's regrouping never renumbers. With the sliding camera the
+  *viewed* opponent additionally keeps a full-size life orb in the center HUD (seat-tinted
+  to match their chip) — the familiar, biggest click target for targeting and defender
+  assignment. On the two-row table overview that orb is dropped (`centerOrbStandsIn`):
+  every board's plate already prints the name and life, and the orb was the same number
+  sixty pixels above the plate. Anchors (`data-player-id` / `data-life-id` /
   `data-life-display`) are carried by exactly one element per player: the orb for the
-  viewed opponent, the cell's name plate for every other board visible in a shared-strip
-  view (the plate is also a defender-assignment / player-target click target), and the
-  rail chip only while the board is off-screen — never more than one, so arrows, damage
-  floats, and player-target clicks resolve unambiguously.
+  viewed opponent while it stands in, the cell's name plate for every other board visible
+  in a shared-strip view (the plate is also a defender-assignment / player-target click
+  target), and the rail chip only while the board is off-screen — never more than one, so
+  arrows, damage floats, and player-target clicks resolve unambiguously.
 - **Board switching**: rail-chip click (pins; re-click unpins), keyboard `1`/`2`/`3`,
   horizontal swipe. Follow-the-action (`useMultiplayerView` + the `boardView` slice:
   `viewedOpponentId`, `viewPinned`, `followAction`) slides automatically on coarse
   boundaries — an opponent's turn starting, the attacker's board when you're attacked, the
   priority seat in hotseat — and is refused inside `followViewTo` while any input is
-  pending (the camera never moves under an in-progress selection).
+  pending (the camera never moves under an in-progress selection). A pin *suspends* the
+  follow setting rather than flipping it: `followAction` is the persisted preference,
+  `isFollowingAction(state)` (= `followAction && !viewPinned`) is what the camera does and
+  what the rail's Follow button shows, and Esc / re-clicking the chip / clicking Follow all
+  release the pin. Pinning used to write `followAction: false`, which left Esc a no-op and
+  the camera permanently manual after one chip click.
+- **Turn context in a pod**: the step strip names the active seat ("Tomasz's Turn") and,
+  outside a shared-turn team game, how far off your turn is ("You're next" / "You in 2",
+  counted over living seats). Another seat's elimination shows a transient top-centre
+  `EliminationNotice` (derived from `hasLost` flipping in the roster, so it fires however
+  the seat died) and keeps its seat colour in the log.
 - **Table overview** (`boardView.overviewMode`, rail toggle or key `0`; desktop/tablet
   only — phones keep the focused camera). **Every 3+ player game opens on it** — the
   one-board camera hides most of a pod — and `GameBoard` re-defaults once per game
