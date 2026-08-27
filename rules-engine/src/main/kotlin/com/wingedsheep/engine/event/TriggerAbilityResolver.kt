@@ -115,10 +115,15 @@ class TriggerAbilityResolver(
         // printed on no card as a separate line. Same derivation shape as vanishing.
         val fabricateAbilities = getFabricateTriggeredAbilities(entityId, cardDefinitionId, state)
 
+        // Renown N (CR 702.112) — the combat-damage trigger is intrinsic to the keyword, printed
+        // on no card as a separate line. Same derivation shape as fabricate: the projected keyword
+        // gates it, the printed KeywordAbility.Numeric supplies N.
+        val renownAbilities = getRenownTriggeredAbilities(entityId, cardDefinitionId, state)
+
         val allGranted = grantedAbilities + staticGrantedAbilities + attachedGrantedAbilities +
             selfGrantedAbilities + wardAbilities + flankingAbilities + ringBearerAbilities +
             suspendAbilities + paradigmAbilities + siegeAbilities + vanishingAbilities +
-            fabricateAbilities
+            fabricateAbilities + renownAbilities
         val combined = if (allGranted.isNotEmpty()) base + allGranted else base
 
         // Apply text replacement if the entity has one
@@ -313,10 +318,15 @@ class TriggerAbilityResolver(
         // printed on no card as a separate line. Same derivation shape as vanishing.
         val fabricateAbilities = getFabricateTriggeredAbilities(entityId, cardDefinitionId, state)
 
+        // Renown N (CR 702.112) — the combat-damage trigger is intrinsic to the keyword, printed
+        // on no card as a separate line. Same derivation shape as fabricate: the projected keyword
+        // gates it, the printed KeywordAbility.Numeric supplies N.
+        val renownAbilities = getRenownTriggeredAbilities(entityId, cardDefinitionId, state)
+
         val allGranted = grantedAbilities + staticGrantedAbilities + attachedGrantedAbilities +
             selfGrantedAbilities + wardAbilities + flankingAbilities + ringBearerAbilities +
             suspendAbilities + paradigmAbilities + siegeAbilities + vanishingAbilities +
-            fabricateAbilities
+            fabricateAbilities + renownAbilities
         val combined = if (allGranted.isNotEmpty()) base + allGranted else base
 
         val textReplacement = state.getEntity(entityId)?.get<TextReplacementComponent>()
@@ -773,6 +783,38 @@ class TriggerAbilityResolver(
         return com.wingedsheep.sdk.scripting.Fabricate.printedCounts(cardDef)
             .mapIndexed { instance, n ->
                 com.wingedsheep.sdk.scripting.Fabricate.etbChoice(n, instance)
+            }
+    }
+
+    /**
+     * Renown N (CR 702.112) as the keyword-derived triggered ability it is. A renown card prints
+     * one keyword line and a reminder, never the ability itself, so the engine supplies it — the
+     * same shape as fabricate, vanishing, flanking, ward and the Siege defeat trigger. See
+     * [com.wingedsheep.sdk.scripting.Renown] for why "if it isn't renowned" is an intervening-`if`
+     * rather than a check inside the effect.
+     *
+     * **Two sources, deliberately**, exactly as fabricate: the *gate* is the projected keyword, so
+     * a creature that has lost all abilities has no renown trigger; the *parameter* is the printed
+     * [KeywordAbility.Numeric], because a projected keyword set carries no N. The one card that
+     * grants renown (Aragorn, Hornburg Hero) is not in the corpus, and a granted renown has no N
+     * to read — the same limitation vanishing's granted case has for its entry counters.
+     *
+     * **One trigger per printed instance**, not one per summed N — CR 702.112c: *"If a creature
+     * has multiple instances of renown, each triggers separately."* The first to resolve makes the
+     * creature renowned and the rest find their intervening-`if` false.
+     */
+    private fun getRenownTriggeredAbilities(
+        entityId: EntityId,
+        cardDefinitionId: String,
+        state: GameState,
+    ): List<TriggeredAbility> {
+        if (!state.projectedState.hasKeyword(entityId, com.wingedsheep.sdk.core.Keyword.RENOWN)) {
+            return emptyList()
+        }
+        val cardDef = cardRegistry.getCard(cardDefinitionId) ?: return emptyList()
+        return com.wingedsheep.sdk.scripting.Renown.printedCounts(cardDef)
+            .mapIndexed { instance, n ->
+                com.wingedsheep.sdk.scripting.Renown.combatDamageTrigger(n, instance)
             }
     }
 

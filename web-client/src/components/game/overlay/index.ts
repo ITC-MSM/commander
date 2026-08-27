@@ -4,4 +4,5 @@ export { LifeDisplay, ActiveEffectsBadges, CommanderDamageBadges } from './LifeD
 export { SpeedGauge } from './SpeedGauge'
 export { TeamLifeBanner } from './TeamLifeBanner'
 export { DayNightBadge } from './DayNightBadge'
+export { EliminationNotice } from './EliminationNotice'
 export { ConcedeButton, StandaloneConcedeButton, FullscreenButton, SpectatorCountBadge } from './GameControls'

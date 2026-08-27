@@ -32,6 +32,62 @@ All game logic lives on the server:
 - Legal actions list comes from server, not computed locally
 - Animation events come from server event stream
 
+#### Estimates are readouts, never gates
+
+The client does do some cost arithmetic — `utils/manaCost.ts` parses `manaCostString`, applies
+a convoke/delve/improvise selection to it, subtracts floating mana, and sums the server's
+`availableManaSources`. Every number it produces is a **readout**: the remaining-cost pips in a
+payment HUD, the "may be N short" hint, the pre-selected lands. None of it decides whether a
+submission happens. The rules that keep it honest:
+
+- **A HUD button is never disabled on a client estimate.** `ConvokeSelector`,
+  `TapForGenericSelector` and `HarmonizeSelector` keep Cast live and show the estimate beside it.
+  The estimate is colour-blind and can't see a Phyrexian pip payable with life, so gating on it
+  would both suppress casts the server accepts and pass ones it rejects. The server's answer —
+  the cast, or an error toast naming the problem — is the verdict.
+- **The server validates every alternative-payment choice, not just the total.**
+  `AlternativePaymentHandler.validateForSpell` / `validateForAbility` reject a convoke creature
+  that is tapped, not a creature, not yours, or claimed to be a colour it isn't; a delve card
+  that isn't in your graveyard; an improvise/waterbend permanent that doesn't qualify — before
+  anything is tapped or exiled, with a message that names the permanent. Before this, validation
+  priced whatever the action *claimed* while execution silently skipped the illegal part, so a
+  stale selection either failed as "Cannot pay mana cost" or was quietly covered by auto-tapping
+  lands the player never chose. Which colour a convoked creature pays is a client *preference*
+  (`pickConvokeColor`); whether it *may* pay that colour is the server's.
+- **Server lists are trusted as-is.** `validCreatures` for attackers and blockers already
+  excludes tapped creatures (the engine's `MustBeUntappedAttackRule`, `getValidBlockers`), so
+  `GameCard` no longer re-checks `isTapped` on top of it; the default attack defender is the first
+  living seat in `validAttackTargets`, not the first living opponent in seat order.
+- **A client-side pre-check reads the same data the server reads.** Banding (CR 702.22c, at most
+  one member without banding) is checked in the `linkBand` reducer against `ClientCard.keywords`
+  — the projected keyword set `validateBands` reads — so the client only refuses a band the
+  server would refuse. It used to read a `data-banding` DOM attribute, which counted any member
+  without a rendered element as "no banding".
+- **The payment prompt carries `ManaSourceOption.manaAmount`**, the same field the cast path's
+  `ManaSourceInfo` has, so `manaCoverage.ts` credits a Gilded Lotus with three mana toward a
+  ward — up to three pips of one colour it makes, the rest toward generic. Without it the Pay
+  button stayed dead on a payment the server would have accepted. That prompt
+  (`ManaSourceSelectionUI`) is the one place a button still waits on a client read: the coverage
+  is colour-aware and pip-exact rather than a total, and a short submission is a server error
+  the prompt survives, so the gate costs nothing when it is right. If it is ever found to
+  disagree with the server, drop the gate rather than patch the arithmetic.
+
+Still client-derived, and the shape of the fix for each:
+
+- The **residual cost and affordability of a partial selection** (`pipelineSlice` rewrites
+  `manaCostString` between phases; the HUD shortfall). The server owns the function —
+  `CastSpellHandler.computeTotalCastCost` + `validatePayment` on a draft action — but nothing
+  carries a *cost-given-a-partial-payment* to the client. A read-only `previewCast` request
+  answered from the session lock would replace every copy of the arithmetic with the engine's.
+- **Blocker↔attacker pairing** (menace, evasion, "can't block unless", lure/provoke) is only
+  checked on Confirm. The client submits and the server rejects — the right direction of
+  failure, but a per-attacker `validBlockersFor` on the `DeclareBlockers` legal action would let
+  the drop highlight say so first.
+- The **per-extra-target mana tax** is summed client-side from `manaCostPerExtraTarget`; the
+  **delve / tap caps** (`maxDelve`, improvise `maxTaps` with an X in the cost) are derived from
+  the cost string; the harmonize reduction is applied in a different order than the engine's.
+  All display-only today, all trivially server-sendable.
+
 ### 3. Optimistic UI (Future)
 
 For responsiveness, we may later add:
@@ -308,20 +364,35 @@ are gated on `players.length > 2`).
   name, life (also the floating ±delta anchor via `data-life-display`), hand count, poison,
   commander-damage warning, active-turn ring, priority dot, deciding spinner
   (`opponentDecisionStatus.playerId`), attention pulses, and a tombstone once a player has
-  left the game. The *viewed* opponent additionally keeps a full-size life orb in the
-  center HUD (seat-tinted to match their chip) — the familiar, biggest click target for
-  targeting and defender assignment. Anchors (`data-player-id` / `data-life-id` /
+  left the game, and (desktop) a `kbd` badge with the digit that focuses the board — the
+  same living-opponent index `useMultiplayerView` maps keys 1–9 to, so a tombstone takes
+  no key and the team rail's regrouping never renumbers. With the sliding camera the
+  *viewed* opponent additionally keeps a full-size life orb in the center HUD (seat-tinted
+  to match their chip) — the familiar, biggest click target for targeting and defender
+  assignment. On the two-row table overview that orb is dropped (`centerOrbStandsIn`):
+  every board's plate already prints the name and life, and the orb was the same number
+  sixty pixels above the plate. Anchors (`data-player-id` / `data-life-id` /
   `data-life-display`) are carried by exactly one element per player: the orb for the
-  viewed opponent, the cell's name plate for every other board visible in a shared-strip
-  view (the plate is also a defender-assignment / player-target click target), and the
-  rail chip only while the board is off-screen — never more than one, so arrows, damage
-  floats, and player-target clicks resolve unambiguously.
+  viewed opponent while it stands in, the cell's name plate for every other board visible
+  in a shared-strip view (the plate is also a defender-assignment / player-target click
+  target), and the rail chip only while the board is off-screen — never more than one, so
+  arrows, damage floats, and player-target clicks resolve unambiguously.
 - **Board switching**: rail-chip click (pins; re-click unpins), keyboard `1`/`2`/`3`,
   horizontal swipe. Follow-the-action (`useMultiplayerView` + the `boardView` slice:
   `viewedOpponentId`, `viewPinned`, `followAction`) slides automatically on coarse
   boundaries — an opponent's turn starting, the attacker's board when you're attacked, the
   priority seat in hotseat — and is refused inside `followViewTo` while any input is
-  pending (the camera never moves under an in-progress selection).
+  pending (the camera never moves under an in-progress selection). A pin *suspends* the
+  follow setting rather than flipping it: `followAction` is the persisted preference,
+  `isFollowingAction(state)` (= `followAction && !viewPinned`) is what the camera does and
+  what the rail's Follow button shows, and Esc / re-clicking the chip / clicking Follow all
+  release the pin. Pinning used to write `followAction: false`, which left Esc a no-op and
+  the camera permanently manual after one chip click.
+- **Turn context in a pod**: the step strip names the active seat ("Tomasz's Turn") and,
+  outside a shared-turn team game, how far off your turn is ("You're next" / "You in 2",
+  counted over living seats). Another seat's elimination shows a transient top-centre
+  `EliminationNotice` (derived from `hasLost` flipping in the roster, so it fires however
+  the seat died) and keeps its seat colour in the log.
 - **Table overview** (`boardView.overviewMode`, rail toggle or key `0`; desktop/tablet
   only — phones keep the focused camera). **Every 3+ player game opens on it** — the
   one-board camera hides most of a pod — and `GameBoard` re-defaults once per game

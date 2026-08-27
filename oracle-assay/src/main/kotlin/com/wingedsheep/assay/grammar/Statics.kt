@@ -11,6 +11,7 @@ import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.dsl.Conditions as SdkConditions
+import com.wingedsheep.sdk.scripting.AssignDamageEqualToToughness
 import com.wingedsheep.sdk.scripting.AttackTax
 import com.wingedsheep.sdk.scripting.CanOnlyBlockCreaturesWith
 import com.wingedsheep.sdk.scripting.CantAttackUnless
@@ -361,6 +362,77 @@ object Statics {
     }
 
     // ---------------------------------------------------------------------------------------
+    // Assigning combat damage by toughness — the Doran family
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * "Each creature you control assigns combat damage equal to its toughness rather than its
+     * power." — Assault Formation and Huatli, the Sun's Heart; "Each creature assigns …" — Doran,
+     * the Siege Tower; and with the qualifier, "Each creature you control **with toughness greater
+     * than its power** assigns …" — Bedrock Tortoise, Tapestry Warden, Ancient Lumberknot.
+     *
+     * The family is two rules and one flag, and the flag is why it is two rules rather than a slot:
+     * `onlyWhenToughnessGreaterThanPower` is a `Boolean`, and English spells its two values in two
+     * different *places* — set, it is a clause inside the noun phrase; clear, it is nothing at all.
+     * A slot has one position, and an empty surface for the common value would give the printer a
+     * choice between "each creature you control assigns" and "each creature you control  assigns".
+     * So the boolean is a row, which is the same answer [restriction] gives its parameterless
+     * members for the same reason.
+     *
+     * **The subject is a distributive singular**, and that is the one thing about this family that
+     * is not shared with any other group static in this file. Every lord and every combat
+     * restriction prints its group as a plural noun phrase ("creatures you control get +1/+1"), so
+     * they slot [Filters.plural]; Oracle prints *this* sentence as "each creature you control …
+     * assigns … **its** toughness", agreeing the verb and the pronoun with the singular, because
+     * the rule it states is about one creature at a time. Same `GroupFilter` value, different
+     * number on the noun — so the slot is [Filters.filter] and the "each" is a literal.
+     *
+     * The reconstruct-and-compare is what keeps `GroupFilter`'s other fields honest: a `Scope.Self`
+     * or an `excludeSelf` that this sentence says nothing about refuses to print rather than being
+     * silently dropped, and [attachedDamageByToughness] owns the one scope that does have a
+     * printed form.
+     */
+    private fun damageByToughness(qualified: Boolean): Phrase<StaticAbility> {
+        val qualifier = if (qualified) " with toughness greater than its power" else ""
+        fun abilityFor(filter: GameObjectFilter) =
+            AssignDamageEqualToToughness(GroupFilter(filter), qualified)
+        return phrase(
+            "each {group}$qualifier assigns combat damage equal to its toughness rather than its power.",
+            name = if (qualified) "a group assigns damage by toughness where it exceeds power"
+            else "a group assigns damage by toughness",
+        ) {
+            slot("group", Filters.filter)
+            build { abilityFor(it.value("group")) }
+            match { value ->
+                val assign = value as? AssignDamageEqualToToughness ?: return@match null
+                if (assign.onlyWhenToughnessGreaterThanPower != qualified) return@match null
+                val base = assign.filter.baseFilter
+                if (value != abilityFor(base)) return@match null
+                bind("group" to base)
+            }
+        }
+    }
+
+    /**
+     * "As long as equipped creature's toughness is greater than its power, it assigns combat damage
+     * equal to its toughness rather than its power." — Bark of Doran, and the same value
+     * [damageByToughness] builds with the group scoped to the attachment.
+     *
+     * A `constant` rather than a row of the pair above, because the attached subject does not merely
+     * change the noun: it moves the qualifier out of the noun phrase and to the front of the
+     * sentence as an "as long as" clause, and turns the subject of the main clause into "it". There
+     * is no filter left to slot — `GroupFilter.attachedCreature()` is the whole value, and it is
+     * [AssignDamageEqualToToughness]'s own default — so the sentence denotes one model and the rule
+     * is the sentence. The unqualified attached form is not printed by any card and is not
+     * registered: an unprinted row is a second spelling waiting to be chosen from.
+     */
+    private val attachedDamageByToughness: Phrase<StaticAbility> = constant(
+        "as long as enchanted creature's toughness is greater than its power, it assigns combat " +
+            "damage equal to its toughness rather than its power.",
+        AssignDamageEqualToToughness(),
+    )
+
+    // ---------------------------------------------------------------------------------------
     // Lords — a whole group of permanents, named by a filter
     // ---------------------------------------------------------------------------------------
 
@@ -652,20 +724,9 @@ object Statics {
         }
     }
 
-    /**
-     * One half of a printed modifier pair as a [DynamicAmount] over [count].
-     *
-     * Three cases and not one, because the SDK spells the three numbers three ways and the corpus is
-     * unanimous about which: "+1/+0" is the bare aggregate beside a `Fixed(0)` — Nim Lasher's golden,
-     * and every other card in the family — while "+2/+2" is a `Multiply`. Writing `Multiply(count, 1)`
-     * for the common half would be a model no hand-written card carries, which the differential would
-     * report on every card this rule reads.
-     */
-    private fun scaled(count: DynamicAmount, multiplier: Int): DynamicAmount = when (multiplier) {
-        0 -> DynamicAmount.Fixed(0)
-        1 -> count
-        else -> DynamicAmount.Multiply(count, multiplier)
-    }
+    /** See [Amounts.scaled] — this family was its first caller and now shares it with [Replacements]. */
+    private fun scaled(count: DynamicAmount, multiplier: Int): DynamicAmount =
+        Amounts.scaled(count, multiplier)
 
     /** The battlefield tally inside one half of a modifier pair, or null when that half is a constant. */
     private fun countedIn(amount: DynamicAmount): DynamicAmount.AggregateBattlefield? = when (amount) {
@@ -675,12 +736,8 @@ object Statics {
     }
 
     /** [scaled]'s inverse against a known tally; null when this half is not that tally scaled at all. */
-    private fun multiplierOf(amount: DynamicAmount, count: DynamicAmount.AggregateBattlefield): Int? = when {
-        amount == DynamicAmount.Fixed(0) -> 0
-        amount == count -> 1
-        amount is DynamicAmount.Multiply && amount.amount == count -> amount.multiplier
-        else -> null
-    }
+    private fun multiplierOf(amount: DynamicAmount, count: DynamicAmount.AggregateBattlefield): Int? =
+        Amounts.multiplierOf(amount, count)
 
     val all: List<Phrase<StaticAbility>> = listOf(
         attachedPump,
@@ -709,6 +766,9 @@ object Statics {
             CantBlockUnless(SdkConditions.ControlMoreCreatures),
         ),
         cantAttackUnlessLandType,
+        damageByToughness(qualified = false),
+        damageByToughness(qualified = true),
+        attachedDamageByToughness,
     ) + combatRestrictions + Amounts.perScope(::selfPumpPerCount) + SpellCosts.all + lordStatic(
         "get", "a group gets",
         parameter = Primitives.statModifiers,

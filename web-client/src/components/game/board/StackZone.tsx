@@ -1,8 +1,7 @@
 import type React from 'react'
 import { useState } from 'react'
 import { useGameStore } from '@/store/gameStore.ts'
-import { useStackCards, selectGameState } from '@/store/selectors.ts'
-import { seatColor } from '@/styles/seatColors'
+import { useStackCards, selectGameState, selectTeamMap, identitySeatColor } from '@/store/selectors.ts'
 import type { EntityId } from '@/types'
 import type { ClientAbilityIdentity, ClientCard } from '@/types/gameState'
 import { getCardImageUrl, faceDownImageUrl } from '@/utils/cardImages.ts'
@@ -55,12 +54,14 @@ export function StackDisplay() {
   // tagged with the caster's name, so "whose spell is that" reads at a glance. 2-player games
   // have only one possible caster per side, so this stays off.
   const players = useGameStore((state) => selectGameState(state)?.players)
+  const teamMap = useGameStore(selectTeamMap)
   const isMulti = (players?.length ?? 0) > 2
   const seatMetaFor = (controllerId: EntityId) => {
     if (!isMulti || !players) return null
     const idx = players.findIndex((p) => p.playerId === controllerId)
     if (idx < 0) return null
-    return { name: players[idx]?.name ?? 'Player', seat: seatColor(idx) }
+    // Identity colour (team hue in 2HG) so the stack agrees with the rail and the plates.
+    return { name: players[idx]?.name ?? 'Player', seat: identitySeatColor(teamMap, controllerId, idx) }
   }
   const seatBorderFor = (controllerId: EntityId): React.CSSProperties => {
     const meta = seatMetaFor(controllerId)

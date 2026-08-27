@@ -59,6 +59,7 @@ import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.addFloatingEffect
 import com.wingedsheep.engine.mechanics.mana.AlternativePaymentHandler
+import com.wingedsheep.engine.mechanics.mana.TapForGeneric
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
@@ -673,6 +674,25 @@ class CastSpellHandler(
             }
         }
         val playForFree = playForFreeFromComponent || action.useWithoutPayingManaCost
+        // The engine, not the client, decides what a convoke/delve/improvise choice is worth: every
+        // chosen permanent or card must be one the payment could actually use, or the cost twins
+        // below would price a payment `execute` then silently declines to apply.
+        // A free cast has no generic to pay, so `execute` ignores tap-for-generic permanents on
+        // one (the `!playForFree` guards below); validation ignores them the same way rather than
+        // rejecting a cast whose taps simply do nothing.
+        val alternativePayment = action.alternativePayment
+            ?.let { if (playForFree) it.copy(tapForGenericPermanents = emptySet()) else it }
+        if (alternativePayment != null && !alternativePayment.isEmpty && cardDef != null) {
+            val waterbendCap = spellWaterbendAmount(cardDef, action) + fixedAltWaterbendAmount(state, action, playForFree)
+            val tapForGeneric = when {
+                waterbendCap > 0 -> TapForGeneric.WATERBEND
+                grantedKeywordResolver.hasKeyword(state, action.playerId, cardDef, Keyword.IMPROVISE) -> TapForGeneric.IMPROVISE
+                else -> null
+            }
+            alternativePaymentHandler.validateForSpell(
+                state, alternativePayment, action.playerId, cardDef, action.cardId, tapForGeneric
+            )?.let { return it }
+        }
         val computedCost = computeTotalCastCost(state, action, cardDef, cardComponent, playForFree, hasCommanderCast)
             ?: return "No alternative casting cost available"
         val paymentError = validatePayment(state, action, computedCost.cost, computedCost.paymentXValue)

@@ -1,7 +1,7 @@
 import { useMemo, useCallback, useRef, useEffect } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import { useInteraction } from '@/hooks/useInteraction'
-import { useViewingPlayer, useOpponent, useOpponents, useViewedOpponent, useStackCards, selectPriorityMode, useGhostCards, useBattlefieldCards, selectTeamMap, useIdentityColor, useViewerTeamIndex, useIsAlly, identitySeatColor, selectViewingPlayerId, useEliminatedBottomSeatId, useViewerEliminated, useIsSharedLifeTeamGame, useTeamLabelFor, useTeammateNames, useTeamHasPriority, useIsMyTeamTurn } from '@/store/selectors'
+import { useViewingPlayer, useOpponent, useOpponents, useViewedOpponent, useStackCards, selectPriorityMode, useGhostCards, useBattlefieldCards, selectTeamMap, useIdentityColor, useViewerTeamIndex, useIsAlly, identitySeatColor, selectViewingPlayerId, useEliminatedBottomSeatId, useViewerEliminated, useIsSharedLifeTeamGame, useTeamLabelFor, useTeammateNames, useTeamHasPriority, useIsMyTeamTurn, useIsSharedTurnTeamGame, turnQueueHintFor } from '@/store/selectors'
 import { useMultiplayerView, useCombatDefenderFocus } from '@/hooks/useMultiplayerView'
 import { OpponentRail, railReservedWidth } from './OpponentRail'
 import { hand, getNextStep, StepShortNames } from '@/types'
@@ -28,7 +28,7 @@ import { ManaSymbol } from '../ui/ManaSymbols'
 import { Battlefield, CardRow, CommandZone, OpponentBoardArea, BoardNamePlate, CollapsedBoardTab, COLLAPSED_TAB_WIDTH, CELL_PLATE_BAND, useCellHandMetrics, StackDisplay, ZonePile, ResponsiveContext } from './board'
 import { RenderProfiler } from '@/utils/renderProfiler'
 import { CardPreview } from './card'
-import { TargetingOverlay, ManaColorSelectionOverlay, LifeDisplay, ActiveEffectsBadges, SpeedGauge, DayNightBadge, ConcedeButton, FullscreenButton, SpectatorCountBadge, TeamLifeBanner } from './overlay'
+import { TargetingOverlay, ManaColorSelectionOverlay, LifeDisplay, ActiveEffectsBadges, SpeedGauge, DayNightBadge, ConcedeButton, FullscreenButton, SpectatorCountBadge, TeamLifeBanner, EliminationNotice } from './overlay'
 import { HelpDrawer, HelpDrawerButton } from '../help/HelpDrawer'
 import { styles } from './board/styles'
 
@@ -138,6 +138,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
   const teamHoldsPriority = useTeamHasPriority(playerId ?? null)
   // ...and is it the viewer's *team's* turn (CR 805.4)? Also false outside a shared-turns format.
   const teamActiveTurn = useIsMyTeamTurn()
+  const sharedTurnTeamGame = useIsSharedTurnTeamGame()
   // The teammate currently on the baton. Read off the priority holder rather than "the ally",
   // because the ally seat is suppressed while this client is the one driving it (hotseat) — and
   // that is exactly a case where naming who is acting matters most.
@@ -146,6 +147,12 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       state.gameState?.players.find((p) => p.playerId === state.gameState?.priorityPlayerId)?.name ??
       null,
   )
+  // The badge below stays mounted through the fade-out, so keep the last name it showed —
+  // otherwise the text collapses to the bare "Team priority" the instant priority leaves the
+  // team, which reads as a second, different message flashing by.
+  const lastBatonNameRef = useRef<string | null>(null)
+  if (batonHolderName) lastBatonNameRef.current = batonHolderName
+  const batonLabelName = batonHolderName ?? lastBatonNameRef.current
   const isTeamGame = viewerTeam != null && Object.keys(teamMap).length > 0
   // The seat anchoring the bottom row: you when playing, the spectator's chosen/first seat, or —
   // for an eliminated spectator, whose own board left the game with them — the survivor sitting
@@ -452,6 +459,12 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
   // the step strip. Every plate then carries its own player's anchors again — there is no orb
   // standing in for a seat any more.
   const teamBannersActive = teamBannerSeats != null
+  // The center-left orb stands in for one opponent only while that opponent has no plate of their
+  // own — the sliding camera. On the two-row table every board's plate already carries its name,
+  // life and anchors, so the orb would print the same number sixty pixels above the plate: the
+  // duplicate the team banners exist to remove, just in a free-for-all. Every plate then carries
+  // its own player's anchors, exactly as with the banners up.
+  const centerOrbStandsIn = !teamBannersActive && !twoRowActive
   // The one ally seat whose hand you may read (CR 810.5). Null outside a shared-life team game,
   // while spectating, and for the (unsupported today) team of one.
   const allySeat = useMemo(() => {
@@ -543,14 +556,15 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
         }
       }
     }
-    // Outside a team-banner game the center orb stands in for one opponent, so it carries their
-    // anchors wherever their own board doesn't. With the banners up nothing stands in for a seat.
-    if (!teamBannersActive && centerOrbOpponentId && !ids.includes(centerOrbOpponentId)) {
+    // With the sliding camera the center orb stands in for one opponent, so it carries their
+    // anchors wherever their own board doesn't. With the banners up, or on the two-row table,
+    // nothing stands in for a seat — every visible plate is its own player's anchor.
+    if (centerOrbStandsIn && centerOrbOpponentId && !ids.includes(centerOrbOpponentId)) {
       ids.push(centerOrbOpponentId)
     }
     return ids
   }, [
-    teamBannersActive,
+    centerOrbStandsIn,
     multiView,
     expandedStripIds,
     eliminatedBottomSeat,
@@ -759,6 +773,13 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       // During a hijack of the opponent's turn, treat it as "my turn" so the active-player
       // controls (combat declaration, sorcery-speed plays) light up for the driving client.
       (youAreHijacking != null && gameState.activePlayerId === youAreHijacking))
+  // Multiplayer: how far off your next turn is, in living seats — "You're next" / "You in 2". The
+  // rail lists the table in turn order, but counting chips is the player's job today. Two-Headed
+  // Giant takes one shared turn per team (CR 805.4), where a per-seat count would mislead, so none
+  // there; Team vs. Team takes individual turns (CR 808.4) and keeps it.
+  const turnQueueHint = !isMulti || sharedTurnTeamGame || spectatorMode || isMyTurn
+    ? undefined
+    : turnQueueHintFor(gameState.players, gameState.activePlayerId, viewingPlayer?.playerId)
   const isInCombatMode = spectatorMode ? false : (combatState !== null)
   const isInDistributeMode = !spectatorMode && distributeState !== null
   const distributeTotalAllocated = distributeState
@@ -1092,7 +1113,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                       // viewed board, but a Two-Headed Giant HUD points its orb at the enemy team
                       // instead (see `centerOrbOpponent`).
                       plateCarriesAnchors={
-                        multiView && expandedCell && (teamBannersActive || o.playerId !== centerOrbOpponentId)
+                        multiView && expandedCell && (!centerOrbStandsIn || o.playerId !== centerOrbOpponentId)
                       }
                       // With every board on screen the useful highlight is whose turn it is,
                       // not which cell the camera nominally tracks.
@@ -1196,7 +1217,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                   table ([TeamLifeBanner]), so the center band keeps only the step strip and the
                   per-player badges. Printing the same number here as well is the duplicate the
                   banners exist to remove. */}
-              {!teamBannersActive && <LifeDisplay
+              {centerOrbStandsIn && <LifeDisplay
                 life={centerOrbOpponent.life}
                 playerId={centerOrbOpponent.playerId}
                 playerName={centerOrbOpponent.name}
@@ -1270,10 +1291,11 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
             Without this the window looks like someone else's turn to speak, and the whole point of
             team priority — answering what your partner just did, before the table moves on — goes
             unused. */}
-        {teamHoldsPriority && !spectatorMode && (
+        {sharedTurnTeamGame && !spectatorMode && (
           <div
             role="status"
             aria-live="polite"
+            aria-hidden={!teamHoldsPriority}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -1289,12 +1311,22 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
               border: `1px solid ${selfSeatColor.base}`,
               whiteSpace: 'nowrap',
               userSelect: 'none',
+              // The baton moves between teammates constantly, so this badge blinks on and off
+              // several times a turn. Mounting and unmounting it did that *in flow*: the centre
+              // HUD grew and shrank by a row each time and the step strip (plus everything
+              // aligned to it) jumped. Inside a shared-turn team game the slot is therefore
+              // always present and only its opacity changes — the layout never moves. Outside
+              // one the whole block still renders nothing at all.
+              opacity: teamHoldsPriority ? 1 : 0,
+              transform: teamHoldsPriority ? 'translateY(0)' : 'translateY(-2px)',
+              transition: 'opacity 180ms ease, transform 180ms ease',
+              pointerEvents: 'none',
             }}
           >
             <span aria-hidden style={{ fontSize: 11 }}>🤝</span>
             <span>
               Team priority
-              {batonHolderName ? ` — ${batonHolderName} is acting` : ''}
+              {batonLabelName ? ` — ${batonLabelName} is acting` : ''}
             </span>
           </div>
         )}
@@ -1308,10 +1340,13 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           isActivePlayer={isMyTurn}
           hasPriority={hasPriority}
           priorityMode={priorityMode}
-          activePlayerName={spectatorMode
+          // Name the active seat in a pod: "Opponent's Turn" says nothing at a four-seat table.
+          // While responding the strip keeps saying so — the name is on the rail's turn ring.
+          activePlayerName={spectatorMode || (isMulti && !isMyTurn && priorityMode !== 'responding')
             ? gameState.players.find(p => p.playerId === gameState.activePlayerId)?.name
             : undefined
           }
+          turnQueueHint={turnQueueHint}
           activeSide={
             spectatorMode
               ? (gameState.activePlayerId === effectiveViewingPlayer?.playerId ? 'bottom' : 'top')
@@ -1472,7 +1507,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                 liftHand={teamBannersActive}
                 plateCarriesAnchors={
                   p.playerId !== bottomHudPlayer?.playerId &&
-                  (teamBannersActive || p.playerId !== centerOrbOpponentId)
+                  (!centerOrbStandsIn || p.playerId !== centerOrbOpponentId)
                 }
                 onToggleCollapse={() => toggleSeatCollapsed(p.playerId)}
                 // Same active-turn ring as the top row — the highlight has to mean the same
@@ -1740,6 +1775,8 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           </div>
         )
       })()}
+
+      {isMulti && <EliminationNotice topOffset={effectiveTopOffset} />}
 
       {/* Attack-restriction explainer — "attack left/right" (CR 803.1) and similar
           restrictions are invisible on the board itself, so say exactly who can be

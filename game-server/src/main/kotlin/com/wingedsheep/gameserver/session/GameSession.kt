@@ -402,6 +402,14 @@ class GameSession(
     }
 
     /**
+     * Every *other* seat at the table — opponents and teammates alike. For table-wide notices
+     * (a seat dropped, a seat came back) that a partner needs at least as much as an opponent
+     * does; [getOpponentIds] is for anything that must stop at the team boundary.
+     */
+    fun getOtherPlayerIds(playerId: EntityId): List<EntityId> =
+        players.keys.filter { it != playerId }
+
+    /**
      * Get the player session for a player ID.
      */
     fun getPlayerSession(playerId: EntityId): PlayerSession? = players[playerId]
@@ -1140,7 +1148,7 @@ class GameSession(
         }
 
         val effectiveOverrides = if (hasNonBattlefieldAbility) {
-            val isMyTurn = state.activePlayerId == priorityPlayer
+            val isMyTurn = state.isActiveTurnFor(priorityPlayer)
             if (isMyTurn) {
                 overrides.copy(myTurnStops = overrides.myTurnStops + state.step)
             } else {
@@ -1263,12 +1271,15 @@ class GameSession(
 
         // During combat declaration steps, submit an empty declaration instead of PassPriority.
         // The engine requires declarations before allowing priority to pass.
+        // Turn ownership is team-wide in a shared team turn (CR 805.10a) — the same gate the
+        // engine's PassPriorityHandler / DeclareBlockersHandler use — so the active player's
+        // teammate isn't handed a DeclareBlockers (or a bare pass) the engine will refuse.
         val action: GameAction = when {
-            state.step == Step.DECLARE_ATTACKERS && playerId == state.activePlayerId &&
+            state.step == Step.DECLARE_ATTACKERS && state.isActiveTurnFor(playerId) &&
                 state.getEntity(playerId)?.get<AttackersDeclaredThisCombatComponent>() == null ->
                 DeclareAttackers(playerId, emptyMap())
 
-            state.step == Step.DECLARE_BLOCKERS && playerId != state.activePlayerId &&
+            state.step == Step.DECLARE_BLOCKERS && !state.isActiveTurnFor(playerId) &&
                 state.getEntity(playerId)?.get<BlockersDeclaredThisCombatComponent>() == null ->
                 DeclareBlockers(playerId, emptyMap())
 
@@ -1309,9 +1320,25 @@ class GameSession(
     fun isGameOver(): Boolean = gameState?.gameOver == true
 
     /**
-     * Get the winner ID if the game is over.
+     * Get the winner ID if the game is over. In a team game this is a *representative* of the
+     * winning team (the engine records one seat); use [getWinnerIds] for everyone who won.
      */
     fun getWinnerId(): EntityId? = gameState?.winnerId
+
+    /**
+     * Every seat that won: the winner's whole still-in team (CR 810.8a — a team wins together), or
+     * just the winner outside a team game. Empty for a draw or an unfinished game. Anything that
+     * labels a seat as having won or lost — the GameOver message, match history, standings — has
+     * to read this rather than compare against the single [getWinnerId], or the winning team's
+     * other head is told they lost.
+     */
+    fun getWinnerIds(): List<EntityId> {
+        val state = gameState ?: return emptyList()
+        val winner = state.winnerId ?: return emptyList()
+        return state.teamOf(winner).filter {
+            state.getEntity(it)?.has<com.wingedsheep.engine.state.components.player.PlayerLostComponent>() != true
+        }
+    }
 
     /**
      * Determine the reason for game over.

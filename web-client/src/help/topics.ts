@@ -688,10 +688,10 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     summary:
       'Overview shows every opponent board side by side; turn it off to focus one board at a time. Follow slides the view to whoever is acting; turn it off for a manual camera.',
     body: [
-      { kind: 'p', text: 'Number keys 1–9 jump to an opponent’s board and 0 toggles the overview. Clicking an opponent chip pins that board until you press Esc.' },
+      { kind: 'p', text: 'Number keys 1–9 jump to an opponent’s board — each chip in the rail shows its key — and 0 toggles the overview. Clicking a chip pins that board (📌) and pauses Follow until you press Esc, click the chip again, or click Follow. With the focused camera you can also swipe left and right across the opponent’s board.' },
       { kind: 'p', text: 'Overview is desktop and landscape-tablet only — three boards side by side are unusable on a portrait phone.' },
     ],
-    shortcuts: ['opponent-boards', 'overview', 'escape'],
+    shortcuts: ['opponent-boards', 'overview', 'escape', 'strip-swipe'],
     related: ['table-free-for-all'],
   },
   {

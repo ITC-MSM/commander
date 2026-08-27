@@ -65,7 +65,7 @@ import { counterManaClass, counterSvgIcon } from '@/assets/icons/keywords'
 import { SvgGlyph } from '@/assets/icons/SvgGlyph'
 import { RenderProfiler } from '@/utils/renderProfiler'
 import { buildActionOptions, playCostRange } from '@/utils/actionOptions.ts'
-import { parseManaCost, totalManaNeeded } from '@/utils/manaCost.ts'
+import { getRemainingCostAfterConvoke, parseManaCost, pickConvokeColor, totalManaNeeded } from '@/utils/manaCost.ts'
 
 /** Shared empty list for cards that can never be played from where they are — see GameCardImpl. */
 const NO_LEGAL_ACTIONS: readonly LegalActionInfo[] = Object.freeze([])
@@ -500,7 +500,9 @@ function GameCardImpl({
   // "ours" / "theirs" for combat and let combatState membership disambiguate.
   const ownForCombat = isOwnCreature || (hotseat && card.cardTypes.includes('CREATURE'))
   const opponentForCombat = isOpponentCard || hotseat
-  const isValidAttacker = isInAttackerMode && ownForCombat && !card.isTapped && combatState.validCreatures.includes(card.id)
+  // `validCreatures` is the server's list (tapped creatures are already out of it — the engine's
+  // MustBeUntappedAttackRule); re-checking `isTapped` here would only let the two disagree.
+  const isValidAttacker = isInAttackerMode && ownForCombat && combatState.validCreatures.includes(card.id)
   const isSelectedAsAttacker = isInAttackerMode && combatState.selectedAttackers.includes(card.id)
 
   // Banding (CR 702.22): which declared band (if any) this creature belongs to. Drives the
@@ -538,7 +540,7 @@ function GameCardImpl({
     (cardHasBanding || draggingAttackerHasBanding === true)
 
   // For blocker mode: check if this is a valid blocker or an attacking creature to block
-  const isValidBlocker = isInBlockerMode && ownForCombat && !card.isTapped && combatState.validCreatures.includes(card.id)
+  const isValidBlocker = isInBlockerMode && ownForCombat && combatState.validCreatures.includes(card.id)
   const isSelectedAsBlocker = isInBlockerMode && !!(combatState?.blockerAssignments[card.id]?.length)
   const isAttackingInBlockerMode = isInBlockerMode && opponentForCombat && combatState.attackingCreatures.includes(card.id)
   const isMustBeBlocked = isInBlockerMode && opponentForCombat && combatState.mustBeBlockedAttackers.includes(card.id)
@@ -829,36 +831,11 @@ function GameCardImpl({
           combatState?.mode === 'declareAttackers' &&
           combatState.validCreatures.includes(targetCardId)
         ) {
-          const sourceHasBanding = card.keywords.includes(Keyword.BANDING)
-          const targetHasBanding = cardEl.getAttribute('data-banding') === 'true'
-          if (sourceHasBanding || targetHasBanding) {
-            // CR 702.22c: a band may contain at most one creature without banding.
-            // Reject the link client-side when the resulting band would exceed that;
-            // banding status of existing members is read off each card's data-banding
-            // attribute (missing attribute = no banding). Server re-checks regardless.
-            const hasBandingFor = (memberId: EntityId): boolean => {
-              if (memberId === draggingAttackerId) return sourceHasBanding
-              if (memberId === targetCardId) return targetHasBanding
-              const el = document.querySelector(`[data-card-id="${memberId}"]`)
-              return el?.getAttribute('data-banding') === 'true'
-            }
-            const bands = combatState.bands
-            const sourceBand = bands.find((b) => b.includes(draggingAttackerId)) ?? []
-            const targetBand = bands.find((b) => b.includes(targetCardId)) ?? []
-            const merged = new Set<EntityId>([
-              draggingAttackerId,
-              targetCardId,
-              ...sourceBand,
-              ...targetBand,
-            ])
-            const nonBandingCount = Array.from(merged).filter((id) => !hasBandingFor(id)).length
-            if (nonBandingCount > 1) {
-              // Illegal band — silently no-op.
-              return
-            }
-            linkBand(draggingAttackerId, targetCardId, sourceHasBanding, targetHasBanding)
-            return
-          }
+          // Whether the band may form (CR 702.22c) is decided in the reducer from the store's
+          // projected keywords — never from the DOM, where an off-screen member has no element
+          // to read and used to count as "no banding". A drop the rule refuses is a no-op.
+          linkBand(draggingAttackerId, targetCardId)
+          return
         }
       }
 
@@ -968,53 +945,14 @@ function GameCardImpl({
       if (isSelectedConvokeCreature) {
         toggleConvokeCreature(card.id, card.name, null)
       } else {
-        // Determine best color payment based on creature colors and remaining cost.
-        // The backend sends creature colors as Color enum names ("WHITE", "BLUE"...)
-        // but mana costs parse as pip letters ("W", "U"...), so we normalise to pip
-        // letters for comparison. payingColor submitted back to the server stays as
-        // the Color enum name so kotlinx serialization can deserialize it.
+        // Which colour this creature pays is a preference the shared cost estimate picks
+        // (`pickConvokeColor`); the server checks the creature actually is that colour. Colours
+        // arrive as backend enum names ("WHITE") and go back the same way so kotlinx can read them.
         const creatureInfo = convokeSelectionState.validCreatures.find((c) => c.entityId === card.id)
-        const colorNames = creatureInfo?.colors ?? []
-        const colorPips = colorNames.map(c => ColorSymbols[c as Color] ?? c)
-        // Parse remaining cost to find colored symbols still needed
-        const manaCost = convokeSelectionState.manaCost
-        const symbols: string[] = []
-        const regex = /\{([^}]+)\}/g
-        let m
-        while ((m = regex.exec(manaCost)) !== null) symbols.push(m[1]!)
-        // Remove symbols already covered by existing selections. Hybrid pips (CR 107.4e)
-        // are colored symbols of both halves, so a previous W selection can consume a
-        // {W/U} pip. Prefer exact colored matches before hybrids to avoid wasting pips.
-        const hybridCovers = (sym: string, pip: string): boolean =>
-          sym.includes('/') && sym.split('/').includes(pip)
-        const remaining = [...symbols]
-        for (const sel of convokeSelectionState.selectedCreatures) {
-          if (sel.payingColor) {
-            const pip = ColorSymbols[sel.payingColor as Color] ?? sel.payingColor
-            const idx = remaining.indexOf(pip)
-            if (idx >= 0) { remaining.splice(idx, 1); continue }
-            const hIdx = remaining.findIndex(s => hybridCovers(s, pip))
-            if (hIdx >= 0) remaining.splice(hIdx, 1)
-          } else {
-            const gIdx = remaining.findIndex(s => /^\d+$/.test(s))
-            if (gIdx >= 0) {
-              const val = parseInt(remaining[gIdx]!, 10)
-              if (val > 1) remaining[gIdx] = String(val - 1)
-              else remaining.splice(gIdx, 1)
-            }
-          }
-        }
-        // Pick a color this creature can pay that's still needed. Exact colored pips
-        // first, then hybrid pips where one half matches.
-        let payingColor: string | null = null
-        for (let i = 0; i < colorPips.length; i++) {
-          if (remaining.includes(colorPips[i]!)) { payingColor = colorNames[i]!; break }
-        }
-        if (!payingColor) {
-          for (let i = 0; i < colorPips.length; i++) {
-            if (remaining.some(s => hybridCovers(s, colorPips[i]!))) { payingColor = colorNames[i]!; break }
-          }
-        }
+        const convoked: Record<string, { color: string | null }> = {}
+        for (const sel of convokeSelectionState.selectedCreatures) convoked[sel.entityId] = { color: sel.payingColor }
+        const remaining = getRemainingCostAfterConvoke(parseManaCost(convokeSelectionState.manaCost), convoked)
+        const payingColor = pickConvokeColor(remaining, creatureInfo?.colors ?? [])
         toggleConvokeCreature(card.id, card.name, payingColor)
       }
       return
@@ -1355,7 +1293,6 @@ function GameCardImpl({
   const cardElement = (
     <div
       data-card-id={card.id}
-      {...(cardHasBanding ? { 'data-banding': 'true' } : {})}
       {...(isGhost ? { 'data-ghost': 'true' } : {})}
       onClick={handleClick}
       onDoubleClick={handleDoubleClickEvent}
@@ -2433,8 +2370,8 @@ function GameCardImpl({
       })()}
 
       {/* Keyword ability icons (shown for face-up cards, and for face-down cards with granted keywords) */}
-      {battlefield && !hideKeywordIcons && (card.keywords.length > 0 || (card.abilityFlags && card.abilityFlags.length > 0) || (card.protections && card.protections.length > 0) || (card.hexproofFromColors && card.hexproofFromColors.length > 0) || card.isSuspected || card.isSolved) && (
-        <KeywordIcons keywords={card.keywords} abilityFlags={card.abilityFlags ?? []} protections={card.protections ?? []} hexproofFromColors={card.hexproofFromColors ?? []} hexproofFromMonocolored={card.hexproofFromMonocolored ?? false} hexproofFromMulticolored={card.hexproofFromMulticolored ?? false} isSuspected={card.isSuspected ?? false} isSolved={card.isSolved ?? false} {...(() => {
+      {battlefield && !hideKeywordIcons && (card.keywords.length > 0 || (card.abilityFlags && card.abilityFlags.length > 0) || (card.protections && card.protections.length > 0) || (card.hexproofFromColors && card.hexproofFromColors.length > 0) || card.isSuspected || card.isSolved || card.isRenowned) && (
+        <KeywordIcons keywords={card.keywords} abilityFlags={card.abilityFlags ?? []} protections={card.protections ?? []} hexproofFromColors={card.hexproofFromColors ?? []} hexproofFromMonocolored={card.hexproofFromMonocolored ?? false} hexproofFromMulticolored={card.hexproofFromMulticolored ?? false} isSuspected={card.isSuspected ?? false} isSolved={card.isSolved ?? false} isRenowned={card.isRenowned ?? false} {...(() => {
           // The ring-bearer marker and the "Prepared" badge both pin to the top-left corner; push the
           // keyword icons down past whichever is showing so they aren't hidden beneath the badge.
           const topOffset = (card.isRingBearer && !faceDown ? 3 + responsive.badges.ptFontSize * 1.7 + 3 : 0) + (card.isPrepared ? 22 : 0)
