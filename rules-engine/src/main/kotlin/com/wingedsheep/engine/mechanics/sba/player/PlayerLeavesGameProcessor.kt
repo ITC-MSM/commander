@@ -33,13 +33,24 @@ import com.wingedsheep.sdk.model.EntityId
  * [PlayerLeftGameComponent]) so it remains in [GameState.turnOrder] for history and the
  * game-end SBA. The turn-order iteration helpers already skip players who have left.
  *
+ * - **CR 800.4f–h (a choice the leaver was mid-way through making)** — a pending decision
+ *   addressed to the leaver is abandoned: the decision is cleared, the continuation frames
+ *   waiting on it are dropped, and priority goes to the active player (CR 117.3b, redirected
+ *   if they too have left). Almost every such decision belongs to the leaver's own spell or
+ *   ability, which has just left the game with them, so the resolution simply ends; a "may
+ *   pay" prompt is answered by not paying (800.4f). The one divergence is a choice another
+ *   player's object asked the leaver to make (800.4g — the controller should pick a
+ *   substitute chooser): that resolution ends early too. Without this the table deadlocks —
+ *   only the leaver could ever answer, and every other seat's pass is refused while a
+ *   decision is pending.
+ *
  * Deliberately not modelled here (documented simplifications of the deeper CR 800.4
  * sub-rules, none of which the current corpus exercises): firing the remaining players'
  * "leaves the battlefield" triggers off these mass removals (CR 800.4a vs 800.4d — the
- * leaver's own triggers must never fire), delegating a choice a leaver was mid-way through
- * making (CR 800.4g–h), and exiling an object the leaver controlled via a *static* ability
- * on a permanent owned by another player (CR 800.4c). Floating control effects — the common
- * case (theft like Control Magic, "gain control until end of turn") — are handled.
+ * leaver's own triggers must never fire), and exiling an object the leaver controlled via a
+ * *static* ability on a permanent owned by another player (CR 800.4c). Floating control
+ * effects — the common case (theft like Control Magic, "gain control until end of turn") —
+ * are handled.
  */
 object PlayerLeavesGameProcessor {
 
@@ -87,7 +98,11 @@ object PlayerLeavesGameProcessor {
             }
         )
 
-        // 6. If the leaver (or any departed player) holds priority, hand it to the next
+        // 6. A decision only the leaver could answer can never be answered now — abandon it
+        //    (CR 800.4f–h; see the class KDoc for what that means for the paused resolution).
+        s = abandonLeaversDecision(s, leaver)
+
+        // 7. If the leaver (or any departed player) holds priority, hand it to the next
         //    player still in the game. withPriority performs the redirect (CR 800.4a).
         val priorityHolder = s.priorityPlayerId
         if (priorityHolder != null &&
@@ -96,13 +111,30 @@ object PlayerLeavesGameProcessor {
             s = s.withPriority(priorityHolder)
         }
 
-        // 7. Mark the leave processing done so the SBA loop never re-applies it.
+        // 8. Mark the leave processing done so the SBA loop never re-applies it.
         s = s.updateEntity(leaver) { it.with(PlayerLeftGameComponent) }
 
         return ExecutionResult.success(
             s,
             listOf(PlayerLeftGameEvent(leaver, reason, toRemove.size))
         )
+    }
+
+    /**
+     * Abandon a pending decision addressed to [leaver]. The decision is cleared, every
+     * continuation frame is dropped (the frames beneath the one waiting on this decision
+     * belong to the same paused resolution — or to triggers deferred behind it — and none of
+     * them can be resumed without the answer), and priority returns to the active player as
+     * it would after a completed resolution (CR 117.3b). A decision addressed to anyone else
+     * is left alone: the game is still waiting on a player who is still here.
+     */
+    private fun abandonLeaversDecision(state: GameState, leaver: EntityId): GameState {
+        val pending = state.pendingDecision ?: return state
+        if (pending.playerId != leaver) return state
+        return state
+            .clearPendingDecision()
+            .copy(continuationStack = emptyList())
+            .withPriority(state.activePlayerId)
     }
 
     /**
