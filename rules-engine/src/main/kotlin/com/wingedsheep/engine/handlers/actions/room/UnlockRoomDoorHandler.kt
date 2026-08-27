@@ -61,7 +61,7 @@ class UnlockRoomDoorHandler(
     private val staticAbilityHandler = StaticAbilityHandler(cardRegistry)
 
     override fun validate(state: GameState, action: UnlockRoomDoor): String? {
-        if (state.priorityPlayerId != action.playerId) {
+        if (!state.hasPriority(action.playerId)) {
             return "You don't have priority"
         }
         if (!state.isActiveTurnFor(action.playerId)) {

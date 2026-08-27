@@ -166,7 +166,7 @@ class ActivateAbilityHandler(
         // mana payment". While such a window is open the paying player holds no priority, so defer
         // the priority verdict until the ability is known to be a mana ability (checked below).
         val manaPaymentWindow = ManaPaymentWindow.openFor(state, action.playerId)
-        if (state.priorityPlayerId != action.playerId && manaPaymentWindow == null) {
+        if (!state.hasPriority(action.playerId) && manaPaymentWindow == null) {
             return "You don't have priority"
         }
 
@@ -197,7 +197,7 @@ class ActivateAbilityHandler(
 
         // The mana-payment window (CR 605.3a) opens the door for mana abilities only — everything
         // else still needs priority.
-        if (manaPaymentWindow != null && state.priorityPlayerId != action.playerId && !ability.isManaAbility) {
+        if (manaPaymentWindow != null && !state.hasPriority(action.playerId) && !ability.isManaAbility) {
             return "Only mana abilities can be activated while paying a cost"
         }
 

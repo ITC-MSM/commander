@@ -6,6 +6,7 @@ import com.wingedsheep.gameserver.protocol.ServerMessage
 import com.wingedsheep.sdk.core.Format
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
@@ -115,6 +116,89 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
             }
         }
 
+        test("the seat roster carries the shared-turn flag, which the client needs to answer \"may I act?\"") {
+            val (session, ids) = started2hg()
+
+            // Two axes, not one: 2HG shares life *and* turns, Team vs. Team shares neither, and the
+            // client can't derive "a teammate may act in my priority window" (CR 805.5a) from
+            // either "has a team" or "pools life".
+            session.seatInfos(viewerId = ids[0]).forEach {
+                it.teamSharedLife shouldBe true
+                it.teamSharedTurns shouldBe true
+            }
+        }
+
+        test("a teammate is offered their OWN actions while their partner holds the baton (CR 805.5)") {
+            val (session, ids) = started2hg()
+            val state = session.getStateForTesting()!!
+            val baton = state.priorityPlayerId!!
+            val teammate = state.teamOf(baton).single { it != baton }
+            val opponent = state.getOpponents(baton).first()
+
+            // The baton holder gets actions, as always.
+            session.getLegalActions(baton) shouldNotBe emptyList<Any>()
+
+            // So does their teammate — this is the whole of team priority from the server's side.
+            // The actions must be enumerated for the *teammate's* seat: it is their hand and their
+            // mana, and an action tagged with the baton holder's id would be rejected as theirs.
+            val teammateActions = session.getLegalActions(teammate)
+            teammateActions shouldNotBe emptyList<Any>()
+            teammateActions.forEach { it.action.playerId shouldBe teammate }
+
+            // The opposing team is still shut out — team priority widens the team, not the table.
+            session.getLegalActions(opponent) shouldBe emptyList()
+        }
+
+        test("a Free-for-All pod stays one seat at a time — only the baton holder is offered actions") {
+            val session = GameSession(cardRegistry = cardRegistry, maxPlayers = 4)
+            val ids = (1..4).map { EntityId.of("ffa-$it") }
+            ids.forEachIndexed { i, id ->
+                session.addPlayer(PlayerSession(mockWs("f$i"), id, "P${i + 1}"), mapOf("Forest" to 40))
+            }
+            session.startGame()
+
+            val baton = session.getStateForTesting()!!.priorityPlayerId!!
+            session.getLegalActions(baton) shouldNotBe emptyList<Any>()
+            ids.filter { it != baton }.forEach { session.getLegalActions(it) shouldBe emptyList() }
+        }
+
+        test("a revealed card in an opponent's hand still reaches the viewer, count and all") {
+            // The client collapses a *fully* face-down opponent hand to a count and falls back to a
+            // real fan the moment any of it is revealed. That decision reads `zone.cardIds`, so this
+            // pins the contract it reads: a hidden hand ships the revealed cards' ids (and their
+            // details) while `size` stays the true hand size. Revealed cards in hand are routine —
+            // anything returned to hand from the battlefield, a graveyard or the stack stays known
+            // to the table until its owner plays a same-named card (RevealedInHandTracker).
+            val (session, ids) = started2hg()
+            val viewer = ids[0]
+            val opponent = ids[2]
+
+            var s = session.getStateForTesting()!!
+            val opponentHand = s.getZone(com.wingedsheep.engine.state.ZoneKey(opponent, Zone.HAND))
+            val known = opponentHand.first()
+            s = s.updateEntity(known) {
+                it.with(com.wingedsheep.engine.state.components.identity.RevealedToComponent.to(viewer))
+            }
+            session.injectStateForDevScenario(s)
+
+            val update = session.createStateUpdate(viewer, emptyList()) as ServerMessage.StateUpdate
+            val hand = update.state.zones.single {
+                it.zoneId.zoneType == Zone.HAND && it.zoneId.ownerId == opponent
+            }
+
+            // Exactly the revealed card comes through, and its details are populated — that is what
+            // the fan draws face-up. The hand's real size is unchanged, so the count on the name
+            // plate and the face-down placeholders beside it both stay honest.
+            hand.cardIds shouldContainExactly listOf(known)
+            update.state.cards[known] shouldNotBe null
+            hand.size shouldBe opponentHand.size
+            hand.size shouldBe 7
+            // The other seat on that team revealed nothing, so it still collapses to a count.
+            update.state.zones.single {
+                it.zoneId.zoneType == Zone.HAND && it.zoneId.ownerId == ids[3]
+            }.cardIds.shouldBeEmpty()
+        }
+
         test("non-team game is unchanged: no team index, every other seat is an opponent") {
             // No teams / Standard format — the degenerate case of the same code path.
             val session = GameSession(cardRegistry = cardRegistry, maxPlayers = 2)
@@ -124,7 +208,10 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
             }
             session.startGame()
 
-            session.seatInfos(viewerId = ids[0]).forEach { it.teamIndex shouldBe null }
+            session.seatInfos(viewerId = ids[0]).forEach {
+                it.teamIndex shouldBe null
+                it.teamSharedTurns shouldBe false
+            }
             session.getOpponentIds(ids[0]) shouldContainExactly listOf(ids[1])
         }
     }

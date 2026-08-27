@@ -721,10 +721,47 @@ data class GameState(
     // play a land (805.4c), and either may take sorcery-speed actions while it is the team's turn
     // (805.5a — a player may act when their team has priority). The engine keeps a single
     // [activePlayerId] (CR 805.9 — "active player" is one specific player), but turn *ownership* —
-    // "is it this player's turn?" — is a team question answered by [isActiveTurnFor]. Priority still
-    // cycles per player, so each teammate gets their own window and the phase advances only once
-    // everyone has passed; that already yields the shared-turn outcome.
+    // "is it this player's turn?" — is a team question answered by [isActiveTurnFor].
+    //
+    // Priority is likewise a team question (CR 805.5: "Teams have priority, not individual
+    // players"). [priorityPlayerId] stays a single seat — it is the baton: who the server nudges,
+    // whose auto-pass runs, which board the UI focuses. But *permission* to act is
+    // [hasPriority], which admits the baton holder's whole team. The phase still advances only
+    // once every seat has passed ([allPlayersPassed]), so each player is still guaranteed their
+    // own window; what changes is that a teammate no longer has to wait for the baton to reach
+    // them before they can respond to what their partner just did.
     // =========================================================================
+
+    /**
+     * True when [playerId] may take a priority action right now — cast a spell, activate an
+     * ability, take a special action, or pass (CR 805.5a). **The team-aware replacement for
+     * `priorityPlayerId == playerId` at every action-legality gate.**
+     *
+     * In a shared-team-turns format the whole of the baton holder's team may act while their team
+     * holds priority (CR 805.5). Everywhere else — 1v1, Free-for-All, Commander, Team vs. Team
+     * (CR 808.4, individual turns) — [sharedTurnTeam] is the singleton `[playerId]`, so this is
+     * literally `priorityPlayerId == playerId` and no non-2HG game changes behaviour.
+     *
+     * Note this is permission, not obligation: [priorityPlayerId] is still one seat, and the
+     * auto-pass / AI paths deliberately keep following it so a bot teammate takes its window in
+     * baton order instead of racing its human partner for every response.
+     */
+    fun hasPriority(playerId: EntityId): Boolean {
+        val holder = priorityPlayerId ?: return false
+        // Read the team off the *holder*, not off [playerId]: [sharedTurnTeam] drops members who
+        // have left the game, so asking the holder is what keeps a departed teammate (CR 800.4a)
+        // from inheriting a window they can no longer take.
+        return holder == playerId || playerId in sharedTurnTeam(holder)
+    }
+
+    /**
+     * Every player who may act in the current priority window — the baton holder's shared-turn
+     * team (CR 805.5), or just the baton holder outside a shared-team-turns format. Empty when
+     * nobody holds priority. The list form of [hasPriority], for the client DTO and for callers
+     * that need to pick an acting seat rather than test one.
+     */
+    val priorityTeam: List<EntityId>
+        get() = priorityPlayerId?.let { sharedTurnTeam(it) } ?: emptyList()
 
     /**
      * True when it is [playerId]'s team's turn — i.e. [playerId] is on the active team. The
@@ -1179,6 +1216,56 @@ data class GameState(
             }
         }
         return afterPlayer
+    }
+
+    /**
+     * The next player still in the game, in turn order after [afterPlayer], who has **not already
+     * passed** in the current priority round — i.e. the seat the priority baton should visit next.
+     *
+     * Identical to [getNextPlayer] whenever passing is strictly round-robin, which is every
+     * non-team game: each seat passes in turn, so the seat after the passer is by construction one
+     * that hasn't passed. It only diverges under team priority ([hasPriority]), where a teammate
+     * may act — and therefore pass — out of baton order, leaving a seat behind the baton that
+     * still owes a pass. Handing the baton to someone who already passed is harmless (they simply
+     * pass again) but it costs a real click, so skip them.
+     *
+     * Falls back to [getNextPlayer] when every other seat has already passed — the caller only
+     * reaches here when [allPlayersPassed] is false, so a seat that still owes a pass exists.
+     */
+    fun nextUnpassedPriorityAfter(afterPlayer: EntityId): EntityId {
+        val size = turnOrder.size
+        if (size == 0) return afterPlayer
+        val start = turnOrder.indexOf(afterPlayer)
+        for (step in 1..size) {
+            val candidate = turnOrder[((start + step) % size + size) % size]
+            if (candidate in priorityPassedBy) continue
+            if (getEntity(candidate)
+                    ?.has<com.wingedsheep.engine.state.components.player.PlayerLostComponent>() != true
+            ) {
+                return candidate
+            }
+        }
+        return getNextPlayer(afterPlayer)
+    }
+
+    /**
+     * Where the priority baton goes once [passer] has passed — the seat rule behind
+     * [com.wingedsheep.engine.handlers.actions.priority.PassPriorityHandler].
+     *
+     * Identical to [getNextPlayer] in every non-team game: the only seat allowed to pass is the
+     * baton holder, so `passer` is the holder and the seat after them has by construction not
+     * passed. Under team priority (CR 805.5) a teammate may pass **out of baton order**, and then
+     * two things differ:
+     *
+     * - the baton doesn't move at all — its holder hasn't passed yet, and taking their window away
+     *   because their partner declined theirs would be exactly backwards;
+     * - once it does move, it skips the seats that already passed this round rather than handing
+     *   them a window they just declined.
+     */
+    fun nextPriorityAfterPass(passer: EntityId): EntityId {
+        val holder = priorityPlayerId
+        if (holder != null && holder != passer && holder !in priorityPassedBy) return holder
+        return nextUnpassedPriorityAfter(passer)
     }
 
     /**
