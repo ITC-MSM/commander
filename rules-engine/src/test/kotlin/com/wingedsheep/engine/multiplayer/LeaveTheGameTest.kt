@@ -2,6 +2,11 @@ package com.wingedsheep.engine.multiplayer
 
 import com.wingedsheep.engine.core.ActionProcessor
 import com.wingedsheep.engine.core.Concede
+import com.wingedsheep.engine.core.DecisionContext
+import com.wingedsheep.engine.core.EffectContinuation
+import com.wingedsheep.engine.core.PassPriority
+import com.wingedsheep.engine.core.YesNoDecision
+import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.core.GameConfig
 import com.wingedsheep.engine.core.GameEndReason
 import com.wingedsheep.engine.core.GameInitializer
@@ -273,5 +278,63 @@ class LeaveTheGameTest : FunSpec({
             state = result.newState
         }
         state.activePlayerId shouldBe players[1]
+    }
+
+    /** Pause the game on a yes/no decision addressed to [chooser], with a resolution frame beneath it. */
+    fun GameState.pausedOn(chooser: EntityId): GameState = withPendingDecision(
+        YesNoDecision(
+            id = "leave-test-decision",
+            playerId = chooser,
+            prompt = "You may pay 2 life.",
+            context = DecisionContext()
+        )
+    ).pushContinuation(
+        EffectContinuation(
+            decisionId = "leave-test-decision",
+            remainingEffects = emptyList(),
+            effectContext = EffectContext(sourceId = null, controllerId = chooser)
+        )
+    )
+
+    test("conceding while owning the pending decision abandons it instead of deadlocking the table (CR 800.4f–h)") {
+        val (base, players) = initGame(4)
+        val processor = ActionProcessor(registry())
+        val paused = base.pausedOn(players[1])
+
+        // Sanity: while the decision is pending nobody else may pass.
+        processor.process(paused, PassPriority(players[0])).result.isSuccess shouldBe false
+
+        val result = processor.process(paused, Concede(players[1])).result
+        result.isSuccess.shouldBeTrue()
+        val state = result.newState
+        state.gameOver shouldBe false
+        state.pendingDecision.shouldBeNull()
+        state.continuationStack shouldContainExactly emptyList()
+        // Priority is back with the active player, who can carry the game forward.
+        state.priorityPlayerId shouldBe players[0]
+        processor.process(state, PassPriority(players[0])).result.isSuccess.shouldBeTrue()
+    }
+
+    test("a pending decision addressed to another player survives the leaver's departure") {
+        val (base, players) = initGame(4)
+        val processor = ActionProcessor(registry())
+        val paused = base.pausedOn(players[2])
+
+        val state = processor.process(paused, Concede(players[1])).result.newState
+        state.pendingDecision?.playerId shouldBe players[2]
+        state.continuationStack.size shouldBe 1
+    }
+
+    test("the abandoned decision's priority skips an active player who has also left") {
+        val (base, players) = initGame(4)
+        // players[0] (active) is already out; players[1] leaves while owning the decision.
+        val state = base.pausedOn(players[1]).updateEntity(players[0]) {
+            it.with(PlayerLostComponent(com.wingedsheep.engine.state.components.player.LossReason.CONCESSION))
+        }.updateEntity(players[1]) {
+            it.with(PlayerLostComponent(com.wingedsheep.engine.state.components.player.LossReason.CONCESSION))
+        }
+        val afterLeave = PlayerLeavesGameProcessor.process(state, players[1], GameEndReason.CONCESSION).newState
+        afterLeave.pendingDecision.shouldBeNull()
+        afterLeave.priorityPlayerId shouldBe players[2]
     }
 })
