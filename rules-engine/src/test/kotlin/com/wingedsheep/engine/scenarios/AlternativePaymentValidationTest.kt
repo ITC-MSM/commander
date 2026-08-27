@@ -1,14 +1,19 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.PaymentStrategy
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.scripting.AlternativePaymentChoice
 import com.wingedsheep.sdk.scripting.ConvokePayment
+import com.wingedsheep.sdk.scripting.KeywordAbility
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -26,7 +31,37 @@ import io.kotest.matchers.string.shouldContain
  */
 class AlternativePaymentValidationTest : FunSpec({
 
-    fun createDriver(): GameTestDriver = GameTestDriver().also { it.registerCards(TestCards.all) }
+    // Convoke and harmonize on one spell — no real card prints both, but the validator must still
+    // refuse one creature for both, because the cost twin would price both taps and `apply` can
+    // only make the first.
+    val convokeRoutine = card("Convoke Routine") {
+        manaCost = "{4}{G}"
+        typeLine = "Sorcery"
+        oracleText = "Convoke\nHarmonize {4}{G}\nYou gain 5 life."
+        keywords(Keyword.CONVOKE)
+        keywordAbility(KeywordAbility.harmonize("{4}{G}"))
+        spell { effect = Effects.GainLife(5) }
+    }
+
+    val improvisingBlueprint = card("Improvising Blueprint") {
+        manaCost = "{4}{U}"
+        typeLine = "Sorcery"
+        oracleText = "Improvise\nYou gain 5 life."
+        keywords(Keyword.IMPROVISE)
+        spell { effect = Effects.GainLife(5) }
+    }
+
+    val convokeBlueprint = card("Convoke Blueprint") {
+        manaCost = "{4}{U}"
+        typeLine = "Sorcery"
+        oracleText = "Convoke\nImprovise\nYou gain 5 life."
+        keywords(Keyword.CONVOKE, Keyword.IMPROVISE)
+        spell { effect = Effects.GainLife(5) }
+    }
+
+    fun createDriver(): GameTestDriver = GameTestDriver().also {
+        it.registerCards(TestCards.all + listOf(convokeRoutine, improvisingBlueprint, convokeBlueprint))
+    }
 
     /** Merrow Skyswimmer ({3}{W/U}{W/U}, convoke) in hand, three lands, a white and a blue creature. */
     data class ConvokeBoard(
@@ -64,11 +99,16 @@ class AlternativePaymentValidationTest : FunSpec({
         return ConvokeBoard(driver, player, skyswimmer, lands, whiteCreature, blueCreature)
     }
 
-    fun ConvokeBoard.cast(payment: AlternativePaymentChoice) = driver.submit(
+    fun ConvokeBoard.cast(
+        payment: AlternativePaymentChoice,
+        cardId: com.wingedsheep.sdk.model.EntityId = skyswimmer,
+        useAlternativeCost: Boolean = false,
+    ) = driver.submit(
         CastSpell(
             playerId = player,
-            cardId = skyswimmer,
+            cardId = cardId,
             targets = emptyList(),
+            useAlternativeCost = useAlternativeCost,
             paymentStrategy = PaymentStrategy.AutoPay,
             alternativePayment = payment,
         )
@@ -165,7 +205,109 @@ class AlternativePaymentValidationTest : FunSpec({
         }
     }
 
+    context("harmonize") {
+
+        test("one creature can't be tapped for both convoke and harmonize") {
+            val board = convokeBoard()
+            val routine = board.driver.putCardInHand(board.player, "Convoke Routine")
+            // Priced as a convoke pip *and* the creature's power; `apply` taps it once for convoke
+            // and harmonize then finds it tapped — so the claim must be refused up front.
+            val result = board.cast(
+                AlternativePaymentChoice(
+                    convokedCreatures = mapOf(board.whiteCreature to ConvokePayment(null)),
+                    harmonizeCreature = board.whiteCreature,
+                ),
+                cardId = routine,
+                useAlternativeCost = true,
+            )
+            result.isSuccess shouldBe false
+            result.error!! shouldContain "can't be tapped for both convoke and harmonize"
+            board.boardUntouched()
+        }
+    }
+
+    context("improvise") {
+
+        test("a creature can't be tapped for improvise") {
+            val board = convokeBoard()
+            val blueprint = board.driver.putCardInHand(board.player, "Improvising Blueprint")
+            val result = board.cast(
+                AlternativePaymentChoice(tapForGenericPermanents = setOf(board.blueCreature)),
+                cardId = blueprint,
+            )
+            result.isSuccess shouldBe false
+            result.error!! shouldContain "Phantom Warrior can't be tapped for improvise"
+            board.boardUntouched()
+        }
+
+        test("a spell without improvise or waterbend rejects the taps instead of ignoring them") {
+            val board = convokeBoard()
+            val result = board.cast(
+                AlternativePaymentChoice(tapForGenericPermanents = setOf(board.lands.first()))
+            )
+            result.isSuccess shouldBe false
+            result.error!! shouldContain "doesn't have improvise or waterbend"
+            board.boardUntouched()
+        }
+
+        test("one permanent can't be tapped for both convoke and improvise") {
+            val board = convokeBoard()
+            val blueprint = board.driver.putCardInHand(board.player, "Convoke Blueprint")
+            val result = board.cast(
+                AlternativePaymentChoice(
+                    convokedCreatures = mapOf(board.blueCreature to ConvokePayment(Color.BLUE)),
+                    tapForGenericPermanents = setOf(board.blueCreature),
+                ),
+                cardId = blueprint,
+            )
+            result.isSuccess shouldBe false
+            result.error!! shouldContain "can't be tapped for both convoke and improvise"
+            board.boardUntouched()
+        }
+    }
+
+    context("activated ability") {
+
+        test("a tapped creature is rejected for an ability's convoke") {
+            // Heirloom Epic: "{4}, {T}: Draw a card. For each mana in this ability's activation
+            // cost, you may tap an untapped creature you control rather than pay that mana."
+            val board = convokeBoard()
+            val epic = board.driver.putPermanentOnBattlefield(board.player, "Heirloom Epic")
+            board.driver.tapPermanent(board.whiteCreature)
+            val abilityId = board.driver.cardRegistry.requireCard("Heirloom Epic").activatedAbilities.first().id
+            val result = board.driver.submit(
+                ActivateAbility(
+                    playerId = board.player,
+                    sourceId = epic,
+                    abilityId = abilityId,
+                    alternativePayment = AlternativePaymentChoice(
+                        convokedCreatures = mapOf(
+                            board.whiteCreature to ConvokePayment(null),
+                            board.blueCreature to ConvokePayment(null),
+                        )
+                    ),
+                )
+            )
+            result.isSuccess shouldBe false
+            result.error!! shouldContain "Savannah Lions is already tapped"
+            board.driver.stackSize shouldBe 0
+            board.driver.isTapped(board.blueCreature) shouldBe false
+            board.driver.isTapped(epic) shouldBe false
+            board.lands.none { board.driver.isTapped(it) } shouldBe true
+        }
+    }
+
     context("delve") {
+
+        test("a spell without delve rejects a delve payment instead of ignoring it") {
+            val board = convokeBoard()
+            val lions = board.driver.putCardInHand(board.player, "Savannah Lions")
+            val inGraveyard = board.driver.putCardInGraveyard(board.player, "Phantom Warrior")
+            val result = board.cast(AlternativePaymentChoice(delvedCards = listOf(inGraveyard)), cardId = lions)
+            result.isSuccess shouldBe false
+            result.error!! shouldContain "doesn't have delve"
+            board.boardUntouched()
+        }
 
         test("a card that isn't in your graveyard can't be exiled for delve") {
             val driver = createDriver()

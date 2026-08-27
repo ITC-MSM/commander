@@ -70,6 +70,19 @@ describe('computeCoverage', () => {
     expect(coverage[1]!.pending).toBe(true)
   })
 
+  it('lets a multi-mana source cover several pips of one colour', () => {
+    const lotus = source('lotus', ['WHITE', 'BLUE', 'BLACK', 'RED', 'GREEN'], 3)
+    const coverage = computeCoverage(['U', 'U', '1'], emptyPool, ['lotus'] as never, [lotus], 0)
+    expect(coverage.map((pip) => pip.pending)).toEqual([true, true, true])
+  })
+
+  it('spends a multi-mana source on one colour only', () => {
+    // Three mana of any *one* colour: the Lotus can pay {U}{U} but not {U}{W}.
+    const lotus = source('lotus', ['WHITE', 'BLUE', 'BLACK', 'RED', 'GREEN'], 3)
+    const coverage = computeCoverage(['U', 'W'], emptyPool, ['lotus'] as never, [lotus], 0)
+    expect(coverage.filter((pip) => pip.pending)).toHaveLength(1)
+  })
+
   it('reads a source without manaAmount as one mana', () => {
     const plains = source('plains', ['WHITE'])
     const coverage = computeCoverage(['2'], emptyPool, ['plains'] as never, [plains], 0)

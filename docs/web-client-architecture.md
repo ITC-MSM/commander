@@ -65,7 +65,12 @@ submission happens. The rules that keep it honest:
   without a rendered element as "no banding".
 - **The payment prompt carries `ManaSourceOption.manaAmount`**, the same field the cast path's
   `ManaSourceInfo` has, so `manaCoverage.ts` credits a Gilded Lotus with three mana toward a
-  ward. Without it the Pay button stayed dead on a payment the server would have accepted.
+  ward — up to three pips of one colour it makes, the rest toward generic. Without it the Pay
+  button stayed dead on a payment the server would have accepted. That prompt
+  (`ManaSourceSelectionUI`) is the one place a button still waits on a client read: the coverage
+  is colour-aware and pip-exact rather than a total, and a short submission is a server error
+  the prompt survives, so the gate costs nothing when it is right. If it is ever found to
+  disagree with the server, drop the gate rather than patch the arithmetic.
 
 Still client-derived, and the shape of the fix for each:
 

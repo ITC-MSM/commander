@@ -9,7 +9,6 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
@@ -139,6 +138,9 @@ class AlternativePaymentHandler(
 
         payment.harmonizeCreature?.let { creatureId ->
             if (!allowsHarmonize) return "This spell doesn't have harmonize"
+            if (creatureId in payment.convokedCreatures) {
+                return "${nameOf(state, creatureId)} can't be tapped for both convoke and harmonize"
+            }
             tappableCreatureError(state, projected, creatureId, playerId, "harmonize")?.let { return it }
         }
 
@@ -373,7 +375,7 @@ class AlternativePaymentHandler(
         val projected = state.projectedState
         if (!projected.isCreature(creatureId)) return AlternativePaymentResult(cost, state, emptyList())
         if (container.has<TappedComponent>()) return AlternativePaymentResult(cost, state, emptyList())
-        if (container.get<ControllerComponent>()?.playerId != playerId) {
+        if (projected.getController(creatureId) != playerId) {
             return AlternativePaymentResult(cost, state, emptyList())
         }
 
