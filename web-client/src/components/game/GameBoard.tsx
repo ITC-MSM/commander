@@ -147,6 +147,12 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       state.gameState?.players.find((p) => p.playerId === state.gameState?.priorityPlayerId)?.name ??
       null,
   )
+  // The badge below stays mounted through the fade-out, so keep the last name it showed —
+  // otherwise the text collapses to the bare "Team priority" the instant priority leaves the
+  // team, which reads as a second, different message flashing by.
+  const lastBatonNameRef = useRef<string | null>(null)
+  if (batonHolderName) lastBatonNameRef.current = batonHolderName
+  const batonLabelName = batonHolderName ?? lastBatonNameRef.current
   const isTeamGame = viewerTeam != null && Object.keys(teamMap).length > 0
   // The seat anchoring the bottom row: you when playing, the spectator's chosen/first seat, or —
   // for an eliminated spectator, whose own board left the game with them — the survivor sitting
@@ -1285,10 +1291,11 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
             Without this the window looks like someone else's turn to speak, and the whole point of
             team priority — answering what your partner just did, before the table moves on — goes
             unused. */}
-        {teamHoldsPriority && !spectatorMode && (
+        {sharedTurnTeamGame && !spectatorMode && (
           <div
             role="status"
             aria-live="polite"
+            aria-hidden={!teamHoldsPriority}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -1304,12 +1311,22 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
               border: `1px solid ${selfSeatColor.base}`,
               whiteSpace: 'nowrap',
               userSelect: 'none',
+              // The baton moves between teammates constantly, so this badge blinks on and off
+              // several times a turn. Mounting and unmounting it did that *in flow*: the centre
+              // HUD grew and shrank by a row each time and the step strip (plus everything
+              // aligned to it) jumped. Inside a shared-turn team game the slot is therefore
+              // always present and only its opacity changes — the layout never moves. Outside
+              // one the whole block still renders nothing at all.
+              opacity: teamHoldsPriority ? 1 : 0,
+              transform: teamHoldsPriority ? 'translateY(0)' : 'translateY(-2px)',
+              transition: 'opacity 180ms ease, transform 180ms ease',
+              pointerEvents: 'none',
             }}
           >
             <span aria-hidden style={{ fontSize: 11 }}>🤝</span>
             <span>
               Team priority
-              {batonHolderName ? ` — ${batonHolderName} is acting` : ''}
+              {batonLabelName ? ` — ${batonLabelName} is acting` : ''}
             </span>
           </div>
         )}
