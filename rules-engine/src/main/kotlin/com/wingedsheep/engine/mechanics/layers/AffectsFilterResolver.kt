@@ -651,6 +651,12 @@ internal class AffectsFilterResolver {
         // ability can gate on it without the self-referential caveat that IsSuspected carries.
         StatePredicate.IsSolved ->
             container.has<com.wingedsheep.engine.state.components.battlefield.SolvedComponent>()
+        // Renowned (CR 702.112b) is component-backed for the same reason as solved: a designation,
+        // not a layer modification, so it reads off base state and is stable for the whole
+        // projection pass. That is what lets "as long as this creature is renowned, it has menace"
+        // (Goblin Glory Chaser) be a plain conditional static.
+        StatePredicate.IsRenowned ->
+            container.has<com.wingedsheep.engine.state.components.battlefield.RenownedComponent>()
         // Suspected (CR 701.60a) is itself a Layer-ability modification, so it is read off the
         // values accumulated so far in this projection pass — the same source `ProjectedState`
         // exposes as `isSuspected`, and the same self-referential caveat as IsModified above.

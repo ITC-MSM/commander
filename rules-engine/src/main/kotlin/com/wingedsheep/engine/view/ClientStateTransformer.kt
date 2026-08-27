@@ -1389,6 +1389,7 @@ class ClientStateTransformer(
             faceDownMode = if (isFaceDown) faceDownDisplayMode?.name else null,
             isSuspected = projectedValues?.isSuspected == true,
             isSolved = container.has<com.wingedsheep.engine.state.components.battlefield.SolvedComponent>(),
+            isRenowned = container.has<com.wingedsheep.engine.state.components.battlefield.RenownedComponent>(),
             saddleRequirement = saddleRequirement,
             isSaddled = isSaddled,
             isPlotted = isPlotted,

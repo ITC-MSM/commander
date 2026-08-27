@@ -402,6 +402,22 @@ class TriggerMatcher(
                     )
                 } else true
             }
+            is EventPattern.BecameRenownedEvent -> {
+                // A renowned creature stays on the battlefield (CR 702.112b), so this matches in
+                // the regular battlefield trigger loop, the same as the saddled designation. SELF
+                // binding must match the creature that became renowned (Relic Seeker).
+                if (event !is com.wingedsheep.engine.core.BecameRenownedEvent) return false
+                if (binding == TriggerBinding.SELF && event.entityId != sourceId) return false
+                if (trigger.filter != GameObjectFilter.Any) {
+                    val predicateContext = com.wingedsheep.engine.handlers.PredicateContext(
+                        controllerId = controllerId,
+                        sourceId = sourceId
+                    )
+                    PredicateEvaluator().matches(
+                        state, state.projectedState, event.entityId, trigger.filter, predicateContext
+                    )
+                } else true
+            }
             is EventPattern.CrewsEvent ->
                 event is com.wingedsheep.engine.core.CrewOrSaddleContributionEvent &&
                     event.kind == com.wingedsheep.engine.core.CrewOrSaddleKind.CREW &&
@@ -2151,6 +2167,11 @@ class TriggerMatcher(
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsSolved ->
             state.getEntity(entityId)
                 ?.has<com.wingedsheep.engine.state.components.battlefield.SolvedComponent>() == true
+        // Renowned (CR 702.112b) — plain per-entity state, evaluable here, so a "renowned"
+        // filter on a trigger's event pattern is answered exactly.
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsRenowned ->
+            state.getEntity(entityId)
+                ?.has<com.wingedsheep.engine.state.components.battlefield.RenownedComponent>() == true
         // Soulbond pairing (CR 702.95b) — plain per-entity state, evaluable here, so a
         // "whenever a paired creature …" trigger filter gates correctly instead of failing open.
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsPaired ->

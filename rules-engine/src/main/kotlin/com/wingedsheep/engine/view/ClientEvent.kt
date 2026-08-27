@@ -344,6 +344,15 @@ sealed interface ClientEvent {
         override val description: String = "$permanentName was solved"
     ) : ClientEvent
 
+    /** A creature became renowned (CR 702.112b) — its renown payoffs are now switched on. */
+    @Serializable
+    @SerialName("permanentRenowned")
+    data class PermanentRenowned(
+        val permanentId: EntityId,
+        val permanentName: String,
+        override val description: String = "$permanentName became renowned"
+    ) : ClientEvent
+
     @Serializable
     @SerialName("permanentExerted")
     data class PermanentExerted(
@@ -1100,6 +1109,11 @@ object ClientEventTransformer {
             )
 
             is CaseSolvedEvent -> ClientEvent.CaseSolved(
+                permanentId = event.entityId,
+                permanentName = event.entityName
+            )
+
+            is BecameRenownedEvent -> ClientEvent.PermanentRenowned(
                 permanentId = event.entityId,
                 permanentName = event.entityName
             )

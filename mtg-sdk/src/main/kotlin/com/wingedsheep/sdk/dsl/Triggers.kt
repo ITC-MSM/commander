@@ -1846,6 +1846,21 @@ object Triggers {
         binding = binding
     )
 
+    /**
+     * Whenever a permanent becomes renowned (CR 702.112b).
+     *
+     * SELF binding (default) = "when this creature becomes renowned" (Relic Seeker). Pass
+     * [binding] = [TriggerBinding.ANY] with a [filter] for "whenever a [filter] becomes renowned"
+     * (Valeron Wardens).
+     */
+    fun becomesRenowned(
+        filter: GameObjectFilter = GameObjectFilter.Any,
+        binding: TriggerBinding = TriggerBinding.SELF,
+    ): TriggerSpec = TriggerSpec(
+        event = BecameRenownedEvent(filter = filter),
+        binding = binding
+    )
+
     // =========================================================================
     // Attachment Triggers
     // =========================================================================

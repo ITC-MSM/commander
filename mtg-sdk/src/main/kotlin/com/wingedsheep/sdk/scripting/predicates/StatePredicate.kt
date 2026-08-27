@@ -889,6 +889,30 @@ sealed interface StatePredicate {
     }
 
     // =============================================================================
+    // Renowned (Entity)
+    // =============================================================================
+
+    /**
+     * Permanent that currently has the renowned designation (CR 702.112b, Magic Origins).
+     * Set by `Effects.BecomeRenowned` when a renown trigger resolves.
+     *
+     * Sticky and one-way, exactly like [IsSolved]: once a permanent becomes renowned it stays
+     * renowned until it leaves the battlefield, and there is no "unrenown". That is why this is
+     * component-backed (the engine's `RenownedComponent`) rather than a floating layer effect like
+     * [IsSuspected] — CR 702.112b says renowned is neither an ability nor part of the permanent's
+     * copiable values, so a copy of a renowned creature is not itself renowned.
+     *
+     * Read by renown's own intervening-`if` ("if it isn't renowned", negated) and by the payoffs
+     * that gate on the designation: "as long as this creature is renowned" (Goblin Glory Chaser,
+     * Honored Hierarch), "if it's renowned" (Consul's Lieutenant, Enshrouding Mist).
+     */
+    @SerialName("IsRenowned")
+    @Serializable
+    data object IsRenowned : Entity {
+        override val description: String = "renowned"
+    }
+
+    // =============================================================================
     // Saddle (Entity)
     // =============================================================================
 

@@ -163,6 +163,22 @@ data object SaddledComponent : Component
 data object SolvedComponent : Component
 
 /**
+ * Marks a permanent as renowned (CR 702.112b) — the designation a creature gains when its renown
+ * trigger resolves. Read via
+ * [com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsRenowned] to gate renown's own
+ * intervening-`if` ("if it isn't renowned", negated) and the payoffs that read the designation
+ * back ("as long as this creature is renowned", "if it's renowned").
+ *
+ * Sticky and one-way like [SolvedComponent], not transient like [SaddledComponent]: once set it
+ * survives cleanup and stays until the permanent leaves the battlefield (a fresh entity has no
+ * battlefield components — stripped in `ZoneMovementUtils.stripBattlefieldComponents`). There is
+ * no "unrenown". CR 702.112b makes renowned neither an ability nor part of the permanent's
+ * copiable values, so a copy of a renowned creature enters not renowned.
+ */
+@Serializable
+data object RenownedComponent : Component
+
+/**
  * Records the distinct creatures that have crewed (CR 702.122) or saddled (CR 702.171) this
  * permanent during the current turn — the creatures tapped to pay a Crew or Saddle cost on it.
  * A permanent is only ever a Vehicle (crew) or a Mount (saddle), so one set covers both keywords.
