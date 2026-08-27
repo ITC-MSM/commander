@@ -434,6 +434,15 @@ class ActivateAbilityHandler(
             }
         }
 
+        // An alternative payment is only worth what the engine says it is: reject a choice the
+        // ability can't use (no convoke/waterbend, a tapped or foreign permanent, a colour the
+        // creature isn't) before it is priced below.
+        action.alternativePayment?.takeUnless { it.isEmpty }?.let { payment ->
+            alternativePaymentHandler.validateForAbility(
+                state, payment, action.playerId, ability.hasConvoke, ability.hasWaterbend
+            )?.let { return it }
+        }
+
         // Check cost requirements (using ManaSolver for mana costs to consider untapped sources)
         // If the ability has convoke or waterbend and the player provided alternative payment,
         // account for the reduced cost.

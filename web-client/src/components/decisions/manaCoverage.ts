@@ -75,12 +75,15 @@ export function computeCoverage(
     }
   }
 
-  // Pass 2 — selected sources against the coloured pips still open.
+  // Pass 2 — selected sources against the coloured pips still open. A source that adds more
+  // than one mana (Gilded Lotus) covers one coloured pip and carries the rest into the generic
+  // pass — the server's `manaAmount`, the same number the cast path's `ManaSourceInfo` sends.
   const sourceById = new Map(availableSources.map((s) => [s.entityId, s]))
-  const flexibleSources: ManaSourceOption[] = []
+  let spareFromSources = 0
   for (const id of selectedIds) {
     const source = sourceById.get(id)
     if (!source) continue
+    const amount = source.manaAmount ?? 1
     const colors = (source.producesColors ?? []).map(toPip)
     const match = pips.find(
       (pip) =>
@@ -88,14 +91,18 @@ export function computeCoverage(
         !pip.pending &&
         pipColorOptions(pip.symbol).some((option) => colors.includes(option)),
     )
-    if (match) match.pending = true
-    else flexibleSources.push(source)
+    if (match) {
+      match.pending = true
+      spareFromSources += amount - 1
+    } else {
+      spareFromSources += amount
+    }
   }
 
-  // Pass 3 — whatever is left (leftover floating, sources that matched no coloured pip, Waterbend
-  // taps) pays generic pips, cheapest first.
+  // Pass 3 — whatever is left (leftover floating, mana from sources that matched no coloured pip
+  // or had some to spare, Waterbend taps) pays generic pips, cheapest first.
   let leftoverFloating = Object.values(floatingByColor).reduce((a, b) => a + b, 0)
-  let leftoverPending = flexibleSources.length + extraGeneric
+  let leftoverPending = spareFromSources + extraGeneric
   for (const pip of pips) {
     if (pip.floating || pip.pending) continue
     const amount = pipGenericAmount(pip.symbol)

@@ -421,6 +421,9 @@ data class WardCostChoiceContinuation(
  *   another permanent (e.g. Springleaf Drum — "{T}, Tap an untapped creature you
  *   control: Add one mana of any color"). Auto-pay never picks these; the
  *   manual-selection resumer pauses for the player to pick which permanent to tap.
+ * @property manaAmount How much mana one activation adds (Gilded Lotus: 3). The same field the
+ *   cast path's `ManaSourceInfo` carries; without it the client's coverage read counted every
+ *   source as one pip, and the Pay button stayed dead on a ward cost a Lotus could cover.
  */
 @Serializable
 data class ManaSourceOption(
@@ -429,7 +432,8 @@ data class ManaSourceOption(
     val producesColors: Set<Color>,
     val producesColorless: Boolean,
     val requiresSacrifice: Boolean = false,
-    val requiresTappingAnotherPermanent: Boolean = false
+    val requiresTappingAnotherPermanent: Boolean = false,
+    val manaAmount: Int = 1,
 )
 
 /**

@@ -581,6 +581,8 @@ export interface ManaSourceOption {
    * Auto-pay never picks these; manual selection performs the sacrifice explicitly.
    */
   readonly requiresSacrifice?: boolean
+  /** How much mana one activation adds (Gilded Lotus: 3). Absent on older servers — read as 1. */
+  readonly manaAmount?: number
 }
 
 /**

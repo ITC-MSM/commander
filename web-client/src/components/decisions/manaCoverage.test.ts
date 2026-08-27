@@ -7,8 +7,8 @@ const pool = (over: Record<string, number> = {}): Pool =>
 const emptyPool = pool()
 
 type Source = Parameters<typeof computeCoverage>[3][number]
-const source = (entityId: string, producesColors: string[]) =>
-  ({ entityId, producesColors }) as unknown as Source
+const source = (entityId: string, producesColors: string[], manaAmount?: number) =>
+  ({ entityId, producesColors, ...(manaAmount !== undefined ? { manaAmount } : {}) }) as unknown as Source
 
 describe('pip parsing', () => {
   it('accepts either half of a hybrid', () => {
@@ -53,5 +53,26 @@ describe('computeCoverage', () => {
     const coverage = computeCoverage(['W', '1'], pool({ blue: 1 }), ['plains'] as never, [plains], 0)
     expect(coverage[0]!.pending).toBe(true)
     expect(coverage[1]!.floating).toBe(true)
+  })
+
+  // A ward of {3} with a Gilded Lotus selected: the prompt used to count the Lotus as one pip,
+  // so the Pay button stayed dead on a payment the server would have accepted.
+  it('lets a multi-mana source cover more than one pip', () => {
+    const lotus = source('lotus', ['WHITE', 'BLUE', 'BLACK', 'RED', 'GREEN'], 3)
+    const coverage = computeCoverage(['3'], emptyPool, ['lotus'] as never, [lotus], 0)
+    expect(coverage[0]!.pending).toBe(true)
+  })
+
+  it('spends a multi-mana source on a coloured pip first and the rest on generic', () => {
+    const lotus = source('lotus', ['WHITE', 'BLUE', 'BLACK', 'RED', 'GREEN'], 3)
+    const coverage = computeCoverage(['U', '2'], emptyPool, ['lotus'] as never, [lotus], 0)
+    expect(coverage[0]!.pending).toBe(true)
+    expect(coverage[1]!.pending).toBe(true)
+  })
+
+  it('reads a source without manaAmount as one mana', () => {
+    const plains = source('plains', ['WHITE'])
+    const coverage = computeCoverage(['2'], emptyPool, ['plains'] as never, [plains], 0)
+    expect(coverage[0]!.pending).toBe(false)
   })
 })
