@@ -73,6 +73,10 @@ export const keywordManaClass: Record<string, string> = {
   /** Solved designation (CR 719.3b). Same synthetic-pseudo-keyword trick as SUSPECTED, from
    *  ClientCard.isSolved — it marks a Case whose "Solved —" abilities are switched on. */
   SOLVED: 'ability-case-solved',
+  /** Renowned designation (CR 702.112b). Same synthetic-pseudo-keyword trick as SUSPECTED, from
+   *  ClientCard.isRenowned — it marks a creature whose renown has already resolved, so renown
+   *  can't trigger again and its "as long as this creature is renowned" payoffs are live. */
+  RENOWNED: 'ability-renowned',
 }
 
 export const displayableKeywords = new Set([

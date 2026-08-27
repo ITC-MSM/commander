@@ -1,5 +1,6 @@
 import { useGameStore, type LogEntry } from '@/store/gameStore.ts'
-import { seatColor } from '@/styles/seatColors'
+import { identitySeatColor, selectTeamMap } from '@/store/selectors.ts'
+import type { EntityId } from '@/types'
 import React, { useState, useRef, useEffect } from 'react'
 
 /**
@@ -11,11 +12,14 @@ export function GameLog() {
   // Multiplayer: log entries take the actor's seat color ("who did that?" is the
   // dominant question in a pod). 2-player keeps the classic cyan/orange split.
   const players = useGameStore((state) => state.gameState?.players)
+  const teamMap = useGameStore(selectTeamMap)
   const isMulti = (players?.length ?? 0) > 2
-  const seatColorFor = (entryPlayerId: string | null): string | null => {
+  // Identity colour, not raw seat colour: in a Two-Headed Giant game the rail, orbs and plates
+  // paint team hues, and the log has to agree with them or "who did that" reads wrong.
+  const seatColorFor = (entryPlayerId: EntityId | null): string | null => {
     if (!isMulti || !players || !entryPlayerId || entryPlayerId === playerId) return null
     const idx = players.findIndex((p) => p.playerId === entryPlayerId)
-    return idx >= 0 ? seatColor(idx).base : null
+    return idx >= 0 ? identitySeatColor(teamMap, entryPlayerId, idx).base : null
   }
   const [expanded, setExpanded] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -72,8 +76,10 @@ function LogEntryRow({ entry, isPlayer, seatColor }: { entry: LogEntry; isPlayer
     )
   }
 
+  // A system line *about* a seat ("Bob has been eliminated") keeps that seat's colour in a pod —
+  // it is the one log line where "who" matters most, and it was the only one that couldn't have it.
   const color = entry.type === 'system'
-    ? '#999'
+    ? seatColor ?? '#999'
     : entry.playerId === null
       ? '#888'
       : isPlayer

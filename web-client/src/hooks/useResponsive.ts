@@ -116,6 +116,9 @@ export function calculateFittingCardWidth(
 /**
  * Hook to track viewport dimensions.
  */
+/** Below this viewport width the layout is the phone layout (`isMobile`). */
+export const MOBILE_BREAKPOINT = 640
+
 export function useViewportSize(): ViewportSize {
   const [size, setSize] = useState<ViewportSize>({
     width: typeof window !== 'undefined' ? window.innerWidth : 1200,
@@ -155,8 +158,8 @@ export function useResponsive(
     // =========================================================================
     // Breakpoint Detection
     // =========================================================================
-    const isMobile = width < 640
-    const isTablet = width >= 640 && width < 1024
+    const isMobile = width < MOBILE_BREAKPOINT
+    const isTablet = width >= MOBILE_BREAKPOINT && width < 1024
     const isCompact = width < 1024 || height < 700
     // Short-viewport desktops (e.g. MBP 14" at 1512×982). Still "desktop" by
     // width, but the hand's fixed grid-row reservation at the desktop 150px

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
 import { useGameStore } from '@/store/gameStore'
+import { isFollowingAction } from '@/store/slices/ui/boardViewSlice'
 import {
   selectGameState,
   selectTeamMap,
@@ -85,7 +86,8 @@ export function OpponentRail({
   const viewedOpponent = useViewedOpponent()
   const self = useViewingPlayer()
   const viewPinned = useGameStore((state) => state.viewPinned)
-  const followAction = useGameStore((state) => state.followAction)
+  // The *effective* camera behaviour: the persisted setting minus a manual pin.
+  const followAction = useGameStore(isFollowingAction)
   const toggleFollowAction = useGameStore((state) => state.toggleFollowAction)
   const overviewMode = useGameStore((state) => state.overviewMode)
   const toggleOverviewMode = useGameStore((state) => state.toggleOverviewMode)
@@ -94,6 +96,14 @@ export function OpponentRail({
   // team sections — your team (you + ally) and the opposing team — colored by team with one
   // shared-life header each. Spectators (no "you") keep the flat per-seat rail.
   const isTeamGame = useIsTeamGame()
+  // The digit that focuses each living opponent's board — the same `opponents.filter(!hasLost)`
+  // order `useMultiplayerView` indexes for keys 1-9, so the badge on a chip is always the key
+  // that selects it (a tombstone takes no key, and a team rail's regrouping doesn't renumber).
+  const keyIndexById = useMemo(() => {
+    const map = new Map<EntityId, number>()
+    opponents.filter((o) => !o.hasLost).forEach((o, i) => map.set(o.playerId, i + 1))
+    return map
+  }, [opponents])
   const teamMap = useGameStore(selectTeamMap)
   const viewerTeam = useViewerTeamIndex()
   const teamMode = isTeamGame && viewerTeam != null && !spectatorMode
@@ -175,6 +185,7 @@ export function OpponentRail({
                 viewPinned={viewPinned}
                 spectatorMode={spectatorMode}
                 isAlly
+                keyIndex={keyIndexById.get(opponent.playerId) ?? null}
               />
             ))}
           </TeamRailSection>
@@ -188,6 +199,7 @@ export function OpponentRail({
                 isBoardVisible={visibleBoardIds.includes(opponent.playerId)}
                 viewPinned={viewPinned}
                 spectatorMode={spectatorMode}
+                keyIndex={keyIndexById.get(opponent.playerId) ?? null}
               />
             ))}
           </TeamRailSection>
@@ -209,6 +221,7 @@ export function OpponentRail({
               isBoardVisible={visibleBoardIds.includes(opponent.playerId)}
               viewPinned={viewPinned}
               spectatorMode={spectatorMode}
+              keyIndex={keyIndexById.get(opponent.playerId) ?? null}
             />
           ))}
         </>
@@ -651,6 +664,7 @@ function RailChip({
   viewPinned,
   spectatorMode,
   isAlly = false,
+  keyIndex = null,
 }: {
   opponent: ClientPlayer
   isViewed: boolean
@@ -660,6 +674,8 @@ function RailChip({
   spectatorMode: boolean
   /** Two-Headed Giant: this seat is the viewing player's teammate (ally treatment, no own life). */
   isAlly?: boolean
+  /** The 1-9 key that focuses this board (null for a tombstone). Shown as a badge on desktop. */
+  keyIndex?: number | null
 }) {
   const responsive = useResponsiveContext()
   const gameState = useGameStore(selectGameState)
@@ -869,8 +885,18 @@ function RailChip({
             }
           : {})}
         role="button"
+        tabIndex={tomb && !spectatorMode ? -1 : 0}
         title={chipTitle(opponent) + (isAttackRestricted ? "\nCan't be attacked this combat" : '')}
         onClick={handleChipClick}
+        onKeyDown={(e) => {
+          // Only the chip itself: the crosshair and distribute buttons inside it are focusable
+          // and handle their own Enter, which must not also change the view.
+          if (e.target !== e.currentTarget) return
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleChipClick()
+          }
+        }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
@@ -893,18 +919,21 @@ function RailChip({
           opacity: tomb ? 0.6 : isAttackRestricted ? 0.5 : 1,
           transition: 'border-color 150ms, background 150ms, opacity 200ms',
           ...(ringShadow ? { boxShadow: ringShadow } : {}),
-          // Active turn wins the animation slot (clearest signal); otherwise the
-          // "board has targets" halo. Both drive box-shadow, so only one can run.
-          ...(isActiveTurn && !tomb
+          // Both animations drive box-shadow, so only one can run. While a selection is in
+          // progress the "board has targets" halo wins: it is the answer to the question the
+          // player is asking right now ("where are my targets?"), and the active player's board
+          // is the most common place for them — which is exactly when the turn ring used to
+          // drown it out. The ▶ marker still says whose turn it is.
+          ...(boardHasTargets && !isViewed
             ? {
-                animation: 'railTurnRing 1.4s ease-in-out infinite',
-                ['--turn-color' as string]: seat.bright,
-                ['--turn-glow' as string]: seat.soft,
+                animation: 'railHalo 1.2s ease-in-out infinite',
+                ['--halo-color' as string]: 'rgba(0, 187, 255, 0.7)',
               }
-            : boardHasTargets && !isViewed
+            : isActiveTurn && !tomb
               ? {
-                  animation: 'railHalo 1.2s ease-in-out infinite',
-                  ['--halo-color' as string]: 'rgba(0, 187, 255, 0.7)',
+                  animation: 'railTurnRing 1.4s ease-in-out infinite',
+                  ['--turn-color' as string]: seat.bright,
+                  ['--turn-glow' as string]: seat.soft,
                 }
               : {}),
         }}
@@ -1179,6 +1208,35 @@ function RailChip({
               +
             </button>
           </span>
+        )}
+        {/* Key badge — the digit that focuses this board (keys 1-9). The one place the shortcut
+            is visible without opening help; stands down while the chip is busy being a target
+            or a distribute row. Desktop only: phones have no keyboard and a compact chip. */}
+        {!compact && !tomb && keyIndex != null && keyIndex <= 9 && !isPlayerTargetable && !isDistributeTarget && (
+          <kbd
+            aria-hidden
+            title={`Press ${keyIndex} to focus this board`}
+            style={{
+              flexShrink: 0,
+              minWidth: 13,
+              height: 13,
+              padding: '0 3px',
+              boxSizing: 'border-box',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 3,
+              border: `1px solid ${isViewed ? seat.base : 'rgba(255, 255, 255, 0.18)'}`,
+              background: 'rgba(0, 0, 0, 0.35)',
+              color: isViewed ? seat.bright : '#8a90a0',
+              fontFamily: 'inherit',
+              fontSize: 9,
+              fontWeight: 800,
+              lineHeight: 1,
+            }}
+          >
+            {keyIndex}
+          </kbd>
         )}
       </div>
 

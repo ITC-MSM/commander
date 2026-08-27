@@ -344,6 +344,11 @@ data class ClientCard(
      * switched on). Sticky until it leaves the battlefield. Battlefield only. */
     val isSolved: Boolean = false,
 
+    /** Whether this creature has the renowned designation (CR 702.112b — its renown payoffs are
+     * switched on and renown can't trigger again). Sticky until it leaves the battlefield.
+     * Battlefield only. */
+    val isRenowned: Boolean = false,
+
     /**
      * Saddle N (CR 702.171a) printed on this permanent, or null if it has no saddle ability.
      * Battlefield only. Sent for every player's Mounts, not just the controller's: whether a Mount

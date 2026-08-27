@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { LegalActionInfo } from '../types'
+import type { ClientPlayer, LegalActionInfo } from '../types'
 
 // selectors.ts transitively imports gameStore.ts, whose gameplay slice reads
 // localStorage.getItem(...) at module-init time to seed autoTapEnabled — a browser global
@@ -12,7 +12,7 @@ vi.stubGlobal('localStorage', {
   removeItem: () => {},
 })
 
-const { cardIdForAction, isHighlightable } = await import('./selectors')
+const { cardIdForAction, isHighlightable, turnQueueHintFor } = await import('./selectors')
 const { entityId } = await import('../types')
 
 // --- Fixture builders -------------------------------------------------------
@@ -124,5 +124,33 @@ describe('isHighlightable', () => {
       { type: 'ActivateAbility', playerId: PLAYER, sourceId: SOURCE, abilityId: 'tap', targets: [] },
       { isManaAbility: true, manaCostString: '{U}' },
     ))).toBe(true)
+  })
+})
+
+describe('turnQueueHintFor', () => {
+  const seat = (id: string, hasLost = false) => ({ playerId: entityId(id), hasLost }) as unknown as ClientPlayer
+  const table = [seat('a'), seat('b'), seat('c'), seat('d')]
+
+  it('counts living seats from the active player to the viewer', () => {
+    expect(turnQueueHintFor(table, entityId('a'), entityId('b'))).toBe("You're next")
+    expect(turnQueueHintFor(table, entityId('a'), entityId('c'))).toBe('You in 2')
+    expect(turnQueueHintFor(table, entityId('a'), entityId('d'))).toBe('You in 3')
+  })
+
+  it('wraps around the end of the turn order', () => {
+    expect(turnQueueHintFor(table, entityId('d'), entityId('a'))).toBe("You're next")
+    expect(turnQueueHintFor(table, entityId('c'), entityId('b'))).toBe('You in 3')
+  })
+
+  it('skips eliminated seats', () => {
+    const withTomb = [seat('a'), seat('b', true), seat('c'), seat('d')]
+    expect(turnQueueHintFor(withTomb, entityId('a'), entityId('c'))).toBe("You're next")
+  })
+
+  it('says nothing on your own turn, for an eliminated viewer, or for an unknown seat', () => {
+    expect(turnQueueHintFor(table, entityId('a'), entityId('a'))).toBeUndefined()
+    expect(turnQueueHintFor([seat('a'), seat('b', true), seat('c')], entityId('a'), entityId('b'))).toBeUndefined()
+    expect(turnQueueHintFor(table, entityId('a'), entityId('zz'))).toBeUndefined()
+    expect(turnQueueHintFor(table, null, entityId('b'))).toBeUndefined()
   })
 })

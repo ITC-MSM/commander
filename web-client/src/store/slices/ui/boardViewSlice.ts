@@ -31,6 +31,14 @@ export function hasPendingInputSelection(state: GameStore): boolean {
 }
 
 /**
+ * Follow-the-action as the camera actually behaves right now: the persisted setting, minus a
+ * manual pin holding the view still. This is what the rail's Follow button shows.
+ */
+export function isFollowingAction(state: Pick<GameStore, 'followAction' | 'viewPinned'>): boolean {
+  return state.followAction && !state.viewPinned
+}
+
+/**
  * True when the local player's own seat is out of a multiplayer game the others are still
  * playing (CR 800.4a). That's the spectator layout: a survivor takes over the bottom half of
  * the table and all action UI hides.
@@ -69,7 +77,9 @@ export interface BoardViewSliceState {
   viewedOpponentId: EntityId | null
   /**
    * True when the player manually selected a board — suspends follow-the-action
-   * until unpinned (re-click the viewed chip / Esc).
+   * until unpinned (re-click the viewed chip / Esc / the Follow button). A pin never
+   * touches [followAction]: it is a *suspension* of the setting, not a change to it, so
+   * unpinning brings the camera straight back.
    */
   viewPinned: boolean
   /** Follow-the-action camera setting (persisted). Default on. */
@@ -201,21 +211,22 @@ export const createBoardViewSlice: SliceCreator<BoardViewSlice> = (set, get) => 
     // bottom — it never also occupies the viewed strip slot.
     if (isViewerEliminated(get()) && playerId === get().eliminatedBottomSeatId) return
     const pin = opts?.pin ?? true
-    // Pinning a board and follow-the-action are mutually exclusive: pinning turns follow off
-    // (the camera is locked), so the Follow toggle reflects that rather than lying "on".
+    // A pin suspends follow-the-action (the camera is locked) without flipping the persisted
+    // setting — so Esc / re-clicking the chip hands the camera back to the follow rules, as the
+    // help text promises. The Follow button shows the *effective* state (`isFollowingAction`)
+    // rather than lying "on" while a pin holds the camera still.
     // Picking a single board also exits the table overview — it *is* the focus gesture.
-    set({
-      viewedOpponentId: playerId,
-      viewPinned: pin,
-      overviewMode: false,
-      ...(pin ? { followAction: false } : {}),
-    })
+    set({ viewedOpponentId: playerId, viewPinned: pin, overviewMode: false })
   },
 
   unpinView: () => set({ viewPinned: false }),
 
   toggleFollowAction: () => {
-    const next = !get().followAction
+    const { followAction, viewPinned } = get()
+    // With follow on but suspended by a pin, the button reads "Off" — clicking it means "follow
+    // again", i.e. release the pin, not "turn the setting off" (which would be a second click
+    // that looks like a no-op).
+    const next = viewPinned && followAction ? true : !followAction
     try {
       localStorage.setItem(FOLLOW_ACTION_KEY, String(next))
     } catch {

@@ -1160,6 +1160,11 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.IsSolved
     )
 
+    /** Must have the renowned designation (CR 702.112b) — see [StatePredicate.IsRenowned]. */
+    fun renowned() = copy(
+        statePredicates = statePredicates + StatePredicate.IsRenowned
+    )
+
     /**
      * Must have crewed (CR 702.122) or saddled (CR 702.171) the effect's source permanent this
      * turn. Source-relative — see [StatePredicate.CrewedOrSaddledSourceThisTurn].
