@@ -512,6 +512,7 @@ class GameSession(
                 // Prefer the running game's format (set for scenario/hotseat pods too), falling back
                 // to the configured format before the game state exists.
                 teamSharedLife = (state?.format ?: engineFormat).sharesTeamLife,
+                teamSharedTurns = (state?.format ?: engineFormat).sharesTeamTurns,
             )
         }.sortedBy { it.seatIndex }
     }
@@ -888,13 +889,22 @@ class GameSession(
         }
 
         val priorityPlayer = state.priorityPlayerId ?: return emptyList()
-        // Allow either the priority player or, when their turn is hijacked, the controller
-        // currently driving them. Legal actions are still enumerated for the affected
-        // player (whose mana, cards, and turn this is).
-        if (state.actorFor(priorityPlayer) != playerId) return emptyList()
+        // The seat this connection may act as right now. Normally the priority player, or — when
+        // their turn is hijacked — whoever this connection is the actor for. Legal actions are
+        // enumerated for the *acting* seat, since it is that seat's mana, cards and turn.
+        //
+        // CR 805.5: under shared team turns the whole of the baton holder's team may act, so a
+        // teammate's connection gets its own actions instead of nothing — that is what lets you
+        // answer what your partner just did without first waiting for the baton to reach you.
+        // The baton holder is tried first so a hotseat client (the actor for every seat) keeps
+        // driving exactly the seat the UI is focused on. Outside a shared-turns format
+        // [GameState.priorityTeam] is the singleton baton holder and this is the old expression.
+        val actingSeat = (listOf(priorityPlayer) + state.priorityTeam.filter { it != priorityPlayer })
+            .firstOrNull { state.actorFor(it) == playerId }
+            ?: return emptyList()
         if (state.pendingDecision != null) return emptyList()
-        val engineActions = legalActionEnumerator.enumerate(state, priorityPlayer)
-        return legalActionEnricher.enrich(engineActions, state, priorityPlayer)
+        val engineActions = legalActionEnumerator.enumerate(state, actingSeat)
+        return legalActionEnricher.enrich(engineActions, state, actingSeat)
     }
 
 
@@ -928,8 +938,9 @@ class GameSession(
         // or is the actor for whoever has priority during a hijacked turn).
         val playerOverrides = getStopOverrides(playerId)
         val playerMode = getPriorityMode(playerId)
-        val priorityHolder = state.priorityPlayerId
-        val isActorForPriority = priorityHolder != null && state.actorFor(priorityHolder) == playerId
+        // "Can this connection act in the current priority window?" — the baton holder's seat, or
+        // (CR 805.5) any seat on the baton holder's team under shared team turns.
+        val isActorForPriority = state.priorityTeam.any { state.actorFor(it) == playerId }
         val nextStopPoint = if (isActorForPriority && playerMode != PriorityMode.FULL_CONTROL) {
             // The same notion of "meaningful" the stop decision itself uses — otherwise the
             // button can promise a stop (say, at the opponent's end step for a spell we can't

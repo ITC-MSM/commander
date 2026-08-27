@@ -198,17 +198,19 @@ export function syncSeatTeams(state: ClientGameState, get: GetState): void {
     if (p.teamIndex != null) next[p.playerId] = p.teamIndex
   }
   const sharedLife = state.players.some((p) => p.teamSharedLife === true)
+  const sharedTurns = state.players.some((p) => p.teamSharedTurns === true)
   const store = get()
   const current = store.teamByPlayerId
   const keys = Object.keys(next)
   if (
     keys.length === Object.keys(current).length &&
     keys.every((k) => current[k as EntityId] === next[k as EntityId]) &&
-    store.teamSharedLife === sharedLife
+    store.teamSharedLife === sharedLife &&
+    store.teamSharedTurns === sharedTurns
   ) {
     return
   }
-  store.setSeatTeams(next, sharedLife)
+  store.setSeatTeams(next, sharedLife, sharedTurns)
 }
 
 function processStateUpdate(
@@ -599,7 +601,10 @@ export function createGameplayHandlers(set: SetState, get: GetState): Pick<Messa
       }
       // Shared life is a game-level fact (same on every seat); 2HG shares, Team vs. Team doesn't.
       const sharedLife = msg.players.some((p) => p.teamSharedLife)
-      get().setSeatTeams(seatTeams, sharedLife)
+      // Shared turns is the separate CR 805 axis: 2HG shares its turn *and* its priority, Team
+      // vs. Team shares neither. `syncSeatTeams` re-derives both from every state update.
+      const sharedTurns = msg.players.some((p) => p.teamSharedTurns)
+      get().setSeatTeams(seatTeams, sharedLife, sharedTurns)
 
       // Load persisted stop overrides and send to server
       try {

@@ -673,6 +673,14 @@ export interface ClientPlayer {
   readonly teamIndex?: number | null
   /** True when the format pools life per team (Two-Headed Giant, CR 810.4). */
   readonly teamSharedLife?: boolean
+  /**
+   * True when the format gives the team one shared turn and one shared priority (CR 805 / 810.2).
+   * Under it a player may act whenever *any* member of their team holds priority (CR 805.5a), so
+   * this is what `hasPriority` has to consult — `priorityPlayerId === me` is only half the answer.
+   * Team vs. Team players are teammates who take individual turns (CR 808.4), so it stays false
+   * there, which is why it can't be folded into `teamSharedLife` or into "has a `teamIndex`".
+   */
+  readonly teamSharedTurns?: boolean
 }
 
 /**
@@ -947,8 +955,32 @@ export function isMyTurn(state: ClientGameState): boolean {
 }
 
 /**
- * Check if the viewing player has priority.
+ * Check if the viewing player has priority — i.e. may cast, activate, or pass right now.
+ *
+ * CR 805.5: under shared team turns a *team* holds priority, so the viewer may act whenever any
+ * member of their team holds the baton. Outside such a format (every 1v1, Commander, Free-for-All
+ * and Team vs. Team game) `teamSharedTurns` is false and this is plain equality, unchanged.
+ *
+ * The server is still authoritative — this only decides what the UI offers.
  */
 export function hasPriority(state: ClientGameState): boolean {
-  return state.priorityPlayerId === state.viewingPlayerId
+  if (state.priorityPlayerId === state.viewingPlayerId) return true
+  return sharesPriorityTeam(state, state.priorityPlayerId, state.viewingPlayerId)
+}
+
+/**
+ * True when [a] and [b] act as one side for priority: a shared-team-turns format and the same
+ * `teamIndex`. False for anyone without a team, and for Team vs. Team's individual turns.
+ */
+export function sharesPriorityTeam(
+  state: ClientGameState,
+  a: EntityId | null | undefined,
+  b: EntityId | null | undefined,
+): boolean {
+  if (!a || !b) return false
+  if (a === b) return true
+  const seatA = state.players.find((p) => p.playerId === a)
+  if (!seatA?.teamSharedTurns || seatA.teamIndex == null) return false
+  const seatB = state.players.find((p) => p.playerId === b)
+  return seatB?.teamIndex === seatA.teamIndex
 }

@@ -82,6 +82,12 @@ sealed interface ServerMessage {
          * same on every seat); lets the client render a shared-life team header vs. per-player life.
          */
         val teamSharedLife: Boolean = false,
+        /**
+         * True when the team takes one shared turn and holds priority as a unit (CR 805 / 810.2),
+         * so any member may act while their team has priority (CR 805.5a). False for Team vs. Team,
+         * whose teammates take individual turns (CR 808.4). Game-level, like [teamSharedLife].
+         */
+        val teamSharedTurns: Boolean = false,
     )
 
     /**

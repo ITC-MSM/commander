@@ -72,7 +72,7 @@ class SuspendCardFromHandHandler(
     }
 
     override fun validate(state: GameState, action: SuspendCardFromHand): String? {
-        if (state.priorityPlayerId != action.playerId) {
+        if (!state.hasPriority(action.playerId)) {
             return "You don't have priority"
         }
         if (action.cardId !in state.getZone(ZoneKey(action.playerId, Zone.HAND))) {

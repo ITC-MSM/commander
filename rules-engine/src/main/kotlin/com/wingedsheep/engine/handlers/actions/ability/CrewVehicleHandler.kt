@@ -41,7 +41,7 @@ class CrewVehicleHandler(
     override val actionType: KClass<CrewVehicle> = CrewVehicle::class
 
     override fun validate(state: GameState, action: CrewVehicle): String? {
-        if (state.priorityPlayerId != action.playerId) {
+        if (!state.hasPriority(action.playerId)) {
             return "You don't have priority"
         }
 

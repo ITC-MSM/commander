@@ -84,7 +84,7 @@ class TurnFaceUpHandler(
     }
 
     override fun validate(state: GameState, action: TurnFaceUp): String? {
-        if (state.priorityPlayerId != action.playerId) {
+        if (!state.hasPriority(action.playerId)) {
             return "You don't have priority"
         }
 
