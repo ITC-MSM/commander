@@ -98,8 +98,8 @@ function CourseHome() {
         </h1>
         <p className={styles.lede}>
           Four short games against the AI, each from a board set up to teach one thing, with a coach at your
-          elbow saying what to do next. About {COURSE_MINUTES} minutes all told. Nothing to read first,
-          nothing to sign up for.
+          elbow saying what to do next — and where on the table to do it. About {COURSE_MINUTES} minutes all
+          told. Nothing to read first, nothing to sign up for.
         </p>
         <div className={styles.heroActions}>
           {finished ? (
@@ -153,7 +153,7 @@ function Brief({ mission }: { mission: Mission }) {
   const completed = useLearnProgress((s) => s.completed)
   const plays = useLearnProgress((s) => s.plays)
   const done = completed.includes(mission.id)
-  const cards = useLessonCards(mission.openingCards)
+  const cards = useLessonCards(mission.openingCards.map((c) => c.name))
   const [name, setName] = useState(storedName)
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -262,11 +262,14 @@ function Brief({ mission }: { mission: Mission }) {
           <aside className={styles.briefColumn} aria-label="Your opening cards">
             <h2 className={styles.briefHeading}>Your opening cards</h2>
             <div className={styles.briefCards}>
-              {mission.openingCards.map((n) => (
-                <CardImage key={n} src={cards[n]?.imageUrl ?? ''} name={n} caption={n} />
+              {mission.openingCards.map((c) => (
+                <CardImage key={c.name} src={cards[c.name]?.imageUrl ?? ''} name={c.name} caption={c.name} note={c.note} />
               ))}
             </div>
-            <p className={styles.briefNote}>Hover any card at the table to read it in full.</p>
+            <p className={styles.briefNote}>
+              <span className={styles.hoverOnly}>Hover a card to lift it, click to read it in full. At the table, hovering any card does the same.</span>
+              <span className={styles.touchOnly}>Tap a card to read it in full. At the table, press and hold any card to do the same.</span>
+            </p>
           </aside>
         </div>
 

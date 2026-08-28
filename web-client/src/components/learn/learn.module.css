@@ -691,6 +691,107 @@
   text-align: center;
 }
 
+.cardTile {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.cardButton {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+  border-radius: 4.5% / 3.2%;
+  transition: transform 0.18s ease;
+}
+
+@media (hover: hover) {
+  .cardButton:hover {
+    transform: translateY(-4px) scale(1.04);
+  }
+}
+
+.cardNote {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ln-muted);
+  text-align: center;
+}
+
+/* Which sentence of a note applies is a property of the device, not the page. */
+.hoverOnly {
+  display: none;
+}
+
+.touchOnly {
+  display: inline;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hoverOnly {
+    display: inline;
+  }
+
+  .touchOnly {
+    display: none;
+  }
+}
+
+/* Full-size card, on a dimmed page. Click anywhere (or Esc) to close. */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  background: rgba(6, 6, 10, 0.86);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  cursor: zoom-out;
+  animation: lightboxIn 0.18s ease-out both;
+}
+
+.lightboxImg {
+  width: min(360px, 80vw);
+  aspect-ratio: 488 / 680;
+  border-radius: 4.5% / 3.2%;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+}
+
+.lightboxNote {
+  margin: 0;
+  max-width: 360px;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ln-paper);
+}
+
+.lightboxHint {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ln-muted);
+}
+
+@keyframes lightboxIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* Mini hand: the course's cards as a strip at the foot of each brief. */
 .miniHand {
   margin-top: 44px;

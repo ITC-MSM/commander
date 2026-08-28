@@ -187,6 +187,7 @@ export function StepStrip({
     >
       {renderTriangle(activeSide === 'top', 'top')}
       <div
+        data-learn="phase-strip"
         style={{
           backgroundColor: 'rgba(0, 0, 0, 0.85)',
           borderRadius: isMobile ? 6 : 8,

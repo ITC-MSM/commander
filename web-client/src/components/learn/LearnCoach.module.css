@@ -196,7 +196,161 @@
   text-decoration: underline;
 }
 
+/* ---- Tour ---------------------------------------------------------------- */
+.tourCount {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8d877a;
+  margin-bottom: 6px;
+}
+
+.tourNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.tourNav .primary {
+  margin-top: 6px;
+}
+
+/* ---- What you learned ---------------------------------------------------- */
+.lessonsHead {
+  margin-top: 10px;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--coach-accent);
+}
+
+.lessons {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: #c9c3b4;
+  font-size: 12.5px;
+}
+
+/* ---- Collapsed pill ------------------------------------------------------ */
+.pill {
+  --coach-accent: #d9b45c;
+  position: fixed;
+  left: 12px;
+  bottom: 52px;
+  z-index: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #efe6cf;
+  background: rgba(14, 14, 20, 0.94);
+  border: 1px solid rgba(239, 230, 207, 0.16);
+  border-left: 3px solid var(--coach-accent);
+  border-radius: 999px;
+  padding: 7px 14px 7px 10px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.pill:hover {
+  border-color: rgba(239, 230, 207, 0.35);
+}
+
+.pillDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--coach-accent);
+  box-shadow: 0 0 8px var(--coach-accent);
+}
+
+/* ---- Spotlight ----------------------------------------------------------- */
+/* A ring around the board element a tip or tour step names. Pointer-transparent, under the
+   coach panel and every modal, over the board itself. */
+.spotlight {
+  --spot: #ffd76a;
+  position: fixed;
+  z-index: 590;
+  pointer-events: none;
+  border-radius: 12px;
+  border: 2.5px solid var(--spot);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    0 0 22px 2px rgba(255, 215, 106, 0.55),
+    inset 0 0 14px rgba(255, 215, 106, 0.25);
+  animation: spotIn 0.3s ease-out both, spotPulse 1.6s ease-in-out 0.3s infinite;
+  transition: top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+
+/* The tour's ring dims everything else: a cut-out spotlight, so the one thing being named is the
+   one bright thing on the screen. The coach panel (z 600) stays above the dim. */
+.spotlightStrong {
+  border-width: 3px;
+  /* Same as the animation's resting frame, so the dim survives prefers-reduced-motion. */
+  box-shadow:
+    0 0 0 9999px rgba(4, 4, 8, 0.6),
+    0 0 22px 2px rgba(255, 215, 106, 0.6),
+    inset 0 0 16px rgba(255, 215, 106, 0.25);
+  animation: spotIn 0.3s ease-out both, spotPulseStrong 1.6s ease-in-out 0.3s infinite;
+}
+
+@keyframes spotIn {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes spotPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.5),
+      0 0 18px 1px rgba(255, 215, 106, 0.45),
+      inset 0 0 12px rgba(255, 215, 106, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.5),
+      0 0 40px 8px rgba(255, 215, 106, 0.8),
+      inset 0 0 20px rgba(255, 215, 106, 0.4);
+  }
+}
+
+@keyframes spotPulseStrong {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 9999px rgba(4, 4, 8, 0.6),
+      0 0 22px 2px rgba(255, 215, 106, 0.6),
+      inset 0 0 16px rgba(255, 215, 106, 0.25);
+  }
+  50% {
+    box-shadow:
+      0 0 0 9999px rgba(4, 4, 8, 0.6),
+      0 0 46px 10px rgba(255, 215, 106, 0.95),
+      inset 0 0 24px rgba(255, 215, 106, 0.45);
+  }
+}
+
 @media (max-width: 640px) {
+  .pill {
+    left: 8px;
+    bottom: 44px;
+  }
+
   .coach {
     left: 8px;
     bottom: 44px;
@@ -212,7 +366,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .body,
-  .objectiveDone .tick {
+  .objectiveDone .tick,
+  .spotlight {
     animation: none;
   }
 }
