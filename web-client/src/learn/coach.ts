@@ -15,6 +15,9 @@
  * game ends — it rides sessionStorage because the hand-off into a scenario game is a full
  * navigation (`/?token=…`), which drops React state but not the tab.
  */
+import type { EntityId } from '@/types'
+import type { ClientEvent } from '@/types/events'
+import type { ClientCard } from '@/types/gameState'
 import type { MissionId } from './missions'
 import { missionById } from './missions'
 import type { SpotId } from './spots'
@@ -92,6 +95,11 @@ export interface CoachView {
   attackersIncoming: number
   /** While declaring attackers: how many creatures are selected to attack so far. */
   attackersSelected: number
+  /**
+   * Of those, how many the player picked themselves — a creature that must attack is selected
+   * by the board before the player touches anything.
+   */
+  attackersChosen: number
   /** While declaring attackers: untapped creatures of mine that would stay home if the selected ones attack. */
   blockersLeft: number
   /** Creatures the opponent has on the battlefield. */
@@ -373,6 +381,117 @@ function baseTip(view: CoachView): CoachTip {
     tone: 'watch',
     spot: 'phase-strip',
   }
+}
+
+// ── Answering the player's own moves ────────────────────────────────────────
+//
+// A tip says what the board is waiting for; a notice says what the player just did. Without the
+// second, a player who plays the Forest while the tour is still introducing the hand is left
+// with a coach describing a table that no longer exists. Every notice is read off the same
+// facts the objectives use — the log for plays, casts, attacks and blocks — plus two consecutive
+// views for the moves that leave no log entry (a pass, an answered prompt, a skipped attack).
+
+/** One line said back to the player about the thing they just did. */
+export interface ActionNotice {
+  /** Stable per action, so the line animates once and a re-render does not replay it. */
+  key: string
+  text: string
+}
+
+function hasType(card: ClientCard | undefined, type: string): boolean {
+  return card !== undefined && card.cardTypes.some((t) => t.toUpperCase() === type)
+}
+
+function listNames(names: readonly string[]): string {
+  if (names.length <= 1) return names[0] ?? ''
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+}
+
+/**
+ * What the player did in the log entries that arrived since the coach last looked, worded back
+ * to them — or null when none of those entries were theirs. `offset` is where `fresh` starts in
+ * the full log, so the key stays stable across renders. The last thing they did wins: a creature
+ * cast is logged as a cast and then as an arrival, and the arrival is the one worth saying.
+ */
+export function noticeFromLog(
+  fresh: readonly ClientEvent[],
+  me: EntityId,
+  cards: Readonly<Record<EntityId, ClientCard>>,
+  offset: number,
+): ActionNotice | null {
+  let notice: ActionNotice | null = null
+  const attackers: string[] = []
+  for (const [i, e] of fresh.entries()) {
+    const key = `${e.type}-${offset + i}`
+    switch (e.type) {
+      case 'permanentEntered': {
+        if (e.controllerId !== me) continue
+        const card = cards[e.cardId]
+        if (hasType(card, 'LAND')) {
+          notice = { key, text: `${e.cardName} is on the battlefield — one more mana every turn from now on.` }
+        } else if (hasType(card, 'CREATURE')) {
+          notice = { key, text: `${e.cardName} is on the battlefield. It can attack from your next turn.` }
+        } else {
+          notice = { key, text: `${e.cardName} is on the battlefield.` }
+        }
+        continue
+      }
+      case 'spellCast':
+        if (e.casterId !== me) continue
+        notice = { key, text: `You cast ${e.spellName}. It sits on the stack until everyone passes.` }
+        continue
+      case 'creatureAttacked':
+        if (e.attackingPlayerId !== me) continue
+        attackers.push(e.creatureName)
+        notice = {
+          key: `attack-${offset + i - attackers.length + 1}`,
+          text: `${listNames(attackers)} ${attackers.length > 1 ? 'attack' : 'attacks'}.`,
+        }
+        continue
+      case 'creatureBlocked':
+        if (cards[e.blockerId]?.controllerId !== me) continue
+        notice = { key, text: `${e.blockerName} blocks ${e.attackerName} — the damage goes to your creature, not to you.` }
+        continue
+      default:
+        continue
+    }
+  }
+  return notice
+}
+
+/**
+ * The moves that leave no log entry, read off two consecutive views. The game cannot take
+ * priority, a prompt or a combat choice away from the player — only their own action does — so
+ * the transition is the proof. Null when nothing between the two views was the player's doing.
+ * Call it after {@link noticeFromLog}: a declared attack or block is logged, and the log's line
+ * is the better one.
+ */
+export function noticeFromMove(prev: CoachView, next: CoachView): ActionNotice | null {
+  const at = `${next.turnNumber}-${next.step}`
+  if (prev.canBlock && !next.canBlock) {
+    return { key: `no-blocks-${at}`, text: 'No blocks — the attack comes through to you.' }
+  }
+  if (prev.canAttack && !next.canAttack) {
+    return { key: `no-attack-${at}`, text: 'No attack this turn — your creatures stay home to block.' }
+  }
+  if (prev.hasDecision && !next.hasDecision) {
+    return { key: `answered-${at}`, text: 'Answered.' }
+  }
+  if (prev.hasPriority && next.stackSize < prev.stackSize) {
+    return { key: `resolved-${at}`, text: 'You passed, and the stack resolved — the last spell cast happened first.' }
+  }
+  if (prev.hasPriority && (next.step !== prev.step || next.turnNumber !== prev.turnNumber)) {
+    return { key: `passed-${at}`, text: 'You passed.' }
+  }
+  return null
+}
+
+/**
+ * The player is in the middle of something — a spell waiting on its target, creatures picked to
+ * attack. Not yet a move, but the tour has no business talking over it.
+ */
+export function playerIsActing(view: CoachView): boolean {
+  return view.isTargeting || view.attackersChosen > 0
 }
 
 type Phase = 'beginning' | 'main' | 'combat' | 'end'
