@@ -7,7 +7,6 @@ import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.Duration
-import com.wingedsheep.sdk.scripting.effects.GrantKeywordEffect
 import com.wingedsheep.sdk.scripting.effects.Mode
 import com.wingedsheep.sdk.scripting.effects.ModalEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -31,6 +30,11 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  * Because it is a *triggered* modal ability, the mode and its target are locked in as the ability
  * is put onto the stack (CR 603.3c) — the controller does not get to re-choose on resolution, and
  * the ability is removed from the stack if its one target has become illegal by then.
+ *
+ * `countsAsModalSpell` is deliberately left at its default. The flag exists for a `ModalEffect` used
+ * as an implementation shortcut for a mechanic that is *not* printed as a modal (gift), and it gates
+ * `SpellCastEvent.chosenModesCount` — which a triggered ability never produces. The printed wording
+ * here is a genuine modal, so the default is both the faithful value and the one Assay reads back.
  *
  * Mode 2 is the Elvish Hunter rail: an ability flag with
  * [Duration.UntilAfterAffectedControllersNextUntap], keyed to the *affected* creature's controller,
@@ -59,8 +63,8 @@ val DreamshackleGeist = card("Dreamshackle Geist") {
                     "Tap target creature"
                 ),
                 Mode.withTarget(
-                    GrantKeywordEffect(
-                        AbilityFlag.DOESNT_UNTAP.name,
+                    Effects.GrantKeyword(
+                        AbilityFlag.DOESNT_UNTAP,
                         EffectTarget.ContextTarget(0),
                         Duration.UntilAfterAffectedControllersNextUntap,
                     ),
@@ -70,7 +74,6 @@ val DreamshackleGeist = card("Dreamshackle Geist") {
             ),
             chooseCount = 1,
             minChooseCount = 0,
-            countsAsModalSpell = false
         )
         description = "At the beginning of combat on your turn, choose up to one — Tap target " +
             "creature, or target creature doesn't untap during its controller's next untap step."

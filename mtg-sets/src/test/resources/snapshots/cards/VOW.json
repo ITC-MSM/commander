@@ -4528,8 +4528,7 @@
                             "description": "Target creature doesn't untap during its controller's next untap step"
                         }
                     ],
-                    "minChooseCount": 0,
-                    "countsAsModalSpell": false
+                    "minChooseCount": 0
                 },
                 "descriptionOverride": "At the beginning of combat on your turn, choose up to one — Tap target creature, or target creature doesn't untap during its controller's next untap step."
             }

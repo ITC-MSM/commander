@@ -1466,8 +1466,52 @@ object Steps {
         ) { Effects.PutOnTopOfLibrary(it) },
     )
 
+    /**
+     * "Target creature doesn't untap during its controller's next untap step." — Dreamshackle Geist's
+     * second mode, Exhaustion's cousins, and eight more targeted lines.
+     *
+     * The verb is a *grant*, not an action: the SDK spells the restriction as
+     * `AbilityFlag.DOESNT_UNTAP` held for [Duration.UntilAfterAffectedControllersNextUntap], the one
+     * duration keyed to the **affected** permanent's controller rather than to the source's. That
+     * pairing is what the printed clause says twice — "its controller's" names whose untap step, and
+     * "next" names which one — so both words are literal here and neither is a slot.
+     *
+     * A rule of its own rather than a row in [quantifiedPermanentStepFamilies], because the sentence
+     * puts its object *before* the verb ("target creature doesn't untap …") where every row there
+     * puts it after ("tap target creature"). The quantifier prefix would have to move with it, and
+     * the ten cards printing this all print the bare singular.
+     *
+     * The sibling durations decline. "…during its controller's untap step" with no "next" is
+     * [Duration]'s open-ended form and a different value; reading one as the other would be the
+     * reversible-but-wrong class this module rules out.
+     */
+    private val doesntUntapTarget: Phrase<CardScript> = run {
+        fun scriptFor(filter: GameObjectFilter) = CardScript(
+            spellEffect = Effects.GrantKeyword(
+                AbilityFlag.DOESNT_UNTAP,
+                Targets.bound(),
+                Duration.UntilAfterAffectedControllersNextUntap,
+            ),
+            targetRequirements = listOf(Targets.permanent(filter)),
+        )
+        phrase(
+            "target {filter} doesn't untap during its controller's next untap step",
+            name = "target doesn't untap next untap step",
+        ) {
+            slot("filter", Filters.filter)
+            build { scriptFor(it.value("filter")) }
+            match { script ->
+                val requirement = script.targetRequirements.singleOrNull() ?: return@match null
+                val filter = Targets.permanentFilter(requirement) ?: return@match null
+                if (script != scriptFor(filter)) return@match null
+                bind("filter" to filter)
+            }
+        }
+    }
+
     private val permanentSteps: List<Phrase<CardScript>> = listOf(
         destroyTargetNoRegenerate,
+        doesntUntapTarget,
         destroyTriggering(noRegenerate = true),
         destroyTriggering(noRegenerate = false),
         sacrificeFiltered,

@@ -46,8 +46,9 @@ import com.wingedsheep.sdk.scripting.effects.Mode
  * | Choose two — | 2 | 2 |
  * | Choose one or both — | 2 | 1 |
  * | Choose one or more — | *n* | 1 |
+ * | Choose up to one — | 1 | 0 |
  *
- * The last two collide at two modes — "one or both" and "one or more" would both denote `(2, 1)` —
+ * "Choose one or both" and "choose one or more" collide at two modes — "one or both" and "one or more" would both denote `(2, 1)` —
  * so they are made **disjoint by mode count** rather than by ordering an alternation, which is the
  * fix this module's second invariant asks for. "Both" is a word about exactly two things and the
  * corpus agrees without exception: all 56 cards printing "one or both" have two modes and all 21
@@ -57,11 +58,17 @@ import com.wingedsheep.sdk.scripting.effects.Mode
  * ## What is deliberately not here
  *
  * The header variants that reach a *different* `ModalEffect` field — "choose one that hasn't been
- * chosen", "choose up to one", "choose any number", "choose one at random" — are not rows in this
- * list. Two of them are one flag away and would be cheap; the point is that they are a different
- * question ("which modes may be picked") from the one this family answers ("how many"), and reading
- * them as this one would be the reversible-but-wrong class. They decline and are counted, and
- * "choose one at random" has no field at all, which is an SDK finding rather than a gap in a rule.
+ * chosen", "choose any number", "choose one at random" — are not rows in this list. They are a
+ * different question ("which modes may be picked") from the one this family answers ("how many"),
+ * and reading them as this one would be the reversible-but-wrong class. They decline and are
+ * counted, and "choose one at random" has no field at all, which is an SDK finding rather than a gap
+ * in a rule.
+ *
+ * "Choose up to one" **was** on that list and should never have been: it is the pair (1, 0), which is
+ * the same two fields every row above sets, and nothing about which modes may be picked. The write-off
+ * had grouped it with its neighbours by where it sits in the printed header rather than by what it
+ * denotes. It is a row now — 9 cards, Dreamshackle Geist among them. Its sibling "choose any number"
+ * ((*n*, 0), 3 cards) is the same shape and stays out only because nothing has needed it yet.
  */
 object Modal {
 
@@ -100,6 +107,10 @@ object Modal {
         Header("choose two", "choose two") { modes -> (2 to 2).takeIf { modes >= 2 } },
         Header("choose one or both", "choose one or both") { modes -> (2 to 1).takeIf { modes == 2 } },
         Header("choose one or more", "choose one or more") { modes -> (modes to 1).takeIf { modes >= 3 } },
+        // (1, 0) — declining every mode is legal, and the ability leaves the stack having done
+        // nothing (CR 700.2b). Disjoint from every row above by `minChooseCount` alone, at any mode
+        // count, so it needs no count guard.
+        Header("choose up to one", "choose up to one") { _ -> 1 to 0 },
     )
 
     /**
