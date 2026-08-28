@@ -1,11 +1,10 @@
 package com.wingedsheep.mtg.sets.definitions.lci.cards
 
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.effects.ForEachPlayerEffect
-import com.wingedsheep.sdk.scripting.effects.ForceSacrificeEffect
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
@@ -17,11 +16,15 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *
  * When this creature enters, each player sacrifices two creatures of their choice.
  *
- * Implemented as an ETB triggered ability using [ForEachPlayerEffect] over [Player.Each].
- * Inside the loop, [EffectTarget.Controller] is rebound to the currently iterated player
- * (CR 701.21), so each player independently chooses which two of their own creatures to
- * sacrifice. When a player controls fewer than two creatures the [ForceSacrificeExecutor]
- * auto-sacrifices all valid candidates without prompting (sacrifices as many as possible).
+ * `ForceSacrificeEffect` already names the players who must sacrifice, and `ForceSacrificeExecutor`
+ * walks a multi-player reference itself — prompting each player in turn for their own two, and
+ * auto-sacrificing without a prompt for anyone controlling two or fewer. So `Player.Each` goes
+ * straight on the effect, which is what Barter in Blood, Blasphemous Edict, Bringer of the Last Gift
+ * and By Invitation Only all write.
+ *
+ * This card used to wrap the same effect in a `ForEachPlayerEffect` over `Player.Each` with the
+ * inner target left as the (rebound) controller — a hand-rolled restatement of the loop the executor
+ * performs. Argentum Assay's differential is what reported the two spellings.
  */
 val AbyssalGorestalker = card("Abyssal Gorestalker") {
     manaCost = "{4}{B}{B}"
@@ -33,15 +36,10 @@ val AbyssalGorestalker = card("Abyssal Gorestalker") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        effect = ForEachPlayerEffect(
-            players = Player.Each,
-            effects = listOf(
-                ForceSacrificeEffect(
-                    filter = GameObjectFilter.Creature,
-                    count = 2,
-                    target = EffectTarget.Controller
-                )
-            )
+        effect = Effects.Sacrifice(
+            GameObjectFilter.Creature,
+            count = 2,
+            target = EffectTarget.PlayerRef(Player.Each),
         )
     }
 
