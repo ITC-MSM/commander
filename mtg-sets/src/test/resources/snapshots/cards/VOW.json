@@ -8988,6 +8988,78 @@
     ]
 }
 
+// Manaform Hellkite
+{
+    "name": "Manaform Hellkite",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Creature — Dragon",
+    "oracleText": "Flying\nWhenever you cast a noncreature spell, create an X/X red Dragon Illusion creature token with flying and haste, where X is the amount of mana spent to cast that spell. Exile that token at the beginning of the next end step.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 0,
+                    "toughness": 0,
+                    "colors": [
+                        "RED"
+                    ],
+                    "creatureTypes": [
+                        "Dragon",
+                        "Illusion"
+                    ],
+                    "keywords": [
+                        "FLYING",
+                        "HASTE"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/e/0/e04ca01e-d2ff-45ce-bf6f-9f756808c8fb.jpg?1783924696",
+                    "dynamicPower": {
+                        "type": "ContextProperty",
+                        "key": "MANA_SPENT_ON_TRIGGERING_SPELL"
+                    },
+                    "dynamicToughness": {
+                        "type": "ContextProperty",
+                        "key": "MANA_SPENT_ON_TRIGGERING_SPELL"
+                    },
+                    "exileAtStep": "END"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "170",
+        "rarity": "MYTHIC",
+        "artist": "Andrew Mar",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/2/52e59170-aa80-45e1-ad0d-ce4818e78d2a.jpg?1783924829",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Manaform Hellkite's triggered ability looks at the mana that was actually spent to cast the spell, which may be different than the mana cost of that spell. For example, if you cast a noncreature spell without paying its mana cost, this ability creates a 0/0 Dragon Illusion token. In most cases, such a creature would immediately be put into your graveyard."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Markov Purifier
 {
     "name": "Markov Purifier",
@@ -11973,6 +12045,103 @@
         "artist": "Brian Valeza",
         "flavorText": "Stitchers delegate the most important tasks to assistants with a good eye for detail.",
         "imageUri": "https://cards.scryfall.io/normal/front/d/c/dc5c6675-6e0f-427d-9399-a6e7fc6215f1.jpg?1782703139"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Screaming Swarm
+{
+    "name": "Screaming Swarm",
+    "manaCost": "{5}{U}",
+    "typeLine": "Creature — Bird Horror",
+    "oracleText": "Flying\nWhenever you attack with one or more creatures, target player mills that many cards. (To mill a card, a player puts the top card of their library into their graveyard.)\n{2}{U}: Put this card from your graveyard into your library second from the top.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "YouAttackEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "AggregateBattlefield",
+                                    "player": "You",
+                                    "filter": "creature attacking"
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Library",
+                    "positionFromTop": 1
+                },
+                "activateFromZone": "Graveyard",
+                "descriptionOverride": "{2}{U}: Put this card from your graveyard into your library second from the top."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "75",
+        "rarity": "UNCOMMON",
+        "artist": "Irina Nordsol",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/c/3c9faf98-11bb-4407-aec9-d0d43dbaba34.jpg?1783924884",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "You may target yourself with Screaming Swarm's triggered ability."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -15890,6 +16059,113 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Witness the Future
+{
+    "name": "Witness the Future",
+    "manaCost": "{2}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Target player shuffles up to four target cards from their graveyard into their library. You look at the top four cards of your library, then put one of those cards into your hand and the rest on the bottom of your library in a random order.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "destination": "Library",
+                        "placement": "Shuffled"
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                }
+                            },
+                            "storeAs": "looked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "looked",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "kept",
+                            "storeRemainder": "rest",
+                            "selectedLabel": "Put in hand",
+                            "remainderLabel": "Put on bottom"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "kept",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "rest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "count": 4,
+                "optional": true,
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Graveyard"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "90",
+        "rarity": "UNCOMMON",
+        "artist": "Anato Finnstark",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/0/d0b3683f-a68b-458c-8f70-bba0f8779b8a.jpg?1783924875",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "If you choose zero target cards or the cards are illegal targets as Witness the Future resolves, the target player will still shuffle their library."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "If the player is an illegal target as Witness the Future resolves, the library won't be shuffled and any targeted cards remain in the graveyard."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

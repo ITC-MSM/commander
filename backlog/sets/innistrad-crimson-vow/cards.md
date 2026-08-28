@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 227 / 273
+**Implemented:** 230 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -155,7 +155,7 @@
 - [x] Lightning Wolf
 - [x] Lunar Rejection
 - [ ] Magma Pummeler
-- [ ] Manaform Hellkite
+- [x] Manaform Hellkite
 - [x] Markov Purifier
 - [x] Markov Retribution
 - [x] Markov Waltzer
@@ -208,7 +208,7 @@
 - [x] Savior of Ollenbock
 - [x] Sawblade Slinger
 - [x] Scattered Thoughts
-- [ ] Screaming Swarm
+- [x] Screaming Swarm
 - [x] Selhoff Entomber
 - [x] Serpentine Ambush
 - [x] Shattered Sanctum
@@ -272,7 +272,7 @@
 - [x] Whispering Wizard
 - [x] Winged Portent
 - [x] Witch's Web
-- [ ] Witness the Future
+- [x] Witness the Future
 - [x] Wolf Strike
 - [x] Wolfkin Outcast
 - [x] Wretched Throng
