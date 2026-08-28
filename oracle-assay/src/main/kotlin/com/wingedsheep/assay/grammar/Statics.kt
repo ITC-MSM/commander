@@ -164,6 +164,22 @@ object Statics {
      * Neither is a layer effect, so neither belongs in a `CompositeStaticAbility` beside the pump in
      * [pumpAndQuotedAbility] — the [Statics] header says why: only abilities projected through the
      * layer system are grouped, and these two are read elsewhere.
+     *
+     * ### The one thing inside the quotes this rule inherits and cannot fix
+     *
+     * `Normalizer.selfReferenceForms` abstracts **both** "this permanent" and the card's own printed
+     * name to `~`, and says in its own KDoc that "the rules that read `~` must not treat it as
+     * authoritative inside a quoted ability". That bites exactly once, in a *cost*: Basal Sliver's
+     * "Sacrifice this permanent" means the Sliver holding the ability
+     * (`AbilityCost.SacrificeSelf`), while Deconstruction Hammer's "Sacrifice Deconstruction
+     * Hammer" means the granting Equipment (`AbilityCost.SacrificeGrantingPermanent`, CR 201.5a) —
+     * two objects, one token, and nothing left in the normalized text to tell them apart.
+     *
+     * [Activated.quoted] reads the majority spelling and Deconstruction Hammer reports as a
+     * differential divergence rather than being silently re-aimed. Remapping the cost by position
+     * was tried and reverted in the same change: it fixed the Equipment and broke five Slivers,
+     * which is the measurement that says the distinction is not a property of the position. The fix
+     * belongs to `normalize/`, where the printed word still exists.
      */
     private val quotedTriggerGrant: Phrase<StaticAbility> =
         phrase("\"{ability}\"", name = "a quoted triggered ability grant") {
