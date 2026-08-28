@@ -109,7 +109,9 @@ export const createAnimationSlice: SliceCreator<AnimationSlice> = (set, get) => 
 
   // Card selection actions
   selectCard: (cardId) => {
-    set({ selectedCardId: cardId })
+    // Opening a card's action menu drops any hover preview: the pointer is still over the card
+    // that was clicked, and the preview would sit on top of the menu's buttons.
+    set(cardId ? { selectedCardId: cardId, hoveredCardId: null, autoTapPreview: null } : { selectedCardId: cardId })
   },
 
   hoverCard: (cardId, position) => {

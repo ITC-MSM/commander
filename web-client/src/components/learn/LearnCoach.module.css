@@ -35,6 +35,43 @@
   --coach-accent: #4fc3f7;
 }
 
+/* A warning: something the player is about to do that a coach would stop them on. */
+.warn {
+  --coach-accent: #ff9d3c;
+}
+
+/* ---- Card note ------------------------------------------------------------ */
+/* One line about a card that just arrived on the table and carries a keyword the course has not
+   named yet — deathtouch, first strike, reach. Under the tip, above the objectives. */
+.note {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(239, 230, 207, 0.1);
+  font-size: 12.5px;
+  animation: coachIn 0.28s ease-out both;
+}
+
+.noteGlyph {
+  font-size: 14px;
+  color: var(--coach-accent);
+  line-height: 1.3;
+}
+
+.noteName {
+  color: #efe6cf;
+  font-weight: 600;
+}
+
+.noteKeyword {
+  color: var(--coach-accent);
+  font-weight: 600;
+}
+
 /* The game-over overlay (App.tsx) dims the board at z 1999–2000; the closing card sits above it
    so "Next mission" is the first thing a finished player can click. */
 .done {
@@ -258,6 +295,8 @@
   padding: 7px 14px 7px 10px;
   cursor: pointer;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .pill:hover {
@@ -345,22 +384,62 @@
   }
 }
 
+/* The tip's title, shown inside the pill on phones only — there the pill is the coach most of
+   the time, so it has to say something. */
+.pillTitle {
+  display: none;
+}
+
 @media (max-width: 640px) {
+  /* A phone has no room at the bottom: the hand, the pass button and the combat buttons are all
+     there. The coach lives as a pill (bottom-left, where the desktop's log toggle would be) and
+     opens as a sheet under the top bar, over the opponent's side, only while wanted. */
   .pill {
     left: 8px;
-    bottom: 44px;
+    top: 44px;
+    bottom: auto;
+    max-width: calc(100vw - 120px);
+    padding: 6px 12px 6px 9px;
+    font-size: 11.5px;
+  }
+
+  .pillTitle {
+    display: inline;
+    font-weight: 400;
+    color: #c9c3b4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
 
   .coach {
     left: 8px;
-    bottom: 44px;
-    width: min(270px, calc(100vw - 16px));
+    right: 8px;
+    top: 44px;
+    bottom: auto;
+    width: auto;
+    max-height: min(46vh, 380px);
+    overflow-y: auto;
     font-size: 12px;
     padding: 8px 10px 10px;
+    gap: 8px;
+  }
+
+  .done {
+    /* The closing card is the one moment the sheet should sit over the middle of the table. */
+    top: 50%;
+    transform: translateY(-50%);
+    max-height: 80vh;
   }
 
   .title {
     font-size: 15px;
+  }
+
+  .objectives {
+    padding-top: 8px;
+    gap: 3px;
   }
 }
 

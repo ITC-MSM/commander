@@ -15,6 +15,10 @@ const base: CoachView = {
   isTargeting: false,
   stackSize: 0,
   attackersIncoming: 0,
+  attackersSelected: 0,
+  blockersLeft: 0,
+  theirCreatures: 0,
+  conceded: false,
   passLabel: 'Pass to Attackers',
   hasHover: true,
   isGameOver: false,
@@ -51,6 +55,24 @@ describe('coachTip', () => {
     expect(coachTip({ ...base, isMyTurn: false, attackersIncoming: 1, canBlock: true }).key).toBe('block')
   })
 
+  it('warns before an attack that leaves no blocker against a board that can hit back', () => {
+    const risky = coachTip({ ...base, canAttack: true, attackersSelected: 1, blockersLeft: 0, theirCreatures: 2 })
+    expect(risky.key).toBe('attack-warning')
+    expect(risky.tone).toBe('warn')
+    expect(risky.body).toMatch(/2 creatures/)
+    // Nothing selected yet, a blocker staying home, or an empty board on their side: no warning.
+    expect(coachTip({ ...base, canAttack: true, attackersSelected: 0, blockersLeft: 0, theirCreatures: 2 }).key).toBe('attack')
+    expect(coachTip({ ...base, canAttack: true, attackersSelected: 1, blockersLeft: 1, theirCreatures: 2 }).key).toBe('attack')
+    expect(coachTip({ ...base, canAttack: true, attackersSelected: 1, blockersLeft: 0, theirCreatures: 0 }).key).toBe('attack')
+  })
+
+  it('treats a concede as the end of the game, not the mission', () => {
+    const tip = coachTip({ ...base, isGameOver: true, won: false, conceded: true })
+    expect(tip.key).toBe('conceded')
+    expect(tip.tone).toBe('done')
+    expect(coachTip({ ...base, isGameOver: true, won: false }).key).toBe('lost')
+  })
+
   it('walks the player through picking a target mid-cast', () => {
     const tip = coachTip({ ...base, isMyTurn: false, canCast: true, stackSize: 1, isTargeting: true })
     expect(tip.key).toBe('target')
@@ -72,6 +94,16 @@ describe('coachTip', () => {
     expect(window.key).toBe('respond-window')
     expect(window.body).toMatch(/instant right now/)
     expect(coachTip({ ...base, isMyTurn: false, hasPriority: false }).key).toBe('waiting')
+  })
+
+  it('explains a spell waiting on the stack during your own turn', () => {
+    const idle = coachTip({ ...base, stackSize: 1 })
+    expect(idle.key).toBe('stack-mine')
+    expect(idle.tone).toBe('watch')
+    expect(idle.body).toMatch(/last spell cast happens first/)
+    expect(coachTip({ ...base, stackSize: 1, canCast: true }).tone).toBe('act')
+    // It outranks the land/cast prompts: a main phase with a stack is not a main phase to play in.
+    expect(coachTip({ ...base, stackSize: 1, canPlayLand: true, canCast: true }).key).toBe('stack-mine')
   })
 
   it('turns the response prompt into an instruction once their spell is on the stack', () => {

@@ -37,7 +37,7 @@ export function CardImage({
         onClick={() => setOpen(true)}
         aria-label={`Read ${name} in full`}
       >
-        <img src={src} alt={name} className={styles.cardImg} loading="lazy" draggable={false} />
+        <img src={src} alt={name} className={styles.cardImg} draggable={false} />
       </button>
       {caption !== undefined && <div className={styles.cardName}>{caption}</div>}
       {note !== undefined && <p className={styles.cardNote}>{note}</p>}

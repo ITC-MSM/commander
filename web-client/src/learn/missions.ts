@@ -1,5 +1,5 @@
 /**
- * The Learn to Play course: four short games, each one a card in the hand on `/learn`.
+ * The Learn to Play course: a handful of short games, each one a card in the hand on `/learn`.
  *
  * Nothing here is read. Every mission is a scripted board sent to the production `/api/scenarios`
  * endpoint with the built-in AI in the other seat, and the teaching happens on the real game
@@ -19,8 +19,10 @@ import type { ScenarioSpec } from '@/components/scenario/types'
 import type { ClientCard, ClientGameState } from '@/types/gameState'
 import type { EntityId } from '@/types'
 import type { SpotId } from './spots'
+import type { LearnSignal } from './signals'
+import { ZoneType } from '@/types/enums'
 
-export type MissionId = 'first-steps' | 'blocking' | 'instants' | 'real-game'
+export type MissionId = 'first-steps' | 'blocking' | 'instants' | 'removal' | 'real-game'
 
 /**
  * The frame colour each mission card wears — one of Magic's colours, gold for multicolour,
@@ -34,6 +36,8 @@ export interface ObjectiveContext {
   me: EntityId
   /** Set once the game is over, from the store's game-over state. */
   won: boolean | null
+  /** Things done to the app rather than the game — the log opened, Undo pressed. See `learn/signals.ts`. */
+  signals: ReadonlySet<LearnSignal>
 }
 
 export interface Objective {
@@ -173,6 +177,112 @@ const won: Objective = {
   done: (ctx) => ctx.won === true || (ctx.state.isGameOver && ctx.state.winnerId === ctx.me),
 }
 
+const castEnchantment: Objective = {
+  id: 'enchantment',
+  label: 'Cast an Aura on a creature',
+  done: (ctx) =>
+    log(ctx).some((e) => {
+      if (e.type !== 'spellCast' || e.casterId !== ctx.me) return false
+      return hasType(card(ctx, e.spellId), 'ENCHANTMENT')
+    }),
+}
+
+const readLog: Objective = {
+  id: 'log',
+  label: 'Open the log',
+  done: (ctx) => ctx.signals.has('logOpened'),
+}
+
+const usedUndo: Objective = {
+  id: 'undo',
+  label: 'Take a move back with Undo',
+  done: (ctx) => ctx.signals.has('undoUsed'),
+}
+
+// ── Card notes ──────────────────────────────────────────────────────────────
+
+/** One line about a keyword, shown when a card carrying it lands on the table. */
+export interface CardNote {
+  keyword: string
+  body: string
+}
+
+/**
+ * The keywords the course's decks carry, explained the first time they matter — when the card
+ * arrives on the battlefield, on either side. Keyed by card name; a card with no entry is vanilla.
+ */
+export const CARD_NOTES: Readonly<Record<string, CardNote>> = {
+  'Typhoid Rats': {
+    keyword: 'Deathtouch',
+    body: 'Any amount of damage it deals to a creature kills that creature — a 1/1 with deathtouch trades with anything it touches. Block it with something you can spare, or take the 1.',
+  },
+  'Benalish Knight': {
+    keyword: 'First strike · Flash',
+    body: 'First strike: it deals its combat damage before creatures without it — if that kills the other creature, it never hits back. Flash: it can be cast at instant speed, on anyone’s turn.',
+  },
+  'Youthful Knight': {
+    keyword: 'First strike',
+    body: 'It deals its combat damage first. If that kills the creature it is fighting, the fight is over before it hits back.',
+  },
+  'Giant Spider': {
+    keyword: 'Reach',
+    body: 'It can block creatures with flying. Without reach, a flier sails over your ground creatures.',
+  },
+  'Serra Angel': {
+    keyword: 'Flying · Vigilance',
+    body: 'Flying: only creatures with flying or reach can block it. Vigilance: attacking does not tap it, so it can attack and still block.',
+  },
+  'Bog Imp': {
+    keyword: 'Flying',
+    body: 'Only your creatures with flying or reach can block it. Giant Spider can; the bears cannot.',
+  },
+  'Raging Goblin': {
+    keyword: 'Haste',
+    body: 'No summoning sickness — it can attack the turn it arrives.',
+  },
+  'Thundering Giant': {
+    keyword: 'Haste',
+    body: 'No summoning sickness — it can attack the turn it arrives. Four power, the turn it lands.',
+  },
+  'Bloodrock Cyclops': {
+    keyword: 'Attacks each combat if able',
+    body: 'It has no choice: every combat it can attack, it must. Put a blocker it cannot kill in front of it and it just keeps running into the wall.',
+  },
+  'Drudge Skeletons': {
+    keyword: 'Regenerate',
+    body: 'For one black mana, the next time it would die this turn it taps and stays instead. Damage will not keep it down while they have a Swamp untapped.',
+  },
+  'Child of Night': {
+    keyword: 'Lifelink',
+    body: 'Damage it deals also gains its controller that much life — every hit is a two-point swing.',
+  },
+  Pacifism: {
+    keyword: 'Aura',
+    body: 'An enchantment that attaches to a creature and stays there. That creature cannot attack or block for as long as Pacifism is on it.',
+  },
+  Oakenform: {
+    keyword: 'Aura',
+    body: 'Attaches to a creature and stays: +3/+3 for as long as it is there. If the creature dies, the Aura goes to the graveyard with it.',
+  },
+}
+
+/**
+ * The most recently arrived permanent on the battlefield that carries a note — what the coach
+ * should explain right now. Null when nothing noted is on the table.
+ */
+export function latestNotedPermanent(state: ClientGameState): { name: string; note: CardNote } | null {
+  const events = state.gameLog ?? []
+  for (let i = events.length - 1; i >= 0; i--) {
+    const e = events[i]
+    if (e?.type !== 'permanentEntered') continue
+    const c = state.cards[e.cardId]
+    if (!c || c.zone?.zoneType !== ZoneType.BATTLEFIELD) continue
+    const note = CARD_NOTES[c.name]
+    if (note) return { name: c.name, note }
+  }
+  return null
+}
+
 // ── Decks ────────────────────────────────────────────────────────────────────
 
 /** Repeat lands between spells so a list reads as a curve, top-first. */
@@ -268,7 +378,7 @@ export const MISSIONS: readonly Mission[] = [
       },
     ],
     lessons: [
-      'Lands make mana; one a turn. Creatures cost mana and wait a turn before attacking.',
+      'Lands make mana; one a turn. Casting taps your lands; they untap at the start of your next turn.',
       'Drag a card onto the battlefield to play it, or {click-lower} it and choose. {read} to read it.',
       'The blue button moves the game on and names the next stop.',
     ],
@@ -290,12 +400,13 @@ export const MISSIONS: readonly Mission[] = [
         body: 'Press Attack All — or {click-lower} a creature and then Attack with 1. The Tutor has nothing to block with, so every point of power comes straight off their life.',
       },
       'pass-to-combat': {
-        title: 'Nothing left to do — press {pass}.',
-        body: 'The blue button at the bottom right. The turn moves on; if a creature of yours can attack, the game stops at combat and asks you.',
+        title: 'That is what mana is.',
+        body: 'The Forests turned sideways are tapped: they paid for what you cast, and untap at the start of your next turn. Nothing left to play — press {pass}. If a creature of yours can attack, the game stops at combat and asks.',
+        spot: 'tapped-lands',
       },
       pass: {
         title: 'Nothing to do here — press {pass}.',
-        body: 'The Tutor takes a turn, then it is back to you with a fresh card drawn. A creature you cast this turn can attack on the next one.',
+        body: 'The Tutor takes a turn, then it is back to you with a fresh card drawn and your lands untapped. A creature you cast this turn can attack on the next one.',
       },
       waiting: {
         title: 'The Tutor is taking a turn.',
@@ -339,9 +450,9 @@ export const MISSIONS: readonly Mission[] = [
     openingCards: [
       { name: 'Giant Spider', note: 'On the battlefield already. 2 power, 4 toughness: it blocks a 3/3 and lives.' },
       { name: 'Centaur Courser', note: 'A 3/3 for three mana. Kills their Ogre in a fight and survives.' },
-      { name: 'Benalish Knight', note: 'Flash: an instant-speed creature. Cast it on their turn and surprise-block.' },
+      { name: 'Benalish Knight', note: 'Your second draw. Flash: cast it on their turn, like an instant, for a surprise blocker.' },
     ],
-    objectives: [blocked, killedInCombat, won],
+    objectives: [blocked, killedInCombat, readLog, won],
     tour: [
       {
         spot: 'opponent-battlefield',
@@ -356,7 +467,7 @@ export const MISSIONS: readonly Mission[] = [
       {
         spot: 'log',
         title: 'The log.',
-        body: 'Everything that happens is written down here. Combat goes by quickly; when you wonder what just hit you, open the log.',
+        body: 'Everything that happens is written down here. Combat goes by quickly — after the first one, open the log and read what hit what.',
       },
     ],
     lessons: [
@@ -398,8 +509,11 @@ export const MISSIONS: readonly Mission[] = [
         // Two unblocked swings (5 a turn) must not end the mission on the spot: 14 leaves room for one mistake.
         lifeTotal: 14,
         battlefield: [{ name: 'Forest' }, { name: 'Forest' }, { name: 'Plains' }, { name: 'Giant Spider', summoningSickness: false }],
-        hand: ['Plains', 'Centaur Courser', 'Benalish Knight'],
-        library: curve(['Trained Armodon', 'Silvercoat Lion', 'Rumbling Baloth', 'Pacifism', 'Serra Angel', 'Craw Wurm', 'Pillarfield Ox'], GW_LANDS),
+        // No flash creature in the opening hand: holding one makes Auto stop at every step of the
+        // Tutor's first turn, and the first thing a new player learns is pressing Pass five times.
+        // Benalish Knight is the second draw, once the pass button is old news.
+        hand: ['Plains', 'Centaur Courser'],
+        library: curve(['Benalish Knight', 'Trained Armodon', 'Silvercoat Lion', 'Rumbling Baloth', 'Pacifism', 'Serra Angel', 'Craw Wurm', 'Pillarfield Ox'], GW_LANDS),
       },
       player2: {
         lifeTotal: 10,
@@ -434,8 +548,11 @@ export const MISSIONS: readonly Mission[] = [
       'When Lightning Bolt targets your bear, save it with Giant Growth. Then win.',
     ],
     openingCards: [
-      { name: 'Grizzly Bears', note: 'Already on the battlefield, and about to be shot at.' },
-      { name: 'Giant Growth', note: 'An instant: +3/+3 until end of turn. Cast it in response and the bear survives the Bolt.' },
+      { name: 'Grizzly Bears', note: 'A 2/2, already on the battlefield — and about to be shot at.' },
+      {
+        name: 'Giant Growth',
+        note: 'An instant: +3/+3 until end of turn. Lightning Bolt deals 3; a 2/2 dies to it, a 5/5 does not.',
+      },
       { name: 'Centaur Courser', note: 'Your next creature, once you have a third Forest and a quiet moment.' },
     ],
     objectives: [castInstant, attacked, won],
@@ -453,13 +570,13 @@ export const MISSIONS: readonly Mission[] = [
       {
         spot: 'hand',
         title: 'Giant Growth.',
-        body: 'An instant: +3/+3 until end of turn. When Lightning Bolt shows up on the stack aimed at your bear, cast this at the bear.',
+        body: 'An instant, so you may cast it on their turn — even while their spell is waiting on the stack. It makes one creature +3/+3 until the turn ends: your 2/2 bear becomes a 5/5. Lightning Bolt deals 3 damage; 3 kills a 2/2, but not a 5/5. So when the Bolt appears, aimed at the bear, cast Giant Growth on the bear — yours resolves first, and the Bolt hits a 5/5.',
       },
     ],
     lessons: [
       'A spell waits on the stack until everyone passes. The last spell cast resolves first.',
       'An instant can be cast on anyone’s turn — you get a window whenever the game stops for you.',
-      'The Auto switch controls when the game stops to ask; it stops on its own when you hold an instant.',
+      'Damage kills a creature when it reaches its toughness. Raising toughness in response is how a trick saves a creature.',
     ],
     hints: {
       respond: {
@@ -505,8 +622,98 @@ export const MISSIONS: readonly Mission[] = [
     }),
   },
   {
-    id: 'real-game',
+    id: 'removal',
     number: 4,
+    title: 'Answers',
+    blurb: 'Their Hill Giant is bigger than anything you have. Do not fight it — Pacifism takes it out of the game.',
+    frame: 'B',
+    minutes: 5,
+    brief: [
+      'Not every problem is solved in combat. Removal deals with a creature directly.',
+      'Pacifism is an Aura: an enchantment that attaches to a creature. That creature can no longer attack or block.',
+      'They have Doom Blade, the other kind of answer. Expect to lose a creature — then win anyway.',
+    ],
+    openingCards: [
+      { name: 'Pacifism', note: 'An Aura. Cast it on their Hill Giant and the Giant sits out the rest of the game.' },
+      { name: 'Grizzly Bears', note: 'On the battlefield already. A 2/2 — the Giant would eat it.' },
+      { name: 'Centaur Courser', note: 'A 3/3: bigger than their Ogre, and the Giant will be out of the way.' },
+    ],
+    objectives: [castEnchantment, attacked, won],
+    tour: [
+      {
+        spot: 'opponent-battlefield',
+        title: 'The problem.',
+        body: 'Their Hill Giant is a 3/3 and your bear is a 2/2. Attack into it and the bear dies for nothing; block with it and the same. So answer it instead of fighting it.',
+      },
+      {
+        spot: 'hand',
+        title: 'Pacifism.',
+        body: 'An enchantment — a card that stays on the battlefield and keeps doing something. This one is an Aura: it is cast at a creature and attaches to it, and that creature can neither attack nor block.',
+      },
+      {
+        spot: 'piles',
+        title: 'The graveyard.',
+        body: 'Where a creature goes when it dies — and where Doom Blade will send one of yours. Face up; {click-lower} a pile to browse it.',
+      },
+    ],
+    lessons: [
+      'Removal answers a creature without fighting it: an Aura like Pacifism stays attached, an instant like Doom Blade kills outright.',
+      'A dead creature goes to its owner’s graveyard, face up. Click a pile to read what is in it.',
+      'After an answer, count again: their Giant is out, and your 3/3 outsizes what is left.',
+    ],
+    hints: {
+      'land-and-cast': {
+        title: 'Answer the Giant.',
+        body: 'Play the Plains, then Pacifism: drag it out or {click-lower} it and choose Cast, and pick the Hill Giant as its target. It costs one white mana and one of any colour — the Plains and a Forest tap for it.',
+      },
+      cast: {
+        title: 'Pacifism is the play.',
+        body: 'Drag it out or {click-lower} it and choose Cast, then pick the Hill Giant. An Aura is cast at a creature and stays on it.',
+      },
+      target: {
+        title: 'Aim it at the Hill Giant.',
+        body: 'The biggest thing they have. {click} it, then Confirm. Pacifism stays attached, and the Giant can neither attack nor block while it does.',
+      },
+      attack: {
+        title: 'Now attack.',
+        body: 'The Giant cannot block. Count what can: {click-lower} the creatures to send in, then Attack with N. Skip Attacking if the trade is bad.',
+      },
+      'stack-mine': {
+        title: 'They answered back.',
+        body: 'Doom Blade — the other kind of removal — is on the stack aimed at a creature of yours; that creature will die and go to your graveyard. Press {pass}: the stack resolves top-down, so Doom Blade happens first, then Pacifism still lands on the Giant.',
+      },
+    },
+    spec: (name) => ({
+      player1Name: name,
+      player2Name: TUTOR_NAME,
+      player1: {
+        lifeTotal: 12,
+        battlefield: [{ name: 'Forest' }, { name: 'Forest' }, { name: 'Plains' }, { name: 'Grizzly Bears', summoningSickness: false }],
+        hand: ['Pacifism', 'Plains', 'Centaur Courser'],
+        library: curve(['Trained Armodon', 'Giant Growth', 'Youthful Knight', 'Rumbling Baloth', 'Serra Angel', 'Craw Wurm', 'Pillarfield Ox'], GW_LANDS),
+      },
+      player2: {
+        lifeTotal: 10,
+        battlefield: [
+          { name: 'Mountain' },
+          { name: 'Swamp' },
+          { name: 'Mountain' },
+          { name: 'Hill Giant', summoningSickness: false },
+          { name: 'Gray Ogre', summoningSickness: false },
+        ],
+        hand: ['Doom Blade', 'Swamp'],
+        library: curve(['Goblin Piker', 'Walking Corpse', 'Volcanic Hammer', 'Hill Giant', 'Scathe Zombies', 'Raging Goblin', 'Child of Night'], RB_LANDS),
+      },
+      phase: 'PRECOMBAT_MAIN',
+      activePlayer: 1,
+      priorityPlayer: 1,
+      mode: 'AI',
+      aiPlayer: 2,
+    }),
+  },
+  {
+    id: 'real-game',
+    number: 5,
     title: 'A real game',
     blurb: 'Twenty life each, full decks, everything at once. The coach stays — but the game is yours.',
     frame: 'artifact',
@@ -521,12 +728,12 @@ export const MISSIONS: readonly Mission[] = [
       { name: 'Benalish Knight', note: 'A 2/2 with first strike and flash — it deals its damage before the other creature does.' },
       { name: 'Runeclaw Bear', note: 'A second bear for the second turn.' },
     ],
-    objectives: [playedLand, castCreature, attacked, won],
+    objectives: [playedLand, castCreature, usedUndo, won],
     tour: [
       {
         spot: 'controls',
         title: 'The controls.',
-        body: 'Undo takes back a tap or a cast the game can still rewind. The land icon switches to choosing your own lands to tap. ? Help explains everything else.',
+        body: 'Undo takes back a tap or a cast the game can still rewind — try it once this game. The land icon switches to choosing your own lands to tap. ? Help explains everything else.',
       },
       {
         spot: 'piles',
@@ -536,7 +743,7 @@ export const MISSIONS: readonly Mission[] = [
       {
         spot: 'opponent-life',
         title: 'Twenty life.',
-        body: 'Life totals sit either side of the turn strip. Zero loses. The coach keeps saying what the board is waiting for; the decisions are yours.',
+        body: 'Life totals sit either side of the turn strip. Zero loses. When a card with a keyword lands — deathtouch, first strike, flying — the coach explains it under the tip. The decisions are yours.',
       },
     ],
     lessons: [
@@ -586,6 +793,10 @@ export function learnHref(id?: MissionId): string {
 
 /** Playing time for the whole course — what the home page promises. */
 export const COURSE_MINUTES = MISSIONS.reduce((sum, m) => sum + m.minutes, 0)
+
+/** "five", for the sentences that count the missions — derived, so adding one cannot leave a stale "four". */
+export const COURSE_COUNT_WORD =
+  ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'][MISSIONS.length] ?? String(MISSIONS.length)
 
 /** Every card name any mission can put in play — what the catalog test checks. */
 export function missionCardNames(): readonly string[] {

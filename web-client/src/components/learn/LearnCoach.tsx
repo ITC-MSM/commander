@@ -5,9 +5,11 @@
  * - **Tour** — when the board first appears, a few steps that each ring one part of the table
  *   (hand, battlefield, turn strip, the pass button …) and say what it is for. Skippable.
  * - **Tip** — one line for what the board is waiting on, worded with the real button label and
- *   this device's gestures, with a quiet ring on the thing it names; the mission's objectives
- *   tick off underneath as the player does them.
- * - **Done** — the game ended: what you learned, and the next card in the hand.
+ *   this device's gestures, with a quiet ring on the thing it names; a card note under it when a
+ *   permanent with a keyword the course has not named yet is on the table; the mission's
+ *   objectives tick off underneath as the player does them.
+ * - **Done** — the game ended: what you learned, and the next card in the hand. A concede ends
+ *   the game but not the mission.
  *
  * Portalled to `<body>` like the help drawer: `#root` is overflow:hidden and the multiplayer
  * strip transforms its subtree, both of which break `position: fixed` for descendants.
@@ -18,10 +20,13 @@ import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
 import { selectHasPriority, selectIsMyTurn, useStackCards } from '@/store/selectors'
 import { armedMission, coachTip, disarmCoach, markTourSeen, tourSeen, wordTip, type CoachView } from '@/learn/coach'
-import { learnHref, missionById, nextMission } from '@/learn/missions'
+import { latestNotedPermanent, learnHref, missionById, nextMission } from '@/learn/missions'
 import type { SpotContext } from '@/learn/spots'
+import { useLearnSignals } from '@/learn/signals'
+import { syncLearnProgress, useLearnProgress } from '@/learn/progressStore'
+import { GameOverReason, ZoneType } from '@/types/enums'
 import type { EntityId } from '@/types'
-import { useLearnProgress } from '@/learn/progressStore'
+import type { ClientCard } from '@/types/gameState'
 import { LearnSpotlight } from './LearnSpotlight'
 import styles from './LearnCoach.module.css'
 
@@ -34,11 +39,25 @@ function deviceHasHover(): boolean {
   }
 }
 
+/** A phone: the coach is a pill by default there, and a sheet only while the tour or the ending is up. */
+function smallScreen(): boolean {
+  try {
+    return window.matchMedia('(max-width: 640px)').matches
+  } catch {
+    return false
+  }
+}
+
+function isCreatureOnBattlefield(c: ClientCard): boolean {
+  return c.zone?.zoneType === ZoneType.BATTLEFIELD && c.cardTypes.some((t) => t.toUpperCase() === 'CREATURE')
+}
+
 export function LearnCoach() {
   const [missionId] = useState(armedMission)
   const mission = useMemo(() => missionById(missionId), [missionId])
-  const [collapsed, setCollapsed] = useState(false)
   const [tourStep, setTourStep] = useState<number | null>(() => (tourSeen() ? null : 0))
+  // On a phone the panel would cover the hand, so it starts tucked away unless the tour is up.
+  const [collapsed, setCollapsed] = useState(() => smallScreen() && tourSeen())
   const [hasHover] = useState(deviceHasHover)
   // Once the game is over the coach disarms itself, so a remount after that renders nothing —
   // which is also what stops the mission being finished twice.
@@ -51,17 +70,27 @@ export function LearnCoach() {
   const legalActions = useGameStore((s) => s.legalActions)
   const pendingDecision = useGameStore((s) => s.pendingDecision)
   const isTargeting = useGameStore((s) => s.targetingState !== null)
+  const combatState = useGameStore((s) => s.combatState)
   const gameOverState = useGameStore((s) => s.gameOverState)
   const nextStopPoint = useGameStore((s) => s.nextStopPoint)
   const isMyTurn = useGameStore(selectIsMyTurn)
   const hasPriority = useGameStore(selectHasPriority)
   const stackSize = useStackCards().length
+  const signals = useLearnSignals((s) => s.marked)
 
   const won = gameOverState ? (gameOverState.result === 'draw' ? null : gameOverState.result === 'win') : null
+  const conceded = gameOverState?.reason === GameOverReason.CONCESSION && gameOverState.result === 'lose'
+
+  const me = gameState?.viewingPlayerId
+  const players = gameState?.players
 
   const view = useMemo<CoachView | null>(() => {
     if (!gameState) return null
     const types = new Set(legalActions.map((a) => a.actionType))
+    const selected = combatState?.mode === 'declareAttackers' ? combatState.selectedAttackers : []
+    const cards = Object.values(gameState.cards)
+    const mine = cards.filter((c) => c.controllerId === gameState.viewingPlayerId && isCreatureOnBattlefield(c))
+    const theirs = cards.filter((c) => c.controllerId !== gameState.viewingPlayerId && isCreatureOnBattlefield(c))
     return {
       turnNumber: gameState.turnNumber,
       step: gameState.currentStep,
@@ -75,15 +104,31 @@ export function LearnCoach() {
       isTargeting,
       stackSize,
       attackersIncoming: gameState.combat?.attackers.length ?? 0,
+      attackersSelected: selected.length,
+      blockersLeft: mine.filter((c) => !c.isTapped && !selected.includes(c.id)).length,
+      theirCreatures: theirs.length,
+      conceded,
       passLabel: nextStopPoint ?? 'Pass',
       hasHover,
       isGameOver: gameState.isGameOver || gameOverState !== null,
       won,
     }
-  }, [gameState, legalActions, pendingDecision, isTargeting, gameOverState, nextStopPoint, isMyTurn, hasPriority, stackSize, hasHover, won])
+  }, [
+    gameState,
+    legalActions,
+    pendingDecision,
+    isTargeting,
+    combatState,
+    gameOverState,
+    nextStopPoint,
+    isMyTurn,
+    hasPriority,
+    stackSize,
+    conceded,
+    hasHover,
+    won,
+  ])
 
-  const me = gameState?.viewingPlayerId
-  const players = gameState?.players
   const spotCtx = useMemo<SpotContext>(
     () => ({
       me: me ?? ('' as EntityId),
@@ -94,19 +139,24 @@ export function LearnCoach() {
 
   const objectives = useMemo(() => {
     if (!mission || !gameState) return []
-    const ctx = { state: gameState, me: gameState.viewingPlayerId, won }
+    const ctx = { state: gameState, me: gameState.viewingPlayerId, won, signals }
     return mission.objectives.map((o) => ({ id: o.id, label: o.label, done: o.done(ctx) }))
-  }, [mission, gameState, won])
+  }, [mission, gameState, won, signals])
 
-  // The game ending is what finishes the mission, win or lose. Disarm so the next game — a
-  // rematch, or anything started from the menu — plays without a coach.
+  const cardNote = useMemo(() => (gameState ? latestNotedPermanent(gameState) : null), [gameState])
+
+  // A game played to its end finishes the mission, win or lose; a concede does not. Either way
+  // the coach disarms, so the next game — a rematch, or anything from the menu — has no coach.
   useEffect(() => {
     if (mission && view?.isGameOver && !finished) {
-      finish(mission.id)
+      if (!view.conceded) {
+        finish(mission.id)
+        void syncLearnProgress()
+      }
       disarmCoach()
       setFinished(true)
     }
-  }, [mission, view?.isGameOver, finished, finish])
+  }, [mission, view?.isGameOver, view?.conceded, finished, finish])
 
   if (!mission || !view) return null
 
@@ -119,6 +169,7 @@ export function LearnCoach() {
   const endTour = () => {
     markTourSeen()
     setTourStep(null)
+    if (smallScreen()) setCollapsed(true)
   }
 
   const leave = (to: string) => {
@@ -136,13 +187,14 @@ export function LearnCoach() {
       >
         <span className={styles.pillDot} aria-hidden="true" />
         Coach · {doneCount}/{objectives.length}
+        <span className={styles.pillTitle}>· {tip.title}</span>
       </button>,
       document.body,
     )
   }
 
   const tone = touring ? 'watch' : tip.tone
-  const spot = touring ? step?.spot : tip.tone === 'act' ? tip.spot : undefined
+  const spot = touring ? step?.spot : tip.tone === 'act' || tip.tone === 'warn' ? tip.spot : undefined
 
   return createPortal(
     <>
@@ -197,17 +249,33 @@ export function LearnCoach() {
           <div key={tip.key} className={styles.body}>
             <div className={styles.title}>{tip.title}</div>
             <p className={styles.text}>{tip.body}</p>
-            <div className={styles.lessonsHead}>What you now know</div>
-            <ul className={styles.lessons}>
-              {mission.lessons.map((line) => (
-                <li key={line}>{wordTip(line, view)}</li>
-              ))}
-            </ul>
+            {!view.conceded && (
+              <>
+                <div className={styles.lessonsHead}>What you now know</div>
+                <ul className={styles.lessons}>
+                  {mission.lessons.map((line) => (
+                    <li key={line}>{wordTip(line, view)}</li>
+                  ))}
+                </ul>
+              </>
+            )}
           </div>
         ) : (
           <div key={tip.key} className={styles.body}>
             <div className={styles.title}>{tip.title}</div>
             <p className={styles.text}>{tip.body}</p>
+          </div>
+        )}
+
+        {!touring && !view.isGameOver && cardNote && (
+          <div key={cardNote.name} className={styles.note} aria-label={`About ${cardNote.name}`}>
+            <span className={styles.noteGlyph} aria-hidden="true">
+              ✦
+            </span>
+            <span>
+              <span className={styles.noteName}>{cardNote.name}</span> — <span className={styles.noteKeyword}>{cardNote.note.keyword}.</span>{' '}
+              {cardNote.note.body}
+            </span>
           </div>
         )}
 
@@ -224,7 +292,11 @@ export function LearnCoach() {
 
         {view.isGameOver && (
           <div className={styles.actions}>
-            {next ? (
+            {view.conceded ? (
+              <button type="button" className={styles.primary} onClick={() => leave(learnHref(mission.id))}>
+                Play it again →
+              </button>
+            ) : next ? (
               <button type="button" className={styles.primary} onClick={() => leave(learnHref(next.id))}>
                 Next: {next.title} →
               </button>
@@ -233,8 +305,8 @@ export function LearnCoach() {
                 Course complete →
               </button>
             )}
-            <button type="button" className={styles.link} onClick={() => leave(learnHref(mission.id))}>
-              Play this one again
+            <button type="button" className={styles.link} onClick={() => leave(view.conceded ? learnHref() : learnHref(mission.id))}>
+              {view.conceded ? 'Back to the missions' : 'Play this one again'}
             </button>
           </div>
         )}

@@ -90,6 +90,14 @@ export interface CoachView {
   /** A spell or ability is waiting on the stack. */
   stackSize: number
   attackersIncoming: number
+  /** While declaring attackers: how many creatures are selected to attack so far. */
+  attackersSelected: number
+  /** While declaring attackers: untapped creatures of mine that would stay home if the selected ones attack. */
+  blockersLeft: number
+  /** Creatures the opponent has on the battlefield. */
+  theirCreatures: number
+  /** The game ended because the player conceded — not a finished mission. */
+  conceded: boolean
   /**
    * What the big button at the bottom right says right now — "Pass", "Pass to Attackers",
    * "End Turn", "Resolve". The server computes it; the coach names it so the tip and the button
@@ -107,8 +115,8 @@ export interface CoachTip {
   key: string
   title: string
   body: string
-  /** Tone drives the accent colour: what to do now, what is happening, or the end of the game. */
-  tone: 'act' | 'watch' | 'done'
+  /** Tone drives the accent colour: what to do now, what is happening, a mistake in the making, or the end of the game. */
+  tone: 'act' | 'watch' | 'warn' | 'done'
   /** The board element to ring while this tip is up. */
   spot?: SpotId
 }
@@ -145,6 +153,14 @@ export function coachTip(view: CoachView, overrides: Partial<Record<string, TipO
 
 function baseTip(view: CoachView): CoachTip {
   if (view.isGameOver) {
+    if (view.conceded) {
+      return {
+        key: 'conceded',
+        title: 'You conceded.',
+        body: 'That ends the game but not the mission — it only counts when a game is played to the end, won or lost. Play it again whenever you like.',
+        tone: 'done',
+      }
+    }
     if (view.won === true) {
       return {
         key: 'won',
@@ -197,6 +213,20 @@ function baseTip(view: CoachView): CoachTip {
   }
 
   if (view.canAttack) {
+    // The classic first mistake: sending in the only creature that could block, into a board that
+    // can hit back. Said before the attack is confirmed, while it can still be undone with a click.
+    if (view.attackersSelected > 0 && view.blockersLeft === 0 && view.theirCreatures > 0) {
+      return {
+        key: 'attack-warning',
+        title: 'That leaves nobody home.',
+        body:
+          view.theirCreatures > 1
+            ? `Attackers tap, and they have ${view.theirCreatures} creatures that can hit back next turn with nothing of yours untapped to block. Sure? {click} a creature again to keep it back, or go ahead with Attack with N.`
+            : 'Attackers tap, and they have a creature that can hit back next turn with nothing of yours untapped to block. Sure? {click} a creature again to keep it back, or go ahead with Attack with N.',
+        tone: 'warn',
+        spot: 'combat-buttons',
+      }
+    }
     return {
       key: 'attack',
       title: 'Combat — your creatures can attack.',
@@ -207,6 +237,17 @@ function baseTip(view: CoachView): CoachTip {
   }
 
   if (view.isMyTurn && view.hasPriority) {
+    if (view.stackSize > 0) {
+      return {
+        key: 'stack-mine',
+        title: 'A spell is waiting on the stack.',
+        body: view.canCast
+          ? 'Nothing has happened yet. You can answer with an instant — drag it out or {click-lower} it — or press {pass} and let the stack resolve, last spell first.'
+          : 'Nothing to answer it with, so press {pass}. The stack resolves top-down: the last spell cast happens first, then the one under it.',
+        tone: view.canCast ? 'act' : 'watch',
+        spot: 'stack',
+      }
+    }
     if (view.canPlayLand && view.canCast) {
       return {
         key: 'land-and-cast',

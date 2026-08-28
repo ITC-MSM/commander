@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { findSpot, spotRect, type SpotContext, type SpotId } from '@/learn/spots'
+import { spotBox, type SpotContext, type SpotId } from '@/learn/spots'
 import styles from './LearnCoach.module.css'
 
 interface Box {
@@ -21,9 +21,8 @@ interface Box {
 const PAD = 6
 
 function measure(spot: SpotId, ctx: SpotContext): Box | null {
-  const el = findSpot(spot, ctx)
-  if (!el) return null
-  const r = spotRect(el)
+  const r = spotBox(spot, ctx)
+  if (!r) return null
   return { top: r.top - PAD, left: r.left - PAD, width: r.width + PAD * 2, height: r.height + PAD * 2 }
 }
 

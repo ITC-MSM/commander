@@ -14,6 +14,7 @@ const ART_GLYPH: Record<MissionId, string> = {
   'first-steps': 'ms-land',
   blocking: 'ms-creature',
   instants: 'ms-instant',
+  removal: 'ms-enchantment',
   'real-game': 'ms-planeswalker',
 }
 
@@ -21,6 +22,7 @@ const TYPE_LINE: Record<MissionId, string> = {
   'first-steps': 'Mission — Lands & creatures',
   blocking: 'Mission — Combat',
   instants: 'Mission — The stack',
+  removal: 'Mission — Answers',
   'real-game': 'Game — Full rules',
 }
 

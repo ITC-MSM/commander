@@ -30,6 +30,7 @@ import { RenderProfiler } from '@/utils/renderProfiler'
 import { CardPreview } from './card'
 import { TargetingOverlay, ManaColorSelectionOverlay, LifeDisplay, ActiveEffectsBadges, SpeedGauge, DayNightBadge, ConcedeButton, FullscreenButton, SpectatorCountBadge, TeamLifeBanner, EliminationNotice } from './overlay'
 import { HelpDrawer, HelpDrawerButton } from '../help/HelpDrawer'
+import { markLearnSignal } from '@/learn/signals'
 import { styles } from './board/styles'
 
 /**
@@ -1669,7 +1670,10 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
             >
               <button
                 data-learn="undo"
-                onClick={requestUndo}
+                onClick={() => {
+                  markLearnSignal('undoUsed')
+                  requestUndo()
+                }}
                 disabled={!undoAvailable}
                 title="Undo"
                 style={{
