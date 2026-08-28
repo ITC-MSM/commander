@@ -301,13 +301,59 @@ function baseTip(view: CoachView): CoachTip {
     }
   }
 
+  // Nothing to decide right now. Two different keys, because they are two different situations —
+  // a mission's "the Tutor will play a land and pass" must never show in the player's own combat.
+  const phase = phaseOf(view.step)
+  if (view.isMyTurn) {
+    return {
+      key: 'working',
+      title: phase === 'combat' ? 'Combat is playing out.' : phase === 'end' ? 'Your turn is ending.' : 'The game is working through your turn.',
+      body:
+        phase === 'combat'
+          ? 'Attackers hit, blockers hit back, and the damage is dealt — the strip at the top walks through it. You get the board back the moment there is something to decide.'
+          : phase === 'end'
+            ? 'The Tutor gets a last chance to act, then it is their turn. Watch the strip at the top.'
+            : 'Steps with nothing to decide pass on their own. You get the board back the moment there is something to do.',
+      tone: 'watch',
+      spot: 'phase-strip',
+    }
+  }
   return {
     key: 'waiting',
-    title: view.isMyTurn ? 'The game is working through your turn.' : 'The Tutor is thinking.',
-    body: view.isMyTurn
-      ? 'Steps with nothing to decide pass on their own. You get the board back the moment there is something to do.'
-      : 'Watch the strip at the top — the lit dot is where their turn is. If they attack you will be asked to block; if they cast a spell you may get a chance to respond.',
+    title: 'The Tutor is taking a turn.',
+    body:
+      phase === 'combat'
+        ? 'They are in combat. If a creature of theirs attacks, the game will stop and ask you to block.'
+        : phase === 'end'
+          ? 'Their turn is ending. Yours is next — the strip at the top comes back to blue.'
+          : phase === 'beginning'
+            ? 'They untap and draw. Then their main phase: a land, and whatever they can afford.'
+            : 'They can play a land and cast spells. If they cast something you may get a chance to respond; if they attack you will be asked to block.',
     tone: 'watch',
     spot: 'phase-strip',
+  }
+}
+
+type Phase = 'beginning' | 'main' | 'combat' | 'end'
+
+/** The five phases behind the thirteen step names the server sends. */
+export function phaseOf(step: string): Phase {
+  switch (step) {
+    case 'UNTAP':
+    case 'UPKEEP':
+    case 'DRAW':
+      return 'beginning'
+    case 'BEGIN_COMBAT':
+    case 'DECLARE_ATTACKERS':
+    case 'DECLARE_BLOCKERS':
+    case 'FIRST_STRIKE_COMBAT_DAMAGE':
+    case 'COMBAT_DAMAGE':
+    case 'END_COMBAT':
+      return 'combat'
+    case 'END':
+    case 'CLEANUP':
+      return 'end'
+    default:
+      return 'main'
   }
 }

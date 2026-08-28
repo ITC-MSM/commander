@@ -83,6 +83,24 @@ describe('coachTip', () => {
     expect(coachTip({ ...base, isMyTurn: false, stackSize: 1 }).tone).toBe('watch')
   })
 
+  it('keeps "the Tutor is taking a turn" to their turn, and reads the phase on both', () => {
+    const mineCombat = coachTip({ ...base, hasPriority: false, step: 'COMBAT_DAMAGE' })
+    expect(mineCombat.key).toBe('working')
+    expect(mineCombat.title).toBe('Combat is playing out.')
+    expect(coachTip({ ...base, hasPriority: false, step: 'END' }).title).toBe('Your turn is ending.')
+    expect(coachTip({ ...base, hasPriority: false }).title).toBe('The game is working through your turn.')
+
+    const theirs = (step: string) => coachTip({ ...base, isMyTurn: false, hasPriority: false, step })
+    expect(theirs('PRECOMBAT_MAIN').key).toBe('waiting')
+    expect(theirs('DECLARE_ATTACKERS').body).toMatch(/in combat/)
+    expect(theirs('UPKEEP').body).toMatch(/untap and draw/)
+    expect(theirs('CLEANUP').body).toMatch(/turn is ending/)
+    // A mission's "they will play a land and pass" override binds to their turn only.
+    const override = { waiting: { body: 'They will play a land and pass.' } }
+    expect(coachTip({ ...base, isMyTurn: false, hasPriority: false }, override).body).toBe('They will play a land and pass.')
+    expect(coachTip({ ...base, hasPriority: false, step: 'COMBAT_DAMAGE' }, override).body).not.toMatch(/play a land/)
+  })
+
   it('has a first-turn tip while the game is still settling', () => {
     expect(coachTip({ ...base, turnNumber: 1, hasPriority: false }).key).toBe('first-turn')
   })
