@@ -125,6 +125,18 @@ class TopOfLibraryTest : StringSpec({
         )
     }
 
+    // Witness the Future writes the recipe as one sentence rather than two. The gather and the
+    // selection that consumes it cannot be split into two clauses, so the join is a spelling of
+    // this rule and not a member of [Steps]' clause run.
+    "the two halves can be joined with a comma instead of a full stop" {
+        variantOf(
+            "You look at the top four cards of your library, then put one of those cards into your " +
+                "hand and the rest on the bottom of your library in a random order.",
+            "Look at the top four cards of your library. Put one of them into your hand and the rest " +
+                "on the bottom of your library in a random order.",
+        )
+    }
+
     "the pile can be named as them or as those cards" {
         variantOf(
             "Look at the top five cards of your library. Put one of those cards into your hand and " +

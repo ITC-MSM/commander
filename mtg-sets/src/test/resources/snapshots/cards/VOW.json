@@ -16081,10 +16081,10 @@
                             "type": "ContextTarget",
                             "index": 0
                         },
-                        "destination": "Library"
+                        "destination": "Library",
+                        "placement": "Shuffled"
                     }
                 },
-                "ShuffleLibrary",
                 {
                     "type": "Composite",
                     "effects": [

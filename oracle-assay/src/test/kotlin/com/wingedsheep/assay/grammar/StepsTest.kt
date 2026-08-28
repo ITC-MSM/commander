@@ -476,6 +476,35 @@ class StepsTest : StringSpec({
             fragment("At the beginning of each end step, sacrifice ~ unless you pay {2}.")
     }
 
+    // The shuffle rides the move rather than being a second clause: `ZonePlacement.Shuffled` puts
+    // each card into its *owner's* library and shuffles that one, which is what "their library"
+    // means when the graveyard is "their graveyard". A separate `ShuffleLibraryEffect()` step would
+    // shuffle the controller's instead, and would also split the sentence into two clauses.
+    "shuffling targets out of a graveyard is one effect per card" {
+        fragment(
+            "Target player shuffles up to four target cards from their graveyard into their library."
+        ) shouldBe CardFragment(
+            script = CardScript(
+                spellEffect = ForEachTargetEffect(
+                    listOf(Effects.ShuffleIntoLibrary(EffectTarget.ContextTarget(0)))
+                ),
+                targetRequirements = listOf(
+                    com.wingedsheep.sdk.scripting.targets.TargetObject(
+                        count = 4,
+                        optional = true,
+                        filter = TargetFilter.CardInGraveyard,
+                    ),
+                ),
+            )
+        )
+        roundTrips(
+            "Target player shuffles up to four target cards from their graveyard into their library."
+        )
+        roundTrips(
+            "Target player shuffles up to three target cards from their graveyard into their library."
+        )
+    }
+
     // Both leaves in one file: a quantity of cards is a word, a quantity of life or damage a numeral.
     "the counted verbs keep the two number conventions apart" {
         roundTrips("You gain 3 life.")

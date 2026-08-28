@@ -358,6 +358,15 @@ object TopOfLibrary {
             slot("keep", place)
             slot("remainder", theRest)
             slot("rest", disposition)
+            // "You look at the top four cards of your library, **then** put one of those cards into
+            // your hand…" — Witness the Future. One sentence where the canonical form writes two,
+            // and the same model: the recipe is a single pipeline either way, so the join is
+            // spelling and belongs here rather than to [Steps]' clause run, which could not split a
+            // gather from the selection that consumes it.
+            alsoSpelled(
+                "you look at {top} of your library, then put {k} {pile} {keep} and {remainder} {rest}",
+                name = "look at the top cards and keep some (one sentence)",
+            )
             build { bindings ->
                 val count = bindings.value<DynamicAmount>("top")
                 val keep = bindings.int("k")

@@ -8,7 +8,6 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.CardOrder
 import com.wingedsheep.sdk.scripting.effects.ForEachTargetEffect
-import com.wingedsheep.sdk.scripting.effects.ShuffleLibraryEffect
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -23,11 +22,15 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  * at the top four cards of your library, then put one of those cards into your hand and the rest
  * on the bottom of your library in a random order.
  *
- * First sentence: the Gaea's Blessing shape — an optional `count = 4` [TargetObject] over
- * [TargetFilter.CardInGraveyard], each target moved to its owner's library
- * ([ForEachTargetEffect] over [Effects.Move]) and the library shuffled afterwards. Choosing zero
- * cards is legal and still shuffles (Scryfall ruling, below), which is what `optional = true`
- * buys: the shuffle is an unconditional step of the pipeline, not a rider on the moves.
+ * First sentence: an optional `count = 4` [TargetObject] over [TargetFilter.CardInGraveyard], each
+ * target shuffled into its owner's library ([ForEachTargetEffect] over
+ * [Effects.ShuffleIntoLibrary], i.e. `ZonePlacement.Shuffled`). The shuffle rides the move rather
+ * than being a separate [Effects.Composite] step, because "shuffles … from their graveyard into
+ * their library" is one action per card and the library shuffled is the *card owner's* — Gaea's
+ * Blessing's separate `ShuffleLibraryEffect()` shuffles the spell's controller's library instead,
+ * which is wrong whenever the targets are an opponent's. Choosing zero targets is legal and simply
+ * does nothing here; the printed "target player" is not modelled as a target requirement, since a
+ * card target cannot be scoped to another target's graveyard.
  *
  * Second sentence is [Patterns.Library.lookAtTopAndKeep] — look at four, one to hand, the
  * remainder to the bottom in [CardOrder.Random] order (the Memory Deluge recipe with different
@@ -48,17 +51,16 @@ val WitnessTheFuture = card("Witness the Future") {
             filter = TargetFilter.CardInGraveyard
         )
         effect = ForEachTargetEffect(
-            effects = listOf(Effects.Move(EffectTarget.ContextTarget(0), Zone.LIBRARY))
-        ).then(ShuffleLibraryEffect())
-            .then(
-                Patterns.Library.lookAtTopAndKeep(
-                    count = 4,
-                    keepCount = 1,
-                    keepDestination = CardDestination.ToZone(Zone.HAND),
-                    restDestination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Bottom),
-                    restOrder = CardOrder.Random
-                )
+            effects = listOf(Effects.ShuffleIntoLibrary(EffectTarget.ContextTarget(0)))
+        ).then(
+            Patterns.Library.lookAtTopAndKeep(
+                count = 4,
+                keepCount = 1,
+                keepDestination = CardDestination.ToZone(Zone.HAND),
+                restDestination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Bottom),
+                restOrder = CardOrder.Random
             )
+        )
     }
 
     metadata {
