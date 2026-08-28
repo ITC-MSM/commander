@@ -3,23 +3,39 @@
  * course armed it (see `learn/coach.ts`). Three states:
  *
  * - **Tour** — when the board first appears, a few steps that each ring one part of the table
- *   (hand, battlefield, turn strip, the pass button …) and say what it is for. Skippable.
+ *   (hand, battlefield, turn strip, the pass button …) and say what it is for. Skippable — and
+ *   the board stays live under it, so a player who plays the Forest while the tour is still
+ *   introducing the hand has simply started; the tour steps aside the moment they do.
  * - **Tip** — one line for what the board is waiting on, worded with the real button label and
- *   this device's gestures, with a quiet ring on the thing it names; a card note under it when a
- *   permanent with a keyword the course has not named yet is on the table; the mission's
- *   objectives tick off underneath as the player does them.
+ *   this device's gestures, with a quiet ring on the thing it names; above it, for a few
+ *   seconds, one line answering the thing the player just did (the Forest is down, the bear
+ *   attacks, no blocks); a card note under it when a permanent with a keyword the course has not
+ *   named yet is on the table; the mission's objectives tick off underneath as the player does
+ *   them.
  * - **Done** — the game ended: what you learned, and the next card in the hand. A concede ends
  *   the game but not the mission.
  *
  * Portalled to `<body>` like the help drawer: `#root` is overflow:hidden and the multiplayer
  * strip transforms its subtree, both of which break `position: fixed` for descendants.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
 import { selectHasPriority, selectIsMyTurn, useStackCards } from '@/store/selectors'
-import { armedMission, coachTip, disarmCoach, markTourSeen, tourSeen, wordTip, type CoachView } from '@/learn/coach'
+import {
+  armedMission,
+  coachTip,
+  disarmCoach,
+  markTourSeen,
+  noticeFromLog,
+  noticeFromMove,
+  playerIsActing,
+  tourSeen,
+  wordTip,
+  type ActionNotice,
+  type CoachView,
+} from '@/learn/coach'
 import { latestNotedPermanent, learnHref, missionById, nextMission } from '@/learn/missions'
 import type { SpotContext } from '@/learn/spots'
 import { useLearnSignals } from '@/learn/signals'
@@ -52,6 +68,14 @@ function isCreatureOnBattlefield(c: ClientCard): boolean {
   return c.zone?.zoneType === ZoneType.BATTLEFIELD && c.cardTypes.some((t) => t.toUpperCase() === 'CREATURE')
 }
 
+/** How long the line answering the player's last move stays up before the tip stands alone again. */
+const NOTICE_MS = 9000
+
+/** The line answering a move, and whether that move was the one that cut the tour short. */
+interface ShownNotice extends ActionNotice {
+  endedTour: boolean
+}
+
 export function LearnCoach() {
   const [missionId] = useState(armedMission)
   const mission = useMemo(() => missionById(missionId), [missionId])
@@ -62,6 +86,10 @@ export function LearnCoach() {
   // Once the game is over the coach disarms itself, so a remount after that renders nothing —
   // which is also what stops the mission being finished twice.
   const [finished, setFinished] = useState(false)
+  const [notice, setNotice] = useState<ShownNotice | null>(null)
+  // What the coach has already answered: the log entries read so far, and the view it last saw.
+  const seenLog = useRef<number | null>(null)
+  const lastView = useRef<CoachView | null>(null)
   const navigate = useNavigate()
   const finish = useLearnProgress((s) => s.finish)
   const returnToMenu = useGameStore((s) => s.returnToMenu)
@@ -88,6 +116,7 @@ export function LearnCoach() {
     if (!gameState) return null
     const types = new Set(legalActions.map((a) => a.actionType))
     const selected = combatState?.mode === 'declareAttackers' ? combatState.selectedAttackers : []
+    const mandatory = combatState?.mode === 'declareAttackers' ? combatState.mandatoryAttackers : []
     const cards = Object.values(gameState.cards)
     const mine = cards.filter((c) => c.controllerId === gameState.viewingPlayerId && isCreatureOnBattlefield(c))
     const theirs = cards.filter((c) => c.controllerId !== gameState.viewingPlayerId && isCreatureOnBattlefield(c))
@@ -105,6 +134,7 @@ export function LearnCoach() {
       stackSize,
       attackersIncoming: gameState.combat?.attackers.length ?? 0,
       attackersSelected: selected.length,
+      attackersChosen: selected.filter((id) => !mandatory.includes(id)).length,
       blockersLeft: mine.filter((c) => !c.isTapped && !selected.includes(c.id)).length,
       theirCreatures: theirs.length,
       conceded,
@@ -145,6 +175,48 @@ export function LearnCoach() {
 
   const cardNote = useMemo(() => (gameState ? latestNotedPermanent(gameState) : null), [gameState])
 
+  const endTour = () => {
+    markTourSeen()
+    setTourStep(null)
+    if (smallScreen()) setCollapsed(true)
+  }
+
+  // Answer the player's own moves. The log is the server's full per-player list, so the entries
+  // past the ones already read are what happened since the last look — the first look reads
+  // nothing, so a remount mid-game does not replay the whole game back. Passes, answered prompts
+  // and combat choices leave no entry; the previous view tells those apart. A move during the
+  // tour ends the tour: the player is ahead of it, and a tip about the live board beats a step
+  // about the opening one.
+  useEffect(() => {
+    if (!view || !gameState) return
+    const log = gameState.gameLog ?? []
+    const seen = seenLog.current
+    const prev = lastView.current
+    seenLog.current = log.length
+    lastView.current = view
+    if (view.isGameOver) return
+    // A shorter log is an undo: the game rewound, and the board moving back is not a move.
+    const rewound = seen !== null && log.length < seen
+    const found = rewound
+      ? { key: `undo-${log.length}`, text: 'Undone — the game is back where it was.' }
+      : (noticeFromLog(log.slice(seen ?? log.length), gameState.viewingPlayerId, gameState.cards, seen ?? log.length) ??
+        (prev ? noticeFromMove(prev, view) : null))
+    const touring = tourStep !== null
+    if (found) setNotice({ ...found, endedTour: touring })
+    if (touring && (found || playerIsActing(view))) {
+      if (!found) setNotice({ key: `ahead-${view.turnNumber}-${view.step}`, text: 'You went ahead.', endedTour: true })
+      endTour()
+    }
+    // `tourStep` is read, not reacted to: a tour click has nothing new to answer.
+  }, [view, gameState])
+
+  // The notice is a moment, not a fixture: the tip is what stays.
+  useEffect(() => {
+    if (!notice) return
+    const id = window.setTimeout(() => setNotice((n) => (n?.key === notice.key ? null : n)), NOTICE_MS)
+    return () => window.clearTimeout(id)
+  }, [notice])
+
   // A game played to its end finishes the mission, win or lose; a concede does not. Either way
   // the coach disarms, so the next game — a rematch, or anything from the menu — has no coach.
   useEffect(() => {
@@ -166,11 +238,6 @@ export function LearnCoach() {
   const touring = tourStep !== null && !view.isGameOver && tourStep < mission.tour.length
   const step = touring ? mission.tour[tourStep] : undefined
 
-  const endTour = () => {
-    markTourSeen()
-    setTourStep(null)
-    if (smallScreen()) setCollapsed(true)
-  }
 
   const leave = (to: string) => {
     returnToMenu()
@@ -262,6 +329,17 @@ export function LearnCoach() {
           </div>
         ) : (
           <div key={tip.key} className={styles.body}>
+            {notice && (
+              <div key={notice.key} className={styles.notice} role="status">
+                <span className={styles.noticeTick} aria-hidden="true">
+                  ✓
+                </span>
+                <span>
+                  {notice.text}
+                  {notice.endedTour && ' You are ahead of the tour, so it steps aside — the coach follows your moves from here.'}
+                </span>
+              </div>
+            )}
             <div className={styles.title}>{tip.title}</div>
             <p className={styles.text}>{tip.body}</p>
           </div>

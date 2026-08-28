@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { coachTip, wordTip, type CoachView } from './coach'
+import { coachTip, noticeFromLog, noticeFromMove, playerIsActing, wordTip, type CoachView } from './coach'
+import type { ClientCard } from '@/types/gameState'
+import type { ClientEvent } from '@/types/events'
+import type { EntityId } from '@/types'
 import { MISSIONS } from './missions'
 
 const base: CoachView = {
@@ -16,6 +19,7 @@ const base: CoachView = {
   stackSize: 0,
   attackersIncoming: 0,
   attackersSelected: 0,
+  attackersChosen: 0,
   blockersLeft: 0,
   theirCreatures: 0,
   conceded: false,
@@ -197,5 +201,103 @@ describe('coachTip', () => {
     expect(coachTip({ ...base, isGameOver: true, won: null }).key).toBe('draw')
     // Game over beats every live prompt.
     expect(coachTip({ ...base, isGameOver: true, won: true, canAttack: true, hasDecision: true }).key).toBe('won')
+  })
+})
+
+const id = (s: string) => s as EntityId
+const me = id('p1')
+const them = id('p2')
+
+function cardOf(id: string, types: string[], controllerId: EntityId = me): ClientCard {
+  return { id, cardTypes: types, controllerId, ownerId: controllerId } as unknown as ClientCard
+}
+
+const cards = Object.fromEntries(
+  [cardOf('forest', ['LAND']), cardOf('bear', ['CREATURE']), cardOf('spider', ['CREATURE']), cardOf('cyclops', ['CREATURE'], them)].map(
+    (c) => [c.id, c],
+  ),
+) as Record<EntityId, ClientCard>
+
+describe('noticeFromLog', () => {
+  it('says the land is down, with what that buys', () => {
+    const log: ClientEvent[] = [
+      { type: 'permanentEntered', cardId: id('forest'), cardName: 'Forest', controllerId: me, enteredTapped: false, description: '' },
+    ]
+    const n = noticeFromLog(log, me, cards, 4)
+    expect(n?.key).toBe('permanentEntered-4')
+    expect(n?.text).toMatch(/^Forest is on the battlefield/)
+  })
+
+  it('answers a creature cast with its arrival, not the cast', () => {
+    const log: ClientEvent[] = [
+      { type: 'spellCast', spellId: id('bear'), spellName: 'Grizzly Bears', casterId: me, description: '' },
+      { type: 'spellResolved', spellId: id('bear'), spellName: 'Grizzly Bears', description: '' },
+      { type: 'permanentEntered', cardId: id('bear'), cardName: 'Grizzly Bears', controllerId: me, enteredTapped: false, description: '' },
+    ]
+    expect(noticeFromLog(log, me, cards, 0)?.text).toMatch(/Grizzly Bears is on the battlefield.*next turn/)
+    // The cast alone — an instant, or the first update of two — is the stack line.
+    expect(noticeFromLog(log.slice(0, 1), me, cards, 0)?.text).toMatch(/^You cast Grizzly Bears/)
+  })
+
+  it('ignores what the other seat did', () => {
+    const log: ClientEvent[] = [
+      { type: 'permanentEntered', cardId: id('cyclops'), cardName: 'Bloodrock Cyclops', controllerId: them, enteredTapped: false, description: '' },
+      { type: 'spellCast', spellId: id('x'), spellName: 'Lightning Bolt', casterId: them, description: '' },
+      { type: 'creatureAttacked', creatureId: id('cyclops'), creatureName: 'Bloodrock Cyclops', attackingPlayerId: them, defendingPlayerId: me, description: '' },
+      { type: 'creatureBlocked', blockerId: id('cyclops'), blockerName: 'Bloodrock Cyclops', attackerId: id('bear'), attackerName: 'Grizzly Bears', description: '' },
+    ]
+    expect(noticeFromLog(log, me, cards, 0)).toBeNull()
+    expect(noticeFromLog([], me, cards, 0)).toBeNull()
+  })
+
+  it('lists the attackers as one line and keys it once', () => {
+    const log: ClientEvent[] = [
+      { type: 'creatureAttacked', creatureId: id('bear'), creatureName: 'Grizzly Bears', attackingPlayerId: me, defendingPlayerId: them, description: '' },
+      { type: 'creatureAttacked', creatureId: id('spider'), creatureName: 'Giant Spider', attackingPlayerId: me, defendingPlayerId: them, description: '' },
+    ]
+    const n = noticeFromLog(log, me, cards, 7)
+    expect(n?.text).toBe('Grizzly Bears and Giant Spider attack.')
+    expect(n?.key).toBe('attack-7')
+    expect(noticeFromLog(log.slice(0, 1), me, cards, 7)?.text).toBe('Grizzly Bears attacks.')
+  })
+
+  it('answers a block by whose creature blocked', () => {
+    const log: ClientEvent[] = [
+      { type: 'creatureBlocked', blockerId: id('spider'), blockerName: 'Giant Spider', attackerId: id('cyclops'), attackerName: 'Bloodrock Cyclops', description: '' },
+    ]
+    expect(noticeFromLog(log, me, cards, 0)?.text).toMatch(/^Giant Spider blocks Bloodrock Cyclops/)
+  })
+})
+
+describe('noticeFromMove', () => {
+  it('reads a pass off the step moving while the player held priority', () => {
+    expect(noticeFromMove(base, { ...base, step: 'BEGIN_COMBAT' })?.text).toBe('You passed.')
+    expect(noticeFromMove(base, { ...base, turnNumber: 4, isMyTurn: false, hasPriority: false })?.text).toBe('You passed.')
+    // Without priority the game moves on its own — the Tutor's turn is not the player's doing.
+    const theirs = { ...base, isMyTurn: false, hasPriority: false, step: 'UPKEEP' }
+    expect(noticeFromMove(theirs, { ...theirs, step: 'PRECOMBAT_MAIN' })).toBeNull()
+    expect(noticeFromMove(base, base)).toBeNull()
+  })
+
+  it('reads the stack resolving as a pass', () => {
+    expect(noticeFromMove({ ...base, stackSize: 1 }, base)?.key).toMatch(/^resolved-/)
+    // The stack growing is the other seat responding, not a pass.
+    expect(noticeFromMove({ ...base, stackSize: 1 }, { ...base, stackSize: 2, hasPriority: true })).toBeNull()
+  })
+
+  it('names a skipped attack and no blocks, and an answered prompt', () => {
+    expect(noticeFromMove({ ...base, canAttack: true }, base)?.text).toMatch(/^No attack this turn/)
+    expect(noticeFromMove({ ...base, canBlock: true, isMyTurn: false }, { ...base, isMyTurn: false })?.text).toMatch(/^No blocks/)
+    expect(noticeFromMove({ ...base, hasDecision: true }, base)?.text).toBe('Answered.')
+  })
+})
+
+describe('playerIsActing', () => {
+  it('is true mid-cast and mid-attack, false at rest', () => {
+    expect(playerIsActing(base)).toBe(false)
+    expect(playerIsActing({ ...base, isTargeting: true })).toBe(true)
+    expect(playerIsActing({ ...base, canAttack: true, attackersSelected: 1, attackersChosen: 1 })).toBe(true)
+    // A creature that must attack is selected before the player has done anything.
+    expect(playerIsActing({ ...base, canAttack: true, attackersSelected: 1, attackersChosen: 0 })).toBe(false)
   })
 })

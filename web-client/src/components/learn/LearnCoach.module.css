@@ -40,6 +40,34 @@
   --coach-accent: #ff9d3c;
 }
 
+/* ---- The answer to a move ------------------------------------------------- */
+/* One line above the tip saying back what the player just did — the Forest is down, the bear
+   attacks, no blocks. Up for a few seconds; the tip is what stays. */
+.notice {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: start;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+  color: #efe6cf;
+  animation: coachIn 0.28s ease-out both;
+}
+
+.noticeTick {
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: var(--coach-accent);
+  color: #1a1408;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  animation: tickIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
 /* ---- Card note ------------------------------------------------------------ */
 /* One line about a card that just arrived on the table and carries a keyword the course has not
    named yet — deathtouch, first strike, reach. Under the tip, above the objectives. */
