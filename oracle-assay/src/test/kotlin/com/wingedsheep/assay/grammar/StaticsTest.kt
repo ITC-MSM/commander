@@ -9,7 +9,10 @@ import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.AssignDamageEqualToToughness
 import com.wingedsheep.sdk.scripting.CantBlock
 import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
+import com.wingedsheep.sdk.scripting.CompositeStaticAbility
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.GrantActivatedAbility
+import com.wingedsheep.sdk.scripting.GrantTriggeredAbility
 import com.wingedsheep.sdk.scripting.GrantKeyword
 import com.wingedsheep.sdk.scripting.ModifyStats
 import com.wingedsheep.sdk.scripting.conditions.Compare
@@ -200,6 +203,46 @@ class StaticsTest : StringSpec({
         )
     }
 
+    // The quoted grant: everything inside the quotation marks is the grammar an ability line already
+    // prints, so one rule inherits the whole triggered-ability vocabulary. `GrantTriggeredAbility`
+    // is read by `TriggerDetector` and is not a layer effect, so it sits beside the pump as its own
+    // top-level static rather than inside a `CompositeStaticAbility`.
+    "a quoted triggered ability is granted to the attached creature" {
+        val line = "Enchanted creature gets +1/+0 and has \"Whenever ~ deals combat damage, " +
+            "create a Blood token.\""
+        val abilities = fragment(line).script.staticAbilities
+        abilities.size shouldBe 2
+        abilities[0] shouldBe ModifyStats(1, 0)
+        abilities[1].shouldBeInstanceOf<GrantTriggeredAbility>()
+        roundTrips(line)
+    }
+
+    // …and its activated twin, over the same printed shape. The two are disjoint by what the quoted
+    // text can be, so nothing here is left choosing.
+    "a quoted activated ability is granted to the attached creature" {
+        val line = "Enchanted creature has \"{T}: Draw a card.\""
+        fragment(line).script.staticAbilities.single().shouldBeInstanceOf<GrantActivatedAbility>()
+        roundTrips(line)
+    }
+
+    // The multi-layer lord. One printed ability across Layers 4, 6 and 7b, so the value is a
+    // `CompositeStaticAbility` (CR 613.6) and not three statics that would each re-resolve their own
+    // affected set. The keyword clause is what chooses between the two templates.
+    "a multi-layer lord is one CompositeStaticAbility" {
+        val bare = "Creatures you control have base power and toughness 6/6 and are Oozes in " +
+            "addition to their other types."
+        val composite = fragment(bare).script.staticAbilities.single()
+            .shouldBeInstanceOf<CompositeStaticAbility>()
+        composite.abilities.size shouldBe 2
+        roundTrips(bare)
+
+        val withKeyword = "Creatures you control with +1/+1 counters on them have base power and " +
+            "toughness 4/4, have flying, and are Angels in addition to their other types."
+        fragment(withKeyword).script.staticAbilities.single()
+            .shouldBeInstanceOf<CompositeStaticAbility>().abilities.size shouldBe 3
+        roundTrips(withKeyword)
+    }
+
     // Every rule in the family can print what it parses — the meta-test each family gets, because a
     // `match` half that quietly matches nothing compiles, parses, and surfaces as a print mismatch
     // far from its cause.
@@ -208,6 +251,10 @@ class StaticsTest : StringSpec({
             "Enchanted creature gets +1/+2.",
             "Enchanted creature has flying.",
             "Enchanted creature gets +2/+2 and has flying.",
+            "Enchanted creature has \"Whenever ~ attacks, draw a card.\"",
+            "Enchanted creature gets +1/+0 and has \"{T}: Draw a card.\"",
+            "Creatures you control have base power and toughness 6/6 and are Oozes in addition " +
+                "to their other types.",
             "~ can't attack unless defending player controls an Island.",
             "Each creature you control with toughness greater than its power assigns combat " +
                 "damage equal to its toughness rather than its power.",
