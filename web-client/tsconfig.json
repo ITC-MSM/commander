@@ -20,6 +20,8 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
 
+    "types": ["node"],
+
     "paths": {
       "@/*": ["./src/*"]
     }
