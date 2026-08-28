@@ -61,4 +61,30 @@ export function findSpot(spot: SpotId, ctx: SpotContext): Element | null {
   return null
 }
 
+export interface SpotRect {
+  top: number
+  left: number
+  width: number
+  height: number
+}
+
+/**
+ * The box to ring: the element's own rect, grown to cover every card inside it. A hand fans its
+ * cards with rotations and overlaps that spill past the zone's layout box, and a bounding rect
+ * reads the box, not the transformed children — so the ring would cut the outer cards in half.
+ * `getBoundingClientRect` on each card does include its transform.
+ */
+export function spotRect(el: Element): SpotRect {
+  let { top, left, right, bottom } = el.getBoundingClientRect()
+  for (const card of el.querySelectorAll('[data-card-id]')) {
+    const r = card.getBoundingClientRect()
+    if (r.width === 0 || r.height === 0) continue
+    top = Math.min(top, r.top)
+    left = Math.min(left, r.left)
+    right = Math.max(right, r.right)
+    bottom = Math.max(bottom, r.bottom)
+  }
+  return { top, left, width: right - left, height: bottom - top }
+}
+
 export const ALL_SPOTS: readonly SpotId[] = Object.keys(SELECTORS) as SpotId[]
