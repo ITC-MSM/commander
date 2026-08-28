@@ -10,6 +10,7 @@ import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.Conditions as SdkConditions
 import com.wingedsheep.sdk.scripting.AssignDamageEqualToToughness
 import com.wingedsheep.sdk.scripting.AttackTax
@@ -22,6 +23,7 @@ import com.wingedsheep.sdk.scripting.CantBeBlockedByMoreThan
 import com.wingedsheep.sdk.scripting.CantBeBlockedExceptBy
 import com.wingedsheep.sdk.scripting.CantBlock
 import com.wingedsheep.sdk.scripting.CantBlockUnless
+import com.wingedsheep.sdk.scripting.CompositeStaticAbility
 import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
 import com.wingedsheep.sdk.scripting.CostModification
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -31,8 +33,11 @@ import com.wingedsheep.sdk.scripting.GrantDynamicStatsEffect
 import com.wingedsheep.sdk.scripting.GrantFlashToSpellType
 import com.wingedsheep.sdk.scripting.GrantKeyword
 import com.wingedsheep.sdk.scripting.GrantProtectionFromChosenColorToGroup
+import com.wingedsheep.sdk.scripting.GrantSubtype
+import com.wingedsheep.sdk.scripting.GrantTriggeredAbility
 import com.wingedsheep.sdk.scripting.ModifySpellCost
 import com.wingedsheep.sdk.scripting.ModifyStats
+import com.wingedsheep.sdk.scripting.SetBasePowerToughnessStatic
 import com.wingedsheep.sdk.scripting.SpellCostTarget
 import com.wingedsheep.sdk.scripting.StaticAbility
 import com.wingedsheep.sdk.scripting.UntapDuringOtherUntapSteps
@@ -135,6 +140,86 @@ object Statics {
                 if (grant != GrantKeyword(keyword)) return@match null
                 bind("kw" to keyword)
             }
+        }
+
+    /**
+     * `Enchanted creature has "Whenever this creature deals combat damage, create a Blood token."` —
+     * Ceremonial Knife, and 149 more attachment lines that grant a **whole ability** instead of a
+     * keyword.
+     *
+     * The attached-position twin of the `have "…"` row in [lordStatic]'s activated instantiation,
+     * and written the same way: the quotes are the whole rule, and everything inside them is the
+     * grammar an ability line already prints. So one row here inherits the entire triggered-ability
+     * (and activated-ability) vocabulary rather than restating a verb.
+     *
+     * **Two rules over one printed shape, disjoint by what the quoted text can be.** A trigger
+     * sentence opens with "whenever" / "when" / "at" and an activated ability has a cost before a
+     * colon, so exactly one of [Triggers.trigger] and [Activated.quoted] can read any given
+     * quotation and the printer is never left choosing. They *are* two SDK types —
+     * `GrantTriggeredAbility` and `GrantActivatedAbility` — read by two different subsystems
+     * (`TriggerDetector` and `LegalActionsCalculator`), so folding them into one rule would be
+     * folding two models. The corpus splits 85 activated to 64 triggered on this line, which is why
+     * neither is the real one with the other as an afterthought.
+     *
+     * Neither is a layer effect, so neither belongs in a `CompositeStaticAbility` beside the pump in
+     * [pumpAndQuotedAbility] — the [Statics] header says why: only abilities projected through the
+     * layer system are grouped, and these two are read elsewhere.
+     *
+     * ### The one thing inside the quotes this rule inherits and cannot fix
+     *
+     * `Normalizer.selfReferenceForms` abstracts **both** "this permanent" and the card's own printed
+     * name to `~`, and says in its own KDoc that "the rules that read `~` must not treat it as
+     * authoritative inside a quoted ability". That bites exactly once, in a *cost*: Basal Sliver's
+     * "Sacrifice this permanent" means the Sliver holding the ability
+     * (`AbilityCost.SacrificeSelf`), while Deconstruction Hammer's "Sacrifice Deconstruction
+     * Hammer" means the granting Equipment (`AbilityCost.SacrificeGrantingPermanent`, CR 201.5a) —
+     * two objects, one token, and nothing left in the normalized text to tell them apart.
+     *
+     * [Activated.quoted] reads the majority spelling and Deconstruction Hammer reports as a
+     * differential divergence rather than being silently re-aimed. Remapping the cost by position
+     * was tried and reverted in the same change: it fixed the Equipment and broke five Slivers,
+     * which is the measurement that says the distinction is not a property of the position. The fix
+     * belongs to `normalize/`, where the printed word still exists.
+     */
+    private val quotedTriggerGrant: Phrase<StaticAbility> =
+        phrase("\"{ability}\"", name = "a quoted triggered ability grant") {
+            slot("ability", Triggers.trigger)
+            build { GrantTriggeredAbility(it.value("ability")) }
+            match { ability ->
+                val grant = ability as? GrantTriggeredAbility ?: return@match null
+                if (grant != GrantTriggeredAbility(grant.ability)) return@match null
+                bind("ability" to grant.ability)
+            }
+        }
+
+    /**
+     * [attachedQuotedTrigger]'s activated twin; see its KDoc for why the two are separate rules.
+     *
+     * The quotation marks live in [Activated.quoted] rather than in this template, because that rule
+     * already owns them for the lord position and a second spelling of the same delimiters would be
+     * a second reading of every granted activated ability.
+     */
+    private val quotedActivatedGrant: Phrase<StaticAbility> =
+        phrase("{ability}", name = "a quoted activated ability grant") {
+            slot("ability", Activated.quoted)
+            build { GrantActivatedAbility(it.value("ability")) }
+            match { ability ->
+                val grant = ability as? GrantActivatedAbility ?: return@match null
+                if (grant != GrantActivatedAbility(grant.ability)) return@match null
+                bind("ability" to grant.ability)
+            }
+        }
+
+    /** Either quoted grant, over one position; see [quotedTriggerGrant] for why they stay two rules. */
+    private val quotedGrant: Phrase<StaticAbility> =
+        oneOf("a quoted granted ability", quotedTriggerGrant, quotedActivatedGrant)
+
+    /** `Enchanted creature has "…"` — the attachment position, over [quotedGrant]. */
+    private val attachedQuotedAbility: Phrase<StaticAbility> =
+        phrase("enchanted creature has {granted}", name = "enchanted creature has an ability") {
+            slot("granted", quotedGrant)
+            build { it.value<StaticAbility>("granted") }
+            match { bind("granted" to it) }
         }
 
     // ---------------------------------------------------------------------------------------
@@ -500,6 +585,101 @@ object Statics {
     }
 
     /**
+     * What a multi-layer lord gives its group: a base power and toughness, optionally some keywords,
+     * and a creature type — the three halves of [compositeLord]'s sentence, held together so the
+     * shape's single `{v}` slot can carry them.
+     */
+    private data class Bodied(
+        val stats: Pair<Int, Int>,
+        val keywords: List<Keyword>,
+        val subtype: Subtype,
+    )
+
+    /**
+     * "Creatures you control have base power and toughness 6/6 and are Oozes in addition to their
+     * other types." — March of the World Ooze, Kudo, Raised by Giants, and Sigarda's Summons with a
+     * keyword clause in the middle.
+     *
+     * The one lord row whose value is a [CompositeStaticAbility], and the reason is CR 613.6 rather
+     * than a wish to keep the sentence together: the printed ability applies in Layer 4
+     * (the added creature type), Layer 6 (the keywords) and Layer 7b (the base P/T), and an effect
+     * that applies in several layers locks its affected set as it *first* starts to apply. Three
+     * separate statics would each re-resolve their own set as the layers are walked, so they are a
+     * different — and wrong — card. All four hand-written cards in the family spell it this way.
+     *
+     * That makes this rule the grammar's first producer of `CompositeStaticAbility`, which is why it
+     * is one rule rather than three rows of the plain lord shape: the composite is the value, not a
+     * convenience.
+     *
+     * **Two spellings, disjoint by whether the keyword clause is there.** The bare form joins its two
+     * halves with "and"; the keyword form takes a comma before "have" and another before the final
+     * "and", which is Oracle's Oxford comma over three clauses rather than two. A single template
+     * with an optional middle would print the wrong punctuation for one of them, so they are two
+     * templates over one [Bodied] and the empty keyword list is what chooses.
+     *
+     * The subtype prints plural ("are Angels") and the model holds it singular, which is
+     * [Primitives.pluralCreatureSubtype]'s whole job — the same split every plural noun in [Filters]
+     * takes.
+     */
+    private val compositeLord: List<Phrase<StaticAbility>> = run {
+        fun abilitiesFor(body: Bodied, group: GroupFilter): StaticAbility =
+            CompositeStaticAbility(
+                listOf<StaticAbility>(SetBasePowerToughnessStatic(body.stats.first, body.stats.second, group)) +
+                    body.keywords.map { GrantKeyword(it, group) } +
+                    GrantSubtype(body.subtype.value, group),
+            )
+
+        fun read(ability: StaticAbility): Pair<Bodied, GroupFilter>? {
+            val parts = (ability as? CompositeStaticAbility)?.abilities ?: return null
+            if (parts.size < 2) return null
+            val stats = parts.first() as? SetBasePowerToughnessStatic ?: return null
+            val subtype = parts.last() as? GrantSubtype ?: return null
+            val keywords = mutableListOf<Keyword>()
+            for (part in parts.drop(1).dropLast(1)) {
+                val grant = part as? GrantKeyword ?: return null
+                keywords += Keyword.entries.firstOrNull { it.name == grant.keyword } ?: return null
+            }
+            val body = Bodied(stats.power to stats.toughness, keywords, Subtype(subtype.subtype))
+            return body to stats.filter
+        }
+
+        fun parameter(withKeywords: Boolean): Phrase<Bodied> {
+            val template = if (withKeywords) {
+                "base power and toughness {p}/{t}, have {kws}, and are {subtype} in addition to their other types"
+            } else {
+                "base power and toughness {p}/{t} and are {subtype} in addition to their other types"
+            }
+            return phrase(template, name = "a body and a type") {
+                slot("p", Primitives.cardinal)
+                slot("t", Primitives.cardinal)
+                if (withKeywords) slot("kws", Keywords.keywordRun)
+                slot("subtype", Primitives.pluralCreatureSubtype)
+                build {
+                    val keywords = if (withKeywords) it.value<List<Keyword>>("kws") else emptyList()
+                    Bodied(it.int("p") to it.int("t"), keywords, it.value("subtype"))
+                }
+                match { body ->
+                    if (body.keywords.isEmpty() == withKeywords) return@match null
+                    if (withKeywords) {
+                        bind("p" to body.stats.first, "t" to body.stats.second, "kws" to body.keywords, "subtype" to body.subtype)
+                    } else {
+                        bind("p" to body.stats.first, "t" to body.stats.second, "subtype" to body.subtype)
+                    }
+                }
+            }
+        }
+
+        listOf(false, true).flatMap { withKeywords ->
+            lordStatic(
+                "have", "a group has a body and a type",
+                parameter = parameter(withKeywords),
+                ability = { body, group -> abilitiesFor(body, group) },
+                read = ::read,
+            )
+        }
+    }
+
+    /**
      * "All Slivers have protection from the chosen color." — Ward Sliver.
      *
      * A lord line with **no parameter at all**: the quality is the colour chosen as the source
@@ -742,6 +922,7 @@ object Statics {
     val all: List<Phrase<StaticAbility>> = listOf(
         attachedPump,
         attachedKeyword,
+        attachedQuotedAbility,
         spellsCantBeCountered,
         spellsHaveFlash,
         attackTax,
@@ -769,7 +950,7 @@ object Statics {
         damageByToughness(qualified = false),
         damageByToughness(qualified = true),
         attachedDamageByToughness,
-    ) + combatRestrictions + Amounts.perScope(::selfPumpPerCount) + SpellCosts.all + lordStatic(
+    ) + combatRestrictions + compositeLord + Amounts.perScope(::selfPumpPerCount) + SpellCosts.all + lordStatic(
         "get", "a group gets",
         parameter = Primitives.statModifiers,
         ability = { (power, toughness), group -> ModifyStats(power, toughness, group) },
@@ -840,6 +1021,37 @@ object Statics {
     }
 
     /**
+     * `Enchanted creature gets +1/+0 and has "Whenever this creature deals combat damage, create a
+     * Blood token."` — Ceremonial Knife, and 37 more.
+     *
+     * [pumpAndKeyword]'s shape with [quotedGrant] where the keyword run goes, and a *list* for the
+     * same reason: one printed sentence, two SDK abilities, because the pump is a Layer 7c
+     * continuous effect and the grant is read by a different subsystem entirely. They are two
+     * top-level statics rather than a `CompositeStaticAbility`, which is the SDK's grouping for
+     * abilities that all go through the layer system (CR 613.6) and not a general "these were one
+     * sentence" wrapper.
+     *
+     * The pump comes first because the sentence does, and 38 hand-written cards agree; a card
+     * carrying them the other way round declines rather than being reordered into agreement.
+     */
+    private val pumpAndQuotedAbility: Phrase<List<StaticAbility>> = run {
+        fun abilitiesFor(modifiers: Pair<Int, Int>, granted: StaticAbility) =
+            listOf<StaticAbility>(ModifyStats(modifiers.first, modifiers.second), granted)
+        phrase("enchanted creature gets {mod} and has {granted}", name = "enchanted creature gets and has an ability") {
+            slot("mod", Primitives.statModifiers)
+            slot("granted", quotedGrant)
+            build { abilitiesFor(it.value("mod"), it.value("granted")) }
+            match { abilities ->
+                if (abilities.size != 2) return@match null
+                val stats = abilities[0] as? ModifyStats ?: return@match null
+                val modifiers = stats.powerBonus to stats.toughnessBonus
+                if (abilities != abilitiesFor(modifiers, abilities[1])) return@match null
+                bind("mod" to modifiers, "granted" to abilities[1])
+            }
+        }
+    }
+
+    /**
      * "Enchanted creature has reach and vigilance." — one sentence, one static *per keyword*.
      *
      * The line-level twin of [attachedKeyword], and two rules rather than one because a run of one
@@ -878,7 +1090,7 @@ object Statics {
      */
     val line: Phrase<List<StaticAbility>> = oneOf(
         "static abilities",
-        listOf(pumpAndKeyword, attachedKeywordRun) +
+        listOf(pumpAndKeyword, pumpAndQuotedAbility, attachedKeywordRun) +
             ConditionalForm.entries.flatMap { form ->
                 listOf(
                     conditionalSelfStatic(leading = false, form = form),

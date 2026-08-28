@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
 import com.wingedsheep.sdk.scripting.ModifyStats
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -23,6 +24,10 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * The +2/+2 is a static [ModifyStats] on the attached creature. The granted activated ability is a
  * [GrantActivatedAbility] static whose [EffectTarget.Self] resolves to the host creature (CR 113.7),
  * so "{1}, Sacrifice a permanent" grants flying until end of turn to the enchanted creature itself.
+ *
+ * The sacrifice filter is spelled [GameObjectFilter.Permanent] rather than left at `Costs.Sacrifice`'s
+ * `Any` default: the printed noun is "a permanent", and the two agree only because a sacrifice cost
+ * can reach nothing but the battlefield anyway.
  */
 val LunarchMantle = card("Lunarch Mantle") {
     manaCost = "{1}{W}"
@@ -42,7 +47,7 @@ val LunarchMantle = card("Lunarch Mantle") {
         ability = GrantActivatedAbility(
             ability = ActivatedAbility(
                 id = AbilityId.generate(),
-                cost = Costs.Composite(Costs.Mana("{1}"), Costs.Sacrifice()),
+                cost = Costs.Composite(Costs.Mana("{1}"), Costs.Sacrifice(GameObjectFilter.Permanent)),
                 effect = Effects.GrantKeyword(Keyword.FLYING, EffectTarget.Self)
             )
         )

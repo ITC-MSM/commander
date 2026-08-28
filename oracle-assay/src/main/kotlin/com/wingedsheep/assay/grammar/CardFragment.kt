@@ -111,6 +111,9 @@ data class CardFragment(
         // *different* characteristics is Yavimaya Kavu and folds normally.
         if (dynamicPower != null && other.dynamicPower != null) return null
         if (dynamicToughness != null && other.dynamicToughness != null) return null
+        // …and a card declares one conditional-flash clause. Same collision, same reason: the field
+        // is singular, so two lines both claiming it is a card this fold has no model for.
+        if (script.conditionalFlash != null && other.script.conditionalFlash != null) return null
         return CardFragment(
             keywordAbilities = keywordAbilities + other.keywordAbilities,
             flags = flags + other.flags,
@@ -137,6 +140,9 @@ data class CardFragment(
                 // "This spell can't be countered." is a line of its own on Root Sliver and Vexing
                 // Beetle, so it accumulates like the ability lists rather than colliding.
                 cantBeCountered = script.cantBeCountered || other.script.cantBeCountered,
+                // "This spell has flash as long as …" — one field, so the fold above has already
+                // refused the two-line case and this is a plain first-wins.
+                conditionalFlash = script.conditionalFlash ?: other.script.conditionalFlash,
             ),
         )
     }
@@ -161,6 +167,6 @@ data class CardFragment(
         const val MODELLED_SLOTS_NOTE =
             "spellEffect, targetRequirements, triggeredAbilities, activatedAbilities, " +
                 "staticAbilities, replacementEffects, auraTarget, castRestrictions, additionalCosts, " +
-                "cantBeCountered"
+                "cantBeCountered, conditionalFlash"
     }
 }

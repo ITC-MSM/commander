@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 223 / 273
+**Implemented:** 227 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -45,7 +45,7 @@
 - [ ] Cemetery Illuminator
 - [ ] Cemetery Protector
 - [ ] Cemetery Prowler
-- [ ] Ceremonial Knife
+- [x] Ceremonial Knife
 - [x] Chandra, Dressed to Kill
 - [x] Change of Fortune
 - [x] Child of the Pack
@@ -82,7 +82,7 @@
 - [x] Dreadfeast Demon
 - [x] Dreadlight Monstrosity
 - [x] Dreamroot Cascade
-- [ ] Dreamshackle Geist
+- [x] Dreamshackle Geist
 - [ ] Drogskol Infantry
 - [x] Dying to Serve
 - [x] Edgar's Awakening
@@ -214,7 +214,7 @@
 - [x] Shattered Sanctum
 - [x] Sheltering Boughs
 - [x] Sigarda's Imprisonment
-- [ ] Sigarda's Summons
+- [x] Sigarda's Summons
 - [ ] Sigardian Paladin
 - [x] Skulking Killer
 - [x] Skull Skaab
@@ -232,7 +232,7 @@
 - [x] Stormcarved Coast
 - [x] Stormchaser Drake
 - [x] Sundown Pass
-- [ ] Supernatural Rescue
+- [x] Supernatural Rescue
 - [x] Sure Strike
 - [x] Swamp
 - [x] Syncopate

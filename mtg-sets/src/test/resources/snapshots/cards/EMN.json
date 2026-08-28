@@ -3184,7 +3184,10 @@
                             },
                             {
                                 "type": "CostAtomWrapper",
-                                "atom": "AtomSacrifice"
+                                "atom": {
+                                    "type": "AtomSacrifice",
+                                    "filter": "permanent"
+                                }
                             }
                         ]
                     },

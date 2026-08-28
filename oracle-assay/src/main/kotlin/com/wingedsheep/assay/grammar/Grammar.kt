@@ -353,6 +353,33 @@ object Grammar {
         }
 
     /**
+     * "This spell has flash as long as you control a Spirit." — Supernatural Rescue, Colossal
+     * Rattlewurm, Take for a Ride.
+     *
+     * A *timing permission read from hand*, so it is neither a keyword nor a static ability: the SDK
+     * gives it `CardScript.conditionalFlash`, a slot of its own, because nothing on the battlefield
+     * ever evaluates it. That is the same reason [castRestrictionLine] is a line — the fragment
+     * carries no effect at all — with the sign flipped: a cast restriction narrows when the card may
+     * be cast, this one widens it.
+     *
+     * There is no unconditional sibling here. "Flash" with no clause is the printed keyword, which
+     * [keywordLine] already reads, so a card is never underdetermined between the two spellings.
+     *
+     * "This spell" stays literal text for [cantBeCounteredLine]'s reason: [Restrictions] spells the
+     * same words inside "Cast this spell only …", so the normalizer leaves the phrase alone.
+     */
+    private val conditionalFlashLine: Phrase<CardFragment> =
+        phrase("this spell has flash as long as {condition}.", name = "a conditional flash line") {
+            slot("condition", Conditions.condition)
+            build { CardFragment.of(CardScript(conditionalFlash = it.value("condition"))) }
+            match { fragment ->
+                val condition = fragment.script.conditionalFlash ?: return@match null
+                if (fragment != CardFragment.of(CardScript(conditionalFlash = condition))) return@match null
+                bind("condition" to condition)
+            }
+        }
+
+    /**
      * "~ can't be blocked." — the one line whose whole content is a `CardDefinition` flag.
      *
      * A flag rather than a static because that is how the SDK spells the *unconditional* form; every
@@ -488,6 +515,7 @@ object Grammar {
         emptyLine,
         castRestrictionLine,
         additionalCostLine,
+        conditionalFlashLine,
         flagLine("${Normalizer.SELF} can't be blocked.", AbilityFlag.CANT_BE_BLOCKED),
         flagLine("${Normalizer.SELF} doesn't untap during your untap step.", AbilityFlag.DOESNT_UNTAP),
         cantBeCounteredLine,

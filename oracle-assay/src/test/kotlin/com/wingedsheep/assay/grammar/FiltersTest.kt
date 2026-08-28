@@ -6,6 +6,7 @@ import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -165,6 +166,38 @@ class FiltersTest : StringSpec({
     "card position carries no controller clause" {
         Filters.cardNoun.parseText("creature card you control").shouldBeInstanceOf<ParseOutcome.Declined>()
         Filters.cardNoun.unparse(GameObjectFilter.Creature.youControl()) shouldBe null
+    }
+
+    // "You don't control" is a third controller value, not a spelling of "an opponent controls" —
+    // the two separate in multiplayer, where a teammate controls neither.
+    "the controller layer spells all three of its values" {
+        read(Filters.filter, "creature you don't control") shouldBe
+            GameObjectFilter.Creature.withControllerPredicate(
+                ControllerPredicate.Not(ControllerPredicate.ControlledByYou)
+            )
+        roundTrips(Filters.filter, "creature you control")
+        roundTrips(Filters.filter, "creature an opponent controls")
+        roundTrips(Filters.filter, "creature you don't control")
+        roundTrips(Filters.plural, "creatures you don't control")
+    }
+
+    // The counter quality: one `StatePredicate.HasCounter` under two templates, chosen by the
+    // grammatical number of the noun it modifies rather than registered as two readings.
+    "the counter quality agrees with its noun" {
+        read(Filters.filter, "creature with a +1/+1 counter on it") shouldBe
+            GameObjectFilter.Creature.withCounter("+1/+1")
+        read(Filters.plural, "creatures with +1/+1 counters on them") shouldBe
+            GameObjectFilter.Creature.withCounter("+1/+1")
+        roundTrips(Filters.filter, "creature with a +1/+1 counter on it")
+        roundTrips(Filters.filter, "artifact with a charge counter on it")
+        roundTrips(Filters.plural, "creatures with +1/+1 counters on them")
+    }
+
+    // …and it sits outside the controller clause, which is where Oracle writes it.
+    "the counter quality composes with the controller clause" {
+        read(Filters.plural, "creatures you control with +1/+1 counters on them") shouldBe
+            GameObjectFilter.Creature.youControl().withCounter("+1/+1")
+        roundTrips(Filters.plural, "creatures you control with +1/+1 counters on them")
     }
 
     // A form nobody wrote down declines rather than being approximated — the point of enumerating

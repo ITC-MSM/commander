@@ -270,6 +270,7 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
         castRestrictions = script.castRestrictions,
         additionalCosts = script.additionalCosts,
         cantBeCountered = script.cantBeCountered,
+        conditionalFlash = script.conditionalFlash,
     )
 
     private fun unmodelledSlots(script: CardScript) = script.copy(
@@ -283,6 +284,7 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
         castRestrictions = emptyList(),
         additionalCosts = emptyList(),
         cantBeCountered = false,
+        conditionalFlash = null,
     )
 
     /**
