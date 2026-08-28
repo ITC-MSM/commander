@@ -1854,6 +1854,29 @@ object Steps {
     }
 
     /**
+     * "Draw a card for each card you've discarded this turn." — Change of Fortune, Green Goblin,
+     * Misty Knight; "…for each creature that died this turn." — Deadly Embrace.
+     *
+     * [drawForEach]'s sentence over a **turn tally** instead of a battlefield filter, and the two
+     * cannot be one rule: that one counts a set of objects a [Filters] noun phrase names and this
+     * one counts something the game tallied over the turn, which has no filter, no zone and no
+     * controller clause for that vocabulary to spell. [Amounts.turnTally] is the noun, so every row
+     * added there reaches this verb without being told.
+     */
+    private val drawForEachTally: Phrase<CardScript> = run {
+        fun scriptFor(amount: DynamicAmount) = CardScript(spellEffect = Effects.DrawCards(amount))
+        phrase("draw a card for each {tally}", name = "draw for each turn tally") {
+            slot("tally", Amounts.turnTally)
+            build { scriptFor(it.value("tally")) }
+            match { script ->
+                val amount = (script.spellEffect as? DrawCardsEffect)?.count ?: return@match null
+                if (script != scriptFor(amount)) return@match null
+                bind("tally" to amount)
+            }
+        }
+    }
+
+    /**
      * "You gain N life for each …" — the first rules whose amount is a [DynamicAmount] rather than
      * a numeral.
      *
@@ -2009,6 +2032,7 @@ object Steps {
             permanentSteps +
             groupSteps +
             drawForEach +
+            drawForEachTally +
             gainLifePerAttacker +
             gainLifeForEachScope +
             gainLifeForEach(" target opponent controls", Player.TargetOpponent, listOf(Targets.opponent())) +
