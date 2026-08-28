@@ -561,6 +561,14 @@ internal object Folds {
      *   surfaced them — Commune with Nature, Ashe, Boughside Wanderers, Casey Jones — agreed about
      *   every destination and disagreed only about how to caption it.
      *
+     * - **`inlineOnTrigger`** is `Gate.MayDecide`'s placement flag: "the yes/no is rendered inline
+     *   on the triggering permanent rather than as a centered modal … flows into
+     *   `DecisionContext.inlineOnTrigger`". A rendering position, and one no printed line names —
+     *   the same "may" sentence carries it on Angel's Tomb and not on Sanguine Statuette. Its
+     *   siblings on the same gate stay compared, and they are the reason this is safe to drop:
+     *   `sourceRequiredZone` decides whether the effect happens at all and `feasibility` decides
+     *   whether the player is asked, so nothing that changes the outcome rides on this name.
+     *
      *   Folding them loses nothing the gate was checking, and that is a property rather than a hope:
      *   `Patterns.Library.lookAtTopAndKeep` *derives* both labels from the two destinations
      *   (`defaultDestinationLabel`), and the destinations themselves are still compared. A label
@@ -568,7 +576,7 @@ internal object Folds {
      *
      * The bar the fold list sets is "both spellings already agreed to mean the same thing somewhere
      * outside this file", and here that agreement is the SDK's own KDoc on each field. The narrowness
-     * is that this drops *these five names* and nothing else — a field that changes what the effect
+     * is that this drops *these names* and nothing else — a field that changes what the effect
      * does keeps diverging, including every sibling of these inside the same object.
      * `SelectFromCollectionEffect.showAllCards` is the nearest miss and stays compared: it decides
      * which cards the player is *shown*, not what they are told about them, and on a "look at the top
@@ -584,7 +592,10 @@ internal object Folds {
     }
 
     private val PRESENTATION_KEYS =
-        setOf("imageUri", "message", "prompt", "selectedLabel", "remainderLabel", "descriptionOverride")
+        setOf(
+            "imageUri", "message", "prompt", "selectedLabel", "remainderLabel",
+            "descriptionOverride", "inlineOnTrigger",
+        )
 
     /**
      * **A mode's `description` is the same class of field, and it is scoped rather than named.**
