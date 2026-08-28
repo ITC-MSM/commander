@@ -202,16 +202,12 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "ForEach",
-                    "space": {
-                        "type": "IterationSpace.Players",
-                        "players": "Each"
-                    },
-                    "body": {
-                        "type": "ForceSacrifice",
-                        "filter": "creature",
-                        "count": 2,
-                        "target": "Controller"
+                    "type": "ForceSacrifice",
+                    "filter": "creature",
+                    "count": 2,
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "Each"
                     }
                 }
             }

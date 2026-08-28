@@ -466,7 +466,7 @@ export function StackDisplay() {
 
   return (
     <>
-    <div style={{
+    <div data-learn="stack" style={{
       position: 'fixed',
       left: responsive.isMobile ? 12 : 120,
       top: '50%',

@@ -9636,6 +9636,15 @@ answer it and would silently return `false`.
 - `YouGainedLifeThisTurnAtLeast(n)` — you gained ≥`n` life this turn. The threshold form of
   `YouGainedLifeThisTurn` (`Compare(TurnTracking(You, LIFE_GAINED), GTE, n)`). Used by Scheming
   Silvertongue's "if you gained 2 or more life this turn" prepared trigger.
+- `PutCounterOnCreatureThisTurn` — you put ≥1 counter of *any* kind on a creature this turn (Lasting
+  Tarfire), read through the `COUNTERS_PUT_ON_CREATURE` turn tracker.
+- `PutCounterKindOnCreatureThisTurn(counterType, player = Player.You)` — the **kind-scoped** reading
+  of the same per-player record: "as long as you've put one or more +1/+1 counters on a creature this
+  turn" (Sigardian Paladin). This is turn *history*, not a board scan — the counter may be gone, the
+  creature may have left the battlefield, and it may have stopped being a creature, and all three
+  still count (Sigardian Paladin's first ruling). For the per-*permanent* wording ("on **~** this
+  turn" — Kid Loki, Beast, Erudite Aerialist) use `StatePredicate.ReceivedCounterThisTurn` on a
+  filter instead; that one names a single permanent, this one means any creature.
 - `CardsPutIntoExileThisTurn(atLeast = 1)` — `atLeast` or more cards were put into exile this turn,
   game-wide (summed across every player via `Player.Each`, backed by the `CARDS_PUT_INTO_EXILE`
   turn tracker), not just yours. Used by Ennis, Debate Moderator's end-step "if one or more cards
@@ -10348,6 +10357,21 @@ Numbers computed at resolution time.
   -2/-2 … if that opponent controls no other creatures" is
   `AggregateBattlefield(Player.ControllerOf("target creature an opponent controls"), Creature) == 1`
   (the target's controller controls exactly one creature — the target itself).
+- `GreatestAmongPlayers(players, inner)` — the largest value `inner` takes when measured **once per
+  player** in `players`: Oracle's "the greatest number of X a player controls / an opponent controls /
+  has". Every iteration rebinds the resolution context's controller, so `Player.You` inside `inner`
+  means the player being measured (the same rebinding `Effects.ForEachPlayer` does) — write `inner`
+  from that player's side and never with an outward reference such as `Player.AnOpponent`. Empty
+  player set evaluates to 0.
+  This is **not** an `Aggregation` on `AggregateBattlefield`: that primitive fans its player reference
+  out and then flattens every player's permanents into one list, so
+  `AggregateBattlefield(Player.Each, Creature)` is the table's *total* creature count and there is no
+  per-player boundary left to maximize across. Investigator's Journal's "a number of suspect counters
+  … equal to the greatest number of creatures a player controls" is
+  `DynamicAmounts.greatestControlledBySinglePlayer(GameObjectFilter.Creature)`; pass
+  `players = Player.EachOpponent` for the "an opponent controls" wording (Cavern-Hoard Dragon). The
+  wrapper takes any `DynamicAmount`, so the off-battlefield siblings ("the greatest number of cards an
+  opponent has drawn this turn") are the same shape around a `TurnTracking`.
 - `AggregateZone(player, zone, filter?, aggregation?)` — count cards in a zone.
 - `CountPermanentsOfType(player, subtype)` — count by creature type.
 - `CountCreaturesYouControl` — shorthand for "your creatures".
@@ -12068,6 +12092,10 @@ substitution.
   a {4} ability removes one). `omen` (`Counters.OMEN`): VOW — Soulcipher Board, a *countdown* counter — the artifact
   enters with three and a per-card "whenever a creature card is put into your graveyard from anywhere" trigger removes
   one, transforming the artifact once a `Compare(countersOnSelf(Named(OMEN)), EQ, 0)` intervening check passes.
+  `suspect` (`Counters.SUSPECT`): VOW — Investigator's Journal, a passive store — the artifact enters with one per
+  creature the most-creatured player controls (`EntersWithDynamicCounters` over
+  `DynamicAmounts.greatestControlledBySinglePlayer(...)`) and a `{2}, {T}, Remove a suspect counter` ability spends
+  them one at a time. Unrelated to the *suspected* keyword action (CR 701.58), which places no counter at all.
   Pure passive counters with no inherent rule; the cards that use them accumulate/spend them via their own
   abilities and read the count via `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.X))` — or, when a
   self-sacrifice/exile cost wipes them first, `DynamicAmounts.lastKnownSourceCounters(...)` (CR 113.7a; see §13).

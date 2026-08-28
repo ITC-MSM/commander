@@ -872,20 +872,35 @@
     "oracleText": "Destroy all creatures you don't control. They can't be regenerated.",
     "script": {
         "spellEffect": {
-            "type": "ForEach",
-            "space": {
-                "type": "IterationSpace.Group",
-                "filter": {
-                    "baseFilter": "creature ctrl:opponent"
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "BattlefieldMatching",
+                        "filter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ],
+                            "controllerPredicate": {
+                                "type": "ControllerNot",
+                                "predicate": "ControlledByYou"
+                            }
+                        }
+                    },
+                    "storeAs": "destroyAll_gathered"
                 },
-                "noRegenerate": true
-            },
-            "body": {
-                "type": "MoveToZone",
-                "target": "Self",
-                "destination": "Graveyard",
-                "byDestruction": true
-            }
+                {
+                    "type": "MoveCollection",
+                    "from": "destroyAll_gathered",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    },
+                    "moveType": "Destroy",
+                    "noRegenerate": true
+                }
+            ]
         }
     },
     "metadata": {

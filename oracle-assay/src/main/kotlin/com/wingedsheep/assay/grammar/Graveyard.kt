@@ -323,11 +323,62 @@ object Graveyard {
         }
     }
 
+    /**
+     * "Target player shuffles up to four target cards from their graveyard into their library." —
+     * Witness the Future, Gaea's Blessing, Rite of Renewal.
+     *
+     * The counted sibling of [returnUpToSeveralFromGraveyard] with the other destination, and the
+     * one place in this file whose requirement carries **no owner predicate**: the printed noun is
+     * a bare "target cards", the graveyard is named by the *player* the sentence targets rather
+     * than by "your", and a card in any graveyard is therefore legal. That is
+     * [TargetFilter.CardInGraveyard] — the same `Any`-in-a-graveyard requirement
+     * [exileAnyCardFromAGraveyard] mints, counted and optional.
+     *
+     * **The shuffle rides the move.** `Effects.ShuffleIntoLibrary` is `ZonePlacement.Shuffled`, one
+     * effect per card, and the library it shuffles is the card's *owner's* — which is what the
+     * sentence says, since "their library" is the same player as "their graveyard". A separate
+     * `ShuffleLibraryEffect()` step would shuffle the spell's controller's library instead, and
+     * that is only right when the targets happen to be your own cards.
+     *
+     * **"Target player" is not modelled.** The printed sentence targets a player as well as the
+     * cards, and the SDK has no way to scope an object target to another target's graveyard — a
+     * `TargetPlayer` requirement beside these would let a card announce player A and cards from
+     * B's graveyard. So the player is unread rather than half-read: it costs the "the player was
+     * made an illegal target" ruling and nothing else, and the alternative is a model the engine
+     * would enforce wrongly. Naming it properly is `mtg-sdk` work — a cross-target scope on
+     * `TargetFilter` — and is reported here rather than approximated.
+     */
+    private val shuffleUpToSeveralIntoLibrary: Phrase<CardScript> = run {
+        fun scriptFor(count: Int) = CardScript(
+            spellEffect = ForEachTargetEffect(
+                listOf(Effects.ShuffleIntoLibrary(EffectTarget.ContextTarget(0)))
+            ),
+            targetRequirements = listOf(
+                TargetObject(count = count, optional = true, filter = TargetFilter.CardInGraveyard),
+            ),
+        )
+        phrase(
+            "target player shuffles up to {n} target cards from their graveyard into their library",
+            name = "shuffle several cards from a graveyard into their owner's library",
+        ) {
+            slot("n", Cardinals.word)
+            build { scriptFor(it.int("n")) }
+            match { script ->
+                val requirement = script.targetRequirements.singleOrNull() as? TargetObject
+                    ?: return@match null
+                if (!Cardinals.spellable(requirement.count)) return@match null
+                if (script != scriptFor(requirement.count)) return@match null
+                bind("n" to requirement.count)
+            }
+        }
+    }
+
     /** The collection name [returnAllFromYourGraveyard] shares with the corpus; see its KDoc. */
     private const val COLLECTED = "graveyard_lands"
 
     val clauses: List<Phrase<CardScript>> = listOf(
         exileAnyCardFromAGraveyard,
+        shuffleUpToSeveralIntoLibrary,
         returnAllFromYourGraveyard(tapped = true),
         returnAllFromYourGraveyard(tapped = false),
         shuffleChosenTypeFromGraveyard,

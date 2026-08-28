@@ -5734,13 +5734,14 @@
                                 "count": {
                                     "type": "Fixed",
                                     "amount": 1
-                                }
+                                },
+                                "isMill": true
                             },
-                            "storeAs": "milledThisWay"
+                            "storeAs": "milled"
                         },
                         {
                             "type": "MoveCollection",
-                            "from": "milledThisWay",
+                            "from": "milled",
                             "destination": {
                                 "type": "ToZone",
                                 "zone": "Graveyard"

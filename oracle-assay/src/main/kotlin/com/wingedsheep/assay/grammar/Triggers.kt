@@ -23,6 +23,7 @@ import com.wingedsheep.sdk.scripting.TriggerSpec
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
 import com.wingedsheep.sdk.scripting.TriggeredAbility
+import com.wingedsheep.sdk.dsl.Conditions as SdkConditions
 import com.wingedsheep.sdk.dsl.Triggers as SdkTriggers
 
 /**
@@ -894,6 +895,25 @@ object Triggers {
         filteredTriggerRule(
             "whenever {filter} becomes blocked", "whenever a creature becomes blocked", Filters.indefinite,
         ) { SdkTriggers.becomesBlocked(it, TriggerBinding.ANY) },
+        // "Whenever you sacrifice a Blood token, …" — Sanguine Statuette, Gluttonous Guest, and 100
+        // printed lines. `YouSacrificeA` / `YouSacrificeAnother` are the **per-permanent** specs
+        // (CR 603.2c): two Bloods sacrificed to one cost give two triggers, which is a different
+        // event from the batch `YouSacrificeOneOrMore` that fires once — so the batch spelling
+        // ("whenever you sacrifice one or more …") stays [batchPrefixes]' to write and nothing here
+        // may grow a "one or more" surface. The pair differs only in whether the source counts,
+        // which is the printed word "another" and therefore a row rather than a slot.
+        slottedTriggerRule(
+            "whenever you sacrifice {filter}", "whenever you sacrifice a permanent",
+            Filters.indefinite, Steps.triggeredStep,
+            { (it.event as? EventPattern.PermanentsSacrificedEvent)?.filter },
+            { SdkTriggers.YouSacrificeA(it) },
+        ),
+        slottedTriggerRule(
+            "whenever you sacrifice another {filter}", "whenever you sacrifice another permanent",
+            Filters.filter, Steps.triggeredStep,
+            { (it.event as? EventPattern.PermanentsSacrificedEvent)?.filter },
+            { SdkTriggers.YouSacrificeAnother(it) },
+        ),
         // "Whenever ~ or another creature dies, …" — Blood Artist, Skirk Drill Sergeant. One
         // ability with an `ANY` binding covers both halves, because the source is itself a member of
         // the watched class; the printed "~ or another" is how Oracle spells that, exactly as it is
@@ -920,10 +940,73 @@ object Triggers {
     /** The `when` clause vocabulary as one alternation, for the contexts that slot it. */
     private val event: Phrase<TriggerSpec> = oneOf("a trigger event", prefixes.map { it.phrase })
 
+    /**
+     * "Whenever you gain life **during your turn**, …" — Wax-Wane Witness, Moonstone Harbinger;
+     * "…are put into your graveyard from anywhere **during your turn**, …" — Crawling Infestation.
+     *
+     * The clause this file's prefix list has been declaring it could not read. It narrows *when the
+     * event counts*, which CR 603.2 makes a property of the trigger rather than of its payoff, and
+     * the SDK spells as `TriggeredAbility.triggerRestriction` — a field [abilityFor] deliberately
+     * never writes, so until now every card printing the clause declined.
+     *
+     * ### Why it is a layer over the prefix and not a wrapper over the sentence
+     *
+     * [onceEachTurn] is a wrapper because its rider is a **second sentence** and can therefore sit
+     * outside a whole trigger. This one sits *inside* the `when` clause, before the comma, so it has
+     * to be spliced between the prefix and the effect — which makes it the same product [Statics]
+     * and [Filters] build: one restriction crossed with every prefix, so a row added to either list
+     * reaches the other without being told. The two riders compose in the order English prints them
+     * ("…during your turn, draw a card. This ability triggers only once each turn."), because the
+     * cap wraps [uncapped] and [uncapped] is where this lands.
+     *
+     * ### It must not be read as an intervening-if, and the model says why
+     *
+     * `interveningIf` is re-checked on resolution (CR 603.4) and `triggerRestriction` is not, so the
+     * two are different cards on the same English if the trigger's turn ends before it resolves.
+     * [scriptFor] refuses to print an ability carrying a restriction for exactly that reason, and
+     * this rule strips the field before handing the rest to the shared reconstruction — so an
+     * ability carrying *both* a restriction and something else the sentence cannot spell still
+     * declines rather than losing the difference.
+     *
+     * Two rows, and the negative one is the SDK's own value rather than a `Not` over the positive:
+     * `Conditions.IsNotYourTurn` is what seven hand-written cards write, and a wrapped negation
+     * would be a second spelling of one condition that nothing could choose between.
+     */
+    private data class Restriction(val surface: String, val name: String, val condition: Condition)
+
+    private val restrictions: List<Restriction> = listOf(
+        Restriction(" during your turn", "during your turn", SdkConditions.IsYourTurn),
+        Restriction(
+            " during each opponent's turn", "during an opponent's turn", SdkConditions.IsNotYourTurn,
+        ),
+    )
+
+    private fun restrictedSentence(prefix: Prefix, restriction: Restriction): Phrase<TriggeredAbility> =
+        phrase(
+            "{trigger}${restriction.surface}, {effect}",
+            name = "${prefix.phrase.name} (${restriction.name})",
+        ) {
+            slot("trigger", prefix.phrase)
+            slot("effect", prefix.effect)
+            build {
+                abilityFor(it.value("trigger"), it.value("effect"))
+                    ?.copy(triggerRestriction = restriction.condition)
+            }
+            match { ability ->
+                if (ability.triggerRestriction != restriction.condition) return@match null
+                val bare = ability.copy(triggerRestriction = null)
+                val spec = specOf(bare)
+                val script = scriptFor(bare)
+                if (abilityFor(spec, script)?.copy(id = bare.id) != bare) return@match null
+                bind("trigger" to spec, "effect" to script)
+            }
+        }
+
     /** Every trigger sentence without the cap [onceEachTurn] can put on one. */
     private val uncapped: Phrase<TriggeredAbility> = oneOf(
         "a triggered ability",
         prefixes.map(::sentence) +
+            restrictions.flatMap { restriction -> prefixes.map { restrictedSentence(it, restriction) } } +
             // The one trigger sentence that is not a prefix plus a payoff: its zone rider lands on
             // the *ability* rather than on the event, so it cannot be a [Prefix] and cannot be
             // joined. See [zonedTriggerRule].

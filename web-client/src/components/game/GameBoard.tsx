@@ -30,6 +30,7 @@ import { RenderProfiler } from '@/utils/renderProfiler'
 import { CardPreview } from './card'
 import { TargetingOverlay, ManaColorSelectionOverlay, LifeDisplay, ActiveEffectsBadges, SpeedGauge, DayNightBadge, ConcedeButton, FullscreenButton, SpectatorCountBadge, TeamLifeBanner, EliminationNotice } from './overlay'
 import { HelpDrawer, HelpDrawerButton } from '../help/HelpDrawer'
+import { markLearnSignal } from '@/learn/signals'
 import { styles } from './board/styles'
 
 /**
@@ -1656,14 +1657,23 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
             alignItems: responsive.isMobile ? 'flex-end' : 'stretch',
             gap: responsive.isMobile ? 6 : 8,
           }}>
-            <div style={{
-              display: 'flex',
-              gap: 4,
-              alignItems: 'stretch',
-              justifyContent: 'flex-end',
-            }}>
+            <div
+              // `data-learn` marks are anchors for the Learn-to-Play coach's spotlight — see
+              // `learn/spots.ts`. Attributes only; they change nothing about layout or behaviour.
+              data-learn="controls"
+              style={{
+                display: 'flex',
+                gap: 4,
+                alignItems: 'stretch',
+                justifyContent: 'flex-end',
+              }}
+            >
               <button
-                onClick={requestUndo}
+                data-learn="undo"
+                onClick={() => {
+                  markLearnSignal('undoUsed')
+                  requestUndo()
+                }}
                 disabled={!undoAvailable}
                 title="Undo"
                 style={{
@@ -1695,6 +1705,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                 <i className="ms ms-land" style={{ fontSize: 14 }} />
               </button>
               <button
+                data-learn="priority-mode"
                 onClick={cyclePriorityMode}
                 title={
                   serverPriorityMode === 'fullControl'
@@ -1732,6 +1743,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
               <HelpDrawerButton />
             </div>
             <button
+              data-learn="pass"
               disabled={!passEnabled}
               onClick={() => {
                 submitAction({
@@ -1896,7 +1908,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
 
       {/* Combat buttons (bottom-right) */}
       {isInCombatMode && combatState?.mode === 'declareAttackers' && (
-        <div style={styles.combatButtonContainer}>
+        <div data-learn="combat-buttons" style={styles.combatButtonContainer}>
           {combatState.selectedAttackers.length === 0 ? (
             <>
               <button
@@ -1963,7 +1975,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       )}
 
       {isInCombatMode && combatState?.mode === 'declareBlockers' && (
-        <div style={styles.combatButtonContainer}>
+        <div data-learn="combat-buttons" style={styles.combatButtonContainer}>
           {Object.keys(combatState.blockerAssignments).length === 0 ? (
             <>
               <button

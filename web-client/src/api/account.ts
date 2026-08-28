@@ -120,6 +120,27 @@ export async function fetchMe(): Promise<AccountUser | null> {
 
 // ----- Saved decks -----
 
+/**
+ * Learn to Play progress on the account — the client's own document, stored verbatim by the
+ * server. `{}` when the course was never started there. See `learn/progressStore.ts` for the merge.
+ */
+export async function fetchLearnProgress(): Promise<unknown> {
+  const res = await fetch('/api/auth/me/learn-progress', { headers: authHeaders() })
+  if (res.status === 401) throw new UnauthorizedError()
+  if (!res.ok) throw new Error(`Failed to load course progress (${res.status})`)
+  return res.json()
+}
+
+export async function saveLearnProgress(progress: unknown): Promise<void> {
+  const res = await fetch('/api/auth/me/learn-progress', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(progress),
+  })
+  if (res.status === 401) throw new UnauthorizedError()
+  if (!res.ok) throw new Error(`Failed to save course progress (${res.status})`)
+}
+
 export interface DeckSummary {
   readonly id: number
   readonly name: string

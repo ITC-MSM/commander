@@ -1,0 +1,480 @@
+/**
+ * The coach panel on the game board. Bottom-left, clear of the hand (bottom centre), the
+ * pass/controls cluster (bottom right) and the game-log toggle (the 12px corner below it),
+ * above the board's own overlays but under modals.
+ */
+.coach {
+  --coach-accent: #d9b45c;
+  position: fixed;
+  left: 12px;
+  bottom: 52px;
+  z-index: 600;
+  width: min(340px, calc(100vw - 32px));
+  border-radius: 12px;
+  border: 1px solid rgba(239, 230, 207, 0.16);
+  border-left: 3px solid var(--coach-accent);
+  background: rgba(14, 14, 20, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  color: #c9c3b4;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 10px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.act {
+  --coach-accent: #d9b45c;
+}
+
+.watch {
+  --coach-accent: #4fc3f7;
+}
+
+/* A warning: something the player is about to do that a coach would stop them on. */
+.warn {
+  --coach-accent: #ff9d3c;
+}
+
+/* ---- The answer to a move ------------------------------------------------- */
+/* One line above the tip saying back what the player just did — the Forest is down, the bear
+   attacks, no blocks. Up for a few seconds; the tip is what stays. */
+.notice {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: start;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+  color: #efe6cf;
+  animation: coachIn 0.28s ease-out both;
+}
+
+.noticeTick {
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: var(--coach-accent);
+  color: #1a1408;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  animation: tickIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* ---- Card note ------------------------------------------------------------ */
+/* One line about a card that just arrived on the table and carries a keyword the course has not
+   named yet — deathtouch, first strike, reach. Under the tip, above the objectives. */
+.note {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(239, 230, 207, 0.1);
+  font-size: 12.5px;
+  animation: coachIn 0.28s ease-out both;
+}
+
+.noteGlyph {
+  font-size: 14px;
+  color: var(--coach-accent);
+  line-height: 1.3;
+}
+
+.noteName {
+  color: #efe6cf;
+  font-weight: 600;
+}
+
+.noteKeyword {
+  color: var(--coach-accent);
+  font-weight: 600;
+}
+
+/* The game-over overlay (App.tsx) dims the board at z 1999–2000; the closing card sits above it
+   so "Next mission" is the first thing a finished player can click. */
+.done {
+  --coach-accent: #7ccf8a;
+  z-index: 2100;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--coach-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.close {
+  background: none;
+  border: none;
+  color: #8d877a;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.close:hover {
+  color: #efe6cf;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.body {
+  animation: coachIn 0.28s ease-out both;
+}
+
+@keyframes coachIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.title {
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  font-size: 18px;
+  color: #efe6cf;
+  margin-bottom: 4px;
+}
+
+.text {
+  margin: 0;
+}
+
+/* ---- Objectives ---------------------------------------------------------- */
+.objectives {
+  margin: 0;
+  padding: 10px 0 0;
+  list-style: none;
+  border-top: 1px solid rgba(239, 230, 207, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.objective {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 8px;
+  align-items: center;
+  font-size: 12.5px;
+  color: #a8a294;
+  transition: color 0.3s ease;
+}
+
+.objectiveDone {
+  color: #efe6cf;
+}
+
+.tick {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(239, 230, 207, 0.3);
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1a1408;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.objectiveDone .tick {
+  background: #d9b45c;
+  border-color: #d9b45c;
+  animation: tickIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes tickIn {
+  from {
+    transform: scale(0.4);
+  }
+  60% {
+    transform: scale(1.25);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* ---- Actions ------------------------------------------------------------- */
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.primary {
+  margin-top: 8px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1408;
+  background: linear-gradient(180deg, #ecc96f 0%, #cfa640 100%);
+  border: 1px solid rgba(255, 240, 200, 0.35);
+  border-radius: 7px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.primary:hover {
+  filter: brightness(1.05);
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--coach-accent);
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+/* ---- Tour ---------------------------------------------------------------- */
+.tourCount {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8d877a;
+  margin-bottom: 6px;
+}
+
+.tourNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.tourNav .primary {
+  margin-top: 6px;
+}
+
+/* ---- What you learned ---------------------------------------------------- */
+.lessonsHead {
+  margin-top: 10px;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--coach-accent);
+}
+
+.lessons {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: #c9c3b4;
+  font-size: 12.5px;
+}
+
+/* ---- Collapsed pill ------------------------------------------------------ */
+.pill {
+  --coach-accent: #d9b45c;
+  position: fixed;
+  left: 12px;
+  bottom: 52px;
+  z-index: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #efe6cf;
+  background: rgba(14, 14, 20, 0.94);
+  border: 1px solid rgba(239, 230, 207, 0.16);
+  border-left: 3px solid var(--coach-accent);
+  border-radius: 999px;
+  padding: 7px 14px 7px 10px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.pill:hover {
+  border-color: rgba(239, 230, 207, 0.35);
+}
+
+.pillDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--coach-accent);
+  box-shadow: 0 0 8px var(--coach-accent);
+}
+
+/* ---- Spotlight ----------------------------------------------------------- */
+/* A ring around the board element a tip or tour step names. Pointer-transparent, under the
+   coach panel and every modal, over the board itself. */
+.spotlight {
+  --spot: #ffd76a;
+  position: fixed;
+  z-index: 590;
+  pointer-events: none;
+  border-radius: 12px;
+  border: 2.5px solid var(--spot);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    0 0 22px 2px rgba(255, 215, 106, 0.55),
+    inset 0 0 14px rgba(255, 215, 106, 0.25);
+  animation: spotIn 0.3s ease-out both, spotPulse 1.6s ease-in-out 0.3s infinite;
+  transition: top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+
+/* The tour's ring dims everything else: a cut-out spotlight, so the one thing being named is the
+   one bright thing on the screen. The coach panel (z 600) stays above the dim. */
+.spotlightStrong {
+  border-width: 3px;
+  /* Same as the animation's resting frame, so the dim survives prefers-reduced-motion. */
+  box-shadow:
+    0 0 0 9999px rgba(4, 4, 8, 0.6),
+    0 0 22px 2px rgba(255, 215, 106, 0.6),
+    inset 0 0 16px rgba(255, 215, 106, 0.25);
+  animation: spotIn 0.3s ease-out both, spotPulseStrong 1.6s ease-in-out 0.3s infinite;
+}
+
+@keyframes spotIn {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes spotPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.5),
+      0 0 18px 1px rgba(255, 215, 106, 0.45),
+      inset 0 0 12px rgba(255, 215, 106, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.5),
+      0 0 40px 8px rgba(255, 215, 106, 0.8),
+      inset 0 0 20px rgba(255, 215, 106, 0.4);
+  }
+}
+
+@keyframes spotPulseStrong {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 9999px rgba(4, 4, 8, 0.6),
+      0 0 22px 2px rgba(255, 215, 106, 0.6),
+      inset 0 0 16px rgba(255, 215, 106, 0.25);
+  }
+  50% {
+    box-shadow:
+      0 0 0 9999px rgba(4, 4, 8, 0.6),
+      0 0 46px 10px rgba(255, 215, 106, 0.95),
+      inset 0 0 24px rgba(255, 215, 106, 0.45);
+  }
+}
+
+/* The tip's title, shown inside the pill on phones only — there the pill is the coach most of
+   the time, so it has to say something. */
+.pillTitle {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  /* A phone has no room at the bottom: the hand, the pass button and the combat buttons are all
+     there. The coach lives as a pill (bottom-left, where the desktop's log toggle would be) and
+     opens as a sheet under the top bar, over the opponent's side, only while wanted. */
+  .pill {
+    left: 8px;
+    top: 44px;
+    bottom: auto;
+    max-width: calc(100vw - 120px);
+    padding: 6px 12px 6px 9px;
+    font-size: 11.5px;
+  }
+
+  .pillTitle {
+    display: inline;
+    font-weight: 400;
+    color: #c9c3b4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .coach {
+    left: 8px;
+    right: 8px;
+    top: 44px;
+    bottom: auto;
+    width: auto;
+    max-height: min(46vh, 380px);
+    overflow-y: auto;
+    font-size: 12px;
+    padding: 8px 10px 10px;
+    gap: 8px;
+  }
+
+  .done {
+    /* The closing card is the one moment the sheet should sit over the middle of the table. */
+    top: 50%;
+    transform: translateY(-50%);
+    max-height: 80vh;
+  }
+
+  .title {
+    font-size: 15px;
+  }
+
+  .objectives {
+    padding-top: 8px;
+    gap: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .body,
+  .objectiveDone .tick,
+  .spotlight {
+    animation: none;
+  }
+}

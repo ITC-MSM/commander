@@ -1,16 +1,10 @@
 package com.wingedsheep.mtg.sets.definitions.spm.cards
 
 import com.wingedsheep.sdk.core.Keyword
-import com.wingedsheep.sdk.core.Zone
-import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.CardDestination
-import com.wingedsheep.sdk.scripting.effects.CardSource
-import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
-import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Mysterio's Phantasm
@@ -30,10 +24,10 @@ val MysteriosPhantasm = card("Mysterio's Phantasm") {
     keywords(Keyword.FLYING, Keyword.VIGILANCE)
     triggeredAbility {
         trigger = Triggers.Attacks
-        effect = Effects.Composite(
-            GatherCardsEffect(CardSource.TopOfLibrary(DynamicAmount.Fixed(1)), storeAs = "milledThisWay"),
-            MoveCollectionEffect(from = "milledThisWay", destination = CardDestination.ToZone(Zone.GRAVEYARD))
-        )
+        // The published recipe, not a hand-built pipeline: `Patterns.Library.mill` stamps
+        // `isMill = true` on the gather, which is what CR 701.13's "mills that many cards plus
+        // four instead" replacements key off. The hand-rolled version lost that flag.
+        effect = Patterns.Library.mill(1)
     }
     metadata {
         rarity = Rarity.COMMON

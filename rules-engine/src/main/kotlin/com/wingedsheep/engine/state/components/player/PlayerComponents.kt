@@ -1431,13 +1431,28 @@ data class PermanentsEnteredUnderControlThisTurnComponent(
 }
 
 /**
- * Marker component indicating that this player has put a counter on a creature this turn.
- * Cleared at end of turn by CleanupPhaseManager.
+ * The kinds of counter this player has put on a creature this turn. Cleared at end of turn by
+ * CleanupPhaseManager.
  *
- * Used for conditions like "if you put a counter on a creature this turn" (Lasting Tarfire).
+ * Presence alone answers the kind-agnostic wording, "if you put a counter on a creature this turn"
+ * (Lasting Tarfire) — read through `TurnTracker.COUNTERS_PUT_ON_CREATURE`. [kinds] narrows it to
+ * one spelling, "as long as you've put one or more +1/+1 counters on a creature this turn"
+ * (Sigardian Paladin), read through `PutCounterKindOnCreatureThisTurn`.
+ *
+ * The kind has to be recorded here rather than derived later: this is turn *history*, and by the
+ * time the condition is read the counters may be gone, the creature may have left the battlefield,
+ * or it may have stopped being a creature — none of which unsets the fact (Sigardian Paladin's
+ * first ruling). A component that only remembered "some counter" could never answer the narrower
+ * question, and one that remembered a single kind would lose the second placement of the turn.
  */
 @Serializable
-data object PutCounterOnCreatureThisTurnComponent : Component
+data class PutCounterOnCreatureThisTurnComponent(
+    val kinds: Set<String> = emptySet()
+) : Component {
+    /** This turn's record plus one more placement of [kind]. */
+    fun with(kind: String): PutCounterOnCreatureThisTurnComponent =
+        if (kind in kinds) this else copy(kinds = kinds + kind)
+}
 
 /**
  * Marks a player as having been dealt combat damage this turn.

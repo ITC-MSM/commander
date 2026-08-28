@@ -35,6 +35,23 @@ package com.wingedsheep.assay.syntax
  * ("B.F.M.", "S.N.E.A.K.", "Ph.D."). Those lines decline, which is what [decapitalize] returning
  * null means, and they declined before this too.
  *
+ * A **granted ability's opening quotation mark** is the fourth, and it arrives with the same
+ * argument as the other three. `Enchanted creature has "Whenever this creature deals combat damage,
+ * create a Blood token."` puts a capital after `has "` that no other break reaches, and the
+ * alternative is a capitalized second copy of every trigger prefix in
+ * [com.wingedsheep.assay.grammar.Triggers]. The corpus states this one too: of 368 `has "`
+ * occurrences outside reminder text, 367 are followed by an uppercase letter or a symbol. The one
+ * exception is Master of the Hunt's `has "bands with other creatures named Wolves of the Hunt."`,
+ * which declined before this and declines after it.
+ *
+ * The break is `has "` and not a bare `"`, and not `have "` either. A bare quotation mark would also
+ * match every *closing* one — harmless, since what follows is punctuation — but it would also reach
+ * the 101 quotations in the corpus that are ordinary prose ("the \"legend rule\" doesn't apply"),
+ * and a lowercase letter at a sentence start makes [decapitalize] refuse the whole line. `have "` is
+ * the plural lord position and is genuinely the same shape, but five of its 221 occurrences are
+ * "have \"bands with other legendary creatures\"" — so it would cost five lines to buy a family
+ * nothing needs yet, and it stays out until something does.
+ *
  * A **mode's bullet** is the third such place, and it arrived with the same argument the full stop
  * did. Normalization keeps a modal card's rows on one line (see
  * [com.wingedsheep.assay.normalize.Normalizer]), so "Choose one —\n• Destroy target artifact." puts
@@ -77,8 +94,9 @@ object SentenceCase {
     }
 
     /**
-     * The three places Oracle starts a new sentence *inside* one ability line: after an ability
-     * cost's `": "`, after a full stop, and at a mode's bullet.
+     * The four places Oracle starts a new sentence *inside* one ability line: after an ability
+     * cost's `": "`, after a full stop, at a mode's bullet, and inside a granted ability's opening
+     * quotation mark.
      *
      * The full stop is what lets a line spelling two sentences — "Target creature gets +1/+3 until
      * end of turn. Untap that creature." — slot the ordinary effect vocabulary twice instead of
@@ -86,7 +104,7 @@ object SentenceCase {
      * same one the bullet carries, and it is why this file exists rather than a `capitalized(...)`
      * combinator in the grammar.
      */
-    private val SENTENCE_BREAK = Regex("""(?:: |\. |\n• )""")
+    private val SENTENCE_BREAK = Regex("""(?:: |\. |\n• |has ")""")
 }
 
 /**

@@ -50,7 +50,7 @@ val UnluckyCabbageMerchant = card("Unlucky Cabbage Merchant") {
     // onto the battlefield tapped. If you search your library this way, put this creature on the
     // bottom of its owner's library, then shuffle.
     triggeredAbility {
-        trigger = Triggers.YouSacrificeOneOrMore(GameObjectFilter.Artifact.withSubtype("Food"))
+        trigger = Triggers.YouSacrificeA(GameObjectFilter.Artifact.withSubtype("Food"))
         effect = MayEffect(
             effect = Effects.Composite(
                 Patterns.Library.searchLibrary(

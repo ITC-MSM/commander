@@ -1933,6 +1933,20 @@ object Conditions {
         trackerAtLeast(com.wingedsheep.sdk.scripting.values.TurnTracker.COUNTERS_PUT_ON_CREATURE)
 
     /**
+     * "As long as you've put one or more [counterType] counters on a creature this turn"
+     * (Sigardian Paladin) — the kind-scoped reading of [PutCounterOnCreatureThisTurn], off the same
+     * per-player record.
+     *
+     * "A creature", not this one: use `Filters`' `receivedCounterThisTurn` predicate for the
+     * per-permanent wording ("on **~** this turn").
+     */
+    fun PutCounterKindOnCreatureThisTurn(
+        counterType: String,
+        player: Player = Player.You
+    ): ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.PutCounterKindOnCreatureThisTurn(counterType, player)
+
+    /**
      * Intervening-if: "if a creature died this turn" (global — any controller).
      * Used for cards like Scorpion, Seething Striker.
      */

@@ -81,6 +81,18 @@ export const HELP_SECTIONS: readonly { id: HelpSection; title: string; blurb: st
 export const HELP_TOPICS: readonly HelpTopic[] = [
   // ── Getting started ────────────────────────────────────────────────────
   {
+    id: 'learn-to-play',
+    section: 'getting-started',
+    title: 'New to Magic itself?',
+    summary:
+      'This guide assumes you know the game. If you do not, the Learn to Play course teaches it by playing: a handful of short games against the AI, each from a board set up to teach one thing, with a coach saying what to do next and pointing at the part of the table to do it on.',
+    body: [
+      { kind: 'p', text: 'The course lives at /learn and needs no name or account. Progress is kept in this browser; the landing page points at it until you have finished.' },
+    ],
+    links: [{ label: 'Learn to play', href: '/learn' }],
+    related: ['first-game'],
+  },
+  {
     id: 'pick-a-name',
     section: 'getting-started',
     title: 'Picking a name',
@@ -482,6 +494,18 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     ],
     shortcuts: ['stack-yield-menu'],
     related: ['priority-modes'],
+  },
+  {
+    id: 'card-preview',
+    section: 'playing',
+    title: 'Reading a card in full',
+    summary:
+      'Hover any card — hand, battlefield, stack, or the top of a graveyard or exile pile — and it opens full-size beside the pointer. On a touch screen, press and hold the card instead, or tap it and pick “View card”.',
+    body: [
+      { kind: 'p', text: 'The preview is read-only; nothing you do to it changes the game. Press F while a double-faced card is open to see its other face.' },
+    ],
+    shortcuts: ['flip-dfc'],
+    related: ['targeting-and-combat', 'zone-browsers'],
   },
   {
     id: 'targeting-and-combat',

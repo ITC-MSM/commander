@@ -476,6 +476,35 @@ class StepsTest : StringSpec({
             fragment("At the beginning of each end step, sacrifice ~ unless you pay {2}.")
     }
 
+    // The shuffle rides the move rather than being a second clause: `ZonePlacement.Shuffled` puts
+    // each card into its *owner's* library and shuffles that one, which is what "their library"
+    // means when the graveyard is "their graveyard". A separate `ShuffleLibraryEffect()` step would
+    // shuffle the controller's instead, and would also split the sentence into two clauses.
+    "shuffling targets out of a graveyard is one effect per card" {
+        fragment(
+            "Target player shuffles up to four target cards from their graveyard into their library."
+        ) shouldBe CardFragment(
+            script = CardScript(
+                spellEffect = ForEachTargetEffect(
+                    listOf(Effects.ShuffleIntoLibrary(EffectTarget.ContextTarget(0)))
+                ),
+                targetRequirements = listOf(
+                    com.wingedsheep.sdk.scripting.targets.TargetObject(
+                        count = 4,
+                        optional = true,
+                        filter = TargetFilter.CardInGraveyard,
+                    ),
+                ),
+            )
+        )
+        roundTrips(
+            "Target player shuffles up to four target cards from their graveyard into their library."
+        )
+        roundTrips(
+            "Target player shuffles up to three target cards from their graveyard into their library."
+        )
+    }
+
     // Both leaves in one file: a quantity of cards is a word, a quantity of life or damage a numeral.
     "the counted verbs keep the two number conventions apart" {
         roundTrips("You gain 3 life.")
@@ -483,5 +512,56 @@ class StepsTest : StringSpec({
         roundTrips("You gain 2 life for each Mountain target opponent controls.")
         roundTrips("~ deals X damage to any target.")
         roundTrips("Target creature gets +3/+3 and gains flying until end of turn.")
+    }
+    "a forced sacrifice names its player and reads the whole four-by-two product" {
+        fragment("Each player sacrifices two creatures of their choice.") shouldBe CardFragment(
+            script = CardScript(
+                spellEffect = Effects.Sacrifice(
+                    GameObjectFilter.Creature,
+                    count = 2,
+                    target = EffectTarget.PlayerRef(com.wingedsheep.sdk.scripting.references.Player.Each),
+                )
+            )
+        )
+        listOf("each player", "each opponent", "target player", "target opponent").forEach { who ->
+            val subject = who.replaceFirstChar { c -> c.uppercase() }
+            roundTrips("$subject sacrifices a creature of their choice.")
+            roundTrips("$subject sacrifices two lands of their choice.")
+        }
+    }
+
+    // The bare imperative is a different SDK type (`SacrificeEffect`, no player), so the two
+    // sentences must not collapse onto one model — this is the pair the differential watches.
+    "the bare sacrifice imperative stays a different rule from the named one" {
+        fragment("Sacrifice a creature.") shouldNotBe
+            fragment("Each player sacrifices a creature of their choice.")
+        roundTrips("Sacrifice a creature.")
+    }
+
+    "an announced number is spent by the sentence that follows it" {
+        fragment("Choose a number between 0 and 13. Each player sacrifices that many creatures of their choice.") shouldBe
+            CardFragment(
+                script = CardScript(
+                    spellEffect = Effects.ChooseNumberThen(
+                        then = Effects.Sacrifice(
+                            GameObjectFilter.Creature,
+                            count = com.wingedsheep.sdk.scripting.values.DynamicAmount.XValue,
+                            target = EffectTarget.PlayerRef(com.wingedsheep.sdk.scripting.references.Player.Each),
+                        ),
+                        minValue = 0,
+                        maxValue = 13,
+                        prompt = "Choose a number between 0 and 13",
+                    )
+                )
+            )
+        roundTrips("Choose a number between 0 and 13. Each player sacrifices that many creatures of their choice.")
+        roundTrips("Choose a number between 1 and 4. Target opponent sacrifices that many lands of their choice.")
+    }
+
+    // "that many" is only legal where a preceding sentence announced the number. Offered at the
+    // top level it would read a bare `XValue` out of nowhere — the reversible-but-wrong class.
+    "the announced-count sacrifice is unreachable without its antecedent" {
+        Grammar.abilityLine.parseLine("Each player sacrifices that many creatures of their choice.")
+            .shouldBeInstanceOf<ParseOutcome.Declined>()
     }
 })

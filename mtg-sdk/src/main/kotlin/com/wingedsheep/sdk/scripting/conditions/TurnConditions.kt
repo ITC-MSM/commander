@@ -344,6 +344,37 @@ data class PlayerPlayedLandThisTurn(
 }
 
 /**
+ * Condition: "as long as [player] has put one or more [counterType] counters on a creature this
+ * turn" — Sigardian Paladin's trample-and-lifelink gate.
+ *
+ * ### Why this is not `TurnTracker.COUNTERS_PUT_ON_CREATURE`
+ *
+ * That tracker is the kind-agnostic reading, "if you put a counter on a creature this turn"
+ * (Lasting Tarfire), and a `TurnTracker` constant has nowhere to carry a kind. This condition reads
+ * the *same* per-player record — so the two can never disagree about whether a placement happened —
+ * and narrows it to one spelling. `null` [counterType] is exactly the wide reading, which keeps a
+ * single evaluator branch answering both.
+ *
+ * ### Why it is not the per-permanent predicate either
+ *
+ * `StatePredicate.ReceivedCounterThisTurn` answers "you've put one or more +1/+1 counters on **~**
+ * this turn" (Beast, Erudite Aerialist; Kid Loki) — one named permanent. Sigardian Paladin says "on
+ * **a** creature": any creature, including one that has since left the battlefield, lost the
+ * counters, or stopped being a creature (its first ruling says all three still count). Only a
+ * player-scoped record of the turn's history can answer that; a board scan cannot.
+ */
+@SerialName("PutCounterKindOnCreatureThisTurn")
+@Serializable
+data class PutCounterKindOnCreatureThisTurn(
+    val counterType: String? = null,
+    val player: Player = Player.You
+) : Condition {
+    override val description: String =
+        "if ${player.description} put one or more ${counterType?.plus(" ") ?: ""}counters on a " +
+            "creature this turn"
+}
+
+/**
  * Condition: "if this is the first spell you've cast this turn that mana from a Treasure
  * was spent to cast." Used by Rain of Riches.
  *

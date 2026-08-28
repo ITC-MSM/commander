@@ -1427,9 +1427,10 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "PermanentsSacrificedEvent",
-                    "filter": "creature"
+                    "filter": "creature",
+                    "perPermanent": true
                 },
-                "binding": "ANY",
+                "binding": "OTHER",
                 "effect": {
                     "type": "Composite",
                     "effects": [

@@ -4,6 +4,8 @@ import com.wingedsheep.assay.syntax.ParseOutcome
 import com.wingedsheep.assay.syntax.parseLine
 import com.wingedsheep.assay.syntax.printLine
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Subtype
+import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.ActivationRestriction
@@ -98,6 +100,27 @@ class RestrictionsTest : StringSpec({
     // prints rather than the alternation's order.
     "an unrestricted ability still prints without the sentence" {
         roundTrips("{T}: Destroy target tapped creature.")
+    }
+
+    // The conditional-flash line is the cast restriction's mirror image: it fills a `CardScript`
+    // slot of its own, carries no effect, and *widens* when the card may be cast where a restriction
+    // narrows it. Unconditional flash stays the printed keyword, so nothing is underdetermined.
+    "conditional flash is a line with its own slot" {
+        val line = "This spell has flash as long as you control an artifact."
+        fragment(line).script.conditionalFlash shouldBe
+            Conditions.YouControl(GameObjectFilter.Artifact)
+        roundTrips(line)
+    }
+
+    // The condition is [Conditions] slotted whole, so a bare subtype reaches it too — as the
+    // `alternate` spelling [Filters] registers for it, which is why Supernatural Rescue is a
+    // VARIANT rather than a byte round trip. The reading is the point; the spelling moved.
+    "a bare subtype reaches the conditional-flash slot as a variant" {
+        val line = "This spell has flash as long as you control a Spirit."
+        fragment(line).script.conditionalFlash shouldBe
+            Conditions.YouControl(GameObjectFilter.Permanent.withSubtype(Subtype.SPIRIT))
+        Grammar.abilityLine.printLine(fragment(line)) shouldBe
+            "This spell has flash as long as you control a Spirit permanent."
     }
 
     // A condition the SDK cannot name declines rather than being approximated by the nearest one.
