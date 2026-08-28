@@ -18,6 +18,7 @@
 import type { ScenarioSpec } from '@/components/scenario/types'
 import type { ClientCard, ClientGameState } from '@/types/gameState'
 import type { EntityId } from '@/types'
+import type { SpotId } from './spots'
 
 export type MissionId = 'first-steps' | 'blocking' | 'instants' | 'real-game'
 
@@ -44,6 +45,25 @@ export interface Objective {
 
 /** Mission-specific wording for a coach tip key; the generic tip is used where none is given. */
 export interface HintOverride {
+  title?: string
+  body?: string
+  /** The board element to ring while the tip is up — see `learn/spots.ts`. */
+  spot?: SpotId
+}
+
+/** A card the brief shows before the game does, with one plain line on what it is for. */
+export interface OpeningCard {
+  name: string
+  note: string
+}
+
+/**
+ * One step of the table tour the coach walks through when the board first appears: a spot on the
+ * board to ring, and two sentences about it. Gesture words (`{read}`, `{click}`) and `{pass}` are
+ * substituted for this device and the real button — see `wordTip` in `learn/coach.ts`.
+ */
+export interface TourStep {
+  spot: SpotId
   title: string
   body: string
 }
@@ -61,10 +81,12 @@ export interface Mission {
   /** What the brief says you will do — three lines, no more. */
   brief: readonly string[]
   /** What the board shows first, so the brief can put the cards on the table before the game does. */
-  openingCards: readonly string[]
+  openingCards: readonly OpeningCard[]
   objectives: readonly Objective[]
-  /** Shown once, when the board first appears. */
-  intro: string
+  /** Walked through once, when the board first appears — each step rings one part of the table. */
+  tour: readonly TourStep[]
+  /** What the closing card says you now know — two or three lines, game and app together. */
+  lessons: readonly string[]
   hints: Partial<Record<string, HintOverride>>
   spec: (playerName: string) => ScenarioSpec
 }
@@ -213,34 +235,63 @@ export const MISSIONS: readonly Mission[] = [
     frame: 'G',
     minutes: 4,
     brief: [
-      'Play one land a turn and tap them for mana — your lands tap on their own when you cast.',
+      'Play one land a turn. Lands make mana, and your lands tap for you when you cast something.',
       'Cast creatures. A creature that just arrived has to wait a turn before it can attack.',
       'Attack with what can attack. Get the Tutor from 8 life to 0.',
     ],
-    openingCards: ['Forest', 'Grizzly Bears', 'Runeclaw Bear'],
+    openingCards: [
+      { name: 'Forest', note: 'A land. Free to play, one per turn; tap it for one green mana.' },
+      { name: 'Grizzly Bears', note: 'A creature. Costs two mana; hits for 2 and takes 2.' },
+      { name: 'Runeclaw Bear', note: 'The same bear in a different coat. Two of them is 4 damage a turn.' },
+    ],
     objectives: [playedLand, castCreature, attacked, won],
-    intro:
-      'This is the table. Your cards are at the bottom — the hand you can play from — and your lands and creatures go on the battlefield above them. Up top is the Tutor, on 8 life. Bring that to zero.',
+    tour: [
+      {
+        spot: 'hand',
+        title: 'Your hand.',
+        body: 'The cards you can play from. Cards you can afford glow. {read} to read it in full — that works anywhere on the table.',
+      },
+      {
+        spot: 'battlefield',
+        title: 'Your battlefield.',
+        body: 'Where your lands and creatures live once played. Two Forests are already down. The Tutor’s side is the mirror image above.',
+      },
+      {
+        spot: 'phase-strip',
+        title: 'The turn strip.',
+        body: 'A turn is a row of steps; the lit dot is where you are. Your turn, then theirs, then yours again.',
+      },
+      {
+        spot: 'pass',
+        title: 'The big button.',
+        body: 'When you are done, press it. It always says where it takes you next — right now, {pass}.',
+      },
+    ],
+    lessons: [
+      'Lands make mana; one a turn. Creatures cost mana and wait a turn before attacking.',
+      'Drag a card onto the battlefield to play it, or {click-lower} it and choose. {read} to read it.',
+      'The blue button moves the game on and names the next stop.',
+    ],
     hints: {
       land: {
         title: 'Play a land.',
-        body: 'Click the Forest in your hand, then Play Forest. Lands are free, one per turn, and every land you have is one more mana next turn.',
+        body: 'Drag the Forest from your hand up onto the battlefield — or {click-lower} it and choose Play Forest. Lands are free, one per turn, and every land is one more mana each turn.',
       },
       'land-and-cast': {
         title: 'Land first, then a creature.',
-        body: 'Click the Forest in your hand, then Play Forest. Then click Grizzly Bears and Cast it — it costs two mana, and your lands tap for you.',
+        body: 'Drag the Forest up onto the battlefield, or {click-lower} it and choose Play Forest. Then do the same with Grizzly Bears — it costs two mana, and your lands tap for you.',
       },
       cast: {
         title: 'Cast a creature.',
-        body: 'The cards you can afford light up. Click Grizzly Bears, then Cast. It lands on the battlefield, but it cannot attack until your next turn — that is summoning sickness.',
+        body: 'The cards you can afford glow. Drag Grizzly Bears onto the battlefield, or {click-lower} it and choose Cast. It lands but cannot attack until your next turn — that is summoning sickness.',
       },
       attack: {
         title: 'Attack!',
-        body: 'Press Attack All — or click a creature and then Attack with 1. The Tutor has nothing to block with, so every point of power goes straight to their life total.',
+        body: 'Press Attack All — or {click-lower} a creature and then Attack with 1. The Tutor has nothing to block with, so every point of power comes straight off their life.',
       },
       'pass-to-combat': {
         title: 'Nothing left to do — press {pass}.',
-        body: 'It is the blue button at the bottom right. The turn moves on; if a creature of yours can attack, the game stops at combat and asks you.',
+        body: 'The blue button at the bottom right. The turn moves on; if a creature of yours can attack, the game stops at combat and asks you.',
       },
       pass: {
         title: 'Nothing to do here — press {pass}.',
@@ -248,7 +299,7 @@ export const MISSIONS: readonly Mission[] = [
       },
       waiting: {
         title: 'The Tutor is taking a turn.',
-        body: 'They will play a land and pass. Watch the phase strip at the top — it comes back to you soon.',
+        body: 'They will play a land and pass. Watch the strip at the top — the lit dot walks through their turn and comes back to you.',
       },
     },
     spec: (name) => ({
@@ -285,26 +336,59 @@ export const MISSIONS: readonly Mission[] = [
       'A blocked attacker hits your creature instead of you. Compare power against toughness before you block.',
       'You start on 14 life with one creature. Their Bloodrock Cyclops must attack every turn — make it pay, then build up and win.',
     ],
-    openingCards: ['Giant Spider', 'Centaur Courser', 'Benalish Knight'],
+    openingCards: [
+      { name: 'Giant Spider', note: 'On the battlefield already. 2 power, 4 toughness: it blocks a 3/3 and lives.' },
+      { name: 'Centaur Courser', note: 'A 3/3 for three mana. Kills their Ogre in a fight and survives.' },
+      { name: 'Benalish Knight', note: 'Flash: an instant-speed creature. Cast it on their turn and surprise-block.' },
+    ],
     objectives: [blocked, killedInCombat, won],
-    intro:
-      'It is the Tutor’s turn, and they have two creatures to your one. Their Bloodrock Cyclops (3/3) is forced to attack every combat. Your Giant Spider is a 2/4 — four toughness means it survives three damage. When they attack, put it in front of the biggest thing coming.',
+    tour: [
+      {
+        spot: 'opponent-battlefield',
+        title: 'Their side.',
+        body: 'Two creatures to your one. The Bloodrock Cyclops (3/3) has to attack every combat — {read} to see it written on the card.',
+      },
+      {
+        spot: 'battlefield',
+        title: 'Your Giant Spider.',
+        body: 'The numbers in the corner are power / toughness: 2/4. Four toughness means it survives three damage, so the Cyclops cannot kill it.',
+      },
+      {
+        spot: 'log',
+        title: 'The log.',
+        body: 'Everything that happens is written down here. Combat goes by quickly; when you wonder what just hit you, open the log.',
+      },
+    ],
+    lessons: [
+      'Block by dragging your creature onto the attacker. An untapped creature can block one attacker.',
+      'Power is what a creature deals, toughness is what it survives. A blocker with more toughness than their power walks away.',
+      'Attacking taps a creature, so it cannot block on their turn. Keep a wall home when you need one.',
+    ],
     hints: {
       block: {
         title: 'Choose your blocks.',
-        body: 'Drag Giant Spider onto the Cyclops (or click the Spider, then the Cyclops). It survives 3 damage, so that block costs you nothing; whatever is unblocked hits you. Then press Confirm Blocks.',
+        body: 'Drag Giant Spider onto the Cyclops — an arrow appears. It survives 3 damage, so that block costs you nothing; whatever is unblocked hits you. Then press Confirm Blocks.',
+        spot: 'battlefield',
       },
       'land-and-cast': {
         title: 'Your turn — build up.',
-        body: 'Click a land in your hand and play it, then click a creature and cast it. Centaur Courser is a 3/3: it kills the Ogre and survives, and trades with the Cyclops.',
+        body: 'Play a land, then a creature — drag them up, or {click-lower} and choose. Centaur Courser is a 3/3: it kills the Ogre and survives, and trades with the Cyclops.',
       },
       attack: {
         title: 'Attack — but count first.',
-        body: 'Click the creatures to send in, then Attack with N. Anything that attacks is tapped on their turn and cannot block, so keep the Spider home if you still need a wall. Skip Attacking is fine too.',
+        body: '{click} the creatures to send in, then Attack with N. Anything that attacks is tapped on their turn and cannot block, so keep the Spider home if you still need a wall. Skip Attacking is fine too.',
       },
       respond: {
+        title: 'Their spell is on the stack.',
+        body: 'Benalish Knight has flash — it can be cast on their turn, like an instant. Cast it now and you have a second blocker before they attack; or press {pass} and keep it up your sleeve.',
+      },
+      'respond-window': {
         title: 'Their turn.',
-        body: 'You have nothing to cast at instant speed, so press {pass}. If they attack, you will be asked to block.',
+        body: 'Benalish Knight has flash, so you may cast it now — otherwise press {pass}. If they attack, you will be asked to block.',
+      },
+      'respond-attack': {
+        title: 'The Cyclops is coming.',
+        body: 'Attackers are declared; blocks come next. Benalish Knight cast now can block this very attack — first strike means it deals its damage before the creature it blocks. Or press {pass} and block with the Spider alone.',
       },
     },
     spec: (name) => ({
@@ -349,14 +433,43 @@ export const MISSIONS: readonly Mission[] = [
       'Spells go on the stack and resolve top-down: your response happens before the spell it answers.',
       'When Lightning Bolt targets your bear, save it with Giant Growth. Then win.',
     ],
-    openingCards: ['Grizzly Bears', 'Giant Growth', 'Centaur Courser'],
+    openingCards: [
+      { name: 'Grizzly Bears', note: 'Already on the battlefield, and about to be shot at.' },
+      { name: 'Giant Growth', note: 'An instant: +3/+3 until end of turn. Cast it in response and the bear survives the Bolt.' },
+      { name: 'Centaur Courser', note: 'Your next creature, once you have a third Forest and a quiet moment.' },
+    ],
     objectives: [castInstant, attacked, won],
-    intro:
-      'You have Grizzly Bears on the battlefield and Giant Growth in hand — an instant that gives +3/+3 until end of turn. It is the Tutor’s turn, and they have three Mountains. When a spell of theirs appears in the middle of the table, that is the stack, and the game will stop to ask if you want to respond.',
+    tour: [
+      {
+        spot: 'stack',
+        title: 'The stack.',
+        body: 'When anyone casts a spell it appears here first, and nothing happens until everybody passes. That gap is your window to respond.',
+      },
+      {
+        spot: 'priority-mode',
+        title: 'Auto.',
+        body: 'This switch decides how often the game stops to ask you. On Auto it stops whenever you hold an instant you can cast — so the Bolt will wait for you.',
+      },
+      {
+        spot: 'hand',
+        title: 'Giant Growth.',
+        body: 'An instant: +3/+3 until end of turn. When Lightning Bolt shows up on the stack aimed at your bear, cast this at the bear.',
+      },
+    ],
+    lessons: [
+      'A spell waits on the stack until everyone passes. The last spell cast resolves first.',
+      'An instant can be cast on anyone’s turn — you get a window whenever the game stops for you.',
+      'The Auto switch controls when the game stops to ask; it stops on its own when you hold an instant.',
+    ],
     hints: {
       respond: {
         title: 'Respond!',
-        body: 'Their spell is on the stack and has not happened yet. Click Giant Growth in your hand, Cast it, and pick Grizzly Bears as the target. Yours resolves first, because it was cast last.',
+        body: 'Their spell is on the stack and has not happened yet. Drag Giant Growth out — or {click-lower} it and choose Cast — and pick Grizzly Bears as the target. Yours resolves first, because it was cast last.',
+        spot: 'hand',
+      },
+      target: {
+        title: 'Aim it at the bear.',
+        body: 'Giant Growth needs a creature to grow. Grizzly Bears is highlighted — {click-lower} it, then Confirm. It becomes 5/5 until end of turn, and 3 damage no longer kills it.',
       },
       'land-and-cast': {
         title: 'Your turn.',
@@ -364,7 +477,7 @@ export const MISSIONS: readonly Mission[] = [
       },
       attack: {
         title: 'Attack.',
-        body: 'Click a creature, then Attack with N. Even when they have a blocker, an instant in hand turns a bad fight into a good one — cast it after blocks are declared.',
+        body: '{click} a creature, then Attack with N. Even when they have a blocker, an instant in hand turns a bad fight into a good one — cast it after blocks are declared.',
       },
     },
     spec: (name) => ({
@@ -379,8 +492,10 @@ export const MISSIONS: readonly Mission[] = [
       player2: {
         lifeTotal: 8,
         battlefield: [{ name: 'Mountain' }, { name: 'Mountain' }, { name: 'Mountain' }],
-        hand: ['Lightning Bolt', 'Shock', 'Mountain'],
-        library: curve(['Goblin Piker', 'Volcanic Hammer', 'Gray Ogre', 'Lightning Strike', 'Hill Giant', 'Raging Goblin', 'Bloodrock Cyclops'], ['Mountain']),
+        // Bolt is the only burn in hand: given Shock as well, the AI opens with the cheaper one
+        // and the brief's "when Lightning Bolt targets your bear" names a card that never shows.
+        hand: ['Lightning Bolt', 'Mountain'],
+        library: curve(['Shock', 'Goblin Piker', 'Volcanic Hammer', 'Gray Ogre', 'Lightning Strike', 'Hill Giant', 'Raging Goblin', 'Bloodrock Cyclops'], ['Mountain']),
       },
       phase: 'PRECOMBAT_MAIN',
       activePlayer: 2,
@@ -401,10 +516,34 @@ export const MISSIONS: readonly Mission[] = [
       'Play a land every turn, spend your mana, and count before you attack or block.',
       'Win or lose, finishing this game finishes the course.',
     ],
-    openingCards: ['Grizzly Bears', 'Benalish Knight', 'Runeclaw Bear'],
+    openingCards: [
+      { name: 'Grizzly Bears', note: 'On the battlefield from the start, ready to attack.' },
+      { name: 'Benalish Knight', note: 'A 2/2 with first strike and flash — it deals its damage before the other creature does.' },
+      { name: 'Runeclaw Bear', note: 'A second bear for the second turn.' },
+    ],
     objectives: [playedLand, castCreature, attacked, won],
-    intro:
-      'A real game: twenty life each, a creature apiece already on the board, and a full deck to draw from. The coach keeps saying what the board is waiting for; the decisions are yours.',
+    tour: [
+      {
+        spot: 'controls',
+        title: 'The controls.',
+        body: 'Undo takes back a tap or a cast the game can still rewind. The land icon switches to choosing your own lands to tap. ? Help explains everything else.',
+      },
+      {
+        spot: 'piles',
+        title: 'Your piles.',
+        body: 'Deck, graveyard and exile. {click} a pile to browse what is in it — your graveyard is where creatures go when they die.',
+      },
+      {
+        spot: 'opponent-life',
+        title: 'Twenty life.',
+        body: 'Life totals sit either side of the turn strip. Zero loses. The coach keeps saying what the board is waiting for; the decisions are yours.',
+      },
+    ],
+    lessons: [
+      'A full game: play a land every turn, spend your mana, count before you attack or block.',
+      'Undo, manual tapping and ? Help are in the bottom-right corner; the piles open when clicked.',
+      'You have played Magic. The PLAY menu has quick games against the AI, drafts and other people.',
+    ],
     hints: {},
     spec: (name) => ({
       player1Name: name,

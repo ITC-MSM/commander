@@ -34,6 +34,7 @@ export function GameLog() {
   if (!expanded) {
     return (
       <button
+        data-learn="log"
         onClick={() => setExpanded(true)}
         style={styles.toggleButton}
       >

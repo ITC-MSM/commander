@@ -15,6 +15,7 @@ import type { ClientCard, ClientGameState } from '@/types/gameState'
 import type { EntityId } from '@/types'
 import { COURSE_MINUTES, MISSIONS, missionById, missionCardNames, nextMission, type ObjectiveContext } from './missions'
 import { hasStarted, nextIncomplete } from './progressStore'
+import { ALL_SPOTS } from './spots'
 
 const SETS_ROOT = resolve(__dirname, '../../../mtg-sets')
 const BASICS = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest']
@@ -65,8 +66,26 @@ describe('the missions', () => {
       }
       // The opening cards the brief shows really are in the opening hand or on the board.
       const opening = new Set([...(spec.player1?.hand ?? []), ...(spec.player1?.battlefield ?? []).map((c) => c.name)])
-      expect(m.openingCards.filter((n) => !opening.has(n))).toEqual([])
+      expect(m.openingCards.map((c) => c.name).filter((n) => !opening.has(n))).toEqual([])
     }
+  })
+
+  it('walk the table before the game, and say what was learned after it', () => {
+    for (const m of MISSIONS) {
+      expect(m.tour.length, m.id).toBeGreaterThanOrEqual(2)
+      expect(m.tour.length, m.id).toBeLessThanOrEqual(4)
+      for (const step of m.tour) {
+        expect(ALL_SPOTS).toContain(step.spot)
+        expect(step.body.length).toBeLessThan(220)
+      }
+      expect(m.lessons.length, m.id).toBeGreaterThanOrEqual(2)
+      expect(m.lessons.length, m.id).toBeLessThanOrEqual(3)
+      for (const c of m.openingCards) expect(c.note.length, c.name).toBeGreaterThan(10)
+      for (const hint of Object.values(m.hints)) if (hint?.spot) expect(ALL_SPOTS).toContain(hint.spot)
+    }
+    // Every card the course teaches with is met on the table before it is named: the first
+    // mission's tour covers the hand, the battlefield, the turn strip and the pass button.
+    expect(missionById('first-steps')?.tour.map((s) => s.spot)).toEqual(['hand', 'battlefield', 'phase-strip', 'pass'])
   })
 
   it('keeps the promise on the home page honest', () => {

@@ -496,6 +496,18 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     related: ['priority-modes'],
   },
   {
+    id: 'card-preview',
+    section: 'playing',
+    title: 'Reading a card in full',
+    summary:
+      'Hover any card — hand, battlefield, stack, or the top of a graveyard or exile pile — and it opens full-size beside the pointer. On a touch screen, press and hold the card instead, or tap it and pick “View card”.',
+    body: [
+      { kind: 'p', text: 'The preview is read-only; nothing you do to it changes the game. Press F while a double-faced card is open to see its other face.' },
+    ],
+    shortcuts: ['flip-dfc'],
+    related: ['targeting-and-combat', 'zone-browsers'],
+  },
+  {
     id: 'targeting-and-combat',
     section: 'playing',
     title: 'Targeting, attacking and blocking',
