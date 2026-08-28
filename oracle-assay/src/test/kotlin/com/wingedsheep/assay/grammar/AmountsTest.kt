@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.scripting.values.CardNumericProperty
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
@@ -228,5 +229,25 @@ class AmountsTest : StringSpec({
         Grammar.abilityLine.printLine(
             fragment("~ deals damage to any target equal to the number of +1/+1 counters on ~.")
         ) shouldBe "~ deals damage equal to the number of +1/+1 counters on ~ to any target."
+    }
+
+    // The aggregation boundary is the *player*, which no `AggregateBattlefield` scope can be:
+    // "on the battlefield" flattens the table into one set and counts it, giving 5 where this
+    // gives 3. Both spellings parse, so the assertion is about which value each denotes.
+    "the superlative counts each player separately and takes the largest" {
+        fragment("~ enters with a number of suspect counters on it equal to the greatest number of creatures a player controls.")
+            .script.replacementEffects.single()
+            .let { it as com.wingedsheep.sdk.scripting.EntersWithDynamicCounters }
+            .count shouldBe DynamicAmount.GreatestAmongPlayers(
+                players = Player.Each,
+                inner = DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature),
+            )
+        roundTrips("~ enters with X suspect counters on it, where X is the greatest number of creatures a player controls.")
+        roundTrips("~ enters with X charge counters on it, where X is the greatest number of artifacts an opponent controls.")
+    }
+
+    "the collective count and the superlative are different values of the same words" {
+        fragment("~ gets +1/+1 for each creature on the battlefield.") shouldNotBe
+            fragment("~ enters with X +1/+1 counters on it, where X is the greatest number of creatures a player controls.")
     }
 })

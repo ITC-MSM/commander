@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.scripting.conditions.Compare
 import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
 import com.wingedsheep.sdk.scripting.conditions.Exists
 import com.wingedsheep.sdk.scripting.conditions.NotCondition
+import com.wingedsheep.sdk.scripting.conditions.PutCounterKindOnCreatureThisTurn
 import com.wingedsheep.sdk.scripting.conditions.YouWereAttackedThisStep
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -198,6 +199,7 @@ object Conditions {
         // is a numeral rather than a number word because Oracle spells a life total in digits, so the
         // leaf is [Primitives.cardinal] and not [Cardinals.word].
         lifeThreshold(),
+        putCounterKindOnCreatureThisTurn(),
         countAtLeast(
             "there are {n} or more {filter} in your graveyard",
             "several cards of a kind in your graveyard",
@@ -301,6 +303,34 @@ object Conditions {
      * word. The two leaves are not interchangeable in either direction, which is the distinction
      * [Cardinals] exists to keep.
      */
+    /**
+     * "you've put one or more +1/+1 counters on **a creature** this turn" — Sigardian Paladin.
+     *
+     * The counted noun is fixed and the *kind* is the slot, which is the opposite split from most of
+     * this file and is the SDK's own: `PutCounterKindOnCreatureThisTurn` carries a kind string and
+     * nothing else, because the record it reads is per-player and keyed on kind. There is no field
+     * for what the counter landed on — "a creature" is the condition's whole domain, and the
+     * per-*permanent* wording ("on ~ this turn", Kid Loki) is a different SDK type entirely.
+     *
+     * "One or more" is not a threshold to slot either: the record is a set of kinds, so any number
+     * above zero is the same fact, and a card printing a real count would have to decline here
+     * rather than round a number down to presence. None does.
+     */
+    private fun putCounterKindOnCreatureThisTurn(): Phrase<Condition> =
+        phrase(
+            "you've put one or more {kind} counters on a creature this turn",
+            name = "you placed a kind of counter this turn",
+        ) {
+            slot("kind", Primitives.counterKind)
+            build { SdkConditions.PutCounterKindOnCreatureThisTurn(it.value("kind")) }
+            match { value ->
+                val condition = value as? PutCounterKindOnCreatureThisTurn ?: return@match null
+                val kind = condition.counterType ?: return@match null
+                if (value != SdkConditions.PutCounterKindOnCreatureThisTurn(kind)) return@match null
+                bind("kind" to kind)
+            }
+        }
+
     private fun lifeThreshold(): Phrase<Condition> =
         phrase("a player has {n} or less life", name = "a player is low on life") {
             slot("n", Primitives.cardinal)
