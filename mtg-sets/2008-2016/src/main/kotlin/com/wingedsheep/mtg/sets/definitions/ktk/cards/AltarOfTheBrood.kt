@@ -6,7 +6,7 @@ import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TriggerBinding
-import com.wingedsheep.sdk.scripting.effects.ForEachPlayerEffect
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.references.Player
 
 /**
@@ -23,13 +23,13 @@ val AltarOfTheBrood = card("Altar of the Brood") {
 
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Any.youControl(),
+            filter = GameObjectFilter.Permanent.youControl(),
             binding = TriggerBinding.OTHER,
         )
-        effect = ForEachPlayerEffect(
-            players = Player.EachOpponent,
-            effects = Patterns.Library.mill(1).effects
-        )
+        // `Patterns.Library.mill` takes the miller directly, so "each opponent mills a card" is the
+        // recipe with `Player.EachOpponent` rather than a `ForEachPlayer` wrapped around a
+        // controller-scoped mill — the spelling Aether Syphon, Flotsam // Jetsam and Saruman use.
+        effect = Patterns.Library.mill(1, EffectTarget.PlayerRef(Player.EachOpponent))
     }
 
     metadata {

@@ -24,7 +24,7 @@ val LightlessEvangel = card("Lightless Evangel") {
     oracleText = "Whenever you sacrifice another creature or artifact, put a +1/+1 counter on this creature."
 
     triggeredAbility {
-        trigger = Triggers.YouSacrificeOneOrMore(
+        trigger = Triggers.YouSacrificeAnother(
             GameObjectFilter.Creature.or(GameObjectFilter.Artifact)
         )
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)

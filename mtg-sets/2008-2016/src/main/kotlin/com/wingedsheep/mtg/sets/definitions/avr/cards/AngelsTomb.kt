@@ -28,9 +28,10 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *    text says.
  *  - [MayEffect] wraps the animation: the controller is asked each time the trigger resolves, and
  *    declining leaves the Tomb a plain artifact.
- *  - [Effects.BecomeCreature] adds CREATURE on top of the printed ARTIFACT type (so it stays an
- *    *artifact* creature), sets base 3/3, the Angel subtype, white, and flying, all until end of
- *    turn. Animating an already-animated Tomb just layers a second identical effect — harmless.
+ *  - [Effects.BecomeCreature] always adds CREATURE, so `addTypes` carries the *other* word the
+ *    text prints — ARTIFACT, a no-op union on a permanent that is already one. It sets base 3/3,
+ *    the Angel subtype, white, and flying, all until end of turn. Animating an already-animated
+ *    Tomb just layers a second identical effect — harmless.
  */
 val AngelsTomb = card("Angel's Tomb") {
     manaCost = "{3}"
@@ -51,7 +52,7 @@ val AngelsTomb = card("Angel's Tomb") {
                 toughness = 3,
                 keywords = setOf(Keyword.FLYING),
                 creatureTypes = setOf("Angel"),
-                addTypes = setOf(CardType.CREATURE.name),
+                addTypes = setOf(CardType.ARTIFACT.name),
                 colors = setOf(Color.WHITE.name),
                 duration = Duration.EndOfTurn
             ),

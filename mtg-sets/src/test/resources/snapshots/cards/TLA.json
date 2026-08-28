@@ -16440,9 +16440,10 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "PermanentsSacrificedEvent",
-                    "filter": "permanent"
+                    "filter": "permanent",
+                    "perPermanent": true
                 },
-                "binding": "ANY",
+                "binding": "OTHER",
                 "effect": {
                     "type": "AddCounters",
                     "counterType": "+1/+1",
@@ -20376,7 +20377,11 @@
             },
             {
                 "id": "ability_2",
-                "trigger": "PermanentsSacrificedEvent",
+                "trigger": {
+                    "type": "PermanentsSacrificedEvent",
+                    "filter": "permanent",
+                    "perPermanent": true
+                },
                 "binding": "ANY",
                 "effect": {
                     "type": "CreateToken",
@@ -21591,7 +21596,8 @@
                 "id": "ability_2",
                 "trigger": {
                     "type": "PermanentsSacrificedEvent",
-                    "filter": "artifact Food"
+                    "filter": "artifact Food",
+                    "perPermanent": true
                 },
                 "binding": "ANY",
                 "effect": {

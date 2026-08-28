@@ -12,8 +12,8 @@
                     "effect": {
                         "type": "MoveToZone",
                         "target": {
-                            "type": "ContextTarget",
-                            "index": 0
+                            "type": "BoundVariable",
+                            "name": "target Zombie"
                         },
                         "destination": "Exile"
                     },
@@ -21,7 +21,7 @@
                         {
                             "type": "TargetObject",
                             "filter": {
-                                "baseFilter": "creature Zombie"
+                                "baseFilter": "permanent Zombie"
                             },
                             "id": "target Zombie"
                         }
@@ -42,11 +42,11 @@
                                         "index": 0
                                     }
                                 },
-                                "storeAs": "handCards"
+                                "storeAs": "hand"
                             },
                             {
                                 "type": "SelectFromCollection",
-                                "from": "handCards",
+                                "from": "hand",
                                 "selection": {
                                     "type": "ChooseExactly",
                                     "count": {
@@ -55,12 +55,12 @@
                                     }
                                 },
                                 "chooser": "TargetPlayer",
-                                "storeSelected": "exiledCards",
-                                "prompt": "Exile two cards from your hand"
+                                "storeSelected": "exiled",
+                                "prompt": "Choose 2 cards to exile"
                             },
                             {
                                 "type": "MoveCollection",
-                                "from": "exiledCards",
+                                "from": "exiled",
                                 "destination": {
                                     "type": "ToZone",
                                     "zone": "Exile",
@@ -4840,7 +4840,8 @@
                 "effect": {
                     "type": "MoveToZone",
                     "target": "Self",
-                    "destination": "Battlefield"
+                    "destination": "Battlefield",
+                    "fromZone": "Graveyard"
                 },
                 "activateFromZone": "Graveyard",
                 "descriptionOverride": "{B}, Sacrifice two Blood tokens: Return this card from your graveyard to the battlefield."
@@ -5717,7 +5718,8 @@
                 "id": "ability_2",
                 "trigger": {
                     "type": "PermanentsSacrificedEvent",
-                    "filter": "artifact Blood"
+                    "filter": "artifact Blood",
+                    "perPermanent": true
                 },
                 "binding": "ANY",
                 "effect": {
@@ -11526,10 +11528,12 @@
                         ],
                         "creatureTypes": [
                             "Vampire"
+                        ],
+                        "addTypes": [
+                            "ARTIFACT"
                         ]
                     }
-                },
-                "descriptionOverride": "Whenever you sacrifice a Blood token, you may have this artifact become a 3/3 Vampire artifact creature with haste until end of turn."
+                }
             }
         ]
     },
