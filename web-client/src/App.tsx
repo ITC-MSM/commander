@@ -30,6 +30,7 @@ import { useNavigate } from 'react-router-dom'
 import { useGameStore } from './store/gameStore'
 import { useConnectName } from './store/useConnectName'
 import { useRematch } from '@/components/lobby/useRematch'
+import { LearnCoach } from '@/components/learn/LearnCoach'
 import { useViewingPlayer, useBattlefieldCards } from './store/selectors'
 import type { ClientAttacker, EntityId } from './types'
 import { GameOverReason } from './types'
@@ -329,6 +330,10 @@ export default function App() {
 
       {/* Opponent decision indicator (shown during game when opponent is deciding) */}
       {showGame && <OpponentDecisionIndicator />}
+
+      {/* Learn-to-play coach — renders nothing unless the course's first game armed it. Mounted
+          through game over too, so it can close with the result. */}
+      {(showGame || gameOverState) && <LearnCoach />}
 
       {/* Disconnect countdown (shown when opponent disconnects during game or mulligan) */}
       {(showGame || mulliganState || waitingForOpponentMulligan) && <DisconnectCountdown />}

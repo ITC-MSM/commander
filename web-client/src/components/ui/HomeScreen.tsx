@@ -27,6 +27,7 @@ import { AuthWidget } from '@/components/auth/AuthWidget'
 import { LoginModal } from '@/components/auth/LoginModal'
 import { DeckMigrationPrompt } from '@/components/auth/DeckMigrationPrompt'
 import { AccountBenefitsCallout } from '@/components/auth/AccountBenefitsCallout'
+import { LearnCallout } from '@/components/learn/LearnCallout'
 import { FullscreenButton } from './FullscreenButton'
 import { PlayWizard } from './PlayWizard'
 import { SetupRail } from './SetupRail'
@@ -331,6 +332,13 @@ export function HomeScreen({
               while the account check is in flight so the prompt can't flash and vanish. */}
           {!nameConfirmed && !connectName && !nameResolving && (
             <div className={styles.inputGroup}>
+              {/* The one screen a first-time visitor sees. Someone who has never played Magic
+                  needs the course before they need a name, so it comes first — unless they arrived
+                  with an invite code or a game token, in which case they are here to join a
+                  table, not to learn. */}
+              {!joinSessionId && !new URLSearchParams(window.location.search).has('token') && (
+                <LearnCallout variant="arrival" />
+              )}
               <label className={styles.inputLabel}>{joinSessionId ? 'Enter your name to join' : 'Enter your name'}</label>
               <input
                 type="text"
@@ -417,6 +425,9 @@ export function HomeScreen({
                   </div>
                 )}
 
+                {/* Quiet row for a connected player who has not finished the course; gone once
+                    they have. The `/help` guide keeps a link for anyone who wants it back. */}
+                <LearnCallout variant="tier" />
                 <AccountBenefitsCallout onCreateAccount={() => setLoginOpen(true)} />
                 <DeckMigrationPrompt />
               </section>

@@ -1,0 +1,789 @@
+/**
+ * Learn to Play — the course home with its hand of mission cards, and the mission briefs.
+ *
+ * Its own palette on purpose. The rest of the client is cool-white glass over land art, tuned
+ * for a board where every pixel is play space. The course is a doorway into that board, so it
+ * gets warm parchment text on the same dark ground, a gold that means "progress" everywhere it
+ * appears, and one serif — the register of a card's name line — for titles only. Everything
+ * else stays quiet so the hand of cards is the one thing you remember.
+ */
+
+.root {
+  --ln-ink: #0b0c12;
+  --ln-paper: #efe6cf;
+  --ln-body: #c9c3b4;
+  --ln-muted: #8d877a;
+  --ln-faint: #5f5a50;
+  --ln-gold: #d9b45c;
+  --ln-gold-glow: rgba(217, 180, 92, 0.22);
+  --ln-line: rgba(239, 230, 207, 0.12);
+  --ln-line-strong: rgba(239, 230, 207, 0.22);
+  --ln-panel: rgba(18, 17, 24, 0.72);
+  --ln-bad: #e0736b;
+
+  /* Frame colours: Magic's five, plus gold and the artifact silver. */
+  --frame-W: #e8e2c6;
+  --frame-U: #2a7bc4;
+  --frame-B: #4a4152;
+  --frame-R: #c93b33;
+  --frame-G: #23854f;
+  --frame-gold: #cfa640;
+  --frame-artifact: #a7afb8;
+
+  --ln-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  --ln-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* The app's type scale is board-sized (12px body). Re-point it for reading. */
+  --font-xs: 12px;
+  --font-sm: 14px;
+  --font-md: 16px;
+
+  /* `#root` is height:100% / overflow:hidden for the board, so this is its own scroll box. */
+  height: 100vh;
+  overflow-y: auto;
+  background:
+    radial-gradient(900px 420px at 50% 108%, var(--ln-gold-glow), transparent 70%),
+    radial-gradient(700px 380px at 8% -8%, rgba(42, 123, 196, 0.12), transparent 65%),
+    var(--ln-ink);
+  color: var(--ln-body);
+  font-family: var(--ln-sans);
+  font-size: var(--font-md);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.root :focus-visible {
+  outline: 2px solid var(--ln-gold);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* =========================================================================
+ * Top bar — shared by the home and every brief
+ * ========================================================================= */
+.topBar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: rgba(11, 12, 18, 0.78);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border-bottom: 1px solid var(--ln-line);
+}
+
+.topBarInner {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topBarLink {
+  background: none;
+  text-decoration: none;
+  border: 1px solid transparent;
+  color: var(--ln-muted);
+  font: inherit;
+  font-size: var(--font-sm);
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.topBarLink:hover {
+  color: var(--ln-paper);
+  border-color: var(--ln-line-strong);
+}
+
+.topBarEyebrow {
+  margin-left: auto;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ln-muted);
+}
+
+/* Progress pips in the top bar: one per mission, gold once complete. */
+.pips {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.pip {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--ln-line-strong);
+  background: transparent;
+  transition: background var(--transition-normal), border-color var(--transition-normal);
+}
+
+.pipDone {
+  background: var(--ln-gold);
+  border-color: var(--ln-gold);
+  box-shadow: 0 0 8px var(--ln-gold-glow);
+}
+
+.pipCurrent {
+  border-color: var(--ln-paper);
+}
+
+/* =========================================================================
+ * Course home
+ * ========================================================================= */
+.home {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 56px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ln-gold);
+  margin: 0 0 14px;
+}
+
+.headline {
+  font-family: var(--ln-display);
+  font-weight: 400;
+  font-size: clamp(38px, 6vw, 64px);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  color: var(--ln-paper);
+  margin: 0;
+}
+
+.headline em {
+  font-style: italic;
+  color: var(--ln-gold);
+}
+
+.lede {
+  margin: 20px 0 0;
+  max-width: 54ch;
+  font-size: 17px;
+  color: var(--ln-body);
+}
+
+.heroActions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 28px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.cta {
+  font: inherit;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  color: #1a1408;
+  background: linear-gradient(180deg, #ecc96f 0%, #cfa640 100%);
+  border: 1px solid rgba(255, 240, 200, 0.35);
+  border-radius: 8px;
+  padding: 12px 22px;
+  cursor: pointer;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 8px 24px rgba(207, 166, 64, 0.28);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+}
+
+.cta:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.4) inset,
+    0 12px 28px rgba(207, 166, 64, 0.36);
+}
+
+.cta:active {
+  transform: translateY(0);
+}
+
+.cta:disabled {
+  cursor: default;
+  filter: saturate(0.4) brightness(0.8);
+  transform: none;
+  box-shadow: none;
+}
+
+.ctaQuiet {
+  font: inherit;
+  text-decoration: none;
+  font-size: 15px;
+  color: var(--ln-body);
+  background: transparent;
+  border: 1px solid var(--ln-line-strong);
+  border-radius: 8px;
+  padding: 12px 18px;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+}
+
+.ctaQuiet:hover {
+  color: var(--ln-paper);
+  border-color: var(--ln-gold);
+  background: rgba(217, 180, 92, 0.06);
+}
+
+.heroNote {
+  margin: 14px 0 0;
+  font-size: var(--font-sm);
+  color: var(--ln-muted);
+}
+
+.heroNote a,
+.textLink {
+  color: var(--ln-gold);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(217, 180, 92, 0.35);
+  cursor: pointer;
+  background: none;
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  font: inherit;
+  padding: 0;
+}
+
+.heroNote a:hover,
+.textLink:hover {
+  border-bottom-color: var(--ln-gold);
+}
+
+/* ---- The hand ----------------------------------------------------------
+ * Four mission cards fanned the way a hand is held. Each card is rotated and dropped around a
+ * point well below the row, so the arc reads as fingers, not a carousel. Hover lifts a card
+ * clear of its neighbours; the next mission to play carries a soft glow so the eye lands on it.
+ */
+.hand {
+  position: relative;
+  width: 100%;
+  margin-top: 48px;
+  height: 340px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.handSlot {
+  --tilt: 0deg;
+  --lift: 0px;
+  --shift: 0px;
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  width: 190px;
+  margin-left: -95px;
+  transform: translateX(var(--shift)) translateY(var(--lift)) rotate(var(--tilt));
+  transform-origin: 50% 140%;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.handSlot:hover,
+.handSlot:focus-within {
+  z-index: 5;
+  transform: translateX(var(--shift)) translateY(calc(var(--lift) - 26px)) rotate(var(--tilt)) scale(1.05);
+}
+
+/* ---- Mission card frame ------------------------------------------------
+ * A Magic-shaped card: coloured frame, dark art box with one glyph, a title line, a text box,
+ * and a bottom line that says where it sits in the course. The frame colour is the mission's.
+ */
+.card {
+  --frame: var(--frame-W);
+  display: flex;
+  flex-direction: column;
+  width: 190px;
+  aspect-ratio: 5 / 7;
+  border-radius: 11px;
+  padding: 7px;
+  box-sizing: border-box;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 45%),
+    var(--frame);
+  border: 1px solid rgba(0, 0, 0, 0.55);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.25) inset,
+    0 14px 30px rgba(0, 0, 0, 0.55);
+  color: #1d1a12;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.cardDark {
+  color: #efe6cf;
+}
+
+.cardTitle {
+  font-family: var(--ln-display);
+  font-size: 14px;
+  line-height: 1.1;
+  padding: 5px 7px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.cardDark .cardTitle {
+  background: rgba(0, 0, 0, 0.32);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.cardNumber {
+  font-family: var(--ln-sans);
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+.cardArt {
+  margin-top: 5px;
+  flex: 1 1 auto;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  background:
+    radial-gradient(70% 60% at 50% 45%, color-mix(in srgb, var(--frame) 55%, transparent), transparent 75%),
+    linear-gradient(180deg, #171821, #0b0c12);
+  display: grid;
+  place-items: center;
+  color: var(--frame);
+  font-size: 58px;
+  text-shadow: 0 0 22px color-mix(in srgb, var(--frame) 60%, transparent);
+}
+
+.cardType {
+  margin-top: 5px;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardDark .cardType {
+  background: rgba(0, 0, 0, 0.32);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.cardText {
+  margin-top: 5px;
+  height: 76px;
+  font-size: 11px;
+  line-height: 1.32;
+  padding: 5px 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  color: #2a2519;
+  overflow: hidden;
+}
+
+.cardDark .cardText {
+  background: rgba(0, 0, 0, 0.36);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #e6ddc6;
+}
+
+.cardFoot {
+  margin-top: 5px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+  padding: 0 2px;
+}
+
+/* A finished mission is foil: a diagonal sheen that slides once when it comes into view. */
+.cardDone::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 245, 200, 0.28) 45%,
+    rgba(255, 255, 255, 0.45) 50%,
+    rgba(255, 245, 200, 0.28) 55%,
+    transparent 70%
+  );
+  transform: translateX(-110%);
+  animation: foil 1.6s ease-out 0.2s 1 both;
+  pointer-events: none;
+}
+
+@keyframes foil {
+  to {
+    transform: translateX(110%);
+  }
+}
+
+.cardSeal {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--ln-gold);
+  color: #1a1408;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  z-index: 2;
+}
+
+.cardNext {
+  animation: beckon 2.4s ease-in-out infinite;
+}
+
+@keyframes beckon {
+  0%,
+  100% {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.25) inset,
+      0 14px 30px rgba(0, 0, 0, 0.55),
+      0 0 0 2px var(--ln-gold),
+      0 0 24px var(--ln-gold-glow);
+  }
+  50% {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.25) inset,
+      0 14px 30px rgba(0, 0, 0, 0.55),
+      0 0 0 2px var(--ln-gold),
+      0 0 48px rgba(217, 180, 92, 0.4);
+  }
+}
+
+.cardLocked {
+  filter: saturate(0.55) brightness(0.72);
+}
+
+.handCaption {
+  margin: 8px 0 0;
+  font-size: var(--font-sm);
+  color: var(--ln-muted);
+}
+
+/* Small screens: the fan becomes a scrolling row. */
+@media (max-width: 860px) {
+  .hand {
+    height: auto;
+    margin-top: 36px;
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 12px 8px 20px;
+    justify-content: flex-start;
+    scroll-snap-type: x mandatory;
+  }
+
+  .handSlot {
+    position: static;
+    margin-left: 0;
+    flex: 0 0 auto;
+    transform: none !important;
+    scroll-snap-align: center;
+  }
+}
+
+/* =========================================================================
+ * Mission brief
+ * ========================================================================= */
+.brief {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 40px 20px 60px;
+}
+
+.briefHeader {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding-bottom: 26px;
+  border-bottom: 1px solid var(--ln-line);
+  margin-bottom: 30px;
+}
+
+.lessonKicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ln-muted);
+}
+
+.lessonSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--frame);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4) inset;
+}
+
+.lessonTitle {
+  font-family: var(--ln-display);
+  font-weight: 400;
+  font-size: clamp(34px, 5vw, 48px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: var(--ln-paper);
+  margin: 0;
+}
+
+.lessonBlurb {
+  margin: 0;
+  font-size: 17px;
+  color: var(--ln-body);
+  max-width: 56ch;
+}
+
+.briefBody {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+.briefColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.briefHeading {
+  font-family: var(--ln-display);
+  font-weight: 400;
+  font-size: 22px;
+  color: var(--ln-paper);
+  margin: 10px 0 0;
+}
+
+.briefHeading:first-child {
+  margin-top: 0;
+}
+
+/* The three things you will do — numbered because they are the order you will do them in. */
+.briefList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.briefList li {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 12px;
+  align-items: start;
+  font-size: 15.5px;
+}
+
+.briefIndex {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ln-gold);
+  color: var(--ln-gold);
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  margin-top: 1px;
+}
+
+.briefNote {
+  margin: 0;
+  font-size: var(--font-sm);
+  color: var(--ln-muted);
+}
+
+.briefCards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.nameField {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.nameInput {
+  font: inherit;
+  font-size: 15px;
+  color: var(--ln-paper);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--ln-line-strong);
+  border-radius: 8px;
+  padding: 11px 14px;
+  min-width: 200px;
+}
+
+.nameInput:focus {
+  outline: none;
+  border-color: var(--ln-gold);
+}
+
+.errorText {
+  color: var(--ln-bad);
+  font-size: 14px;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .briefBody {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
+
+/* ---- Real card images ---------------------------------------------------- */
+.cardImg {
+  display: block;
+  width: 100%;
+  aspect-ratio: 488 / 680;
+  border-radius: 4.5% / 3.2%;
+  background: #1a1a22;
+  object-fit: cover;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+}
+
+.cardName {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--ln-muted);
+  text-align: center;
+}
+
+/* Mini hand: the course's cards as a strip at the foot of each brief. */
+.miniHand {
+  margin-top: 44px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.miniCard {
+  --frame: var(--frame-W);
+  width: 36px;
+  height: 50px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.25), transparent 50%), var(--frame);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d1a12;
+  cursor: pointer;
+  text-decoration: none;
+  opacity: 0.55;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  position: relative;
+}
+
+.miniCard:hover {
+  opacity: 1;
+  transform: translateY(-3px);
+}
+
+.miniCardDark {
+  color: #efe6cf;
+}
+
+.miniCardActive {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--ln-gold);
+}
+
+.miniCardDone::after {
+  content: '✓';
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ln-gold);
+  color: #1a1408;
+  font-size: 9px;
+  display: grid;
+  place-items: center;
+}
+
+/* =========================================================================
+ * Course complete
+ * ========================================================================= */
+.doneBanner {
+  margin: 36px auto 0;
+  max-width: 560px;
+  padding: 22px 26px;
+  border-radius: 12px;
+  border: 1px solid rgba(217, 180, 92, 0.45);
+  background: rgba(217, 180, 92, 0.07);
+  text-align: center;
+}
+
+.doneBanner h2 {
+  font-family: var(--ln-display);
+  font-weight: 400;
+  font-size: 28px;
+  color: var(--ln-paper);
+  margin: 0 0 8px;
+}
+
+.doneBanner p {
+  margin: 0 0 14px;
+}
+
+/* =========================================================================
+ * Reduced motion
+ * ========================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  .handSlot,
+  .cta {
+    transition: none;
+  }
+
+  .cardDone::after,
+  .cardNext {
+    animation: none;
+  }
+}
