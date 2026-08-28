@@ -186,6 +186,26 @@ object DynamicAmounts {
     fun allCreatures(): DynamicAmount =
         battlefield(Player.Each, GameObjectFilter.Creature).count()
 
+    /**
+     * "The greatest number of [filter] a player controls" — [DynamicAmount.GreatestAmongPlayers]
+     * around a per-player battlefield count, which is the whole of Investigator's Journal's
+     * enters-with amount.
+     *
+     * Note the difference from [allCreatures] and every other `battlefield(Player.Each, …)` count:
+     * those give the table's **total**, because the underlying aggregate flattens all players'
+     * permanents into one list before counting. This one keeps the per-player boundary and takes
+     * the largest, which is what "a player controls" means in Oracle's superlative wording.
+     *
+     * @param players [Player.Each] for "a player", [Player.EachOpponent] for "an opponent".
+     */
+    fun greatestControlledBySinglePlayer(
+        filter: GameObjectFilter = GameObjectFilter.Any,
+        players: Player = Player.Each,
+    ): DynamicAmount = DynamicAmount.GreatestAmongPlayers(
+        players = players,
+        inner = battlefield(Player.You, filter).count(),
+    )
+
     fun landsYouControl(): DynamicAmount =
         battlefield(Player.You, GameObjectFilter.Land).count()
 

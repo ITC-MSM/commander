@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 230 / 273
+**Implemented:** 233 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -37,7 +37,7 @@
 - [x] Bramble Wurm
 - [x] Bride's Gown
 - [ ] Brine Comber
-- [ ] By Invitation Only
+- [x] By Invitation Only
 - [x] Cartographer's Survey
 - [ ] Catapult Fodder
 - [ ] Cemetery Desecrator
@@ -138,7 +138,7 @@
 - [ ] Innocent Traveler
 - [x] Inspired Idea
 - [x] Into the Night
-- [ ] Investigator's Journal
+- [x] Investigator's Journal
 - [x] Island
 - [ ] Jacob Hauken, Inspector
 - [ ] Katilda, Dawnhart Martyr
@@ -215,7 +215,7 @@
 - [x] Sheltering Boughs
 - [x] Sigarda's Imprisonment
 - [x] Sigarda's Summons
-- [ ] Sigardian Paladin
+- [x] Sigardian Paladin
 - [x] Skulking Killer
 - [x] Skull Skaab
 - [x] Skywarp Skaab

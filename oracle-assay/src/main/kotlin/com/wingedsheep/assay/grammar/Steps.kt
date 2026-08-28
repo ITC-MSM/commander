@@ -24,6 +24,7 @@ import com.wingedsheep.sdk.scripting.effects.AddCountersEffect
 import com.wingedsheep.sdk.scripting.effects.BecomeCreatureEffect
 import com.wingedsheep.sdk.scripting.effects.AddDynamicCountersEffect
 import com.wingedsheep.sdk.scripting.effects.CardSource
+import com.wingedsheep.sdk.scripting.effects.ChooseNumberThenEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.CreateDelayedTriggerEffect
@@ -1425,6 +1426,168 @@ object Steps {
         }
     }
 
+    /**
+     * Who a forced sacrifice names, and how the script says so — one row per printed subject.
+     *
+     * A row rather than a player slot, for the reason [Steps]' life-loss rules give: "each player",
+     * "each opponent", "target player" and "target opponent" are four printed sentences, and the
+     * targeted pair carry a `TargetRequirement` the named pair must not have. A slot would let one
+     * rule print all four and leave the targeting undetermined by the model.
+     */
+    private data class SacrificeSubject(
+        val surface: String,
+        val target: EffectTarget,
+        val targets: List<com.wingedsheep.sdk.scripting.targets.TargetRequirement>,
+    )
+
+    private val sacrificeSubjects: List<SacrificeSubject> = listOf(
+        SacrificeSubject("each player", EffectTarget.PlayerRef(Player.Each), emptyList()),
+        SacrificeSubject("each opponent", EffectTarget.PlayerRef(Player.EachOpponent), emptyList()),
+        SacrificeSubject("target player", Targets.bound(), listOf(Targets.player())),
+        SacrificeSubject("target opponent", Targets.bound(), listOf(Targets.opponent())),
+    )
+
+    /**
+     * "Each player sacrifices a creature of their choice.", "Target player sacrifices two creatures
+     * of their choice." — the sacrifice a sentence makes *someone else* perform.
+     *
+     * ### A different SDK type from [sacrificeFiltered], because it is a different sentence
+     *
+     * The bare imperative "Sacrifice a creature." names nobody and builds `SacrificeEffect`, whose
+     * KDoc above explains why. This family names a player, which is `ForceSacrificeEffect` — the
+     * type `Effects.Sacrifice(filter, count, target)` builds. The two are the "one concept, two
+     * spellings" pair that rule already records; what makes them separable here is that the printed
+     * subject is *present*, so no reading has to choose.
+     *
+     * ### "of their choice" is not a slot and not optional
+     *
+     * CR 701.17a already says the sacrificing player chooses, so the phrase adds nothing to the
+     * model — but Oracle prints it on all but a handful of the 83 cards in this family, and the
+     * exceptions ("each opponent sacrifices an artifact") say something narrower the model cannot
+     * hold either. So it is template text, and the cards that omit it decline rather than round-trip
+     * through a sentence they do not print. That is [Steps]' own test for freezing a word: Oracle
+     * prints the sentence without it, but the SDK has *no distinct value* for the version that has
+     * it, so the bare form is not a row of this shape — it is a card whose reading is still open.
+     *
+     * @param count null spells the singular through [Filters.indefinite], which carries the article;
+     *   a phrase spells the plural, over [Filters.plural].
+     */
+    private fun forcedSacrifice(
+        subject: SacrificeSubject,
+        count: Phrase<Int>?,
+        countName: String,
+    ): Phrase<CardScript> {
+        fun scriptFor(filter: GameObjectFilter, n: Int) = CardScript(
+            spellEffect = Effects.Sacrifice(filter, n, subject.target),
+            targetRequirements = subject.targets,
+        )
+        val counted = if (count == null) "" else "{n} "
+        return phrase(
+            "${subject.surface} sacrifices $counted{filter} of their choice",
+            name = "${subject.surface} sacrifices $countName",
+        ) {
+            if (count != null) slot("n", count)
+            slot("filter", if (count == null) Filters.indefinite else Filters.plural)
+            build { bindings ->
+                scriptFor(bindings.value("filter"), if (count == null) 1 else bindings.int("n"))
+            }
+            match { script ->
+                val effect = script.spellEffect as? ForceSacrificeEffect ?: return@match null
+                if (count == null) {
+                    if (effect.count != 1) return@match null
+                } else {
+                    if (effect.count < 2 || !Cardinals.spellable(effect.count)) return@match null
+                }
+                if (script != scriptFor(effect.filter, effect.count)) return@match null
+                if (count == null) bind("filter" to effect.filter)
+                else bind("n" to effect.count, "filter" to effect.filter)
+            }
+        }
+    }
+
+    /**
+     * "…sacrifices **that many** creatures of their choice." — the same family with its count taken
+     * from a number the *previous sentence* announced.
+     *
+     * ### Why this is a separate instantiation rather than a third count row
+     *
+     * "that many" denotes `DynamicAmount.XValue`, and a bare `XValue` is only a legal reading where
+     * the resolution context provably carries one — the argument [Amounts.namesX] states, and the
+     * reason the chosen-count band left "for each counter removed this way" unwritten. Registered at
+     * [step] this rule would read "that many" with no antecedent in sight, round-trip perfectly, and
+     * mean whatever X happened to be. So it is offered only from [announcedNumberThen], whose own
+     * template contains the sentence that announces the number — the position-scoped instantiation
+     * `SelfSteps.retargetable` takes for the anaphors, applied to a count instead of a subject.
+     */
+    private fun forcedSacrificeThatMany(subject: SacrificeSubject): Phrase<CardScript> {
+        fun scriptFor(filter: GameObjectFilter) = CardScript(
+            spellEffect = Effects.Sacrifice(filter, DynamicAmount.XValue, subject.target),
+            targetRequirements = subject.targets,
+        )
+        return phrase(
+            "${subject.surface} sacrifices that many {filter} of their choice",
+            name = "${subject.surface} sacrifices the announced number",
+        ) {
+            slot("filter", Filters.plural)
+            build { scriptFor(it.value("filter")) }
+            match { script ->
+                val effect = script.spellEffect as? ForceSacrificeEffect ?: return@match null
+                if (effect.dynamicCount != DynamicAmount.XValue) return@match null
+                if (script != scriptFor(effect.filter)) return@match null
+                bind("filter" to effect.filter)
+            }
+        }
+    }
+
+    /**
+     * "Choose a number between 0 and 13. Each player sacrifices that many creatures of their
+     * choice." — By Invitation Only, and the only sentence in the corpus that announces a number for
+     * a later clause to spend.
+     *
+     * ### The two sentences are one rule because the scope is
+     *
+     * `ChooseNumberThenEffect` is a combinator: it prompts, stamps the answer onto the resolution
+     * context as X, and runs its inner effect once. The printed English says the same thing with a
+     * full stop, so the payload is a *slot* — but it is a slot over the announced-count
+     * instantiations only, never over [step]. Splitting the line into two independent rules would
+     * make "that many" readable anywhere, which is the reversible-but-wrong class in one clause;
+     * keeping them in one template is what makes the antecedent visible to the grammar.
+     *
+     * The bounds are slots because the model carries both and nothing else in the sentence does.
+     * They are [Primitives.cardinal] rather than [Cardinals.word] because Oracle writes them as
+     * digits here — "between 0 and 13" — which is the same split [Cardinals] states for keyword
+     * parameters.
+     */
+    private val announcedNumberThen: Phrase<CardScript> = run {
+        val payload = oneOf(
+            "a step spending an announced number",
+            sacrificeSubjects.map { forcedSacrificeThatMany(it) },
+        )
+        fun scriptFor(inner: CardScript, min: Int, max: Int): CardScript? {
+            val effect = inner.spellEffect ?: return null
+            return inner.copy(
+                spellEffect = Effects.ChooseNumberThen(
+                    then = effect,
+                    minValue = min,
+                    maxValue = max,
+                    prompt = "Choose a number between $min and $max",
+                )
+            )
+        }
+        phrase("choose a number between {min} and {max}. {payload}", name = "announce a number, then act") {
+            slot("min", Primitives.cardinal)
+            slot("max", Primitives.cardinal)
+            slot("payload", payload)
+            build { scriptFor(it.value("payload"), it.int("min"), it.int("max")) }
+            match { script ->
+                val choose = script.spellEffect as? ChooseNumberThenEffect ?: return@match null
+                val inner = script.copy(spellEffect = choose.then)
+                if (script != scriptFor(inner, choose.minValue, choose.maxValue)) return@match null
+                bind("min" to choose.minValue, "max" to choose.maxValue, "payload" to inner)
+            }
+        }
+    }
+
     /** "You lose the game." / "That player loses the game." — Phage the Untouchable, both halves. */
     private fun losesTheGame(template: String, name: String, player: EffectTarget): Phrase<CardScript> {
         val script = CardScript(spellEffect = Effects.LoseGame(player))
@@ -1517,13 +1680,19 @@ object Steps {
         sacrificeFiltered,
         sacrificeAnyNumber(excludeSource = false),
         sacrificeAnyNumber(excludeSource = true),
+        announcedNumberThen,
         losesTheGame("you lose the game", "you lose the game", EffectTarget.Controller),
         losesTheGame(
             "that player loses the game",
             "the triggering player loses the game",
             EffectTarget.PlayerRef(Player.TriggeringPlayer),
         ),
-    ) + quantifiedPermanentStepFamilies.flatten()
+    ) + sacrificeSubjects.flatMap {
+        listOf(
+            forcedSacrifice(it, count = null, countName = "one permanent"),
+            forcedSacrifice(it, count = Cardinals.word, countName = "several permanents"),
+        )
+    } + quantifiedPermanentStepFamilies.flatten()
 
     // ---------------------------------------------------------------------------------------
     // Whole groups — "Creatures you control get +1/+1", "Destroy all white creatures"

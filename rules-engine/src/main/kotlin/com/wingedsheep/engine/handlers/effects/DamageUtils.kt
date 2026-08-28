@@ -893,8 +893,10 @@ object DamageUtils {
     /**
      * Mark that [placerId] put one or more counters on the creature [targetId] this turn.
      * Only marks when [targetId] is a creature in the projected state.
-     * Sets the PutCounterOnCreatureThisTurnComponent on the placing player's entity (for
-     * "if you put a counter on a creature this turn", Lasting Tarfire) and the per-creature
+     * Records [counterType] in the PutCounterOnCreatureThisTurnComponent on the placing player's
+     * entity — its presence answers "if you put a counter on a creature this turn" (Lasting
+     * Tarfire) and the recorded kind answers "one or more +1/+1 counters" (Sigardian Paladin) —
+     * and stamps the per-creature
      * [com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent]
      * marker (for "first time counters this turn" triggers, Stalwart Successor).
      *
@@ -917,7 +919,10 @@ object DamageUtils {
         val byController = state.projectedState.getController(targetId) == placerId
         return state
             .updateEntity(placerId) { container ->
-                container.with(com.wingedsheep.engine.state.components.player.PutCounterOnCreatureThisTurnComponent)
+                val existing = container
+                    .get<com.wingedsheep.engine.state.components.player.PutCounterOnCreatureThisTurnComponent>()
+                    ?: com.wingedsheep.engine.state.components.player.PutCounterOnCreatureThisTurnComponent()
+                container.with(existing.with(counterType))
             }
             .updateEntity(targetId) { container ->
                 val existing = container

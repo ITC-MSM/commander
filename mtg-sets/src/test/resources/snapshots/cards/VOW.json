@@ -2183,6 +2183,54 @@
     ]
 }
 
+// By Invitation Only
+{
+    "name": "By Invitation Only",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose a number between 0 and 13. Each player sacrifices that many creatures of their choice.",
+    "script": {
+        "spellEffect": {
+            "type": "ChooseNumberThen",
+            "then": {
+                "type": "ForceSacrifice",
+                "filter": "creature",
+                "target": {
+                    "type": "PlayerRef",
+                    "player": "Each"
+                },
+                "dynamicCount": "XValue"
+            },
+            "maxValue": 13,
+            "prompt": "Choose a number between 0 and 13"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "5",
+        "rarity": "RARE",
+        "artist": "Micah Epstein",
+        "flavorText": "The red envelopes guarantee safe passage through the Lurenbraum barrier. Olivia left strict instructions: no invitation, no entry, no exceptions.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/6/46764e49-64da-4a94-b61c-75e006b2c5a9.jpg?1783924927",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "The numbers you may choose include 0 and 13."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "If a player controls fewer than the chosen number of creatures, they will sacrifice all their creatures."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "Starting with the player whose turn it is, each player in turn order chooses which creatures they will sacrifice, then all the creatures chosen by all players are sacrificed at the same time. Players get to know the choices made by players who chose before them."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Cartographer's Survey
 {
     "name": "Cartographer's Survey",
@@ -8242,6 +8290,104 @@
     ]
 }
 
+// Investigator's Journal
+{
+    "name": "Investigator's Journal",
+    "manaCost": "{2}",
+    "typeLine": "Artifact — Book Clue",
+    "oracleText": "This artifact enters with a number of suspect counters on it equal to the greatest number of creatures a player controls.\n{2}, {T}, Remove a suspect counter from this artifact: Draw a card.\n{2}, Sacrifice this artifact: Draw a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomRemoveCounters",
+                                "counterType": "suspect",
+                                "self": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{2}, {T}, Remove a suspect counter from this artifact: Draw a card."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{2}, Sacrifice this artifact: Draw a card."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithDynamicCounters",
+                "counterType": {
+                    "type": "Named",
+                    "name": "suspect"
+                },
+                "count": {
+                    "type": "GreatestAmongPlayers",
+                    "inner": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "creature"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "258",
+        "rarity": "RARE",
+        "artist": "Yeong-Hao Han",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f8a606e5-7a90-4a89-b51a-7f4e68705f97.jpg?1783924786",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "You don't choose an opponent to determine how many suspect counters are placed on Investigator's Journal as it enters the battlefield. You always use the greatest number possible."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Kessig Flamebreather
 {
     "name": "Kessig Flamebreather",
@@ -12513,6 +12659,126 @@
         ]
     },
     "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Sigardian Paladin
+{
+    "name": "Sigardian Paladin",
+    "manaCost": "{2}{G}{W}",
+    "typeLine": "Creature — Human Knight",
+    "oracleText": "As long as you've put one or more +1/+1 counters on a creature this turn, this creature has trample and lifelink.\n{1}{G}{W}: Target creature you control with a +1/+1 counter on it gains trample and lifelink until end of turn.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{G}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "TRAMPLE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control with a +1/+1 counter on it"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "LIFELINK",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control with a +1/+1 counter on it"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    {
+                                        "type": "HasCounter",
+                                        "counterType": "+1/+1"
+                                    }
+                                ],
+                                "controllerPredicate": "ControlledByYou"
+                            }
+                        },
+                        "id": "target creature you control with a +1/+1 counter on it"
+                    }
+                ],
+                "descriptionOverride": "{1}{G}{W}: Target creature you control with a +1/+1 counter on it gains trample and lifelink until end of turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "TRAMPLE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "PutCounterKindOnCreatureThisTurn",
+                    "counterType": "+1/+1"
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "PutCounterKindOnCreatureThisTurn",
+                    "counterType": "+1/+1"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "247",
+        "rarity": "UNCOMMON",
+        "artist": "Slawomir Maniak",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/4/34228fdd-e466-488e-84b2-4c595e758688.jpg?1783924787",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Sigardian Paladin's first ability applies as long as you put a +1/+1 counter on a permanent this turn and that permanent was a creature at the time you put the counter on. It doesn't matter if that creature later left the battlefield, lost its counters, or somehow stopped being a creature."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "Sigardian Paladin's last ability can target only a creature with a +1/+1 counter on it. Once that ability has resolved, the creature has trample and lifelink until end of turn even if it somehow loses its counters or stops being a creature (although trample doesn't help a noncreature permanent much)."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
         "WHITE"
     ]
 }

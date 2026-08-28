@@ -261,4 +261,31 @@ class StaticsTest : StringSpec({
         )
         lines.forEach { line -> Grammar.abilityLine.printLine(fragment(line)) shouldBe line }
     }
+
+    // Sigardian Paladin's gate. The condition is turn *history* keyed on a counter kind, so the kind
+    // is the slot and the noun ("a creature") is the condition's whole domain — the opposite split
+    // from every other rule in `Conditions`, and the SDK type's own.
+    "a counter-history condition slots the kind and fixes the noun" {
+        fragment("~ has trample as long as you've put one or more +1/+1 counters on a creature this turn.")
+            .script.staticAbilities shouldBe listOf(
+            ConditionalStaticAbility(
+                ability = com.wingedsheep.sdk.scripting.GrantKeyword(
+                    com.wingedsheep.sdk.core.Keyword.TRAMPLE,
+                    GroupFilter.source(),
+                ),
+                condition = com.wingedsheep.sdk.scripting.conditions
+                    .PutCounterKindOnCreatureThisTurn("+1/+1"),
+            )
+        )
+        roundTrips("~ has trample as long as you've put one or more +1/+1 counters on a creature this turn.")
+        roundTrips("~ has flying as long as you've put one or more charge counters on a creature this turn.")
+    }
+
+    // The counter-kind leaf is gated on the SDK's own list, so a kind Magic does not have declines
+    // rather than being invented — the "Elves" -> `Elve` class, in a condition.
+    "a counter kind the SDK does not name declines" {
+        Grammar.abilityLine
+            .parseLine("~ has trample as long as you've put one or more sprocket counters on a creature this turn.")
+            .shouldBeInstanceOf<ParseOutcome.Declined>()
+    }
 })

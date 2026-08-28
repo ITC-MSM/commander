@@ -272,6 +272,51 @@ object Amounts {
         }
 
     /**
+     * "the greatest number of creatures a player controls" — the count whose aggregation boundary is
+     * the **player** rather than the permanent.
+     *
+     * ### Why this is not a [Scope] row on [battlefieldCount]
+     *
+     * Every [scopes] row spells *whose* battlefield is counted, and each one still produces one
+     * number out of one flattened set: " on the battlefield" counts the table's permanents together.
+     * The superlative asks a different question — count each player's separately, then take the
+     * largest — which is `DynamicAmount.GreatestAmongPlayers` around a per-player count, a value no
+     * combination of scope and filter can express. Adding it to [scopes] would also make every
+     * family that slots that layer offer a superlative it has no word for.
+     *
+     * ### The singular possessor is the whole surface difference
+     *
+     * "a player controls" and "an opponent controls" are the two spellings, and they are *singular*
+     * where [scopes]' plural-scoped rows are collective — which is exactly what the superlative
+     * means and why the grammar can tell the two families apart with no lookahead. The inner count
+     * is always written from the measured player's own side (`Player.You`), matching how the SDK
+     * factory `DynamicAmounts.greatestControlledBySinglePlayer` builds it.
+     *
+     * The filter may not carry a controller of its own: this clause has already said whose
+     * permanents are counted, and saying it twice is [Scope.narrowing]'s rule stated for one row.
+     */
+    private fun greatestPerPlayerCount(surface: String, players: Player, name: String): Phrase<DynamicAmount> {
+        fun amountFor(filter: GameObjectFilter) = DynamicAmount.GreatestAmongPlayers(
+            players = players,
+            inner = DynamicAmount.AggregateBattlefield(Player.You, filter),
+        )
+        return phrase("the greatest number of {filter} $surface", name = name) {
+            slot("filter", Filters.plural)
+            build { bindings ->
+                amountFor(bindings.value<GameObjectFilter>("filter").takeIf { it.controllerPredicate == null }
+                    ?: return@build null)
+            }
+            match { amount ->
+                val greatest = amount as? DynamicAmount.GreatestAmongPlayers ?: return@match null
+                if (greatest.players != players) return@match null
+                val inner = greatest.inner as? DynamicAmount.AggregateBattlefield ?: return@match null
+                if (amount != amountFor(inner.filter)) return@match null
+                bind("filter" to (inner.filter.takeIf { it.controllerPredicate == null } ?: return@match null))
+            }
+        }
+    }
+
+    /**
      * "the number of cards in your hand" — the same tally with **no** filter, which English spells
      * by dropping the type phrase rather than by writing a word for "any".
      *
@@ -391,6 +436,12 @@ object Amounts {
             // through a possessive: the sentence it lives in has already introduced them.
             bareZoneCount("in their hand", Player.TriggeringPlayer, Zone.HAND),
             constant("your life total", DynamicAmount.YourLifeTotal),
+            greatestPerPlayerCount(
+                "a player controls", Player.Each, "the largest single player's count",
+            ),
+            greatestPerPlayerCount(
+                "an opponent controls", Player.EachOpponent, "the largest single opponent's count",
+            ),
             battlefieldAggregate(
                 "the greatest mana value among", Aggregation.MAX, CardNumericProperty.MANA_VALUE,
                 "you control", Player.You, "the greatest mana value on your battlefield",
