@@ -477,6 +477,21 @@ class ConditionEvaluator(
                     else -> zones.isNotEmpty()
                 }
             }
+            // "you've put one or more <kind> counters on a creature this turn" — turn history off
+            // the placing player, never a board scan: the counters, the creature, and even its
+            // creature-ness may all be gone by now and the answer is still yes.
+            is com.wingedsheep.sdk.scripting.conditions.PutCounterKindOnCreatureThisTurn -> {
+                val playerId = resolvePlayer(state, condition.player, ctx)
+                val record = playerId?.let {
+                    state.getEntity(it)
+                        ?.get<com.wingedsheep.engine.state.components.player.PutCounterOnCreatureThisTurnComponent>()
+                }
+                when {
+                    record == null -> false
+                    condition.counterType == null -> true
+                    else -> condition.counterType in record.kinds
+                }
+            }
             is com.wingedsheep.sdk.scripting.conditions.PermanentEnteredFaceDownThisTurn -> {
                 val playerId = resolvePlayer(state, condition.player, ctx)
                 val count = playerId?.let {

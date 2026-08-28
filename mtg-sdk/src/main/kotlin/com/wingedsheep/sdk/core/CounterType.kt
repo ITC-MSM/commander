@@ -113,6 +113,7 @@ enum class CounterType {
     ENERGY,
     ICE,
     OMEN,
+    SUSPECT,
     PLAN,
     INVASION,
     UNLOCK,
@@ -411,6 +412,14 @@ object Counters {
      * trigger removes one, transforming the artifact once the last one is gone.
      */
     const val OMEN = "omen"
+
+    /**
+     * Suspect counter (VOW — Investigator's Journal). Passive storage counter with no inherent
+     * rule; the artifact enters with one per creature the most-creatured player controls and its
+     * activated ability removes one to draw. Unrelated to the *suspected* keyword action
+     * (CR 701.58), which grants menace and can't-block and places no counter.
+     */
+    const val SUSPECT = "suspect"
 
     /**
      * Doom counter (ATQ — Armageddon Clock). Passive counter accumulated one-per-upkeep; the card

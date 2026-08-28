@@ -404,6 +404,16 @@ class DynamicAmountEvaluator(
             is DynamicAmount.AggregateZone ->
                 evaluateZoneAggregate(state, amount, context, projectedState)
 
+            // "the greatest <inner> a player controls / has" — the one aggregation whose boundary is
+            // the *player* rather than the object, so it cannot be an `Aggregation` on the two
+            // primitives above: those flatten every player's objects into one list before
+            // aggregating. Each iteration rebinds the controller so `Player.You` inside [inner]
+            // means the player being measured, exactly as `ForEachPlayerEffect` does.
+            is DynamicAmount.GreatestAmongPlayers ->
+                resolveUnifiedPlayerIds(state, amount.players, context).maxOfOrNull { playerId ->
+                    evaluate(state, amount.inner, context.copy(controllerId = playerId), projectedState)
+                } ?: 0
+
             // Devotion (CR 700.5): the number of mana symbols of the named colors among the mana
             // costs of permanents the player controls. Hybrid ({W/U}), monocolored hybrid ({2/B}),
             // and Phyrexian ({B/P}) symbols each count toward their color(s); a symbol matching more
