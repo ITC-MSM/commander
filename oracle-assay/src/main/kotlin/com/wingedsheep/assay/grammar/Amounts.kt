@@ -31,6 +31,7 @@ import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.ContextPropertyKey
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.scripting.values.TurnTracker
 
 /**
  * Clauses whose number is a **count of something**, and the vocabulary that names the count.
@@ -271,6 +272,51 @@ object Amounts {
         }
 
     /**
+     * "the greatest number of creatures a player controls" — the count whose aggregation boundary is
+     * the **player** rather than the permanent.
+     *
+     * ### Why this is not a [Scope] row on [battlefieldCount]
+     *
+     * Every [scopes] row spells *whose* battlefield is counted, and each one still produces one
+     * number out of one flattened set: " on the battlefield" counts the table's permanents together.
+     * The superlative asks a different question — count each player's separately, then take the
+     * largest — which is `DynamicAmount.GreatestAmongPlayers` around a per-player count, a value no
+     * combination of scope and filter can express. Adding it to [scopes] would also make every
+     * family that slots that layer offer a superlative it has no word for.
+     *
+     * ### The singular possessor is the whole surface difference
+     *
+     * "a player controls" and "an opponent controls" are the two spellings, and they are *singular*
+     * where [scopes]' plural-scoped rows are collective — which is exactly what the superlative
+     * means and why the grammar can tell the two families apart with no lookahead. The inner count
+     * is always written from the measured player's own side (`Player.You`), matching how the SDK
+     * factory `DynamicAmounts.greatestControlledBySinglePlayer` builds it.
+     *
+     * The filter may not carry a controller of its own: this clause has already said whose
+     * permanents are counted, and saying it twice is [Scope.narrowing]'s rule stated for one row.
+     */
+    private fun greatestPerPlayerCount(surface: String, players: Player, name: String): Phrase<DynamicAmount> {
+        fun amountFor(filter: GameObjectFilter) = DynamicAmount.GreatestAmongPlayers(
+            players = players,
+            inner = DynamicAmount.AggregateBattlefield(Player.You, filter),
+        )
+        return phrase("the greatest number of {filter} $surface", name = name) {
+            slot("filter", Filters.plural)
+            build { bindings ->
+                amountFor(bindings.value<GameObjectFilter>("filter").takeIf { it.controllerPredicate == null }
+                    ?: return@build null)
+            }
+            match { amount ->
+                val greatest = amount as? DynamicAmount.GreatestAmongPlayers ?: return@match null
+                if (greatest.players != players) return@match null
+                val inner = greatest.inner as? DynamicAmount.AggregateBattlefield ?: return@match null
+                if (amount != amountFor(inner.filter)) return@match null
+                bind("filter" to (inner.filter.takeIf { it.controllerPredicate == null } ?: return@match null))
+            }
+        }
+    }
+
+    /**
      * "the number of cards in your hand" — the same tally with **no** filter, which English spells
      * by dropping the type phrase rather than by writing a word for "any".
      *
@@ -305,9 +351,83 @@ object Amounts {
      * "in your graveyard" and "in all graveyards" are two clauses, not two values of one word, and
      * the possessive changes with the player. What is shared is the *shape*, which is the point.
      */
+    /**
+     * **A turn tally** — a quantity the game counted *over this turn* rather than a set of objects
+     * a filter could name.
+     *
+     * [Tokens] declared why these are not rows of [plainCount]'s battlefield vocabulary: "nothing
+     * about the phrase is a noun the filter vocabulary could spell", and a tally has no filter, no
+     * zone and no scope. What it does have is **two printed noun phrases for one value**, and that
+     * is what makes it a table rather than a pair of constants:
+     *
+     * | Value | as a count | as a distributive |
+     * |---|---|---|
+     * | `CARDS_DISCARDED` | "the number of cards you've discarded this turn" | "…for each **card** you've discarded this turn" |
+     * | `CREATURES_DIED` | "the number of creatures that died this turn" | "…for each **creature** that died this turn" |
+     *
+     * The two differ in grammatical number and in the words around them, so neither can be derived
+     * from the other — but the *value* must not be written twice, because a row whose two spellings
+     * disagreed would round-trip byte-perfectly and mean a different card. Hence one row carrying
+     * both surfaces, [count] taking the plural one and [Steps] taking the singular one.
+     *
+     * **They are also two different sentence positions, which is why both stay canonical.** "You
+     * gain life equal to the number of cards you've discarded this turn" and "draw a card for each
+     * card you've discarded this turn" are different verbs with different arguments; no sentence in
+     * the grammar can print one model both ways, so there is nothing here for an [alternate] to
+     * disambiguate.
+     *
+     * ### Which player, and why it is fixed per row rather than slotted
+     *
+     * `TurnTracking` carries a [Player], and English does not spell it in either surface — "you've
+     * discarded" is the possessive inside the noun phrase, and "that died this turn" names no owner
+     * at all. So the player is part of the row: the discard tally is the controller's
+     * (`Player.You`), and the death tally is game-wide (`Player.Each`, which is what Deadly Embrace,
+     * Grizzly Ghoul and Khabal Ghoul's `Each`/`You`/`EachOpponent` split show the corpus means by
+     * the bare wording).
+     *
+     * **"…for each spell you've cast this turn" is deliberately not a row.** Its SDK value is not a
+     * `TurnTracking` at all but `DynamicAmounts.spellsCastThisTurn`, which carries a filter, an
+     * `excludeSelf` and a source zone — a spell counting "spells you've cast this turn" during its
+     * own resolution has already been cast, so the row would have to decide that axis rather than
+     * read it. That is a row of its own the day someone settles it, and five printed lines is not
+     * enough to settle it here.
+     */
+    private data class TurnTally(
+        /** The plural noun phrase, as a count: "the number of cards you've discarded this turn". */
+        val asCount: String,
+        /** The singular noun phrase a distributive "for each" takes: "card you've discarded this turn". */
+        val perOne: String,
+        val amount: DynamicAmount,
+    )
+
+    private val turnTallies: List<TurnTally> = listOf(
+        TurnTally(
+            asCount = "the number of cards you've discarded this turn",
+            perOne = "card you've discarded this turn",
+            amount = DynamicAmount.TurnTracking(Player.You, TurnTracker.CARDS_DISCARDED),
+        ),
+        TurnTally(
+            asCount = "the number of creatures that died this turn",
+            perOne = "creature that died this turn",
+            amount = DynamicAmount.TurnTracking(Player.Each, TurnTracker.CREATURES_DIED),
+        ),
+    )
+
+    /** The tallies as a count — [plainCount]'s rows for them. */
+    private val turnTallyCounts: List<Phrase<DynamicAmount>> =
+        turnTallies.map { constant<DynamicAmount>(it.asCount, it.amount) }
+
+    /**
+     * The tallies as a distributive — the noun a "…for each **{tally}**" clause counts one of.
+     *
+     * Published for [Steps], which owns the verbs that take it.
+     */
+    val turnTally: Phrase<DynamicAmount> =
+        oneOf("a turn tally", turnTallies.map { constant<DynamicAmount>(it.perOne, it.amount) })
+
     private val plainCount: Phrase<DynamicAmount> = oneOf(
         "a plain count",
-        perScope { battlefieldCount(it) } + perScope { battlefieldCount(it, other = true) } + listOf(
+        perScope { battlefieldCount(it) } + perScope { battlefieldCount(it, other = true) } + listOf<Phrase<DynamicAmount>>(
             zoneCardCount("in your graveyard", Player.You, Zone.GRAVEYARD, "a count of your graveyard"),
             zoneCardCount("in all graveyards", Player.Each, Zone.GRAVEYARD, "a count of every graveyard"),
             bareZoneCount("in your graveyard", Player.You, Zone.GRAVEYARD),
@@ -316,6 +436,12 @@ object Amounts {
             // through a possessive: the sentence it lives in has already introduced them.
             bareZoneCount("in their hand", Player.TriggeringPlayer, Zone.HAND),
             constant("your life total", DynamicAmount.YourLifeTotal),
+            greatestPerPlayerCount(
+                "a player controls", Player.Each, "the largest single player's count",
+            ),
+            greatestPerPlayerCount(
+                "an opponent controls", Player.EachOpponent, "the largest single opponent's count",
+            ),
             battlefieldAggregate(
                 "the greatest mana value among", Aggregation.MAX, CardNumericProperty.MANA_VALUE,
                 "you control", Player.You, "the greatest mana value on your battlefield",
@@ -356,7 +482,7 @@ object Amounts {
             // [Primitives.counterFilter]'s reason: `CounterTypeFilter` has dedicated cases for the
             // stat-changing kinds and a `Named` fallback for the rest, and one leaf spells both.
             counterCount,
-        ),
+        ) + turnTallyCounts,
     )
 
     /**

@@ -20,7 +20,23 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is **three cards' worth of grammar** — the first band picked not off the tail
+The most recent work is **a second pass on that same set** — four more Innistrad: Crimson Vow cards
+implemented by hand (Aim for the Head, Change of Fortune, Crawling Infestation, Sanguine Statuette)
+with the grammar extended until Assay read each of them whole (**+140 whole cards**, 8,872 → 9,012,
+for six families). Three of its findings generalize. **Mill had no effect clause at all** — the verb
+was readable as a cost and as Dreamborn Muse's "where X is …" amount, and "Mill two cards." was
+blocked on nothing but the missing rule, so one family was 93 cards. **A trigger restriction is a
+layer over the prefix**: "…during your turn" narrows *when the event counts* (CR 603.2), which is
+`triggerRestriction` and not the intervening-if the engine re-checks on resolution, and because it
+sits inside the `when` clause it is spliced between prefix and effect rather than wrapped around the
+sentence — so every one of the file's prefixes inherited it at once. And **a turn tally has two
+printed noun phrases for one value**, which makes it a table rather than a pair of constants: a row
+whose two spellings disagreed would round-trip byte-perfectly and mean a different card. Its
+differential half found **eight card bugs, five of them one shape** — "Whenever you sacrifice a
+Blood token" modelled as the *batch* trigger, where CR 603.2c makes the singular wording
+per-permanent. See [the second set-backlog band](#the-second-set-backlog-band).
+
+Before it came **three cards' worth of grammar** — the first band picked not off the tail
 ranking but off a *set's* backlog, which is a different question and gave a different answer. Three
 Innistrad: Crimson Vow cards were implemented by hand, and the grammar was extended until Assay read
 each of them whole: the Doran static, the counted entry, and the quantity anaphor "that many"
@@ -555,6 +571,80 @@ Captain [M20] was an unreviewed `mtgish-tooling` render whose count was
 the printed "each other creature you control". Nothing is attacking during a main phase, so the card
 entered as a plain 2/2 every time it was cast. It was the only card the three families newly made
 comparable that disagreed.
+
+## The second set-backlog band
+
+[The set-backlog band](#the-set-backlog-band) again, on the same set and with the same rule: four
+Innistrad: Crimson Vow cards were implemented by hand (Aim for the Head, Change of Fortune,
+Crawling Infestation, Sanguine Statuette) and the grammar was extended until Assay read each of them
+whole. `just assay-ready VOW` still reports **0 Assay-ready** of the set's 54 missing cards, so
+every card taken here was one the grammar could not read — which is what makes "did the grammar
+learn to read it" a gate the card work cannot pass by accident.
+
+**8,872 → 9,012 whole cards** for six families, and the disproportion is the same one the first pass
+found: a card nobody has implemented is a card whose *sentences* nobody has generalized, so the
+families behind four cards are worth a hundred and forty.
+
+**Mill was not in the grammar at all.** `Patterns.Library.mill` had a reader in `Amounts` for
+Dreamborn Muse's "that player mills X cards, where X is …" and `Costs` knew it as a cost atom, but
+the plain effect clause — "Mill two cards." — had no rule, so 93 cards were blocked on CR 701.13's
+one-word verb. It is this file's pipeline with the middle taken out (a gather and one move, no
+selection and no second pile), which is why it reads as a family beside the look/keep/rest layers
+rather than a row inside them; the miller is a template per row for `Hand`'s reason, and
+`Steps`' `you may {inner}` wrapper reached "you may mill two cards" the moment the clause existed.
+
+**A trigger restriction is a layer over the prefix, not a wrapper over the sentence.** "…during your
+turn" narrows *when the event counts* (CR 603.2), which is `TriggeredAbility.triggerRestriction` — a
+field `Triggers.abilityFor` deliberately never wrote, so 250 printed lines declined. `onceEachTurn`
+could be a wrapper because its rider is a second sentence; this one sits inside the `when` clause,
+before the comma, so it is spliced between the prefix and the effect and becomes the product every
+prefix inherits. It must *not* be read as an intervening-if: CR 603.4 re-checks that on resolution
+and a restriction is not re-checked, so the two are different cards on the same English whenever the
+trigger's turn ends before it resolves.
+
+**A predefined token is a named noun, and the seven names are a closed list.** `Filters` could
+already build `Artifact.withSubtype("Blood")` — but only from the words "Blood artifact", which no
+card prints. Oracle names these seven by their token noun, so "Whenever you sacrifice a Blood token"
+declined on the word "Blood". The domain being closed is what keeps the new row and `subtyped`
+disjoint by *value* rather than by alternation order.
+
+**A turn tally has two printed noun phrases and one value.** "…for each card you've discarded this
+turn" and "the number of cards you've discarded this turn" differ in grammatical number and in the
+words around them, so neither template derives from the other — but the value must not be written
+twice, or a row whose spellings disagreed would round-trip byte-perfectly and mean a different card.
+Hence one row carrying both surfaces, `Amounts.count` taking the plural and `Steps` the singular.
+"…for each spell you've cast this turn" is declared out: its value is not a `TurnTracking` at all but
+`spellsCastThisTurn`, which carries a filter and an `excludeSelf` the row would have to *decide*
+rather than read.
+
+**The self-animate is the token noun phrase, and "artifact" is a model field.** The existing animate
+spells "target creature becomes a blue Serpent **with base power and toughness 5/5**"; this one
+spells "this artifact becomes a **3/3 Vampire artifact creature** with haste", and the P/T changes
+*position* rather than spelling, which is the criterion for two rules. The word "artifact" in the
+middle is `addTypes` — the line grammar has no type line to derive it from, the same wall gift hit,
+so a rule that treated it as ornament would decline every card that prints it. On a permanent that
+is already an artifact the value is a no-op union, which is what makes the reading safe as well as
+literal.
+
+**What the differential found: eight card bugs, five of them one shape.** The new sacrifice prefix
+made "Whenever you sacrifice a *Blood token* / *artifact* / *permanent* / *another creature*"
+comparable for the first time, and five cards had it modelled as the **batch**
+`Triggers.YouSacrificeOneOrMore` — Gluttonous Guest, Fleshtaker, Biotech Specialist, Tolls of War,
+Sandbender Scavengers, plus Unlucky Cabbage Merchant and Lightless Evangel that the same grep found
+outside the compared set. CR 603.2c makes the singular wording per-permanent: sacrificing two Blood
+tokens to one cost is two triggers and two life, and the batch spec paid once. The other three:
+Falkenrath Forebear's "return this card **from your graveyard**" had lost its `fromZone` guard,
+Mysterio's Phantasm hand-built the mill pipeline and lost `isMill` with it (so CR 701.13's "mills
+that many plus four instead" could not see it), and Angel's Tomb wrote `addTypes = CREATURE` — a
+type `BecomeCreature` adds anyway — where the printed word is "artifact".
+
+Two more carry the same batch spec and are **not** changed here: Esoteric Duplicator and Rakdos, the
+Muscle both bind the triggering entity through the engine's batch-sacrifice path and carry KDoc
+about it, so converting them is a behavioural change with its own tests rather than a one-line swap.
+
+`Gate.MayDecide.inlineOnTrigger` joined the presentation fold on the way past — a rendering position
+("the yes/no is rendered inline on the triggering permanent rather than as a centered modal"), no
+printed line names it, and its outcome-bearing siblings on the same gate stay compared.
 
 ## The Legions band
 

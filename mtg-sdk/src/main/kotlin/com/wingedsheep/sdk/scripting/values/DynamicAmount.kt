@@ -1236,6 +1236,60 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     /**
+     * The largest value [inner] takes when measured **once per player** in [players] — Oracle's
+     * "the greatest number of X a player controls / an opponent controls / has".
+     *
+     * ### Why this is a wrapper and not another [Aggregation]
+     *
+     * [AggregateBattlefield] and [AggregateZone] already aggregate, but they aggregate *over
+     * permanents*: `resolveUnifiedPlayerIds` fans the player reference out and then flattens every
+     * player's permanents into one list, so `AggregateBattlefield(Player.Each, Creature)` is the
+     * table's **total** creature count and there is no per-player boundary left to take a maximum
+     * across. The missing axis is a second, outer aggregation keyed on the player — which is a
+     * different shape from an inner one, not another `Aggregation` constant.
+     *
+     * Making it a wrapper over an arbitrary [DynamicAmount] rather than a fourth field on
+     * `AggregateBattlefield` also keeps it usable for the sibling wordings the same sentence takes
+     * in other zones and off the battlefield entirely: "the greatest number of cards an opponent
+     * has drawn this turn" (Thought Sponge) is this around a [TurnTracking], and "the greatest
+     * number of artifacts an opponent controls" (Cavern-Hoard Dragon) is this around an
+     * `AggregateBattlefield` with a different filter.
+     *
+     * ### The inner amount is evaluated *as* each player
+     *
+     * Each iteration rebinds the resolution context's controller to the player being measured, so
+     * [Player.You] inside [inner] means that player — the same rebinding
+     * [com.wingedsheep.sdk.dsl.Effects.ForEachPlayer] does. Write [inner] from that player's point
+     * of view (`GameObjectFilter.Creature` counted for `Player.You`), never with an outward
+     * reference such as `Player.AnOpponent`, which would measure the same set every iteration.
+     *
+     * An empty [players] set evaluates to 0, which is the right floor for every counting wording:
+     * "the greatest number of creatures a player controls" with no players left is not a card
+     * state that arises, and 0 keeps a caller such as
+     * [com.wingedsheep.sdk.scripting.EntersWithDynamicCounters] total.
+     *
+     * @param players Which players to measure, one at a time. [Player.Each] for "a player",
+     *   [Player.EachOpponent] for "an opponent".
+     * @param inner The per-player amount, written from the measured player's own perspective.
+     */
+    @SerialName("GreatestAmongPlayers")
+    @Serializable
+    data class GreatestAmongPlayers(
+        val players: Player = Player.Each,
+        val inner: DynamicAmount,
+    ) : DynamicAmount {
+        override val description: String =
+            "the greatest ${inner.description} among ${
+                if (players == Player.EachOpponent) "your opponents" else "all players"
+            }"
+
+        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount {
+            val newInner = inner.applyTextReplacement(replacer)
+            return if (newInner !== inner) copy(inner = newInner) else this
+        }
+    }
+
+    /**
      * Generic zone aggregation primitive.
      * Queries cards in a player's zone, filters them, optionally maps to a numeric
      * property, and applies an aggregation function.

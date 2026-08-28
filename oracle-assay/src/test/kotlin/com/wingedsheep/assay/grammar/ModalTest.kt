@@ -131,6 +131,29 @@ class ModalTest : StringSpec({
         Grammar.abilityLine.printLine(notYetChosen) shouldBe null
     }
 
+    // (1, 0) — the fifth header. Declining every mode is legal, and the ability leaves the stack
+    // having done nothing (CR 700.2b). Disjoint from every other header by `minChooseCount` alone,
+    // so it needs no mode-count guard.
+    "choose up to one is minChooseCount 0" {
+        val upToOne = "Choose up to one —\n• Draw a card.\n• You gain 2 life."
+        fragment(upToOne) shouldBe CardFragment(
+            script = CardScript(
+                spellEffect = ModalEffect(
+                    modes = listOf(Mode(Effects.DrawCards(1)), Mode(Effects.GainLife(2))),
+                    chooseCount = 1,
+                    minChooseCount = 0,
+                )
+            )
+        )
+        roundTrips(upToOne)
+    }
+
+    // …and it stays disjoint at three modes, where "one or more" also spells a min of 1.
+    "choose up to one and choose one or more do not collide at three modes" {
+        roundTrips("Choose up to one —\n• Draw a card.\n• You gain 2 life.\n• You lose 2 life.")
+        roundTrips("Choose one or more —\n• Draw a card.\n• You gain 2 life.\n• You lose 2 life.")
+    }
+
     // A mode is a sentence, not a step, so nothing nests — and the rule is constructible because of
     // it. Reading this would mean the cascade reached itself.
     "a mode is not itself modal" {

@@ -24,8 +24,11 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * {B}, Sacrifice two Blood tokens: Return this card from your graveyard to the battlefield.
  *
  * The recursion ability activates from the graveyard (like Persistent Specimen):
- * [Effects.PutOntoBattlefield] on Self from [Zone.GRAVEYARD], its cost combining {B} with
- * sacrificing two Blood tokens ([Costs.SacrificeMultiple] over the Blood-artifact filter).
+ * [Effects.PutOntoBattlefieldFromGraveyard] on Self, its cost combining {B} with sacrificing two
+ * Blood tokens ([Costs.SacrificeMultiple] over the Blood-artifact filter). The guarded facade, not
+ * the bare [Effects.PutOntoBattlefield]: "return this card **from your graveyard**" is skipped if
+ * the card has left the graveyard by resolution, and the unguarded move would return it from
+ * wherever it had got to. Argentum Assay's differential is what named the omission.
  */
 val FalkenrathForebear = card("Falkenrath Forebear") {
     manaCost = "{2}{B}"
@@ -55,7 +58,7 @@ val FalkenrathForebear = card("Falkenrath Forebear") {
             Costs.Mana("{B}"),
             Costs.SacrificeMultiple(2, GameObjectFilter.Artifact.withSubtype("Blood")),
         )
-        effect = Effects.PutOntoBattlefield(EffectTarget.Self)
+        effect = Effects.PutOntoBattlefieldFromGraveyard(EffectTarget.Self)
         activateFromZone = Zone.GRAVEYARD
         description = "{B}, Sacrifice two Blood tokens: Return this card from your graveyard to " +
             "the battlefield."

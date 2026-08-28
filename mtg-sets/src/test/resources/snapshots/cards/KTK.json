@@ -699,41 +699,36 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "ctrl:you",
+                    "filter": "permanent ctrl:you",
                     "to": "Battlefield"
                 },
                 "binding": "OTHER",
                 "effect": {
-                    "type": "ForEach",
-                    "space": {
-                        "type": "IterationSpace.Players",
-                        "players": "EachOpponent"
-                    },
-                    "body": {
-                        "type": "Composite",
-                        "effects": [
-                            {
-                                "type": "GatherCards",
-                                "source": {
-                                    "type": "TopOfLibrary",
-                                    "count": {
-                                        "type": "Fixed",
-                                        "amount": 1
-                                    },
-                                    "isMill": true
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
                                 },
-                                "storeAs": "milled"
+                                "player": "EachOpponent",
+                                "isMill": true
                             },
-                            {
-                                "type": "MoveCollection",
-                                "from": "milled",
-                                "destination": {
-                                    "type": "ToZone",
-                                    "zone": "Graveyard"
-                                }
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": "EachOpponent"
                             }
-                        ]
-                    }
+                        }
+                    ]
                 }
             }
         ]

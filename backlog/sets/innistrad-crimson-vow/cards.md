@@ -2,10 +2,10 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 219 / 273
+**Implemented:** 238 / 273
 - [x] Abrade
 - [x] Adamant Will
-- [ ] Aim for the Head
+- [x] Aim for the Head
 - [x] Alchemist's Gambit
 - [x] Alchemist's Retrieval
 - [ ] Alluring Suitor
@@ -20,7 +20,7 @@
 - [x] Avabruck Caretaker
 - [x] Ballista Watcher
 - [x] Belligerent Guest
-- [ ] Binding Geist
+- [x] Binding Geist
 - [x] Biolume Egg
 - [x] Bleed Dry
 - [x] Blood Fountain
@@ -37,7 +37,7 @@
 - [x] Bramble Wurm
 - [x] Bride's Gown
 - [ ] Brine Comber
-- [ ] By Invitation Only
+- [x] By Invitation Only
 - [x] Cartographer's Survey
 - [ ] Catapult Fodder
 - [ ] Cemetery Desecrator
@@ -45,9 +45,9 @@
 - [ ] Cemetery Illuminator
 - [ ] Cemetery Protector
 - [ ] Cemetery Prowler
-- [ ] Ceremonial Knife
+- [x] Ceremonial Knife
 - [x] Chandra, Dressed to Kill
-- [ ] Change of Fortune
+- [x] Change of Fortune
 - [x] Child of the Pack
 - [x] Chill of the Grave
 - [ ] Circle of Confinement
@@ -57,7 +57,7 @@
 - [ ] Consuming Tide
 - [x] Courier Bat
 - [x] Cradle of Safety
-- [ ] Crawling Infestation
+- [x] Crawling Infestation
 - [ ] Creepy Puppeteer
 - [x] Cruel Witness
 - [x] Crushing Canopy
@@ -71,7 +71,7 @@
 - [x] Desperate Farmer
 - [x] Dig Up
 - [x] Diregraf Scavenger
-- [ ] Distracting Geist
+- [x] Distracting Geist
 - [x] Diver Skaab
 - [ ] Dollhouse of Horrors
 - [x] Dominating Vampire
@@ -82,8 +82,8 @@
 - [x] Dreadfeast Demon
 - [x] Dreadlight Monstrosity
 - [x] Dreamroot Cascade
-- [ ] Dreamshackle Geist
-- [ ] Drogskol Infantry
+- [x] Dreamshackle Geist
+- [x] Drogskol Infantry
 - [x] Dying to Serve
 - [x] Edgar's Awakening
 - [x] Edgar, Charmed Groom
@@ -138,14 +138,14 @@
 - [ ] Innocent Traveler
 - [x] Inspired Idea
 - [x] Into the Night
-- [ ] Investigator's Journal
+- [x] Investigator's Journal
 - [x] Island
 - [ ] Jacob Hauken, Inspector
 - [ ] Katilda, Dawnhart Martyr
 - [ ] Kaya, Geist Hunter
 - [x] Kessig Flamebreather
 - [x] Kessig Wolfrider
-- [ ] Kindly Ancestor
+- [x] Kindly Ancestor
 - [x] Lacerate Flesh
 - [x] Laid to Rest
 - [x] Lambholt Raconteur
@@ -155,7 +155,7 @@
 - [x] Lightning Wolf
 - [x] Lunar Rejection
 - [ ] Magma Pummeler
-- [ ] Manaform Hellkite
+- [x] Manaform Hellkite
 - [x] Markov Purifier
 - [x] Markov Retribution
 - [x] Markov Waltzer
@@ -163,7 +163,7 @@
 - [x] Militia Rallier
 - [x] Mindleech Ghoul
 - [ ] Mirrorhall Mimic
-- [ ] Mischievous Catgeist
+- [x] Mischievous Catgeist
 - [x] Moldgraf Millipede
 - [x] Mountain
 - [x] Mulch
@@ -204,18 +204,18 @@
 - [ ] Runo Stromkirk
 - [x] Rural Recruit
 - [x] Sanctify
-- [ ] Sanguine Statuette
+- [x] Sanguine Statuette
 - [x] Savior of Ollenbock
 - [x] Sawblade Slinger
 - [x] Scattered Thoughts
-- [ ] Screaming Swarm
+- [x] Screaming Swarm
 - [x] Selhoff Entomber
 - [x] Serpentine Ambush
 - [x] Shattered Sanctum
 - [x] Sheltering Boughs
 - [x] Sigarda's Imprisonment
-- [ ] Sigarda's Summons
-- [ ] Sigardian Paladin
+- [x] Sigarda's Summons
+- [x] Sigardian Paladin
 - [x] Skulking Killer
 - [x] Skull Skaab
 - [x] Skywarp Skaab
@@ -232,7 +232,7 @@
 - [x] Stormcarved Coast
 - [x] Stormchaser Drake
 - [x] Sundown Pass
-- [ ] Supernatural Rescue
+- [x] Supernatural Rescue
 - [x] Sure Strike
 - [x] Swamp
 - [x] Syncopate
@@ -272,7 +272,7 @@
 - [x] Whispering Wizard
 - [x] Winged Portent
 - [x] Witch's Web
-- [ ] Witness the Future
+- [x] Witness the Future
 - [x] Wolf Strike
 - [x] Wolfkin Outcast
 - [x] Wretched Throng

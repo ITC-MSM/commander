@@ -1375,7 +1375,8 @@
                 "id": "ability_2",
                 "trigger": {
                     "type": "PermanentsSacrificedEvent",
-                    "filter": "artifact"
+                    "filter": "artifact",
+                    "perPermanent": true
                 },
                 "binding": "ANY",
                 "effect": {
@@ -8680,9 +8681,10 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "PermanentsSacrificedEvent",
-                    "filter": "creature|artifact"
+                    "filter": "creature|artifact",
+                    "perPermanent": true
                 },
-                "binding": "ANY",
+                "binding": "OTHER",
                 "effect": {
                     "type": "AddCounters",
                     "counterType": "+1/+1",

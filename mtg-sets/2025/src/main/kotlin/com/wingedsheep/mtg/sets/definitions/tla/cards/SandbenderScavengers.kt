@@ -48,7 +48,7 @@ val SandbenderScavengers = card("Sandbender Scavengers") {
 
     // Whenever you sacrifice another permanent, put a +1/+1 counter on this creature.
     triggeredAbility {
-        trigger = Triggers.YouSacrificeOneOrMore(GameObjectFilter.Permanent)
+        trigger = Triggers.YouSacrificeAnother(GameObjectFilter.Permanent)
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
         description = "Whenever you sacrifice another permanent, put a +1/+1 counter on this creature."
     }

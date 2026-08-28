@@ -23,6 +23,9 @@ import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.SelectionMode
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
+import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
@@ -355,6 +358,15 @@ object TopOfLibrary {
             slot("keep", place)
             slot("remainder", theRest)
             slot("rest", disposition)
+            // "You look at the top four cards of your library, **then** put one of those cards into
+            // your hand…" — Witness the Future. One sentence where the canonical form writes two,
+            // and the same model: the recipe is a single pipeline either way, so the join is
+            // spelling and belongs here rather than to [Steps]' clause run, which could not split a
+            // gather from the selection that consumes it.
+            alsoSpelled(
+                "you look at {top} of your library, then put {k} {pile} {keep} and {remainder} {rest}",
+                name = "look at the top cards and keep some (one sentence)",
+            )
             build { bindings ->
                 val count = bindings.value<DynamicAmount>("top")
                 val keep = bindings.int("k")
@@ -584,6 +596,94 @@ object TopOfLibrary {
         }
     }
 
+
+    // ---------------------------------------------------------------------------------------
+    // Mill — the top of a library, straight into a graveyard
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * "Mill two cards." / "Target player mills two cards." — CR 701.13.
+     *
+     * A mill is this file's pipeline with the middle taken out: `GatherCards(TopOfLibrary(n))` and
+     * one `MoveCollection` to the graveyard, no selection step and no second pile, which is why it
+     * takes none of the [place] / [disposition] layers above and reads as a family of its own.
+     * `Patterns.Library.mill` publishes exactly that recipe.
+     *
+     * **The `isMill` flag is why this cannot be spelled as a row of the exile family.** The gather
+     * carries it, CR 701.13 applies "mill that many plus four instead" at the count site, and the
+     * SDK therefore holds a mill and a same-shaped move apart even where the two pipelines otherwise
+     * agree — see [exiledTopCount], which refuses a mill for that reason. A rule ignoring the flag
+     * would print one as the other.
+     *
+     * **The miller is a template per row, not a slot**, for [Hand]'s stated reason: English spells
+     * it as the sentence's subject and inflects the verb with it — "mill", "target player mills",
+     * "each opponent mills" — so the three are three templates, each carrying its own requirement,
+     * and the singular and plural counts are two rows apiece because the article and the noun both
+     * change ([Steps]' split).
+     *
+     * "You may mill two cards." needs no row here. "Mill two cards" states no subject of its own, so
+     * [Steps]' `you may {inner}` wrapper reaches it the moment this exists — which is what Crawling
+     * Infestation's upkeep trigger reads.
+     */
+    private fun mill(
+        template: String,
+        name: String,
+        count: Int?,
+        target: EffectTarget,
+        requirements: List<TargetRequirement>,
+    ): Phrase<CardScript> {
+        fun scriptFor(cards: Int) = CardScript(
+            spellEffect = Patterns.Library.mill(cards, target),
+            targetRequirements = requirements,
+        )
+        return phrase(template, name = name) {
+            if (count == null) slot("n", Cardinals.word)
+            build { bindings -> scriptFor(count ?: bindings.int("n")) }
+            match { script ->
+                val cards = count ?: milledCount(script) ?: return@match null
+                if (count == null && !Cardinals.spellable(cards)) return@match null
+                if (script != scriptFor(cards)) return@match null
+                bind("n" to cards)
+            }
+        }
+    }
+
+    /** How many cards a `Patterns.Library.mill` pipeline moves, read off its gather step. */
+    private fun milledCount(script: CardScript): Int? {
+        val gather = (script.spellEffect as? CompositeEffect)?.effects?.firstOrNull()
+            as? GatherCardsEffect ?: return null
+        val source = gather.source as? CardSource.TopOfLibrary ?: return null
+        if (!source.isMill) return null
+        return (source.count as? DynamicAmount.Fixed)?.amount
+    }
+
+    private val millClauses: List<Phrase<CardScript>> = listOf(
+        mill(
+            "mill a card", "mill a card",
+            count = 1, target = EffectTarget.Controller, requirements = emptyList(),
+        ),
+        mill(
+            "mill {n} cards", "mill cards",
+            count = null, target = EffectTarget.Controller, requirements = emptyList(),
+        ),
+        mill(
+            "target player mills a card", "target player mills a card",
+            count = 1, target = Targets.bound(), requirements = listOf(Targets.player()),
+        ),
+        mill(
+            "target player mills {n} cards", "target player mills cards",
+            count = null, target = Targets.bound(), requirements = listOf(Targets.player()),
+        ),
+        mill(
+            "each opponent mills a card", "each opponent mills a card",
+            count = 1, target = EffectTarget.PlayerRef(Player.EachOpponent), requirements = emptyList(),
+        ),
+        mill(
+            "each opponent mills {n} cards", "each opponent mills cards",
+            count = null, target = EffectTarget.PlayerRef(Player.EachOpponent), requirements = emptyList(),
+        ),
+    )
+
     val clauses: List<Phrase<CardScript>> = listOf(
         lookAtTopRevealMatchingToHand,
         revealTopPutAllMatchingToHand,
@@ -635,5 +735,5 @@ object TopOfLibrary {
             "exile the top card and play it for as long as it remains exiled",
             MayPlayExpiry.Permanent,
         ),
-    )
+    ) + millClauses
 }

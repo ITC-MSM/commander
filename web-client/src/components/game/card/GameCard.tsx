@@ -305,11 +305,14 @@ function GameCardImpl({
   // of the action menu that same tap had just opened — and since no mouseleave follows a tap, it
   // stayed there. Touch reaches the preview through the long-press below instead.
   const updateHoverPosition = useGameStore((s) => s.updateHoverPosition)
+  // While an action menu is open the pointer is still over the card that opened it, and the
+  // preview would land on top of the menu's buttons — the menu already shows the card full-size.
+  const menuOpen = useGameStore((s) => s.selectedCardId !== null)
 
   const handleHoverEnter = useCallback((e: React.PointerEvent) => {
-    if (e.pointerType === 'touch') return
+    if (e.pointerType === 'touch' || menuOpen) return
     hoverCard(card.id, { x: e.clientX, y: e.clientY })
-  }, [card.id, hoverCard])
+  }, [card.id, hoverCard, menuOpen])
 
   const handleHoverMove = useCallback((e: React.PointerEvent) => {
     if (e.pointerType === 'touch') return
@@ -1294,6 +1297,7 @@ function GameCardImpl({
     <div
       data-card-id={card.id}
       {...(isGhost ? { 'data-ghost': 'true' } : {})}
+      {...(isTapped ? { 'data-tapped': 'true' } : {})}
       onClick={handleClick}
       onDoubleClick={handleDoubleClickEvent}
       /* Mouse and touch both drive the drag handlers, so every mouse one has to ignore the

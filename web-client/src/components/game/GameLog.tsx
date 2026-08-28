@@ -1,6 +1,7 @@
 import { useGameStore, type LogEntry } from '@/store/gameStore.ts'
 import { identitySeatColor, selectTeamMap } from '@/store/selectors.ts'
 import type { EntityId } from '@/types'
+import { markLearnSignal } from '@/learn/signals'
 import React, { useState, useRef, useEffect } from 'react'
 
 /**
@@ -34,7 +35,11 @@ export function GameLog() {
   if (!expanded) {
     return (
       <button
-        onClick={() => setExpanded(true)}
+        data-learn="log"
+        onClick={() => {
+          setExpanded(true)
+          markLearnSignal('logOpened')
+        }}
         style={styles.toggleButton}
       >
         Log ({eventLog.length})
