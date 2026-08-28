@@ -25,8 +25,9 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *
  * [Effects.BecomeCreature] sets *base* P/T in layer 7b, which is what makes the printed rulings
  * true without extra wiring — a later -2/-2 still applies on top (leaving a 1/1), and a second
- * sacrifice re-sets the base to 3/3 without undoing that -2/-2. The statuette is already an
- * artifact, so only CREATURE is added; `creatureTypes` supplies the Vampire.
+ * sacrifice re-sets the base to 3/3 without undoing that -2/-2. `creatureTypes` supplies the
+ * Vampire and `addTypes` the printed "artifact", which is a no-op union on a permanent that is
+ * already one — the literal reading of the sentence rather than a type the text leaves implied.
  */
 val SanguineStatuette = card("Sanguine Statuette") {
     manaCost = "{1}{R}"
@@ -51,11 +52,10 @@ val SanguineStatuette = card("Sanguine Statuette") {
                 toughness = 3,
                 keywords = setOf(Keyword.HASTE),
                 creatureTypes = setOf("Vampire"),
+                addTypes = setOf("ARTIFACT"),
                 duration = Duration.EndOfTurn
             )
         )
-        description = "Whenever you sacrifice a Blood token, you may have this artifact become a " +
-            "3/3 Vampire artifact creature with haste until end of turn."
     }
 
     metadata {

@@ -1,23 +1,13 @@
 package com.wingedsheep.mtg.sets.definitions.vow.cards
 
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.effects.CardDestination
-import com.wingedsheep.sdk.scripting.effects.CardSource
-import com.wingedsheep.sdk.scripting.effects.Chooser
-import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
-import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
-import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
-import com.wingedsheep.sdk.scripting.effects.SelectionMode
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
-import com.wingedsheep.sdk.scripting.references.Player
-import com.wingedsheep.sdk.scripting.targets.EffectTarget
-import com.wingedsheep.sdk.scripting.targets.TargetCreature
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.scripting.targets.TargetPermanent
 
 /**
  * Aim for the Head
@@ -28,12 +18,14 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * • Exile target Zombie.
  * • Target opponent exiles two cards from their hand.
  *
- * Mode 1 is a plain [Effects.Exile] over a subtype-scoped creature target (the Phoenix Down
- * shape). Mode 2 is the Perfect Intimidation pipeline: gather the targeted opponent's hand,
- * have *that player* ([Chooser.TargetPlayer]) pick two of their own cards, then move the
- * selection to exile. The ruling — "if the target opponent only has one card in hand, they
- * will exile that card" — falls out of `SelectFromCollection`, which takes everything eligible
- * rather than stalling when the collection is smaller than the requested count.
+ * Mode 1 is a plain [Effects.Exile] over a subtype-scoped target. The noun is **`Permanent`, not
+ * `Creature`**: a bare tribal noun in Oracle names permanents of that type, so an artifact Zombie
+ * or an enchantment Zombie is a legal target for it. Mode 2 is [Patterns.Hand.exileFromHand], whose default target is the mode's own
+ * `ContextTarget(0)`: it gathers the targeted opponent's hand, has *that player* pick two of
+ * their own cards, and moves the selection to exile. The printed ruling — "if the target
+ * opponent only has one card in hand, they will exile that card" — falls out of the recipe's
+ * `SelectFromCollection`, which takes everything eligible rather than stalling when the
+ * collection is smaller than the requested count.
  */
 val AimForTheHead = card("Aim for the Head") {
     manaCost = "{2}{B}"
@@ -46,33 +38,15 @@ val AimForTheHead = card("Aim for the Head") {
     spell {
         modal(chooseCount = 1) {
             mode("Exile target Zombie") {
-                target(
+                val zombie = target(
                     "target Zombie",
-                    TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Zombie")))
+                    TargetPermanent(filter = TargetFilter(GameObjectFilter.Permanent.withSubtype("Zombie")))
                 )
-                effect = Effects.Exile(EffectTarget.ContextTarget(0))
+                effect = Effects.Exile(zombie)
             }
             mode("Target opponent exiles two cards from their hand") {
                 target("opponent", Targets.Opponent)
-                effect = Effects.Composite(
-                    listOf(
-                        GatherCardsEffect(
-                            source = CardSource.FromZone(Zone.HAND, Player.ContextPlayer(0), GameObjectFilter.Any),
-                            storeAs = "handCards"
-                        ),
-                        SelectFromCollectionEffect(
-                            from = "handCards",
-                            selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(2)),
-                            chooser = Chooser.TargetPlayer,
-                            storeSelected = "exiledCards",
-                            prompt = "Exile two cards from your hand"
-                        ),
-                        MoveCollectionEffect(
-                            from = "exiledCards",
-                            destination = CardDestination.ToZone(Zone.EXILE, Player.ContextPlayer(0))
-                        )
-                    )
-                )
+                effect = Patterns.Hand.exileFromHand(2)
             }
         }
     }
