@@ -4,6 +4,7 @@ import com.wingedsheep.assay.syntax.ParseOutcome
 import com.wingedsheep.assay.syntax.parseLine
 import com.wingedsheep.assay.syntax.printLine
 import com.wingedsheep.sdk.core.Subtype
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.CardNamePool
@@ -15,6 +16,7 @@ import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.ModifyLifeGain
 import com.wingedsheep.sdk.scripting.ModeOption
+import com.wingedsheep.sdk.scripting.RedirectZoneChange
 import com.wingedsheep.sdk.scripting.conditions.IsYourTurn
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -291,6 +293,32 @@ class ReplacementsTest : StringSpec({
             .script.replacementEffects.single().shouldBeInstanceOf<EntersWithDynamicCounters>()
         fragment("~ enters with a +1/+1 counter on it for each creature on the battlefield.")
             .script.replacementEffects.single().shouldBeInstanceOf<EntersWithDynamicCounters>()
+    }
+
+    // The second line every disturb back face prints (CR 702.146b) — 28 cards, all of them MID/VOW
+    // transforming cards. A `constant` on the whole value: the sentence spells no field beyond the
+    // destination, and the sibling lines that name a filter instead are a different value.
+    "the disturb back face's exile-instead line is a self-scoped redirect" {
+        fragment("If ~ would be put into a graveyard from anywhere, exile it instead.") shouldBe
+            CardFragment(
+                script = CardScript(
+                    replacementEffects = listOf(
+                        RedirectZoneChange(
+                            newDestination = Zone.EXILE,
+                            appliesTo = EventPattern.ZoneChangeEvent(to = Zone.GRAVEYARD),
+                            selfOnly = true,
+                        )
+                    )
+                )
+            )
+        roundTrips("If ~ would be put into a graveyard from anywhere, exile it instead.")
+        // Rest in Peace and Dryad Militant name a filter rather than the source, so they are a
+        // different value (`selfOnly = false`) and stay declined rather than folding into this rule.
+        declines("If a card or token would be put into a graveyard from anywhere, exile it instead.")
+        declines(
+            "If an instant or sorcery card would be put into a graveyard from anywhere, " +
+                "exile it instead."
+        )
     }
 
     "every as-it-enters choice rule prints what it parses" {

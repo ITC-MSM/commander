@@ -7,6 +7,7 @@ import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.constant
 import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.CardNamePool
 import com.wingedsheep.sdk.scripting.ChoiceType
 import com.wingedsheep.sdk.scripting.EntersTapped
@@ -16,6 +17,7 @@ import com.wingedsheep.sdk.scripting.EntersWithDynamicCounters
 import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.ModifyLifeGain
+import com.wingedsheep.sdk.scripting.RedirectZoneChange
 import com.wingedsheep.sdk.scripting.ReplacementEffect
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.references.Player
@@ -540,6 +542,33 @@ object Replacements {
         listOf(plus, twice)
     }
 
+    /**
+     * "If ~ would be put into a graveyard from anywhere, exile it instead." — the second line every
+     * disturb back face prints (CR 702.146b), and the whole of this rule's corpus: 28 cards, every
+     * one of them a MID/VOW transforming card whose back is the disturbed face.
+     *
+     * A `constant` on the whole value, for [entersTapped]'s reason. `RedirectZoneChange` has six
+     * fields beyond the destination and this sentence spells none of them: `linkToSource`,
+     * `shuffleIntoLibrary`, `reveal` and a non-`Any` `requiredCause` all belong to other printed
+     * lines, and `appliesTo` is pinned by "from anywhere" (no `from`) plus "into a graveyard"
+     * (`to = GRAVEYARD`). A rule that let any of them vary would print this sentence for a value
+     * that means something else, which is the reversible-but-wrong class exactly.
+     *
+     * `selfOnly = true` is what "~" buys: the normalizer has already replaced the face's own name,
+     * so the subject *is* the source, and the sibling lines that name a filter instead — Rest in
+     * Peace's "a card or token", Dryad Militant's "an instant or sorcery card" — are a different
+     * value (`selfOnly = false`, a non-`Any` filter) and stay declined here rather than being
+     * folded into a slot this sentence would then mis-print.
+     */
+    private val exileInsteadOfGraveyard: Phrase<ReplacementEffect> = constant(
+        "if ${Normalizer.SELF} would be put into a graveyard from anywhere, exile it instead.",
+        RedirectZoneChange(
+            newDestination = Zone.EXILE,
+            appliesTo = EventPattern.ZoneChangeEvent(to = Zone.GRAVEYARD),
+            selfOnly = true,
+        ),
+    )
+
     val replacement: Phrase<ReplacementEffect> = oneOf(
         "a replacement effect",
         listOf(
@@ -548,6 +577,7 @@ object Replacements {
             shockLand,
             entersWithChosenNumber,
             entersWithLookedUpCardName,
+            exileInsteadOfGraveyard,
         ) + choiceNouns.map { (noun, value) -> entersWithChoice(noun, value) } +
             entersWithCounters + entersWithDynamicCounters + entersWithCountersPerCount +
             modifyLifeGain,

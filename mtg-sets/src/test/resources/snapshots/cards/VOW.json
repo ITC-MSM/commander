@@ -1145,6 +1145,109 @@
     ]
 }
 
+// Binding Geist
+{
+    "name": "Binding Geist",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Whenever this creature attacks, target creature an opponent controls gets -2/-0 until end of turn.\nDisturb {1}{U} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{1}{U}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature an opponent controls"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "creature an opponent controls"
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Spectral Binding",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura",
+        "oracleText": "Enchant creature\nEnchanted creature gets -2/-0.\nIf Spectral Binding would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "ModifyStats",
+                    "powerBonus": -2,
+                    "toughnessBonus": 0
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        },
+        "metadata": {
+            "collectorNumber": "48",
+            "artist": "Campbell White",
+            "imageUri": "https://cards.scryfall.io/normal/back/7/3/730e4629-dc54-415d-9493-88885788ca19.jpg?1783924907"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "artist": "Campbell White",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/3/730e4629-dc54-415d-9493-88885788ca19.jpg?1783924907"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Biolume Egg
 {
     "name": "Biolume Egg",
@@ -4021,6 +4124,126 @@
     ]
 }
 
+// Distracting Geist
+{
+    "name": "Distracting Geist",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Whenever this creature attacks, tap target creature defending player controls.\nDisturb {4}{W} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{4}{W}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature defending player controls"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "creature defending player controls"
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Clever Distraction",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura",
+        "oracleText": "Enchant creature\nEnchanted creature has \"Whenever this creature attacks, tap target creature defending player controls.\"\nIf Clever Distraction would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "GrantTriggeredAbility",
+                    "ability": {
+                        "id": "ability_2",
+                        "trigger": "AttackEvent",
+                        "effect": {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        "targetRequirement": {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:opponent"
+                            }
+                        }
+                    }
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        },
+        "metadata": {
+            "collectorNumber": "9",
+            "rarity": "UNCOMMON",
+            "artist": "Andrew Mar",
+            "flavorText": "\"Me neither.\"",
+            "imageUri": "https://cards.scryfall.io/normal/back/a/7/a7fc0939-6286-44de-a727-c83bfd3fa752.jpg?1783924930"
+        },
+        "colorIdentityOverride": [
+            "WHITE"
+        ],
+        "colorIndicator": [
+            "WHITE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "9",
+        "rarity": "UNCOMMON",
+        "artist": "Andrew Mar",
+        "flavorText": "\"I never did enjoy studying.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/7/a7fc0939-6286-44de-a727-c83bfd3fa752.jpg?1783924930",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Distracting Geist's triggered ability can only target a creature controlled by the player you are attacking with Distracting Geist, even if other creatures you control are also attacking other players. This is also true for the ability of the creature enchanted by Clever Distraction."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Diver Skaab
 {
     "name": "Diver Skaab",
@@ -4590,6 +4813,81 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Drogskol Infantry
+{
+    "name": "Drogskol Infantry",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Spirit Soldier",
+    "oracleText": "Disturb {3}{W} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{3}{W}"
+        }
+    ],
+    "backFace": {
+        "name": "Drogskol Armaments",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura",
+        "oracleText": "Enchant creature\nEnchanted creature gets +2/+2.\nIf Drogskol Armaments would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "ModifyStats",
+                    "powerBonus": 2,
+                    "toughnessBonus": 2
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        },
+        "metadata": {
+            "collectorNumber": "10",
+            "artist": "Cristi Balanescu",
+            "flavorText": "When he could no longer carry on, he imparted his strength to the one who took up his duty.",
+            "imageUri": "https://cards.scryfall.io/normal/back/f/8/f88e269e-ff3d-4775-8520-5b7a6dddf23d.jpg?1783924937"
+        },
+        "colorIdentityOverride": [
+            "WHITE"
+        ],
+        "colorIndicator": [
+            "WHITE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "10",
+        "artist": "Cristi Balanescu",
+        "flavorText": "He swore to protect the Moorlands. A little thing like death was no excuse to break his oath.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f88e269e-ff3d-4775-8520-5b7a6dddf23d.jpg?1783924937"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -8501,6 +8799,81 @@
     ]
 }
 
+// Kindly Ancestor
+{
+    "name": "Kindly Ancestor",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Lifelink\nDisturb {1}{W} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "LIFELINK",
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{1}{W}"
+        }
+    ],
+    "backFace": {
+        "name": "Ancestor's Embrace",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura",
+        "oracleText": "Enchant creature\nEnchanted creature has lifelink.\nIf Ancestor's Embrace would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK"
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        },
+        "metadata": {
+            "collectorNumber": "22",
+            "artist": "Justyna Dura",
+            "flavorText": "\"Thank you, Grandmother. I love you too.\"",
+            "imageUri": "https://cards.scryfall.io/normal/back/2/5/25193485-7f41-4b05-9a69-4c112679f97c.jpg?1783924921"
+        },
+        "colorIdentityOverride": [
+            "WHITE"
+        ],
+        "colorIndicator": [
+            "WHITE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "22",
+        "artist": "Justyna Dura",
+        "flavorText": "\"You look cold, dearie.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/5/25193485-7f41-4b05-9a69-4c112679f97c.jpg?1783924921"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Lacerate Flesh
 {
     "name": "Lacerate Flesh",
@@ -9688,6 +10061,114 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Mischievous Catgeist
+{
+    "name": "Mischievous Catgeist",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Cat Spirit",
+    "oracleText": "Whenever this creature deals combat damage to a player, draw a card.\nDisturb {2}{U} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{2}{U}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Catlike Curiosity",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura",
+        "oracleText": "Enchant creature\nEnchanted creature has \"Whenever this creature deals combat damage to a player, draw a card.\"\nIf Catlike Curiosity would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "GrantTriggeredAbility",
+                    "ability": {
+                        "id": "ability_2",
+                        "trigger": {
+                            "type": "DealsDamageEvent",
+                            "damageType": "DamageCombat",
+                            "recipient": "AnyPlayer"
+                        },
+                        "effect": {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    }
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        },
+        "metadata": {
+            "collectorNumber": "69",
+            "rarity": "UNCOMMON",
+            "artist": "Denman Rooke",
+            "imageUri": "https://cards.scryfall.io/normal/back/a/3/a3ff628a-ef8e-45c4-84e7-a33ec28f025a.jpg?1783924899"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "69",
+        "rarity": "UNCOMMON",
+        "artist": "Denman Rooke",
+        "flavorText": "\"I never get any knitting done, but I don't entirely mind.\"\n—Lorn, Lambholt innkeeper",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/3/a3ff628a-ef8e-45c4-84e7-a33ec28f025a.jpg?1783924899"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
