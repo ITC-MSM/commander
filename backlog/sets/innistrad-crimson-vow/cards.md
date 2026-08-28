@@ -2,10 +2,10 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 219 / 273
+**Implemented:** 223 / 273
 - [x] Abrade
 - [x] Adamant Will
-- [ ] Aim for the Head
+- [x] Aim for the Head
 - [x] Alchemist's Gambit
 - [x] Alchemist's Retrieval
 - [ ] Alluring Suitor
@@ -47,7 +47,7 @@
 - [ ] Cemetery Prowler
 - [ ] Ceremonial Knife
 - [x] Chandra, Dressed to Kill
-- [ ] Change of Fortune
+- [x] Change of Fortune
 - [x] Child of the Pack
 - [x] Chill of the Grave
 - [ ] Circle of Confinement
@@ -57,7 +57,7 @@
 - [ ] Consuming Tide
 - [x] Courier Bat
 - [x] Cradle of Safety
-- [ ] Crawling Infestation
+- [x] Crawling Infestation
 - [ ] Creepy Puppeteer
 - [x] Cruel Witness
 - [x] Crushing Canopy
@@ -204,7 +204,7 @@
 - [ ] Runo Stromkirk
 - [x] Rural Recruit
 - [x] Sanctify
-- [ ] Sanguine Statuette
+- [x] Sanguine Statuette
 - [x] Savior of Ollenbock
 - [x] Sawblade Slinger
 - [x] Scattered Thoughts

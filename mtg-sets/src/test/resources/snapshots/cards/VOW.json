@@ -1,3 +1,105 @@
+// Aim for the Head
+{
+    "name": "Aim for the Head",
+    "manaCost": "{2}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose one —\n• Exile target Zombie.\n• Target opponent exiles two cards from their hand.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target Zombie"
+                        },
+                        "destination": "Exile"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "permanent Zombie"
+                            },
+                            "id": "target Zombie"
+                        }
+                    ],
+                    "description": "Exile target Zombie"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "storeAs": "hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    }
+                                },
+                                "chooser": "TargetPlayer",
+                                "storeSelected": "exiled",
+                                "prompt": "Choose 2 cards to exile"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "exiled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetOpponent",
+                            "id": "opponent"
+                        }
+                    ],
+                    "description": "Target opponent exiles two cards from their hand"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "92",
+        "artist": "Zoltan Boros",
+        "flavorText": "\"Works every time.\"\n—Halana, Kessig ranger",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/1/1174e8e1-2e8e-4070-9871-7d5d93e0dd56.jpg?1783924875",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "If the target opponent only has one card in hand, they will exile that card."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Alchemist's Gambit
 {
     "name": "Alchemist's Gambit",
@@ -2355,6 +2457,67 @@
     ]
 }
 
+// Change of Fortune
+{
+    "name": "Change of Fortune",
+    "manaCost": "{3}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Discard your hand, then draw a card for each card you've discarded this turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "discardedHand"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "discardedHand",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        }
+                    ]
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "CARDS_DISCARDED"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "150",
+        "rarity": "RARE",
+        "artist": "Sam Guay",
+        "flavorText": "\"We cannot escape change, but with faith and fortitude, we can mold it to our liking.\"\n—Marel, Dawnhart witch",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/3/63ca5ce5-94e7-43a1-8f2b-f0a4532f617a.jpg?1783924841",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Change of Fortune counts cards you discarded this turn for any reason, not just cards you discarded as part of the resolution of this effect."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Child of the Pack
 {
     "name": "Child of the Pack",
@@ -2917,6 +3080,93 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Crawling Infestation
+{
+    "name": "Crawling Infestation",
+    "manaCost": "{2}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "At the beginning of your upkeep, you may mill two cards. (You may put the top two cards of your library into your graveyard.)\nWhenever one or more creature cards are put into your graveyard from anywhere during your turn, create a 1/1 green Insect creature token. This ability triggers only once each turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    },
+                                    "isMill": true
+                                },
+                                "storeAs": "milled"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "milled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "At the beginning of your upkeep, you may mill two cards."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "CardsPutIntoYourGraveyardEvent",
+                    "filter": "creature"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Insect"
+                    ]
+                },
+                "triggerRestriction": "IsYourTurn",
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever one or more creature cards are put into your graveyard from anywhere during your turn, create a 1/1 green Insect creature token. This ability triggers only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "193",
+        "rarity": "UNCOMMON",
+        "artist": "Khurrum",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0ab55dae-5393-4356-9f81-66d6ea5d23c0.jpg?1783924816",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Crawling Infestation must be on the battlefield for its ability to trigger. If it's destroyed at the same time as one or more creatures you own, its ability won't trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -4590,7 +4840,8 @@
                 "effect": {
                     "type": "MoveToZone",
                     "target": "Self",
-                    "destination": "Battlefield"
+                    "destination": "Battlefield",
+                    "fromZone": "Graveyard"
                 },
                 "activateFromZone": "Graveyard",
                 "descriptionOverride": "{B}, Sacrifice two Blood tokens: Return this card from your graveyard to the battlefield."
@@ -5467,7 +5718,8 @@
                 "id": "ability_2",
                 "trigger": {
                     "type": "PermanentsSacrificedEvent",
-                    "filter": "artifact Blood"
+                    "filter": "artifact Blood",
+                    "perPermanent": true
                 },
                 "binding": "ANY",
                 "effect": {
@@ -11228,6 +11480,81 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Sanguine Statuette
+{
+    "name": "Sanguine Statuette",
+    "manaCost": "{1}{R}",
+    "typeLine": "Artifact",
+    "oracleText": "When this artifact enters, create a Blood token. (It's an artifact with \"{1}, {T}, Discard a card, Sacrifice this token: Draw a card.\")\nWhenever you sacrifice a Blood token, you may have this artifact become a 3/3 Vampire artifact creature with haste until end of turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Blood"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "PermanentsSacrificedEvent",
+                    "filter": "artifact Blood",
+                    "perPermanent": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "BecomeCreature",
+                        "power": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "toughness": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "keywords": [
+                            "HASTE"
+                        ],
+                        "creatureTypes": [
+                            "Vampire"
+                        ],
+                        "addTypes": [
+                            "ARTIFACT"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "177",
+        "rarity": "UNCOMMON",
+        "artist": "Izzy",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/0/706fafd4-443f-4e16-972e-86c16f22670a.jpg?1783924823",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "If after becoming a creature, Sanguine Statuette becomes subject to an effect that reduces or increases its toughness, sacrificing another Blood token won't allow you to counteract that effect. For example, if a resolving spell gives it -2/-2 until end of turn, it will be a 1/1 creature, even if you set its power to 3/3 again."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "If another effect sets Sanguine Statuette's power and/or toughness to another number, sacrificing a Blood token will set it back to 3/3. However, it would still be subject to any increases or reductions that are applying, as described above."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

@@ -252,13 +252,44 @@ class TriggersTest : StringSpec({
         roundTrips("When ~ enters, draw a card. This ability triggers only once each turn.")
     }
 
-    // This band's two write-offs, asserted so they stay declines rather than drifting into a
+    // This band's remaining write-off, asserted so it stays a decline rather than drifting into a
     // half-reading. Attacks: `YouAttackEvent` cannot carry the "attack **a player**" narrowing that
     // eight of its printed lines have, so the two English sentences would collapse to one model.
-    // "During your turn" is a `triggerRestriction`, a clause nobody has written yet.
+    //
+    // The second write-off has expired: "during your turn" is now the `triggerRestriction` layer,
+    // and the case below is what it reads. The expiry is asserted rather than deleted, because a
+    // write-off quietly becoming readable is how a declared hole drifts back open.
     "the band's write-offs decline rather than being approximated" {
         declines("Whenever one or more Merfolk you control attack, draw a card.")
-        declines("Whenever one or more cards leave your graveyard during your turn, draw a card.")
+    }
+
+    // The restriction layer, over the prefix vocabulary rather than over one family: a "during your
+    // turn" clause narrows *when the event counts* (CR 603.2), which is `triggerRestriction` and not
+    // the intervening-if the engine would re-check on resolution.
+    "a during-your-turn clause is a trigger restriction on any prefix" {
+        fragment("Whenever one or more cards leave your graveyard during your turn, draw a card.")
+            .script.triggeredAbilities.single().triggerRestriction shouldBe Conditions.IsYourTurn
+        fragment("Whenever you gain life during each opponent's turn, draw a card.")
+            .script.triggeredAbilities.single().triggerRestriction shouldBe Conditions.IsNotYourTurn
+
+        roundTrips("Whenever one or more cards leave your graveyard during your turn, draw a card.")
+        roundTrips("Whenever you gain life during each opponent's turn, draw a card.")
+        roundTrips(
+            "Whenever one or more creature cards are put into your graveyard from anywhere during " +
+                "your turn, draw a card. This ability triggers only once each turn."
+        )
+    }
+
+    // "Whenever you sacrifice a Blood token" — the per-permanent spec (CR 603.2c), which is what
+    // separates it from the batch `YouSacrificeOneOrMore` the differential found on five cards.
+    "a sacrifice trigger is per-permanent and reads the predefined token nouns" {
+        fragment("Whenever you sacrifice a Blood token, draw a card.")
+            .script.triggeredAbilities.single().trigger shouldBe
+            SdkTriggers.YouSacrificeA(GameObjectFilter.Artifact.withSubtype("Blood")).event
+
+        roundTrips("Whenever you sacrifice a Blood token, draw a card.")
+        roundTrips("Whenever you sacrifice a creature, draw a card.")
+        roundTrips("Whenever you sacrifice another creature, draw a card.")
     }
 
     "every batch trigger rule prints what it parses" {

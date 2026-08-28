@@ -4,7 +4,9 @@ import com.wingedsheep.assay.syntax.Phrase
 import com.wingedsheep.assay.syntax.alternate
 import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.phrase
+import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Costs
@@ -12,11 +14,16 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.PayCost
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.sdk.scripting.effects.BecomeCreatureEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.effects.Gate
+import com.wingedsheep.sdk.scripting.effects.GatedEffect
+import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.sdk.scripting.effects.PayOrSufferEffect
 import com.wingedsheep.sdk.scripting.effects.RegenerateEffect
 import com.wingedsheep.sdk.scripting.effects.RemoveKeywordEffect
@@ -81,7 +88,7 @@ object SelfSteps {
             selfLosesKeyword(target, subject, tag),
             move("untap {self}", "untap$tag", Effects.Untap(target), subject),
             move("regenerate {self}", "regenerate$tag", RegenerateEffect(target), subject),
-        ) + putCounters(target, subject, tag) +
+        ) + putCounters(target, subject, tag) + selfAnimates(target, subject, tag) +
             // "{2}{U}: ~ can't be blocked this turn." — the durational evasion, whose whole family
             // lives in [Combat] beside the combat statics it is the spell-side sibling of. It is a
             // member here rather than a clause of its own because its object moves with every other
@@ -284,6 +291,154 @@ object SelfSteps {
             }
         }
     }
+
+    /**
+     * "**This artifact becomes a 3/3 Vampire artifact creature with haste until end of turn.**" —
+     * Sanguine Statuette, Sanguine Brushstroke, and the self side of the animate.
+     *
+     * [Steps.animateTargetPermanent]'s payload with the **token noun phrase** instead of the
+     * "with base power and toughness 5/5" clause, and the two are two rules because the P/T changes
+     * *position*: Oracle puts it in front of the type when the sentence names the resulting creature
+     * as a whole ("a 3/3 Vampire artifact creature") and behind it when the sentence modifies an
+     * existing permanent ("target creature becomes a blue Serpent with base power and toughness
+     * 5/5"). Neither template can be derived from the other, which is exactly [Steps.countedStepPair]'s
+     * criterion for two strings.
+     *
+     * ### "artifact" is a model field, and the corpus already writes it that way
+     *
+     * "a 3/3 Vampire **artifact** creature" names the types the permanent ends up with, and the line
+     * grammar has no type line to derive the word from — a rule that treated it as ornament would
+     * decline every card that prints it, which is the same wall the gift line hit. So it is a row of
+     * an omissible layer over `addTypes`, the field Relic's Roar and Phantom Train already use for
+     * this word. On a permanent that is already an artifact the value is a no-op union, which is
+     * what makes the reading safe as well as literal.
+     *
+     * ### One keyword, one creature type, one colour
+     *
+     * All three are `Set`s on `BecomeCreatureEffect` and a set has no order for a printer to
+     * recover, so this rule reads exactly one of each and a two-keyword animate declines —
+     * [Steps.animateTargetPermanent]'s finding, unchanged, and the honest verdict rather than a
+     * guess at which word leads.
+     *
+     * ### The "may" form is a variant of this shape rather than a wrapper
+     *
+     * [Steps]' `you may {inner}` spells a clause that states no subject; this one states one, and
+     * English contracts the two into the causative "you may **have** ~ **become** …" rather than
+     * repeating them. That is [Steps.mayCountedStep]'s contraction, one family over: both spellings
+     * are generated from one call site so the pair cannot drift, and the model is the same
+     * `MayEffect` either way.
+     */
+    private fun selfAnimate(
+        target: EffectTarget,
+        subject: Phrase<Unit>,
+        tag: String,
+        coloured: Boolean,
+        artifact: Boolean,
+        keyworded: Boolean,
+        may: Boolean,
+    ): Phrase<CardScript> {
+        fun scriptFor(
+            stats: Pair<Int, Int>,
+            colour: Color?,
+            type: Subtype,
+            keyword: Keyword?,
+        ): CardScript {
+            val animate = Effects.BecomeCreature(
+                target = target,
+                power = stats.first,
+                toughness = stats.second,
+                keywords = setOfNotNull(keyword),
+                creatureTypes = setOf(type.value),
+                addTypes = if (artifact) setOf("ARTIFACT") else emptySet(),
+                colors = colour?.let { setOf(it.name) },
+                duration = Duration.EndOfTurn,
+            )
+            return CardScript(spellEffect = if (may) MayEffect(animate) else animate)
+        }
+
+        val noun = "a {p}/{t} " +
+            (if (coloured) "{colour} " else "") +
+            "{type} " +
+            (if (artifact) "artifact " else "") +
+            "creature" +
+            (if (keyworded) " with {kw}" else "")
+        val template = if (may) {
+            "you may have {self} become $noun until end of turn"
+        } else {
+            "{self} becomes $noun until end of turn"
+        }
+        val name = buildString {
+            append(tag.trim().ifEmpty { "the source" })
+            append(" becomes a creature")
+            if (may) append(" (optional)")
+            if (coloured) append(" (coloured)")
+            if (artifact) append(" (artifact)")
+            if (keyworded) append(" (with a keyword)")
+        }
+        return phrase(template, name = name) {
+            if (!may) frontedDuration()
+            slot("self", subject)
+            slot("p", Primitives.cardinal)
+            slot("t", Primitives.cardinal)
+            if (coloured) slot("colour", Primitives.color)
+            slot("type", Primitives.creatureSubtype)
+            if (keyworded) slot("kw", Keywords.keyword)
+            build {
+                scriptFor(
+                    it.int("p") to it.int("t"),
+                    if (coloured) it.value<Color>("colour") else null,
+                    it.value("type"),
+                    if (keyworded) it.value<Keyword>("kw") else null,
+                )
+            }
+            match { script ->
+                val inner = if (may) {
+                    val gated = script.spellEffect as? GatedEffect ?: return@match null
+                    if (gated.gate !is Gate.MayDecide) return@match null
+                    gated.then
+                } else {
+                    script.spellEffect
+                }
+                val animate = inner as? BecomeCreatureEffect ?: return@match null
+                val colour = animate.colors?.singleOrNull()
+                    ?.let { name -> Color.entries.firstOrNull { it.name == name } }
+                if (coloured != (colour != null)) return@match null
+                if (artifact != animate.addTypes.isNotEmpty()) return@match null
+                val keyword = animate.keywords.singleOrNull()
+                if (keyworded != (keyword != null)) return@match null
+                val type = animate.creatureTypes.singleOrNull() ?: return@match null
+                val power = (animate.power as? DynamicAmount.Fixed)?.amount ?: return@match null
+                val toughness = (animate.toughness as? DynamicAmount.Fixed)?.amount ?: return@match null
+                if (script != scriptFor(power to toughness, colour, Subtype(type), keyword)) {
+                    return@match null
+                }
+                bind(
+                    "self" to Unit,
+                    "p" to power,
+                    "t" to toughness,
+                    "colour" to colour,
+                    "type" to Subtype(type),
+                    "kw" to keyword,
+                )
+            }
+        }
+    }
+
+    /** The [selfAnimate] product — the three omissible layers crossed with both "may" spellings. */
+    private fun selfAnimates(
+        target: EffectTarget,
+        subject: Phrase<Unit>,
+        tag: String,
+    ): List<Phrase<CardScript>> =
+        listOf(false, true).flatMap { may ->
+            listOf(false, true).flatMap { coloured ->
+                listOf(false, true).flatMap { artifact ->
+                    listOf(false, true).map { keyworded ->
+                        selfAnimate(target, subject, tag, coloured, artifact, keyworded, may)
+                    }
+                }
+            }
+        }
 
     /** "~ loses flying until end of turn." — Swooping Talon, the grant rules' negation. */
     private fun selfLosesKeyword(

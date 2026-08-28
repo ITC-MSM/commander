@@ -265,6 +265,40 @@ object Filters {
      * `Conditions.ControlPermanentOfType`, and `TargetFilter.PermanentInYourGraveyard`. That a
      * bare-noun reading had no way to be *written* is the finding this module exists to produce.
      */
+    /**
+     * "**a Blood token**", "**Treasure tokens**" — the seven predefined artifact tokens as a noun.
+     *
+     * `GameObjectFilter.Artifact.withSubtype("Blood")` is what every hand-written card means by the
+     * phrase, and [subtyped] can already *build* that value — but only from the words "Blood
+     * artifact", which no card prints. Oracle names these seven by their token noun, so a filter
+     * position had no readable spelling for them at all: "Whenever you sacrifice a Blood token"
+     * declined on the word "Blood".
+     *
+     * **The domain is a closed list, which is what makes this a row and not a layer.** The names are
+     * exactly the predefined tokens the SDK publishes a `create` facade for — the same list
+     * [Tokens] spells on the creating side — so this rule and [subtyped] are disjoint by *value*
+     * rather than by ordering: a subtype outside the list cannot reach this rule, and inside it
+     * Oracle prints only this form. That is the [Targets.creatureOrPlaneswalker] argument again —
+     * two spellings exist in the abstract and the corpus has already chosen one.
+     *
+     * The word "token" is part of the noun rather than a `IsToken` predicate, and deliberately: a
+     * Blood permanent that is not a token does not exist, the filter every card writes carries no
+     * such predicate, and adding one would make this rule read a *narrower* card than the text says.
+     */
+    private val PREDEFINED_TOKENS: List<String> =
+        listOf("Treasure", "Food", "Clue", "Blood", "Map", "Lander", "Shard")
+
+    private fun predefinedToken(plural: Boolean, name: String): Phrase<GameObjectFilter> =
+        oneOf(
+            name,
+            PREDEFINED_TOKENS.map { token ->
+                constant<GameObjectFilter>(
+                    if (plural) "$token tokens" else "$token token",
+                    GameObjectFilter.Artifact.withSubtype(Subtype(token)),
+                )
+            },
+        )
+
     private fun bareSubtype(plural: Boolean, name: String): Phrase<GameObjectFilter> =
         alternate(
             phrase<GameObjectFilter>("{subtype}", name = name) {
@@ -535,6 +569,9 @@ object Filters {
         val types = oneOf(
             "a permanent type or subtype$suffix",
             listOf(
+                // Ahead of [subtyped]: the seven names below print as a token noun and never as
+                // "{name} artifact", which is the only form that rule could spell them with.
+                predefinedToken(plural && !card, "a predefined token$suffix"),
                 named,
                 subtyped(named, "a permanent of a subtype$suffix"),
                 notSubtyped(named, "a permanent of another subtype$suffix"),
