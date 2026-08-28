@@ -17,13 +17,13 @@ cards using *only* supported mechanics need **no backend change** — pure `add-
 | **Cleave** | 12 | 2 | ✅ `AlternativeCostType.CLEAVE` + `cleaveTarget`/`cleaveEffect` DSL | CR 702.148 — text-modifying alternative cost on instants/sorceries, modeled as a cast-mode branch (not string mutation). 10 authored (reference cards Alchemist's Gambit, Dig Up, Fierce Retribution, Path of Peril, Wash Away + this batch's Alchemist's Retrieval, Dread Fugue, Lunar Rejection, Parasitic Grasp, Winged Portent). 2 blocked on orthogonal sub-features — see [`engine-features-cleave-blocked.md`](engine-features-cleave-blocked.md): **Inspired Idea** (reduce max hand size by N) and **Lantern Flare** (`{X}` in the cleave cost). |
 | **Training** | 9 | 9 | ❌ **GAP → [#1261](https://github.com/wingedsheep/argentum-engine/issues/1261)** | CR 702.149 — attack trigger gated on a co-attacker with greater power → +1/+1 counter; plus a "when this creature trains" payoff hook (702.149c). Structural analog: Mentor + Decayed. |
 | **Exploit** | 9 | 9 | ❌ **GAP → [#1260](https://github.com/wingedsheep/argentum-engine/issues/1260)** | CR 702.110 — ETB "may sacrifice a creature" + a paired "when this creature exploits a creature" payoff (702.110b, the crux). Analog: Casualty's reflexive "when you do" trigger. Also surfaces as blocked trigger `WhenAPermanentExploitsAPermanent` (×9). |
-| **Disturb** | ~13 | ~13 | ⚠️ **GAP — no issue yet** | CR 702.146 — cast the back face from your graveyard, then exile. Transform machinery exists (`TransformEffects`), but there is no Disturb keyword or graveyard-cast-back-face DSL. All are DFCs (spirit front // enchantment or aura back). Not on the coverage leaderboard because these DFCs sit in the tool's "unmatched in mtgish" bucket. |
-| **Daybound / Nightbound** | ~14 | ~14 | ⚠️ **GAP — no issue yet** | CR 702.145 — day/night designation + werewolf-style DFC flips keyed on spells-cast-per-turn. **Zero** engine support: no day/night state tracker anywhere in main source, no keyword. All are DFCs. Also invisible to the coverage leaderboard (unmatched-in-mtgish bucket). |
+| **Disturb** | ~13 | ~7 | ✅ `disturb("{cost}")` DSL + `DisturbCasts` | CR 702.146 — cast the back face from your graveyard, then exile. Shipped since this file was written: the DSL sits on top of the existing transform machinery, and `DisturbCasts` owns the graveyard cast. Reference cards: Lantern Bearer, Twinblade Geist, Kindly Ancestor, Drogskol Infantry, Binding Geist, Mischievous Catgeist, Distracting Geist. |
+| **Daybound / Nightbound** | ~14 | ~14 | ✅ `DayNightService` + `DayNightDsl` | CR 702.145 — day/night designation + werewolf-style DFC flips keyed on spells-cast-per-turn. Shipped since this file was written: `DayNightService` holds the designation, `BeginningPhaseManager` advances it, and `DayNightMechanicScenarioTest` covers the flips. The remaining cards are authoring work, not engine work. |
 
 **Transform / DFC machinery** — ✅ present (`TransformEffect`, `ExileAndReturnTransformedEffect`,
 `ReturnSelfFromZoneTransformedEffect`). The *effect* layer that flips a permanent's face exists and is
-reused by other sets; what VOW is missing is the two *keyword layers* above (Disturb's graveyard-cast +
-Daybound/Nightbound's day/night trigger) that drive those flips.
+reused by other sets, and the two *keyword layers* above it — Disturb's graveyard-cast and
+Daybound/Nightbound's day/night trigger — have since shipped too.
 
 ## Evergreen / returning keywords present
 
@@ -53,15 +53,10 @@ the cleave-cost enumerator.
 Training and Exploit are the top remaining entries on `just coverage-gaps --set VOW`'s BLOCKED
 leaderboard (×9 each), so clearing them unlocks the most cards.
 
-**Two further gaps have no work item yet** — flagged here so they aren't mistaken for supported:
-
-- **Disturb** (CR 702.146, ~13 cards) — needs a graveyard-cast-back-face keyword layered on the
-  existing transform machinery.
-- **Daybound / Nightbound** (CR 702.145, ~14 cards) — needs a day/night game-state tracker plus the
-  werewolf-flip trigger; nothing exists today.
-
-Both are absent from the coverage leaderboard only because their DFCs land in the tool's
-"unmatched in mtgish" bucket (name-join misses), **not** because they're covered.
+**Disturb and Daybound / Nightbound are no longer gaps.** Both keyword layers shipped after this
+file was written — see the table above for the entry points. Their remaining cards are pure
+`add-card` authoring. They are absent from the coverage leaderboard because their DFCs land in the
+tool's "unmatched in mtgish" bucket (name-join misses), not because they're unsupported.
 
 **Smaller blocked capabilities** (from `coverage-gaps`, lower-volume — assess per card, may be pure
 `add-feature` one-offs): `SetPT` layer effect (×4), `RemoveCounters` cost/action (×3),
@@ -71,5 +66,5 @@ items.
 
 **Everything else is pure `add-card` authoring** — Blood-token cards, the returning/evergreen keyword
 cards, and standard effects. Suggested order: clear the Blood/evergreen single-faced cards first, then
-land the Cleave/Training/Exploit features (highest unlock), and defer the Disturb / Daybound DFCs until
-those two keyword layers are built.
+land the Training/Exploit features (highest unlock), and take the Disturb / Daybound DFCs as ordinary
+authoring work now that both keyword layers exist.

@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 233 / 273
+**Implemented:** 238 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -20,7 +20,7 @@
 - [x] Avabruck Caretaker
 - [x] Ballista Watcher
 - [x] Belligerent Guest
-- [ ] Binding Geist
+- [x] Binding Geist
 - [x] Biolume Egg
 - [x] Bleed Dry
 - [x] Blood Fountain
@@ -71,7 +71,7 @@
 - [x] Desperate Farmer
 - [x] Dig Up
 - [x] Diregraf Scavenger
-- [ ] Distracting Geist
+- [x] Distracting Geist
 - [x] Diver Skaab
 - [ ] Dollhouse of Horrors
 - [x] Dominating Vampire
@@ -83,7 +83,7 @@
 - [x] Dreadlight Monstrosity
 - [x] Dreamroot Cascade
 - [x] Dreamshackle Geist
-- [ ] Drogskol Infantry
+- [x] Drogskol Infantry
 - [x] Dying to Serve
 - [x] Edgar's Awakening
 - [x] Edgar, Charmed Groom
@@ -145,7 +145,7 @@
 - [ ] Kaya, Geist Hunter
 - [x] Kessig Flamebreather
 - [x] Kessig Wolfrider
-- [ ] Kindly Ancestor
+- [x] Kindly Ancestor
 - [x] Lacerate Flesh
 - [x] Laid to Rest
 - [x] Lambholt Raconteur
@@ -163,7 +163,7 @@
 - [x] Militia Rallier
 - [x] Mindleech Ghoul
 - [ ] Mirrorhall Mimic
-- [ ] Mischievous Catgeist
+- [x] Mischievous Catgeist
 - [x] Moldgraf Millipede
 - [x] Mountain
 - [x] Mulch
