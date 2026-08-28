@@ -276,26 +276,36 @@
 /* A ring around the board element a tip or tour step names. Pointer-transparent, under the
    coach panel and every modal, over the board itself. */
 .spotlight {
+  --spot: #ffd76a;
   position: fixed;
   z-index: 590;
   pointer-events: none;
   border-radius: 12px;
-  border: 2px solid rgba(217, 180, 92, 0.55);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 0 18px rgba(217, 180, 92, 0.25);
-  animation: spotIn 0.3s ease-out both, spotPulse 2.4s ease-in-out 0.3s infinite;
+  border: 2.5px solid var(--spot);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    0 0 22px 2px rgba(255, 215, 106, 0.55),
+    inset 0 0 14px rgba(255, 215, 106, 0.25);
+  animation: spotIn 0.3s ease-out both, spotPulse 1.6s ease-in-out 0.3s infinite;
   transition: top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease;
 }
 
+/* The tour's ring dims everything else: a cut-out spotlight, so the one thing being named is the
+   one bright thing on the screen. The coach panel (z 600) stays above the dim. */
 .spotlightStrong {
-  border-color: #efd27a;
   border-width: 3px;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 0 28px rgba(239, 210, 122, 0.45);
+  /* Same as the animation's resting frame, so the dim survives prefers-reduced-motion. */
+  box-shadow:
+    0 0 0 9999px rgba(4, 4, 8, 0.6),
+    0 0 22px 2px rgba(255, 215, 106, 0.6),
+    inset 0 0 16px rgba(255, 215, 106, 0.25);
+  animation: spotIn 0.3s ease-out both, spotPulseStrong 1.6s ease-in-out 0.3s infinite;
 }
 
 @keyframes spotIn {
   from {
     opacity: 0;
-    transform: scale(1.04);
+    transform: scale(1.06);
   }
   to {
     opacity: 1;
@@ -306,10 +316,32 @@
 @keyframes spotPulse {
   0%,
   100% {
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 0 14px rgba(217, 180, 92, 0.2);
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.5),
+      0 0 18px 1px rgba(255, 215, 106, 0.45),
+      inset 0 0 12px rgba(255, 215, 106, 0.2);
   }
   50% {
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 0 26px rgba(217, 180, 92, 0.45);
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.5),
+      0 0 40px 8px rgba(255, 215, 106, 0.8),
+      inset 0 0 20px rgba(255, 215, 106, 0.4);
+  }
+}
+
+@keyframes spotPulseStrong {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 9999px rgba(4, 4, 8, 0.6),
+      0 0 22px 2px rgba(255, 215, 106, 0.6),
+      inset 0 0 16px rgba(255, 215, 106, 0.25);
+  }
+  50% {
+    box-shadow:
+      0 0 0 9999px rgba(4, 4, 8, 0.6),
+      0 0 46px 10px rgba(255, 215, 106, 0.95),
+      inset 0 0 24px rgba(255, 215, 106, 0.45);
   }
 }
 
