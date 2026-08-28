@@ -90,6 +90,15 @@ class MagicLinkService(
         return users.save(user.copy(displayName = displayName))
     }
 
+    /**
+     * Store the account's Learn to Play progress — the client's JSON, kept verbatim. Returns null if
+     * the account no longer exists. Caller validates the body (well-formed JSON, size cap).
+     */
+    fun updateLearnProgress(userId: UUID, progressJson: String): UserRow? {
+        val user = users.findById(userId).orElse(null) ?: return null
+        return users.save(user.copy(learnProgress = progressJson))
+    }
+
     private fun sha256Hex(value: String): String =
         MessageDigest.getInstance("SHA-256")
             .digest(value.toByteArray(Charsets.UTF_8))

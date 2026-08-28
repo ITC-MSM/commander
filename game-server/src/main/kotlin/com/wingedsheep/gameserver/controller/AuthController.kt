@@ -6,7 +6,10 @@ import com.wingedsheep.gameserver.auth.InvalidLoginTokenException
 import com.wingedsheep.gameserver.auth.MagicLinkService
 import com.wingedsheep.gameserver.persistence.UserRow
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -56,6 +59,8 @@ class AuthController(
 
     companion object {
         const val MAX_DISPLAY_NAME_LENGTH = 40
+        /** A course of a handful of missions is a few hundred bytes; anything near this is not progress. */
+        const val MAX_LEARN_PROGRESS_BYTES = 4096
     }
 
     @PostMapping("/request-login")
@@ -101,6 +106,38 @@ class AuthController(
         val updated = magicLinkService.updateDisplayName(claims.userId, name)
             ?: return ResponseEntity.status(401).body(mapOf("error" to "Account no longer exists"))
         return ResponseEntity.ok(updated.toDto())
+    }
+
+    /**
+     * The account's Learn to Play progress — the client's own JSON, returned verbatim, or `{}` when
+     * the course was never started on this account. Guests keep the same document in localStorage;
+     * the client merges the two on sign-in.
+     */
+    @GetMapping("/me/learn-progress", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun learnProgress(@RequestHeader(HttpHeaders.AUTHORIZATION, required = false) authorization: String?): ResponseEntity<Any> {
+        val claims = authSupport.requireUser(authorization)
+        val user = magicLinkService.findUser(claims.userId)
+            ?: return ResponseEntity.status(401).body(mapOf("error" to "Account no longer exists"))
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(user.learnProgress ?: "{}")
+    }
+
+    /** Replace the account's Learn to Play progress. The body must be a JSON object, and small. */
+    @PutMapping("/me/learn-progress", consumes = [MediaType.APPLICATION_JSON_VALUE])
+    fun updateLearnProgress(
+        @RequestHeader(HttpHeaders.AUTHORIZATION, required = false) authorization: String?,
+        @RequestBody body: String,
+    ): ResponseEntity<Any> {
+        val claims = authSupport.requireUser(authorization)
+        if (body.length > MAX_LEARN_PROGRESS_BYTES) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "Progress document too large"))
+        }
+        val parsed = runCatching { Json.parseToJsonElement(body) }.getOrNull()
+        if (parsed !is JsonObject) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "Progress must be a JSON object"))
+        }
+        magicLinkService.updateLearnProgress(claims.userId, parsed.toString())
+            ?: return ResponseEntity.status(401).body(mapOf("error" to "Account no longer exists"))
+        return ResponseEntity.noContent().build()
     }
 
     private fun UserRow.toDto() =

@@ -7,7 +7,7 @@
  * (the `/help` guide keeps a link for anyone who wants it back).
  */
 import { useNavigate } from 'react-router-dom'
-import { COURSE_MINUTES, MISSIONS } from '@/learn/missions'
+import { COURSE_COUNT_WORD, COURSE_MINUTES, MISSIONS } from '@/learn/missions'
 import { hasStarted, nextIncomplete, useLearnProgress } from '@/learn/progressStore'
 import styles from './LearnCallout.module.css'
 
@@ -35,7 +35,7 @@ export function LearnCallout({ variant }: { variant: 'arrival' | 'tier' }) {
           <span className={styles.arrivalBody}>
             {started
               ? `${completed.length} of ${MISSIONS.length} missions done — no name needed to continue.`
-              : `Learn by playing: four short guided games with a coach, about ${COURSE_MINUTES} minutes. No name needed.`}
+              : `Learn by playing: ${COURSE_COUNT_WORD} short guided games with a coach, about ${COURSE_MINUTES} minutes. No name needed.`}
           </span>
         </span>
         <span className={styles.arrivalArrow} aria-hidden="true">→</span>

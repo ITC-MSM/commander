@@ -28,6 +28,8 @@ data class UserRow(
     val isAdmin: Boolean = false,
     /** When true the account appears offline to its friends even while connected (presence opt-out). */
     val hidePresence: Boolean = false,
+    /** Learn to Play progress — the client's JSON, stored verbatim; null until the course is started. */
+    val learnProgress: String? = null,
     val createdAt: Instant = Instant.now(),
 )
 

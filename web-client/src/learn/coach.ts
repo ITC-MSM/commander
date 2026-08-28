@@ -90,6 +90,14 @@ export interface CoachView {
   /** A spell or ability is waiting on the stack. */
   stackSize: number
   attackersIncoming: number
+  /** While declaring attackers: how many creatures are selected to attack so far. */
+  attackersSelected: number
+  /** While declaring attackers: untapped creatures of mine that would stay home if the selected ones attack. */
+  blockersLeft: number
+  /** Creatures the opponent has on the battlefield. */
+  theirCreatures: number
+  /** The game ended because the player conceded — not a finished mission. */
+  conceded: boolean
   /**
    * What the big button at the bottom right says right now — "Pass", "Pass to Attackers",
    * "End Turn", "Resolve". The server computes it; the coach names it so the tip and the button
@@ -107,8 +115,8 @@ export interface CoachTip {
   key: string
   title: string
   body: string
-  /** Tone drives the accent colour: what to do now, what is happening, or the end of the game. */
-  tone: 'act' | 'watch' | 'done'
+  /** Tone drives the accent colour: what to do now, what is happening, a mistake in the making, or the end of the game. */
+  tone: 'act' | 'watch' | 'warn' | 'done'
   /** The board element to ring while this tip is up. */
   spot?: SpotId
 }
@@ -145,6 +153,14 @@ export function coachTip(view: CoachView, overrides: Partial<Record<string, TipO
 
 function baseTip(view: CoachView): CoachTip {
   if (view.isGameOver) {
+    if (view.conceded) {
+      return {
+        key: 'conceded',
+        title: 'You conceded.',
+        body: 'That ends the game but not the mission — it only counts when a game is played to the end, won or lost. Play it again whenever you like.',
+        tone: 'done',
+      }
+    }
     if (view.won === true) {
       return {
         key: 'won',
@@ -197,6 +213,20 @@ function baseTip(view: CoachView): CoachTip {
   }
 
   if (view.canAttack) {
+    // The classic first mistake: sending in the only creature that could block, into a board that
+    // can hit back. Said before the attack is confirmed, while it can still be undone with a click.
+    if (view.attackersSelected > 0 && view.blockersLeft === 0 && view.theirCreatures > 0) {
+      return {
+        key: 'attack-warning',
+        title: 'That leaves nobody home.',
+        body:
+          view.theirCreatures > 1
+            ? `Attackers tap, and they have ${view.theirCreatures} creatures that can hit back next turn with nothing of yours untapped to block. Sure? {click} a creature again to keep it back, or go ahead with Attack with N.`
+            : 'Attackers tap, and they have a creature that can hit back next turn with nothing of yours untapped to block. Sure? {click} a creature again to keep it back, or go ahead with Attack with N.',
+        tone: 'warn',
+        spot: 'combat-buttons',
+      }
+    }
     return {
       key: 'attack',
       title: 'Combat — your creatures can attack.',
@@ -207,6 +237,17 @@ function baseTip(view: CoachView): CoachTip {
   }
 
   if (view.isMyTurn && view.hasPriority) {
+    if (view.stackSize > 0) {
+      return {
+        key: 'stack-mine',
+        title: 'A spell is waiting on the stack.',
+        body: view.canCast
+          ? 'Nothing has happened yet. You can answer with an instant — drag it out or {click-lower} it — or press {pass} and let the stack resolve, last spell first.'
+          : 'Nothing to answer it with, so press {pass}. The stack resolves top-down: the last spell cast happens first, then the one under it.',
+        tone: view.canCast ? 'act' : 'watch',
+        spot: 'stack',
+      }
+    }
     if (view.canPlayLand && view.canCast) {
       return {
         key: 'land-and-cast',
@@ -301,13 +342,59 @@ function baseTip(view: CoachView): CoachTip {
     }
   }
 
+  // Nothing to decide right now. Two different keys, because they are two different situations —
+  // a mission's "the Tutor will play a land and pass" must never show in the player's own combat.
+  const phase = phaseOf(view.step)
+  if (view.isMyTurn) {
+    return {
+      key: 'working',
+      title: phase === 'combat' ? 'Combat is playing out.' : phase === 'end' ? 'Your turn is ending.' : 'The game is working through your turn.',
+      body:
+        phase === 'combat'
+          ? 'Attackers hit, blockers hit back, and the damage is dealt — the strip at the top walks through it. You get the board back the moment there is something to decide.'
+          : phase === 'end'
+            ? 'The Tutor gets a last chance to act, then it is their turn. Watch the strip at the top.'
+            : 'Steps with nothing to decide pass on their own. You get the board back the moment there is something to do.',
+      tone: 'watch',
+      spot: 'phase-strip',
+    }
+  }
   return {
     key: 'waiting',
-    title: view.isMyTurn ? 'The game is working through your turn.' : 'The Tutor is thinking.',
-    body: view.isMyTurn
-      ? 'Steps with nothing to decide pass on their own. You get the board back the moment there is something to do.'
-      : 'Watch the strip at the top — the lit dot is where their turn is. If they attack you will be asked to block; if they cast a spell you may get a chance to respond.',
+    title: 'The Tutor is taking a turn.',
+    body:
+      phase === 'combat'
+        ? 'They are in combat. If a creature of theirs attacks, the game will stop and ask you to block.'
+        : phase === 'end'
+          ? 'Their turn is ending. Yours is next — the strip at the top comes back to blue.'
+          : phase === 'beginning'
+            ? 'They untap and draw. Then their main phase: a land, and whatever they can afford.'
+            : 'They can play a land and cast spells. If they cast something you may get a chance to respond; if they attack you will be asked to block.',
     tone: 'watch',
     spot: 'phase-strip',
+  }
+}
+
+type Phase = 'beginning' | 'main' | 'combat' | 'end'
+
+/** The five phases behind the thirteen step names the server sends. */
+export function phaseOf(step: string): Phase {
+  switch (step) {
+    case 'UNTAP':
+    case 'UPKEEP':
+    case 'DRAW':
+      return 'beginning'
+    case 'BEGIN_COMBAT':
+    case 'DECLARE_ATTACKERS':
+    case 'DECLARE_BLOCKERS':
+    case 'FIRST_STRIKE_COMBAT_DAMAGE':
+    case 'COMBAT_DAMAGE':
+    case 'END_COMBAT':
+      return 'combat'
+    case 'END':
+    case 'CLEANUP':
+      return 'end'
+    default:
+      return 'main'
   }
 }

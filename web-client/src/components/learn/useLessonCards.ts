@@ -66,3 +66,27 @@ function fallback(names: readonly string[]): Record<string, LessonCard> {
   for (const name of names) out[name] = { name, imageUrl: getCardImageUrl(name, undefined, 'normal'), summary: null }
   return out
 }
+
+/**
+ * Warm the browser's image cache for a list of cards — the course home calls this for every
+ * brief's opening cards, so a brief opens with its cards already painted instead of three grey
+ * boxes while Scryfall answers. Fire-and-forget; nothing is rendered.
+ */
+export function usePreloadLessonCards(names: readonly string[]) {
+  const key = names.join('|')
+  useEffect(() => {
+    const wanted = key.split('|').filter(Boolean)
+    if (wanted.length === 0) return
+    let cancelled = false
+    fetchSummaries(wanted).then((index) => {
+      if (cancelled) return
+      for (const name of wanted) {
+        const img = new Image()
+        img.src = getCardImageUrl(name, index.get(name)?.imageUri ?? undefined, 'normal')
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [key])
+}

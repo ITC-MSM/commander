@@ -1,5 +1,5 @@
 /**
- * `/learn` — the course home, a hand of four mission cards — and `/learn/:missionId`, the brief
+ * `/learn` — the course home, a hand of mission cards — and `/learn/:missionId`, the brief
  * for one mission: three lines on what you will do, the cards you start with, and the button
  * that puts you at the table.
  *
@@ -10,14 +10,14 @@
  */
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { COURSE_MINUTES, MISSIONS, TUTOR_NAME, learnHref, missionById, type Mission, type MissionId } from '@/learn/missions'
+import { COURSE_COUNT_WORD, COURSE_MINUTES, MISSIONS, TUTOR_NAME, learnHref, missionById, type Mission, type MissionId } from '@/learn/missions'
 import { armCoach } from '@/learn/coach'
-import { hasStarted, nextIncomplete, useLearnProgress } from '@/learn/progressStore'
+import { hasStarted, nextIncomplete, syncLearnProgress, useLearnProgress } from '@/learn/progressStore'
 import { useAuthStore } from '@/store/authStore'
 import type { ScenarioCreateResponse } from '@/components/scenario/types'
 import { MissionHand, MiniHand, frameVar } from '@/components/learn/MissionHand'
 import { CardImage } from '@/components/learn/CardImage'
-import { useLessonCards } from '@/components/learn/useLessonCards'
+import { useLessonCards, usePreloadLessonCards } from '@/components/learn/useLessonCards'
 import styles from '@/components/learn/learn.module.css'
 
 const NAME_KEY = 'argentum-player-name'
@@ -81,10 +81,15 @@ function CourseHome() {
 
   useEffect(() => {
     document.title = 'Learn to play — Argentum'
+    // Signed in? Fold the account's progress into this browser's, and vice versa.
+    void syncLearnProgress()
     return () => {
       document.title = 'Argentum Engine'
     }
   }, [])
+
+  // Every brief's opening cards, fetched now so the brief opens with its cards already painted.
+  usePreloadLessonCards(MISSIONS.flatMap((m) => m.openingCards.map((c) => c.name)))
 
   return (
     <>
@@ -97,9 +102,10 @@ function CourseHome() {
           <em>by playing it.</em>
         </h1>
         <p className={styles.lede}>
-          Four short games against the AI, each from a board set up to teach one thing, with a coach at your
-          elbow saying what to do next — and where on the table to do it. About {COURSE_MINUTES} minutes all
-          told. Nothing to read first, nothing to sign up for.
+          {COURSE_COUNT_WORD[0]!.toUpperCase() + COURSE_COUNT_WORD.slice(1)} short games against the AI, each
+          from a board set up to teach one thing, with a coach at your elbow saying what to do next — and where
+          on the table to do it. About {COURSE_MINUTES} minutes all told. Nothing to read first, nothing to sign
+          up for.
         </p>
         <div className={styles.heroActions}>
           {finished ? (

@@ -85,7 +85,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     section: 'getting-started',
     title: 'New to Magic itself?',
     summary:
-      'This guide assumes you know the game. If you do not, the Learn to Play course teaches it by playing: four short games against the AI, each from a board set up to teach one thing, with a coach saying what to do next.',
+      'This guide assumes you know the game. If you do not, the Learn to Play course teaches it by playing: a handful of short games against the AI, each from a board set up to teach one thing, with a coach saying what to do next and pointing at the part of the table to do it on.',
     body: [
       { kind: 'p', text: 'The course lives at /learn and needs no name or account. Progress is kept in this browser; the landing page points at it until you have finished.' },
     ],

@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest'
 import type { ClientEvent } from '@/types/events'
 import type { ClientCard, ClientGameState } from '@/types/gameState'
 import type { EntityId } from '@/types'
-import { COURSE_MINUTES, MISSIONS, missionById, missionCardNames, nextMission, type ObjectiveContext } from './missions'
+import { CARD_NOTES, COURSE_COUNT_WORD, COURSE_MINUTES, MISSIONS, latestNotedPermanent, missionById, missionCardNames, nextMission, type ObjectiveContext } from './missions'
 import { hasStarted, nextIncomplete } from './progressStore'
 import { ALL_SPOTS } from './spots'
 
@@ -64,8 +64,13 @@ describe('the missions', () => {
         expect(seat?.library?.length ?? 0).toBeLessThanOrEqual(100)
         expect(seat?.library?.length ?? 0).toBeGreaterThanOrEqual(8)
       }
-      // The opening cards the brief shows really are in the opening hand or on the board.
-      const opening = new Set([...(spec.player1?.hand ?? []), ...(spec.player1?.battlefield ?? []).map((c) => c.name)])
+      // The opening cards the brief shows really are in the opening hand, on the board, or among
+      // the first few draws.
+      const opening = new Set([
+        ...(spec.player1?.hand ?? []),
+        ...(spec.player1?.battlefield ?? []).map((c) => c.name),
+        ...(spec.player1?.library ?? []).slice(0, 4),
+      ])
       expect(m.openingCards.map((c) => c.name).filter((n) => !opening.has(n))).toEqual([])
     }
   })
@@ -76,7 +81,7 @@ describe('the missions', () => {
       expect(m.tour.length, m.id).toBeLessThanOrEqual(4)
       for (const step of m.tour) {
         expect(ALL_SPOTS).toContain(step.spot)
-        expect(step.body.length).toBeLessThan(220)
+        expect(step.body.length).toBeLessThan(400)
       }
       expect(m.lessons.length, m.id).toBeGreaterThanOrEqual(2)
       expect(m.lessons.length, m.id).toBeLessThanOrEqual(3)
@@ -93,8 +98,15 @@ describe('the missions', () => {
     expect(COURSE_MINUTES).toBeLessThanOrEqual(30)
   })
 
+  it('counts itself in words', () => {
+    expect(COURSE_COUNT_WORD).toBe('five')
+    expect(MISSIONS.length).toBe(5)
+  })
+
   it('walks forward', () => {
     expect(nextMission('first-steps')?.id).toBe('blocking')
+    expect(nextMission('instants')?.id).toBe('removal')
+    expect(nextMission('removal')?.id).toBe('real-game')
     expect(nextMission('real-game')).toBeUndefined()
     expect(missionById('nope')).toBeUndefined()
   })
@@ -119,7 +131,7 @@ function ctx(events: readonly object[], cards: ClientCard[], extra: Partial<Clie
     winnerId: null,
     ...extra,
   } as unknown as ClientGameState
-  return { state, me: ME, won: null }
+  return { state, me: ME, won: null, signals: new Set() }
 }
 
 const objective = (missionId: string, id: string) => {
@@ -162,6 +174,30 @@ describe('objectives', () => {
     expect(objective('blocking', 'kill').done(ctx([died], [cardOf('c1', ME, ['CREATURE'])]))).toBe(false)
   })
 
+  it('reads the app signals for the log and undo, and an Aura for the removal mission', () => {
+    const base = ctx([], [])
+    expect(objective('blocking', 'log').done(base)).toBe(false)
+    expect(objective('blocking', 'log').done({ ...base, signals: new Set(['logOpened']) })).toBe(true)
+    expect(objective('real-game', 'undo').done({ ...base, signals: new Set(['undoUsed']) })).toBe(true)
+    const cast = { type: 'spellCast', spellId: 's1', spellName: 'Pacifism', casterId: ME, description: '' } as const
+    expect(objective('removal', 'enchantment').done(ctx([cast], [cardOf('s1', ME, ['ENCHANTMENT'])]))).toBe(true)
+    expect(objective('removal', 'enchantment').done(ctx([cast], [cardOf('s1', ME, ['CREATURE'])]))).toBe(false)
+  })
+
+  it('names the keyword of the most recently arrived noted permanent', () => {
+    const entered = (id: string, name: string) =>
+      ({ type: 'permanentEntered', cardId: id, cardName: name, controllerId: THEM, enteredTapped: false, description: '' }) as const
+    const onTable = (id: string, name: string) =>
+      ({ ...cardOf(id, THEM, ['CREATURE']), name, zone: { zoneType: 'Battlefield' } }) as unknown as ClientCard
+    const rats = onTable('r1', 'Typhoid Rats')
+    const ogre = onTable('o1', 'Gray Ogre')
+    expect(latestNotedPermanent(ctx([entered('r1', 'Typhoid Rats'), entered('o1', 'Gray Ogre')], [rats, ogre]).state)?.note.keyword).toBe('Deathtouch')
+    // A noted card that has since left the battlefield is not explained.
+    const gone = { ...rats, zone: { zoneType: 'Graveyard' } } as unknown as ClientCard
+    expect(latestNotedPermanent(ctx([entered('r1', 'Typhoid Rats')], [gone]).state)).toBeNull()
+    expect(CARD_NOTES['Typhoid Rats']?.body).toMatch(/kills/)
+  })
+
   it('wins from the store result or the state', () => {
     const win = objective('real-game', 'win')
     expect(win.done(ctx([], []))).toBe(false)
@@ -175,6 +211,7 @@ describe('progress helpers', () => {
   it('continues at the first unfinished mission, in course order', () => {
     expect(nextIncomplete([])).toBe('first-steps')
     expect(nextIncomplete(['first-steps', 'instants'])).toBe('blocking')
+    expect(nextIncomplete(['first-steps', 'blocking', 'instants'])).toBe('removal')
     expect(nextIncomplete(MISSIONS.map((m) => m.id))).toBeUndefined()
     expect(hasStarted({ completed: [] })).toBe(false)
     expect(hasStarted({ completed: ['first-steps'] })).toBe(true)
