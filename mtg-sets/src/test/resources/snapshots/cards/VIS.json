@@ -1000,6 +1000,47 @@
     ]
 }
 
+// Undo
+{
+    "name": "Undo",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return two target creatures to their owners' hands.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": "IterationSpace.Targets",
+            "body": {
+                "type": "MoveToZone",
+                "target": {
+                    "type": "ContextTarget",
+                    "index": 0
+                },
+                "destination": "Hand"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "count": 2,
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "47",
+        "artist": "Terese Nielsen",
+        "flavorText": "\"Oft have I wished to undo past deeds, but never did I imagine they would be undone for me.\"\n—Naimah, Femeref philosopher",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/b/2bef942e-9d17-4d40-a4c9-8be715e73a08.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Vampiric Tutor
 {
     "name": "Vampiric Tutor",
