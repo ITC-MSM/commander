@@ -306,6 +306,37 @@ A restriction implemented *outside* the layer system (read directly by a manager
 restrictions are) would stop the untap while leaving the card visually identical to one that untaps
 normally. `UntapRestrictionVisibilityTest` pins the projected-keyword contract this depends on.
 
+## Battlefield card sizing
+
+Battlefield cards are sized from the slot the board grid gives them, not from the window: every
+row's fullest wrap line must fit the slot's width, and all lines, dividers, row paddings and the gap
+toward the center HUD must fit its height. Rows never move — creatures/planeswalkers stay in the
+front row by the HUD, lands/other in the back row at the outer edge — only the card size and the
+wrap-line count per row change with what is on the board. Design and worked numbers:
+[`plans/battlefield-sparse-layout.md`](plans/battlefield-sparse-layout.md).
+
+- **`board/battlefieldLayout.ts`** — the pure solver (`solveSlotLayout`, `solvePooledLayout`) and
+  every geometry constant (card aspect, size floor/ceiling, divider strip, tapped footprint, stack
+  peek, `BACK_ROW_SCALE`). No DOM, no React; `battlefieldLayout.test.ts` pins the reference numbers.
+  An empty row costs no line, and the divider margin / HUD gap / row padding scale with the card
+  actually rendered rather than with the desktop base card.
+- **`board/useBoardGroups.ts`** — groups one side's permanents into stacks (`groupCards`) and derives
+  the per-row stats the solver consumes (stack count, tapped count, capped peek depth).
+- **`board/shared.ts` — `useSlotSizedResponsive`** — measures one battlefield's slot with a
+  `ResizeObserver`, runs `solveSlotLayout`, and re-provides `ResponsiveContext` with the resulting
+  `battlefieldCardWidth` (badges and row padding rescaled by `sizesForCardWidth`). This is the path
+  for multiplayer strip cells, which size themselves per cell.
+- **`board/usePooledBattlefieldLayout.ts`** — the two-player path. `GameBoard` measures the height
+  grid rows 2 and 4 have *together* (container minus the hand reservations and the HUD) and both
+  sides' stats, and `solvePooledLayout` returns one shared card width plus the slot height each side
+  needs; the heights become the `fr` weights of rows 2/4 and the layout reaches both `Battlefield`s
+  through `PooledBattlefieldLayoutContext`. The split is clamped (`SLOT_SPLIT_MIN`) so the HUD stays
+  near the middle. No feedback loop: every measured input (viewport, HUD `auto` height, the fixed
+  zone-pile / command-zone columns) is independent of the layout it produces.
+- Battlefield card boxes ease size changes (`CARD_RESIZE_TRANSITION`, off under
+  `prefers-reduced-motion`); the arrow overlays poll rects every 100 ms and drag-drop resolves with
+  `elementFromPoint`, so both follow a transition without change.
+
 ## Battlefield card grouping (token quantity aggregation)
 
 Identical permanents on one player's board collapse into a single visual **stack**
