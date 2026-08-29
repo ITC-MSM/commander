@@ -936,6 +936,82 @@
     ]
 }
 
+// Drowner of Secrets
+{
+    "name": "Drowner of Secrets",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Merfolk Wizard",
+    "oracleText": "Tap an untapped Merfolk you control: Target player mills a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "filter": "permanent Merfolk"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "descriptionOverride": "Tap an untapped Merfolk you control: Target player mills a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "58",
+        "rarity": "UNCOMMON",
+        "artist": "Rebecca Guay",
+        "flavorText": "Merrows consider themselves the keepers of Lorwyn's past—and consider it their duty to edit when necessary.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/4/149aa77e-fc10-4b9b-8f38-cc6db5be7b79.jpg?1783942904"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Elvish Handservant
 {
     "name": "Elvish Handservant",
@@ -1450,6 +1526,48 @@
         "rarity": "UNCOMMON",
         "artist": "Larry MacDougall",
         "imageUri": "https://cards.scryfall.io/normal/front/f/9/f9bdc319-4e06-420b-ba54-6cb994d4e279.jpg?1783942903"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Fallowsage
+{
+    "name": "Fallowsage",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Merfolk Wizard",
+    "oracleText": "Whenever this creature becomes tapped, you may draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TapEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                },
+                "descriptionOverride": "Whenever this creature becomes tapped, you may draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "63",
+        "rarity": "UNCOMMON",
+        "artist": "Paolo Parente",
+        "flavorText": "Memories of ages past are said to swim the minds of lounging fallowsages.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/4/d4237352-4e0e-4f40-946b-2a61753674d4.jpg?1783942904"
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -2747,6 +2865,51 @@
     ]
 }
 
+// Judge of Currents
+{
+    "name": "Judge of Currents",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Merfolk Wizard",
+    "oracleText": "Whenever a Merfolk you control becomes tapped, you may gain 1 life.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "TapEvent",
+                    "filter": "permanent Merfolk ctrl:you"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                },
+                "descriptionOverride": "Whenever a Merfolk you control becomes tapped, you may gain 1 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "22",
+        "artist": "Dan Murayama Scott",
+        "flavorText": "Though the currents of the Lanes shift every year, the merrow never lose track of where they are or where they are going.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/0/3073f3f5-bff8-4ec1-a68f-c83d63435843.jpg?1783942913"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Kinsbaile Skirmisher
 {
     "name": "Kinsbaile Skirmisher",
@@ -3173,6 +3336,51 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Merrow Commerce
+{
+    "name": "Merrow Commerce",
+    "manaCost": "{1}{U}",
+    "typeLine": "Kindred Enchantment — Merfolk",
+    "oracleText": "At the beginning of your end step, untap all Merfolk you control.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "permanent Merfolk ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "TapUntap",
+                        "target": "Self",
+                        "tap": false
+                    }
+                },
+                "descriptionOverride": "At the beginning of your end step, untap all Merfolk you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "72",
+        "rarity": "UNCOMMON",
+        "artist": "Steve Ellis",
+        "flavorText": "Schools meet and mingle on Lorwyn's riverways. In the bustling interplay, the merrow renew their sense of community as they sharpen their wits and hone their trading skills.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/a/3ad0c3b4-fd24-44ad-8b30-4176f07be3d6.jpg?1783942900"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -4671,6 +4879,47 @@
         "imageUri": "https://cards.scryfall.io/normal/front/e/4/e472d4f5-add4-4de3-8718-31a47a35277c.jpg?1783942851"
     },
     "colorIdentityOverride": []
+}
+
+// Veteran of the Depths
+{
+    "name": "Veteran of the Depths",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Merfolk Soldier",
+    "oracleText": "Whenever this creature becomes tapped, you may put a +1/+1 counter on it.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TapEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Whenever this creature becomes tapped, you may put a +1/+1 counter on it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "46",
+        "rarity": "UNCOMMON",
+        "artist": "Daren Bader",
+        "flavorText": "In the backwaters of the Merrow Lanes lie stones scarred with tallies of countless generations, each representing a victory of merrow soldiers.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c36fe821-e9b1-453d-8e44-f8dce111a6de.jpg?1783942907"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }
 
 // Wanderer's Twig
