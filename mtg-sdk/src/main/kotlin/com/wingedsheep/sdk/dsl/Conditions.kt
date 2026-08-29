@@ -1636,6 +1636,22 @@ object Conditions {
         AllConditions(listOf(YouGainedLifeThisTurn, YouLostLifeThisTurn))
 
     /**
+     * If you discarded a card this turn — Ragged Recluse's end-step flip, and the madness/hellbent
+     * payoffs that gate on a discard having happened at all.
+     *
+     * The tally is `TurnTracker.CARDS_DISCARDED`, the same per-player record
+     * [DynamicAmounts.cardsDiscardedThisTurn] counts, so this is a *name* for the composition rather
+     * than a new capability: a card that wants the count writes the amount, and one that wants the
+     * yes/no writes this. It counts **cards**, not discard events, which is what the printed "a card
+     * this turn" asks for — one discard of two cards satisfies it exactly as two discards of one do.
+     *
+     * Not [YouDiscardedThisCardThisTurn], which is Mayhem's per-*card* question ("this card was the
+     * one you discarded") and reads a different record entirely.
+     */
+    val YouDiscardedACardThisTurn: ConditionInterface =
+        trackerAtLeast(com.wingedsheep.sdk.scripting.values.TurnTracker.CARDS_DISCARDED)
+
+    /**
      * If you attacked this turn (you declared at least one attacker).
      * Used for Mardu Skullhunter, Mardu Hordechief, Wingmate Roc, Arrow Storm, etc.
      */

@@ -1,17 +1,14 @@
 package com.wingedsheep.mtg.sets.definitions.vow.cards
 
 import com.wingedsheep.sdk.dsl.Conditions
-import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
 import com.wingedsheep.sdk.scripting.effects.TransformEffect
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Ragged Recluse // Odious Witch (Innistrad: Crimson Vow #127 — the card's earliest printing)
@@ -28,12 +25,12 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * resolution. A discard that happens in response to the trigger therefore still turns it on, and a
  * card discarded earlier in the turn keeps it on even though the hand has since refilled.
  *
- * "You discarded a card this turn" is the turn-scoped tally
- * [DynamicAmounts.cardsDiscardedThisTurn] — the engine's `CardsDiscardedThisTurnComponent`, written
- * by every discard site (cost, effect, cycling, hand-size cleanup) and reset each turn — compared
- * against 1. It is a count of *cards*, not of discard events, which is what the printed "a card"
- * asks for: one discard of two cards satisfies it just as two discards of one do. This is not an
- * ordinary flip trigger the opponent can play around, so it is not a "may".
+ * "You discarded a card this turn" is [Conditions.YouDiscardedACardThisTurn], named in this change
+ * over the turn-scoped tally `TurnTracker.CARDS_DISCARDED` — the engine's
+ * `CardsDiscardedThisTurnComponent`, written by every discard site (cost, effect, cycling, hand-size
+ * cleanup) and reset each turn. It counts *cards*, not discard events, which is what the printed
+ * "a card" asks for: one discard of two cards satisfies it just as two discards of one do. This is
+ * not an ordinary flip trigger the opponent can play around, so it is not a "may".
  *
  * The back is a plain attack drain. "Defending player" is [Player.DefendingPlayer], resolved from
  * the attack the trigger fired on rather than from targeting, so the ability targets nothing and the
@@ -52,11 +49,7 @@ private val RaggedRecluseFront = card("Ragged Recluse") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        interveningIf = Conditions.CompareAmounts(
-            DynamicAmounts.cardsDiscardedThisTurn(),
-            ComparisonOperator.GTE,
-            DynamicAmount.Fixed(1),
-        )
+        interveningIf = Conditions.YouDiscardedACardThisTurn
         effect = TransformEffect(EffectTarget.Self)
         description = "At the beginning of your end step, if you discarded a card this turn, " +
             "transform this creature."
