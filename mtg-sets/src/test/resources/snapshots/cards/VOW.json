@@ -6007,6 +6007,70 @@
     ]
 }
 
+// Eruth, Tormented Prophet
+{
+    "name": "Eruth, Tormented Prophet",
+    "manaCost": "{1}{U}{R}",
+    "typeLine": "Legendary Creature — Human Wizard",
+    "oracleText": "If you would draw a card, exile the top two cards of your library instead. You may play those cards this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "ReplaceDrawWith",
+                "replacementEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "storeAs": "impulseExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "impulseExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "impulseExiled"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "237",
+        "rarity": "RARE",
+        "artist": "Ekaterina Burmak",
+        "flavorText": "She is cursed with visions of monsters and suffering . . . and all her visions come true.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/f/9f764077-df2d-4ac7-b507-2c8e08386d49.jpg?1783924793",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "You may choose to apply Eruth's replacement effect even if there are fewer than two cards in your library. If there are no cards in your library, you won't exile any cards this way, but you also won't lose the game for having attempted to draw from an empty library."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Estwald Shieldbasher
 {
     "name": "Estwald Shieldbasher",
@@ -9818,6 +9882,221 @@
     "colorIdentityOverride": []
 }
 
+// Katilda, Dawnhart Martyr
+{
+    "name": "Katilda, Dawnhart Martyr",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Legendary Creature — Spirit Warlock",
+    "oracleText": "Flying, lifelink, protection from Vampires\nKatilda's power and toughness are each equal to the number of permanents you control that are Spirits and/or enchantments.\nDisturb {3}{W}{W} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "keywords": [
+        "FLYING",
+        "LIFELINK",
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Protection",
+            "scope": {
+                "type": "ProtectionScope.Subtype",
+                "subtype": "Vampire"
+            }
+        },
+        {
+            "type": "Disturb",
+            "cost": "{3}{W}{W}"
+        }
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "SetBasePowerToughnessDynamicStatic",
+                "power": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "And",
+                                        "predicates": [
+                                            "IsPermanent",
+                                            {
+                                                "type": "HasSubtype",
+                                                "subtype": "Spirit"
+                                            }
+                                        ]
+                                    },
+                                    "IsEnchantment"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "toughness": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "And",
+                                        "predicates": [
+                                            "IsPermanent",
+                                            {
+                                                "type": "HasSubtype",
+                                                "subtype": "Spirit"
+                                            }
+                                        ]
+                                    },
+                                    "IsEnchantment"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Katilda's Rising Dawn",
+        "manaCost": "",
+        "typeLine": "Legendary Enchantment — Aura",
+        "oracleText": "Enchant creature\nEnchanted creature has flying, lifelink, and protection from Vampires, and it gets +X/+X, where X is the number of permanents you control that are Spirits and/or enchantments.\nIf Katilda's Rising Dawn would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING"
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK"
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "PROTECTION_FROM_SUBTYPE_VAMPIRE"
+                },
+                {
+                    "type": "GrantDynamicStats",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "AttachedTo"
+                    },
+                    "powerBonus": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "Or",
+                                    "predicates": [
+                                        {
+                                            "type": "And",
+                                            "predicates": [
+                                                "IsPermanent",
+                                                {
+                                                    "type": "HasSubtype",
+                                                    "subtype": "Spirit"
+                                                }
+                                            ]
+                                        },
+                                        "IsEnchantment"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "toughnessBonus": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "Or",
+                                    "predicates": [
+                                        {
+                                            "type": "And",
+                                            "predicates": [
+                                                "IsPermanent",
+                                                {
+                                                    "type": "HasSubtype",
+                                                    "subtype": "Spirit"
+                                                }
+                                            ]
+                                        },
+                                        "IsEnchantment"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        },
+        "metadata": {
+            "collectorNumber": "21",
+            "rarity": "RARE",
+            "artist": "Manuel Castañón",
+            "imageUri": "https://cards.scryfall.io/normal/back/0/e/0ef240aa-2a88-4ec4-888a-918466372adb.jpg?1783924922"
+        },
+        "colorIdentityOverride": [
+            "WHITE"
+        ],
+        "colorIndicator": [
+            "WHITE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "21",
+        "rarity": "RARE",
+        "artist": "Manuel Castañón",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/e/0ef240aa-2a88-4ec4-888a-918466372adb.jpg?1783924922",
+        "rulings": [
+            {
+                "date": "2021-09-24",
+                "text": "When you cast a spell using a card's disturb ability, the card is put onto the stack with its back face up. The resulting spell has all the characteristics of that face."
+            },
+            {
+                "date": "2021-09-24",
+                "text": "The mana value of a spell cast using disturb is determined by the mana cost on the front face of the card, no matter what the total cost to cast the spell was."
+            },
+            {
+                "date": "2021-09-24",
+                "text": "The back face of each card with disturb has an ability that instructs its controller to exile it if it would be put into a graveyard from anywhere. This includes going to the graveyard from the stack, so if the spell is countered after you cast it using the disturb ability, it will be put into exile."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Kessig Flamebreather
 {
     "name": "Kessig Flamebreather",
@@ -11193,6 +11472,123 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Mirrorhall Mimic
+{
+    "name": "Mirrorhall Mimic",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "You may have this creature enter as a copy of any creature on the battlefield, except it's a Spirit in addition to its other types.\nDisturb {3}{U}{U} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "keywords": [
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{3}{U}{U}"
+        }
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersAsCopy",
+                "additionalSubtypes": [
+                    "Spirit"
+                ]
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Ghastly Mimicry",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura",
+        "oracleText": "Enchant creature\nAt the beginning of your upkeep, create a token that's a copy of enchanted creature, except it's a Spirit in addition to its other types.\nIf Ghastly Mimicry would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_1",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "UPKEEP"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "CreateTokenCopyOfTarget",
+                        "target": "EnchantedCreature",
+                        "addedSubtypes": [
+                            "Spirit"
+                        ]
+                    }
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        },
+        "metadata": {
+            "collectorNumber": "68",
+            "rarity": "RARE",
+            "artist": "Justine Cruz",
+            "imageUri": "https://cards.scryfall.io/normal/back/8/2/823ad188-bd56-476d-9853-bed90bfad582.jpg?1783924898"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "68",
+        "rarity": "RARE",
+        "artist": "Justine Cruz",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/2/823ad188-bd56-476d-9853-bed90bfad582.jpg?1783924898",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Mirrorhall Mimic copies exactly what was printed on the original creature (unless that creature is copying something else or is a token), except that it's also a Spirit. It doesn't copy whether that creature is tapped or untapped, whether it has any counters on it or any Auras and Equipment attached to it, or any non-copy effects that have changed its power, toughness, types, color, or so on."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "If the chosen creature is copying something else (for example, if the chosen creature is another Mirrorhall Mimic), then Mirrorhall Mimic enters the battlefield as whatever the chosen creature copied."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "If another creature becomes a copy of Mirrorhall Mimic, that creature is also a Spirit."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "Any enters-the-battlefield abilities of the copied creature will trigger when Mirrorhall Mimic enters the battlefield. Any \"as [this creature] enters the battlefield\" or \"[this creature] enters the battlefield with\" abilities of the chosen creature will also work."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "If Mirrorhall Mimic somehow enters the battlefield at the same time as another creature, it can't become a copy of that creature. You may choose only a creature that's already on the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
