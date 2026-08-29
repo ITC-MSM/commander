@@ -70,6 +70,63 @@
     ]
 }
 
+// Idyllic Tutor
+{
+    "name": "Idyllic Tutor",
+    "manaCost": "{2}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Search your library for an enchantment card, reveal it, put it into your hand, then shuffle.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Library",
+                        "filter": "enchantment"
+                    },
+                    "storeAs": "searchable"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "searchable",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "found"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "found",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    },
+                    "revealed": true
+                },
+                "ShuffleLibrary",
+                "EmitLibrarySearchedEvent"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "12",
+        "rarity": "RARE",
+        "artist": "Howard Lyon",
+        "flavorText": "\"If one's life is blessed, solutions to all life's problems will appear at the right moment.\"\n—*The Book of Kith and Kin*",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0a5e7a59-7322-46eb-9903-00131234b310.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Indomitable Ancients
 {
     "name": "Indomitable Ancients",

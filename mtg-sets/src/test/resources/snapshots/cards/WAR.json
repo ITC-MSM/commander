@@ -1036,6 +1036,90 @@
     ]
 }
 
+// Return to Nature
+{
+    "name": "Return to Nature",
+    "manaCost": "{1}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Destroy target artifact.\n• Destroy target enchantment.\n• Exile target card from a graveyard.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "artifact"
+                            },
+                            "id": "target"
+                        }
+                    ]
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "enchantment"
+                            },
+                            "id": "target"
+                        }
+                    ]
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Exile"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": {},
+                                "zone": "Graveyard"
+                            },
+                            "id": "target"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "175",
+        "artist": "Alayna Danner",
+        "flavorText": "\"Yes, nature is stronger. You don't see little buildings sprouting on trees.\"\n—Emmara",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/8/085e3129-591b-46ec-ac8b-cff428927c01.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Spark Reaper
 {
     "name": "Spark Reaper",
