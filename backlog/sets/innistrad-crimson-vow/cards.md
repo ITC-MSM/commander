@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 244 / 273
+**Implemented:** 248 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -39,7 +39,7 @@
 - [ ] Brine Comber
 - [x] By Invitation Only
 - [x] Cartographer's Survey
-- [ ] Catapult Fodder
+- [x] Catapult Fodder
 - [ ] Cemetery Desecrator
 - [x] Cemetery Gatekeeper
 - [ ] Cemetery Illuminator
@@ -76,7 +76,7 @@
 - [ ] Dollhouse of Horrors
 - [x] Dominating Vampire
 - [x] Doomed Dissenter
-- [ ] Dormant Grove
+- [x] Dormant Grove
 - [x] Dorothea, Vengeful Victim
 - [x] Dread Fugue
 - [x] Dreadfeast Demon
@@ -101,7 +101,7 @@
 - [x] Flame-Blessed Bolt
 - [x] Fleeting Spirit
 - [x] Flourishing Hunter
-- [ ] Foreboding Statue
+- [x] Foreboding Statue
 - [x] Forest
 - [x] Frenzied Devils
 - [x] Geistlight Snare
@@ -135,7 +135,7 @@
 - [x] Hungry Ridgewolf
 - [x] Ill-Tempered Loner
 - [x] Infestation Expert
-- [ ] Innocent Traveler
+- [x] Innocent Traveler
 - [x] Inspired Idea
 - [x] Into the Night
 - [x] Investigator's Journal

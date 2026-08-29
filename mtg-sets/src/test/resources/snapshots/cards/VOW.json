@@ -2407,6 +2407,137 @@
     ]
 }
 
+// Catapult Fodder
+{
+    "name": "Catapult Fodder",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Zombie",
+    "oracleText": "At the beginning of combat on your turn, if you control three or more creatures that each have toughness greater than their power, transform this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "interveningIf": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": {
+                            "cardPredicates": [
+                                "IsCreature",
+                                "ToughnessGreaterThanPower"
+                            ]
+                        }
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "descriptionOverride": "At the beginning of combat on your turn, if you control three or more creatures that each have toughness greater than their power, transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Catapult Captain",
+        "manaCost": "",
+        "typeLine": "Creature — Zombie",
+        "oracleText": "{2}{B}, {T}, Sacrifice another creature: Target opponent loses life equal to the sacrificed creature's toughness.",
+        "creatureStats": {
+            "power": 2,
+            "toughness": 6
+        },
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_2",
+                    "cost": {
+                        "type": "CostComposite",
+                        "costs": [
+                            {
+                                "type": "CostAtomWrapper",
+                                "atom": {
+                                    "type": "AtomMana",
+                                    "cost": "{2}{B}"
+                                }
+                            },
+                            "CostTap",
+                            {
+                                "type": "CostAtomWrapper",
+                                "atom": {
+                                    "type": "AtomSacrifice",
+                                    "filter": "creature",
+                                    "excludeSelf": true
+                                }
+                            }
+                        ]
+                    },
+                    "effect": {
+                        "type": "LoseLife",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "Sacrificed",
+                            "numericProperty": "Toughness"
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target opponent"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetOpponent",
+                            "id": "target opponent"
+                        }
+                    ],
+                    "descriptionOverride": "{2}{B}, {T}, Sacrifice another creature: Target opponent loses life equal to the sacrificed creature's toughness."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "99",
+            "rarity": "UNCOMMON",
+            "artist": "Jesper Ejsing",
+            "flavorText": "And they're more than happy to share the wealth.",
+            "imageUri": "https://cards.scryfall.io/normal/back/e/6/e61b3afa-66e0-4f7b-84bc-7ae2cc6d28d4.jpg?1783924882"
+        },
+        "colorIdentityOverride": [
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLACK"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "99",
+        "rarity": "UNCOMMON",
+        "artist": "Jesper Ejsing",
+        "flavorText": "These days, ghouls are the only abundant resource in Thraben.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/6/e61b3afa-66e0-4f7b-84bc-7ae2cc6d28d4.jpg?1783924882",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "To satisfy Catapult Fodder's condition, each of the three creatures must have toughness greater than its own power, regardless of the power and toughness of the other two creatures."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Cemetery Gatekeeper
 {
     "name": "Cemetery Gatekeeper",
@@ -4815,6 +4946,112 @@
     ]
 }
 
+// Dormant Grove
+{
+    "name": "Dormant Grove",
+    "manaCost": "{3}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "At the beginning of combat on your turn, put a +1/+1 counter on target creature you control. Then if that creature has toughness 6 or greater, transform this enchantment.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "EntityMatches",
+                                    "entity": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    },
+                                    "filter": "creature tou>=6"
+                                }
+                            },
+                            "then": "Transform"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                },
+                "descriptionOverride": "At the beginning of combat on your turn, put a +1/+1 counter on target creature you control. Then if that creature has toughness 6 or greater, transform this enchantment."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Gnarled Grovestrider",
+        "manaCost": "",
+        "typeLine": "Creature — Treefolk",
+        "oracleText": "Vigilance\nOther creatures you control have vigilance.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 6
+        },
+        "keywords": [
+            "VIGILANCE"
+        ],
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "VIGILANCE",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "198",
+            "rarity": "UNCOMMON",
+            "artist": "Kekai Kotaki",
+            "flavorText": "Far from the bloodsoaked wedding, unseen by human eyes, a long-slumbering force arose to protect its home.",
+            "imageUri": "https://cards.scryfall.io/normal/back/e/7/e7d3012e-1798-4f72-8d9a-b2d16f817502.jpg?1783924820"
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "198",
+        "rarity": "UNCOMMON",
+        "artist": "Kekai Kotaki",
+        "flavorText": "As the natural cycle of day and night grew twisted, old powers stirred deep in the Ulvenwald.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/7/e7d3012e-1798-4f72-8d9a-b2d16f817502.jpg?1783924820"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Dorothea, Vengeful Victim
 {
     "name": "Dorothea, Vengeful Victim",
@@ -6376,6 +6613,129 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Foreboding Statue
+{
+    "name": "Foreboding Statue",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "{T}: Add one mana of any color. Put an omen counter on this creature.\nAt the beginning of your end step, if there are three or more omen counters on this creature, untap it, then transform it.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": "Self",
+                            "tap": false
+                        },
+                        "Transform"
+                    ]
+                },
+                "interveningIf": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "omen"
+                            }
+                        }
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "descriptionOverride": "At the beginning of your end step, if there are three or more omen counters on this creature, untap it, then transform it."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        "AddManaOfChoice",
+                        {
+                            "type": "AddCounters",
+                            "counterType": "omen",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add one mana of any color. Put an omen counter on this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Forsaken Thresher",
+        "manaCost": "",
+        "typeLine": "Artifact Creature — Construct",
+        "oracleText": "At the beginning of your first main phase, add one mana of any color.",
+        "creatureStats": {
+            "power": 5,
+            "toughness": 5
+        },
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "PRECOMBAT_MAIN"
+                    },
+                    "binding": "ANY",
+                    "effect": "AddManaOfChoice",
+                    "descriptionOverride": "At the beginning of your first main phase, add one mana of any color."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "256",
+            "rarity": "UNCOMMON",
+            "artist": "Aaron Miller",
+            "flavorText": "Were it not for the cultists' fatal curiosity, the terrible machine might have lain dormant for decades more.",
+            "imageUri": "https://cards.scryfall.io/normal/back/a/2/a27b9d82-f613-4789-9e8b-f37db5597027.jpg?1783924791"
+        },
+        "colorIdentityOverride": [],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "256",
+        "rarity": "UNCOMMON",
+        "artist": "Aaron Miller",
+        "flavorText": "As the sand eroded, a faint sound could be heard whirling under the ground.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/2/a27b9d82-f613-4789-9e8b-f37db5597027.jpg?1783924791",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "You can't tap Foreboding Statue to get one more mana while resolving its triggered ability in your end step."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Frenzied Devils
@@ -9129,6 +9489,108 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Innocent Traveler
+{
+    "name": "Innocent Traveler",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Creature — Human",
+    "oracleText": "At the beginning of your upkeep, any opponent may sacrifice a creature of their choice. If no one does, transform this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AnyPlayerMayPay",
+                    "cost": {
+                        "type": "PayAtom",
+                        "atom": {
+                            "type": "AtomSacrifice",
+                            "filter": "creature"
+                        }
+                    },
+                    "consequenceIfNonePaid": "Transform",
+                    "eligiblePlayers": "EachOpponent"
+                },
+                "descriptionOverride": "At the beginning of your upkeep, any opponent may sacrifice a creature of their choice. If no one does, transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Malicious Invader",
+        "manaCost": "",
+        "typeLine": "Creature — Vampire",
+        "oracleText": "Flying\nThis creature gets +2/+0 as long as an opponent controls a Human.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 3
+        },
+        "keywords": [
+            "FLYING"
+        ],
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "ConditionalStaticAbility",
+                    "ability": {
+                        "type": "ModifyStats",
+                        "powerBonus": 2,
+                        "toughnessBonus": 0,
+                        "filter": {
+                            "baseFilter": "permanent",
+                            "scope": "Self"
+                        }
+                    },
+                    "condition": {
+                        "type": "Exists",
+                        "player": "EachOpponent",
+                        "zone": "Battlefield",
+                        "filter": "permanent Human"
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "121",
+            "rarity": "UNCOMMON",
+            "artist": "Cristi Balanescu",
+            "flavorText": "\"Aren't you going to offer me a drink?\"",
+            "imageUri": "https://cards.scryfall.io/normal/back/1/3/13a5e5fd-a67a-4c0e-97ae-923bdbc1be20.jpg?1783924866"
+        },
+        "colorIdentityOverride": [
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLACK"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "121",
+        "rarity": "UNCOMMON",
+        "artist": "Cristi Balanescu",
+        "flavorText": "\"Aren't you going to invite me in?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/13a5e5fd-a67a-4c0e-97ae-923bdbc1be20.jpg?1783924866",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "When Innocent Traveler's ability resolves, the next opponent in turn order chooses whether they want to sacrifice a creature at all and which creature to sacrifice if so, then each other opponent in turn order does the same, knowing the choices made before them. Then all the chosen creatures are sacrificed at the same time. If no creatures are sacrificed this way, Innocent Traveler is transformed."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
