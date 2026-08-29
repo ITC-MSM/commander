@@ -81,6 +81,96 @@
     ]
 }
 
+// Celestial Flare
+{
+    "name": "Celestial Flare",
+    "manaCost": "{W}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Target player sacrifices an attacking or blocking creature of their choice.",
+    "script": {
+        "spellEffect": {
+            "type": "ForceSacrifice",
+            "filter": {
+                "cardPredicates": [
+                    "IsCreature"
+                ],
+                "statePredicates": [
+                    {
+                        "type": "StateOr",
+                        "predicates": [
+                            "IsAttacking",
+                            "IsBlocking"
+                        ]
+                    }
+                ]
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target player"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "target player"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "12",
+        "artist": "Clint Cearley",
+        "flavorText": "\"You were defeated the moment you declared your aggression.\"\n—Gideon Jura",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/c/6c8d1320-0f1a-4c66-86c9-9f8da0f1d9ef.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Charging Griffin
+{
+    "name": "Charging Griffin",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Griffin",
+    "oracleText": "Flying (This creature can't be blocked except by creatures with flying or reach.)\nWhenever this creature attacks, it gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "13",
+        "artist": "Erica Yang",
+        "flavorText": "Four claws, two wings, one beak, no fear.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/8/88637cc0-3b2a-402c-b491-26fcc2d21fb8.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Elvish Mystic
 {
     "name": "Elvish Mystic",

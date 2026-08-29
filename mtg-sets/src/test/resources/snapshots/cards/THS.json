@@ -2040,6 +2040,75 @@
     ]
 }
 
+// Returned Centaur
+{
+    "name": "Returned Centaur",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Zombie Centaur",
+    "oracleText": "When this creature enters, target player mills four cards.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target player"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "103",
+        "artist": "Lucas Graciano",
+        "flavorText": "Driven away by his living kin, he wanders mourning through the wilderness, seeking the dead city of Asphodel.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/0/1067cf71-a270-4b1b-aa06-0ec0e732ed16.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Satyr Rambler
 {
     "name": "Satyr Rambler",

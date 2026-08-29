@@ -1637,6 +1637,47 @@
     ]
 }
 
+// Fleshbag Marauder
+{
+    "name": "Fleshbag Marauder",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Zombie Warrior",
+    "oracleText": "When this creature enters, each player sacrifices a creature of their choice.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForceSacrifice",
+                    "filter": "creature",
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "Each"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "76",
+        "rarity": "UNCOMMON",
+        "artist": "Pete Venters",
+        "flavorText": "Grixis is a world where the only things found in abundance are death and decay. Corpses, whole or in part, are the standard currency among necromancers and demons.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/7/f71e4391-04a8-4df8-9d52-3a3480bcd5b6.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Glaze Fiend
 {
     "name": "Glaze Fiend",
