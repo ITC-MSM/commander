@@ -19,10 +19,11 @@
 export const CARD_ASPECT = 1.4
 
 /**
- * Hard ceiling on slot-derived card growth. The window-derived `useResponsive`
- * caps the base battlefield card at 125 px (desktop); with the explicit-track
- * grid a slot is often far taller than that estimate, so cards may grow to
- * ~1.6× before clamping.
+ * Absolute ceiling on slot-derived card growth, used when a `LayoutEnv` names
+ * no `maxCardWidth`. In the app the ceiling is the window-derived base card
+ * (`useResponsive`'s `battlefieldCardWidth`, 125 px on desktop — see
+ * `layoutEnvFor`): a sparse board reclaims the size the base card would have
+ * had, never more. Growing past it made a lone permanent fill the board.
  */
 export const SLOT_MAX_CARD_WIDTH = 200
 
@@ -112,7 +113,17 @@ export interface LayoutEnv {
   stackOffset: number
   /** Back-row size relative to the front row; defaults to `BACK_ROW_SCALE`. */
   backRowScale?: number
+  /**
+   * Largest card the solver may render; defaults to `SLOT_MAX_CARD_WIDTH`.
+   * The app passes the window-derived base card so a sparse board grows back
+   * up to the ordinary card size and no further.
+   */
+  maxCardWidth?: number
 }
+
+/** The ceiling this environment allows (see `LayoutEnv.maxCardWidth`). */
+export const maxCardWidthFor = (env: LayoutEnv): number =>
+  Math.max(ABSOLUTE_MIN_CARD_WIDTH, env.maxCardWidth ?? SLOT_MAX_CARD_WIDTH)
 
 export interface SlotLayout {
   /** Front-row card width; the size `ResponsiveContext` carries as `battlefieldCardWidth`. */
@@ -345,7 +356,7 @@ function floorLayout(slotWidth: number, stats: BoardStats, env: LayoutEnv): Slot
  * cells, and the two-player board before the pooled solve has measurements).
  *
  * Pass 1 keeps the comfortable breathing gap toward the HUD and lets cards grow
- * to `SLOT_MAX_CARD_WIDTH`. If that lands under `PREFERRED_MIN_CARD_WIDTH`, pass
+ * to the environment's ceiling (`maxCardWidthFor`). If that lands under `PREFERRED_MIN_CARD_WIDTH`, pass
  * 2 trades the breathing gap for size with the floor as the ceiling. If even
  * that can't fit, cards clamp to `ABSOLUTE_MIN_CARD_WIDTH` and the line counts
  * follow what greedy wrapping will actually do.
@@ -363,7 +374,7 @@ export function solveSlotLayout(slotWidth: number, slotHeight: number, stats: Bo
     }
     return best
   }
-  const comfortable = pass(false, SLOT_MAX_CARD_WIDTH)
+  const comfortable = pass(false, maxCardWidthFor(env))
   if (comfortable && comfortable.cardWidth >= PREFERRED_MIN_CARD_WIDTH) return comfortable
   const squeezed = pass(true, PREFERRED_MIN_CARD_WIDTH)
   if (squeezed) return squeezed
@@ -401,7 +412,7 @@ export function solvePooledLayout(
   ): { c: LineCandidate; need: number } | null => {
     let best: { c: LineCandidate; need: number } | null = null
     for (const c of candidates) {
-      if (widthCapFor(slotWidth, stats, c, env, SLOT_MAX_CARD_WIDTH) < w) continue
+      if (widthCapFor(slotWidth, stats, c, env, maxCardWidthFor(env)) < w) continue
       const need = slotHeightNeeded(stats, c.frontLines, c.backLines, w, env, tight)
       if (best === null || need < best.need) best = { c, need }
     }
@@ -420,7 +431,7 @@ export function solvePooledLayout(
     return splitHeights(w, makeLayout(w, a.c, player, env), a.need, makeLayout(w, b.c, opponent, env), b.need, pooledHeight)
   }
 
-  const comfortable = pass(false, SLOT_MAX_CARD_WIDTH)
+  const comfortable = pass(false, maxCardWidthFor(env))
   if (comfortable && comfortable.cardWidth >= PREFERRED_MIN_CARD_WIDTH) return comfortable
   const squeezed = pass(true, PREFERRED_MIN_CARD_WIDTH)
   if (squeezed) return squeezed

@@ -54,8 +54,14 @@ step 4 is optional; step 5 is CSS. All numbers below are for the reference 1200�
 - Both players render at the same card width (`styles.ts:27-28`). Step 3 keeps this by solving one
   width for both slots.
 - No stored mode, no hysteresis: a card entering can change the size, and step 5 animates it.
-- `SLOT_MAX_CARD_WIDTH = 200` stays; badges, attachment peeks and stack offsets already scale from
+- The ceiling is the window-derived base card (`useResponsive`'s `battlefieldCardWidth`, 125 px on
+  desktop), passed as `LayoutEnv.maxCardWidth`: a sparse board reclaims the ordinary card size and
+  never grows past it. (The first cut shipped with the raw `SLOT_MAX_CARD_WIDTH = 200`, which let a
+  lone permanent fill the board.) Badges, attachment peeks and stack offsets already scale from
   `battlefieldCardWidth`.
+- Slot and grid-row measurements are quantized to whole pixels and ignored when unchanged. The rows
+  are `fr` tracks weighted by the solve's own output, so fractional ResizeObserver readings fed
+  straight back made weights → rows → measurement → weights oscillate — the center HUD shook.
 
 ### Step 1 — an empty row costs nothing
 

@@ -18,11 +18,22 @@ function useObservedSize(ref: RefObject<HTMLElement | null>, enabled: boolean): 
     }
     const node = ref.current
     if (!node) return
+    // Whole pixels, and no state change for a same-size report. The grid rows
+    // are fr tracks weighted by this hook's own output, so their measured
+    // heights come back fractional and slightly different every time the
+    // weights change; feeding those fractions straight back into the solve made
+    // weights → rows → measurement → weights oscillate, and the center HUD
+    // between the rows visibly shook. Integer sizes make the loop settle.
+    const update = (width: number, height: number) =>
+      setSize((prev) => {
+        const next = { width: Math.round(width), height: Math.round(height) }
+        return prev !== null && prev.width === next.width && prev.height === next.height ? prev : next
+      })
     const rect = node.getBoundingClientRect()
-    setSize({ width: rect.width, height: rect.height })
+    update(rect.width, rect.height)
     const obs = new ResizeObserver((entries) => {
       const entry = entries[0]
-      if (entry) setSize({ width: entry.contentRect.width, height: entry.contentRect.height })
+      if (entry) update(entry.contentRect.width, entry.contentRect.height)
     })
     obs.observe(node)
     return () => obs.disconnect()
