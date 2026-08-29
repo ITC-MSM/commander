@@ -390,6 +390,7 @@ object Triggers {
         when (event) {
             is EventPattern.ZoneChangeEvent -> event.filter
             is EventPattern.BecomesBlockedEvent -> event.filter
+            is EventPattern.TapEvent -> event.filter
             is EventPattern.SpellCastEvent -> event.spellFilter
             else -> null
         }
@@ -754,6 +755,14 @@ object Triggers {
         triggerRule("whenever ${Normalizer.SELF} attacks", SdkTriggers.Attacks),
         triggerRule("whenever ${Normalizer.SELF} blocks", SdkTriggers.Blocks),
         triggerRule("whenever ${Normalizer.SELF} becomes blocked", SdkTriggers.BecomesBlocked),
+        // "Whenever this creature becomes tapped, …" — Fallowsage, Veteran of the Depths, Chrome
+        // Companion. Cause-agnostic by construction: `TapEvent`'s `reason` is null here, so the
+        // trigger fires however the permanent became tapped — attacking, a cost, crew, or an
+        // opponent's effect. The narrowed sibling (`BecomesTappedForTeamwork`) prints a clause of
+        // its own ("to pay a teamwork cost") and becomes a row of its own the day a card needs it,
+        // rather than a flag this surface has no words for.
+        triggerRule("whenever ${Normalizer.SELF} becomes tapped", SdkTriggers.BecomesTapped),
+        triggerRule("whenever ${Normalizer.SELF} becomes untapped", SdkTriggers.BecomesUntapped),
         // The four outgoing-damage prefixes take [Steps.damageStep] rather than [Steps.step]: their
         // event reports how much damage was dealt, which is the antecedent of "that many" in the
         // payoff. See [Tokens.damageClauses] for why that phrase is scoped to these positions and
@@ -895,6 +904,17 @@ object Triggers {
         filteredTriggerRule(
             "whenever {filter} becomes blocked", "whenever a creature becomes blocked", Filters.indefinite,
         ) { SdkTriggers.becomesBlocked(it, TriggerBinding.ANY) },
+        // "Whenever a Merfolk you control becomes tapped, …" — Judge of Currents, and the filtered
+        // half of the pair above. It is the **per-permanent** reading (CR 603.2c): attacking with
+        // three Merfolk gives three triggers, which is a different event from the batch
+        // `OneOrMoreBecomeTapped` that fires once — so the batch spelling ("whenever one or more …
+        // become tapped") stays [batchPrefixes]' to write, and nothing here may grow a "one or
+        // more" surface. `TapEvent` carries `batch`, `reason` and `firstTimeEachTurn` beside the
+        // filter and this surface spells none of them; the reconstruct-and-compare is what keeps a
+        // spec carrying one of them from printing as this sentence.
+        filteredTriggerRule(
+            "whenever {filter} becomes tapped", "whenever a permanent becomes tapped", Filters.indefinite,
+        ) { SdkTriggers.becomesTapped(binding = TriggerBinding.ANY, filter = it) },
         // "Whenever you sacrifice a Blood token, …" — Sanguine Statuette, Gluttonous Guest, and 100
         // printed lines. `YouSacrificeA` / `YouSacrificeAnother` are the **per-permanent** specs
         // (CR 603.2c): two Bloods sacrificed to one cost give two triggers, which is a different
