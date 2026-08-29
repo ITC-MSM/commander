@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 251 / 273
+**Implemented:** 253 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -50,7 +50,7 @@
 - [x] Change of Fortune
 - [x] Child of the Pack
 - [x] Chill of the Grave
-- [ ] Circle of Confinement
+- [x] Circle of Confinement
 - [x] Cloaked Cadet
 - [x] Cobbled Lancer
 - [x] Concealing Curtains
@@ -183,7 +183,7 @@
 - [x] Panicked Bystander
 - [x] Parasitic Grasp
 - [x] Parish-Blade Trainee
-- [ ] Patchwork Crawler
+- [x] Patchwork Crawler
 - [x] Path of Peril
 - [x] Persistent Specimen
 - [x] Piercing Light
