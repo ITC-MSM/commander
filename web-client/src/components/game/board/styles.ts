@@ -20,12 +20,14 @@ export const styles: Record<string, React.CSSProperties> = {
     // Five-row grid (template provided inline in GameBoard.tsx since rows 1
     // and 5 are sized from responsive values):
     //   1. opp-hand reservation     (px — keeps battlefield clear of fixed hand)
-    //   2. opp-board                (1fr — equal to row 4)
+    //   2. opp-board                (fr — weighted by what the opponent's rows need)
     //   3. center HUD               (auto — uncrossable partition)
-    //   4. player-board             (1fr — equal to row 2)
+    //   4. player-board             (fr — weighted by what the player's rows need)
     //   5. player-hand reservation  (px — keeps battlefield clear of fixed hand)
-    // Equal 1fr battlefield rows mean both players get the same card size
-    // via useSlotSizedResponsive, regardless of asymmetric hand sizes.
+    // Rows 2 and 4 are solved together (usePooledBattlefieldLayout): both
+    // players render at one card width, and each side gets the height its
+    // wrap lines need — equal until the first measurement, and clamped so
+    // the HUD stays near the middle (battlefieldLayout.ts, SLOT_SPLIT_MIN).
     display: 'grid',
     gridTemplateColumns: '100%',
     backgroundColor: '#0a0a15',

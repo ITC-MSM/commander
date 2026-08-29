@@ -27,6 +27,9 @@ import { ManaSymbol } from '../ui/ManaSymbols'
 // Import extracted components
 import { Battlefield, CardRow, CommandZone, OpponentBoardArea, BoardNamePlate, CollapsedBoardTab, COLLAPSED_TAB_WIDTH, CELL_PLATE_BAND, useCellHandMetrics, StackDisplay, ZonePile, ResponsiveContext } from './board'
 import { RenderProfiler } from '@/utils/renderProfiler'
+import { PooledBattlefieldLayoutContext } from './board/shared'
+import { useBoardGroups } from './board/useBoardGroups'
+import { usePooledBattlefieldLayout } from './board/usePooledBattlefieldLayout'
 import { CardPreview } from './card'
 import { TargetingOverlay, ManaColorSelectionOverlay, LifeDisplay, ActiveEffectsBadges, SpeedGauge, DayNightBadge, ConcedeButton, FullscreenButton, SpectatorCountBadge, TeamLifeBanner, EliminationNotice } from './overlay'
 import { HelpDrawer, HelpDrawerButton } from '../help/HelpDrawer'
@@ -249,6 +252,33 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
   // Grid row 1: keeps the battlefield clear of the fixed/absolute opponent hand.
   const oppHandReservation =
     responsive.smallCardHeight + effectiveTopOffset + responsive.opponentHandBattlefieldGap
+  // Grid row 5: keeps the battlefield clear of the fixed player hand.
+  const playerHandReservation =
+    (spectatorMode ? responsive.smallCardHeight : responsive.cardHeight) + responsive.handBattlefieldGap
+
+  // Two-player battlefield sizing, solved for both players together: one card
+  // width, and each battlefield the slot height its rows need (a lands-only
+  // board hands height to a crowded one). The grid rows 2/4 take these heights
+  // as weights below. Multiplayer strips size per cell instead (null here).
+  // See docs/plans/battlefield-sparse-layout.md.
+  const opponentRowRef = useRef<HTMLDivElement>(null)
+  const playerRowRef = useRef<HTMLDivElement>(null)
+  const playerSlotRef = useRef<HTMLDivElement>(null)
+  const playerBoard = useBoardGroups(false)
+  const opponentBoard = useBoardGroups(true)
+  const pooledLayout = usePooledBattlefieldLayout({
+    enabled: !isMulti,
+    opponentRowRef,
+    playerRowRef,
+    slotRef: playerSlotRef,
+    player: playerBoard.stats,
+    opponent: opponentBoard.stats,
+    base: responsive,
+  })
+  // fr weights: the browser hands the rows' actual remainder out in this ratio, so
+  // a measurement a few px off can't overflow the way fixed px tracks would.
+  const opponentRowWeight = pooledLayout ? Math.max(1, Math.round(pooledLayout.opponentHeight)) : 1
+  const playerRowWeight = pooledLayout ? Math.max(1, Math.round(pooledLayout.playerHeight)) : 1
 
   // Confirm mana selection: if pipeline is active, advance it; otherwise build
   // modified LegalActionInfo with Explicit payment and route through executeAction
@@ -879,12 +909,14 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
   return (
     <RenderProfiler id="GameBoard">
     <ResponsiveContext.Provider value={responsive}>
+    <PooledBattlefieldLayoutContext.Provider value={pooledLayout}>
     <div style={{
       ...styles.container,
       padding: `0 ${responsive.containerPadding}px`,
       // Hand reservation rows (1 and 5) keep the battlefield rows from sliding
-      // under the position:fixed hand overlays. Both 1fr rows then receive
-      // identical heights → symmetric card sizes for player and opponent.
+      // under the position:fixed hand overlays. Rows 2 and 4 are weighted by
+      // what each battlefield needs (pooled solve above; equal until measured)
+      // — both players still render at one card width.
       // Eliminated spectator: a survivor's board takes over their dead bottom half, so the
       // rows stay spectator-shaped (small face-down hand at the bottom). Only when no living
       // seat is left to sit there (the game is effectively over) do rows 4-5 collapse and the
@@ -895,9 +927,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
               responsive.smallCardHeight + responsive.handBattlefieldGap
             }px`
           : `${oppHandReservation}px minmax(0, 1fr) auto 0px 0px`
-        : `${oppHandReservation}px minmax(0, 1fr) auto minmax(0, 1fr) ${
-            (spectatorMode ? responsive.smallCardHeight : responsive.cardHeight) + responsive.handBattlefieldGap
-          }px`,
+        : `${oppHandReservation}px minmax(0, ${opponentRowWeight}fr) auto minmax(0, ${playerRowWeight}fr) ${playerHandReservation}px`,
     }}>
       {/* Fullscreen button (top-left) */}
       <FullscreenButton />
@@ -1023,6 +1053,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           spectatorMode={spectatorMode}
           isHijacking={isHijacking}
           hijackedSurfaceStyle={hijackedSurfaceStyle}
+          areaRef={opponentRowRef}
         />
       )}
       {isMulti && (
@@ -1528,12 +1559,12 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           })}
         </div>
       ) : isEliminatedSpectator ? null : (
-        <div style={styles.playerArea}>
+        <div ref={playerRowRef} style={styles.playerArea}>
           <div style={styles.playerRowWithZones}>
             {/* Player command zone (left side) — Commander format only; renders nothing otherwise. */}
             {effectiveViewingPlayer && <CommandZone player={effectiveViewingPlayer} />}
 
-            <div style={{
+            <div ref={playerSlotRef} style={{
               ...styles.playerMainArea,
               ...(isHijacked ? hijackedSurfaceStyle : null),
             }}>
@@ -2388,6 +2419,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       )}
     </div>
     <HelpDrawer />
+    </PooledBattlefieldLayoutContext.Provider>
     </ResponsiveContext.Provider>
     </RenderProfiler>
   )

@@ -1,5 +1,6 @@
 package com.wingedsheep.assay.grammar
 
+import com.wingedsheep.assay.normalize.Normalizer
 import com.wingedsheep.assay.syntax.Phrase
 import com.wingedsheep.assay.syntax.alternate
 import com.wingedsheep.assay.syntax.bind
@@ -237,6 +238,19 @@ object SpellCosts {
         ) { filter ->
             CostReductionSource.CardsInGraveyardAndExileMatchingFilter(filter, 1)
         },
+        // "Spells you cast cost {1} less to cast for each card type **they share with cards exiled
+        // with this creature**." — Cemetery Prowler. The only counted noun in this list that is not
+        // a set of objects: it counts the *intersection* of two type sets, one of which is the
+        // spell being priced. So there is nothing to slot — neither side of the intersection varies
+        // in the printed text, and the pronoun "they" is the subject the sentence already named.
+        //
+        // It is a counting source like the rest, which is what keeps it in this vocabulary rather
+        // than in [namedVariableSource]: `amountPerType` is the same per-unit field the graveyard
+        // rows carry, so [perUnit]'s one-number-two-slots reconstruction covers it unchanged.
+        constant<CostReductionSource>(
+            "card type they share with cards exiled with ${Normalizer.SELF}",
+            CostReductionSource.SharedCardTypesWithLinkedExile(1),
+        ),
     )
 
     /**
@@ -248,6 +262,7 @@ object SpellCosts {
         is CostReductionSource.PermanentsOnBattlefieldMatching -> 1
         is CostReductionSource.CardsInGraveyardMatchingFilter -> source.amountPerCard
         is CostReductionSource.CardsInGraveyardAndExileMatchingFilter -> source.amountPerCard
+        is CostReductionSource.SharedCardTypesWithLinkedExile -> source.amountPerType
         else -> null
     }
 
@@ -261,6 +276,8 @@ object SpellCosts {
             is CostReductionSource.CardsInGraveyardMatchingFilter -> source.copy(amountPerCard = amount)
             is CostReductionSource.CardsInGraveyardAndExileMatchingFilter ->
                 source.copy(amountPerCard = amount)
+
+            is CostReductionSource.SharedCardTypesWithLinkedExile -> source.copy(amountPerType = amount)
 
             else -> source.takeIf { amount == 1 && perUnitAmount(it) != null }
         }

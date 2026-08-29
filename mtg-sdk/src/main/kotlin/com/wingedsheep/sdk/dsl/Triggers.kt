@@ -379,6 +379,18 @@ object Triggers {
     )
 
     /**
+     * When *any* player plays a land (CR 305.1) — "whenever a player plays a land …" (Cemetery
+     * Gatekeeper). The any-player scope of [youPlayLand]; the land-play counterpart of
+     * [AnyPlayerCastsSpell], so the two compose under [or] for the printed "plays a land or casts
+     * a spell" ability.
+     */
+    fun anyPlayerPlaysLand(fromZoneOtherThan: com.wingedsheep.sdk.core.Zone? = null): TriggerSpec =
+        TriggerSpec(
+            event = LandPlayedEvent(fromZoneOtherThan = fromZoneOtherThan, player = Player.Each),
+            binding = TriggerBinding.ANY
+        )
+
+    /**
      * When one or more creatures attack you.
      * Fires once per combat (not per attacker) when the trigger's controller is
      * declared as defender for at least one creature.

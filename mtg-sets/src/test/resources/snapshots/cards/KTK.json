@@ -6820,10 +6820,7 @@
                 "effect": {
                     "type": "CreateDelayedTrigger",
                     "step": "END_COMBAT",
-                    "effect": {
-                        "type": "SacrificeTarget",
-                        "target": "Self"
-                    }
+                    "effect": "SacrificeSelf"
                 }
             },
             {
@@ -6832,10 +6829,7 @@
                 "effect": {
                     "type": "CreateDelayedTrigger",
                     "step": "END_COMBAT",
-                    "effect": {
-                        "type": "SacrificeTarget",
-                        "target": "Self"
-                    }
+                    "effect": "SacrificeSelf"
                 }
             }
         ]

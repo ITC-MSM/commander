@@ -272,6 +272,7 @@ val engineSerializersModule = SerializersModule {
         subclass(RevealCountersContinuation::class)
         subclass(ExileCountersContinuation::class)
         subclass(DevourEntersContinuation::class)
+        subclass(DevourMintedTokenContinuation::class)
         subclass(CastWithCreatureTypeContinuation::class)
         subclass(CastModalModeSelectionContinuation::class)
         subclass(CastModalTargetSelectionContinuation::class)

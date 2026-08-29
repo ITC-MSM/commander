@@ -390,6 +390,7 @@ object Triggers {
         when (event) {
             is EventPattern.ZoneChangeEvent -> event.filter
             is EventPattern.BecomesBlockedEvent -> event.filter
+            is EventPattern.TapEvent -> event.filter
             is EventPattern.SpellCastEvent -> event.spellFilter
             else -> null
         }
@@ -754,6 +755,14 @@ object Triggers {
         triggerRule("whenever ${Normalizer.SELF} attacks", SdkTriggers.Attacks),
         triggerRule("whenever ${Normalizer.SELF} blocks", SdkTriggers.Blocks),
         triggerRule("whenever ${Normalizer.SELF} becomes blocked", SdkTriggers.BecomesBlocked),
+        // "Whenever this creature becomes tapped, …" — Fallowsage, Veteran of the Depths, Chrome
+        // Companion. Cause-agnostic by construction: `TapEvent`'s `reason` is null here, so the
+        // trigger fires however the permanent became tapped — attacking, a cost, crew, or an
+        // opponent's effect. The narrowed sibling (`BecomesTappedForTeamwork`) prints a clause of
+        // its own ("to pay a teamwork cost") and becomes a row of its own the day a card needs it,
+        // rather than a flag this surface has no words for.
+        triggerRule("whenever ${Normalizer.SELF} becomes tapped", SdkTriggers.BecomesTapped),
+        triggerRule("whenever ${Normalizer.SELF} becomes untapped", SdkTriggers.BecomesUntapped),
         // The four outgoing-damage prefixes take [Steps.damageStep] rather than [Steps.step]: their
         // event reports how much damage was dealt, which is the antecedent of "that many" in the
         // payoff. See [Tokens.damageClauses] for why that phrase is scoped to these positions and
@@ -895,6 +904,17 @@ object Triggers {
         filteredTriggerRule(
             "whenever {filter} becomes blocked", "whenever a creature becomes blocked", Filters.indefinite,
         ) { SdkTriggers.becomesBlocked(it, TriggerBinding.ANY) },
+        // "Whenever a Merfolk you control becomes tapped, …" — Judge of Currents, and the filtered
+        // half of the pair above. It is the **per-permanent** reading (CR 603.2c): attacking with
+        // three Merfolk gives three triggers, which is a different event from the batch
+        // `OneOrMoreBecomeTapped` that fires once — so the batch spelling ("whenever one or more …
+        // become tapped") stays [batchPrefixes]' to write, and nothing here may grow a "one or
+        // more" surface. `TapEvent` carries `batch`, `reason` and `firstTimeEachTurn` beside the
+        // filter and this surface spells none of them; the reconstruct-and-compare is what keeps a
+        // spec carrying one of them from printing as this sentence.
+        filteredTriggerRule(
+            "whenever {filter} becomes tapped", "whenever a permanent becomes tapped", Filters.indefinite,
+        ) { SdkTriggers.becomesTapped(binding = TriggerBinding.ANY, filter = it) },
         // "Whenever you sacrifice a Blood token, …" — Sanguine Statuette, Gluttonous Guest, and 100
         // printed lines. `YouSacrificeA` / `YouSacrificeAnother` are the **per-permanent** specs
         // (CR 603.2c): two Bloods sacrificed to one cost give two triggers, which is a different
@@ -971,13 +991,31 @@ object Triggers {
      * Two rows, and the negative one is the SDK's own value rather than a `Not` over the positive:
      * `Conditions.IsNotYourTurn` is what seven hand-written cards write, and a wrapped negation
      * would be a second spelling of one condition that nothing could choose between.
+     *
+     * ### The negative row's surface was written from the model's name, not from printed text
+     *
+     * It first shipped as `" during each opponent's turn"`, and **no card in the corpus prints
+     * that clause after a prefix this grammar reads.** All ten lines carrying "each opponent's
+     * turn" attach it to a different prefix — "Whenever you cast **your first spell** during each
+     * opponent's turn" (Alela, Wavebreak Hippocamp, Mischievous Chimera, Arena Trickster,
+     * Dreamstalker Manticore) or to a combat permission (Party Crasher) — and every one of those
+     * declines on the prefix, so the surface was reachable by nothing. Meanwhile **20 cards** print
+     * "during **an** opponent's turn" against the plain `you cast a spell` prefix this row is
+     * crossed with, and all 20 declined on the word the row was supposed to read.
+     *
+     * So the surface is the one the corpus prints, and "each" is not kept as an
+     * [com.wingedsheep.assay.syntax.PhraseBuilder.alsoSpelled] variant. The two spellings are not
+     * one restriction spelled twice: "each" is printed only where a per-turn cap on the *prefix*
+     * needs a distributive reading, and folding it in here would let that family inherit a row it
+     * never asked for and print its cards back with the wrong article. When the first-spell prefix
+     * lands it brings its own row.
      */
     private data class Restriction(val surface: String, val name: String, val condition: Condition)
 
     private val restrictions: List<Restriction> = listOf(
         Restriction(" during your turn", "during your turn", SdkConditions.IsYourTurn),
         Restriction(
-            " during each opponent's turn", "during an opponent's turn", SdkConditions.IsNotYourTurn,
+            " during an opponent's turn", "during an opponent's turn", SdkConditions.IsNotYourTurn,
         ),
     )
 
@@ -1170,6 +1208,25 @@ object Triggers {
             "when ${Normalizer.SELF} enters or is turned face up",
             "when the source enters or is turned face up",
             listOf(SdkTriggers.EntersBattlefield, SdkTriggers.TurnedFaceUp),
+        ),
+        // The two joins whose halves are not *self* events — a land play and a spell cast, which
+        // the Crimson Vow cemetery cycle prints together. They belong in this table for the same
+        // reason the five above do: the pair is one printed sentence rather than a clause plus a
+        // word, so a cross product of the event vocabulary would invent English no card prints.
+        //
+        // The scope is spelled by the verb's agreement and nothing else, which is why they are two
+        // rows and not one with a slot: "a player **plays** … or **casts**" against "you **play** …
+        // or **cast**". Each row's two events carry the matching `Player`, so the model decides
+        // which sentence prints.
+        Contraction(
+            "whenever a player plays a land or casts a spell",
+            "whenever a player plays a land or casts a spell",
+            listOf(SdkTriggers.anyPlayerPlaysLand(), SdkTriggers.AnyPlayerCastsSpell),
+        ),
+        Contraction(
+            "whenever you play a land or cast a spell",
+            "whenever you play a land or cast a spell",
+            listOf(SdkTriggers.youPlayLand(), SdkTriggers.YouCastSpell),
         ),
     )
 

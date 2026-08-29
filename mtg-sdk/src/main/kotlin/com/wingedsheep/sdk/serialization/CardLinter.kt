@@ -884,6 +884,13 @@ object CardLinter {
         val label: String,
         val targetCount: Int,
         val targetIds: Set<String>,
+        /**
+         * The subset of [targetIds] whose requirement spans more than one slot of the flat chosen-
+         * target list ("two target creatures", "one or two target …", `unlimited`, a
+         * `dynamicMaxCount`). Such a requirement has no single bound handle: its targets are keyed
+         * per slot, so a bare `BoundVariable` on the id resolves to nothing at resolution.
+         */
+        val multiSlotTargetIds: Set<String>,
         /** Non-null for Mode scopes: collections resolve against this enclosing scope. */
         val collectionParent: Scope?,
     ) {
@@ -903,8 +910,10 @@ object CardLinter {
             label: String,
             targetCount: Int = 0,
             targetIds: Set<String> = emptySet(),
+            multiSlotTargetIds: Set<String> = emptySet(),
             collectionParent: Scope? = null,
-        ): Scope = Scope(label, targetCount, targetIds, collectionParent).also { scopes.add(it) }
+        ): Scope = Scope(label, targetCount, targetIds, multiSlotTargetIds, collectionParent)
+            .also { scopes.add(it) }
     }
 
     // =========================================================================================
@@ -963,6 +972,8 @@ object CardLinter {
                 requirementSlotCount(cleaveReqs),
             ),
             targetIds = requirementIds(baseReqs) + requirementIds(kickerReqs) + requirementIds(cleaveReqs),
+            multiSlotTargetIds = multiSlotRequirementIds(baseReqs) +
+                multiSlotRequirementIds(kickerReqs) + multiSlotRequirementIds(cleaveReqs),
         )
 
         // Spell-resolution scope, in execution order: cast-time writers (captures, additional
@@ -1031,15 +1042,38 @@ object CardLinter {
         // requirements (the engine slices the flat target list per mode only when modes
         // declare their own).
         val scope = if (reqs.isEmpty() && collectionParent != null) {
-            state.newScope(label, collectionParent.targetCount, collectionParent.targetIds, collectionParent)
+            state.newScope(
+                label, collectionParent.targetCount, collectionParent.targetIds,
+                collectionParent.multiSlotTargetIds, collectionParent,
+            )
         } else {
-            state.newScope(label, requirementSlotCount(reqs), requirementIds(reqs), collectionParent)
+            state.newScope(
+                label, requirementSlotCount(reqs), requirementIds(reqs),
+                multiSlotRequirementIds(reqs), collectionParent,
+            )
         }
         walkInto(obj, scope, state)
     }
 
     private fun requirementIds(reqs: JsonArray): Set<String> =
         reqs.mapNotNull { ((it as? JsonObject)?.get("id") as? JsonPrimitive)?.contentOrNull }.toSet()
+
+    /**
+     * Ids of the requirements that occupy more than one slot of the flat chosen-target list —
+     * `count > 1`, `unlimited`, or a `dynamicMaxCount`. [EffectContext.buildNamedTargets] keys
+     * those per slot (`id[0]`, `id[1]`, …) and leaves the bare `id` unmapped, so an effect handed
+     * the requirement's bound handle resolves to `null` and silently does nothing. Such a
+     * requirement is read with `ForEachTargetEffect` over `ContextTarget(0)` instead.
+     */
+    private fun multiSlotRequirementIds(reqs: JsonArray): Set<String> =
+        reqs.mapNotNull { req ->
+            val obj = req as? JsonObject ?: return@mapNotNull null
+            val id = (obj["id"] as? JsonPrimitive)?.contentOrNull ?: return@mapNotNull null
+            val unlimited = (obj["unlimited"] as? JsonPrimitive)?.contentOrNull == "true"
+            val dynamicMax = obj["dynamicMaxCount"]?.takeIf { it !is JsonNull } != null
+            val count = (obj["count"] as? JsonPrimitive)?.contentOrNull?.toIntOrNull() ?: 1
+            id.takeIf { unlimited || dynamicMax || count > 1 }
+        }.toSet()
 
     /**
      * Number of `ContextTarget` indices a requirement list spans. `ContextTarget(i)` indexes the
@@ -1154,9 +1188,12 @@ object CardLinter {
             }
         )
         val child = if (reqs.isEmpty()) {
-            state.newScope(label, scope.targetCount, scope.targetIds, scope)
+            state.newScope(label, scope.targetCount, scope.targetIds, scope.multiSlotTargetIds, scope)
         } else {
-            state.newScope(label, requirementSlotCount(reqs), requirementIds(reqs), collectionParent = scope)
+            state.newScope(
+                label, requirementSlotCount(reqs), requirementIds(reqs),
+                multiSlotRequirementIds(reqs), collectionParent = scope,
+            )
         }
         obj[effectField]?.let { walk(it, child, state) }
     }
@@ -1380,6 +1417,19 @@ object CardLinter {
                 }
                 if (ref.boundName != null) {
                     val base = ref.boundName.substringBefore('[')
+                    if (base in scope.multiSlotTargetIds && base == ref.boundName) {
+                        state.findings.add(
+                            CardValidationError.MultiSlotTargetBinding(
+                                cardName = state.cardName,
+                                message = "'${state.cardName}' (${scope.label}): " +
+                                    "${ref.nodeType} reads BoundVariable('${ref.boundName}'), but that " +
+                                    "target requirement spans more than one slot of the chosen-target " +
+                                    "list, so the bare binding resolves to nothing and the effect " +
+                                    "silently does nothing. Read the targets one at a time with " +
+                                    "ForEachTargetEffect over EffectTarget.ContextTarget(0).",
+                            )
+                        )
+                    }
                     if (base !in scope.targetIds) {
                         state.findings.add(
                             CardValidationError.UnknownTargetBinding(

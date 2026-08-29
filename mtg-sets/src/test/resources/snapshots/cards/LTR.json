@@ -13530,7 +13530,7 @@
                     "space": {
                         "type": "IterationSpace.Group",
                         "filter": {
-                            "baseFilter": "creature Human ctrl:you"
+                            "baseFilter": "permanent Human ctrl:you"
                         }
                     },
                     "body": {

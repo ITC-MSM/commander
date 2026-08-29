@@ -120,6 +120,9 @@ object CardCompiler {
         val fragment = faceResult.lines
             .mapNotNull { it.model }
             .fold<CardFragment, CardFragment?>(CardFragment.EMPTY) { acc, next -> acc?.merge(next) }
+            // CR 607's linked abilities are a whole-card fact, resolved once every line is in —
+            // see [CardFragment.deriveExileLinkage]. The differential's own fold does the same.
+            ?.deriveExileLinkage()
         if (fragment == null) {
             declines += CompileDecline(
                 DeclineKind.LINES_DO_NOT_FOLD,

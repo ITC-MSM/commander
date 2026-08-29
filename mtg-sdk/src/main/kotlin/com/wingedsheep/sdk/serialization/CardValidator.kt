@@ -268,6 +268,18 @@ sealed interface CardValidationError {
         override val message: String
     ) : CardValidationError
 
+    /**
+     * A bare `BoundVariable` read of a target requirement that spans more than one slot of the
+     * chosen-target list ("two target creatures", "one or two target …", `unlimited`, a
+     * `dynamicMaxCount`). Those targets are keyed per slot, so the bare binding resolves to nothing
+     * and the effect silently does nothing — read them with `ForEachTargetEffect` over
+     * `EffectTarget.ContextTarget(0)` instead.
+     */
+    data class MultiSlotTargetBinding(
+        override val cardName: String,
+        override val message: String
+    ) : CardValidationError
+
     /** A choice-slot read (`CastChoiceMade`, `HasChosenColor`, …) with no declaring ability. */
     data class UndeclaredChoiceSlotRead(
         override val cardName: String,

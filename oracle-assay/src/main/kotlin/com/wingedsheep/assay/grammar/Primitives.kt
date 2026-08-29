@@ -279,6 +279,31 @@ object Primitives {
     val itPronoun: Phrase<Unit> = constant("it", Unit)
 
     /**
+     * The subject of a *later* clause when that subject is the **target an earlier clause chose** —
+     * "Untap target creature. **It** gets +2/+4…", "…and put a +1/+1 counter on **that creature**."
+     *
+     * The third position [self] and the [selfNamed]/[itPronoun] pair index, and the one that makes
+     * [SelfSteps.retargetable] a shape rather than a rule: the same vocabulary, aimed at
+     * [Targets.bound] instead of at the source. It is reachable only from a later position in a
+     * clause run — [Steps] never offers it first — which is what keeps "it" denoting one thing in
+     * each position rather than two things in one.
+     *
+     * **Which spelling is canonical was measured, not chosen.** Over the Oracle bulk, counting the
+     * lines that print each anaphor in this position: "put a counter on **it**" 2122 against "on
+     * **that creature**" 86; "**It** gains …" 311 against "**That creature** gains …" 56; "**It**
+     * gets …" 38 against 12. So the pronoun prints and the demonstratives parse. The one verb that
+     * disagrees is untap — 66 against 69, near enough to even — and a per-verb canonical is the
+     * frozen-word defect this whole family exists to undo, so untap follows the measurement with
+     * the rest and the sixty-nine lines that spell it the other way come back as variants.
+     */
+    val targetPronoun: Phrase<Unit> = oneOf(
+        "the object an earlier clause chose",
+        constant("it", Unit),
+        alternate(constant("that creature", Unit)),
+        alternate(constant("that permanent", Unit)),
+    )
+
+    /**
      * Plurals whose singular the general rules would get wrong *in either direction*.
      *
      * The "-ves" family needs to be listed rather than derived, because the inverse is not a rule:
@@ -295,10 +320,63 @@ object Primitives {
         "Scarecrows" to "Scarecrow",
     )
 
-    private val SUBTYPE_PLURAL = Regex("""[A-Z][A-Za-z-]*s""")
+    /**
+     * The creature types whose plural **is** the singular, spelled without a trailing "s".
+     *
+     * Listed rather than derived, for [IRREGULAR_PLURALS]' reason turned around: nothing in the
+     * spelling of a word says whether English inflects it. "Merfolk" and "Kithkin" are invariant;
+     * "Elemental" and "Goblin" are not, and no rule over the letters separates them. The list is
+     * read off printed Oracle text — a type earns a row here when the corpus puts the bare word in a
+     * slot only a plural can fill ("Other **Merfolk** you control get +1/+1", "the number of
+     * **Kithkin** you control", "**Eldrazi** you control are Slivers", "activate abilities of
+     * **Myr**" beside "activate abilities of Dragon**s**"). A type English probably does not inflect
+     * but that no printed line puts in a plural slot stays off the list: the corpus is the evidence,
+     * and a name added without it would be a guess that round-trips.
+     *
+     * Invariance is not the same property [pluralCandidates] already handles with
+     * `singular.endsWith("s")`. That branch covers "Plains", where the *singular* ends in "s" and so
+     * the ordinary "-s" plural would double it; these nine end in no "s" at all, which is why
+     * [SUBTYPE_PLURAL] could not even tokenize them and the whole family was unreachable in both
+     * directions — a plural-position bare subtype declined, and a filter carrying one could not be
+     * printed.
+     */
+    private val INVARIANT_PLURAL_SUBTYPES: Set<String> = setOf(
+        "Aetherborn",
+        "Eldrazi",
+        "Fish",
+        "Kithkin",
+        "Merfolk",
+        "Myr",
+        "Nephilim",
+        "Samurai",
+        "Treefolk",
+        "Zubera",
+    )
+
+    /**
+     * A printed plural: the ordinary "-s" run, or one of the invariant spellings by name.
+     *
+     * The alternation is built from [INVARIANT_PLURAL_SUBTYPES] rather than widened to "any word",
+     * and that is the gate this token needs: a pattern with the "s" dropped would let *every*
+     * singular subtype tokenize as a plural, and [pluralSubtype] and [subtype] would then read one
+     * word two ways with two different numbers. Naming the nine keeps the two slots disjoint.
+     */
+    /**
+     * The invariant spellings as an alternation, each closed off with a boundary so a listed name
+     * cannot match a *prefix* of a longer word — without it "Fisherman" would tokenize as "Fish"
+     * and strand "erman" for the template to choke on.
+     */
+    private fun invariantAlternation(anyCase: Boolean): String =
+        INVARIANT_PLURAL_SUBTYPES.joinToString("|") { type ->
+            val head = if (anyCase) "[${type.first().uppercaseChar()}${type.first().lowercaseChar()}]" else type.take(1)
+            "$head${type.drop(1)}(?![A-Za-z-])"
+        }
+
+    private val SUBTYPE_PLURAL = Regex("""[A-Z][A-Za-z-]*s|${invariantAlternation(anyCase = false)}""")
 
     /** The same run with a lowercased initial allowed — see [subtype] for why that is a reading. */
-    private val SUBTYPE_PLURAL_ANY_CASE = Regex("""[A-Za-z][A-Za-z-]*s""")
+    private val SUBTYPE_PLURAL_ANY_CASE =
+        Regex("""[A-Za-z][A-Za-z-]*s|${invariantAlternation(anyCase = true)}""")
 
     /** A printed word as a subtype: exact when capitalized, gated to known types when it is not. */
     private fun readSubtype(text: String): Subtype? {
@@ -536,8 +614,10 @@ object Primitives {
      */
     private fun pluralCandidates(singular: String): List<String> = listOfNotNull(
         IRREGULAR_PLURALS.entries.firstOrNull { it.value == singular }?.key,
-        // An invariant plural is its own plural, and must be offered before "…s" would win.
-        singular.takeIf { it.endsWith("s") },
+        // An invariant plural is its own plural, and must be offered before "…s" would win. Two
+        // spellings reach this: a singular that already ends in "s" ("Plains"), and one the corpus
+        // shows English does not inflect at all ("Merfolk").
+        singular.takeIf { it.endsWith("s") || it in INVARIANT_PLURAL_SUBTYPES },
         // Consonant + y pluralizes as "-ies" ("Ally" → "Allies"); vowel + y does not ("Monkeys").
         (singular.dropLast(1) + "ies").takeIf { singular.endsWithConsonantY() },
         "${singular}s",

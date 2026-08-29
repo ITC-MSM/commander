@@ -95,6 +95,106 @@
     ]
 }
 
+// Doomsday
+{
+    "name": "Doomsday",
+    "manaCost": "{B}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Search your library and graveyard for five cards and exile the rest. Put the chosen cards on top of your library in any order. You lose half your life, rounded up.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromMultipleZones",
+                                "zones": [
+                                    "Library",
+                                    "Graveyard"
+                                ]
+                            },
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered0",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 5
+                                }
+                            },
+                            "storeSelected": "selected1",
+                            "storeRemainder": "remainder1",
+                            "prompt": "Choose five cards to put on top of your library",
+                            "selectedLabel": "Put on top of library",
+                            "remainderLabel": "Exile"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "remainder1",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected1",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Top"
+                            },
+                            "order": "ControllerChooses"
+                        },
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "Divide",
+                        "numerator": {
+                            "type": "LifeTotal",
+                            "player": "You"
+                        },
+                        "denominator": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    },
+                    "target": "Controller"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "rarity": "RARE",
+        "artist": "Adrian Smith",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/b/5b3c6d87-9383-450b-bba5-33435b6b0d08.jpg?1783946736",
+        "rulings": [
+            {
+                "date": "2018-03-16",
+                "text": "If your graveyard and library combined contain five or more cards, you must choose five cards from among them. You can't choose to find fewer than that."
+            },
+            {
+                "date": "2018-03-16",
+                "text": "If your graveyard and library combined contain fewer than five cards, all of those cards will wind up in your library."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Festering Evil
 {
     "name": "Festering Evil",

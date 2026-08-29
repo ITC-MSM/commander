@@ -2,6 +2,7 @@ import { memo, useState } from 'react'
 import type { GroupedCard } from '@/store/selectors.ts'
 import { MAX_VISUAL_STACK_DEPTH } from '@/store/selectors.ts'
 import { useResponsiveContext } from '../board/shared'
+import { stackOffsetFor } from '../board/battlefieldLayout'
 import { GameCard } from './GameCard'
 
 /**
@@ -127,7 +128,7 @@ function CardStackImpl({
   }
 
   // Calculate stack offset (how much each card is offset from the previous)
-  const stackOffset = responsive.isMobile ? 12 : 18
+  const stackOffset = stackOffsetFor(responsive.isMobile)
 
   // Render at most MAX_VISUAL_STACK_DEPTH overlapping layers regardless of how
   // many identical members the group has — the count badge conveys the true size.

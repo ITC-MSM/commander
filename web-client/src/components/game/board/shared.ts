@@ -1,4 +1,16 @@
 import React, { createContext, useContext, useLayoutEffect, useMemo, useState, type RefObject } from 'react'
+import {
+  BACK_ROW_SCALE,
+  LANDSCAPE_CONTAINER_PAD,
+  cardHeightFor,
+  rowPaddingFor,
+  solveSlotLayout,
+  stackOffsetFor,
+  type BoardStats,
+  type LayoutEnv,
+  type PooledLayout,
+  type SlotLayout,
+} from './battlefieldLayout'
 import type { ResponsiveSizes, BadgeSizes } from '../../../hooks/useResponsive'
 import { getScryfallFallbackUrl } from '../../../utils/cardImages'
 import type { ClientCard, LegalActionInfo } from '../../../types'
@@ -14,70 +26,102 @@ export function useResponsiveContext(): ResponsiveSizes {
   return ctx
 }
 
-// Hard ceiling on slot-derived card growth. The window-derived `useResponsive`
-// caps base battlefieldCardWidth at 125 (desktop) — that estimate was tuned
-// for the legacy layout where hand reservations weren't explicit grid tracks.
-// With the explicit-track grid, slots are often substantially taller than that
-// budget anticipated, so we let cards grow up to ~1.6× before clamping.
-const SLOT_MAX_CARD_WIDTH = 200
+/**
+ * Two-player pooled layout, provided by `GameBoard` once it has measured the
+ * height the grid gives both battlefields jointly (`usePooledBattlefieldLayout`).
+ * Each `Battlefield` reads its own side and skips its per-slot solve; `null`
+ * (multiplayer strips, spectator bottom seats, or before the first measurement)
+ * means "size yourself from your own slot".
+ */
+export const PooledBattlefieldLayoutContext = createContext<PooledLayout | null>(null)
 
-// Upper bound on the wrap-line search per battlefield row. Four lines of
-// tiny cards per row is the most a phone slot can ever usefully hold; a
-// larger bound only adds search work.
-const MAX_LINES_PER_ROW = 4
-
-// Preferred readability floor for battlefield cards. When a board is so
-// crowded that respecting it would make the layout taller than the slot
-// (overlapping the center HUD), cards shrink further — fitting beats size.
-const PREFERRED_MIN_CARD_WIDTH = 60
-
-// Below this, cards are unrecognizable; clamp here for pathological boards
-// (25+ permanents on a phone). The slot clips its content (Battlefield.tsx),
-// so even then nothing can bleed over the center HUD.
-const ABSOLUTE_MIN_CARD_WIDTH = 32
-
-// Minimum gap kept toward the center HUD when the comfortable `breathing`
-// margin has been sacrificed for card size. Clears the StepStrip's
-// active-player chevron (~9px) and its glow, which paints over anything
-// closer and reads as cards tucked under the HUD.
-const TIGHT_HUD_GAP = 16
+/** The solver inputs that come from the responsive base (gap and stack peek). */
+export function layoutEnvFor(base: ResponsiveSizes): LayoutEnv {
+  return {
+    cardGap: base.cardGap,
+    stackOffset: stackOffsetFor(base.isMobile),
+    backRowScale: BACK_ROW_SCALE,
+    // A sparse board grows cards back up to the ordinary window-derived size,
+    // never past it — one permanent should not fill the board.
+    maxCardWidth: base.battlefieldCardWidth,
+  }
+}
 
 /**
- * Slot-derived battlefield layout: the card sizes to render with, plus the
+ * The base responsive sizes with the battlefield card (and everything that
+ * scales with it — row padding, badges) replaced for `cardWidth`. Returns
+ * `base` itself when nothing would change, so downstream useMemos keyed on the
+ * sizes identity don't invalidate for no visual change.
+ */
+export function sizesForCardWidth(base: ResponsiveSizes, cardWidth: number): ResponsiveSizes {
+  const cardHeight = cardHeightFor(cardWidth)
+  if (cardWidth === base.battlefieldCardWidth && cardHeight === base.battlefieldCardHeight) return base
+
+  // Recompute the same badge scale formula useResponsive uses so badges
+  // stay proportionate to the (resized) battlefield card.
+  const DESKTOP_BF_WIDTH = 125
+  const bfScale = Math.max(0.5, Math.min(1.6, cardWidth / DESKTOP_BF_WIDTH))
+  const scaled = (desktop: number, floor: number) => Math.max(floor, Math.round(desktop * bfScale))
+  const badgeInset = scaled(4, 2)
+  const badgePadH = scaled(6, 3)
+  const badgePadV = scaled(2, 1)
+  const tightPadH = scaled(5, 3)
+  const tightPadV = scaled(2, 1)
+  const badges: BadgeSizes = {
+    ptFontSize: scaled(12, 9),
+    counterTextFontSize: scaled(11, 8),
+    counterIconFontSize: scaled(10, 7),
+    keywordIconSize: scaled(18, 12),
+    sicknessIconSize: scaled(24, 14),
+    smallLabelFontSize: scaled(9, 7),
+    manaCostFontSize: scaled(13, 9),
+    classLevelMarkerSize: scaled(18, 12),
+    classLevelMarkerFontSize: scaled(9, 7),
+    countBadgeSize: scaled(22, 16),
+    countBadgeFontSize: scaled(12, 9),
+    distributeBadgeSize: scaled(26, 18),
+    distributeBadgeFontSize: scaled(14, 10),
+    indicatorFontSize: scaled(13, 9),
+    badgePadding: `${badgePadV}px ${badgePadH}px`,
+    badgePaddingTight: `${tightPadV}px ${tightPadH}px`,
+    badgeInset,
+  }
+
+  return {
+    ...base,
+    battlefieldCardWidth: cardWidth,
+    battlefieldCardHeight: cardHeight,
+    battlefieldRowPadding: rowPaddingFor(cardHeight),
+    badges,
+  }
+}
+
+/**
+ * Slot-derived battlefield layout: the card sizes to render with (front row,
+ * and the back row — the same object unless `BACK_ROW_SCALE < 1`), plus the
  * number of wrap lines each row was budgeted for (used by Battlefield.tsx to
  * reserve matching minHeight per row so a wrapped row can't collapse or
- * overflow its neighbour).
+ * overflow its neighbour; 0 for an empty row).
  */
 export interface SlotSizedLayout {
   sizes: ResponsiveSizes
+  backSizes: ResponsiveSizes
   frontRowLines: number
   backRowLines: number
 }
 
 /**
  * Measures the bounded slot a battlefield occupies (set up by the grid in
- * board/styles.ts) and derives card sizes that fit inside it. Cards both
- * shrink (when slot is too small) and grow (when slot has unused height,
- * up to SLOT_MAX_CARD_WIDTH) so the slot is used as fully as possible
- * without overflow.
+ * board/styles.ts) and derives card sizes that fit inside it via
+ * `solveSlotLayout`. Cards both shrink (when the slot is too small) and grow
+ * (when it has unused height, up to SLOT_MAX_CARD_WIDTH) so the slot is used
+ * as fully as possible without overflow — an empty row costs no line, and the
+ * divider margins and the gap toward the HUD scale with the card rendered
+ * rather than with the desktop base card.
  *
- * Each row (front: creatures + planeswalkers, back: lands + other) may wrap
- * into multiple physical lines when that yields *larger* cards than squeezing
- * everything onto one line — e.g. many creatures on a wide board, or a narrow
- * portrait phone where vertical space is plentiful and horizontal space isn't.
- * The hook searches line-count combinations (1..MAX_LINES_PER_ROW per row)
- * and picks the one that maximizes card width while the combined height of
- * all lines still fits the slot. Single lines win ties, so roomy boards keep
- * today's flat layout.
- *
- * Counts are *rendered stacks* (after groupCards), not raw cards. The tapped
- * counts matter because tapped cards are rotated 90°: their horizontal
- * footprint is the portrait card *height* (≈1.4× card width) rather than the
- * width. The stackedExtra counts (cards hidden behind a stack's first card)
- * each add a fixed peek offset to their stack's footprint. The width
- * constraint assumes the worst-case line (as many tapped cards as can share a
- * line) so an unplanned extra wrap line — which would overflow the slot
- * vertically into the center HUD — stays geometrically impossible.
+ * When `pooled` is given (the two-player board, solved jointly by GameBoard so
+ * both players share one width and the crowded side gets the height it needs)
+ * the slot measurement is ignored and the pooled result is rendered as-is.
  *
  * Phase 2 of the no-overlap layout: makes overflow into the center HUD
  * geometrically impossible by sizing cards from the actual slot rather
@@ -85,12 +129,8 @@ export interface SlotSizedLayout {
  */
 export function useSlotSizedResponsive(
   slotRef: RefObject<HTMLElement | null>,
-  frontRowCount: number = 0,
-  frontRowTappedCount: number = 0,
-  frontRowStackedExtra: number = 0,
-  backRowCount: number = 0,
-  backRowTappedCount: number = 0,
-  backRowStackedExtra: number = 0,
+  stats: BoardStats,
+  pooled: SlotLayout | null = null,
 ): SlotSizedLayout {
   const base = useResponsiveContext()
   const [slotSize, setSlotSize] = useState<{ width: number; height: number } | null>(null)
@@ -98,215 +138,47 @@ export function useSlotSizedResponsive(
   useLayoutEffect(() => {
     const node = slotRef.current
     if (!node) return
+    // Whole pixels, and no state change for a same-size report: fractional
+    // ResizeObserver readings would otherwise re-solve (and re-render) on every
+    // sub-pixel wobble of the grid rows.
+    const update = (width: number, height: number) =>
+      setSlotSize((prev) => {
+        const next = { width: Math.round(width), height: Math.round(height) }
+        return prev !== null && prev.width === next.width && prev.height === next.height ? prev : next
+      })
     const rect = node.getBoundingClientRect()
-    setSlotSize({ width: rect.width, height: rect.height })
+    update(rect.width, rect.height)
     const obs = new ResizeObserver((entries) => {
       const entry = entries[0]
-      if (entry) setSlotSize({ width: entry.contentRect.width, height: entry.contentRect.height })
+      if (entry) update(entry.contentRect.width, entry.contentRect.height)
     })
     obs.observe(node)
     return () => obs.disconnect()
   }, [slotRef])
 
+  const { front, back } = stats
   return useMemo(() => {
-    if (slotSize === null || slotSize.height <= 0 || slotSize.width <= 0) {
-      return { sizes: base, frontRowLines: 1, backRowLines: 1 }
+    const own =
+      slotSize !== null && slotSize.height > 0 && slotSize.width > 0
+        ? solveSlotLayout(slotSize.width, slotSize.height, { front, back }, layoutEnvFor(base))
+        : null
+    // The pooled width was solved from the rows' measured heights, but this
+    // slot's own measurement can lag a frame behind a grid change — and
+    // whatever the source, a card that doesn't fit the slot it is in would be
+    // clipped against the center HUD. Never render wider than the slot fits;
+    // in a consistent frame the two agree and the pooled width wins as-is.
+    const layout = pooled !== null && own !== null && own.cardWidth < pooled.cardWidth ? own : (pooled ?? own)
+    if (layout === null) {
+      return { sizes: base, backSizes: base, frontRowLines: front.count > 0 ? 1 : 0, backRowLines: back.count > 0 ? 1 : 0 }
     }
-
-    // Each battlefield holds two card rows separated by a divider strip
-    // (24px + 2 × dividerMargin, see Battlefield.tsx). The `breathing` value
-    // is leftover slot height that ends up between the cards and the slot's
-    // anchored end — which, for both opponent (justify flex-start) and player
-    // (justify flex-end), is the center-HUD side. So this is effectively the
-    // gap between battlefield cards and the center HUD.
-    //
-    // Sized to clear the StepStrip's active-player chevron (6px triangle +
-    // 3px gap = ~9px protruding from the HUD into our slot's bottom edge)
-    // with room to spare. Scaled with slot height so tight viewports stay
-    // tight and roomy ones get a comfortable gap.
-    const dividerMargin = Math.max(10, Math.round(base.battlefieldCardHeight * 0.1))
-    const dividerSpace = 24 + 2 * dividerMargin
-    const breathing = Math.max(12, Math.min(48, Math.round(slotSize.height * 0.10)))
-
-    // Horizontal-fit cap for one row spread across `lines` wrap lines: the
-    // largest card width that lets the fullest line sit side-by-side in the
-    // slot's width (accounting for inter-card gaps). With 0–1 cards per line,
-    // no horizontal constraint applies.
-    //
-    // Each tapped stack's rotated container is cardHeight + 8 (= 1.4 ×
-    // cardWidth + 8, see GameCard's needsLandscapeContainer) wide rather than
-    // cardWidth, and every card stacked behind a group's first peeks out by a
-    // fixed offset (see CardStack). Flex-wrap breaks lines greedily, so we
-    // can't control which items share a line — assume the worst case where a
-    // line holds as many tapped stacks (and all the stacked-extra cards) as
-    // possible. Solving for cardWidth with t tapped and e stacked-extra out
-    // of n items on a line:
-    //   slotWidth ≥ cw × (n + 0.4·t) + 8·t + stackOffset·e + (n − 1) × gap
-    //   cw ≤ (slotWidth − 8·t − stackOffset·e − (n − 1) × gap) / (n + 0.4·t)
-    const stackOffset = base.isMobile ? 12 : 18
-    const widthCapForRow = (count: number, tappedCount: number, stackedExtra: number, lines: number): number => {
-      const cardsPerLine = Math.ceil(count / lines)
-      if (cardsPerLine <= 1 && stackedExtra <= 0) return SLOT_MAX_CARD_WIDTH
-      const tappedOnLine = Math.max(0, Math.min(tappedCount, cardsPerLine))
-      const widthDivisor = cardsPerLine + 0.4 * tappedOnLine
-      const totalGap = (cardsPerLine - 1) * base.cardGap
-      return Math.floor(
-        (slotSize.width - totalGap - 8 * tappedOnLine - stackOffset * stackedExtra) / widthDivisor,
-      )
-    }
-
-    // Search every (frontLines, backLines) combination and keep whichever
-    // yields the widest card. More lines relax the horizontal constraint but
-    // tighten the vertical one (each line costs cardHeight + a wrap gap), so
-    // the optimum depends on slot aspect ratio and card counts. Strict `>`
-    // with ascending iteration means fewer lines win ties — a board that fits
-    // comfortably on single lines keeps the flat layout.
-    //
-    // The vertical budget also reserves the two rows' minHeight padding
-    // (battlefieldRowPadding = 0.08 × cardHeight each, hence the 0.224·cw
-    // term folded into the divisor).
-    const maxFrontLines = Math.min(MAX_LINES_PER_ROW, Math.max(1, frontRowCount))
-    const maxBackLines = Math.min(MAX_LINES_PER_ROW, Math.max(1, backRowCount))
-    const search = (hudGap: number, maxWidth: number) => {
-      let width = 0
-      let frontLines = 1
-      let backLines = 1
-      for (let front = 1; front <= maxFrontLines; front++) {
-        for (let back = 1; back <= maxBackLines; back++) {
-          const totalLines = front + back
-          // Vertical-fit cap: every line costs one cardHeight, and wrapped
-          // lines within a row are separated by the flex `gap` (cardGap).
-          const heightBudget =
-            slotSize.height - dividerSpace - hudGap - (totalLines - 2) * base.cardGap
-          const widthFromHeight = Math.floor(heightBudget / (totalLines * 1.4 + 0.224))
-          const candidate = Math.min(
-            maxWidth,
-            widthFromHeight,
-            widthCapForRow(frontRowCount, frontRowTappedCount, frontRowStackedExtra, front),
-            widthCapForRow(backRowCount, backRowTappedCount, backRowStackedExtra, back),
-          )
-          if (candidate > width) {
-            width = candidate
-            frontLines = front
-            backLines = back
-          }
-        }
-      }
-      return { width, frontLines, backLines }
-    }
-
-    // Pass 1: comfortable layout — full breathing gap toward the center HUD.
-    let { width: slotCardWidth, frontLines: frontRowLines, backLines: backRowLines } =
-      search(breathing, SLOT_MAX_CARD_WIDTH)
-
-    if (slotCardWidth < PREFERRED_MIN_CARD_WIDTH) {
-      // Crowded board: cards would drop below the preferred readability
-      // floor. Re-search with the breathing margin sacrificed (keeping just
-      // enough to clear the StepStrip chevron) and the floor as the ceiling —
-      // trading the comfort gap for card size, but never letting the layout
-      // grow taller than the slot, which is what used to push cards over the
-      // center HUD on phones.
-      const tight = search(TIGHT_HUD_GAP, PREFERRED_MIN_CARD_WIDTH)
-      slotCardWidth = tight.width
-      frontRowLines = tight.frontLines
-      backRowLines = tight.backLines
-
-      if (slotCardWidth < ABSOLUTE_MIN_CARD_WIDTH) {
-        // Even unreadably small cards can't fit this board (20+ permanents on
-        // a phone). Clamp to the absolute minimum and re-derive each row's
-        // line count from what greedy flex-wrap actually produces at that
-        // width, so the minHeight reservations in Battlefield.tsx track
-        // reality instead of the impossible plan. Some overflow is now
-        // unavoidable.
-        slotCardWidth = ABSOLUTE_MIN_CARD_WIDTH
-        const linesAtFloor = (count: number, tappedCount: number, stackedExtra: number): number => {
-          if (count <= 0) return 1
-          const contentWidth =
-            count * (slotCardWidth + base.cardGap) +
-            tappedCount * (0.4 * slotCardWidth + 8) +
-            stackedExtra * stackOffset
-          const lineCapacity = slotSize.width + base.cardGap
-          return Math.min(
-            MAX_LINES_PER_ROW,
-            Math.max(1, Math.ceil(contentWidth / lineCapacity)),
-          )
-        }
-        frontRowLines = linesAtFloor(frontRowCount, frontRowTappedCount, frontRowStackedExtra)
-        backRowLines = linesAtFloor(backRowCount, backRowTappedCount, backRowStackedExtra)
-      }
-    }
-    const slotCardHeight = Math.round(slotCardWidth * 1.4)
-
-    // No-op if the resulting size matches what the base context already supplies
-    // (within rounding) — avoids creating a fresh ResponsiveSizes identity that
-    // would invalidate every downstream useMemo for no visual change.
-    if (
-      slotCardWidth === base.battlefieldCardWidth &&
-      slotCardHeight === base.battlefieldCardHeight
-    ) {
-      return { sizes: base, frontRowLines, backRowLines }
-    }
-
-    // Recompute the same badge scale formula useResponsive uses so badges
-    // stay proportionate to the (resized) battlefield card.
-    const DESKTOP_BF_WIDTH = 125
-    const bfScale = Math.max(0.5, Math.min(1.6, slotCardWidth / DESKTOP_BF_WIDTH))
-    const scaled = (desktop: number, floor: number) =>
-      Math.max(floor, Math.round(desktop * bfScale))
-    const badgeInset = scaled(4, 2)
-    const badgePadH = scaled(6, 3)
-    const badgePadV = scaled(2, 1)
-    const tightPadH = scaled(5, 3)
-    const tightPadV = scaled(2, 1)
-    const badges: BadgeSizes = {
-      ptFontSize: scaled(12, 9),
-      counterTextFontSize: scaled(11, 8),
-      counterIconFontSize: scaled(10, 7),
-      keywordIconSize: scaled(18, 12),
-      sicknessIconSize: scaled(24, 14),
-      smallLabelFontSize: scaled(9, 7),
-      manaCostFontSize: scaled(13, 9),
-      classLevelMarkerSize: scaled(18, 12),
-      classLevelMarkerFontSize: scaled(9, 7),
-      countBadgeSize: scaled(22, 16),
-      countBadgeFontSize: scaled(12, 9),
-      distributeBadgeSize: scaled(26, 18),
-      distributeBadgeFontSize: scaled(14, 10),
-      indicatorFontSize: scaled(13, 9),
-      badgePadding: `${badgePadV}px ${badgePadH}px`,
-      badgePaddingTight: `${tightPadV}px ${tightPadH}px`,
-      badgeInset,
-    }
-
-    return {
-      sizes: {
-        ...base,
-        battlefieldCardWidth: slotCardWidth,
-        battlefieldCardHeight: slotCardHeight,
-        battlefieldRowPadding: Math.round(slotCardHeight * 0.08),
-        badges,
-      },
-      frontRowLines,
-      backRowLines,
-    }
-  }, [
-    base,
-    slotSize,
-    frontRowCount,
-    frontRowTappedCount,
-    frontRowStackedExtra,
-    backRowCount,
-    backRowTappedCount,
-    backRowStackedExtra,
-  ])
+    const sizes = sizesForCardWidth(base, layout.cardWidth)
+    const backSizes = layout.backCardWidth === layout.cardWidth ? sizes : sizesForCardWidth(base, layout.backCardWidth)
+    return { sizes, backSizes, frontRowLines: layout.frontLines, backRowLines: layout.backLines }
+    // Keyed on the stats' numbers, not the objects, so an unrelated store
+    // update that rebuilds equal stats doesn't produce a fresh sizes identity.
+  }, [base, slotSize, pooled, front.count, front.tapped, front.stackedExtra, back.count, back.tapped, back.stackedExtra])
 }
 
-/**
- * Extra width GameCard's own wrapper reserves for a card lying sideways on the
- * battlefield (see the `needsLandscapeContainer` branch in GameCard.tsx). Kept in
- * sync with that constant so the stack reserves the same footprint GameCard uses.
- */
-const LANDSCAPE_CONTAINER_PAD = 8
 
 /** Placement of one card inside an attachment stack, in container-local pixels. */
 export interface AttachmentStackBox {

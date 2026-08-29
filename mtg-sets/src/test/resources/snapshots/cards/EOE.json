@@ -571,12 +571,16 @@
                 },
                 {
                     "effect": {
-                        "type": "MoveToZone",
-                        "target": {
-                            "type": "BoundVariable",
-                            "name": "target creature and/or planeswalker cards"
-                        },
-                        "destination": "Hand"
+                        "type": "ForEach",
+                        "space": "IterationSpace.Targets",
+                        "body": {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "destination": "Hand"
+                        }
                     },
                     "targetRequirements": [
                         {
@@ -586,8 +590,7 @@
                             "filter": {
                                 "baseFilter": "creature|planeswalker",
                                 "zone": "Graveyard"
-                            },
-                            "id": "target creature and/or planeswalker cards"
+                            }
                         }
                     ],
                     "description": "Return one or two target creature and/or planeswalker cards from your graveyard to your hand"

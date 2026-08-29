@@ -154,6 +154,15 @@ different subset of the same three rows. If it is *yes, yes*, the bare form is a
 separate value, which is what "Sacrifice ~." needed. Watch the ranking for it: a decline whose tail is
 a bare `.` is always this, never a construct.
 
+The family came back to the top of the ranking and the frozen word was the **subject** that time —
+four members of `SelfSteps.retargetable` spelled the pronoun as literal template text ("exile **it**",
+"return **it** to its owner's hand") instead of putting it in the `{self}` slot every other member
+has, which cost twenty-nine spells the sentence "Exile ~." and forced a `pronominal` flag to exist so
+the positions that read the *name* could exclude them. So the test has a third question after the two
+above: **is the word in the template one the shape already has a slot for?** A row that spells by hand
+what its family parameterizes is the same defect one level up, and it is invisible to the ranking
+until something else makes the position reachable.
+
 **Generalize the axis when the rules define one.** `qualityRun` started as a colour-join fix and
 generalized in the same change to any quality, to the Oxford-comma three-way, and to hexproof under
 CR 702.11f, because the Comprehensive Rules define the join over *qualities*. Reach for the rule the
@@ -548,6 +557,29 @@ always means the target. `SelfSteps.anaphoric`, `Continuations` and `SelfSteps.t
 reachable from disjoint positions for exactly that reason — registering any surface form in two of
 them is two readings of one text. The differential found the second and third by *running*: both
 wrong readings round-tripped byte-perfectly and meant a different creature.
+
+**A position is only an anaphor position if it is an instantiation.** For a long time the *later*
+clause of a run was not: `Continuations` was a file of individually written sentences ("untap that
+creature", "it gets {mod} until end of turn"), so the pronoun could only reach the verbs somebody had
+copied, and everything else — untap, regenerate, transform, the keyword grants, the animate, the
+combat restrictions — declined on its own full stop. It is now
+`retargetable(Targets.bound(), Primitives.targetPronoun)` plus the four clauses that genuinely have no
+source-side twin, and the check that keeps the pronoun honest moved with it: `Steps.merge` refuses a
+run that reads the target slot **while declaring no requirement**, so a dangling "it" is a decline
+rather than a byte-perfect reading of the wrong permanent. One guard for the vocabulary beats one
+omission per family — `Combat` had been carrying the omission as a stated design decision.
+
+There is a **fourth** position and it does not belong to the grammar: `~` inside the quotes a
+*granted* ability is printed in. CR 201.4 makes a reference by **name** the object that printed the
+ability (an Equipment, `EffectTarget.GrantingSource`) and "this creature" the object that *has* it
+(`EffectTarget.Self`), and normalization used to abstract both to one token — so the moment a rule
+read the clause, Ninja's Kunai bounced the equipped creature instead of the Equipment. The distinction
+is in the printed text, so the fix is `Normalizer.GRANTED_SELF`: inside a quotation the name gets its
+own token, no rule spells it, and the line declines and is counted. The general shape is worth
+remembering — **when two readings differ and the printed text does tell them apart, the split belongs
+to normalization, not to a guard in the grammar.** The guard was written first and measured: refusing
+any quoted ability that pointed at the source withdrew twenty-one correct readings to prevent two
+wrong ones.
 
 The third one is also the worked example of **how** to add an anaphor position. The distinction
 exists only at parse time — after parsing, "~ gets +1/+1" and "it gets +1/+1" are the same model, so

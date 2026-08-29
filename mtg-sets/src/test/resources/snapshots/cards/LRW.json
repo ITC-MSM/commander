@@ -572,6 +572,92 @@
     ]
 }
 
+// Cloudgoat Ranger
+{
+    "name": "Cloudgoat Ranger",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Creature — Giant Warrior Ranger",
+    "oracleText": "When this creature enters, create three 1/1 white Kithkin Soldier creature tokens.\nTap three untapped Kithkin you control: This creature gets +2/+0 and gains flying until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Kithkin",
+                        "Soldier"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/a/d/ad29eb21-7ee3-4a67-9601-a62ea0cbe4c0.jpg?1783942839"
+                },
+                "descriptionOverride": "create three 1/1 white Kithkin Soldier creature tokens."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "count": 3,
+                        "filter": "permanent Kithkin"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FLYING",
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Tap three untapped Kithkin you control: This creature gets +2/+0 and gains flying until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "10",
+        "rarity": "UNCOMMON",
+        "artist": "Adam Rex",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/e/9e344859-7248-4498-8303-252f196a007b.jpg?1783942916"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Cloudthresher
 {
     "name": "Cloudthresher",
@@ -936,6 +1022,143 @@
     ]
 }
 
+// Dreamspoiler Witches
+{
+    "name": "Dreamspoiler Witches",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flying\nWhenever you cast a spell during an opponent's turn, you may have target creature get -1/-1 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "SpellCastEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": -1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": -1
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                },
+                "triggerRestriction": "IsNotYourTurn",
+                "descriptionOverride": "Whenever you cast a spell during an opponent's turn, you may have target creature get -1/-1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "108",
+        "artist": "Jeff Easley",
+        "flavorText": "At night, the faeries steal dreamstuff for their queen. At daybreak, countless creatures wake weak and hollow.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/d/7d5c2487-5da0-4d9a-beb2-598feeb068a1.jpg?1783942891"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Drowner of Secrets
+{
+    "name": "Drowner of Secrets",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Merfolk Wizard",
+    "oracleText": "Tap an untapped Merfolk you control: Target player mills a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "filter": "permanent Merfolk"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "descriptionOverride": "Tap an untapped Merfolk you control: Target player mills a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "58",
+        "rarity": "UNCOMMON",
+        "artist": "Rebecca Guay",
+        "flavorText": "Merrows consider themselves the keepers of Lorwyn's past—and consider it their duty to edit when necessary.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/4/149aa77e-fc10-4b9b-8f38-cc6db5be7b79.jpg?1783942904"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Elvish Handservant
 {
     "name": "Elvish Handservant",
@@ -1063,6 +1286,50 @@
         "rarity": "UNCOMMON",
         "artist": "Larry MacDougall",
         "imageUri": "https://cards.scryfall.io/normal/front/d/e/de789231-8358-4cbd-b8eb-1da4ce5b34c0.jpg?1783942866"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Elvish Promenade
+{
+    "name": "Elvish Promenade",
+    "manaCost": "{3}{G}",
+    "typeLine": "Kindred Sorcery — Elf",
+    "oracleText": "Create a 1/1 green Elf Warrior creature token for each Elf you control.",
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "permanent Elf"
+            },
+            "power": 1,
+            "toughness": 1,
+            "colors": [
+                "GREEN"
+            ],
+            "creatureTypes": [
+                "Elf",
+                "Warrior"
+            ],
+            "imageUri": "https://cards.scryfall.io/normal/front/2/7/27b171ac-b2ef-4a80-92d1-6d9e71f3e3ca.jpg?1783942838"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "208",
+        "rarity": "UNCOMMON",
+        "artist": "Steve Ellis",
+        "flavorText": "The faultless and immaculate castes form the lower tiers of elvish society, with the exquisite caste above them. At the pinnacle is the perfect, a consummate blend of aristocrat and predator.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/ec9d5049-c1a6-4186-952e-bd7481b1974a.jpg?1783942865",
+        "rulings": [
+            {
+                "date": "2024-06-07",
+                "text": "This cards was originally printed with the \"tribal\" card type. That card type has been replaced with \"kindred\". This change does not affect the gameplay function of this card."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "GREEN"
@@ -1450,6 +1717,48 @@
         "rarity": "UNCOMMON",
         "artist": "Larry MacDougall",
         "imageUri": "https://cards.scryfall.io/normal/front/f/9/f9bdc319-4e06-420b-ba54-6cb994d4e279.jpg?1783942903"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Fallowsage
+{
+    "name": "Fallowsage",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Merfolk Wizard",
+    "oracleText": "Whenever this creature becomes tapped, you may draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TapEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                },
+                "descriptionOverride": "Whenever this creature becomes tapped, you may draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "63",
+        "rarity": "UNCOMMON",
+        "artist": "Paolo Parente",
+        "flavorText": "Memories of ages past are said to swim the minds of lounging fallowsages.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/4/d4237352-4e0e-4f40-946b-2a61753674d4.jpg?1783942904"
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -2113,6 +2422,61 @@
     ]
 }
 
+// Glen Elendra Pranksters
+{
+    "name": "Glen Elendra Pranksters",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flying\nWhenever you cast a spell during an opponent's turn, you may return target creature you control to its owner's hand.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "SpellCastEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature you control"
+                        },
+                        "destination": "Hand"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                },
+                "triggerRestriction": "IsNotYourTurn",
+                "descriptionOverride": "Whenever you cast a spell during an opponent's turn, you may return target creature you control to its owner's hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "67",
+        "rarity": "UNCOMMON",
+        "artist": "Omar Rayyan",
+        "flavorText": "Victims spirited through a faerie ring find themselves stranded miles away.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/a/2a71800f-3e67-4cfb-a3b1-8c073a91b909.jpg?1783942901"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Goldmeadow Dodger
 {
     "name": "Goldmeadow Dodger",
@@ -2205,6 +2569,177 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Guardian of Cloverdell
+{
+    "name": "Guardian of Cloverdell",
+    "manaCost": "{5}{G}{G}",
+    "typeLine": "Creature — Treefolk Shaman",
+    "oracleText": "When this creature enters, create three 1/1 white Kithkin Soldier creature tokens.\n{G}, Sacrifice a Kithkin: You gain 1 life.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Kithkin",
+                        "Soldier"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/a/d/ad29eb21-7ee3-4a67-9601-a62ea0cbe4c0.jpg?1783942839"
+                },
+                "descriptionOverride": "create three 1/1 white Kithkin Soldier creature tokens."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{G}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "permanent Kithkin"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{G}, Sacrifice a Kithkin: You gain 1 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "216",
+        "rarity": "UNCOMMON",
+        "artist": "Jesper Ejsing",
+        "flavorText": "Although they're protective of all creatures, many treefolk are especially fond of the empathic kithkin.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/311c5f1d-7e3b-4397-b05b-f20bde2dc164.jpg?1783942863"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Hearthcage Giant
+{
+    "name": "Hearthcage Giant",
+    "manaCost": "{6}{R}{R}",
+    "typeLine": "Creature — Giant Warrior",
+    "oracleText": "When this creature enters, create two 3/1 red Elemental Shaman creature tokens.\nSacrifice an Elemental: Target Giant creature gets +3/+1 until end of turn.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 3,
+                    "toughness": 1,
+                    "colors": [
+                        "RED"
+                    ],
+                    "creatureTypes": [
+                        "Elemental",
+                        "Shaman"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/a/2/a280aee2-e15a-4625-b429-4032eae08a41.jpg?1783942839"
+                },
+                "descriptionOverride": "create two 3/1 red Elemental Shaman creature tokens."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "permanent Elemental"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target Giant creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature Giant"
+                        },
+                        "id": "target Giant creature"
+                    }
+                ],
+                "descriptionOverride": "Sacrifice an Elemental: Target Giant creature gets +3/+1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "174",
+        "rarity": "UNCOMMON",
+        "artist": "Zoltan Boros & Gabor Szikszai",
+        "flavorText": "The flamekin are mere kindling for his warmth.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fb0d4d3f-d3ad-4c70-b9af-9bfcdd9efd1f.jpg?1783942874"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -2747,6 +3282,51 @@
     ]
 }
 
+// Judge of Currents
+{
+    "name": "Judge of Currents",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Merfolk Wizard",
+    "oracleText": "Whenever a Merfolk you control becomes tapped, you may gain 1 life.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "TapEvent",
+                    "filter": "permanent Merfolk ctrl:you"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                },
+                "descriptionOverride": "Whenever a Merfolk you control becomes tapped, you may gain 1 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "22",
+        "artist": "Dan Murayama Scott",
+        "flavorText": "Though the currents of the Lanes shift every year, the merrow never lose track of where they are or where they are going.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/0/3073f3f5-bff8-4ec1-a68f-c83d63435843.jpg?1783942913"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Kinsbaile Skirmisher
 {
     "name": "Kinsbaile Skirmisher",
@@ -3104,6 +3684,71 @@
     ]
 }
 
+// Lys Alana Huntmaster
+{
+    "name": "Lys Alana Huntmaster",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Creature — Elf Warrior",
+    "oracleText": "Whenever you cast an Elf spell, you may create a 1/1 green Elf Warrior creature token.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasSubtype",
+                                "subtype": "Elf"
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "CreateToken",
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "GREEN"
+                        ],
+                        "creatureTypes": [
+                            "Elf",
+                            "Warrior"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/2/7/27b171ac-b2ef-4a80-92d1-6d9e71f3e3ca.jpg?1783942838"
+                    },
+                    "descriptionOverride": "you may create a 1/1 green Elf Warrior creature token."
+                },
+                "descriptionOverride": "you may create a 1/1 green Elf Warrior creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "229",
+        "artist": "Pete Venters",
+        "flavorText": "From the highest tiers of Dawn's Light Palace to the deepest shade of Wren's Run, the silver notes of the horn shimmer through the air, and all who hear it feel its pull.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/d/8d21f992-f982-415e-9d77-d11d8c931741.jpg?1783942860",
+        "rulings": [
+            {
+                "date": "2016-06-08",
+                "text": "Lys Alana Huntmaster's ability will resolve before the Elf spell that caused it to trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Masked Admirers
 {
     "name": "Masked Admirers",
@@ -3176,6 +3821,51 @@
     ]
 }
 
+// Merrow Commerce
+{
+    "name": "Merrow Commerce",
+    "manaCost": "{1}{U}",
+    "typeLine": "Kindred Enchantment — Merfolk",
+    "oracleText": "At the beginning of your end step, untap all Merfolk you control.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "permanent Merfolk ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "TapUntap",
+                        "target": "Self",
+                        "tap": false
+                    }
+                },
+                "descriptionOverride": "At the beginning of your end step, untap all Merfolk you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "72",
+        "rarity": "UNCOMMON",
+        "artist": "Steve Ellis",
+        "flavorText": "Schools meet and mingle on Lorwyn's riverways. In the bustling interplay, the merrow renew their sense of community as they sharpen their wits and hone their trading skills.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/a/3ad0c3b4-fd24-44ad-8b30-4176f07be3d6.jpg?1783942900"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Merrow Harbinger
 {
     "name": "Merrow Harbinger",
@@ -3244,6 +3934,97 @@
         "rarity": "UNCOMMON",
         "artist": "Steve Prescott",
         "imageUri": "https://cards.scryfall.io/normal/front/b/4/b47af11c-1090-4f0a-8eea-64a3b639e535.jpg?1783942900"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Merrow Reejerey
+{
+    "name": "Merrow Reejerey",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Merfolk Soldier",
+    "oracleText": "Other Merfolk creatures you control get +1/+1.\nWhenever you cast a Merfolk spell, you may tap or untap target permanent.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasSubtype",
+                                "subtype": "Merfolk"
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Modal",
+                        "modes": [
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target permanent"
+                                    }
+                                },
+                                "description": "Tap that permanent"
+                            },
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target permanent"
+                                    },
+                                    "tap": false
+                                },
+                                "description": "Untap that permanent"
+                            }
+                        ],
+                        "countsAsModalSpell": false
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent"
+                    },
+                    "id": "target permanent"
+                },
+                "descriptionOverride": "Whenever you cast a Merfolk spell, you may tap or untap target permanent."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature Merfolk ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "74",
+        "rarity": "UNCOMMON",
+        "artist": "Greg Staples",
+        "flavorText": "Steady and silent as the deep current, the reejerey guides the course of the school.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/5/b57434d9-6fa5-43a6-98b9-044d2259d699.jpg?1783942900"
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -3937,6 +4718,81 @@
     ]
 }
 
+// Pestermite
+{
+    "name": "Pestermite",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Faerie Rogue",
+    "oracleText": "Flash\nFlying\nWhen this creature enters, you may tap or untap target permanent.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Modal",
+                        "modes": [
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target permanent"
+                                    }
+                                },
+                                "description": "Tap that permanent"
+                            },
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target permanent"
+                                    },
+                                    "tap": false
+                                },
+                                "description": "Untap that permanent"
+                            }
+                        ],
+                        "countsAsModalSpell": false
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent"
+                    },
+                    "id": "target permanent"
+                },
+                "descriptionOverride": "When this creature enters, you may tap or untap target permanent."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "78",
+        "artist": "Christopher Moeller",
+        "flavorText": "The fae know when they're not wanted. That's precisely why they show up.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/2/f252ae53-443c-4a27-b8f0-639a9a2b8598.jpg?1783942899"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Plover Knights
 {
     "name": "Plover Knights",
@@ -4360,6 +5216,72 @@
     ]
 }
 
+// Soaring Hope
+{
+    "name": "Soaring Hope",
+    "manaCost": "{4}{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nWhen this Aura enters, you gain 3 life.\nEnchanted creature has flying.\n{W}: Put this Aura on top of its owner's library.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "descriptionOverride": "you gain 3 life."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{W}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Library",
+                    "placement": "Top"
+                },
+                "descriptionOverride": "{W}: Put this Aura on top of its owner's library."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "FLYING"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "40",
+        "artist": "Martina Pilcerova",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7f6c24b1-af9d-4a9c-9167-faa8a397a361.jpg?1783942908"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Spiderwig Boggart
 {
     "name": "Spiderwig Boggart",
@@ -4482,6 +5404,131 @@
     ]
 }
 
+// Stonybrook Angler
+{
+    "name": "Stonybrook Angler",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Merfolk Wizard",
+    "oracleText": "{1}{U}, {T}: You may tap or untap target creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{U}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Modal",
+                        "modes": [
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target creature"
+                                    }
+                                },
+                                "description": "Tap that creature"
+                            },
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target creature"
+                                    },
+                                    "tap": false
+                                },
+                                "description": "Untap that creature"
+                            }
+                        ],
+                        "countsAsModalSpell": false
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "{1}{U}, {T}: You may tap or untap target creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "90",
+        "artist": "Larry MacDougall",
+        "flavorText": "\"Water is in the air, the trees, and the earth. Understand its motion, speak its language, and the subtle currents that flow through all living things will fall under your command.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/4/047709e7-c44f-47e4-a9cc-1d941264e454.jpg?1783942896"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Sunrise Sovereign
+{
+    "name": "Sunrise Sovereign",
+    "manaCost": "{5}{R}",
+    "typeLine": "Creature — Giant Warrior",
+    "oracleText": "Other Giant creatures you control get +2/+2 and have trample.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2,
+                "filter": {
+                    "baseFilter": "creature Giant ctrl:you",
+                    "excludeSelf": true
+                }
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "TRAMPLE",
+                "filter": {
+                    "baseFilter": "creature Giant ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "192",
+        "rarity": "RARE",
+        "artist": "William O'Connor",
+        "flavorText": "A hundred generations has he mentored, a hundred armies has he crushed beneath his feet, yet only a hundred words has he ever spoken, each more revered than a hundred books.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b62a4703-9e8d-4164-a529-b2dbc4069aa8.jpg?1783942869"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Surge of Thoughtweft
 {
     "name": "Surge of Thoughtweft",
@@ -4543,6 +5590,72 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Surgespanner
+{
+    "name": "Surgespanner",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Creature — Merfolk Wizard",
+    "oracleText": "Whenever this creature becomes tapped, you may pay {1}{U}. If you do, return target permanent to its owner's hand.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TapEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{1}{U}"
+                        }
+                    },
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target permanent"
+                        },
+                        "destination": "Hand"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent"
+                    },
+                    "id": "target permanent"
+                },
+                "descriptionOverride": "you may pay {1}{U}. If you do, return target permanent to its owner's hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "92",
+        "rarity": "RARE",
+        "artist": "Warren Mahy",
+        "flavorText": "They ride on waves of Æther, washing out anything that might pollute the Merrow Lanes.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/d/1d5b00cb-ebc3-44e8-970d-724150eb7876.jpg?1783942896",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "This is a triggered ability, not an activated ability. It doesn't allow you to tap the creature whenever you want; rather, you need some other way of tapping it, such as by attacking with the creature."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "For the ability to trigger, the creature has to actually change from untapped to tapped. If an effect attempts to tap the creature, but it was already tapped at the time, this ability won't trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -4671,6 +5784,116 @@
         "imageUri": "https://cards.scryfall.io/normal/front/e/4/e472d4f5-add4-4de3-8718-31a47a35277c.jpg?1783942851"
     },
     "colorIdentityOverride": []
+}
+
+// Thorntooth Witch
+{
+    "name": "Thorntooth Witch",
+    "manaCost": "{5}{B}",
+    "typeLine": "Creature — Treefolk Shaman",
+    "oracleText": "Whenever you cast a Treefolk spell, you may have target creature get +3/-3 until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasSubtype",
+                                "subtype": "Treefolk"
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": -3
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    },
+                    "descriptionOverride": "you may have target creature get +3/-3 until end of turn."
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                },
+                "descriptionOverride": "you may have target creature get +3/-3 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "144",
+        "rarity": "UNCOMMON",
+        "artist": "William O'Connor",
+        "flavorText": "The crone's boughs creaked as she spoke. \"You look peaked, little one. Come, sip from my warm brew. It'll have you blooming in no time.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/4/140265a2-61c3-4731-989c-9d55c27400ec.jpg?1783942882"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Veteran of the Depths
+{
+    "name": "Veteran of the Depths",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Merfolk Soldier",
+    "oracleText": "Whenever this creature becomes tapped, you may put a +1/+1 counter on it.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TapEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Whenever this creature becomes tapped, you may put a +1/+1 counter on it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "46",
+        "rarity": "UNCOMMON",
+        "artist": "Daren Bader",
+        "flavorText": "In the backwaters of the Merrow Lanes lie stones scarred with tallies of countless generations, each representing a victory of merrow soldiers.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c36fe821-e9b1-453d-8e44-f8dce111a6de.jpg?1783942907"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }
 
 // Wanderer's Twig
@@ -4950,6 +6173,65 @@
     "colorIdentityOverride": [
         "BLACK",
         "RED"
+    ]
+}
+
+// Wydwen, the Biting Gale
+{
+    "name": "Wydwen, the Biting Gale",
+    "manaCost": "{2}{U}{B}",
+    "typeLine": "Legendary Creature — Faerie Wizard",
+    "oracleText": "Flash\nFlying\n{U}{B}, Pay 1 life: Return Wydwen to its owner's hand.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{U}{B}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomPayLife",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand"
+                },
+                "descriptionOverride": "{U}{B}, Pay 1 life: Return Wydwen to its owner's hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "253",
+        "rarity": "RARE",
+        "artist": "Matt Cavotta",
+        "flavorText": "In a world of bright, cloudless skies, she is the dark storm on the horizon.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/f/ff6b558b-74a5-497d-8be4-474c375d7ca7.jpg?1783942852"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
     ]
 }
 

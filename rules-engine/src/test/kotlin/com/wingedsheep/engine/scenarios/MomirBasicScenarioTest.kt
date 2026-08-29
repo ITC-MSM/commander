@@ -269,6 +269,118 @@ class MomirBasicScenarioTest : ScenarioTestBase() {
             game.state.projectedState.getColors(token) shouldContain "RED"
         }
 
+        test("a minted devour token prompts for the sacrifice and enters with the counters") {
+            val game = scenario()
+                .withPlayers()
+                .withFormat(Format.MomirBasic(eligibleCreatureNames = listOf("Predator Dragon")))
+                .withCardInCommandZone(1, avatar)
+                .withLandsOnBattlefield(1, "Mountain", 6)
+                .withCardsInHand(1, "Forest", 2)
+                .withCardOnBattlefield(1, "Grizzly Bears")
+                .withCardOnBattlefield(1, "Runeclaw Bear")
+                .build()
+
+            // Predator Dragon is mana value 6: a 4/4 with "Devour 2".
+            game.execute(game.momirAction(xValue = 6)).error shouldBe null
+            game.resolveStack()
+
+            // As-enters replacement (CR 702.82): "As this creature enters, you may sacrifice any
+            // number of creatures. It enters with twice that many +1/+1 counters on it." The
+            // minted token must surface the sacrifice prompt — the bug was that it never did, so
+            // the token entered with no devour counters at all.
+            val decision = game.getPendingDecision()
+            decision.shouldNotBeNull()
+
+            val bears = listOf(game.findPermanent("Grizzly Bears")!!, game.findPermanent("Runeclaw Bear")!!)
+            game.selectCards(bears)
+            game.resolveStack()
+
+            game.isInGraveyard(1, "Grizzly Bears").shouldBeTrue()
+            game.isInGraveyard(1, "Runeclaw Bear").shouldBeTrue()
+
+            val token = game.findPermanents("Predator Dragon").single()
+            // 4/4 base + 2 creatures x devour 2 = four +1/+1 counters -> 8/8.
+            game.state.projectedState.getPower(token) shouldBe 8
+            game.state.projectedState.getToughness(token) shouldBe 8
+        }
+
+        test("a minted devour token sacrificing nothing enters with no counters") {
+            val game = scenario()
+                .withPlayers()
+                .withFormat(Format.MomirBasic(eligibleCreatureNames = listOf("Predator Dragon")))
+                .withCardInCommandZone(1, avatar)
+                .withLandsOnBattlefield(1, "Mountain", 6)
+                .withCardsInHand(1, "Forest", 2)
+                .withCardOnBattlefield(1, "Grizzly Bears")
+                .build()
+
+            game.execute(game.momirAction(xValue = 6)).error shouldBe null
+            game.resolveStack()
+
+            // CR 702.82a: devour lets you sacrifice *any number*, zero included.
+            game.getPendingDecision().shouldNotBeNull()
+            game.skipSelection()
+            game.resolveStack()
+
+            game.isOnBattlefield("Grizzly Bears").shouldBeTrue()
+            val token = game.findPermanents("Predator Dragon").single()
+            game.state.projectedState.getPower(token) shouldBe 4
+            game.state.projectedState.getToughness(token) shouldBe 4
+        }
+
+        test("a minted devour token with nothing to sacrifice never prompts") {
+            val game = scenario()
+                .withPlayers()
+                .withFormat(Format.MomirBasic(eligibleCreatureNames = listOf("Predator Dragon")))
+                .withCardInCommandZone(1, avatar)
+                .withLandsOnBattlefield(1, "Mountain", 6)
+                .withCardsInHand(1, "Forest", 2)
+                .build()
+
+            game.execute(game.momirAction(xValue = 6)).error shouldBe null
+            game.resolveStack()
+
+            // No creatures to devour -> no decision, and the token still enters (with no counters).
+            game.getPendingDecision() shouldBe null
+            val token = game.findPermanents("Predator Dragon").single()
+            game.state.projectedState.getPower(token) shouldBe 4
+        }
+
+        test("devour land on a minted token sacrifices lands and feeds its own ETB (Famished Worldsire)") {
+            val game = scenario()
+                .withPlayers()
+                .withFormat(Format.MomirBasic(eligibleCreatureNames = listOf("Famished Worldsire")))
+                .withCardInCommandZone(1, avatar)
+                .withLandsOnBattlefield(1, "Forest", 8)
+                .withCardsInHand(1, "Mountain", 2)
+                .withCardInLibrary(1, "Plains")
+                .build()
+
+            // Famished Worldsire is mana value 8: a 0/0 with "Devour land 3".
+            game.execute(game.momirAction(xValue = 8)).error shouldBe null
+            game.resolveStack()
+
+            // The devour *land* variant offers lands, not creatures.
+            val decision = game.getPendingDecision()
+            decision.shouldNotBeNull()
+
+            val forests = game.findPermanents("Forest").take(2)
+            forests shouldHaveSize 2
+            game.selectCards(forests)
+            game.resolveStack()
+
+            val token = game.findPermanents("Famished Worldsire").single()
+            // 0/0 base + 2 lands x devour land 3 = six +1/+1 counters -> 6/6. Without the counters
+            // the token would be a 0/0 that state-based actions bin the moment it arrives.
+            game.state.projectedState.getPower(token) shouldBe 6
+            game.state.projectedState.getToughness(token) shouldBe 6
+            game.state.getZone(game.player1Id, Zone.GRAVEYARD).size shouldBe 3 // 2 Forests + the discard
+
+            // Its own ETB reads that power: "look at the top X cards of your library, where X is
+            // this creature's power" — so the trigger only has cards to offer because devour ran.
+            game.getPendingDecision().shouldNotBeNull()
+        }
+
         test("the random copy is filtered to the chosen mana value") {
             // Pool has a mana-value-1 and a mana-value-4 creature; X=1 must only ever pick the 1.
             val game = scenario()

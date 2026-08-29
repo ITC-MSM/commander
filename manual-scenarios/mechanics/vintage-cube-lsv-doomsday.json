@@ -1,0 +1,129 @@
+{
+  "player1Name": "lsv",
+  "player2Name": "tapedecky",
+  "player1": {
+    "lifeTotal": 20,
+    "hand": [
+      "Chrome Mox",
+      "Island",
+      "Plains",
+      "Miscalculation",
+      "Jace, the Mind Sculptor",
+      "Force of Negation"
+    ],
+    "battlefield": [
+      {
+        "name": "Lush Portico"
+      },
+      {
+        "name": "Botanical Sanctum"
+      },
+      {
+        "name": "Island"
+      }
+    ],
+    "graveyard": [
+      "Island"
+    ],
+    "library": [
+      "Tishana's Tidebinder",
+      "Counterspell",
+      "Brainstorm",
+      "Island",
+      "Island",
+      "Island",
+      "Island",
+      "Island",
+      "Island",
+      "Island",
+      "Island",
+      "Island",
+      "Island",
+      "Island",
+      "Plains",
+      "Plains",
+      "Plains",
+      "Plains",
+      "Plains",
+      "Plains",
+      "Plains",
+      "Plains",
+      "Plains",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest"
+    ]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": [
+      "Dark Ritual",
+      "Doomsday",
+      "Thassa's Oracle"
+    ],
+    "battlefield": [
+      {
+        "name": "Undercity Sewers"
+      },
+      {
+        "name": "Mountain"
+      },
+      {
+        "name": "Island"
+      }
+    ],
+    "graveyard": [
+      "Mystical Tutor"
+    ],
+    "library": [
+      "Thassa's Oracle",
+      "Brainstorm",
+      "Ponder",
+      "Preordain",
+      "Lotus Petal",
+      "Demonic Tutor",
+      "Dark Ritual",
+      "Dark Ritual",
+      "Counterspell",
+      "Mystical Tutor",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Island",
+      "Island",
+      "Island",
+      "Island",
+      "Island",
+      "Island",
+      "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain"
+    ]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "step": "PRECOMBAT_MAIN",
+  "activePlayer": 2,
+  "priorityPlayer": 2,
+  "player1StopAtSteps": [],
+  "player2StopAtSteps": [
+    "PRECOMBAT_MAIN"
+  ],
+  "player1OpponentStopAtSteps": [
+    "PRECOMBAT_MAIN"
+  ],
+  "player2OpponentStopAtSteps": [],
+  "mode": "SELF"
+}

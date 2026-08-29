@@ -154,6 +154,9 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
         // `CardFragment.merge`.
         val fromText = result.lines.mapNotNull { it.model }
             .fold(CardFragment.EMPTY as CardFragment?) { acc, fragment -> acc?.merge(fragment) }
+            // CR 607's linked abilities are a whole-card fact, so they are resolved once the fold
+            // has every line — see `CardFragment.deriveExileLinkage`.
+            ?.deriveExileLinkage()
             ?: return CardComparison(implemented, card, Population.LINES_DO_NOT_FOLD)
         val fromCard = CardFragment(
             keywordAbilities = printedKeywords(definition).toList(),

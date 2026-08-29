@@ -425,8 +425,8 @@ export function HomeScreen({
                   </div>
                 )}
 
-                {/* Quiet row for a connected player who has not finished the course; gone once
-                    they have. The `/help` guide keeps a link for anyone who wants it back. */}
+                {/* Quiet row for a connected player: progress while the course is unfinished,
+                    then a dimmed "course complete" row that still opens it for a replay. */}
                 <LearnCallout variant="tier" />
                 <AccountBenefitsCallout onCreateAccount={() => setLoginOpen(true)} />
                 <DeckMigrationPrompt />

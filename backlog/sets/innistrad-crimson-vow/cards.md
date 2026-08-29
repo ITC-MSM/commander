@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 238 / 273
+**Implemented:** 251 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -39,12 +39,12 @@
 - [ ] Brine Comber
 - [x] By Invitation Only
 - [x] Cartographer's Survey
-- [ ] Catapult Fodder
+- [x] Catapult Fodder
 - [ ] Cemetery Desecrator
-- [ ] Cemetery Gatekeeper
+- [x] Cemetery Gatekeeper
 - [ ] Cemetery Illuminator
-- [ ] Cemetery Protector
-- [ ] Cemetery Prowler
+- [x] Cemetery Protector
+- [x] Cemetery Prowler
 - [x] Ceremonial Knife
 - [x] Chandra, Dressed to Kill
 - [x] Change of Fortune
@@ -76,8 +76,8 @@
 - [ ] Dollhouse of Horrors
 - [x] Dominating Vampire
 - [x] Doomed Dissenter
-- [ ] Dormant Grove
-- [ ] Dorothea, Vengeful Victim
+- [x] Dormant Grove
+- [x] Dorothea, Vengeful Victim
 - [x] Dread Fugue
 - [x] Dreadfeast Demon
 - [x] Dreadlight Monstrosity
@@ -88,7 +88,7 @@
 - [x] Edgar's Awakening
 - [x] Edgar, Charmed Groom
 - [x] End the Festivities
-- [ ] Eruth, Tormented Prophet
+- [x] Eruth, Tormented Prophet
 - [x] Estwald Shieldbasher
 - [x] Evolving Wilds
 - [ ] Faithbound Judge
@@ -101,7 +101,7 @@
 - [x] Flame-Blessed Bolt
 - [x] Fleeting Spirit
 - [x] Flourishing Hunter
-- [ ] Foreboding Statue
+- [x] Foreboding Statue
 - [x] Forest
 - [x] Frenzied Devils
 - [x] Geistlight Snare
@@ -115,7 +115,7 @@
 - [x] Groom's Finery
 - [x] Gryff Rider
 - [x] Gryffwing Cavalry
-- [ ] Gutter Skulker
+- [x] Gutter Skulker
 - [x] Halana and Alena, Partners
 - [x] Hallowed Haunting
 - [x] Hamlet Vanguard
@@ -135,13 +135,13 @@
 - [x] Hungry Ridgewolf
 - [x] Ill-Tempered Loner
 - [x] Infestation Expert
-- [ ] Innocent Traveler
+- [x] Innocent Traveler
 - [x] Inspired Idea
 - [x] Into the Night
 - [x] Investigator's Journal
 - [x] Island
 - [ ] Jacob Hauken, Inspector
-- [ ] Katilda, Dawnhart Martyr
+- [x] Katilda, Dawnhart Martyr
 - [ ] Kaya, Geist Hunter
 - [x] Kessig Flamebreather
 - [x] Kessig Wolfrider
@@ -162,7 +162,7 @@
 - [x] Massive Might
 - [x] Militia Rallier
 - [x] Mindleech Ghoul
-- [ ] Mirrorhall Mimic
+- [x] Mirrorhall Mimic
 - [x] Mischievous Catgeist
 - [x] Moldgraf Millipede
 - [x] Mountain
@@ -191,7 +191,7 @@
 - [x] Pointed Discussion
 - [x] Pyre Spawn
 - [ ] Radiant Grace
-- [ ] Ragged Recluse
+- [x] Ragged Recluse
 - [x] Reckless Impulse
 - [x] Reclusive Taxidermist
 - [x] Rending Flame
