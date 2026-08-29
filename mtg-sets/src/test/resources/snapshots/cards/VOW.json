@@ -3473,6 +3473,112 @@
     ]
 }
 
+// Circle of Confinement
+{
+    "name": "Circle of Confinement",
+    "manaCost": "{1}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, exile target creature an opponent controls with mana value 3 or less until this enchantment leaves the battlefield.\nWhenever an opponent casts a Vampire spell with the same name as a card exiled with this enchantment, you gain 2 life.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ExileUntilLeaves",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature mv<=3 ctrl:opponent"
+                    },
+                    "id": "target"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "ability_3",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasSubtype",
+                                "subtype": "Vampire"
+                            },
+                            {
+                                "type": "SharesNameWith",
+                                "entity": "LinkedExiledCard"
+                            }
+                        ]
+                    },
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "Whenever an opponent casts a Vampire spell with the same name as a card exiled with Circle of Confinement, you gain 2 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "7",
+        "rarity": "UNCOMMON",
+        "artist": "Lorenzo Mastroianni",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/13031fb6-9d5a-4add-9a86-28b2a9373fd2.jpg?1783924926",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "If Circle of Confinement leaves the battlefield before its enters-the-battlefield ability resolves, the target creature won't be exiled."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "If a token is exiled this way, it will cease to exist and won't return to the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Cloaked Cadet
 {
     "name": "Cloaked Cadet",
@@ -12841,6 +12947,92 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Patchwork Crawler
+{
+    "name": "Patchwork Crawler",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Zombie Horror",
+    "oracleText": "{2}{U}: Exile target creature card from your graveyard and put a +1/+1 counter on this creature.\nThis creature has all activated abilities of all creature cards exiled with it.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card from your graveyard"
+                            },
+                            "destination": "Exile",
+                            "linkToSource": true
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "target creature card from your graveyard"
+                    }
+                ],
+                "descriptionOverride": "Exile target creature card from your graveyard and put a +1/+1 counter on Patchwork Crawler."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "HasAllActivatedAbilitiesOfCards",
+                "donors": "LinkedExile"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "72",
+        "rarity": "RARE",
+        "artist": "Fesbra",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/b/6bb86ebf-f145-43c1-8f05-f4b55ded59b6.jpg?1783924886",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Patchwork Crawler gains only activated abilities. It doesn't gain triggered abilities or static abilities."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "If an activated ability of a card in exile references the card it's printed on by name, treat Patchwork Crawler's version of that ability as though it referenced Patchwork Crawler by name instead."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "Once Patchwork Crawler leaves the battlefield, it will no longer have the activated abilities of the creature cards exiled with it."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
