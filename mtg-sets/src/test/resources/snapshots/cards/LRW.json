@@ -572,6 +572,92 @@
     ]
 }
 
+// Cloudgoat Ranger
+{
+    "name": "Cloudgoat Ranger",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Creature — Giant Warrior Ranger",
+    "oracleText": "When this creature enters, create three 1/1 white Kithkin Soldier creature tokens.\nTap three untapped Kithkin you control: This creature gets +2/+0 and gains flying until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Kithkin",
+                        "Soldier"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/a/d/ad29eb21-7ee3-4a67-9601-a62ea0cbe4c0.jpg?1783942839"
+                },
+                "descriptionOverride": "create three 1/1 white Kithkin Soldier creature tokens."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "count": 3,
+                        "filter": "permanent Kithkin"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FLYING",
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Tap three untapped Kithkin you control: This creature gets +2/+0 and gains flying until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "10",
+        "rarity": "UNCOMMON",
+        "artist": "Adam Rex",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/e/9e344859-7248-4498-8303-252f196a007b.jpg?1783942916"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Cloudthresher
 {
     "name": "Cloudthresher",
@@ -2483,6 +2569,177 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Guardian of Cloverdell
+{
+    "name": "Guardian of Cloverdell",
+    "manaCost": "{5}{G}{G}",
+    "typeLine": "Creature — Treefolk Shaman",
+    "oracleText": "When this creature enters, create three 1/1 white Kithkin Soldier creature tokens.\n{G}, Sacrifice a Kithkin: You gain 1 life.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Kithkin",
+                        "Soldier"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/a/d/ad29eb21-7ee3-4a67-9601-a62ea0cbe4c0.jpg?1783942839"
+                },
+                "descriptionOverride": "create three 1/1 white Kithkin Soldier creature tokens."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{G}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "permanent Kithkin"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{G}, Sacrifice a Kithkin: You gain 1 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "216",
+        "rarity": "UNCOMMON",
+        "artist": "Jesper Ejsing",
+        "flavorText": "Although they're protective of all creatures, many treefolk are especially fond of the empathic kithkin.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/311c5f1d-7e3b-4397-b05b-f20bde2dc164.jpg?1783942863"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Hearthcage Giant
+{
+    "name": "Hearthcage Giant",
+    "manaCost": "{6}{R}{R}",
+    "typeLine": "Creature — Giant Warrior",
+    "oracleText": "When this creature enters, create two 3/1 red Elemental Shaman creature tokens.\nSacrifice an Elemental: Target Giant creature gets +3/+1 until end of turn.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 3,
+                    "toughness": 1,
+                    "colors": [
+                        "RED"
+                    ],
+                    "creatureTypes": [
+                        "Elemental",
+                        "Shaman"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/a/2/a280aee2-e15a-4625-b429-4032eae08a41.jpg?1783942839"
+                },
+                "descriptionOverride": "create two 3/1 red Elemental Shaman creature tokens."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "permanent Elemental"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target Giant creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature Giant"
+                        },
+                        "id": "target Giant creature"
+                    }
+                ],
+                "descriptionOverride": "Sacrifice an Elemental: Target Giant creature gets +3/+1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "174",
+        "rarity": "UNCOMMON",
+        "artist": "Zoltan Boros & Gabor Szikszai",
+        "flavorText": "The flamekin are mere kindling for his warmth.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fb0d4d3f-d3ad-4c70-b9af-9bfcdd9efd1f.jpg?1783942874"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -4959,6 +5216,72 @@
     ]
 }
 
+// Soaring Hope
+{
+    "name": "Soaring Hope",
+    "manaCost": "{4}{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nWhen this Aura enters, you gain 3 life.\nEnchanted creature has flying.\n{W}: Put this Aura on top of its owner's library.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "descriptionOverride": "you gain 3 life."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{W}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Library",
+                    "placement": "Top"
+                },
+                "descriptionOverride": "{W}: Put this Aura on top of its owner's library."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "FLYING"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "40",
+        "artist": "Martina Pilcerova",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7f6c24b1-af9d-4a9c-9167-faa8a397a361.jpg?1783942908"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Spiderwig Boggart
 {
     "name": "Spiderwig Boggart",
@@ -5850,6 +6173,65 @@
     "colorIdentityOverride": [
         "BLACK",
         "RED"
+    ]
+}
+
+// Wydwen, the Biting Gale
+{
+    "name": "Wydwen, the Biting Gale",
+    "manaCost": "{2}{U}{B}",
+    "typeLine": "Legendary Creature — Faerie Wizard",
+    "oracleText": "Flash\nFlying\n{U}{B}, Pay 1 life: Return Wydwen to its owner's hand.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{U}{B}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomPayLife",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand"
+                },
+                "descriptionOverride": "{U}{B}, Pay 1 life: Return Wydwen to its owner's hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "253",
+        "rarity": "RARE",
+        "artist": "Matt Cavotta",
+        "flavorText": "In a world of bright, cloudless skies, she is the dark storm on the horizon.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/f/ff6b558b-74a5-497d-8be4-474c375d7ca7.jpg?1783942852"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
     ]
 }
 
