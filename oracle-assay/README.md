@@ -20,7 +20,24 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is **a second pass on that same set** — four more Innistrad: Crimson Vow cards
+The most recent work is **the becomes-tapped trigger and the invariant plural** — a band picked off
+Lorwyn's backlog, which has no `backlog/sets/` entry at all. Five cards were implemented by hand
+(Drowner of Secrets, Fallowsage, Judge of Currents, Veteran of the Depths, Merrow Commerce) and the
+grammar extended until Assay read each whole (**+42 whole cards**, 9,149 → 9,191). Two findings
+generalize. **A family the SDK factored correctly can still have no rule at all**: `BecomesTapped`,
+`BecomesUntapped` and the `becomesTapped(binding, filter)` factory have been in `mtg-sdk` since the
+tap-event atom and 26 hand-written cards use them, yet all 158 corpus lines printing "becomes
+tapped"/"becomes untapped" declined on the word after "Whenever" — four rows closed it. And **a
+pattern can require a letter English does not always add**: `Primitives.pluralSubtype` tokenizes on a
+trailing "s", so "Merfolk", "Kithkin" and "Myr" were unreachable in *both* directions, and this
+file's own write-off ("widening it would give every bare singular subtype a second reading") was
+right about widening and wrong that widening was the only move — nine *named* words are not a
+widened pattern. Its differential half found one card bug, and found it the interesting way:
+Deepchannel Duelist spells one printed noun two ways inside one card, and had never been compared
+because the other line declined. See
+[the becomes-tapped trigger and the invariant plural](#the-becomes-tapped-trigger-and-the-invariant-plural).
+
+Before it came **a second pass on that same set** — four more Innistrad: Crimson Vow cards
 implemented by hand (Aim for the Head, Change of Fortune, Crawling Infestation, Sanguine Statuette)
 with the grammar extended until Assay read each of them whole (**+140 whole cards**, 8,872 → 9,012,
 for six families). Three of its findings generalize. **Mill had no effect clause at all** — the verb
@@ -3687,9 +3704,101 @@ the corpus's 205 restriction sentences**. What blocks the rest is mostly not thi
   field exists on `SubtypeSpellsOrAbilitiesOnly`, but every hand-written user of it is a chosen-type
   card whose printed wording is "a creature spell of the chosen type", so reading a *named* subtype onto
   it is a model the corpus does not vouch for. Declined on purpose.
-- **an invariant plural** — "activate abilities of **Myr**". `Primitives.pluralSubtype`'s pattern
-  requires a trailing "s", and widening it would give every bare singular subtype in the grammar a
-  second reading as a plural. One line, and not worth that.
+- ~~**an invariant plural** — "activate abilities of **Myr**"~~. **Closed by
+  [the invariant plural](#the-becomes-tapped-trigger-and-the-invariant-plural).** The write-off was
+  right about the danger and wrong about the only fix: widening the pattern would indeed give every
+  bare singular subtype a second reading as a plural, but *naming the nine words English does not
+  inflect* does not. Myr Reservoir reads whole.
+
+## The becomes-tapped trigger and the invariant plural
+
+The third band picked off a *set's* backlog rather than off the tail ranking, and the first picked
+off a set with no `backlog/sets/` entry at all. Five Lorwyn cards were implemented by hand — Drowner
+of Secrets, Fallowsage, Judge of Currents, Veteran of the Depths, Merrow Commerce — and the grammar
+was extended until Assay read each of them whole: **9,149 → 9,191 whole cards**, for two families
+whose only connection is that one Merfolk tribal set prints both.
+
+`just assay-ready LRW` is what makes the pairing honest again: **2 Assay-ready** of the set's 187
+missing cards, so four of the five were cards the grammar could not read, and "did the grammar learn
+to read it" is a gate the card work cannot pass by accident.
+
+### "Becomes tapped" is four rows the tap/untap pair had never been given
+
+`Triggers.BecomesTapped`, `BecomesUntapped` and the `becomesTapped(binding, filter, …)` factory have
+been in `mtg-sdk` for as long as the tap-event atom has, and 26 hand-written cards use them. The
+grammar had no rule for any of it. So this half is not a modelling problem at all — it is the shape
+this file keeps finding, a family the SDK factored correctly and the parser had simply never been
+pointed at: **123 corpus lines print "becomes tapped" and 35 print "becomes untapped"**, and every
+one of them declined on the word after "Whenever".
+
+Four rows, two shapes, and the split is the SDK's own: `triggerRule` for the SELF binding, which
+takes the source and no filter, and `filteredTriggerRule` for the ANY binding, whose noun phrase is
+a slot. Judge of Currents' "a Merfolk **you control**" needs no controller row of its own — the
+filter's own `controlledBy` layer carries it, exactly as the blocked family beside it does.
+
+Three things the rows deliberately do **not** spell, and each is a field on `TapEvent` that the
+reconstruct-and-compare refuses to print this sentence for:
+
+- **`reason`** — `BecomesTappedForTeamwork` narrows the event to a teamwork cost payment (CR
+  702.194a) and Oracle spells that narrowing as an extra clause. A flag on this surface would print
+  "whenever ~ becomes tapped" for a card that says something else.
+- **`batch`** — "whenever one or more Merfolk you control **become** tapped" is a different event
+  under CR 603.2c, fires once per tap batch rather than once per permanent, and belongs to
+  `batchPrefixes`. Nothing here may grow a "one or more" surface, for the reason the sacrifice family
+  records.
+- **`firstTimeEachTurn`** — a per-permanent cap with its own printed clause.
+
+`triggeredFilter` grew one `when` arm for `TapEvent`, which is the whole of the plumbing: the
+filtered rules read one `GameObjectFilter` off three event shapes through that function, and this is
+the fourth.
+
+### The invariant plural: a pattern that required a letter English does not always add
+
+Merrow Commerce is "At the beginning of your end step, untap all **Merfolk** you control." The rule
+for it — `groupStep("untap all {filter}", …)` over `Filters.plural` — has existed since the group
+family landed, and `bareSubtype` has built `Permanent.withSubtype` for a plural bare noun since the
+104-card migration. The sentence still declined, on the noun, because `Primitives.pluralSubtype`
+tokenizes with `Regex("[A-Z][A-Za-z-]*s")` and **"Merfolk" has no "s" in it**.
+
+That is a different property from the one `pluralCandidates` already handles. "Plains" is invariant
+*and* ends in "s", so it tokenizes and only the de-pluralization needed ranking — the bug the
+differential caught on its first run. These nine end in no "s" at all, so they were unreachable in
+**both** directions: a plural-position bare subtype declined, and a filter carrying one could not be
+printed even if something else had built it.
+
+The fix is a named list, and naming it is the point. This file already carried the write-off — "one
+line, and not worth that", against `Myr Reservoir` — and its reasoning was sound as far as it went:
+dropping the "s" from the pattern would let *every* singular subtype tokenize as a plural, and
+`pluralSubtype` and `subtype` would then read one word two ways with two different numbers. What the
+write-off missed is that the alternative to widening a pattern is not always leaving it alone.
+`INVARIANT_PLURAL_SUBTYPES` is nine words spliced into the pattern as an alternation, each closed
+with a `(?![A-Za-z-])` boundary so a listed name cannot match a prefix of a longer one — without it
+"Fisherman" tokenizes as "Fish" and strands "erman".
+
+**The list is read off printed Oracle text, not off English.** A type earns a row when the corpus
+puts the bare word in a slot only a plural can fill: "Other **Merfolk** you control get +1/+1", "the
+number of **Kithkin** you control", "**Eldrazi** you control are Slivers", "activate abilities of
+**Myr**" standing beside "activate abilities of Dragon**s**". A distributive singular ("each Myr you
+control") is not evidence and does not count. Types English probably does not inflect either — Kor,
+Viashino, Rhox — stay off the list until a line puts one in a plural slot, because a name added
+without evidence is a guess that round-trips perfectly.
+
+### What it moved
+
+**55 cards' blocking decline cleared, 41 of them all the way to whole**, and the split is clean:
+34 blocked on "becomes tapped", 10 on "becomes untapped", 11 on an invariant plural. The residue is
+the effect clause rather than the trigger — Surgespanner's "you may pay {1}{U}. If you do, …",
+Freyalise's Winds' untap replacement — which is what a prefix family looks like once it reads.
+
+### What the differential found
+
+One card, and it is the fail-closed bucket doing its job. **Deepchannel Duelist [ECL]** spells one
+printed noun two ways *inside one card*: its static reads "Other Merfolk you control get +1/+1" as
+`Permanent.withSubtype`, and its trigger reads "untap target Merfolk you control" as
+`Creature.withSubtype`. The static was migrated with the other 103 and the target was missed. The
+card had never been compared, because the plural noun on its *other* line declined and one declined
+line declines the whole card — so the migration's own gate could not see it. A family that makes one
+line readable is how the cards nothing verified come out.
 
 ## The differential gate
 

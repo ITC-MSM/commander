@@ -1198,6 +1198,15 @@ class PredicateEvaluator {
         is EffectTarget.PlayerRef -> when (target.player) {
             Player.DefendingPlayer -> TargetResolutionUtils
                 .defendingPlayerOfAttacker(state, context.sourceId)
+            // "…deals combat damage to a player, [that player] …" (Balefire Dragon). A self-bound
+            // damage trigger carries the damaged player on `triggeringEntityId` and sets no
+            // distinct `triggeringPlayerId` (see DamageTriggerDetector), which is exactly the
+            // fallback TargetResolutionUtils.resolvePlayerTarget and the sibling
+            // ControlledByTriggeringPlayer / OwnedByTriggeringPlayer predicates already apply.
+            // PredicateContext can't do it alone — it has no state to tell a player id from a
+            // creature's — so the turn-order guard lives here.
+            Player.TriggeringPlayer ->
+                context.triggeringEntityId?.takeIf { it in state.turnOrder }
             else -> null
         }
         else -> null

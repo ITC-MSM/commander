@@ -41,6 +41,7 @@ class ModalAndCloneContinuationResumer(
         resumer(RevealCountersContinuation::class, ::resumeRevealCounters),
         resumer(ExileCountersContinuation::class, ::resumeExileCounters),
         resumer(DevourEntersContinuation::class, ::resumeDevourEnters),
+        resumer(DevourMintedTokenContinuation::class, ::resumeDevourMintedToken),
         resumer(CastWithCreatureTypeContinuation::class, ::resumeCastWithCreatureType),
         resumer(BudgetModalContinuation::class, ::resumeBudgetModal),
         resumer(CreateTokenCopyOfChosenContinuation::class, ::resumeCreateTokenCopyOfChosen),
@@ -1254,24 +1255,9 @@ class ModalAndCloneContinuationResumer(
         val events = mutableListOf<GameEvent>()
 
         // Sacrifice the chosen permanents.
-        if (sacrificed.isNotEmpty()) {
-            val names = sacrificed.map { id ->
-                newState.getEntity(id)?.get<CardComponent>()?.name ?: "Unknown"
-            }
-            events.add(
-                com.wingedsheep.engine.core.PermanentsSacrificedEvent(
-                    controllerId, sacrificed, names
-                )
-            )
-            newState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-                .trackPermanentSacrifice(newState, sacrificed, controllerId)
-            for (permanentId in sacrificed) {
-                val result = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-                    .moveToZone(newState, permanentId, com.wingedsheep.sdk.core.Zone.GRAVEYARD)
-                newState = result.state
-                events.addAll(result.events)
-            }
-        }
+        val (afterSacrifice, sacrificeEvents) = sacrificeForDevour(newState, controllerId, sacrificed)
+        newState = afterSacrifice
+        events.addAll(sacrificeEvents)
 
         // Place counters on the still-resolving spell entity.
         val counterCount = sacrificed.size * continuation.multiplier
@@ -1330,6 +1316,91 @@ class ModalAndCloneContinuationResumer(
         )
 
         return checkForMore(newState, events)
+    }
+
+    /**
+     * Sacrifice the permanents a player chose for a Devour as-enters replacement (CR 702.82,
+     * CR 701.21 — each goes to its owner's graveyard), emitting the sacrifice event and every
+     * zone-change event the moves produce.
+     *
+     * Shared by both devour entry paths — a permanent cast as a spell ([resumeDevourEnters]) and a
+     * token minted from a bare definition ([resumeDevourMintedToken]) — so the two cannot drift
+     * apart on what a devour sacrifice emits.
+     */
+    private fun sacrificeForDevour(
+        state: GameState,
+        controllerId: EntityId,
+        sacrificed: List<EntityId>,
+    ): Pair<GameState, List<GameEvent>> {
+        if (sacrificed.isEmpty()) return state to emptyList()
+        val events = mutableListOf<GameEvent>()
+        val names = sacrificed.map { id ->
+            state.getEntity(id)?.get<CardComponent>()?.name ?: "Unknown"
+        }
+        events.add(
+            com.wingedsheep.engine.core.PermanentsSacrificedEvent(controllerId, sacrificed, names)
+        )
+        var newState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+            .trackPermanentSacrifice(state, sacrificed, controllerId)
+        for (permanentId in sacrificed) {
+            val result = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+                .moveToZone(newState, permanentId, com.wingedsheep.sdk.core.Zone.GRAVEYARD)
+            newState = result.state
+            events.addAll(result.events)
+        }
+        return newState to events
+    }
+
+    /**
+     * Resume after the player selects permanents to sacrifice for Devour on a token minted from a
+     * bare card definition — the Momir Basic avatar's random-creature token.
+     *
+     * The token does not exist yet: devour is an as-enters replacement (CR 614), and a devour
+     * creature is usually a 0/0, so the decision was raised *before* the mint rather than after.
+     * Sacrifices the picks, then re-enters
+     * [com.wingedsheep.engine.handlers.effects.token.TokenFromDefinition.mint] with the earned
+     * counter count so the token enters already carrying it — and its ETB triggers, fired by the
+     * caller off the mint's zone-change event, see the final power.
+     */
+    fun resumeDevourMintedToken(
+        state: GameState,
+        continuation: DevourMintedTokenContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is CardsSelectedResponse) {
+            return ExecutionResult.error(state, "Expected card selection response for devour")
+        }
+        val cardDef = services.cardRegistry.getCard(continuation.cardDefinitionId)
+            ?: return ExecutionResult.error(
+                state, "Card definition not found: ${continuation.cardDefinitionId}"
+            )
+
+        val (afterSacrifice, sacrificeEvents) = sacrificeForDevour(
+            state, continuation.controllerId, response.selectedCards
+        )
+
+        val minted = com.wingedsheep.engine.handlers.effects.token.TokenFromDefinition.mint(
+            state = afterSacrifice,
+            cardDef = cardDef,
+            controllerId = continuation.controllerId,
+            cardRegistry = services.cardRegistry,
+            staticAbilityHandler = com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler(
+                services.cardRegistry
+            ),
+            devourCounters = response.selectedCards.size * continuation.multiplier,
+        ).toExecutionResult()
+
+        // The mint can pause again (a devour creature that also has an as-enters choice); carry the
+        // sacrifice events across that pause so they are not lost.
+        if (minted.isPaused) {
+            return ExecutionResult.paused(
+                minted.state,
+                minted.pendingDecision!!,
+                sacrificeEvents + minted.events
+            )
+        }
+        return checkForMore(minted.state, sacrificeEvents + minted.events)
     }
 
     private fun resolveCounterTypeFromString(counterType: String): com.wingedsheep.sdk.core.CounterType? {

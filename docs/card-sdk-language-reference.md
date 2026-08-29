@@ -3816,6 +3816,13 @@ Every `TargetRequirement` carries count semantics (defaults shown):
 
 - `count = 1` — maximum number of targets.
 - `minCount = count` — minimum; set below `count` for "one or two target creatures".
+- **A requirement spanning more than one slot has no single bound handle.** Whenever `count > 1`,
+  `unlimited = true`, or a `dynamicMaxCount` is set, the chosen targets occupy that many slots of
+  the flat target list and are keyed per slot (`id[0]`, `id[1]`, …), so the bare `target(name, …)`
+  handle resolves to nothing and any effect handed it silently does nothing. Read such a
+  requirement with `ForEachTargetEffect(listOf(<effect>(EffectTarget.ContextTarget(0))))` — the
+  body runs once per chosen target. `CardLinter.MultiSlotTargetBinding` fails the build on the
+  bare-handle shape.
 - `optional = false` — when `true`, minimum becomes 0 ("up to N target ..."). An activated ability
   whose controller-chosen requirements are **all** optional (e.g. Boom Box's "Destroy up to one target
   artifact, up to one target creature, and up to one target land") is legal to activate with an *empty*
