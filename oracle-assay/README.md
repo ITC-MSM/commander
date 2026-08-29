@@ -3871,6 +3871,95 @@ card had never been compared, because the plural noun on its *other* line declin
 line declines the whole card — so the migration's own gate could not see it. A family that makes one
 line readable is how the cards nothing verified come out.
 
+## The tap/untap choice, and a restriction spelled from its own name
+
+The fourth band picked off Lorwyn's backlog, and the second to be paired with hand-written cards:
+Pestermite, Stonybrook Angler, Merrow Reejerey, Dreamspoiler Witches and Glen Elendra Pranksters
+were written by hand and the grammar was extended until Assay read each of them whole —
+**9,228 -> 9,263 whole cards**, +35, from three rules.
+
+`just assay-ready LRW` keeps the pairing honest the same way it did last time: **2 Assay-ready** of
+the set's 182 missing cards, so all five were cards the grammar could not read, and "did the grammar
+learn to read it" is a gate the card work cannot pass by accident.
+
+### "Tap or untap" is a choice between two verbs, and the SDK already spells it
+
+`quantifiedPermanentSteps` has had rows for "tap {q}target {filter}" and "untap {q}target {filter}"
+since the family landed. It had none for the two together, so **47 corpus lines** — every one of
+them "tap or untap" — died on the word after "tap", where the grammar was expecting a number.
+
+There is no "tap or untap" effect in `mtg-sdk` and there should not be one: `TapUntapEffect` carries
+the direction as a `Boolean`, and a choice between two fixed actions is what `ModalEffect` already
+means. The corpus had converged on that reading before the grammar reached it — Granite Witness,
+Sewer-veillance Cam, Elite Interceptor and Inverted Iceberg all write `MayEffect` over a two-`Mode`
+`ModalEffect` with `countsAsModalSpell = false`, and two of them say in their KDoc that they are
+copying the third. So the row is a sixth entry in an existing table, spelling the idiom the cards
+already agreed on.
+
+`countsAsModalSpell = false` is the load-bearing argument and it is also what makes the row safe.
+`Modal`'s "Choose one —" rule builds `ModalEffect.chooseOne`, whose flag defaults to `true`, so the
+two models are never equal and neither rule can print the other's — the collision is closed by the
+model rather than by rule order. It is the truth about the card as well: CR 700.2 modality is a
+property of the *spell*, and tap-or-untap is decided on resolution.
+
+`Mode.description` is left to the SDK's own default. It is presentation, the differential drops it
+before comparing, and a noun invented for it here would be a string in the grammar that no printed
+text supports.
+
+### A restriction whose surface was written from the model's name
+
+`Triggers.restrictions` shipped two rows, and the negative one spelled itself
+`" during each opponent's turn"` while naming itself "during an opponent's turn". **No card in the
+corpus prints that clause after a prefix this grammar reads.** All ten lines carrying "each
+opponent's turn" attach it to something else — "Whenever you cast **your first spell** during each
+opponent's turn" (Alela, Wavebreak Hippocamp, Mischievous Chimera, Arena Trickster, Dreamstalker
+Manticore), or a combat permission (Party Crasher) — and every one declines on the prefix. So the
+surface was reachable by nothing, while **20 cards** printing "during **an** opponent's turn"
+against the plain `you cast a spell` prefix declined on the word the row existed to read.
+
+The fix is one article, and the interesting part is what it is *not*: "each" is not kept as an
+`alsoSpelled`. The two spellings are not one restriction written twice. "Each" is printed only where
+a per-turn cap on the *prefix* wants a distributive reading, and folding it in here would let that
+family inherit a row it never asked for and print its cards back with the wrong article. When the
+first-spell prefix lands it brings its own row. The unit test that asserted the old surface now
+asserts that it declines, with the count behind the decision.
+
+This is a shape worth naming, because it is cheaper to find than a missing rule: a surface written
+from what the *model* is called rather than from what the corpus *prints*. It round-trips perfectly
+and reads nothing.
+
+### The causative "have", and why it cannot be a spelling of the wrapper
+
+Dreamspoiler Witches needed a third rule. `mayClause` wraps any readable clause as "you may
+{inner}", but English cannot put that in front of a clause carrying its own subject — "you may
+target creature gets …" is not a sentence — so Oracle reaches for the causative and de-inflects the
+verb with it: "you may **have** target creature **get** -1/-1 until end of turn". That inflection is
+*inside* the wrapped clause, where a slot cannot reach it, so the causative can never be a spelling
+of the wrapper and has to be written at the clause's own call site. `mayCountedStep` records the
+same printed-shape fact for "You **may** gain 3 life", and `Amounts`' `mayHaveTargetSuffer` had
+already written two causatives whole for the same reason. `mayPumpTargetPermanent` is the third.
+
+### What the differential found: one card, two spellings, twice over
+
+**Captain of the Mists [AVR]**, and it diverged on *both* of its lines — which is the fail-closed
+bucket doing exactly what it is for. The card had never been compared, because until this band its
+second line declined, and one declined line declines the whole card.
+
+Its activated ability wrote the tap-or-untap choice as `Effects.ChooseAction` over two
+`EffectChoice`s, alone against seven cards using the `ModalEffect` idiom. That is a second SDK
+spelling to classify rather than fold, and the reading with seven cards behind it wins — with a
+rules argument on top: `ChooseActionEffect` filters infeasible options and auto-selects when one
+remains, which quietly takes away a choice the rules leave open, since tapping an already-tapped
+permanent is legal and simply does nothing.
+
+Its trigger read "Whenever another **Human** you control enters" as `Creature.withSubtype`. That is
+the bare-subtype migration's own residue — the 104-card sweep that moved a bare creature-type noun
+onto `Permanent.withSubtype` (CR 205.3) missed this one, exactly as it missed Deepchannel Duelist's
+target. Both scenario tests pass unchanged after the fix.
+
+Corpus-wide the differential is back to its baseline **51** with **15 more cards compared**, so the
+band cost no divergences and closed one.
+
 ## The differential gate
 
 `just assay-differential` diffs Assay's reading of a card against the `CardDefinition` a human wrote
