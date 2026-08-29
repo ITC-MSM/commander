@@ -66,6 +66,17 @@ describe('solveSlotLayout', () => {
     expect(phone.frontLines).toBe(4)
   })
 
+  it('a LayoutEnv ceiling caps growth: a lone permanent renders at the base card, not the slot max', () => {
+    // The app passes useResponsive's battlefieldCardWidth (125 px on desktop) as the ceiling.
+    const env: LayoutEnv = { ...DESKTOP, maxCardWidth: 125 }
+    expect(solveSlotLayout(1600, 900, board(EMPTY_ROW, row(1)), env).cardWidth).toBe(125)
+    expect(solveSlotLayout(SLOT_W, SLOT_H, board(EMPTY_ROW, row(1)), env).cardWidth).toBe(125)
+    const pooled = solvePooledLayout(SLOT_W, 2 * SLOT_H, board(EMPTY_ROW, row(1)), board(EMPTY_ROW, row(1)), env)
+    expect(pooled.cardWidth).toBe(125)
+    // The ceiling only binds when the slot would allow more.
+    expect(solveSlotLayout(SLOT_W, SLOT_H, board(row(1), row(2)), env).cardWidth).toBe(76)
+  })
+
   it('trades the breathing gap for size before dropping under the readability floor', () => {
     // 12 stacks per row on a short slot: comfortable pass lands under 60, tight pass recovers it.
     const layout = solveSlotLayout(1200, 236, board(row(12), row(12)), DESKTOP)

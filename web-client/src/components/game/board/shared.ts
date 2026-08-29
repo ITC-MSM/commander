@@ -37,7 +37,14 @@ export const PooledBattlefieldLayoutContext = createContext<PooledLayout | null>
 
 /** The solver inputs that come from the responsive base (gap and stack peek). */
 export function layoutEnvFor(base: ResponsiveSizes): LayoutEnv {
-  return { cardGap: base.cardGap, stackOffset: stackOffsetFor(base.isMobile), backRowScale: BACK_ROW_SCALE }
+  return {
+    cardGap: base.cardGap,
+    stackOffset: stackOffsetFor(base.isMobile),
+    backRowScale: BACK_ROW_SCALE,
+    // A sparse board grows cards back up to the ordinary window-derived size,
+    // never past it — one permanent should not fill the board.
+    maxCardWidth: base.battlefieldCardWidth,
+  }
 }
 
 /**
@@ -131,11 +138,19 @@ export function useSlotSizedResponsive(
   useLayoutEffect(() => {
     const node = slotRef.current
     if (!node) return
+    // Whole pixels, and no state change for a same-size report: fractional
+    // ResizeObserver readings would otherwise re-solve (and re-render) on every
+    // sub-pixel wobble of the grid rows.
+    const update = (width: number, height: number) =>
+      setSlotSize((prev) => {
+        const next = { width: Math.round(width), height: Math.round(height) }
+        return prev !== null && prev.width === next.width && prev.height === next.height ? prev : next
+      })
     const rect = node.getBoundingClientRect()
-    setSlotSize({ width: rect.width, height: rect.height })
+    update(rect.width, rect.height)
     const obs = new ResizeObserver((entries) => {
       const entry = entries[0]
-      if (entry) setSlotSize({ width: entry.contentRect.width, height: entry.contentRect.height })
+      if (entry) update(entry.contentRect.width, entry.contentRect.height)
     })
     obs.observe(node)
     return () => obs.disconnect()
