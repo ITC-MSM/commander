@@ -20,7 +20,23 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is **the becomes-tapped trigger and the invariant plural** — a band picked off
+The most recent work is **the linked-exile band** — three more Innistrad: Crimson Vow cards
+implemented by hand (Cemetery Gatekeeper, Cemetery Protector, Cemetery Prowler) with the grammar
+extended until Assay read each whole (**+3 whole cards**, 9,228 → 9,231, differential unchanged at
+51). It is the smallest band here by card count and the one whose finding travels furthest, because
+its construct **is not on a line**. CR 607 makes "Exile a card from a graveyard." *linked* to a later
+ability that says "the exiled card", the SDK carries that fact twice — on the read
+(`EntityReference.LinkedExiledCard`) and on the move (`MoveCollectionEffect.linkToSource`) — and
+only the read is printed. Every previous derivation of that shape reads one field off another inside
+one line; this one cannot, so it moved out to the **fold**
+(`CardFragment.deriveExileLinkage`, called by both the differential's merge and `CardCompiler`).
+Writing its trigger half also found a live engine gap rather than a grammar one:
+`EventPattern.LandPlayedEvent` had no `player` axis, so "whenever **a player** plays a land" was
+inexpressible, and `TriggerContext.fromEvent` had no branch for the event, so every land-play trigger
+resolved with a null "it" and a null "that player". See
+[the linked-exile band](#the-linked-exile-band).
+
+Before it came **the becomes-tapped trigger and the invariant plural** — a band picked off
 Lorwyn's backlog, which has no `backlog/sets/` entry at all. Five cards were implemented by hand
 (Drowner of Secrets, Fallowsage, Judge of Currents, Veteran of the Depths, Merrow Commerce) and the
 grammar extended until Assay read each whole (**+42 whole cards**, 9,149 → 9,191). Two findings
@@ -510,6 +526,61 @@ reading all of one means the grammar has no systematic hole in that era rather t
 family. Portal is a deliberately simple set, which is what makes it the right first one — and the
 318 alternate spellings above are mostly its doing, because a card printing "A and B" or "A, then B"
 now reads correctly and prints back as the full-stop form.
+
+## The linked-exile band
+
+Three more Innistrad: Crimson Vow cards implemented by hand — Cemetery Gatekeeper, Cemetery
+Protector, Cemetery Prowler — with the grammar extended until Assay read each of them whole
+(**9,228 → 9,231 whole cards**, and the corpus differential unchanged at 51). It is the smallest
+band recorded here by card count and the one with the most transferable finding, because its
+construct is the first the grammar has met that **is not on a line at all**.
+
+### CR 607's linkage is a whole-card fact, so it is derived by the fold
+
+"Exile a card from a graveyard." is printed identically on seven corpus cards. On five of them the
+exiled card is *linked* to the permanent that exiled it (CR 607), and on two it is not — and no word
+in the sentence says which. What says it is a **different line**: "if it shares a card type with
+**the exiled card**", "for each card type they share with **cards exiled with this creature**".
+
+The SDK carries the fact twice, which is this module's own signal for a derivation: on the read side
+(`EntityReference.LinkedExiledCard`, `CostReductionSource.SharedCardTypesWithLinkedExile`) and on the
+move that fills the pile (`MoveCollectionEffect.linkToSource`). Every previous derivation of that
+shape — `Activated.producesMana` for CR 605.1a, `Recursion.functionsIn` for CR 113.6m — reads one
+field off another *within a line*. This one cannot: the exile line has no evidence and the payoff
+line has no move.
+
+So the derivation moved out to the **fold**. `CardFragment.deriveExileLinkage` runs once the whole
+card's lines are merged, searches the folded script for a reader and, if it finds one, sets
+`linkToSource` on every card-to-exile move. Both consumers of the fold call it — the differential's
+own merge and `CardCompiler` — which is the property that keeps them from drifting.
+
+Two things transfer. **When a construct's evidence is on another line, the answer is the fold, not a
+wider rule** — the alternative was to make the exile rule emit the linked model on the majority
+reading, which is precisely "reading a habit", and would have silently mis-modelled Lazav, Familiar
+Stranger and Kaya, Spirits' Justice if either ever became readable. And **a fold-time derivation
+needs no new line verdict**: the line still round-trips as the unlinked model, so the touchstone is
+untouched and only the whole-card comparison sees the flag.
+
+### "A card" and "target card" are two rules, and the article is the whole difference
+
+`Graveyard` already read "exile **target** card from a graveyard" (Withered Wretch). The cemetery
+cycle's "exile **a** card from a graveyard" is a different model, not a shorter spelling of one: a
+target is chosen as the ability goes on the stack and can be responded to, and this is a choice made
+on resolution, so it declares no `TargetRequirement` at all and gathers the candidates itself. A rule
+that read the two into one model would be reading a targeting decision off a word Oracle uses here to
+mean the opposite.
+
+### The land-play trigger had a `player` axis nobody had needed
+
+"Whenever **a player** plays a land or casts a spell" joins two events whose halves are not *self*
+events, so it is two more rows of `Triggers.contractions` — the counted table of pairs Oracle
+contracts with "or". Writing them exposed a live gap one module over rather than in the grammar:
+`EventPattern.LandPlayedEvent` had no `player` field at all and `TriggerMatcher` compared the playing
+player to the trigger's controller unconditionally, so "a player plays a land" was not expressible.
+`TriggerContext.fromEvent` had no branch for the event either, so a land-play trigger resolved with an
+empty context — "it" null and "that player" null. Both were fixed in the same change with the cards.
+**A trigger family the grammar cannot spell is worth checking against the engine before assuming the
+gap is the grammar's.**
 
 ## The set-backlog band
 

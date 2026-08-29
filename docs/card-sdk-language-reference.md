@@ -5570,6 +5570,14 @@ caster with `EffectTarget.PlayerRef(Player.TriggeringPlayer)`.
   spell from a non-hand zone", use two triggered abilities — this one plus
   `youCastSpell(requires = setOf(SpellCastPredicate.CastFromZoneOtherThan(Zone.HAND)))`.
 
+- `anyPlayerPlaysLand(fromZoneOtherThan: Zone? = null)` — "whenever **a player** plays a land"
+  (Cemetery Gatekeeper). The any-player scope of `youPlayLand`, and the land-play counterpart of
+  `AnyPlayerCastsSpell`: `EventPattern.LandPlayedEvent.player` reads the same `Player` vocabulary
+  `SpellCastEvent.player` does, so the two compose for the printed "plays a land or casts a spell"
+  — write that as **two** triggered abilities, one per event, which is what the corpus spells and
+  what Argentum Assay reads. The played land is the triggering entity, so an intervening-`if` over
+  it (`Conditions.TriggeringSpellMatches(...)`) and a `Player.TriggeringPlayer` payoff both resolve.
+
 **Factory** — `youCastSpell(spellFilter?, requires: Set<SpellCastPredicate>)`. The
 `requires` set is conjunctive — every predicate must hold for the trigger to fire.
 
@@ -7024,7 +7032,16 @@ staticAbility {
   graveyard — Emrakul, the Promised End. Distinct types (CR 205.2a), never supertypes or subtypes,
   so nine creature cards shave only {1}; the counting sibling of `CardsInGraveyardMatchingFilter`,
   which totals cards. Same aggregation as `Conditions.Delirium` over the same zone, capped by the
-  number of card types — {9} for Emrakul), `FixedIfAnyTargetMatches`,
+  number of card types — {9} for Emrakul),
+  `SharedCardTypesWithLinkedExile(amountPerType = 1)` (the number of card types the spell being cast
+  shares with the cards in the source's linked-exile pile — Cemetery Prowler's "Spells you cast cost
+  {1} less to cast for each card type they share with cards exiled with this creature". The only
+  reduction source whose amount depends on the *spell* rather than on the board, so it is priced
+  against the caster's own `CardDefinition`; distinct types on both sides, per the card's ruling, so
+  two exiled creature cards still shave only {1} off a creature spell. Fill the pile with a
+  `linkToSource = true` exile and read it back elsewhere with
+  `EntityReference.LinkedExiledCard`. A face-down (morph) spell has no visible card types and
+  correctly reduces by 0), `FixedIfAnyTargetMatches`,
   `ChosenTargetsBeyondTheFirst` (the count of the spell's chosen targets minus one — "for each
   target beyond the first". Only meaningful on a `SelfCast` modifier, since only that path is priced
   with the caster's own chosen targets; before targets are chosen it reads 0, which is also the right

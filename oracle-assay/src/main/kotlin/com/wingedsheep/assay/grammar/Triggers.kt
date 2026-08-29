@@ -1209,6 +1209,25 @@ object Triggers {
             "when the source enters or is turned face up",
             listOf(SdkTriggers.EntersBattlefield, SdkTriggers.TurnedFaceUp),
         ),
+        // The two joins whose halves are not *self* events — a land play and a spell cast, which
+        // the Crimson Vow cemetery cycle prints together. They belong in this table for the same
+        // reason the five above do: the pair is one printed sentence rather than a clause plus a
+        // word, so a cross product of the event vocabulary would invent English no card prints.
+        //
+        // The scope is spelled by the verb's agreement and nothing else, which is why they are two
+        // rows and not one with a slot: "a player **plays** … or **casts**" against "you **play** …
+        // or **cast**". Each row's two events carry the matching `Player`, so the model decides
+        // which sentence prints.
+        Contraction(
+            "whenever a player plays a land or casts a spell",
+            "whenever a player plays a land or casts a spell",
+            listOf(SdkTriggers.anyPlayerPlaysLand(), SdkTriggers.AnyPlayerCastsSpell),
+        ),
+        Contraction(
+            "whenever you play a land or cast a spell",
+            "whenever you play a land or cast a spell",
+            listOf(SdkTriggers.youPlayLand(), SdkTriggers.YouCastSpell),
+        ),
     )
 
     private val pairedRules: List<Phrase<List<TriggeredAbility>>> = contractions.map { contraction ->
