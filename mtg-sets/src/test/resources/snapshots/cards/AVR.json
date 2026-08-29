@@ -327,7 +327,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Human ctrl:you",
+                    "filter": "permanent Human ctrl:you",
                     "to": "Battlefield"
                 },
                 "binding": "OTHER",
@@ -358,20 +358,19 @@
                     "type": "Gated",
                     "gate": "Gate.MayDecide",
                     "then": {
-                        "type": "ChooseAction",
-                        "choices": [
+                        "type": "Modal",
+                        "modes": [
                             {
-                                "label": "Tap it",
                                 "effect": {
                                     "type": "TapUntap",
                                     "target": {
                                         "type": "BoundVariable",
                                         "name": "target permanent"
                                     }
-                                }
+                                },
+                                "description": "Tap that permanent"
                             },
                             {
-                                "label": "Untap it",
                                 "effect": {
                                     "type": "TapUntap",
                                     "target": {
@@ -379,9 +378,11 @@
                                         "name": "target permanent"
                                     },
                                     "tap": false
-                                }
+                                },
+                                "description": "Untap that permanent"
                             }
-                        ]
+                        ],
+                        "countsAsModalSpell": false
                     },
                     "descriptionOverride": "You may tap or untap that permanent"
                 },

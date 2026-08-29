@@ -936,6 +936,67 @@
     ]
 }
 
+// Dreamspoiler Witches
+{
+    "name": "Dreamspoiler Witches",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flying\nWhenever you cast a spell during an opponent's turn, you may have target creature get -1/-1 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "SpellCastEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": -1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": -1
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                },
+                "triggerRestriction": "IsNotYourTurn",
+                "descriptionOverride": "Whenever you cast a spell during an opponent's turn, you may have target creature get -1/-1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "108",
+        "artist": "Jeff Easley",
+        "flavorText": "At night, the faeries steal dreamstuff for their queen. At daybreak, countless creatures wake weak and hollow.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/d/7d5c2487-5da0-4d9a-beb2-598feeb068a1.jpg?1783942891"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Drowner of Secrets
 {
     "name": "Drowner of Secrets",
@@ -2231,6 +2292,61 @@
     ]
 }
 
+// Glen Elendra Pranksters
+{
+    "name": "Glen Elendra Pranksters",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flying\nWhenever you cast a spell during an opponent's turn, you may return target creature you control to its owner's hand.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "SpellCastEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature you control"
+                        },
+                        "destination": "Hand"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                },
+                "triggerRestriction": "IsNotYourTurn",
+                "descriptionOverride": "Whenever you cast a spell during an opponent's turn, you may return target creature you control to its owner's hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "67",
+        "rarity": "UNCOMMON",
+        "artist": "Omar Rayyan",
+        "flavorText": "Victims spirited through a faerie ring find themselves stranded miles away.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/a/2a71800f-3e67-4cfb-a3b1-8c073a91b909.jpg?1783942901"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Goldmeadow Dodger
 {
     "name": "Goldmeadow Dodger",
@@ -3458,6 +3574,97 @@
     ]
 }
 
+// Merrow Reejerey
+{
+    "name": "Merrow Reejerey",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Merfolk Soldier",
+    "oracleText": "Other Merfolk creatures you control get +1/+1.\nWhenever you cast a Merfolk spell, you may tap or untap target permanent.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasSubtype",
+                                "subtype": "Merfolk"
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Modal",
+                        "modes": [
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target permanent"
+                                    }
+                                },
+                                "description": "Tap that permanent"
+                            },
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target permanent"
+                                    },
+                                    "tap": false
+                                },
+                                "description": "Untap that permanent"
+                            }
+                        ],
+                        "countsAsModalSpell": false
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent"
+                    },
+                    "id": "target permanent"
+                },
+                "descriptionOverride": "Whenever you cast a Merfolk spell, you may tap or untap target permanent."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature Merfolk ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "74",
+        "rarity": "UNCOMMON",
+        "artist": "Greg Staples",
+        "flavorText": "Steady and silent as the deep current, the reejerey guides the course of the school.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/5/b57434d9-6fa5-43a6-98b9-044d2259d699.jpg?1783942900"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Moonglove Extract
 {
     "name": "Moonglove Extract",
@@ -4145,6 +4352,81 @@
     ]
 }
 
+// Pestermite
+{
+    "name": "Pestermite",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Faerie Rogue",
+    "oracleText": "Flash\nFlying\nWhen this creature enters, you may tap or untap target permanent.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Modal",
+                        "modes": [
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target permanent"
+                                    }
+                                },
+                                "description": "Tap that permanent"
+                            },
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target permanent"
+                                    },
+                                    "tap": false
+                                },
+                                "description": "Untap that permanent"
+                            }
+                        ],
+                        "countsAsModalSpell": false
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent"
+                    },
+                    "id": "target permanent"
+                },
+                "descriptionOverride": "When this creature enters, you may tap or untap target permanent."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "78",
+        "artist": "Christopher Moeller",
+        "flavorText": "The fae know when they're not wanted. That's precisely why they show up.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/2/f252ae53-443c-4a27-b8f0-639a9a2b8598.jpg?1783942899"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Plover Knights
 {
     "name": "Plover Knights",
@@ -4687,6 +4969,88 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Stonybrook Angler
+{
+    "name": "Stonybrook Angler",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Merfolk Wizard",
+    "oracleText": "{1}{U}, {T}: You may tap or untap target creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{U}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Modal",
+                        "modes": [
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target creature"
+                                    }
+                                },
+                                "description": "Tap that creature"
+                            },
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target creature"
+                                    },
+                                    "tap": false
+                                },
+                                "description": "Untap that creature"
+                            }
+                        ],
+                        "countsAsModalSpell": false
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "{1}{U}, {T}: You may tap or untap target creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "90",
+        "artist": "Larry MacDougall",
+        "flavorText": "\"Water is in the air, the trees, and the earth. Understand its motion, speak its language, and the subtle currents that flow through all living things will fall under your command.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/4/047709e7-c44f-47e4-a9cc-1d941264e454.jpg?1783942896"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
