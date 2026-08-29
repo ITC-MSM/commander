@@ -748,6 +748,49 @@
     ]
 }
 
+// Infuriate
+{
+    "name": "Infuriate",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +3/+2 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": 3
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "145",
+        "artist": "Caio Monteiro",
+        "flavorText": "\"No shirt, no shoes, no service.\"\n—Marketplace sign",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7ac778f6-8997-47ee-a676-3eb9f8d1592f.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Ironroot Warlord
 {
     "name": "Ironroot Warlord",
