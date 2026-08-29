@@ -991,13 +991,31 @@ object Triggers {
      * Two rows, and the negative one is the SDK's own value rather than a `Not` over the positive:
      * `Conditions.IsNotYourTurn` is what seven hand-written cards write, and a wrapped negation
      * would be a second spelling of one condition that nothing could choose between.
+     *
+     * ### The negative row's surface was written from the model's name, not from printed text
+     *
+     * It first shipped as `" during each opponent's turn"`, and **no card in the corpus prints
+     * that clause after a prefix this grammar reads.** All ten lines carrying "each opponent's
+     * turn" attach it to a different prefix — "Whenever you cast **your first spell** during each
+     * opponent's turn" (Alela, Wavebreak Hippocamp, Mischievous Chimera, Arena Trickster,
+     * Dreamstalker Manticore) or to a combat permission (Party Crasher) — and every one of those
+     * declines on the prefix, so the surface was reachable by nothing. Meanwhile **20 cards** print
+     * "during **an** opponent's turn" against the plain `you cast a spell` prefix this row is
+     * crossed with, and all 20 declined on the word the row was supposed to read.
+     *
+     * So the surface is the one the corpus prints, and "each" is not kept as an
+     * [com.wingedsheep.assay.syntax.PhraseBuilder.alsoSpelled] variant. The two spellings are not
+     * one restriction spelled twice: "each" is printed only where a per-turn cap on the *prefix*
+     * needs a distributive reading, and folding it in here would let that family inherit a row it
+     * never asked for and print its cards back with the wrong article. When the first-spell prefix
+     * lands it brings its own row.
      */
     private data class Restriction(val surface: String, val name: String, val condition: Condition)
 
     private val restrictions: List<Restriction> = listOf(
         Restriction(" during your turn", "during your turn", SdkConditions.IsYourTurn),
         Restriction(
-            " during each opponent's turn", "during an opponent's turn", SdkConditions.IsNotYourTurn,
+            " during an opponent's turn", "during an opponent's turn", SdkConditions.IsNotYourTurn,
         ),
     )
 

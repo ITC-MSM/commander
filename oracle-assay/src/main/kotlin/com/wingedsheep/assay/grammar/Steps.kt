@@ -50,10 +50,13 @@ import com.wingedsheep.sdk.scripting.effects.Gate
 import com.wingedsheep.sdk.scripting.effects.GatedEffect
 import com.wingedsheep.sdk.scripting.effects.LoseLifeEffect
 import com.wingedsheep.sdk.scripting.effects.MayEffect
+import com.wingedsheep.sdk.scripting.effects.ModalEffect
+import com.wingedsheep.sdk.scripting.effects.Mode
 import com.wingedsheep.sdk.scripting.effects.ModifyStatsEffect
 import com.wingedsheep.sdk.scripting.effects.PlayAdditionalLandsEffect
 import com.wingedsheep.sdk.scripting.effects.ScryEffect
 import com.wingedsheep.sdk.scripting.effects.SurveilEffect
+import com.wingedsheep.sdk.scripting.effects.TapUntapEffect
 import com.wingedsheep.sdk.scripting.effects.TakeExtraTurnEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -988,6 +991,49 @@ object Steps {
     }
 
     /**
+     * "You may have target creature get -1/-1 until end of turn." — Dreamspoiler Witches, Dream
+     * Spoilers' Lorwyn original, Wren's Run Hunter's relatives; six printed lines.
+     *
+     * The **causative** spelling of [pumpTargetPermanent] under a "may". English cannot put
+     * [mayClause]'s generic wrapper in front of a clause that states its own subject — "you may
+     * target creature gets …" is not a sentence — so Oracle reaches for "have" and de-inflects the
+     * verb with it ("gets" → "get"). That inflection lives *inside* the wrapped clause, where a
+     * slot cannot reach it, so the causative cannot be a spelling of the wrapper and has to be
+     * written at the clause's own call site. It is the same printed-shape fact [mayCountedStep]
+     * records for "You **may** gain 3 life", and the same shape [Amounts]' `mayHaveTargetSuffer`
+     * already writes for the two causatives it counted.
+     *
+     * Singular rows only, for [animateTargetPermanent]'s reason: the plural causative Oracle prints
+     * is "you may have **each** creature …", which names a group rather than several targets.
+     */
+    private val mayPumpTargetPermanent: List<Phrase<CardScript>> =
+        Targets.singularQuantifiers.map { quantifier ->
+            fun scriptFor(modifiers: Pair<Int, Int>, filter: GameObjectFilter) = CardScript(
+                spellEffect = MayEffect(
+                    quantifier.effectOver { Effects.ModifyStats(modifiers.first, modifiers.second, it) },
+                ),
+                targetRequirements = listOf(quantifier.requirement(1, filter)),
+            )
+            phrase(
+                quantifier.splice("you may have {q}target {filter} get {mod} until end of turn"),
+                name = "may pump, ${quantifier.name}",
+            ) {
+                slot("filter", Filters.filter)
+                slot("mod", Primitives.statModifiers)
+                build { scriptFor(it.value("mod"), it.value("filter")) }
+                match { script ->
+                    val gated = script.spellEffect as? GatedEffect ?: return@match null
+                    if (gated.gate !is Gate.MayDecide) return@match null
+                    val modifiers = fixedModifiers(quantifier.memberOf(gated.then)) ?: return@match null
+                    val requirement = script.targetRequirements.singleOrNull() ?: return@match null
+                    val filter = Targets.targetedFilter(requirement) ?: return@match null
+                    if (script != scriptFor(modifiers, filter)) return@match null
+                    bind("filter" to filter, "mod" to modifiers)
+                }
+            }
+        }
+
+    /**
      * "Until end of turn, target creature becomes a blue Serpent with base power and toughness
      * 5/5." — the **animate**, and the first rule of the band [Durations] named when it measured
      * what sits behind the fronted duration (54 lines animate a permanent into a creature).
@@ -1620,6 +1666,35 @@ object Steps {
     }
 
     /**
+     * "Tap or untap target permanent." — Pestermite, Niblis of the Breath, Coral Trickster, and 41
+     * more lines whose verb is a *choice between two verbs* rather than a verb of its own.
+     *
+     * The SDK has no "tap or untap" effect and should not grow one: `TapUntapEffect` carries the
+     * direction as a `Boolean`, and the choice between two fixed actions is what `ModalEffect`
+     * already spells. Three hand-written cards had converged on this shape before the grammar
+     * reached it — Sewer Veillance Cam, Granite Witness, and Jolt's relatives — so the row here is
+     * the corpus' own idiom rather than a reading invented for it.
+     *
+     * `countsAsModalSpell = false` is the load-bearing argument, and it is why this cannot collide
+     * with [Modal]'s "Choose one —" rule in either direction: that rule builds `chooseOne`, whose
+     * flag defaults to `true`, so the two models are never equal and neither rule can print the
+     * other's. The flag is also the truth about the card — CR 700.2 modality is a property of the
+     * *spell*, and "tap or untap" is a choice made on resolution, so nothing here may set it.
+     *
+     * The [Mode] descriptions are left to the SDK's own default (`effect.description`). They are
+     * presentation, dropped by the differential before it compares, and inventing a noun for them
+     * here would put a string in the grammar that no printed text supports.
+     */
+    private fun tapOrUntap(target: EffectTarget): Effect = ModalEffect(
+        modes = listOf(
+            Mode.noTarget(TapUntapEffect(target, tap = true)),
+            Mode.noTarget(TapUntapEffect(target, tap = false)),
+        ),
+        chooseCount = 1,
+        countsAsModalSpell = false,
+    )
+
+    /**
      * The verbs [quantifiedPermanentSteps] is instantiated for — one entry, one rule per quantifier.
      *
      * The two verbs carrying a possessive past the noun spell their plural, and every other one is
@@ -1634,6 +1709,7 @@ object Steps {
         quantifiedPermanentSteps("exile {q}target {filter}", "exile") { Effects.Exile(it) },
         quantifiedPermanentSteps("tap {q}target {filter}", "tap") { Effects.Tap(it) },
         quantifiedPermanentSteps("untap {q}target {filter}", "untap") { Effects.Untap(it) },
+        quantifiedPermanentSteps("tap or untap {q}target {filter}", "tap or untap", effect = ::tapOrUntap),
         quantifiedPermanentSteps(
             singular = "return {q}target {filter} to its owner's hand",
             name = "return to hand",
@@ -2260,6 +2336,7 @@ object Steps {
                 fixed = DynamicAmount.XValue,
             ) +
             pumpTargetPermanent +
+            mayPumpTargetPermanent +
             animateTargetPermanent +
             grantToTargetPermanent +
             pumpAndGrantTarget +
