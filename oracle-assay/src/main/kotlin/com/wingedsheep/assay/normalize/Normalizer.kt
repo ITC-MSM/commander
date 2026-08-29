@@ -42,7 +42,8 @@ object Normalizer {
 
     fun normalize(face: OracleFace): NormalizedFace {
         val (stripped, reminders) = stripReminders(face.oracleText)
-        val (abstracted, selfRefs) = abstractSelfReference(stripped, selfReferenceForms(face.name))
+        val (abstracted, selfRefs) =
+            abstractSelfReference(stripped, selfReferenceForms(face.name), selfNameForms(face.name))
         val (canonicalNoun, attachmentNouns) = canonicalizeAttachmentNoun(abstracted)
         val split = joinBulletedBlocks(canonicalNoun.split("\n"))
         return NormalizedFace(
@@ -247,20 +248,30 @@ object Normalizer {
      *
      * Known limitation, deliberately not papered over: a short name that occurs inside a *longer*
      * proper noun in the card's own text — Kher Keep making "Kobolds of Kher Keep" — is abstracted
-     * too, and so is a [SELF_NOUNS] phrase inside a *granted* ability, where "this creature" means
-     * the enchanted creature rather than the source ("Enchanted creature has 'When this creature
-     * dies, …'"). The round trip is unaffected in both cases — the form is recorded and restored
-     * verbatim — but the model would be wrong, so the rules that read `~` must not treat it as
-     * authoritative inside a quoted ability. Nothing in the grammar does.
+     * too. The round trip is unaffected, because the form is recorded and restored verbatim.
+     *
+     * Inside a **quoted granted ability** the two halves of this list stop denoting the same object,
+     * and [abstractSelfReference] splits them there rather than leaving the grammar to guess: a
+     * [SELF_NOUNS] phrase is the permanent that gained the ability, which is what every rule reading
+     * `~` already builds, while a name is the card that printed it and gets [GRANTED_SELF] instead.
      */
-    internal fun selfReferenceForms(faceName: String): List<String> {
+    internal fun selfReferenceForms(faceName: String): List<String> =
+        (selfNameForms(faceName) + SELF_NOUNS).filter { it.isNotBlank() }.sortedByDescending { it.length }
+
+    /**
+     * The half of [selfReferenceForms] that is a **name** rather than a type noun — the card's own
+     * name and the legend short names CR 201.3b allows for it.
+     *
+     * Kept separate because inside a quoted granted ability the two halves stop denoting the same
+     * object; see [abstractSelfReference].
+     */
+    internal fun selfNameForms(faceName: String): Set<String> {
         val forms = linkedSetOf(faceName)
         SHORT_NAME_SEPARATORS.forEach { separator ->
             val at = faceName.indexOf(separator)
             if (at > 0) forms.add(faceName.substring(0, at))
         }
-        forms.addAll(SELF_NOUNS)
-        return forms.filter { it.isNotBlank() }.sortedByDescending { it.length }
+        return forms.filterTo(linkedSetOf()) { it.isNotBlank() }
     }
 
     /**
@@ -290,19 +301,57 @@ object Normalizer {
         return out.toString() to removals
     }
 
-    private fun abstractSelfReference(text: String, forms: List<String>): Pair<String, List<String>> {
+    /**
+     * Abstract every self-reference to [SELF] — except a reference **by name inside a quotation**,
+     * which becomes [GRANTED_SELF] instead.
+     *
+     * ### Why one token is not enough
+     *
+     * Oracle writes a self-reference two ways and they mean the same object, so both abstract to one
+     * token and no rule has to know which was printed. That holds everywhere but inside the quotes a
+     * *granted* ability is printed in, where CR 201.4 pulls them apart: an ability referring to an
+     * object **by name** refers to the object that printed it, while "this creature" refers to the
+     * object that has the ability. On an Equipment those are two different permanents — the
+     * Equipment and the creature it is attached to, `EffectTarget.GrantingSource` against
+     * `EffectTarget.Self` — and the whole distinction is in the printed word.
+     *
+     * Collapsing them cost a real reading. "Equipped creature has "{1}, {T}: Tap target creature.
+     * Return Trusty Boomerang to its owner's hand."" bounces the Equipment; read through one token
+     * it bounces the creature, round-trips byte-perfectly and means the wrong permanent. This
+     * object's KDoc had recorded that as a known limitation and asserted "the rules that read `~`
+     * must not treat it as authoritative inside a quoted ability. Nothing in the grammar does" — an
+     * assertion that stayed true only until a rule read the clause, which the `.` band did.
+     *
+     * ### Why the split is here and not in the grammar
+     *
+     * Which anaphor was printed is a fact about the *text*, and this file owns those. A second token
+     * costs the grammar nothing: no rule spells [GRANTED_SELF], so a line carrying one declines and
+     * is counted, which is the honest verdict until a `GrantingSource` vocabulary is written. The
+     * twenty-one Slivers and Auras whose quoted ability spells the noun are untouched — they still
+     * carry [SELF] and still read as the gaining permanent.
+     *
+     * Invertibility is unchanged: both tokens append to one positional list in text order, and
+     * `NormalizedFace.restore` replays it against either token.
+     */
+    private fun abstractSelfReference(
+        text: String,
+        forms: List<String>,
+        nameForms: Set<String>,
+    ): Pair<String, List<String>> {
         if (forms.isEmpty()) return text to emptyList()
         val replaced = mutableListOf<String>()
         val out = StringBuilder()
+        var quoted = false
         var i = 0
         while (i < text.length) {
+            if (text[i] == '"') quoted = !quoted
             val hit = forms.firstOrNull { form ->
                 text.startsWith(form, i) &&
                     !isNameChar(text.getOrNull(i - 1)) &&
                     !isNameChar(text.getOrNull(i + form.length))
             }
             if (hit != null) {
-                out.append(SELF)
+                out.append(if (quoted && hit in nameForms) GRANTED_SELF else SELF)
                 replaced.add(hit)
                 i += hit.length
             } else {
@@ -326,6 +375,13 @@ object Normalizer {
 
     /** The self-reference placeholder. Oracle text never contains a literal tilde. */
     const val SELF = "~"
+
+    /**
+     * The self-reference placeholder for a card naming **itself inside a quoted granted ability**,
+     * where [SELF] would be the wrong object. See [abstractSelfReference]; no grammar rule spells
+     * it, which is the point. Oracle text never contains a section sign.
+     */
+    const val GRANTED_SELF = "§"
 }
 
 /** A span removed by a normalization pass, plus where to put it back. */
@@ -427,9 +483,13 @@ data class NormalizedFace(
         var i = 0
         var next = 0
         while (i < text.length) {
-            if (text.startsWith(Normalizer.SELF, i) && next < selfReferences.size) {
+            // Either placeholder consumes the next recorded form: both are appended to one list in
+            // text order, so which token stands where changes nothing about the replay.
+            val token = listOf(Normalizer.SELF, Normalizer.GRANTED_SELF)
+                .firstOrNull { text.startsWith(it, i) }
+            if (token != null && next < selfReferences.size) {
                 out.append(selfReferences[next++])
-                i += Normalizer.SELF.length
+                i += token.length
             } else {
                 out.append(text[i])
                 i++

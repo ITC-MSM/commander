@@ -2,7 +2,7 @@
 
 **Set Size:** 312 cards
 **Release Date:** August 2, 2024
-**Implemented:** 118 / 312
+**Implemented:** 119 / 312
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 37    | 0    |
@@ -149,7 +149,7 @@
 - [ ] Intellectual Offering
 - [ ] Ishai, Ojutai Dragonspeaker
 - [ ] Izzet Signet
-- [ ] Jace, the Mind Sculptor
+- [x] Jace, the Mind Sculptor
 - [ ] Jacked Rabbit
 - [ ] Jazal Goldmane
 - [ ] Jolrael, Mwonvuli Recluse

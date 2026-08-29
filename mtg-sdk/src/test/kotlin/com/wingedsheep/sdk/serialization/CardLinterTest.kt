@@ -260,6 +260,42 @@ class CardLinterTest : DescribeSpec({
             )
             CardLinter.lint(card).shouldBeEmpty()
         }
+
+        it("flags a bare BoundVariable on a multi-slot requirement") {
+            // "Return one or two target creature cards ... to your hand" handed straight to a
+            // single-target effect: the two chosen targets are keyed `cards[0]` / `cards[1]`, so
+            // the bare binding resolves to nothing and the spell silently does nothing.
+            val card = instant(
+                "Two At Once",
+                CardScript(
+                    spellEffect = DealDamageEffect(
+                        DynamicAmount.Fixed(2),
+                        EffectTarget.BoundVariable("cards"),
+                    ),
+                    targetRequirements = listOf(AnyTarget(id = "cards", count = 2, minCount = 1)),
+                ),
+            )
+            val findings = CardLinter.lint(card)
+            findings.shouldHaveSize(1)
+            findings[0].shouldBeInstanceOf<CardValidationError.MultiSlotTargetBinding>()
+                .message shouldContain "ForEachTargetEffect"
+        }
+
+        it("accepts a per-slot BoundVariable on a multi-slot requirement") {
+            val card = instant(
+                "Two At Once, Indexed",
+                CardScript(
+                    spellEffect = CompositeEffect(
+                        listOf(
+                            DealDamageEffect(DynamicAmount.Fixed(1), EffectTarget.BoundVariable("cards[0]")),
+                            DealDamageEffect(DynamicAmount.Fixed(1), EffectTarget.BoundVariable("cards[1]")),
+                        ),
+                    ),
+                    targetRequirements = listOf(AnyTarget(id = "cards", count = 2, minCount = 1)),
+                ),
+            )
+            CardLinter.lint(card).shouldBeEmpty()
+        }
     }
 
     describe("choice slots") {

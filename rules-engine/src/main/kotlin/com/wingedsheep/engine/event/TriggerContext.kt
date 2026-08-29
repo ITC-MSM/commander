@@ -238,6 +238,15 @@ data class TriggerContext(
                     triggeringEntityId = event.sourceId,
                     damageAmount = event.amount
                 )
+                // A land play (CR 305.1): the land played this way is "it" and the player who
+                // played it is "that player", so an intervening-"if" over the triggering object
+                // (Cemetery Gatekeeper's "if it shares a card type with the exiled card") and a
+                // Player.TriggeringPlayer payoff both resolve. Without this branch the land-play
+                // trigger fires with an empty context and every such reference reads null.
+                is com.wingedsheep.engine.core.LandPlayedEvent -> TriggerContext(
+                    triggeringEntityId = event.cardId,
+                    triggeringPlayerId = event.controllerId
+                )
                 is com.wingedsheep.engine.core.CardPlayedFromPermissionEvent -> TriggerContext(
                     // The card played this way; the player who played it. The rider's source
                     // (e.g. Fires of Mount Doom) is carried separately on the delayed trigger.

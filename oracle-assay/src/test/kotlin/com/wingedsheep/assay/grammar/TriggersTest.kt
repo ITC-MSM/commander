@@ -269,11 +269,16 @@ class TriggersTest : StringSpec({
     "a during-your-turn clause is a trigger restriction on any prefix" {
         fragment("Whenever one or more cards leave your graveyard during your turn, draw a card.")
             .script.triggeredAbilities.single().triggerRestriction shouldBe Conditions.IsYourTurn
-        fragment("Whenever you gain life during each opponent's turn, draw a card.")
+        fragment("Whenever you gain life during an opponent's turn, draw a card.")
             .script.triggeredAbilities.single().triggerRestriction shouldBe Conditions.IsNotYourTurn
 
         roundTrips("Whenever one or more cards leave your graveyard during your turn, draw a card.")
-        roundTrips("Whenever you gain life during each opponent's turn, draw a card.")
+        roundTrips("Whenever you gain life during an opponent's turn, draw a card.")
+
+        // "each opponent's turn" is a spelling no card prints against a prefix this grammar reads —
+        // every corpus line carrying it says "your **first** spell", which declines on the prefix.
+        // See the surface note on `Triggers.restrictions`.
+        declines("Whenever you gain life during each opponent's turn, draw a card.")
         roundTrips(
             "Whenever one or more creature cards are put into your graveyard from anywhere during " +
                 "your turn, draw a card. This ability triggers only once each turn."

@@ -4972,7 +4972,7 @@
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
-                        "baseFilter": "creature Merfolk ctrl:you"
+                        "baseFilter": "permanent Merfolk ctrl:you"
                     },
                     "id": "merfolk"
                 }

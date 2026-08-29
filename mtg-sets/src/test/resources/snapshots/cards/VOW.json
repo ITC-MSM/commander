@@ -2407,6 +2407,561 @@
     ]
 }
 
+// Catapult Fodder
+{
+    "name": "Catapult Fodder",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Zombie",
+    "oracleText": "At the beginning of combat on your turn, if you control three or more creatures that each have toughness greater than their power, transform this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "interveningIf": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": {
+                            "cardPredicates": [
+                                "IsCreature",
+                                "ToughnessGreaterThanPower"
+                            ]
+                        }
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "descriptionOverride": "At the beginning of combat on your turn, if you control three or more creatures that each have toughness greater than their power, transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Catapult Captain",
+        "manaCost": "",
+        "typeLine": "Creature — Zombie",
+        "oracleText": "{2}{B}, {T}, Sacrifice another creature: Target opponent loses life equal to the sacrificed creature's toughness.",
+        "creatureStats": {
+            "power": 2,
+            "toughness": 6
+        },
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_2",
+                    "cost": {
+                        "type": "CostComposite",
+                        "costs": [
+                            {
+                                "type": "CostAtomWrapper",
+                                "atom": {
+                                    "type": "AtomMana",
+                                    "cost": "{2}{B}"
+                                }
+                            },
+                            "CostTap",
+                            {
+                                "type": "CostAtomWrapper",
+                                "atom": {
+                                    "type": "AtomSacrifice",
+                                    "filter": "creature",
+                                    "excludeSelf": true
+                                }
+                            }
+                        ]
+                    },
+                    "effect": {
+                        "type": "LoseLife",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "Sacrificed",
+                            "numericProperty": "Toughness"
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target opponent"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetOpponent",
+                            "id": "target opponent"
+                        }
+                    ],
+                    "descriptionOverride": "{2}{B}, {T}, Sacrifice another creature: Target opponent loses life equal to the sacrificed creature's toughness."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "99",
+            "rarity": "UNCOMMON",
+            "artist": "Jesper Ejsing",
+            "flavorText": "And they're more than happy to share the wealth.",
+            "imageUri": "https://cards.scryfall.io/normal/back/e/6/e61b3afa-66e0-4f7b-84bc-7ae2cc6d28d4.jpg?1783924882"
+        },
+        "colorIdentityOverride": [
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLACK"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "99",
+        "rarity": "UNCOMMON",
+        "artist": "Jesper Ejsing",
+        "flavorText": "These days, ghouls are the only abundant resource in Thraben.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/6/e61b3afa-66e0-4f7b-84bc-7ae2cc6d28d4.jpg?1783924882",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "To satisfy Catapult Fodder's condition, each of the three creatures must have toughness greater than its own power, regardless of the power and toughness of the other two creatures."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Cemetery Gatekeeper
+{
+    "name": "Cemetery Gatekeeper",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Vampire",
+    "oracleText": "First strike\nWhen this creature enters, exile a card from a graveyard.\nWhenever a player plays a land or casts a spell, if it shares a card type with the exiled card, this creature deals 2 damage to that player.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FIRST_STRIKE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "player": "Each"
+                            },
+                            "storeAs": "graveyards"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "graveyards",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "exiled",
+                            "prompt": "Exile a card from a graveyard",
+                            "selectedLabel": "Exile",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "exiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When Cemetery Gatekeeper enters, exile a card from a graveyard."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "LandPlayedEvent",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                },
+                "interveningIf": {
+                    "type": "EntityMatches",
+                    "entity": "TriggeringEntity",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "SharesCardTypeWith",
+                                "entity": "LinkedExiledCard"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "Whenever a player plays a land, if it shares a card type with the exiled card, Cemetery Gatekeeper deals 2 damage to that player."
+            },
+            {
+                "id": "ability_3",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                },
+                "interveningIf": {
+                    "type": "EntityMatches",
+                    "entity": "TriggeringEntity",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "SharesCardTypeWith",
+                                "entity": "LinkedExiledCard"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "Whenever a player casts a spell, if it shares a card type with the exiled card, Cemetery Gatekeeper deals 2 damage to that player."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "148",
+        "rarity": "MYTHIC",
+        "artist": "Tyler Jacobson",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/5/457086c4-1b4e-4f79-8f2a-10b16174c8bb.jpg?1783924842",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Card types that can be exiled from a graveyard include artifact, creature, enchantment, land, planeswalker, instant, and sorcery. Legendary, basic, and snow are supertypes, not card types. Human, Equipment, and Aura are subtypes, not card types."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Cemetery Protector
+{
+    "name": "Cemetery Protector",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Creature — Human Soldier",
+    "oracleText": "Flash\nWhen this creature enters, exile a card from a graveyard.\nWhenever you play a land or cast a spell, if it shares a card type with the exiled card, create a 1/1 white Human creature token.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "player": "Each"
+                            },
+                            "storeAs": "graveyards"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "graveyards",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "exiled",
+                            "prompt": "Exile a card from a graveyard",
+                            "selectedLabel": "Exile",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "exiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When Cemetery Protector enters, exile a card from a graveyard."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "LandPlayedEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Human"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/7/d/7d13a93a-a43d-4cf5-8300-8341f3b7f1b1.jpg?1783924701"
+                },
+                "interveningIf": {
+                    "type": "EntityMatches",
+                    "entity": "TriggeringEntity",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "SharesCardTypeWith",
+                                "entity": "LinkedExiledCard"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "Whenever you play a land, if it shares a card type with the exiled card, create a 1/1 white Human creature token."
+            },
+            {
+                "id": "ability_3",
+                "trigger": "SpellCastEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Human"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/7/d/7d13a93a-a43d-4cf5-8300-8341f3b7f1b1.jpg?1783924701"
+                },
+                "interveningIf": {
+                    "type": "EntityMatches",
+                    "entity": "TriggeringEntity",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "SharesCardTypeWith",
+                                "entity": "LinkedExiledCard"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "Whenever you cast a spell, if it shares a card type with the exiled card, create a 1/1 white Human creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "6",
+        "rarity": "MYTHIC",
+        "artist": "Chris Rallis",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/0/c00731eb-69fe-42f3-9919-66a4cdec00f7.jpg?1783924926",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Card types that can be exiled from a graveyard include artifact, creature, enchantment, land, planeswalker, instant, and sorcery. Legendary, basic, and snow are supertypes, not card types. Human, Equipment, and Aura are subtypes, not card types."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Cemetery Prowler
+{
+    "name": "Cemetery Prowler",
+    "manaCost": "{1}{G}{G}",
+    "typeLine": "Creature — Wolf",
+    "oracleText": "Vigilance\nWhenever this creature enters or attacks, exile a card from a graveyard.\nSpells you cast cost {1} less to cast for each card type they share with cards exiled with this creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "player": "Each"
+                            },
+                            "storeAs": "graveyards"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "graveyards",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "exiled",
+                            "prompt": "Exile a card from a graveyard",
+                            "selectedLabel": "Exile",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "exiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When Cemetery Prowler enters, exile a card from a graveyard."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "player": "Each"
+                            },
+                            "storeAs": "graveyards"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "graveyards",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "exiled",
+                            "prompt": "Exile a card from a graveyard",
+                            "selectedLabel": "Exile",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "exiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever Cemetery Prowler attacks, exile a card from a graveyard."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": {}
+                },
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": "SharedCardTypesWithLinkedExile"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "191",
+        "rarity": "MYTHIC",
+        "artist": "Daarken",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/1/b124ccc4-76e3-41a4-92b2-8f1d06ea9cb8.jpg?1783924818",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Card types that can be exiled from a graveyard include artifact, creature, enchantment, land, planeswalker, instant, and sorcery. Legendary, basic, and snow are supertypes, not card types. Human, Equipment, and Aura are subtypes, not card types."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "Cemetery Prowler's last ability checks the number of card types among cards exiled with it, not the number of cards exiled. For example, if Cemetery Prowler has exiled two creature cards, creature spells you cast cost {1} less, not {2} less."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Ceremonial Knife
 {
     "name": "Ceremonial Knife",
@@ -4391,6 +4946,250 @@
     ]
 }
 
+// Dormant Grove
+{
+    "name": "Dormant Grove",
+    "manaCost": "{3}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "At the beginning of combat on your turn, put a +1/+1 counter on target creature you control. Then if that creature has toughness 6 or greater, transform this enchantment.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "EntityMatches",
+                                    "entity": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    },
+                                    "filter": "creature tou>=6"
+                                }
+                            },
+                            "then": "Transform"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                },
+                "descriptionOverride": "At the beginning of combat on your turn, put a +1/+1 counter on target creature you control. Then if that creature has toughness 6 or greater, transform this enchantment."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Gnarled Grovestrider",
+        "manaCost": "",
+        "typeLine": "Creature — Treefolk",
+        "oracleText": "Vigilance\nOther creatures you control have vigilance.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 6
+        },
+        "keywords": [
+            "VIGILANCE"
+        ],
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "VIGILANCE",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "198",
+            "rarity": "UNCOMMON",
+            "artist": "Kekai Kotaki",
+            "flavorText": "Far from the bloodsoaked wedding, unseen by human eyes, a long-slumbering force arose to protect its home.",
+            "imageUri": "https://cards.scryfall.io/normal/back/e/7/e7d3012e-1798-4f72-8d9a-b2d16f817502.jpg?1783924820"
+        },
+        "colorIdentityOverride": [
+            "GREEN"
+        ],
+        "colorIndicator": [
+            "GREEN"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "198",
+        "rarity": "UNCOMMON",
+        "artist": "Kekai Kotaki",
+        "flavorText": "As the natural cycle of day and night grew twisted, old powers stirred deep in the Ulvenwald.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/7/e7d3012e-1798-4f72-8d9a-b2d16f817502.jpg?1783924820"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Dorothea, Vengeful Victim
+{
+    "name": "Dorothea, Vengeful Victim",
+    "manaCost": "{W}{U}",
+    "typeLine": "Legendary Creature — Spirit",
+    "oracleText": "Flying\nWhen Dorothea attacks or blocks, sacrifice it at end of combat.\nDisturb {1}{W}{U} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{1}{W}{U}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "CreateDelayedTrigger",
+                    "step": "END_COMBAT",
+                    "effect": "SacrificeSelf"
+                },
+                "descriptionOverride": "When Dorothea attacks or blocks, sacrifice it at end of combat."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "BlockEvent",
+                "effect": {
+                    "type": "CreateDelayedTrigger",
+                    "step": "END_COMBAT",
+                    "effect": "SacrificeSelf"
+                },
+                "descriptionOverride": "When Dorothea attacks or blocks, sacrifice it at end of combat."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Dorothea's Retribution",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura",
+        "oracleText": "Enchant creature\nEnchanted creature has \"Whenever this creature attacks, create a 4/4 white Spirit creature token with flying that's tapped and attacking. Sacrifice that token at end of combat.\"\nIf Dorothea's Retribution would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "GrantTriggeredAbility",
+                    "ability": {
+                        "id": "ability_3",
+                        "trigger": "AttackEvent",
+                        "effect": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "CreateToken",
+                                    "power": 4,
+                                    "toughness": 4,
+                                    "colors": [
+                                        "WHITE"
+                                    ],
+                                    "creatureTypes": [
+                                        "Spirit"
+                                    ],
+                                    "keywords": [
+                                        "FLYING"
+                                    ],
+                                    "tapped": true,
+                                    "attacking": true
+                                },
+                                {
+                                    "type": "CreateDelayedTrigger",
+                                    "step": "END_COMBAT",
+                                    "effect": {
+                                        "type": "SacrificeTarget",
+                                        "target": {
+                                            "type": "PipelineTarget",
+                                            "collectionName": "createdTokens"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        },
+        "metadata": {
+            "collectorNumber": "235",
+            "rarity": "RARE",
+            "artist": "Marta Nael",
+            "imageUri": "https://cards.scryfall.io/normal/back/8/c/8c927707-abb5-4a9d-ac53-25df182d6e9b.jpg?1783924799"
+        },
+        "colorIdentityOverride": [
+            "WHITE",
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "WHITE",
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "235",
+        "rarity": "RARE",
+        "artist": "Marta Nael",
+        "flavorText": "\"Every day a Voldaren draws breath is a day I cannot rest.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/c/8c927707-abb5-4a9d-ac53-25df182d6e9b.jpg?1783924799"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Dread Fugue
 {
     "name": "Dread Fugue",
@@ -5208,6 +6007,70 @@
     ]
 }
 
+// Eruth, Tormented Prophet
+{
+    "name": "Eruth, Tormented Prophet",
+    "manaCost": "{1}{U}{R}",
+    "typeLine": "Legendary Creature — Human Wizard",
+    "oracleText": "If you would draw a card, exile the top two cards of your library instead. You may play those cards this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "ReplaceDrawWith",
+                "replacementEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "storeAs": "impulseExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "impulseExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "impulseExiled"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "237",
+        "rarity": "RARE",
+        "artist": "Ekaterina Burmak",
+        "flavorText": "She is cursed with visions of monsters and suffering . . . and all her visions come true.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/f/9f764077-df2d-4ac7-b507-2c8e08386d49.jpg?1783924793",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "You may choose to apply Eruth's replacement effect even if there are fewer than two cards in your library. If there are no cards in your library, you won't exile any cards this way, but you also won't lose the game for having attempted to draw from an empty library."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Estwald Shieldbasher
 {
     "name": "Estwald Shieldbasher",
@@ -5814,6 +6677,129 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Foreboding Statue
+{
+    "name": "Foreboding Statue",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "{T}: Add one mana of any color. Put an omen counter on this creature.\nAt the beginning of your end step, if there are three or more omen counters on this creature, untap it, then transform it.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": "Self",
+                            "tap": false
+                        },
+                        "Transform"
+                    ]
+                },
+                "interveningIf": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "omen"
+                            }
+                        }
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "descriptionOverride": "At the beginning of your end step, if there are three or more omen counters on this creature, untap it, then transform it."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        "AddManaOfChoice",
+                        {
+                            "type": "AddCounters",
+                            "counterType": "omen",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add one mana of any color. Put an omen counter on this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Forsaken Thresher",
+        "manaCost": "",
+        "typeLine": "Artifact Creature — Construct",
+        "oracleText": "At the beginning of your first main phase, add one mana of any color.",
+        "creatureStats": {
+            "power": 5,
+            "toughness": 5
+        },
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "PRECOMBAT_MAIN"
+                    },
+                    "binding": "ANY",
+                    "effect": "AddManaOfChoice",
+                    "descriptionOverride": "At the beginning of your first main phase, add one mana of any color."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "256",
+            "rarity": "UNCOMMON",
+            "artist": "Aaron Miller",
+            "flavorText": "Were it not for the cultists' fatal curiosity, the terrible machine might have lain dormant for decades more.",
+            "imageUri": "https://cards.scryfall.io/normal/back/a/2/a27b9d82-f613-4789-9e8b-f37db5597027.jpg?1783924791"
+        },
+        "colorIdentityOverride": [],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "256",
+        "rarity": "UNCOMMON",
+        "artist": "Aaron Miller",
+        "flavorText": "As the sand eroded, a faint sound could be heard whirling under the ground.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/2/a27b9d82-f613-4789-9e8b-f37db5597027.jpg?1783924791",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "You can't tap Foreboding Statue to get one more mana while resolving its triggered ability in your end step."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Frenzied Devils
@@ -6638,6 +7624,114 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Gutter Skulker
+{
+    "name": "Gutter Skulker",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "This creature can't be blocked as long as it's attacking alone.\nDisturb {3}{U} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{3}{U}"
+        }
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": "CantBeBlocked",
+                "condition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            "IsAttackingAlone"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Gutter Shortcut",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura",
+        "oracleText": "Enchant creature\nEnchanted creature can't be blocked as long as it's attacking alone.\nIf Gutter Shortcut would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "ConditionalStaticAbility",
+                    "ability": {
+                        "type": "CantBeBlocked",
+                        "filter": {
+                            "baseFilter": "permanent",
+                            "scope": "AttachedTo"
+                        }
+                    },
+                    "condition": {
+                        "type": "EntityMatches",
+                        "entity": "EnchantedPermanent",
+                        "filter": {
+                            "statePredicates": [
+                                "IsAttackingAlone"
+                            ]
+                        }
+                    }
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        },
+        "metadata": {
+            "collectorNumber": "62",
+            "rarity": "UNCOMMON",
+            "artist": "Viko Menezes",
+            "flavorText": "Some people take that as inspiration.",
+            "imageUri": "https://cards.scryfall.io/normal/back/c/e/ceb84515-7b8f-444d-b6a9-61231621f9b7.jpg?1783924900"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "62",
+        "rarity": "UNCOMMON",
+        "artist": "Viko Menezes",
+        "flavorText": "Geists have a knack for showing up wherever they're least expected.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/e/ceb84515-7b8f-444d-b6a9-61231621f9b7.jpg?1783924900"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -8462,6 +9556,108 @@
     ]
 }
 
+// Innocent Traveler
+{
+    "name": "Innocent Traveler",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Creature — Human",
+    "oracleText": "At the beginning of your upkeep, any opponent may sacrifice a creature of their choice. If no one does, transform this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AnyPlayerMayPay",
+                    "cost": {
+                        "type": "PayAtom",
+                        "atom": {
+                            "type": "AtomSacrifice",
+                            "filter": "creature"
+                        }
+                    },
+                    "consequenceIfNonePaid": "Transform",
+                    "eligiblePlayers": "EachOpponent"
+                },
+                "descriptionOverride": "At the beginning of your upkeep, any opponent may sacrifice a creature of their choice. If no one does, transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Malicious Invader",
+        "manaCost": "",
+        "typeLine": "Creature — Vampire",
+        "oracleText": "Flying\nThis creature gets +2/+0 as long as an opponent controls a Human.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 3
+        },
+        "keywords": [
+            "FLYING"
+        ],
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "ConditionalStaticAbility",
+                    "ability": {
+                        "type": "ModifyStats",
+                        "powerBonus": 2,
+                        "toughnessBonus": 0,
+                        "filter": {
+                            "baseFilter": "permanent",
+                            "scope": "Self"
+                        }
+                    },
+                    "condition": {
+                        "type": "Exists",
+                        "player": "EachOpponent",
+                        "zone": "Battlefield",
+                        "filter": "permanent Human"
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "121",
+            "rarity": "UNCOMMON",
+            "artist": "Cristi Balanescu",
+            "flavorText": "\"Aren't you going to offer me a drink?\"",
+            "imageUri": "https://cards.scryfall.io/normal/back/1/3/13a5e5fd-a67a-4c0e-97ae-923bdbc1be20.jpg?1783924866"
+        },
+        "colorIdentityOverride": [
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLACK"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "121",
+        "rarity": "UNCOMMON",
+        "artist": "Cristi Balanescu",
+        "flavorText": "\"Aren't you going to invite me in?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/13a5e5fd-a67a-4c0e-97ae-923bdbc1be20.jpg?1783924866",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "When Innocent Traveler's ability resolves, the next opponent in turn order chooses whether they want to sacrifice a creature at all and which creature to sacrifice if so, then each other opponent in turn order does the same, knowing the choices made before them. Then all the chosen creatures are sacrificed at the same time. If no creatures are sacrificed this way, Innocent Traveler is transformed."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Inspired Idea
 {
     "name": "Inspired Idea",
@@ -8684,6 +9880,221 @@
         ]
     },
     "colorIdentityOverride": []
+}
+
+// Katilda, Dawnhart Martyr
+{
+    "name": "Katilda, Dawnhart Martyr",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Legendary Creature — Spirit Warlock",
+    "oracleText": "Flying, lifelink, protection from Vampires\nKatilda's power and toughness are each equal to the number of permanents you control that are Spirits and/or enchantments.\nDisturb {3}{W}{W} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "keywords": [
+        "FLYING",
+        "LIFELINK",
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Protection",
+            "scope": {
+                "type": "ProtectionScope.Subtype",
+                "subtype": "Vampire"
+            }
+        },
+        {
+            "type": "Disturb",
+            "cost": "{3}{W}{W}"
+        }
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "SetBasePowerToughnessDynamicStatic",
+                "power": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "And",
+                                        "predicates": [
+                                            "IsPermanent",
+                                            {
+                                                "type": "HasSubtype",
+                                                "subtype": "Spirit"
+                                            }
+                                        ]
+                                    },
+                                    "IsEnchantment"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "toughness": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "And",
+                                        "predicates": [
+                                            "IsPermanent",
+                                            {
+                                                "type": "HasSubtype",
+                                                "subtype": "Spirit"
+                                            }
+                                        ]
+                                    },
+                                    "IsEnchantment"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Katilda's Rising Dawn",
+        "manaCost": "",
+        "typeLine": "Legendary Enchantment — Aura",
+        "oracleText": "Enchant creature\nEnchanted creature has flying, lifelink, and protection from Vampires, and it gets +X/+X, where X is the number of permanents you control that are Spirits and/or enchantments.\nIf Katilda's Rising Dawn would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING"
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK"
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "PROTECTION_FROM_SUBTYPE_VAMPIRE"
+                },
+                {
+                    "type": "GrantDynamicStats",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "AttachedTo"
+                    },
+                    "powerBonus": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "Or",
+                                    "predicates": [
+                                        {
+                                            "type": "And",
+                                            "predicates": [
+                                                "IsPermanent",
+                                                {
+                                                    "type": "HasSubtype",
+                                                    "subtype": "Spirit"
+                                                }
+                                            ]
+                                        },
+                                        "IsEnchantment"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "toughnessBonus": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "Or",
+                                    "predicates": [
+                                        {
+                                            "type": "And",
+                                            "predicates": [
+                                                "IsPermanent",
+                                                {
+                                                    "type": "HasSubtype",
+                                                    "subtype": "Spirit"
+                                                }
+                                            ]
+                                        },
+                                        "IsEnchantment"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        },
+        "metadata": {
+            "collectorNumber": "21",
+            "rarity": "RARE",
+            "artist": "Manuel Castañón",
+            "imageUri": "https://cards.scryfall.io/normal/back/0/e/0ef240aa-2a88-4ec4-888a-918466372adb.jpg?1783924922"
+        },
+        "colorIdentityOverride": [
+            "WHITE"
+        ],
+        "colorIndicator": [
+            "WHITE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "21",
+        "rarity": "RARE",
+        "artist": "Manuel Castañón",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/e/0ef240aa-2a88-4ec4-888a-918466372adb.jpg?1783924922",
+        "rulings": [
+            {
+                "date": "2021-09-24",
+                "text": "When you cast a spell using a card's disturb ability, the card is put onto the stack with its back face up. The resulting spell has all the characteristics of that face."
+            },
+            {
+                "date": "2021-09-24",
+                "text": "The mana value of a spell cast using disturb is determined by the mana cost on the front face of the card, no matter what the total cost to cast the spell was."
+            },
+            {
+                "date": "2021-09-24",
+                "text": "The back face of each card with disturb has an ability that instructs its controller to exile it if it would be put into a graveyard from anywhere. This includes going to the graveyard from the stack, so if the spell is countered after you cast it using the disturb ability, it will be put into exile."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }
 
 // Kessig Flamebreather
@@ -10061,6 +11472,123 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Mirrorhall Mimic
+{
+    "name": "Mirrorhall Mimic",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "You may have this creature enter as a copy of any creature on the battlefield, except it's a Spirit in addition to its other types.\nDisturb {3}{U}{U} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "keywords": [
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{3}{U}{U}"
+        }
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersAsCopy",
+                "additionalSubtypes": [
+                    "Spirit"
+                ]
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Ghastly Mimicry",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura",
+        "oracleText": "Enchant creature\nAt the beginning of your upkeep, create a token that's a copy of enchanted creature, except it's a Spirit in addition to its other types.\nIf Ghastly Mimicry would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_1",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "UPKEEP"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "CreateTokenCopyOfTarget",
+                        "target": "EnchantedCreature",
+                        "addedSubtypes": [
+                            "Spirit"
+                        ]
+                    }
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        },
+        "metadata": {
+            "collectorNumber": "68",
+            "rarity": "RARE",
+            "artist": "Justine Cruz",
+            "imageUri": "https://cards.scryfall.io/normal/back/8/2/823ad188-bd56-476d-9853-bed90bfad582.jpg?1783924898"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "68",
+        "rarity": "RARE",
+        "artist": "Justine Cruz",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/2/823ad188-bd56-476d-9853-bed90bfad582.jpg?1783924898",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Mirrorhall Mimic copies exactly what was printed on the original creature (unless that creature is copying something else or is a token), except that it's also a Spirit. It doesn't copy whether that creature is tapped or untapped, whether it has any counters on it or any Auras and Equipment attached to it, or any non-copy effects that have changed its power, toughness, types, color, or so on."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "If the chosen creature is copying something else (for example, if the chosen creature is another Mirrorhall Mimic), then Mirrorhall Mimic enters the battlefield as whatever the chosen creature copied."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "If another creature becomes a copy of Mirrorhall Mimic, that creature is also a Spirit."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "Any enters-the-battlefield abilities of the copied creature will trigger when Mirrorhall Mimic enters the battlefield. Any \"as [this creature] enters the battlefield\" or \"[this creature] enters the battlefield with\" abilities of the chosen creature will also work."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "If Mirrorhall Mimic somehow enters the battlefield at the same time as another creature, it can't become a copy of that creature. You may choose only a creature that's already on the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -11582,6 +13110,109 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Ragged Recluse
+{
+    "name": "Ragged Recluse",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Human Peasant",
+    "oracleText": "At the beginning of your end step, if you discarded a card this turn, transform this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "interveningIf": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "CARDS_DISCARDED"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "At the beginning of your end step, if you discarded a card this turn, transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Odious Witch",
+        "manaCost": "",
+        "typeLine": "Creature — Human Warlock",
+        "oracleText": "Whenever this creature attacks, defending player loses 1 life and you gain 1 life.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 3
+        },
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": "AttackEvent",
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "LoseLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "target": {
+                                    "type": "PlayerRef",
+                                    "player": "DefendingPlayer"
+                                }
+                            },
+                            {
+                                "type": "GainLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Whenever this creature attacks, defending player loses 1 life and you gain 1 life."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "127",
+            "artist": "Lie Setiawan",
+            "flavorText": "Her cauldron refilled, she settled in to wait for the next unsuspecting traveler to knock at her door.",
+            "imageUri": "https://cards.scryfall.io/normal/back/7/f/7fb728de-0d6e-4b32-b0c4-edd7382d1391.jpg?1783924862"
+        },
+        "colorIdentityOverride": [
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLACK"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "127",
+        "artist": "Lie Setiawan",
+        "flavorText": "\"Forgive my manners. It's been so long since I had a guest for dinner.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7fb728de-0d6e-4b32-b0c4-edd7382d1391.jpg?1783924862"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

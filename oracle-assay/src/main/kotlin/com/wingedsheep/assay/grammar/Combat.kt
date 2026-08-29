@@ -158,8 +158,17 @@ object Combat {
      * registering one surface in both positions would be two readings of one text. Only the
      * subject's spelling and the [EffectTarget] move.
      *
+     * The anaphoric instantiation is [SelfSteps.continuing]'s, not a second table here: this family
+     * is a member of [SelfSteps.retargetable], so the position that aims that shape at the target an
+     * earlier clause chose aims this one too. It used to have a hand-written "that creature" copy,
+     * whose KDoc refused to spell the pronoun because nine lines print "It can't be blocked this
+     * turn." about a permanent the *same* clause animated (Creeping Tar Pit). What actually keeps
+     * those honest is [Steps.merge]'s dangling-anaphor guard — a run that reads the target slot
+     * without declaring it refuses — so the restriction is now where it belongs and the nine lines
+     * still decline.
+     *
      * @param subject the phrase standing in the `{self}` slot, or null when [surface] spells the
-     *   subject as a literal — the same split [SelfSteps.retargetable]'s `pronominal` flag makes.
+     *   subject as a literal.
      */
     fun restrictionClauses(
         target: EffectTarget,
@@ -235,21 +244,6 @@ object Combat {
                 }
             }
         }
-
-    /**
-     * The same table over the anaphor — what [Continuations] slots.
-     *
-     * "That creature" only, and deliberately not "it": in a later clause [Continuations] reads "it"
-     * as the target and [SelfSteps] reads it as the source, and nine of the corpus's lines print it
-     * about a permanent the *same* clause animated ("{1}{U}{B}: Until end of turn, ~ becomes a 3/2
-     * blue and black Elemental creature. It's still a land. It can't be blocked this turn." — Creeping
-     * Tar Pit). Registering the pronoun here would read those as the target: byte-perfect and about
-     * the wrong creature, which is the reversible-but-wrong class. [Prevention.continuationClauses]
-     * can spell the pronoun because its recipient vocabulary makes the two readings disjoint; this
-     * table has no such handle, so the pronoun declines and is counted.
-     */
-    val restrictionContinuationClauses: List<Phrase<CardScript>> =
-        restrictionClauses(Targets.bound(), subject = null, surface = "that creature", tag = ", that creature")
 
     /**
      * "Return one or two target attacking creatures to their owner's hand." — Command of

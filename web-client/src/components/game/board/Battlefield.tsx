@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useBattlefieldCards, groupCards, visibleStackDepth, useSplitOutTargetIds, selectViewingPlayerId } from '@/store/selectors.ts'
+import { useBattlefieldCards, selectViewingPlayerId } from '@/store/selectors.ts'
 import { useGameStore } from '@/store/gameStore.ts'
 import { useInteraction } from '@/hooks/useInteraction.ts'
-import { ResponsiveContext, useResponsiveContext, useSlotSizedResponsive, handleImageError, attachmentStackLayout } from './shared'
+import { ResponsiveContext, PooledBattlefieldLayoutContext, useResponsiveContext, useSlotSizedResponsive, handleImageError, attachmentStackLayout } from './shared'
+import { useBoardGroups } from './useBoardGroups'
+import { DIVIDER_STRIP_HEIGHT, dividerMarginFor, rowMinHeightFor } from './battlefieldLayout'
+import type { ResponsiveSizes } from '@/hooks/useResponsive'
 import { styles } from './styles'
 import { CardStack } from '../card'
 import { GameCard } from '../card'
@@ -53,71 +56,23 @@ export function Battlefield({ isOpponent, playerId, spectatorMode = false }: {
   spectatorMode?: boolean
 }) {
   const slotRef = useRef<HTMLDivElement>(null)
-  const cards = useBattlefieldCards(isOpponent ? playerId : undefined, isOpponent ? undefined : playerId)
-  const lands = isOpponent ? cards.opponentLands : cards.playerLands
-  const creatures = isOpponent ? cards.opponentCreatures : cards.playerCreatures
-  const planeswalkers = isOpponent ? cards.opponentPlaneswalkers : cards.playerPlaneswalkers
-  const other = isOpponent ? cards.opponentOther : cards.playerOther
+  // Grouped into rendered stacks (see useBoardGroups) — the fit constraints
+  // below must count stacks, not raw cards.
+  const {
+    lands: groupedLands,
+    creatures: groupedCreatures,
+    planeswalkers: groupedPlaneswalkers,
+    other: groupedOther,
+    stats,
+  } = useBoardGroups(isOpponent, playerId)
 
-  // Group permanents that share exactly the same projected status (counters, P/T, tapped,
-  // combat assignment, attachments, chosen attributes, …) into a single overlapping stack —
-  // the same treatment lands have always had, now applied to every row. A horde of identical
-  // tokens collapses into one stack instead of sprawling across the row, and any one of them
-  // splits back out the moment it's buffed, tapped, attacks, etc. (see computeCardGroupKey).
-  // Memoized so these arrays keep stable identity across unrelated store updates —
-  // otherwise every battlefield re-render allocates fresh arrays that cascade
-  // into child re-renders and invalidate downstream useMemos.
-  // Grouped here rather than in BattlefieldContent because the fit constraints
-  // below must count rendered stacks, not raw cards.
-  // Permanents that are chosen targets / triggering sources keep their own card so
-  // their targeting arrows can anchor (a member hidden behind the stack render cap
-  // would drop its arrow) — see useSplitOutTargetIds / groupCards.
-  const splitOutIds = useSplitOutTargetIds()
-  const groupedLands = useMemo(() => groupCards(lands, splitOutIds), [lands, splitOutIds])
-  const groupedCreatures = useMemo(() => groupCards(creatures, splitOutIds), [creatures, splitOutIds])
-  const groupedPlaneswalkers = useMemo(() => groupCards(planeswalkers, splitOutIds), [planeswalkers, splitOutIds])
-  const groupedOther = useMemo(() => groupCards(other, splitOutIds), [other, splitOutIds])
-
-  // Per-row footprint stats drive the fit constraints in useSlotSizedResponsive
-  // — it picks card sizes plus how many wrap lines each row gets, trading
-  // unused vertical space for larger cards when a row is crowded (or the
-  // viewport is a narrow portrait phone).
-  //
-  // Tapped stacks are rotated 90° on the battlefield — their horizontal
-  // footprint is cardHeight (≈1.4×cardWidth) rather than cardWidth — and every
-  // card stacked behind a group's first adds a fixed peek offset. Counted per
-  // row so the horizontal-fit constraint reserves the true width; otherwise a
-  // crowded row on a narrow viewport overflows into an unbudgeted wrap line,
-  // which pushes the row up into the center HUD.
-  const rowStats = (...groupLists: (readonly GroupedCard[])[]) => {
-    let count = 0
-    let tapped = 0
-    let stackedExtra = 0
-    for (const groups of groupLists) {
-      for (const group of groups) {
-        count++
-        // Every member of a group shares its tapped state (it's part of the
-        // group key), so the representative answers for the whole stack.
-        if (group.card.isTapped) tapped++
-        // Only the *rendered* peek layers occupy horizontal space — a collapsed
-        // horde paints at most MAX_VISUAL_STACK_DEPTH cards, so the footprint
-        // (and thus the fit search) must use the capped depth, not the raw count.
-        stackedExtra += visibleStackDepth(group.count) - 1
-      }
-    }
-    return { count, tapped, stackedExtra }
-  }
-  const front = rowStats(groupedCreatures, groupedPlaneswalkers)
-  const back = rowStats(groupedLands, groupedOther)
-  const { sizes, frontRowLines, backRowLines } = useSlotSizedResponsive(
-    slotRef,
-    front.count,
-    front.tapped,
-    front.stackedExtra,
-    back.count,
-    back.tapped,
-    back.stackedExtra,
-  )
+  // Two-player board: GameBoard has solved both battlefields together over the
+  // height the grid gives the pair (one shared width, each side the height its
+  // rows need). Multiplayer strip cells and spectator bottom seats get no pooled
+  // layout and size themselves from their own slot.
+  const pooledLayout = useContext(PooledBattlefieldLayoutContext)
+  const pooled = pooledLayout ? (isOpponent ? pooledLayout.opponent : pooledLayout.player) : null
+  const { sizes, backSizes, frontRowLines, backRowLines } = useSlotSizedResponsive(slotRef, stats, pooled)
   return (
     <div
       ref={slotRef}
@@ -146,6 +101,7 @@ export function Battlefield({ isOpponent, playerId, spectatorMode = false }: {
           groupedOther={groupedOther}
           frontRowLines={frontRowLines}
           backRowLines={backRowLines}
+          backSizes={backSizes}
         />
       </ResponsiveContext.Provider>
     </div>
@@ -161,6 +117,7 @@ function BattlefieldContent({
   groupedOther,
   frontRowLines,
   backRowLines,
+  backSizes,
 }: {
   isOpponent: boolean
   spectatorMode?: boolean
@@ -168,8 +125,11 @@ function BattlefieldContent({
   groupedCreatures: readonly GroupedCard[]
   groupedPlaneswalkers: readonly GroupedCard[]
   groupedOther: readonly GroupedCard[]
+  /** Wrap lines each row is budgeted for; 0 for an empty row (which then reserves no height). */
   frontRowLines: number
   backRowLines: number
+  /** Sizes for the back row — the context sizes unless BACK_ROW_SCALE renders lands smaller. */
+  backSizes: ResponsiveSizes
 }) {
   const { attachmentsByCardId } = useBattlefieldCards()
   const responsive = useResponsiveContext()
@@ -196,7 +156,6 @@ function BattlefieldContent({
 
   // How much of each attachment card peeks out from behind its parent
   const attachmentPeek = responsive.isMobile ? 12 : 16
-  const cardHeight = Math.round(responsive.battlefieldCardWidth * 1.4)
 
   const hasActionableAttachment = (attachmentList: readonly TaggedAttachment[]): boolean => {
     const ids = new Set(attachmentList.map((a) => a.card.id))
@@ -229,7 +188,7 @@ function BattlefieldContent({
    * untapped Equipment upright (it's a separate permanent, CR 301.5d, and is still
    * available to tap), and a tapped Equipment reads as tapped on an untapped host.
    */
-  const renderWithAttachments = (group: GroupedCard) => {
+  const renderWithAttachments = (group: GroupedCard, rowSizes: ResponsiveSizes = responsive) => {
     const resolved = attachmentsByCardId.get(group.card.id)
     const attachmentCards = resolved?.attachments ?? EMPTY_ATTACHMENTS
     const linkedExileCards = resolved?.linkedExile ?? EMPTY_ATTACHMENTS
@@ -257,10 +216,10 @@ function BattlefieldContent({
     // still signalling that attachments exist.
     const collapsed = attachments.length >= ATTACHMENT_COLLAPSE_THRESHOLD
     const visibleAttachments = collapsed ? attachments.slice(0, 1) : attachments
-    const cardWidth = responsive.battlefieldCardWidth
+    const cardWidth = rowSizes.battlefieldCardWidth
     const layout = attachmentStackLayout({
       cardWidth,
-      cardHeight,
+      cardHeight: rowSizes.battlefieldCardHeight,
       peek: attachmentPeek,
       hostTapped: parentTapped,
       attachmentsTapped: visibleAttachments.map((tagged) => tagged.card.isTapped === true),
@@ -429,6 +388,7 @@ function BattlefieldContent({
     centerItems: readonly GroupedCard[],
     sideItems: readonly GroupedCard[],
     lines: number,
+    rowSizes: ResponsiveSizes,
     extra?: React.CSSProperties,
   ) => {
     const hasCenter = centerItems.length > 0
@@ -441,22 +401,22 @@ function BattlefieldContent({
       if (perLine >= centerItems.length) return undefined
       const tapped = centerItems.reduce((sum, g) => sum + (g.card.isTapped ? 1 : 0), 0)
       const tappedPerLine = Math.min(tapped, perLine)
-      const cw = responsive.battlefieldCardWidth
+      const cw = rowSizes.battlefieldCardWidth
       // Mirrors the per-line width model in useSlotSizedResponsive: tapped
       // cards occupy 1.4 × width + 8 (rotated container).
       return Math.ceil(
         perLine * cw +
         tappedPerLine * (0.4 * cw + 8) +
-        (perLine - 1) * responsive.cardGap,
+        (perLine - 1) * rowSizes.cardGap,
       ) + 2
     })()
-    return (
+    const rowElement = (
       <div style={{
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'flex-end',
         flexWrap: 'nowrap',
-        gap: responsive.cardGap,
+        gap: rowSizes.cardGap,
         width: '100%',
         ...extra,
       }}>
@@ -466,11 +426,11 @@ function BattlefieldContent({
             flexWrap: 'wrap',
             alignItems: 'flex-end',
             justifyContent: 'center',
-            gap: responsive.cardGap,
+            gap: rowSizes.cardGap,
             minWidth: 0,
             ...(balancedMaxWidth !== undefined ? { maxWidth: balancedMaxWidth } : {}),
           }}>
-            {centerItems.map((group) => renderWithAttachments(group))}
+            {centerItems.map((group) => renderWithAttachments(group, rowSizes))}
           </div>
         )}
         {showDividerBetween && (
@@ -487,22 +447,29 @@ function BattlefieldContent({
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'flex-end',
-            gap: responsive.cardGap,
+            gap: rowSizes.cardGap,
             minWidth: 0,
           }}>
-            {sideItems.map((group) => renderWithAttachments(group))}
+            {sideItems.map((group) => renderWithAttachments(group, rowSizes))}
           </div>
         )}
       </div>
     )
+    // A row rendered at its own size (BACK_ROW_SCALE < 1) re-provides the
+    // responsive context so its cards, badges and attachment stacks all scale.
+    return rowSizes === responsive
+      ? rowElement
+      : <ResponsiveContext.Provider value={rowSizes}>{rowElement}</ResponsiveContext.Provider>
   }
 
-  const dividerMargin = Math.max(10, Math.round(responsive.battlefieldCardHeight * 0.1))
+  // Scales with the card actually rendered (see dividerMarginFor) — the fixed
+  // base-card margin used to cost 36 px around a 92 px-tall card.
+  const dividerMargin = dividerMarginFor(responsive.battlefieldCardHeight)
   const renderDivider = () => showDivider ? (
     <div
       style={{
         width: '70%',
-        height: 24,
+        height: DIVIDER_STRIP_HEIGHT,
         margin: `${dividerMargin}px 0`,
         background: 'radial-gradient(ellipse at center, rgba(120, 140, 180, 0.12) 0%, rgba(120, 140, 180, 0.04) 45%, transparent 75%)',
         pointerEvents: 'none',
@@ -517,21 +484,23 @@ function BattlefieldContent({
   // overflow into the divider / wrapped row's territory. The line counts come
   // from useSlotSizedResponsive, which already sized cards so the combined
   // reservation fits the slot.
-  const rowMinHeight = (lines: number) =>
-    lines * responsive.battlefieldCardHeight +
-    (lines - 1) * responsive.cardGap +
-    responsive.battlefieldRowPadding
+  // An empty row reserves nothing (rowMinHeightFor) — it costs no line, so a
+  // lands-only turn-1 board renders its lands at the full slot height.
+  const rowMinHeight = (lines: number, rowSizes: ResponsiveSizes) =>
+    rowMinHeightFor(lines, rowSizes.battlefieldCardHeight, rowSizes.cardGap)
   const frontRow = renderGridRow(
     groupedCreatures,
     groupedPlaneswalkers,
     frontRowLines,
-    { minHeight: rowMinHeight(frontRowLines) },
+    responsive,
+    { minHeight: rowMinHeight(frontRowLines, responsive) },
   )
   const backRow = renderGridRow(
     groupedLands,
     groupedOther,
     backRowLines,
-    { minHeight: rowMinHeight(backRowLines) },
+    backSizes,
+    { minHeight: rowMinHeight(backRowLines, backSizes) },
   )
 
   return (

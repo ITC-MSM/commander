@@ -4,10 +4,14 @@ import com.wingedsheep.assay.syntax.ParseOutcome
 import com.wingedsheep.assay.syntax.parseLine
 import com.wingedsheep.assay.syntax.printLine
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.effects.CreateDelayedTriggerEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachTargetEffect
+import com.wingedsheep.sdk.scripting.effects.SacrificeSelfEffect
+import com.wingedsheep.sdk.scripting.effects.TransformEffect
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetPermanent
@@ -563,5 +567,51 @@ class StepsTest : StringSpec({
     "the announced-count sacrifice is unreachable without its antecedent" {
         Grammar.abilityLine.parseLine("Each player sacrifices that many creatures of their choice.")
             .shouldBeInstanceOf<ParseOutcome.Declined>()
+    }
+
+    // CR 701.28's verb about the source, a row of the retargetable shape rather than a rule of its
+    // own — which is what puts it in every position that shape reaches: an activated flip, a step
+    // trigger, an intervening-if trigger. The corpus's top "Transform" decline row was this line.
+    "transform is a clause about the source in every position that takes one" {
+        fragment("Transform ~.") shouldBe
+            CardFragment(script = CardScript(spellEffect = TransformEffect(EffectTarget.Self)))
+        roundTrips("Transform ~.")
+        roundTrips("{5}{G}{G}: Transform ~.")
+        roundTrips("At the beginning of your end step, if you discarded a card this turn, transform ~.")
+    }
+
+    // The rider says *when*, the clause says *what*, and `CreateDelayedTriggerEffect` is the SDK's
+    // own split of the two — so it wraps every clause the grammar can read instead of being written
+    // into each verb's template. CR 603.7a: created on resolution, fires once at end of combat.
+    "at end of combat defers whatever clause precedes it" {
+        fragment("Sacrifice ~ at end of combat.") shouldBe
+            CardFragment(
+                script = CardScript(
+                    spellEffect = CreateDelayedTriggerEffect(
+                        step = Step.END_COMBAT,
+                        effect = SacrificeSelfEffect,
+                    )
+                )
+            )
+        roundTrips("Sacrifice ~ at end of combat.")
+        roundTrips("Whenever ~ attacks, sacrifice ~ at end of combat.")
+        // The bare clause and the deferred one are different models, so neither prints the other.
+        roundTrips("Sacrifice ~.")
+    }
+
+    // Another row of the life-loss recipient list, not a slot over `Player`: the recipient is a
+    // value on the effect, and one rule with a player slot would print four separate sentences.
+    "defending player is a recipient row beside each opponent and target player" {
+        fragment("Defending player loses 1 life.") shouldBe
+            CardFragment(
+                script = CardScript(
+                    spellEffect = Effects.LoseLife(
+                        1,
+                        EffectTarget.PlayerRef(com.wingedsheep.sdk.scripting.references.Player.DefendingPlayer),
+                    )
+                )
+            )
+        roundTrips("Defending player loses 1 life.")
+        roundTrips("Whenever ~ attacks, defending player loses 2 life.")
     }
 })

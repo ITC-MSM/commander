@@ -31,6 +31,7 @@ import com.wingedsheep.sdk.scripting.CardNamePool
 import com.wingedsheep.sdk.scripting.ChoiceType
 import com.wingedsheep.sdk.scripting.EntersAsCopy
 import com.wingedsheep.sdk.scripting.EntersWithChoice
+import com.wingedsheep.sdk.scripting.EntersWithDevour
 import com.wingedsheep.sdk.scripting.OnEnterRunEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.references.Player
@@ -49,7 +50,7 @@ import com.wingedsheep.sdk.scripting.references.Player
  *    (sharing this object's [onEnterRunEffectFor] lookup).
  *  - [com.wingedsheep.engine.handlers.effects.token.TokenFromDefinition] — a token minted from a
  *    card definition (e.g. the Momir Basic avatar's random-creature token).
- *    [pauseForEntersWithChoice] only.
+ *    [pauseForEntersWithChoice] and [devourSacrificeCandidates].
  *  - [com.wingedsheep.engine.handlers.effects.zones.MoveToZoneEffectExecutor] — a card put onto
  *    the battlefield by an effect (reanimation, a blink or earthbend return from exile).
  *    [runOnEnterRunEffect] only.
@@ -120,6 +121,37 @@ object PermanentEntryReplacements {
      * [com.wingedsheep.engine.handlers.actions.land.PlayLandHandler] and [runOnEnterRunEffect]
      * cannot drift apart on it.
      */
+    /**
+     * The permanents [controllerId] may sacrifice for a Devour as-enters replacement (CR 702.82) —
+     * every battlefield permanent they *currently* control matching [devour]'s sacrifice filter,
+     * minus the entering object itself.
+     *
+     * Control is read off the projected state so an opponent's Act of Treason on one of your lands
+     * removes it from the pool (CR 701.21a: you can only sacrifice permanents you control). The
+     * filter match is likewise projected, per the project's battlefield-filter rule.
+     *
+     * Shared by the two entry paths that can meet a devour permanent: a spell resolving off the
+     * stack ([com.wingedsheep.engine.mechanics.stack.StackResolver], where [enteringId] is the
+     * spell entity) and a token minted from a bare definition
+     * ([com.wingedsheep.engine.handlers.effects.token.TokenFromDefinition], where the token does
+     * not exist yet and [enteringId] is null).
+     */
+    fun devourSacrificeCandidates(
+        state: GameState,
+        controllerId: EntityId,
+        devour: EntersWithDevour,
+        enteringId: EntityId?,
+    ): List<EntityId> {
+        val predicateContext = PredicateContext(controllerId = controllerId, sourceId = enteringId)
+        return state.getBattlefield().filter { entityId ->
+            if (entityId == enteringId) return@filter false
+            if (state.projectedState.getController(entityId) != controllerId) return@filter false
+            predicateEvaluator.matches(
+                state, state.projectedState, entityId, devour.sacrificeFilter, predicateContext
+            )
+        }
+    }
+
     fun onEnterRunEffectFor(cardDef: CardDefinition?): OnEnterRunEffect? =
         cardDef?.script?.replacementEffects
             ?.filterIsInstance<OnEnterRunEffect>()

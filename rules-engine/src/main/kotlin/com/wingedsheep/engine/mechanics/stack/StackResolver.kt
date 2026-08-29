@@ -1271,15 +1271,8 @@ class StackResolver(
             val devourEffect = cardDef.script.replacementEffects
                 .filterIsInstance<com.wingedsheep.sdk.scripting.EntersWithDevour>().firstOrNull()
             if (devourEffect != null) {
-                val predicateContext = PredicateContext(controllerId = controllerId, sourceId = spellId)
-                val candidates = state.getBattlefield().filter { entityId ->
-                    if (entityId == spellId) return@filter false
-                    // Use projected controller — control-changing effects (e.g. an opponent's
-                    // Act of Treason on one of your lands) must be respected; you can only
-                    // sacrifice permanents you currently control (CR 701.21a).
-                    if (state.projectedState.getController(entityId) != controllerId) return@filter false
-                    predicateEvaluator.matches(state, state.projectedState, entityId, devourEffect.sacrificeFilter, predicateContext)
-                }
+                val candidates = com.wingedsheep.engine.handlers.effects.PermanentEntryReplacements
+                    .devourSacrificeCandidates(state, controllerId, devourEffect, enteringId = spellId)
 
                 if (candidates.isNotEmpty()) {
                     val devourLabel = devourEffect.description.substringBefore(" (")

@@ -27,6 +27,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Clauses that reach into a graveyard — "Return target creature card from your graveyard to your
@@ -373,11 +374,80 @@ object Graveyard {
         }
     }
 
+    /**
+     * "Exile a card from a graveyard." — the Crimson Vow cemetery cycle (Gatekeeper, Illuminator,
+     * Protector, Prowler, Desecrator), Lazav, Familiar Stranger, Kaya, Spirits' Justice.
+     *
+     * The **untargeted** sibling of [exileAnyCardFromAGraveyard], and the article is the whole
+     * difference: "exile **target** card from a graveyard" is a cast-time choice the opponent can
+     * respond to and this one is a choice made on resolution, so it declares no
+     * `TargetRequirement` at all and collects the candidates itself — gather every graveyard,
+     * choose one, move it. Reading the two into one model would be reading a targeting rule off a
+     * word Oracle uses to mean the opposite.
+     *
+     * "A graveyard" is every player's, which the gather says with `Player.Each`; the chooser is the
+     * ability's controller, which is `SelectFromCollectionEffect`'s default and what the sentence
+     * means with no other player named.
+     *
+     * The clause is deliberately **not** counted. Oracle prints "a card" here and nothing else —
+     * "exile **another** card from a graveyard" (Cemetery Desecrator) is a different sentence with
+     * an exclusion this rule has no field for, and it declines rather than losing the word.
+     *
+     * ### `linkToSource` is not on this line, and is derived by the fold
+     *
+     * CR 607 makes this ability *linked* to a later one that says "the exiled card", and the SDK
+     * carries that fact twice — on the move (`MoveCollectionEffect.linkToSource`) and on the read
+     * (`EntityReference.LinkedExiledCard`). Only the read is printed. So this rule builds the plain
+     * move and [CardFragment.deriveExileLinkage] sets the flag when some other line on the same
+     * card turns out to read the pile, which is this module's "a value the SDK carries twice is
+     * derived, not spelled" applied one scope out: the deriving evidence is on a different line, so
+     * the derivation is in the fold rather than in the rule.
+     */
+    private val exileACardFromAGraveyard: Phrase<CardScript> = run {
+        val script = CardScript(
+            spellEffect = CompositeEffect(
+                listOf(
+                    GatherCardsEffect(
+                        source = CardSource.FromZone(Zone.GRAVEYARD, Player.Each, GameObjectFilter.Any),
+                        storeAs = GRAVEYARDS,
+                    ),
+                    SelectFromCollectionEffect(
+                        from = GRAVEYARDS,
+                        selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(1)),
+                        storeSelected = EXILED,
+                        prompt = "Exile a card from a graveyard",
+                        selectedLabel = "Exile",
+                        useTargetingUI = true,
+                    ),
+                    MoveCollectionEffect(
+                        from = EXILED,
+                        destination = CardDestination.ToZone(Zone.EXILE),
+                    ),
+                )
+            )
+        )
+        phrase("exile a card from a graveyard", name = "exile a chosen card from any graveyard") {
+            build { script }
+            match { if (it == script) bind() else null }
+        }
+    }
+
     /** The collection name [returnAllFromYourGraveyard] shares with the corpus; see its KDoc. */
     private const val COLLECTED = "graveyard_lands"
 
+    /**
+     * [exileACardFromAGraveyard]'s two collection names.
+     *
+     * Wiring, in the sense [returnAllFromYourGraveyard]'s KDoc records: no printed word determines
+     * them and the differential compares them anyway, so the grammar picks a pair and the
+     * hand-written cards spell the same one.
+     */
+    private const val GRAVEYARDS = "graveyards"
+    private const val EXILED = "exiled"
+
     val clauses: List<Phrase<CardScript>> = listOf(
         exileAnyCardFromAGraveyard,
+        exileACardFromAGraveyard,
         shuffleUpToSeveralIntoLibrary,
         returnAllFromYourGraveyard(tapped = true),
         returnAllFromYourGraveyard(tapped = false),

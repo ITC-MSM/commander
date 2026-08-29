@@ -797,7 +797,8 @@ definitions construct these through the facade, e.g. `Costs.additional.Sacrifice
   "DiscardCard"` cost (the hand picker Force of Will uses), excludes the spell being cast, and is
   offered only when you hold at least `count` other matching cards. The discard-as-cost still feeds
   the turn's discard tracking (CR 701.8), so it counts toward
-  `DynamicAmounts.cardsDiscardedThisTurn()` / `Conditions.YouDiscardedThisCardThisTurn` (Mayhem).
+  `DynamicAmounts.cardsDiscardedThisTurn()` / `Conditions.YouDiscardedACardThisTurn` /
+  `Conditions.YouDiscardedThisCardThisTurn` (Mayhem).
 - `Costs.additional.Choice(vararg options)` — **cost-vs-cost**: "as an additional cost to cast this
   spell, pay exactly one of `options`" (Souls of the Lost: *"discard a card **or** sacrifice a
   permanent"*). The general, parameterized form of `Forage` — each option is itself an
@@ -3815,6 +3816,13 @@ Every `TargetRequirement` carries count semantics (defaults shown):
 
 - `count = 1` — maximum number of targets.
 - `minCount = count` — minimum; set below `count` for "one or two target creatures".
+- **A requirement spanning more than one slot has no single bound handle.** Whenever `count > 1`,
+  `unlimited = true`, or a `dynamicMaxCount` is set, the chosen targets occupy that many slots of
+  the flat target list and are keyed per slot (`id[0]`, `id[1]`, …), so the bare `target(name, …)`
+  handle resolves to nothing and any effect handed it silently does nothing. Read such a
+  requirement with `ForEachTargetEffect(listOf(<effect>(EffectTarget.ContextTarget(0))))` — the
+  body runs once per chosen target. `CardLinter.MultiSlotTargetBinding` fails the build on the
+  bare-handle shape.
 - `optional = false` — when `true`, minimum becomes 0 ("up to N target ..."). An activated ability
   whose controller-chosen requirements are **all** optional (e.g. Boom Box's "Destroy up to one target
   artifact, up to one target creature, and up to one target land") is legal to activate with an *empty*
@@ -5562,6 +5570,14 @@ caster with `EffectTarget.PlayerRef(Player.TriggeringPlayer)`.
   spell from a non-hand zone", use two triggered abilities — this one plus
   `youCastSpell(requires = setOf(SpellCastPredicate.CastFromZoneOtherThan(Zone.HAND)))`.
 
+- `anyPlayerPlaysLand(fromZoneOtherThan: Zone? = null)` — "whenever **a player** plays a land"
+  (Cemetery Gatekeeper). The any-player scope of `youPlayLand`, and the land-play counterpart of
+  `AnyPlayerCastsSpell`: `EventPattern.LandPlayedEvent.player` reads the same `Player` vocabulary
+  `SpellCastEvent.player` does, so the two compose for the printed "plays a land or casts a spell"
+  — write that as **two** triggered abilities, one per event, which is what the corpus spells and
+  what Argentum Assay reads. The played land is the triggering entity, so an intervening-`if` over
+  it (`Conditions.TriggeringSpellMatches(...)`) and a `Player.TriggeringPlayer` payoff both resolve.
+
 **Factory** — `youCastSpell(spellFilter?, requires: Set<SpellCastPredicate>)`. The
 `requires` set is conjunctive — every predicate must hold for the trigger to fire.
 
@@ -7016,7 +7032,16 @@ staticAbility {
   graveyard — Emrakul, the Promised End. Distinct types (CR 205.2a), never supertypes or subtypes,
   so nine creature cards shave only {1}; the counting sibling of `CardsInGraveyardMatchingFilter`,
   which totals cards. Same aggregation as `Conditions.Delirium` over the same zone, capped by the
-  number of card types — {9} for Emrakul), `FixedIfAnyTargetMatches`,
+  number of card types — {9} for Emrakul),
+  `SharedCardTypesWithLinkedExile(amountPerType = 1)` (the number of card types the spell being cast
+  shares with the cards in the source's linked-exile pile — Cemetery Prowler's "Spells you cast cost
+  {1} less to cast for each card type they share with cards exiled with this creature". The only
+  reduction source whose amount depends on the *spell* rather than on the board, so it is priced
+  against the caster's own `CardDefinition`; distinct types on both sides, per the card's ruling, so
+  two exiled creature cards still shave only {1} off a creature spell. Fill the pile with a
+  `linkToSource = true` exile and read it back elsewhere with
+  `EntityReference.LinkedExiledCard`. A face-down (morph) spell has no visible card types and
+  correctly reduces by 0), `FixedIfAnyTargetMatches`,
   `ChosenTargetsBeyondTheFirst` (the count of the spell's chosen targets minus one — "for each
   target beyond the first". Only meaningful on a `SelfCast` modifier, since only that path is priced
   with the caster's own chosen targets; before targets are chosen it reads 0, which is also the right
@@ -9636,6 +9661,11 @@ answer it and would silently return `false`.
 - `YouGainedLifeThisTurnAtLeast(n)` — you gained ≥`n` life this turn. The threshold form of
   `YouGainedLifeThisTurn` (`Compare(TurnTracking(You, LIFE_GAINED), GTE, n)`). Used by Scheming
   Silvertongue's "if you gained 2 or more life this turn" prepared trigger.
+- `YouDiscardedACardThisTurn` — you discarded ≥1 card this turn (`Compare(TurnTracking(You,
+  CARDS_DISCARDED), GTE, 1)`, the same per-player record `DynamicAmounts.cardsDiscardedThisTurn()`
+  counts). Used by Ragged Recluse's end-step flip. Counts **cards**, not discard events — one discard
+  of two cards satisfies it exactly as two discards of one do. Not `YouDiscardedThisCardThisTurn`,
+  which is Mayhem's per-*card* question and reads a different record.
 - `PutCounterOnCreatureThisTurn` — you put ≥1 counter of *any* kind on a creature this turn (Lasting
   Tarfire), read through the `COUNTERS_PUT_ON_CREATURE` turn tracker.
 - `PutCounterKindOnCreatureThisTurn(counterType, player = Player.You)` — the **kind-scoped** reading

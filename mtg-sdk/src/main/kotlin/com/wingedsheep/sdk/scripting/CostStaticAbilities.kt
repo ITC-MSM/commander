@@ -917,6 +917,30 @@ sealed interface CostReductionSource {
     ) : CostReductionSource {
         override val description: String = "the number of card types among cards in your graveyard"
     }
+
+    /**
+     * Reduces cost by [amountPerType] for each *card type* the spell being cast shares with the
+     * cards exiled with the reducing permanent — Cemetery Prowler ("Spells you cast cost {1} less
+     * to cast for each card type they share with cards exiled with this creature").
+     *
+     * The one [CostReductionSource] whose amount is a function of the spell rather than of the
+     * board: it intersects the spell's card types (CR 205.2a) with the union of the card types in
+     * the source's linked-exile pile ([com.wingedsheep.sdk.scripting.values.EntityReference.LinkedExiledCard]'s
+     * pile, written by a `linkToSource = true` exile) and counts the intersection.
+     *
+     * Distinct types, both sides. Per the Cemetery Prowler ruling, two exiled *creature* cards
+     * still reduce a creature spell by {1}, not {2} — the count is over card types, not cards.
+     * Supertypes and subtypes never count. A face-down spell (morph) has no visible card types and
+     * correctly reduces by 0.
+     */
+    @SerialName("SharedCardTypesWithLinkedExile")
+    @Serializable
+    data class SharedCardTypesWithLinkedExile(
+        val amountPerType: Int = 1
+    ) : CostReductionSource {
+        override val description: String =
+            "the number of card types it shares with cards exiled with this permanent"
+    }
 }
 
 /**

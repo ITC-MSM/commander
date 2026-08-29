@@ -374,11 +374,22 @@ object Activated {
      * needs — "{T}: Add {B} or {G}." as two abilities sharing a cost — has nowhere to go in a grant,
      * so it declines here rather than being silently truncated to its first member.
      *
-     * Note what the quoted text does **not** mean: `~` inside a granted ability is the creature that
-     * gained it, not the card whose line this is. Normalization abstracts both to the same token and
-     * records that as a known limitation; nothing here reads `~` as the source, and the effect
-     * vocabulary spells it [com.wingedsheep.sdk.scripting.targets.EffectTarget.Self] either way,
-     * which is the reading that stays true in both positions.
+     * ### `~` inside the quotes is not the card whose line this is
+     *
+     * A self-reference has two printed shapes and CR 201.4 keeps them apart: "this creature" is the
+     * object that *has* the ability — the creature the Equipment or Aura handed it to,
+     * [com.wingedsheep.sdk.scripting.targets.EffectTarget.Self] — while the card's own **name**
+     * still means the card that printed it, `EffectTarget.GrantingSource`. Outside a quote the two
+     * denote one object and `Normalizer` abstracts both to `~`; inside one they come apart, so
+     * normalization keeps the name as its own token there and nothing under these quotes can read
+     * it. The effect vocabulary spells `~` as `Self`, which is the reading that is true for the
+     * noun form and the only form that reaches here.
+     *
+     * Trusty Boomerang is what made that necessary: "Equipped creature has "{1}, {T}: Tap target
+     * creature. Return Trusty Boomerang to its owner's hand."" bounces the Equipment, and reading it
+     * as the equipped creature round-trips byte-perfectly while meaning the wrong permanent. It
+     * declines instead, and is counted; the twenty-one Slivers and Auras that spell the *noun* are
+     * unaffected, because the distinction is now in the text the grammar sees.
      */
     val quoted: Phrase<ActivatedAbility> = phrase("\"{ability}\"", name = "a quoted activated ability") {
         slot("ability", abilities)

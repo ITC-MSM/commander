@@ -50,10 +50,13 @@ import com.wingedsheep.sdk.scripting.effects.Gate
 import com.wingedsheep.sdk.scripting.effects.GatedEffect
 import com.wingedsheep.sdk.scripting.effects.LoseLifeEffect
 import com.wingedsheep.sdk.scripting.effects.MayEffect
+import com.wingedsheep.sdk.scripting.effects.ModalEffect
+import com.wingedsheep.sdk.scripting.effects.Mode
 import com.wingedsheep.sdk.scripting.effects.ModifyStatsEffect
 import com.wingedsheep.sdk.scripting.effects.PlayAdditionalLandsEffect
 import com.wingedsheep.sdk.scripting.effects.ScryEffect
 import com.wingedsheep.sdk.scripting.effects.SurveilEffect
+import com.wingedsheep.sdk.scripting.effects.TapUntapEffect
 import com.wingedsheep.sdk.scripting.effects.TakeExtraTurnEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -451,6 +454,28 @@ object Steps {
                     CardScript(
                         spellEffect = Effects.LoseLife(it, Targets.bound()),
                         targetRequirements = listOf(Targets.player()),
+                    )
+                },
+                count = ::lifeLost,
+            ),
+        ),
+        listOf(
+            // "Whenever ~ attacks, defending player loses 1 life and you gain 1 life." — Odious
+            // Witch and the attack-drain family, plus afflict's reminder text and the
+            // becomes-blocked payoffs. Another row of the recipient list above for that list's own
+            // reason: `Player.DefendingPlayer` is a value on the effect, and a slot over `Player`
+            // would let one rule print four separate printed sentences.
+            //
+            // The recipient only *means* anything inside a combat trigger, and no rule here can see
+            // the sentence it lands in — but that is not the ambiguity the module refuses to
+            // register, because the surface denotes exactly one model wherever it appears. Oracle
+            // prints the phrase in no other position, so a card that made it meaningless would have
+            // to be written first.
+            countedStep(
+                "defending player loses {n} life", "defending player loses life",
+                script = {
+                    CardScript(
+                        spellEffect = Effects.LoseLife(it, EffectTarget.PlayerRef(Player.DefendingPlayer)),
                     )
                 },
                 count = ::lifeLost,
@@ -964,6 +989,49 @@ object Steps {
             }
         }
     }
+
+    /**
+     * "You may have target creature get -1/-1 until end of turn." — Dreamspoiler Witches, Dream
+     * Spoilers' Lorwyn original, Wren's Run Hunter's relatives; six printed lines.
+     *
+     * The **causative** spelling of [pumpTargetPermanent] under a "may". English cannot put
+     * [mayClause]'s generic wrapper in front of a clause that states its own subject — "you may
+     * target creature gets …" is not a sentence — so Oracle reaches for "have" and de-inflects the
+     * verb with it ("gets" → "get"). That inflection lives *inside* the wrapped clause, where a
+     * slot cannot reach it, so the causative cannot be a spelling of the wrapper and has to be
+     * written at the clause's own call site. It is the same printed-shape fact [mayCountedStep]
+     * records for "You **may** gain 3 life", and the same shape [Amounts]' `mayHaveTargetSuffer`
+     * already writes for the two causatives it counted.
+     *
+     * Singular rows only, for [animateTargetPermanent]'s reason: the plural causative Oracle prints
+     * is "you may have **each** creature …", which names a group rather than several targets.
+     */
+    private val mayPumpTargetPermanent: List<Phrase<CardScript>> =
+        Targets.singularQuantifiers.map { quantifier ->
+            fun scriptFor(modifiers: Pair<Int, Int>, filter: GameObjectFilter) = CardScript(
+                spellEffect = MayEffect(
+                    quantifier.effectOver { Effects.ModifyStats(modifiers.first, modifiers.second, it) },
+                ),
+                targetRequirements = listOf(quantifier.requirement(1, filter)),
+            )
+            phrase(
+                quantifier.splice("you may have {q}target {filter} get {mod} until end of turn"),
+                name = "may pump, ${quantifier.name}",
+            ) {
+                slot("filter", Filters.filter)
+                slot("mod", Primitives.statModifiers)
+                build { scriptFor(it.value("mod"), it.value("filter")) }
+                match { script ->
+                    val gated = script.spellEffect as? GatedEffect ?: return@match null
+                    if (gated.gate !is Gate.MayDecide) return@match null
+                    val modifiers = fixedModifiers(quantifier.memberOf(gated.then)) ?: return@match null
+                    val requirement = script.targetRequirements.singleOrNull() ?: return@match null
+                    val filter = Targets.targetedFilter(requirement) ?: return@match null
+                    if (script != scriptFor(modifiers, filter)) return@match null
+                    bind("filter" to filter, "mod" to modifiers)
+                }
+            }
+        }
 
     /**
      * "Until end of turn, target creature becomes a blue Serpent with base power and toughness
@@ -1598,6 +1666,35 @@ object Steps {
     }
 
     /**
+     * "Tap or untap target permanent." — Pestermite, Niblis of the Breath, Coral Trickster, and 41
+     * more lines whose verb is a *choice between two verbs* rather than a verb of its own.
+     *
+     * The SDK has no "tap or untap" effect and should not grow one: `TapUntapEffect` carries the
+     * direction as a `Boolean`, and the choice between two fixed actions is what `ModalEffect`
+     * already spells. Three hand-written cards had converged on this shape before the grammar
+     * reached it — Sewer Veillance Cam, Granite Witness, and Jolt's relatives — so the row here is
+     * the corpus' own idiom rather than a reading invented for it.
+     *
+     * `countsAsModalSpell = false` is the load-bearing argument, and it is why this cannot collide
+     * with [Modal]'s "Choose one —" rule in either direction: that rule builds `chooseOne`, whose
+     * flag defaults to `true`, so the two models are never equal and neither rule can print the
+     * other's. The flag is also the truth about the card — CR 700.2 modality is a property of the
+     * *spell*, and "tap or untap" is a choice made on resolution, so nothing here may set it.
+     *
+     * The [Mode] descriptions are left to the SDK's own default (`effect.description`). They are
+     * presentation, dropped by the differential before it compares, and inventing a noun for them
+     * here would put a string in the grammar that no printed text supports.
+     */
+    private fun tapOrUntap(target: EffectTarget): Effect = ModalEffect(
+        modes = listOf(
+            Mode.noTarget(TapUntapEffect(target, tap = true)),
+            Mode.noTarget(TapUntapEffect(target, tap = false)),
+        ),
+        chooseCount = 1,
+        countsAsModalSpell = false,
+    )
+
+    /**
      * The verbs [quantifiedPermanentSteps] is instantiated for — one entry, one rule per quantifier.
      *
      * The two verbs carrying a possessive past the noun spell their plural, and every other one is
@@ -1612,6 +1709,7 @@ object Steps {
         quantifiedPermanentSteps("exile {q}target {filter}", "exile") { Effects.Exile(it) },
         quantifiedPermanentSteps("tap {q}target {filter}", "tap") { Effects.Tap(it) },
         quantifiedPermanentSteps("untap {q}target {filter}", "untap") { Effects.Untap(it) },
+        quantifiedPermanentSteps("tap or untap {q}target {filter}", "tap or untap", effect = ::tapOrUntap),
         quantifiedPermanentSteps(
             singular = "return {q}target {filter} to its owner's hand",
             name = "return to hand",
@@ -2238,6 +2336,7 @@ object Steps {
                 fixed = DynamicAmount.XValue,
             ) +
             pumpTargetPermanent +
+            mayPumpTargetPermanent +
             animateTargetPermanent +
             grantToTargetPermanent +
             pumpAndGrantTarget +
@@ -2479,11 +2578,16 @@ object Steps {
      */
     private fun renumbered(parts: List<CardScript>): List<CardScript>? {
         val declarers = parts.count { it.targetRequirements.isNotEmpty() }
-        if (declarers > 1 &&
+        val refersWithoutDeclaring =
             parts.any { it.targetRequirements.isEmpty() && Slots.references(it, Targets.SLOT) }
-        ) {
-            return null
-        }
+        // A pronoun with nothing to point at is not a model. "…~ becomes a 3/2 blue and black
+        // Elemental creature. It's still a land. It can't be blocked this turn." — Creeping Tar Pit
+        // — spells "it" about the permanent the same clause animated, and this position reads the
+        // pronoun as the target; with no target declared anywhere on the line, the reading is a
+        // dangling reference that would round-trip byte-perfectly while meaning the wrong
+        // permanent. Nine lines print that shape. Refusing them is why [SelfSteps.continuing] can
+        // be the whole retargetable vocabulary rather than the subset nobody had misread yet.
+        if (refersWithoutDeclaring && declarers != 1) return null
         var index = 0
         return parts.map { part ->
             if (part.targetRequirements.isEmpty()) return@map part
@@ -2598,6 +2702,45 @@ object Steps {
         }
 
         /**
+         * "…sacrifice it **at end of combat**." — Dorothea and Mardu Blazebringer; "…destroy that
+         * creature at end of combat." — the old deathtouch templating; "…remove a +1/+1 counter
+         * from it at end of combat." — Fire Ants and the fading attackers.
+         *
+         * A wrapper for [mayClause]'s reason: the clause says *what* happens and the rider says
+         * *when*, so writing it into each verb's template would be one rule per verb for a phrase
+         * that composes with all of them. `CreateDelayedTriggerEffect` is the SDK's own shape for
+         * that split — a step and the effect it defers — and CR 603.7a is the rule it spells: the
+         * delayed trigger is created on resolution and fires once, at the next end-of-combat step.
+         *
+         * Only end of combat, and that is the corpus rather than a limit of the shape. Oracle's
+         * other deferrals name a *step of a turn* ("at the beginning of the next end step"), which
+         * is the same SDK field with a different `Step` and a different printed clause; each is a
+         * row of this rule the day someone counts it. What this rider must not become is a slot
+         * over `Step`, because the surfaces are not one phrase with a word in it.
+         */
+        private val delayedClause: Phrase<CardScript> =
+            phrase("{inner} at end of combat", name = "at end of combat$tag") {
+                slot("inner", atom)
+                build { bindings ->
+                    wrap(bindings.value("inner")) {
+                        CreateDelayedTriggerEffect(step = Step.END_COMBAT, effect = it)
+                    }
+                }
+                match { script ->
+                    val delayed = script.spellEffect as? CreateDelayedTriggerEffect ?: return@match null
+                    val inner = CardScript(
+                        spellEffect = delayed.effect,
+                        targetRequirements = script.targetRequirements,
+                    )
+                    val rebuilt = wrap(inner) {
+                        CreateDelayedTriggerEffect(step = Step.END_COMBAT, effect = it)
+                    }
+                    if (rebuilt != script) return@match null
+                    bind("inner" to inner)
+                }
+            }
+
+        /**
          * "You may pay {B}{B}{B}. If you do, return it to your hand." — Ghastly Remains, Skirk
          * Drill Sergeant, and Hollow Specter's `{X}` sibling.
          *
@@ -2697,7 +2840,7 @@ object Steps {
          * that can follow them.
          */
         private val simpleClause: Phrase<CardScript> =
-            oneOf("a spell effect$tag", nonAnaphoric + anaphora + positionScoped + mayClause)
+            oneOf("a spell effect$tag", nonAnaphoric + anaphora + positionScoped + mayClause + delayedClause)
 
         /**
          * A clause that can only be a *later* one: it refers back to something an earlier clause
@@ -2705,9 +2848,14 @@ object Steps {
          */
         private val laterClause: Phrase<CardScript> = oneOf(
             "a later spell effect$tag",
-            // Everything except the source-anaphora: once a clause has introduced a target, "it" means
-            // that target, and [Continuations] owns the pronoun from here on. See [SelfSteps.anaphoric].
-            nonAnaphoric + mayClause + positionScoped + Continuations.all,
+            // Everything except the source *pronoun*: once a clause has introduced a target, "it"
+            // means that target, and [Continuations] owns the pronoun from here on. See
+            // [SelfSteps.anaphoric]. The source's *name* is a different matter — `~` denotes the
+            // card in any sentence and no earlier mention can capture it — so [SelfSteps.named] is
+            // a member here, which is what lets "Draw a card. Put a +1/+1 counter on ~." and
+            // "{T}: Add {C}. Put a point counter on ~." read at all.
+            nonAnaphoric + mayClause + delayedClause + positionScoped +
+                Continuations.all + SelfSteps.named,
         )
 
         /** A whole line's clauses, joined. The shape and its KDoc are [clauseRun]. */

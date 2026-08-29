@@ -5,6 +5,7 @@ import com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent
 import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
 
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
+import com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExileLookup
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
@@ -371,7 +372,7 @@ class CostCalculator(
             is CostModification.ReduceGeneric -> addGenericReduction(modification.amount)
             is CostModification.ReduceGenericBy ->
                 addGenericReduction(
-                    evaluateReduction(state, modification.source, casterId, chosenTargets, abilitySourceId)
+                    evaluateReduction(state, modification.source, casterId, chosenTargets, abilitySourceId, cardDef)
                 )
             is CostModification.ReduceColored -> {
                 ManaCost.parse(modification.symbols).symbols
@@ -380,7 +381,7 @@ class CostCalculator(
             }
             is CostModification.ReduceColoredPerUnit -> {
                 val units =
-                    evaluateReduction(state, modification.countSource, casterId, chosenTargets, abilitySourceId)
+                    evaluateReduction(state, modification.countSource, casterId, chosenTargets, abilitySourceId, cardDef)
                 val coloredSymbols = ManaCost.parse(modification.symbols).symbols
                     .filterIsInstance<ManaSymbol.Colored>()
                 repeat(units) { coloredSymbols.forEach(addColoredReductionWithOverflow) }
@@ -397,7 +398,7 @@ class CostCalculator(
             is CostModification.IncreaseGeneric -> addGenericIncrease(modification.amount)
             is CostModification.IncreaseGenericBy ->
                 addGenericIncrease(
-                    evaluateReduction(state, modification.source, casterId, chosenTargets, abilitySourceId)
+                    evaluateReduction(state, modification.source, casterId, chosenTargets, abilitySourceId, cardDef)
                 )
             is CostModification.IncreaseColored -> {
                 ManaCost.parse(modification.symbols).symbols
@@ -406,7 +407,7 @@ class CostCalculator(
             }
             is CostModification.IncreaseColoredPerUnit -> {
                 val units =
-                    evaluateReduction(state, modification.countSource, casterId, chosenTargets, abilitySourceId)
+                    evaluateReduction(state, modification.countSource, casterId, chosenTargets, abilitySourceId, cardDef)
                 val coloredSymbols = ManaCost.parse(modification.symbols).symbols
                     .filterIsInstance<ManaSymbol.Colored>()
                 repeat(units) { coloredSymbols.forEach(addColoredIncrease) }
@@ -445,7 +446,8 @@ class CostCalculator(
         source: CostReductionSource,
         playerId: EntityId,
         chosenTargets: List<EntityId> = emptyList(),
-        abilitySourceId: EntityId? = null
+        abilitySourceId: EntityId? = null,
+        spellCard: CardDefinition? = null
     ): Int {
         return when (source) {
             is CostReductionSource.Fixed -> source.amount
@@ -516,7 +518,32 @@ class CostCalculator(
                 countCreaturesThatAttackedThisTurn(state) * source.amountPerCreature
             is CostReductionSource.CardTypesInYourGraveyard ->
                 countGraveyardCardTypes(state, playerId) * source.amountPerType
+            is CostReductionSource.SharedCardTypesWithLinkedExile ->
+                sharedCardTypesWithLinkedExile(state, abilitySourceId, spellCard) * source.amountPerType
         }
+    }
+
+    /**
+     * The number of card types (CR 205.2a) the spell being cast shares with the cards exiled with
+     * [abilitySourceId] — Cemetery Prowler. Distinct types on both sides, so two exiled creature
+     * cards share one type with a creature spell, not two (the card's own ruling).
+     *
+     * Reads printed type lines: the spell is on the stack and the exiled cards are in exile, and
+     * neither is a battlefield permanent whose types a continuous effect could have changed. A
+     * spell with no visible card types (a face-down morph, which reaches here with a null
+     * [spellCard]) shares nothing and reduces by 0.
+     */
+    private fun sharedCardTypesWithLinkedExile(
+        state: GameState,
+        abilitySourceId: EntityId?,
+        spellCard: CardDefinition?
+    ): Int {
+        val spellTypes = spellCard?.typeLine?.cardTypes?.toSet().orEmpty()
+        if (spellTypes.isEmpty()) return 0
+        val exiledTypes = LinkedExileLookup.exiledCards(state, abilitySourceId)
+            .mapNotNull { state.getEntity(it)?.get<CardComponent>()?.typeLine?.cardTypes }
+            .flatMapTo(mutableSetOf()) { it }
+        return spellTypes.count { it in exiledTypes }
     }
 
     /**

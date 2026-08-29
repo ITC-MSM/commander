@@ -28,6 +28,7 @@ import com.wingedsheep.sdk.scripting.effects.PayOrSufferEffect
 import com.wingedsheep.sdk.scripting.effects.RegenerateEffect
 import com.wingedsheep.sdk.scripting.effects.RemoveKeywordEffect
 import com.wingedsheep.sdk.scripting.effects.SacrificeSelfEffect
+import com.wingedsheep.sdk.scripting.effects.TransformEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
@@ -67,18 +68,20 @@ object SelfSteps {
      * [target] is what the whole clause acts on; the two move together, which is the entire content
      * of the third-anaphor split described on this object.
      *
-     * @param pronominal whether the members that spell the pronoun as a *literal* ("put **it** on
-     *   top of its owner's library") are included. They have no subject slot, so [subject] cannot
-     *   keep them apart: a position that reads the pronoun as something other than the source has to
-     *   take them, and one that reads only the name has to leave them out, or one text would have
-     *   two readings.
+     * **Every member states its subject in a slot, and that is load-bearing.** Four of them used to
+     * spell the pronoun as literal template text — "exile **it**", "put **it** on top of its
+     * owner's library" — which needed a `pronominal` flag to keep them out of the positions that
+     * read the name, and cost the grammar every line that prints the noun instead: "Exile ~." was
+     * unreadable on twenty-nine cards for no reason but a frozen word. A subject that is a slot is
+     * what makes one position's spelling another position's, so the flag is gone and the four rows
+     * are ordinary members.
+     *
      * @param tag distinguishes the rule names across instantiations so an ambiguity diagnostic can
      *   still say which side it found.
      */
     fun retargetable(
         target: EffectTarget,
         subject: Phrase<Unit>,
-        pronominal: Boolean,
         tag: String,
     ): List<Phrase<CardScript>> {
         val named = listOf(
@@ -87,7 +90,53 @@ object SelfSteps {
             selfGainsKeywords(target, subject, tag),
             selfLosesKeyword(target, subject, tag),
             move("untap {self}", "untap$tag", Effects.Untap(target), subject),
+            // Untap's twin, and a row for exactly the reason untap is one: "Target creature gets
+            // -1/-1 until end of turn. Tap that creature." (Stabbing Pain) is the same shape said of
+            // the other verb, and a family that reads one and not the other is the count sitting in
+            // the rule instead of in the slot.
+            move("tap {self}", "tap$tag", Effects.Tap(target), subject),
             move("regenerate {self}", "regenerate$tag", RegenerateEffect(target), subject),
+            // "Transform ~." — CR 701.28, the verb a double-faced permanent's own ability uses on
+            // itself: the daybound/nightbound upkeep triggers (62 lines), the "{5}{G}{G}: Transform
+            // ~." activated flips, and every Innistrad front face that turns over on a condition.
+            // A row rather than a rule of its own because its object is an ordinary [EffectTarget]
+            // that moves with the position exactly as untap's and regenerate's do — unlike
+            // `SacrificeSelfEffect`, which the SDK models as a verb with no object at all.
+            move("transform {self}", "transform$tag", TransformEffect(target), subject),
+            // The four zone verbs the pronoun used to be frozen into. "Exile ~." is the standalone
+            // sentence twenty-nine spells print about themselves and "exile it" is what the same
+            // verb looks like after a clause has already named the source; one rule, one model, and
+            // the subject slot is the only difference between them.
+            move("exile {self}", "exile$tag", Effects.Move(target, Zone.EXILE), subject),
+            move(
+                "put {self} on top of its owner's library",
+                "put$tag on top of its library",
+                Effects.PutOnTopOfLibrary(target),
+                subject,
+            ),
+            move(
+                "shuffle {self} into its owner's library",
+                "shuffle$tag into its library",
+                Effects.Move(target, Zone.LIBRARY, ZonePlacement.Shuffled),
+                subject,
+            ),
+            move(
+                "return {self} to its owner's hand",
+                "return$tag to its owner's hand",
+                Effects.Move(target, Zone.HAND),
+                subject,
+            ),
+            // "…return it to your hand." — Ghastly Remains. The same move: a card returning itself
+            // goes to its owner's hand, and the owner of a card you are returning from your own
+            // graveyard is you. Two printed forms, one model, so this one parses and never prints.
+            alternate(
+                move(
+                    "return {self} to your hand",
+                    "return$tag to your hand",
+                    Effects.Move(target, Zone.HAND),
+                    subject,
+                )
+            ),
         ) + putCounters(target, subject, tag) + selfAnimates(target, subject, tag) +
             // "{2}{U}: ~ can't be blocked this turn." — the durational evasion, whose whole family
             // lives in [Combat] beside the combat statics it is the spell-side sibling of. It is a
@@ -96,34 +145,7 @@ object SelfSteps {
             // lets "~ gets +1/+0 until end of turn and can't be blocked this turn." read as the two
             // clauses it is.
             Combat.restrictionClauses(target, subject, surface = "{self}", tag = tag)
-        if (!pronominal) return named
-        return named + listOf(
-            putOnTop(target, tag),
-            move(
-                "shuffle it into its owner's library",
-                "shuffle$tag into its library",
-                Effects.Move(target, Zone.LIBRARY, ZonePlacement.Shuffled),
-                subject = null,
-            ),
-            move("exile it", "exile$tag", Effects.Move(target, Zone.EXILE), subject = null),
-            move(
-                "return it to its owner's hand",
-                "return$tag to its owner's hand",
-                Effects.Move(target, Zone.HAND),
-                subject = null,
-            ),
-            // "…return it to your hand." — Ghastly Remains. The same move: a card returning itself
-            // goes to its owner's hand, and the owner of a card you are returning from your own
-            // graveyard is you. Two printed forms, one model, so this one parses and never prints.
-            alternate(
-                move(
-                    "return it to your hand",
-                    "return$tag to your hand",
-                    Effects.Move(target, Zone.HAND),
-                    subject = null,
-                )
-            ),
-        )
+        return named
     }
 
     /**
@@ -462,36 +484,24 @@ object SelfSteps {
         }
     }
 
-    /** "Put it on top of its owner's library." — Undying Beast's death trigger. */
-    private fun putOnTop(target: EffectTarget, tag: String): Phrase<CardScript> {
-        val script = CardScript(spellEffect = Effects.PutOnTopOfLibrary(target))
-        return phrase(
-            "put it on top of its owner's library",
-            name = "put$tag on top of its library",
-        ) {
-            build { script }
-            match { if (it == script) bind() else null }
-        }
-    }
-
     /**
      * The verbs whose object is one permanent and which carry nothing else — a move to a named zone,
      * an untap, a regeneration.
      *
-     * The subject slot is optional because the older members spell the pronoun as a literal ("return
-     * **it** to its owner's hand"), while the ones a card names itself in take a subject phrase.
-     * Both are the same rule shape; only the printed subject differs. A `null` [subject] is what
-     * [retargetable]'s `pronominal` flag gates on.
+     * The subject is always a slot, which is what lets one row serve every anaphor position: the
+     * source spells it `~`, a filtered trigger's pronoun spells it "it", and a later clause's
+     * pronoun points at the target instead. See [retargetable] for why none of these is template
+     * text any more.
      */
     private fun move(
         template: String,
         name: String,
         effect: Effect,
-        subject: Phrase<Unit>?,
+        subject: Phrase<Unit>,
     ): Phrase<CardScript> {
         val script = CardScript(spellEffect = effect)
         return phrase(template, name = name) {
-            if (subject != null) slot("self", subject)
+            slot("self", subject)
             build { script }
             match { if (it == script) bind("self" to Unit) else null }
         }
@@ -690,6 +700,34 @@ object SelfSteps {
     )
 
     /**
+     * The **name** alone — the half of [anaphoric] that means the source in every position there is.
+     *
+     * `~` is not an anaphor: it denotes the card whatever sentence it stands in, so unlike "it" it
+     * needs no earlier mention and cannot be captured by one. That is why this list is offered in a
+     * *later* clause of a run as well as a first one ([Steps]' `laterClause`), where the pronoun is
+     * [Continuations]' to read: "Draw a card. Put a +1/+1 counter on ~." and "{T}: Add {C}. Put a
+     * point counter on ~." were declining on their own full stop, and ninety-four lines of the `.`
+     * decline family were this one omission.
+     *
+     * It is the same list [triggering] takes for its named half, and one `val` rather than two
+     * calls on purpose: two instantiations of one shape over one subject spelling would be two rule
+     * instances reading one text, which is redundancy the gate counts.
+     */
+    val named: List<Phrase<CardScript>> =
+        retargetable(EffectTarget.Self, Primitives.selfNamed, tag = " the named source")
+
+    /**
+     * The same vocabulary aimed at the **target an earlier clause chose** — what [Continuations]
+     * slots, and the third position the shape was written for.
+     *
+     * Reachable only from a later clause of a run, which is what keeps "it" denoting one thing per
+     * position. [Steps.merge] refuses a run that reads this slot without declaring it, so the
+     * pronoun cannot dangle.
+     */
+    val continuing: List<Phrase<CardScript>> =
+        retargetable(Targets.bound(), Primitives.targetPronoun, tag = " the target")
+
+    /**
      * The clauses whose "it" is the **source** — what every position but a filtered trigger reads.
      *
      * Kept apart from the rest because English resolves an anaphor to the most recently mentioned
@@ -700,8 +738,7 @@ object SelfSteps {
      * would be two readings of one text, which is ambiguity rather than a choice.
      */
     val anaphoric: List<Phrase<CardScript>> =
-        retargetable(EffectTarget.Self, Primitives.self, pronominal = true, tag = " the source") +
-            sacrificesSource
+        retargetable(EffectTarget.Self, Primitives.self, tag = " the source") + sacrificesSource
 
     /**
      * The same vocabulary inside a **filtered** trigger, where the two spellings come apart.
@@ -712,11 +749,10 @@ object SelfSteps {
      * object, and [Steps.triggeredStep] for the only cascade that takes this list.
      */
     val triggering: List<Phrase<CardScript>> =
-        retargetable(EffectTarget.Self, Primitives.selfNamed, pronominal = false, tag = " the named source") +
+        named +
             retargetable(
                 EffectTarget.TriggeringEntity,
                 Primitives.itPronoun,
-                pronominal = true,
                 tag = " the triggering permanent",
             ) +
             sacrificesSource
