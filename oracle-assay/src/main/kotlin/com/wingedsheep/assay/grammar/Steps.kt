@@ -2578,11 +2578,16 @@ object Steps {
      */
     private fun renumbered(parts: List<CardScript>): List<CardScript>? {
         val declarers = parts.count { it.targetRequirements.isNotEmpty() }
-        if (declarers > 1 &&
+        val refersWithoutDeclaring =
             parts.any { it.targetRequirements.isEmpty() && Slots.references(it, Targets.SLOT) }
-        ) {
-            return null
-        }
+        // A pronoun with nothing to point at is not a model. "…~ becomes a 3/2 blue and black
+        // Elemental creature. It's still a land. It can't be blocked this turn." — Creeping Tar Pit
+        // — spells "it" about the permanent the same clause animated, and this position reads the
+        // pronoun as the target; with no target declared anywhere on the line, the reading is a
+        // dangling reference that would round-trip byte-perfectly while meaning the wrong
+        // permanent. Nine lines print that shape. Refusing them is why [SelfSteps.continuing] can
+        // be the whole retargetable vocabulary rather than the subset nobody had misread yet.
+        if (refersWithoutDeclaring && declarers != 1) return null
         var index = 0
         return parts.map { part ->
             if (part.targetRequirements.isEmpty()) return@map part
@@ -2843,9 +2848,14 @@ object Steps {
          */
         private val laterClause: Phrase<CardScript> = oneOf(
             "a later spell effect$tag",
-            // Everything except the source-anaphora: once a clause has introduced a target, "it" means
-            // that target, and [Continuations] owns the pronoun from here on. See [SelfSteps.anaphoric].
-            nonAnaphoric + mayClause + delayedClause + positionScoped + Continuations.all,
+            // Everything except the source *pronoun*: once a clause has introduced a target, "it"
+            // means that target, and [Continuations] owns the pronoun from here on. See
+            // [SelfSteps.anaphoric]. The source's *name* is a different matter — `~` denotes the
+            // card in any sentence and no earlier mention can capture it — so [SelfSteps.named] is
+            // a member here, which is what lets "Draw a card. Put a +1/+1 counter on ~." and
+            // "{T}: Add {C}. Put a point counter on ~." read at all.
+            nonAnaphoric + mayClause + delayedClause + positionScoped +
+                Continuations.all + SelfSteps.named,
         )
 
         /** A whole line's clauses, joined. The shape and its KDoc are [clauseRun]. */

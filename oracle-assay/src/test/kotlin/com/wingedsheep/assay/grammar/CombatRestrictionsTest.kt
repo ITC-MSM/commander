@@ -208,9 +208,17 @@ class CombatRestrictionsTest : StringSpec({
 
     // "That creature" is the target an earlier clause chose; the pronoun is deliberately absent, so
     // a later-clause "it" declines rather than being read as the wrong creature.
-    "the anaphor reads the target and the pronoun declines" {
-        roundTrips("Untap target creature. That creature can't be blocked this turn.")
-        declines("Untap target creature. It can't be blocked this turn.")
+    // Both anaphors reach the target now that the family is a member of [SelfSteps.retargetable]:
+    // the pronoun prints and the demonstrative parses. What still declines is the *dangling* one —
+    // Creeping Tar Pit's "It can't be blocked this turn." after a clause that animated the source,
+    // where no target was ever declared for the pronoun to point at.
+    "the anaphor reads the target in both of its spellings, and declines with nothing to point at" {
+        roundTrips("Untap target creature. It can't be blocked this turn.")
+        variantOf(
+            "Untap target creature. That creature can't be blocked this turn.",
+            "Untap target creature. It can't be blocked this turn.",
+        )
+        declines("~ becomes a 3/3 Elemental creature until end of turn. It can't be blocked this turn.")
     }
 
     // The pronoun clause is not a row of the condition vocabulary: its subject is a back-reference to

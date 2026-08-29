@@ -20,21 +20,37 @@ import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
- * Clauses that refer **back** — "Untap that creature.", "~ deals 2 damage to that creature."
+ * Clauses that refer **back** — "Untap it.", "~ deals 2 damage to that creature."
  *
- * A sentence like these cannot start a line: "that creature" is an anaphor, and the thing it names
- * was introduced by an earlier sentence's `target` requirement. So these rules produce an effect
- * bound to [Targets.SLOT] while declaring **no** requirement of their own, and they are reachable
- * only from a later position in [Steps.sequence]. Registering them as ordinary clauses would let a
- * card's whole text be a dangling reference, which is a reading no printed card supports.
+ * A sentence like these cannot start a line: the subject is an anaphor, and the thing it names was
+ * introduced by an earlier sentence's `target` requirement. So these rules produce an effect bound
+ * to [Targets.SLOT] while declaring **no** requirement of their own, and they are reachable only
+ * from a later position in a [Steps] clause run. Registering them as ordinary clauses would let a
+ * card's whole text be a dangling reference, which is a reading no printed card supports; a run
+ * that reads the slot without declaring it is refused by [Steps.merge] for the same reason.
  *
- * ### Why "that creature" and not "it"
+ * ### One pronoun, two referents, decided by position
  *
- * Oracle uses two anaphors and they point at different things. "It" is the *source* — "When this
- * creature dies, put **it** on top of its owner's library" — which is [EffectTarget.Self] and lives
- * in [SelfSteps] as an ordinary clause, because a source needs no earlier sentence to introduce it.
- * "That creature" is the *target* the spell already chose. Keeping them in separate vocabularies is
- * what stops a sequence reading one as the other.
+ * Oracle spells both anaphors "it" and they point at different things. In a *first* clause "it" is
+ * the source — "When this creature dies, put **it** on top of its owner's library" — which is
+ * [EffectTarget.Self] and lives in [SelfSteps.anaphoric], because a source needs no earlier
+ * sentence to introduce it. In a *later* one it is the target the spell already chose. Position is
+ * the whole of the distinction, which is why the two vocabularies are two instantiations of one
+ * shape rather than two lists of rules: [SelfSteps.anaphoric] is offered first and
+ * [SelfSteps.continuing] only after, so no text has both readings.
+ *
+ * "That creature" and "that permanent" are the demonstratives Oracle prints where "it" would read
+ * badly. They mean exactly what "it" means here, so they parse and the pronoun prints — see
+ * [Primitives.targetPronoun], where the choice of canonical is a corpus measurement.
+ *
+ * ### The vocabulary is not written here
+ *
+ * The two anaphors point at different things; they do not have different *verbs*. So the clause
+ * vocabulary is [SelfSteps.retargetable] — one shape over a subject spelling and an
+ * [com.wingedsheep.sdk.scripting.targets.EffectTarget] — and this position is one instantiation of
+ * it, [SelfSteps.continuing]. What stays in this file is the handful of clauses that have no
+ * source-side twin at all. Anything else written here would be a second copy of a rule that already
+ * exists, which is how a family becomes three hundred one-offs.
  */
 object Continuations {
 
@@ -55,12 +71,6 @@ object Continuations {
             match { if (it == script) bind() else null }
         }
     }
-
-    private val untapThatCreature: Phrase<CardScript> =
-        referringStep("untap that creature", "untap that creature") { Effects.Untap(Targets.bound()) }
-
-    private val tapThatCreature: Phrase<CardScript> =
-        referringStep("tap that creature", "tap that creature") { Effects.Tap(Targets.bound()) }
 
     /**
      * "It doesn't untap during its controller's next untap step." — the rider on a tap.
@@ -110,65 +120,6 @@ object Continuations {
                 bind("n" to amount)
             }
         }
-    }
-
-    /**
-     * "It gets +2/+4 until end of turn." — Inspirit, after "Untap target creature."
-     *
-     * The same surface form [SelfSteps.anaphoric] reads as the *source*, and the reason the two
-     * vocabularies exist: once a clause has introduced a target, "it" is that target. This rule is
-     * reachable only from a later position in a sequence and [SelfSteps]' is reachable only from the
-     * first, so no text has both readings.
-     *
-     * That split was found by the differential rather than by reading: the line round-tripped
-     * perfectly while meaning the wrong creature, which the touchstone structurally cannot see.
-     */
-    private val itGets: Phrase<CardScript> = run {
-        fun scriptFor(modifiers: Pair<Int, Int>) = CardScript(
-            spellEffect = Effects.ModifyStats(modifiers.first, modifiers.second, Targets.bound())
-        )
-        phrase("it gets {mod} until end of turn", name = "the target gets") {
-            frontedDuration()
-            slot("mod", Primitives.statModifiers)
-            build { scriptFor(it.value("mod")) }
-            match { script ->
-                val modifiers = Steps.fixedModifiers(script.spellEffect) ?: return@match null
-                if (script != scriptFor(modifiers)) return@match null
-                bind("mod" to modifiers)
-            }
-        }
-    }
-
-    /**
-     * "…and put a stun counter on it." — the counter verb over the target an earlier clause chose.
-     *
-     * [SelfSteps.putCountersOnSelf] is the identical English about the *source*, and this is the
-     * second sentence to need both readings after "it gets +2/+4". The split costs a rule and buys
-     * the guarantee: "When ~ enters, tap target creature an opponent controls and put a stun counter
-     * on it" stuns the creature it tapped, not the permanent that tapped it, and both readings
-     * round-trip byte-perfectly so nothing else in the module could tell them apart.
-     */
-    private val putCountersOnThatPermanent: List<Phrase<CardScript>> = run {
-        fun scriptFor(kind: String, count: Int) =
-            CardScript(spellEffect = Effects.AddCounters(kind, count, Targets.bound()))
-        fun rule(template: String, name: String, quantity: Phrase<*>?) =
-            phrase(template, name = name) {
-                slot("kind", if (quantity == null) Primitives.singularCounterKind else Primitives.counterKind)
-                if (quantity != null) slot("n", quantity)
-                build { scriptFor(it.value("kind"), if (quantity == null) 1 else it.int("n")) }
-                match { script ->
-                    val (kind, count) =
-                        Steps.countersAdded(script.spellEffect, Targets.bound()) ?: return@match null
-                    if (quantity == null && count != 1) return@match null
-                    if (quantity != null && !(count >= 2 && Cardinals.spellable(count))) return@match null
-                    if (script != scriptFor(kind, count)) return@match null
-                    bind("kind" to kind, "n" to count)
-                }
-            }
-        listOf(
-            rule("put {kind} counter on it", "put a counter on the target", null),
-            rule("put {n} {kind} counters on it", "put counters on the target", Cardinals.word),
-        )
     }
 
     /** "Its owner gains 4 life." — Path of Peace, referring to the creature the first clause destroyed. */
@@ -252,15 +203,29 @@ object Continuations {
         else -> null
     }
 
+    /**
+     * The vocabulary, and the reason this file is now short.
+     *
+     * [SelfSteps.continuing] is the bulk of it: the whole retargetable shape aimed at
+     * [Targets.bound] instead of at the source, which is what "untap it", "it gets +2/+4 and gains
+     * reach until end of turn", "put two +1/+1 counters on it", "regenerate it", "transform it" and
+     * "it can't block this turn" all are. Five rules used to stand here, one printed sentence at a
+     * time — and everything nobody had copied was simply unreadable: untap existed only as "untap
+     * that creature", and regenerate, transform, gets-and-gains, the keyword grants, the animate and
+     * the combat restrictions did not exist in this position at all. That is why "Target creature
+     * gets +2/+2 and gains reach until end of turn. **Untap it.**" died on its own full stop, on
+     * ninety-four lines of the `.` decline family.
+     *
+     * What is left here is what genuinely has no source-side twin: a rider on a tap, a verb whose
+     * *recipient* rather than whose subject is the anaphor, and two clauses whose "it" is not an
+     * object at all.
+     */
     val all: List<Phrase<CardScript>> = listOf(
-        untapThatCreature,
-        tapThatCreature,
         itDoesntUntap,
         damageToThatCreature,
-        itGets,
         ownerGainsLife,
         drawForEachInHand,
-    ) + putCountersOnThatPermanent + Prevention.continuationClauses + Combat.restrictionContinuationClauses
+    ) + SelfSteps.continuing + Prevention.continuationClauses
 
     val clause: Phrase<CardScript> = oneOf("a clause referring to the target", all)
 }

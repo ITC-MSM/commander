@@ -20,7 +20,28 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is **the linked-exile band** — three more Innistrad: Crimson Vow cards
+The most recent work is **the later clause** — the tail ranking's number-one family, keyed `.`,
+back at the top eighteen months of bands after it was first cleared, and this time it was one word:
+the **subject**. A clause vocabulary written once and instantiated per anaphor position
+(`SelfSteps.retargetable`) had a *later* position that was not an instantiation at all —
+`Continuations` was five printed sentences somebody had written out by hand — and four of its zone
+verbs spelled the pronoun as literal template text rather than as a slot. So "Untap **it**.",
+"Regenerate **it**.", "**It** gains vigilance until end of turn." and "Exile **~**." had no rule,
+and 123 of the family's 216 lines were complete Oracle sentences dying on their own full stop.
+Closing it is a **deletion**: the pronoun position becomes one more instantiation of the shape, the
+`pronominal` flag disappears, and `Combat`'s hand-written "that creature" table goes with it
+(**+127 whole cards**, 8,992 → 9,119 in the ledger; the family fell from 213 cards / 129 sole to
+124 / 80). Two findings travel. A run that reads the target slot **without declaring one** now
+refuses — a dangling anaphor is not a model — which is what let the pronoun take the whole
+vocabulary instead of the subset nobody had misread yet. And `~` is not one object: inside the
+quotes a *granted* ability is printed in, CR 201.4 makes a reference **by name** the card that
+printed the ability and "this creature" the permanent that gained it, so normalization now keeps the
+name as its own token there. `Normalizer`'s KDoc had asserted "the rules that read `~` must not treat
+it as authoritative inside a quoted ability. Nothing in the grammar does" — true only until a rule
+read the clause, and Ninja's Kunai and Deconstruction Hammer were already being read as the equipped
+creature sacrificing and bouncing *itself*. See [the later clause](#the-later-clause).
+
+Before it came **the linked-exile band** — three more Innistrad: Crimson Vow cards
 implemented by hand (Cemetery Gatekeeper, Cemetery Protector, Cemetery Prowler) with the grammar
 extended until Assay read each whole (**+3 whole cards**, 9,228 → 9,231, differential unchanged at
 51). It is the smallest band here by card count and the one whose finding travels furthest, because
@@ -449,7 +470,9 @@ grammar/    the rules, by topic — Primitives, Keywords, Cardinals, Conditions,
             Steps is the clause vocabulary and the sentence/sequence machinery every other file
             slots into; Activated is the cost-colon-effect sentence; Statics is the continuous-
             ability slot; Restrictions is the three "when may this happen" vocabularies;
-            Continuations and SelfSteps are the two anaphors ("that creature" / "it")
+            SelfSteps is the clause vocabulary written once and instantiated per anaphor
+            position; Continuations is the *later*-clause instantiation of it plus the handful
+            of clauses that have no source-side twin
 gate/       the touchstone, the fineness report, the differential
 compile/    a whole reading as a CardDefinition — the custom-card sandbox's engine
 explore/    the browser UI — a loopback HTTP server over the live grammar and both gates
@@ -526,6 +549,127 @@ reading all of one means the grammar has no systematic hole in that era rather t
 family. Portal is a deliberately simple set, which is what makes it the right first one — and the
 318 alternate spellings above are mostly its doing, because a card printing "A and B" or "A, then B"
 now reads correctly and prints back as the full-stop form.
+
+## The later clause
+
+The `.` family came back to the top of the tail ranking — **213 cards, 129 of them solely, over 216
+lines** — and, as the first time, it named no construct. A tail of a bare full stop means the grammar
+read the whole sentence and refused the period, which is always a rule that froze something English
+can move or leave out. The first time it was three *modifiers*. This time it was the **subject**.
+
+### One shape, and a position that was not using it
+
+`SelfSteps.retargetable` is the clause vocabulary as a function of two things: the `EffectTarget` the
+clause acts on, and the phrase that stands in its `{self}` slot. It had two instantiations — the
+source, and a filtered trigger's split between the name and the pronoun — and its own KDoc called the
+later position of a clause run a third anaphor. That position was not an instantiation. It was
+`Continuations`, a file of individually written sentences: "untap that creature", "tap that creature",
+"it gets {mod} until end of turn", "put {kind} counter on it". Whatever nobody had written was not
+readable, which is why
+
+```
+Target creature gets +2/+2 and gains reach until end of turn. Untap it.
+Put a +1/+1 counter on target creature you control. It gains hexproof until end of turn.
+Target creature gets +2/+0 until end of turn. Regenerate it.
+Untap target creature. It gets +2/+4 and gains reach until end of turn.
+```
+
+all declined on the final period while every one of those verbs was already written, one file over,
+about the source. Ninety-four lines of the family were that. The fix is `SelfSteps.continuing =
+retargetable(Targets.bound(), Primitives.targetPronoun, tag = " the target")` and the deletion of the
+five hand-written rules it subsumes — including `Combat.restrictionContinuationClauses`, whose whole
+existence was the same omission in the combat family.
+
+**Which spelling prints was measured, not chosen.** "It" and "that creature"/"that permanent" are one
+model, so one is canonical and the others parse. Over the bulk: "put a counter on **it**" 2,122
+against "on **that creature**" 86; "**It** gains …" 311 against 56; "**It** gets …" 38 against 12.
+The pronoun prints. Untap is the one verb where the two are near even (66 against 69) and it follows
+the measurement with the rest, because a per-verb canonical is exactly the frozen word this band
+exists to undo; those sixty-nine lines come back as variants, which costs the coverage number
+nothing.
+
+### The subject was template text in four rules, and "Exile ~." was the bill
+
+Four members spelled the pronoun as a *literal*: `exile it`, `put it on top of its owner's library`,
+`shuffle it into its owner's library`, `return it to its owner's hand`. Having no slot, they needed a
+`pronominal` flag to keep them out of the positions that read the name — and they cost the grammar
+every line that prints the noun. "Exile ~." is the whole second line of **twenty-nine** spells
+(Vengeful Rebirth, Finale of Revelation, Mnemonic Betrayal, Teferi's Protection…) and it was
+unreadable, dying on a full stop with `", "` and `": "` in its expectation set because the only rule
+that could read the words was the *cost* list. Giving all four the family's subject slot deletes the
+flag and the special case together. `tap {self}` joined them in the same change: untap had a row and
+tap did not, which is the count sitting in the rule rather than in the slot, and Stabbing Pain and
+Stun Sniper are the two cards that noticed.
+
+### A dangling anaphor is not a model
+
+`Combat`'s hand-written table had refused to spell the pronoun for a stated reason, and the reason
+was real: Creeping Tar Pit prints "{1}{U}{B}: Until end of turn, ~ becomes a 3/2 blue and black
+Elemental creature. It's still a land. It can't be blocked this turn." — where "it" is the permanent
+the *same clause* animated, and reading it as a target would round-trip byte-perfectly. But the
+handle that separates those lines is not the verb; it is that **no target was ever declared**.
+`Steps.merge` now refuses a run that reads the target slot while declaring no requirement, which is
+one guard for the whole vocabulary instead of one omission per family, and it is why the pronoun
+could take every verb rather than the ones nobody had misread yet.
+
+### `~` is two objects inside a quotation, and normalization owns the difference
+
+`Normalizer` abstracts both of Oracle's self-references — the card's own name and "this creature" —
+to one token, and records the surface form so the round trip is unaffected. Its KDoc named the one
+place that is lossy and asserted the grammar was safe from it:
+
+> a `SELF_NOUNS` phrase inside a *granted* ability … the model would be wrong, so the rules that read
+> `~` must not treat it as authoritative inside a quoted ability. Nothing in the grammar does.
+
+The sentence was true because no rule had reached the clause. `return {self} to its owner's hand`
+reached it, and the differential produced Trusty Boomerang within one run: "Equipped creature has
+"{1}, {T}: Tap target creature. Return Trusty Boomerang to its owner's hand."" bounces the
+*Equipment*, and reading `~` as `EffectTarget.Self` bounces the creature — byte-perfect and about the
+wrong permanent.
+
+CR 201.4 settles it: an ability referring to an object **by name** refers to the object that printed
+it, while "this creature" refers to the object that has the ability. The distinction is in the
+printed text and only the collapsing lost it, so the fix belongs to normalization, not to a grammar
+guard. Inside a quotation the name now abstracts to a token of its own; no rule spells it, so those
+lines decline and are counted, and the twenty-one Slivers and Auras whose quoted ability spells the
+*noun* are untouched. The blunt alternative — refusing any quoted ability that points at the source —
+was written first and measured: it withdrew those twenty-one correct readings to prevent two wrong
+ones, which is what a guard costs when it is aimed at the model instead of at the text.
+
+Two cards left `whole` for it, and both were being read wrongly: **Deconstruction Hammer**, which the
+differential had been reporting as divergent on `main` before this band existed, and **Ninja's
+Kunai**, which names itself twice in one quoted ability and was read as the equipped creature
+sacrificing itself.
+
+### What the gates said
+
+Touchstone: **8,992 → 9,119 cards read whole** in the baked ledger (127 in, 2 out, both named above);
+zero ambiguities, print mismatches, non-invertible normalizations or redundant readings, unchanged.
+Differential: **51 divergences before and 51 after** — Deconstruction Hammer out (fixed), Saved by
+the Shell in. That one is not new: it entered the compared set because this band made its line
+readable, and it disagrees on the cost-reduction shape `ReduceGeneric` + `OnlyIf` against
+`ReduceGenericBy(FixedIfControlFilter)`, which is the split the
+spell-cost band already recorded ("`FixedIf…` restates `OnlyIf`, and the corpus is split") and which
+Bolt Bend has been reporting on `main`.
+
+### What is left in the family
+
+124 cards / 80 sole / 126 lines, third on the ranking. Named, largest first:
+
+- **34 lines: the pronoun with no target, where English means the source.** "~ gains indestructible
+  until end of turn. **Tap it**." (Dream Trawler, Seasoned Hallowblade, and a dozen more), "Untap ~.
+  **It** gains shroud until end of turn." This is the guard above, seen from the other side: with no
+  target declared, "it" is the source, and that is a *position* rule the grammar could take rather
+  than a hole. Four of them are a fourth referent again — "Create a 1/1 white Rabbit creature token.
+  **It** gains haste until end of turn." is the token, `PipelineTarget(CREATED_TOKENS)`.
+- **20 lines: the non-creature bare subtypes.** Equipment, Aura, Gate, Desert, Vehicle, Powerstone,
+  Attraction, Spacecraft — and "Oxen", whose plural is not a suffix.
+- **10 lines: prevention with no duration.** "Prevent all damage that would be dealt to ~." is a
+  *static*, a different slot, not a missing word.
+- **6 lines: two targets inside one clause.** "Destroy target creature and target land."
+- **6 lines: "~ deals X damage to each creature with flying."** — the announced X over a group.
+- **5 lines: "for each creature you control with vigilance"** — the counted noun phrase with a
+  quality on it.
 
 ## The linked-exile band
 
