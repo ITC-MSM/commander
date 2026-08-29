@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.scripting.effects.CREATED_TOKENS
 import com.wingedsheep.sdk.scripting.effects.CreateDelayedTriggerEffect
 import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
+import com.wingedsheep.sdk.scripting.effects.SacrificeSelfEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
@@ -36,12 +37,16 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *   token with flying that's tapped and attacking. Sacrifice that token at end of combat."
  *   If Dorothea's Retribution would be put into a graveyard from anywhere, exile it instead.
  *
- * "Attacks or blocks" is one printed ability with two events, so it is one [Triggers.or] over the
- * two SELF-bound atoms rather than two triggered abilities — a creature can never do both in one
- * combat, so the disjunction fires at most once. The sacrifice is a delayed trigger set up on
- * resolution ([CreateDelayedTriggerEffect] at [Step.END_COMBAT], CR 603.7b), not an immediate one:
- * Dorothea deals her combat damage first, and if she leaves the battlefield before end of combat
- * the delayed trigger simply finds nothing to sacrifice.
+ * "Attacks or blocks" is **two** triggered abilities rather than one `EventPattern.AnyOf`. A creature
+ * can never do both in one combat, so the pair fires at most once either way, and this is the
+ * spelling the corpus writes 60 times against three — and the one Argentum Assay prints, so the card
+ * and the grammar agree instead of the card landing in the gate's divergence list.
+ *
+ * The sacrifice is a delayed trigger set up on resolution ([CreateDelayedTriggerEffect] at
+ * [Step.END_COMBAT], CR 603.7b), not an immediate one: Dorothea deals her combat damage first, and if
+ * she leaves the battlefield before end of combat the delayed trigger simply finds nothing to
+ * sacrifice. [SacrificeSelfEffect] is the verb with no object — it reads the delayed trigger's own
+ * source — and is the majority of the SDK's two spellings of "sacrifice it".
  *
  * The back face quotes the *other* half of the card's design onto the enchanted creature, which is
  * [GrantTriggeredAbility] — the same shape [MischievousCatgeist]'s Aura face uses. Inside the
@@ -69,11 +74,14 @@ private val DorotheaVengefulVictimFront = card("Dorothea, Vengeful Victim") {
     keywords(Keyword.FLYING)
 
     triggeredAbility {
-        trigger = Triggers.or(Triggers.Attacks, Triggers.Blocks)
-        effect = CreateDelayedTriggerEffect(
-            step = Step.END_COMBAT,
-            effect = Effects.SacrificeTarget(EffectTarget.Self),
-        )
+        trigger = Triggers.Attacks
+        effect = CreateDelayedTriggerEffect(step = Step.END_COMBAT, effect = SacrificeSelfEffect)
+        description = "When Dorothea attacks or blocks, sacrifice it at end of combat."
+    }
+
+    triggeredAbility {
+        trigger = Triggers.Blocks
+        effect = CreateDelayedTriggerEffect(step = Step.END_COMBAT, effect = SacrificeSelfEffect)
         description = "When Dorothea attacks or blocks, sacrifice it at end of combat."
     }
 

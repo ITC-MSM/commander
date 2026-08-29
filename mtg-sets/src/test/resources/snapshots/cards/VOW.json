@@ -4415,20 +4415,21 @@
         "triggeredAbilities": [
             {
                 "id": "ability_1",
-                "trigger": {
-                    "type": "AnyOfEvents",
-                    "events": [
-                        "AttackEvent",
-                        "BlockEvent"
-                    ]
-                },
+                "trigger": "AttackEvent",
                 "effect": {
                     "type": "CreateDelayedTrigger",
                     "step": "END_COMBAT",
-                    "effect": {
-                        "type": "SacrificeTarget",
-                        "target": "Self"
-                    }
+                    "effect": "SacrificeSelf"
+                },
+                "descriptionOverride": "When Dorothea attacks or blocks, sacrifice it at end of combat."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "BlockEvent",
+                "effect": {
+                    "type": "CreateDelayedTrigger",
+                    "step": "END_COMBAT",
+                    "effect": "SacrificeSelf"
                 },
                 "descriptionOverride": "When Dorothea attacks or blocks, sacrifice it at end of combat."
             }
@@ -4444,7 +4445,7 @@
                 {
                     "type": "GrantTriggeredAbility",
                     "ability": {
-                        "id": "ability_2",
+                        "id": "ability_3",
                         "trigger": "AttackEvent",
                         "effect": {
                             "type": "Composite",

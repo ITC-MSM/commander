@@ -1,11 +1,10 @@
 package com.wingedsheep.mtg.sets.definitions.ktk.cards
 
-import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.effects.CreateDelayedTriggerEffect
-import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.effects.SacrificeSelfEffect
 import com.wingedsheep.sdk.core.Step
 
 /**
@@ -14,6 +13,13 @@ import com.wingedsheep.sdk.core.Step
  * Creature — Ogre Warrior
  * 4/4
  * When Mardu Blazebringer attacks or blocks, sacrifice it at end of combat.
+ *
+ * One printed sentence, two triggered abilities: a creature can never both attack and block in one
+ * combat, so the disjunction fires at most once either way, and this is the spelling the corpus
+ * writes 60 times against three for `EventPattern.AnyOf`. The sacrifice is `SacrificeSelfEffect` —
+ * the verb with no object, which reads the delayed trigger's own source — rather than
+ * `SacrificeTarget(Self)`; the two are behaviourally identical and Argentum Assay reads the printed
+ * line as the former, so the card carries the spelling the grammar prints.
  */
 val MarduBlazebringer = card("Mardu Blazebringer") {
     manaCost = "{2}{R}"
@@ -27,7 +33,7 @@ val MarduBlazebringer = card("Mardu Blazebringer") {
         trigger = Triggers.Attacks
         effect = CreateDelayedTriggerEffect(
                 step = Step.END_COMBAT,
-                effect = Effects.SacrificeTarget(EffectTarget.Self)
+                effect = SacrificeSelfEffect
             )
     }
 
@@ -35,7 +41,7 @@ val MarduBlazebringer = card("Mardu Blazebringer") {
         trigger = Triggers.Blocks
         effect = CreateDelayedTriggerEffect(
                 step = Step.END_COMBAT,
-                effect = Effects.SacrificeTarget(EffectTarget.Self)
+                effect = SacrificeSelfEffect
             )
     }
 
