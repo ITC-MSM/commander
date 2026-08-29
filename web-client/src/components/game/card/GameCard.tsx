@@ -54,6 +54,7 @@ import {
   getCounterCount,
   PASSIVE_COUNTER_TYPES,
 } from '../board/shared'
+import { CARD_RESIZE_TRANSITION, prefersReducedMotion } from '../board/battlefieldLayout'
 import { styles, bandColorFor, passiveCounterBadgeStyle, UNTAP_FROST_RIM, UNTAP_FROST_FILL } from '../board/styles'
 import {
   TARGET_COLOR, TARGET_COLOR_BRIGHT, TARGET_GLOW, TARGET_GLOW_BRIGHT, TARGET_GLOW_OUTER, TARGET_SHADOW,
@@ -1315,6 +1316,10 @@ function GameCardImpl({
         ...styles.card,
         width,
         height,
+        // Battlefield cards resize as the board fills up or empties out (see
+        // battlefieldLayout.ts); ease the size change so a card entering play
+        // reads as the board settling rather than everything jumping.
+        ...(battlefield && !prefersReducedMotion() ? { transition: CARD_RESIZE_TRANSITION } : {}),
         borderRadius: responsive.isMobile ? 4 : 8,
         cursor,
         border: isBeheldPulsing ? '3px solid #eab308' : borderStyle,
@@ -3043,7 +3048,7 @@ function GameCardImpl({
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'center',
-        transition: 'width 0.15s, height 0.15s',
+        ...(prefersReducedMotion() ? {} : { transition: 'width 0.18s ease, height 0.18s ease' }),
         pointerEvents: 'none',
         position: 'relative',
       }}>
