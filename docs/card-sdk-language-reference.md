@@ -797,7 +797,8 @@ definitions construct these through the facade, e.g. `Costs.additional.Sacrifice
   "DiscardCard"` cost (the hand picker Force of Will uses), excludes the spell being cast, and is
   offered only when you hold at least `count` other matching cards. The discard-as-cost still feeds
   the turn's discard tracking (CR 701.8), so it counts toward
-  `DynamicAmounts.cardsDiscardedThisTurn()` / `Conditions.YouDiscardedThisCardThisTurn` (Mayhem).
+  `DynamicAmounts.cardsDiscardedThisTurn()` / `Conditions.YouDiscardedACardThisTurn` /
+  `Conditions.YouDiscardedThisCardThisTurn` (Mayhem).
 - `Costs.additional.Choice(vararg options)` — **cost-vs-cost**: "as an additional cost to cast this
   spell, pay exactly one of `options`" (Souls of the Lost: *"discard a card **or** sacrifice a
   permanent"*). The general, parameterized form of `Forage` — each option is itself an
@@ -9643,6 +9644,11 @@ answer it and would silently return `false`.
 - `YouGainedLifeThisTurnAtLeast(n)` — you gained ≥`n` life this turn. The threshold form of
   `YouGainedLifeThisTurn` (`Compare(TurnTracking(You, LIFE_GAINED), GTE, n)`). Used by Scheming
   Silvertongue's "if you gained 2 or more life this turn" prepared trigger.
+- `YouDiscardedACardThisTurn` — you discarded ≥1 card this turn (`Compare(TurnTracking(You,
+  CARDS_DISCARDED), GTE, 1)`, the same per-player record `DynamicAmounts.cardsDiscardedThisTurn()`
+  counts). Used by Ragged Recluse's end-step flip. Counts **cards**, not discard events — one discard
+  of two cards satisfies it exactly as two discards of one do. Not `YouDiscardedThisCardThisTurn`,
+  which is Mayhem's per-*card* question and reads a different record.
 - `PutCounterOnCreatureThisTurn` — you put ≥1 counter of *any* kind on a creature this turn (Lasting
   Tarfire), read through the `COUNTERS_PUT_ON_CREATURE` turn tracker.
 - `PutCounterKindOnCreatureThisTurn(counterType, player = Player.You)` — the **kind-scoped** reading

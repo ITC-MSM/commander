@@ -42,10 +42,12 @@ import com.wingedsheep.sdk.scripting.SpellCostTarget
 import com.wingedsheep.sdk.scripting.StaticAbility
 import com.wingedsheep.sdk.scripting.UntapDuringOtherUntapSteps
 import com.wingedsheep.sdk.scripting.conditions.Condition
+import com.wingedsheep.sdk.scripting.conditions.EntityMatches
 import com.wingedsheep.sdk.scripting.conditions.Exists
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
@@ -264,6 +266,21 @@ object Statics {
     }
 
     /**
+     * The entity a [Subject]'s own pronoun denotes, or null where English has no pronoun for it.
+     *
+     * The singular subjects are one permanent, so "it" names them; a group is a set, and Oracle
+     * writes a clause about a set's members with a relative clause rather than a pronoun ("creatures
+     * that are attacking alone"), which is a different sentence over a different model — a filter
+     * predicate rather than a condition. Returning null is what keeps [attackingAloneEvasion] from
+     * printing an "it" for a plural subject.
+     */
+    private fun Subject.pronounEntity(): EffectTarget? = when (this) {
+        Subject.SOURCE -> EffectTarget.Self
+        Subject.ATTACHED -> EffectTarget.EnchantedPermanent
+        Subject.GROUP -> null
+    }
+
+    /**
      * The slot bindings this subject needs in order to print [group], or null when [group] is a
      * value it does not spell.
      *
@@ -405,7 +422,51 @@ object Statics {
             parameter = Filters.plural,
             ability = { blockers, group -> CanOnlyBlockCreaturesWith(blockers!!, group) },
             read = { (it as? CanOnlyBlockCreaturesWith)?.let { r -> r.blockerFilter to r.filter } },
-        )
+        ) + Subject.entries.mapNotNull(::attackingAloneEvasion)
+
+    /**
+     * "~ can't be blocked as long as it's attacking alone." — Gutter Skulker and five others;
+     * "Enchanted creature can't be blocked as long as it's attacking alone." — Gutter Shortcut, the
+     * Aura the same card's disturb cast puts on the stack, and Aerie Auxiliary.
+     *
+     * **This is not the conditional wrapper the band declined to write.** That one slots
+     * [Conditions.condition] after any restriction, and its probe finished 2 of 29 lines because the
+     * payload was the condition vocabulary rather than the restriction — see [Subject]'s band notes.
+     * The clause here is not a row of that vocabulary at all: its subject is a *pronoun back to the
+     * restriction's own subject*, so there is nothing free to slot, and the whole sentence is two
+     * rows over the [Subject] table this family already has. The two are reachable from disjoint
+     * surfaces ("as long as it's attacking alone" against "as long as {cond}"), so writing the
+     * general wrapper later does not collide with this — it would have to exclude the pronoun, which
+     * `Conditions` cannot spell.
+     *
+     * The affected group and the condition's entity are the *same* permanent said twice, which is
+     * how the SDK spells it: `CantBeBlocked` carries the group and `ConditionalStaticAbility` carries
+     * an `EntityMatches` over the role. So the two halves are derived from one [Subject] and the
+     * `match` rebuilds both, which is what stops the rule printing "it" for a sentence whose
+     * condition is about some other permanent.
+     *
+     * "Attacking alone" is CR 506.5, and it is a `StatePredicate` rather than a condition type —
+     * `GameObjectFilter.Any.attackingAlone()` is the whole of what the clause says.
+     */
+    private fun attackingAloneEvasion(subject: Subject): Phrase<StaticAbility>? {
+        val entity = subject.pronounEntity() ?: return null
+        val filter = GameObjectFilter.Any.attackingAlone()
+        fun ability(group: GroupFilter): StaticAbility =
+            ConditionalStaticAbility(CantBeBlocked(group), EntityMatches(entity, filter))
+        return phrase(
+            "${subject.surface} can't be blocked as long as it's attacking alone.",
+            name = "can't be blocked while attacking alone, ${subject.label}",
+        ) {
+            build { bindings -> ability(subject.groupOf(bindings)) }
+            match { value ->
+                val conditional = value as? ConditionalStaticAbility ?: return@match null
+                val group = (conditional.ability as? CantBeBlocked)?.filter ?: return@match null
+                val bindings = subject.spelling(group) ?: return@match null
+                if (value != ability(group)) return@match null
+                bind(*bindings.toTypedArray())
+            }
+        }
+    }
 
     /**
      * "~ can't attack unless defending player controls an Island." — Deep-Sea Serpent, and the

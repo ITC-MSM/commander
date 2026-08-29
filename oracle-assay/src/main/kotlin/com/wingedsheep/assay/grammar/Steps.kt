@@ -457,6 +457,28 @@ object Steps {
             ),
         ),
         listOf(
+            // "Whenever ~ attacks, defending player loses 1 life and you gain 1 life." — Odious
+            // Witch and the attack-drain family, plus afflict's reminder text and the
+            // becomes-blocked payoffs. Another row of the recipient list above for that list's own
+            // reason: `Player.DefendingPlayer` is a value on the effect, and a slot over `Player`
+            // would let one rule print four separate printed sentences.
+            //
+            // The recipient only *means* anything inside a combat trigger, and no rule here can see
+            // the sentence it lands in — but that is not the ambiguity the module refuses to
+            // register, because the surface denotes exactly one model wherever it appears. Oracle
+            // prints the phrase in no other position, so a card that made it meaningless would have
+            // to be written first.
+            countedStep(
+                "defending player loses {n} life", "defending player loses life",
+                script = {
+                    CardScript(
+                        spellEffect = Effects.LoseLife(it, EffectTarget.PlayerRef(Player.DefendingPlayer)),
+                    )
+                },
+                count = ::lifeLost,
+            ),
+        ),
+        listOf(
             countedStep(
                 "scry {n}", "scry",
                 script = { CardScript(spellEffect = Effects.Scry(it)) },
@@ -2598,6 +2620,45 @@ object Steps {
         }
 
         /**
+         * "…sacrifice it **at end of combat**." — Dorothea and Mardu Blazebringer; "…destroy that
+         * creature at end of combat." — the old deathtouch templating; "…remove a +1/+1 counter
+         * from it at end of combat." — Fire Ants and the fading attackers.
+         *
+         * A wrapper for [mayClause]'s reason: the clause says *what* happens and the rider says
+         * *when*, so writing it into each verb's template would be one rule per verb for a phrase
+         * that composes with all of them. `CreateDelayedTriggerEffect` is the SDK's own shape for
+         * that split — a step and the effect it defers — and CR 603.7a is the rule it spells: the
+         * delayed trigger is created on resolution and fires once, at the next end-of-combat step.
+         *
+         * Only end of combat, and that is the corpus rather than a limit of the shape. Oracle's
+         * other deferrals name a *step of a turn* ("at the beginning of the next end step"), which
+         * is the same SDK field with a different `Step` and a different printed clause; each is a
+         * row of this rule the day someone counts it. What this rider must not become is a slot
+         * over `Step`, because the surfaces are not one phrase with a word in it.
+         */
+        private val delayedClause: Phrase<CardScript> =
+            phrase("{inner} at end of combat", name = "at end of combat$tag") {
+                slot("inner", atom)
+                build { bindings ->
+                    wrap(bindings.value("inner")) {
+                        CreateDelayedTriggerEffect(step = Step.END_COMBAT, effect = it)
+                    }
+                }
+                match { script ->
+                    val delayed = script.spellEffect as? CreateDelayedTriggerEffect ?: return@match null
+                    val inner = CardScript(
+                        spellEffect = delayed.effect,
+                        targetRequirements = script.targetRequirements,
+                    )
+                    val rebuilt = wrap(inner) {
+                        CreateDelayedTriggerEffect(step = Step.END_COMBAT, effect = it)
+                    }
+                    if (rebuilt != script) return@match null
+                    bind("inner" to inner)
+                }
+            }
+
+        /**
          * "You may pay {B}{B}{B}. If you do, return it to your hand." — Ghastly Remains, Skirk
          * Drill Sergeant, and Hollow Specter's `{X}` sibling.
          *
@@ -2697,7 +2758,7 @@ object Steps {
          * that can follow them.
          */
         private val simpleClause: Phrase<CardScript> =
-            oneOf("a spell effect$tag", nonAnaphoric + anaphora + positionScoped + mayClause)
+            oneOf("a spell effect$tag", nonAnaphoric + anaphora + positionScoped + mayClause + delayedClause)
 
         /**
          * A clause that can only be a *later* one: it refers back to something an earlier clause
@@ -2707,7 +2768,7 @@ object Steps {
             "a later spell effect$tag",
             // Everything except the source-anaphora: once a clause has introduced a target, "it" means
             // that target, and [Continuations] owns the pronoun from here on. See [SelfSteps.anaphoric].
-            nonAnaphoric + mayClause + positionScoped + Continuations.all,
+            nonAnaphoric + mayClause + delayedClause + positionScoped + Continuations.all,
         )
 
         /** A whole line's clauses, joined. The shape and its KDoc are [clauseRun]. */

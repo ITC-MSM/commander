@@ -120,6 +120,31 @@ object Conditions {
             }
         }
 
+    /**
+     * "…if you discarded a card this turn…" — Ragged Recluse's end-step flip, Fell Stinger's
+     * Illusion, Typhoid Mary; "…if you've discarded a card this turn…" — Containment Construct's
+     * activation gate and Alrund's Epiphany's foretell-adjacent cost reduction.
+     *
+     * A `phrase` rather than a [constant] row because the clause has **two printed tenses**. Past
+     * simple leads inside an intervening "if" and present perfect leads after "As long as" and
+     * "Activate only if"; both are the same fact about the same per-player tally, so they are one
+     * rule with a second spelling rather than two rows — a copied `build`/`match` pair is what the
+     * kernel's [com.wingedsheep.assay.syntax.PhraseBuilder.alsoSpelled] exists to prevent. Past
+     * simple is canonical because the positions that print it are the ones a condition slot reaches
+     * today.
+     *
+     * The model is `Conditions.YouDiscardedACardThisTurn`, which was named in this change: it is the
+     * `Compare` over `TurnTracker.CARDS_DISCARDED` that a card would otherwise spell inline, so the
+     * rule and the cards are one definition. Naming an existing composition is the one `mtg-sdk`
+     * change this module makes on its own; it adds no capability.
+     */
+    private val discardedACardThisTurn: Phrase<Condition> =
+        phrase("you discarded a card this turn", name = "you discarded a card this turn") {
+            alsoSpelled("you've discarded a card this turn", name = "you have discarded a card this turn")
+            build { SdkConditions.YouDiscardedACardThisTurn }
+            match { if (it == SdkConditions.YouDiscardedACardThisTurn) bind() else null }
+        }
+
     val all: List<Phrase<Condition>> = listOf(
         constant("an opponent controls more lands than you", SdkConditions.OpponentControlsMoreLands),
         // `IsYourTurn` / `IsNotYourTurn` are deliberately absent, and the reason is one position
@@ -169,6 +194,7 @@ object Conditions {
         constant("you gained and lost life this turn", SdkConditions.YouGainedAndLostLifeThisTurn),
         constant("you've lost life this turn", SdkConditions.YouLostLifeThisTurn),
         constant("an opponent lost life this turn", SdkConditions.OpponentLostLifeThisTurn),
+        discardedACardThisTurn,
         eitherControlled,
         countAtLeast(
             "you control {n} or more {filter}",

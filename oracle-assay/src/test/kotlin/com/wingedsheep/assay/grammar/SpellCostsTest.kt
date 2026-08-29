@@ -244,6 +244,7 @@ class SpellCostsTest : StringSpec({
             "Cleric spells you cast cost {W}{B} less to cast.",
             "White spells you cast cost {W} more to cast.",
             "This spell costs {2} less to cast if it's bargained.",
+            "This spell costs {1} less to cast if you discarded a card this turn.",
             "This spell costs {3} less to cast if it targets a tapped creature.",
             "This spell costs {2} more to cast if it targets an artifact.",
             "This spell costs {1} less to cast for each creature on the battlefield.",

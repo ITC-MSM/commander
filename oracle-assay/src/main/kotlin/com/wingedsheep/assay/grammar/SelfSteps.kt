@@ -28,6 +28,7 @@ import com.wingedsheep.sdk.scripting.effects.PayOrSufferEffect
 import com.wingedsheep.sdk.scripting.effects.RegenerateEffect
 import com.wingedsheep.sdk.scripting.effects.RemoveKeywordEffect
 import com.wingedsheep.sdk.scripting.effects.SacrificeSelfEffect
+import com.wingedsheep.sdk.scripting.effects.TransformEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
@@ -88,6 +89,13 @@ object SelfSteps {
             selfLosesKeyword(target, subject, tag),
             move("untap {self}", "untap$tag", Effects.Untap(target), subject),
             move("regenerate {self}", "regenerate$tag", RegenerateEffect(target), subject),
+            // "Transform ~." — CR 701.28, the verb a double-faced permanent's own ability uses on
+            // itself: the daybound/nightbound upkeep triggers (62 lines), the "{5}{G}{G}: Transform
+            // ~." activated flips, and every Innistrad front face that turns over on a condition.
+            // A row rather than a rule of its own because its object is an ordinary [EffectTarget]
+            // that moves with the position exactly as untap's and regenerate's do — unlike
+            // `SacrificeSelfEffect`, which the SDK models as a verb with no object at all.
+            move("transform {self}", "transform$tag", TransformEffect(target), subject),
         ) + putCounters(target, subject, tag) + selfAnimates(target, subject, tag) +
             // "{2}{U}: ~ can't be blocked this turn." — the durational evasion, whose whole family
             // lives in [Combat] beside the combat statics it is the spell-side sibling of. It is a
