@@ -34,58 +34,59 @@ function useObservedSize(ref: RefObject<HTMLElement | null>, enabled: boolean): 
  * Two-player battlefield sizing, solved for both players at once.
  *
  * The board grid gives the two battlefields rows 2 and 4; this hook measures
- * the height those rows have *together* (the container minus the hand
- * reservation rows and the center HUD) and both players' row stats, and asks
- * `solvePooledLayout` for one card width plus the slot height each side needs.
- * GameBoard turns the heights into the grid's row weights and hands the layout
- * to both `Battlefield`s through `PooledBattlefieldLayoutContext`.
+ * the height those rows have *together* — read straight off the two row
+ * elements, whose sum is fixed by the viewport, the HUD and the hand
+ * reservations however the pair is split — plus both players' row stats, and
+ * asks `solvePooledLayout` for one card width and the slot height each side
+ * needs. GameBoard turns the heights into the grid's row weights and hands the
+ * layout to both `Battlefield`s through `PooledBattlefieldLayoutContext`.
  *
- * No feedback loop: every measured input is independent of the layout it
- * produces — the container is viewport-sized, the center HUD's `auto` height
- * depends only on its own content, and the slot width comes from the fixed
- * command-zone and zone-pile columns, never from the cards.
+ * Measured from the rows rather than derived (container − HUD − reservations)
+ * on purpose: the reservations come from the window-derived responsive sizes,
+ * which update synchronously on `resize`, while element measurements arrive a
+ * frame later through ResizeObserver — mixing the two solved one frame with
+ * the new reservation against the old container height, oversizing the cards.
+ * Reading the rows keeps every input in one DOM state.
+ *
+ * No feedback loop: the rows' *sum* does not depend on the weights this hook
+ * produces, and the slot width comes from the fixed command-zone and zone-pile
+ * columns, never from the cards.
  *
  * Returns null while disabled (multiplayer, where strip cells size themselves)
  * or before the first measurement, in which case each battlefield falls back
- * to its own per-slot solve.
+ * to its own per-slot solve. `Battlefield` additionally clamps the pooled width
+ * to what its own measured slot fits, so a stale frame can never overflow.
  */
 export function usePooledBattlefieldLayout({
   enabled,
-  containerRef,
-  centerRef,
+  opponentRowRef,
+  playerRowRef,
   slotRef,
-  reservedHeight,
   player,
   opponent,
   base,
 }: {
   enabled: boolean
-  /** The board grid container (rows 1–5). */
-  containerRef: RefObject<HTMLElement | null>
-  /** The center HUD row (grid row 3, `auto`). */
-  centerRef: RefObject<HTMLElement | null>
+  /** Grid row 2 — the opponent board area. */
+  opponentRowRef: RefObject<HTMLElement | null>
+  /** Grid row 4 — the player board area. */
+  playerRowRef: RefObject<HTMLElement | null>
   /** One battlefield's slot — both slots share a width in the two-player grid. */
   slotRef: RefObject<HTMLElement | null>
-  /** Sum of the hand reservation rows (1 and 5). */
-  reservedHeight: number
   player: BoardStats
   opponent: BoardStats
   base: ResponsiveSizes
 }): PooledLayout | null {
-  const container = useObservedSize(containerRef, enabled)
-  const center = useObservedSize(centerRef, enabled)
+  const opponentRow = useObservedSize(opponentRowRef, enabled)
+  const playerRow = useObservedSize(playerRowRef, enabled)
   const slot = useObservedSize(slotRef, enabled)
 
-  const containerHeight = container?.height ?? 0
-  const centerHeight = center?.height ?? 0
+  const pooledHeight = (opponentRow?.height ?? 0) + (playerRow?.height ?? 0)
   const slotWidth = slot?.width ?? 0
-  const centerMeasured = center !== null
   const { front: pf, back: pb } = player
   const { front: of, back: ob } = opponent
   return useMemo(() => {
-    if (!enabled || slotWidth <= 0 || containerHeight <= 0 || !centerMeasured) return null
-    const pooledHeight = containerHeight - centerHeight - reservedHeight
-    if (pooledHeight <= 0) return null
+    if (!enabled || slotWidth <= 0 || pooledHeight <= 0) return null
     return solvePooledLayout(slotWidth, pooledHeight, { front: pf, back: pb }, { front: of, back: ob }, layoutEnvFor(base))
     // Keyed on the stats' numbers so an unrelated store update that rebuilds
     // equal stats doesn't produce a fresh layout identity (which would re-render
@@ -93,10 +94,7 @@ export function usePooledBattlefieldLayout({
   }, [
     enabled,
     slotWidth,
-    containerHeight,
-    centerMeasured,
-    centerHeight,
-    reservedHeight,
+    pooledHeight,
     base,
     pf.count,
     pf.tapped,

@@ -108,6 +108,7 @@ export function OpponentBoardArea({
   plateAtBottom = false,
   liftHand = false,
   controlsTop,
+  areaRef,
 }: {
   opponent: ClientPlayer
   layout: 'grid' | 'strip'
@@ -195,6 +196,8 @@ export function OpponentBoardArea({
    * below that row.
    */
   controlsTop?: number
+  /** Grid layout only: ref to the board-area element (grid row 2) for GameBoard's pooled battlefield sizing. */
+  areaRef?: RefObject<HTMLDivElement | null>
   /**
    * This seat's hand is rendered *outside* the cell — the Two-Headed Giant ally fan at the bottom
    * of the screen. Without this, a cell being driven by this client (hotseat / Mindslaver) forces
@@ -267,6 +270,7 @@ export function OpponentBoardArea({
 
   const boardBlock = (
     <div
+      ref={layout === 'grid' ? areaRef : undefined}
       style={
         layout === 'grid'
           ? styles.opponentArea

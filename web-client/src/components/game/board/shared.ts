@@ -143,11 +143,16 @@ export function useSlotSizedResponsive(
 
   const { front, back } = stats
   return useMemo(() => {
-    const layout =
-      pooled ??
-      (slotSize !== null && slotSize.height > 0 && slotSize.width > 0
+    const own =
+      slotSize !== null && slotSize.height > 0 && slotSize.width > 0
         ? solveSlotLayout(slotSize.width, slotSize.height, { front, back }, layoutEnvFor(base))
-        : null)
+        : null
+    // The pooled width was solved from the rows' measured heights, but this
+    // slot's own measurement can lag a frame behind a grid change — and
+    // whatever the source, a card that doesn't fit the slot it is in would be
+    // clipped against the center HUD. Never render wider than the slot fits;
+    // in a consistent frame the two agree and the pooled width wins as-is.
+    const layout = pooled !== null && own !== null && own.cardWidth < pooled.cardWidth ? own : (pooled ?? own)
     if (layout === null) {
       return { sizes: base, backSizes: base, frontRowLines: front.count > 0 ? 1 : 0, backRowLines: back.count > 0 ? 1 : 0 }
     }

@@ -261,17 +261,16 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
   // board hands height to a crowded one). The grid rows 2/4 take these heights
   // as weights below. Multiplayer strips size per cell instead (null here).
   // See docs/plans/battlefield-sparse-layout.md.
-  const boardContainerRef = useRef<HTMLDivElement>(null)
-  const centerHudRef = useRef<HTMLDivElement>(null)
+  const opponentRowRef = useRef<HTMLDivElement>(null)
+  const playerRowRef = useRef<HTMLDivElement>(null)
   const playerSlotRef = useRef<HTMLDivElement>(null)
   const playerBoard = useBoardGroups(false)
   const opponentBoard = useBoardGroups(true)
   const pooledLayout = usePooledBattlefieldLayout({
     enabled: !isMulti,
-    containerRef: boardContainerRef,
-    centerRef: centerHudRef,
+    opponentRowRef,
+    playerRowRef,
     slotRef: playerSlotRef,
-    reservedHeight: oppHandReservation + playerHandReservation,
     player: playerBoard.stats,
     opponent: opponentBoard.stats,
     base: responsive,
@@ -911,7 +910,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
     <RenderProfiler id="GameBoard">
     <ResponsiveContext.Provider value={responsive}>
     <PooledBattlefieldLayoutContext.Provider value={pooledLayout}>
-    <div ref={boardContainerRef} style={{
+    <div style={{
       ...styles.container,
       padding: `0 ${responsive.containerPadding}px`,
       // Hand reservation rows (1 and 5) keep the battlefield rows from sliding
@@ -1054,6 +1053,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           spectatorMode={spectatorMode}
           isHijacking={isHijacking}
           hijackedSurfaceStyle={hijackedSurfaceStyle}
+          areaRef={opponentRowRef}
         />
       )}
       {isMulti && (
@@ -1224,7 +1224,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           can't cross. The outer flex row mirrors `playerRowWithZones` (main
           area + zone pile spacer) so the step strip aligns with the cards
           above/below rather than the viewport. */}
-      <div ref={centerHudRef} style={{
+      <div style={{
         gridRow: 3,
         display: 'flex',
         alignItems: 'center',
@@ -1559,7 +1559,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           })}
         </div>
       ) : isEliminatedSpectator ? null : (
-        <div style={styles.playerArea}>
+        <div ref={playerRowRef} style={styles.playerArea}>
           <div style={styles.playerRowWithZones}>
             {/* Player command zone (left side) — Commander format only; renders nothing otherwise. */}
             {effectiveViewingPlayer && <CommandZone player={effectiveViewingPlayer} />}
