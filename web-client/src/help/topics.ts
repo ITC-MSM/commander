@@ -87,7 +87,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     summary:
       'This guide assumes you know the game. If you do not, the Learn to Play course teaches it by playing: a handful of short games against the AI, each from a board set up to teach one thing, with a coach saying what to do next and pointing at the part of the table to do it on.',
     body: [
-      { kind: 'p', text: 'The course lives at /learn and needs no name or account. Progress is kept in this browser; the landing page points at it until you have finished.' },
+      { kind: 'p', text: 'The course lives at /learn and needs no name or account. Progress is kept in this browser, and the landing page keeps a row pointing at it — including after you have finished, so any mission can be played again.' },
     ],
     links: [{ label: 'Learn to play', href: '/learn' }],
     related: ['first-game'],

@@ -82,6 +82,24 @@
   background: rgba(217, 180, 92, 0.1);
 }
 
+/* The course is finished. The row stays — a done course is still the way back to replay a
+   mission — but drops out of the gold that marks unfinished business. */
+.tierDone {
+  color: #b6b0a2;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(217, 180, 92, 0.16);
+}
+
+.tierDone:hover {
+  border-color: rgba(217, 180, 92, 0.45);
+  background: rgba(217, 180, 92, 0.07);
+}
+
+.tierDone .tierGlyph,
+.tierDone .tierMeta {
+  color: rgba(217, 180, 92, 0.65);
+}
+
 .tierGlyph {
   color: #d9b45c;
   font-size: 16px;
