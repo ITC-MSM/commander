@@ -1206,6 +1206,50 @@
     ]
 }
 
+// Elvish Promenade
+{
+    "name": "Elvish Promenade",
+    "manaCost": "{3}{G}",
+    "typeLine": "Kindred Sorcery — Elf",
+    "oracleText": "Create a 1/1 green Elf Warrior creature token for each Elf you control.",
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "permanent Elf"
+            },
+            "power": 1,
+            "toughness": 1,
+            "colors": [
+                "GREEN"
+            ],
+            "creatureTypes": [
+                "Elf",
+                "Warrior"
+            ],
+            "imageUri": "https://cards.scryfall.io/normal/front/2/7/27b171ac-b2ef-4a80-92d1-6d9e71f3e3ca.jpg?1783942838"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "208",
+        "rarity": "UNCOMMON",
+        "artist": "Steve Ellis",
+        "flavorText": "The faultless and immaculate castes form the lower tiers of elvish society, with the exquisite caste above them. At the pinnacle is the perfect, a consummate blend of aristocrat and predator.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/ec9d5049-c1a6-4186-952e-bd7481b1974a.jpg?1783942865",
+        "rulings": [
+            {
+                "date": "2024-06-07",
+                "text": "This cards was originally printed with the \"tribal\" card type. That card type has been replaced with \"kindred\". This change does not affect the gameplay function of this card."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Epic Proportions
 {
     "name": "Epic Proportions",
@@ -3383,6 +3427,71 @@
     ]
 }
 
+// Lys Alana Huntmaster
+{
+    "name": "Lys Alana Huntmaster",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Creature — Elf Warrior",
+    "oracleText": "Whenever you cast an Elf spell, you may create a 1/1 green Elf Warrior creature token.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasSubtype",
+                                "subtype": "Elf"
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "CreateToken",
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "GREEN"
+                        ],
+                        "creatureTypes": [
+                            "Elf",
+                            "Warrior"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/2/7/27b171ac-b2ef-4a80-92d1-6d9e71f3e3ca.jpg?1783942838"
+                    },
+                    "descriptionOverride": "you may create a 1/1 green Elf Warrior creature token."
+                },
+                "descriptionOverride": "you may create a 1/1 green Elf Warrior creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "229",
+        "artist": "Pete Venters",
+        "flavorText": "From the highest tiers of Dawn's Light Palace to the deepest shade of Wren's Run, the silver notes of the horn shimmer through the air, and all who hear it feel its pull.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/d/8d21f992-f982-415e-9d77-d11d8c931741.jpg?1783942860",
+        "rulings": [
+            {
+                "date": "2016-06-08",
+                "text": "Lys Alana Huntmaster's ability will resolve before the Elf spell that caused it to trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Masked Admirers
 {
     "name": "Masked Admirers",
@@ -5054,6 +5163,49 @@
     ]
 }
 
+// Sunrise Sovereign
+{
+    "name": "Sunrise Sovereign",
+    "manaCost": "{5}{R}",
+    "typeLine": "Creature — Giant Warrior",
+    "oracleText": "Other Giant creatures you control get +2/+2 and have trample.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2,
+                "filter": {
+                    "baseFilter": "creature Giant ctrl:you",
+                    "excludeSelf": true
+                }
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "TRAMPLE",
+                "filter": {
+                    "baseFilter": "creature Giant ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "192",
+        "rarity": "RARE",
+        "artist": "William O'Connor",
+        "flavorText": "A hundred generations has he mentored, a hundred armies has he crushed beneath his feet, yet only a hundred words has he ever spoken, each more revered than a hundred books.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b62a4703-9e8d-4164-a529-b2dbc4069aa8.jpg?1783942869"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Surge of Thoughtweft
 {
     "name": "Surge of Thoughtweft",
@@ -5115,6 +5267,72 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Surgespanner
+{
+    "name": "Surgespanner",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Creature — Merfolk Wizard",
+    "oracleText": "Whenever this creature becomes tapped, you may pay {1}{U}. If you do, return target permanent to its owner's hand.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TapEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{1}{U}"
+                        }
+                    },
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target permanent"
+                        },
+                        "destination": "Hand"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent"
+                    },
+                    "id": "target permanent"
+                },
+                "descriptionOverride": "you may pay {1}{U}. If you do, return target permanent to its owner's hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "92",
+        "rarity": "RARE",
+        "artist": "Warren Mahy",
+        "flavorText": "They ride on waves of Æther, washing out anything that might pollute the Merrow Lanes.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/d/1d5b00cb-ebc3-44e8-970d-724150eb7876.jpg?1783942896",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "This is a triggered ability, not an activated ability. It doesn't allow you to tap the creature whenever you want; rather, you need some other way of tapping it, such as by attacking with the creature."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "For the ability to trigger, the creature has to actually change from untapped to tapped. If an effect attempts to tap the creature, but it was already tapped at the time, this ability won't trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -5243,6 +5461,75 @@
         "imageUri": "https://cards.scryfall.io/normal/front/e/4/e472d4f5-add4-4de3-8718-31a47a35277c.jpg?1783942851"
     },
     "colorIdentityOverride": []
+}
+
+// Thorntooth Witch
+{
+    "name": "Thorntooth Witch",
+    "manaCost": "{5}{B}",
+    "typeLine": "Creature — Treefolk Shaman",
+    "oracleText": "Whenever you cast a Treefolk spell, you may have target creature get +3/-3 until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasSubtype",
+                                "subtype": "Treefolk"
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": -3
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    },
+                    "descriptionOverride": "you may have target creature get +3/-3 until end of turn."
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                },
+                "descriptionOverride": "you may have target creature get +3/-3 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "144",
+        "rarity": "UNCOMMON",
+        "artist": "William O'Connor",
+        "flavorText": "The crone's boughs creaked as she spoke. \"You look peaked, little one. Come, sip from my warm brew. It'll have you blooming in no time.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/4/140265a2-61c3-4731-989c-9d55c27400ec.jpg?1783942882"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
 }
 
 // Veteran of the Depths
