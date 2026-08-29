@@ -895,9 +895,15 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     }
 
     /**
-     * Whenever you play a land (CR 305.1 — the special land-play action). [fromZoneOtherThan], when
-     * set, restricts to lands *played* from a zone other than that one: "whenever you play a land …
-     * from anywhere other than your hand" (Shadow of the Goblin) is `fromZoneOtherThan = Zone.HAND`.
+     * Whenever [player] plays a land (CR 305.1 — the special land-play action). [fromZoneOtherThan],
+     * when set, restricts to lands *played* from a zone other than that one: "whenever you play a
+     * land … from anywhere other than your hand" (Shadow of the Goblin) is
+     * `fromZoneOtherThan = Zone.HAND`.
+     *
+     * [player] reads the same vocabulary as [SpellCastEvent.player], which is what lets the two sit
+     * side by side under an [AnyOf] for "whenever a player plays a land or casts a spell" (the
+     * Cemetery cycle): [Player.You] for the controller's own land drop, [Player.Each] for any
+     * player's, [Player.EachOpponent] for an opponent's.
      *
      * Matches the engine's `LandPlayedEvent`, which is emitted only for the land-play action, never
      * for a land an effect *puts* onto the battlefield — so this does not over-trigger on fetches,
@@ -906,10 +912,11 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     @SerialName("LandPlayedEvent")
     @Serializable
     data class LandPlayedEvent(
-        val fromZoneOtherThan: Zone? = null
+        val fromZoneOtherThan: Zone? = null,
+        val player: Player = Player.You
     ) : EventPattern {
         override val description: String = buildString {
-            append("you play a land")
+            append(if (player == Player.You) "you play a land" else "a player plays a land")
             if (fromZoneOtherThan != null) {
                 append(" from anywhere other than your ${fromZoneOtherThan.name.lowercase()}")
             }
