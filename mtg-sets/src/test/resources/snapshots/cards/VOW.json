@@ -4391,6 +4391,143 @@
     ]
 }
 
+// Dorothea, Vengeful Victim
+{
+    "name": "Dorothea, Vengeful Victim",
+    "manaCost": "{W}{U}",
+    "typeLine": "Legendary Creature — Spirit",
+    "oracleText": "Flying\nWhen Dorothea attacks or blocks, sacrifice it at end of combat.\nDisturb {1}{W}{U} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{1}{W}{U}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AnyOfEvents",
+                    "events": [
+                        "AttackEvent",
+                        "BlockEvent"
+                    ]
+                },
+                "effect": {
+                    "type": "CreateDelayedTrigger",
+                    "step": "END_COMBAT",
+                    "effect": {
+                        "type": "SacrificeTarget",
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "When Dorothea attacks or blocks, sacrifice it at end of combat."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Dorothea's Retribution",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura",
+        "oracleText": "Enchant creature\nEnchanted creature has \"Whenever this creature attacks, create a 4/4 white Spirit creature token with flying that's tapped and attacking. Sacrifice that token at end of combat.\"\nIf Dorothea's Retribution would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "GrantTriggeredAbility",
+                    "ability": {
+                        "id": "ability_2",
+                        "trigger": "AttackEvent",
+                        "effect": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "CreateToken",
+                                    "power": 4,
+                                    "toughness": 4,
+                                    "colors": [
+                                        "WHITE"
+                                    ],
+                                    "creatureTypes": [
+                                        "Spirit"
+                                    ],
+                                    "keywords": [
+                                        "FLYING"
+                                    ],
+                                    "tapped": true,
+                                    "attacking": true
+                                },
+                                {
+                                    "type": "CreateDelayedTrigger",
+                                    "step": "END_COMBAT",
+                                    "effect": {
+                                        "type": "SacrificeTarget",
+                                        "target": {
+                                            "type": "PipelineTarget",
+                                            "collectionName": "createdTokens"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        },
+        "metadata": {
+            "collectorNumber": "235",
+            "rarity": "RARE",
+            "artist": "Marta Nael",
+            "imageUri": "https://cards.scryfall.io/normal/back/8/c/8c927707-abb5-4a9d-ac53-25df182d6e9b.jpg?1783924799"
+        },
+        "colorIdentityOverride": [
+            "WHITE",
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "WHITE",
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "235",
+        "rarity": "RARE",
+        "artist": "Marta Nael",
+        "flavorText": "\"Every day a Voldaren draws breath is a day I cannot rest.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/c/8c927707-abb5-4a9d-ac53-25df182d6e9b.jpg?1783924799"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Dread Fugue
 {
     "name": "Dread Fugue",
@@ -6638,6 +6775,114 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Gutter Skulker
+{
+    "name": "Gutter Skulker",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "This creature can't be blocked as long as it's attacking alone.\nDisturb {3}{U} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{3}{U}"
+        }
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": "CantBeBlocked",
+                "condition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            "IsAttackingAlone"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Gutter Shortcut",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura",
+        "oracleText": "Enchant creature\nEnchanted creature can't be blocked as long as it's attacking alone.\nIf Gutter Shortcut would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "staticAbilities": [
+                {
+                    "type": "ConditionalStaticAbility",
+                    "ability": {
+                        "type": "CantBeBlocked",
+                        "filter": {
+                            "baseFilter": "permanent",
+                            "scope": "AttachedTo"
+                        }
+                    },
+                    "condition": {
+                        "type": "EntityMatches",
+                        "entity": "EnchantedPermanent",
+                        "filter": {
+                            "statePredicates": [
+                                "IsAttackingAlone"
+                            ]
+                        }
+                    }
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        },
+        "metadata": {
+            "collectorNumber": "62",
+            "rarity": "UNCOMMON",
+            "artist": "Viko Menezes",
+            "flavorText": "Some people take that as inspiration.",
+            "imageUri": "https://cards.scryfall.io/normal/back/c/e/ceb84515-7b8f-444d-b6a9-61231621f9b7.jpg?1783924900"
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "62",
+        "rarity": "UNCOMMON",
+        "artist": "Viko Menezes",
+        "flavorText": "Geists have a knack for showing up wherever they're least expected.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/e/ceb84515-7b8f-444d-b6a9-61231621f9b7.jpg?1783924900"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -11582,6 +11827,109 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Ragged Recluse
+{
+    "name": "Ragged Recluse",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Human Peasant",
+    "oracleText": "At the beginning of your end step, if you discarded a card this turn, transform this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "interveningIf": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "CARDS_DISCARDED"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "At the beginning of your end step, if you discarded a card this turn, transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Odious Witch",
+        "manaCost": "",
+        "typeLine": "Creature — Human Warlock",
+        "oracleText": "Whenever this creature attacks, defending player loses 1 life and you gain 1 life.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 3
+        },
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": "AttackEvent",
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "LoseLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "target": {
+                                    "type": "PlayerRef",
+                                    "player": "DefendingPlayer"
+                                }
+                            },
+                            {
+                                "type": "GainLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Whenever this creature attacks, defending player loses 1 life and you gain 1 life."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "127",
+            "artist": "Lie Setiawan",
+            "flavorText": "Her cauldron refilled, she settled in to wait for the next unsuspecting traveler to knock at her door.",
+            "imageUri": "https://cards.scryfall.io/normal/back/7/f/7fb728de-0d6e-4b32-b0c4-edd7382d1391.jpg?1783924862"
+        },
+        "colorIdentityOverride": [
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLACK"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "127",
+        "artist": "Lie Setiawan",
+        "flavorText": "\"Forgive my manners. It's been so long since I had a guest for dinner.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7fb728de-0d6e-4b32-b0c4-edd7382d1391.jpg?1783924862"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
