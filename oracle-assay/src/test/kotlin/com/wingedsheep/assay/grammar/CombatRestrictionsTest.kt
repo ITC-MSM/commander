@@ -14,11 +14,14 @@ import com.wingedsheep.sdk.scripting.CantBeBlockedByFewerThan
 import com.wingedsheep.sdk.scripting.CantBeBlockedByMoreThan
 import com.wingedsheep.sdk.scripting.CantBeBlockedExceptBy
 import com.wingedsheep.sdk.scripting.CantBlock
+import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.conditions.EntityMatches
 import com.wingedsheep.sdk.scripting.effects.CantBlockEffect
 import com.wingedsheep.sdk.scripting.effects.GrantCantBeBlockedExceptByEffect
 import com.wingedsheep.sdk.scripting.effects.GrantKeywordEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -210,6 +213,30 @@ class CombatRestrictionsTest : StringSpec({
         declines("Untap target creature. It can't be blocked this turn.")
     }
 
+    // The pronoun clause is not a row of the condition vocabulary: its subject is a back-reference to
+    // the restriction's own subject, so the two halves are derived together and the group and the
+    // condition's entity have to agree. The source form is included even though the *bare* source
+    // form is the flag — no flag can carry a condition, so there is no second rule for this text.
+    "the attacking-alone clause reads the same permanent in both halves" {
+        statics("~ can't be blocked as long as it's attacking alone.") shouldBe
+            listOf(
+                ConditionalStaticAbility(
+                    CantBeBlocked(GroupFilter.source()),
+                    EntityMatches(EffectTarget.Self, GameObjectFilter.Any.attackingAlone()),
+                )
+            )
+        statics("Enchanted creature can't be blocked as long as it's attacking alone.") shouldBe
+            listOf(
+                ConditionalStaticAbility(
+                    CantBeBlocked(GroupFilter.attachedCreature()),
+                    EntityMatches(EffectTarget.EnchantedPermanent, GameObjectFilter.Any.attackingAlone()),
+                )
+            )
+        // A group has no "it" — Oracle writes a clause about a set's members as a relative clause
+        // over a different model, so the plural subject has no row here and declines.
+        declines("Juggernauts you control can't be blocked as long as it's attacking alone.")
+    }
+
     // Every rule in the family can print what it parses — the meta-test each family gets, because a
     // `match` half that quietly matches nothing compiles, parses, and surfaces as a print mismatch
     // far from its cause.
@@ -239,6 +266,8 @@ class CombatRestrictionsTest : StringSpec({
             "Target creature can't attack or block this turn.",
             "Up to two target creatures can't block this turn.",
             "{1}{U}: ~ can't be blocked this turn.",
+            "~ can't be blocked as long as it's attacking alone.",
+            "Enchanted creature can't be blocked as long as it's attacking alone.",
         ).forEach { line -> Grammar.abilityLine.printLine(fragment(line)) shouldBe line }
     }
 })
