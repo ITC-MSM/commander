@@ -2438,11 +2438,11 @@
                                 "zone": "Graveyard",
                                 "player": "Each"
                             },
-                            "storeAs": "gathered0"
+                            "storeAs": "graveyards"
                         },
                         {
                             "type": "SelectFromCollection",
-                            "from": "gathered0",
+                            "from": "graveyards",
                             "selection": {
                                 "type": "ChooseExactly",
                                 "count": {
@@ -2450,14 +2450,14 @@
                                     "amount": 1
                                 }
                             },
-                            "storeSelected": "gatekeeperExile",
+                            "storeSelected": "exiled",
                             "prompt": "Exile a card from a graveyard",
                             "selectedLabel": "Exile",
                             "useTargetingUI": true
                         },
                         {
                             "type": "MoveCollection",
-                            "from": "gatekeeperExile",
+                            "from": "exiled",
                             "destination": {
                                 "type": "ToZone",
                                 "zone": "Exile"
@@ -2471,17 +2471,8 @@
             {
                 "id": "ability_2",
                 "trigger": {
-                    "type": "AnyOfEvents",
-                    "events": [
-                        {
-                            "type": "LandPlayedEvent",
-                            "player": "Each"
-                        },
-                        {
-                            "type": "SpellCastEvent",
-                            "player": "Each"
-                        }
-                    ]
+                    "type": "LandPlayedEvent",
+                    "player": "Each"
                 },
                 "binding": "ANY",
                 "effect": {
@@ -2507,7 +2498,39 @@
                         ]
                     }
                 },
-                "descriptionOverride": "Whenever a player plays a land or casts a spell, if it shares a card type with the exiled card, Cemetery Gatekeeper deals 2 damage to that player."
+                "descriptionOverride": "Whenever a player plays a land, if it shares a card type with the exiled card, Cemetery Gatekeeper deals 2 damage to that player."
+            },
+            {
+                "id": "ability_3",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                },
+                "interveningIf": {
+                    "type": "EntityMatches",
+                    "entity": "TriggeringEntity",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "SharesCardTypeWith",
+                                "entity": "LinkedExiledCard"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "Whenever a player casts a spell, if it shares a card type with the exiled card, Cemetery Gatekeeper deals 2 damage to that player."
             }
         ]
     },
@@ -2559,11 +2582,11 @@
                                 "zone": "Graveyard",
                                 "player": "Each"
                             },
-                            "storeAs": "gathered0"
+                            "storeAs": "graveyards"
                         },
                         {
                             "type": "SelectFromCollection",
-                            "from": "gathered0",
+                            "from": "graveyards",
                             "selection": {
                                 "type": "ChooseExactly",
                                 "count": {
@@ -2571,14 +2594,14 @@
                                     "amount": 1
                                 }
                             },
-                            "storeSelected": "protectorExile",
+                            "storeSelected": "exiled",
                             "prompt": "Exile a card from a graveyard",
                             "selectedLabel": "Exile",
                             "useTargetingUI": true
                         },
                         {
                             "type": "MoveCollection",
-                            "from": "protectorExile",
+                            "from": "exiled",
                             "destination": {
                                 "type": "ToZone",
                                 "zone": "Exile"
@@ -2591,13 +2614,7 @@
             },
             {
                 "id": "ability_2",
-                "trigger": {
-                    "type": "AnyOfEvents",
-                    "events": [
-                        "LandPlayedEvent",
-                        "SpellCastEvent"
-                    ]
-                },
+                "trigger": "LandPlayedEvent",
                 "binding": "ANY",
                 "effect": {
                     "type": "CreateToken",
@@ -2609,7 +2626,6 @@
                     "creatureTypes": [
                         "Human"
                     ],
-                    "name": "Human",
                     "imageUri": "https://cards.scryfall.io/normal/front/7/d/7d13a93a-a43d-4cf5-8300-8341f3b7f1b1.jpg?1783924701"
                 },
                 "interveningIf": {
@@ -2624,7 +2640,37 @@
                         ]
                     }
                 },
-                "descriptionOverride": "Whenever you play a land or cast a spell, if it shares a card type with the exiled card, create a 1/1 white Human creature token."
+                "descriptionOverride": "Whenever you play a land, if it shares a card type with the exiled card, create a 1/1 white Human creature token."
+            },
+            {
+                "id": "ability_3",
+                "trigger": "SpellCastEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Human"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/7/d/7d13a93a-a43d-4cf5-8300-8341f3b7f1b1.jpg?1783924701"
+                },
+                "interveningIf": {
+                    "type": "EntityMatches",
+                    "entity": "TriggeringEntity",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "SharesCardTypeWith",
+                                "entity": "LinkedExiledCard"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "Whenever you cast a spell, if it shares a card type with the exiled card, create a 1/1 white Human creature token."
             }
         ]
     },
@@ -2663,14 +2709,8 @@
             {
                 "id": "ability_1",
                 "trigger": {
-                    "type": "AnyOfEvents",
-                    "events": [
-                        {
-                            "type": "ZoneChangeEvent",
-                            "to": "Battlefield"
-                        },
-                        "AttackEvent"
-                    ]
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
                 },
                 "effect": {
                     "type": "Composite",
@@ -2682,11 +2722,11 @@
                                 "zone": "Graveyard",
                                 "player": "Each"
                             },
-                            "storeAs": "gathered0"
+                            "storeAs": "graveyards"
                         },
                         {
                             "type": "SelectFromCollection",
-                            "from": "gathered0",
+                            "from": "graveyards",
                             "selection": {
                                 "type": "ChooseExactly",
                                 "count": {
@@ -2694,14 +2734,14 @@
                                     "amount": 1
                                 }
                             },
-                            "storeSelected": "prowlerExile",
+                            "storeSelected": "exiled",
                             "prompt": "Exile a card from a graveyard",
                             "selectedLabel": "Exile",
                             "useTargetingUI": true
                         },
                         {
                             "type": "MoveCollection",
-                            "from": "prowlerExile",
+                            "from": "exiled",
                             "destination": {
                                 "type": "ToZone",
                                 "zone": "Exile"
@@ -2710,7 +2750,50 @@
                         }
                     ]
                 },
-                "descriptionOverride": "Whenever Cemetery Prowler enters or attacks, exile a card from a graveyard."
+                "descriptionOverride": "When Cemetery Prowler enters, exile a card from a graveyard."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "player": "Each"
+                            },
+                            "storeAs": "graveyards"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "graveyards",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "exiled",
+                            "prompt": "Exile a card from a graveyard",
+                            "selectedLabel": "Exile",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "exiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever Cemetery Prowler attacks, exile a card from a graveyard."
             }
         ],
         "staticAbilities": [

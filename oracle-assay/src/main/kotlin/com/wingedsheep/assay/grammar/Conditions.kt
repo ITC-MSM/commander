@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.scripting.conditions.PutCounterKindOnCreatureThisTurn
 import com.wingedsheep.sdk.scripting.conditions.YouWereAttackedThisStep
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.scripting.values.EntityReference
 import com.wingedsheep.sdk.dsl.Conditions as SdkConditions
 
 /**
@@ -175,6 +176,22 @@ object Conditions {
         // durable cast-choice slot rather than naming a condition per mechanic, and `WasBargained`
         // is the facade over exactly that read, so the rule is a constant and the mechanic's other
         // spellings arrive as sibling rows rather than as a shape.
+        // "Whenever a player plays a land or casts a spell, **if it shares a card type with the
+        // exiled card**, …" — the Crimson Vow cemetery cycle. The pronoun is the object the trigger
+        // just reported (a played land or a cast spell), and "the exiled card" is the CR 607
+        // imprint anaphor `EntityReference.LinkedExiledCard` — the same handle Mirrodin's imprint
+        // payoffs read. So the whole clause is one `EntityMatches` over a one-predicate filter, and
+        // there is nothing in it to slot: neither side of the comparison is a noun phrase the text
+        // varies. A card that compared some *other* characteristic with the exiled card ("shares a
+        // color", Thought Prison) prints its own clause, and would be a sibling row rather than a
+        // widening of this one — the predicates are separate SDK values and Oracle spells them with
+        // separate nouns.
+        constant(
+            "it shares a card type with the exiled card",
+            SdkConditions.TriggeringSpellMatches(
+                GameObjectFilter.Any.sharingCardTypeWith(EntityReference.LinkedExiledCard()),
+            ),
+        ),
         constant("it's bargained", SdkConditions.WasBargained),
         constant("it's kicked", SdkConditions.WasKicked),
         // The life-state conditions Bloomburrow's Bats and Lizards check. Each is one whole clause

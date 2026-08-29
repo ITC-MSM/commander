@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 241 / 273
+**Implemented:** 244 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -41,10 +41,10 @@
 - [x] Cartographer's Survey
 - [ ] Catapult Fodder
 - [ ] Cemetery Desecrator
-- [ ] Cemetery Gatekeeper
+- [x] Cemetery Gatekeeper
 - [ ] Cemetery Illuminator
-- [ ] Cemetery Protector
-- [ ] Cemetery Prowler
+- [x] Cemetery Protector
+- [x] Cemetery Prowler
 - [x] Ceremonial Knife
 - [x] Chandra, Dressed to Kill
 - [x] Change of Fortune

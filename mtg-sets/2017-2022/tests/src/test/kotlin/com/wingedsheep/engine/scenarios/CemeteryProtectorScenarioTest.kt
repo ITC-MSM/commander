@@ -96,7 +96,7 @@ class CemeteryProtectorScenarioTest : ScenarioTestBase() {
                 game.resolveStack()
 
                 withClue("Forest and the exiled Mountain are both land cards") {
-                    game.findAllPermanents("Human").size shouldBe 1
+                    game.findAllPermanents("Human Token").size shouldBe 1
                 }
             }
 
@@ -108,7 +108,7 @@ class CemeteryProtectorScenarioTest : ScenarioTestBase() {
                 game.resolveStack()
 
                 withClue("a land card shares no card type with an exiled creature card") {
-                    game.findAllPermanents("Human").size shouldBe 0
+                    game.findAllPermanents("Human Token").size shouldBe 0
                 }
             }
 
@@ -120,7 +120,7 @@ class CemeteryProtectorScenarioTest : ScenarioTestBase() {
                 game.resolveStack()
 
                 withClue("\"whenever YOU play a land\" — the opponent's drop is not yours") {
-                    game.findAllPermanents("Human").size shouldBe 0
+                    game.findAllPermanents("Human Token").size shouldBe 0
                 }
             }
         }

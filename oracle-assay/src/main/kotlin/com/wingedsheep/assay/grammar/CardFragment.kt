@@ -4,7 +4,18 @@ import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.model.CharacteristicValue
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.scripting.effects.CardDestination
+import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.sdk.scripting.effects.GatedEffect
+import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
+import com.wingedsheep.sdk.serialization.CardSerialization
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * What one ability line contributes to a card.
@@ -147,6 +158,69 @@ data class CardFragment(
         )
     }
 
+    /**
+     * CR 607's linked abilities, resolved once the whole card is in hand — the one derivation this
+     * type makes, and it is here because the evidence for it is on a *different line*.
+     *
+     * "Exile a card from a graveyard." says nothing about linkage. "…if it shares a card type with
+     * **the exiled card**", "…cards exiled **with this creature**" is what makes the pair linked
+     * (CR 607.2), and the SDK carries the fact twice: on the read
+     * ([com.wingedsheep.sdk.scripting.values.EntityReference.LinkedExiledCard],
+     * [com.wingedsheep.sdk.scripting.CostReductionSource.SharedCardTypesWithLinkedExile]) and on
+     * the move that fills the pile (`MoveCollectionEffect.linkToSource`). This module's rule for a
+     * value the SDK carries twice is to **derive** it rather than spell it, and no single line can:
+     * the exile line has no evidence and the payoff line has no move. So the derivation runs on the
+     * fold, which is the first place both are visible — the same reason
+     * [Grammar]'s line/header split puts the `*` pairing in the compiler.
+     *
+     * The read side is a *search* and the write side is a *rewrite*, and both are deliberately
+     * shallow: they descend the two wrappers a printed clause builds — a `Composite` for a sequence
+     * and a `GatedEffect` for "you may" and the intervening-if — exactly as
+     * [Recursion.functionsIn] does, and no further. A rule that produced an exile inside an
+     * iteration would need this widened, and would be the change that widens it.
+     *
+     * Nothing happens on a card with no imprint read, which is every card in the corpus but the
+     * imprint permanents and the cemetery cycle: [needsLinkedExile] is false and the fragment is
+     * returned unchanged.
+     */
+    fun deriveExileLinkage(): CardFragment {
+        if (!needsLinkedExile()) return this
+        return copy(script = script.copy(
+            spellEffect = script.spellEffect?.let(::linkExiles),
+            triggeredAbilities = script.triggeredAbilities.map { it.copy(effect = linkExiles(it.effect)) },
+            activatedAbilities = script.activatedAbilities.map { it.copy(effect = linkExiles(it.effect)) },
+        ))
+    }
+
+    /** Whether any part of this card reads a linked-exile pile; see [deriveExileLinkage]. */
+    private fun needsLinkedExile(): Boolean =
+        mentionsLinkedExile(
+            CardSerialization.json.parseToJsonElement(
+                CardSerialization.json.encodeToString(CardScript.serializer(), script),
+            )
+        )
+
+    private fun mentionsLinkedExile(element: JsonElement): Boolean = when (element) {
+        is JsonObject -> element.values.any(::mentionsLinkedExile)
+        is JsonArray -> element.any(::mentionsLinkedExile)
+        is JsonPrimitive -> element.isString && element.content in LINKED_EXILE_READERS
+        else -> false
+    }
+
+    /** Set `linkToSource` on every card-to-exile move in [effect]; see [deriveExileLinkage]. */
+    private fun linkExiles(effect: Effect): Effect = when (effect) {
+        is MoveCollectionEffect ->
+            if ((effect.destination as? CardDestination.ToZone)?.zone == Zone.EXILE) {
+                effect.copy(linkToSource = true)
+            } else {
+                effect
+            }
+
+        is CompositeEffect -> effect.copy(effects = effect.effects.map(::linkExiles))
+        is GatedEffect -> effect.copy(then = linkExiles(effect.then))
+        else -> effect
+    }
+
     val isEmpty: Boolean
         get() = keywordAbilities.isEmpty() && flags.isEmpty() && equipCost == null &&
             dynamicPower == null && dynamicToughness == null && script == CardScript.EMPTY
@@ -164,6 +238,20 @@ data class CardFragment(
          * `Differential.compare`'s completeness check cannot drift apart — adding a slot to the
          * grammar means adding it in both places, and this note is the pointer between them.
          */
+        /**
+         * The `@SerialName`s of the SDK values that *read* a linked-exile pile; see
+         * [deriveExileLinkage].
+         *
+         * Matched by discriminator rather than by walking the typed tree, for the reason the
+         * differential's own folds are: the readers turn up in a `CardPredicate`, in a
+         * `CostReductionSource`, in an `EffectTarget` and in a `DynamicAmount`, and a typed search
+         * would be four walks over four sealed hierarchies that share nothing but this question.
+         * The names are the SDK's own and a rename breaks the serialized corpus first, so this list
+         * cannot drift silently.
+         */
+        private val LINKED_EXILE_READERS =
+            setOf("LinkedExiledCard", "SharedCardTypesWithLinkedExile", "ExiledWithSource")
+
         const val MODELLED_SLOTS_NOTE =
             "spellEffect, targetRequirements, triggeredAbilities, activatedAbilities, " +
                 "staticAbilities, replacementEffects, auraTarget, castRestrictions, additionalCosts, " +

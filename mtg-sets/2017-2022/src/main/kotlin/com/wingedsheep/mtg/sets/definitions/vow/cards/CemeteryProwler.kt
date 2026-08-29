@@ -11,7 +11,9 @@ import com.wingedsheep.sdk.scripting.CostReductionSource
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.ModifySpellCost
 import com.wingedsheep.sdk.scripting.SpellCostTarget
+import com.wingedsheep.sdk.scripting.TriggerSpec
 import com.wingedsheep.sdk.scripting.effects.CardSource
+import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.references.Player
 
 /**
@@ -27,6 +29,10 @@ import com.wingedsheep.sdk.scripting.references.Player
  * The green half of the Crimson Vow cemetery cycle. Unlike [CemeteryGatekeeper] and
  * [CemeteryProtector] the Prowler keeps exiling — one card per enter *and* per attack — so its
  * payoff reads the whole linked-exile pile rather than a single "the exiled card".
+ *
+ * "Enters or attacks" is two triggered abilities for [CemeteryGatekeeper]'s reason: the corpus
+ * contracts the pair in *print* and writes it as two abilities in the model, which is the spelling
+ * Argentum Assay reads and prints.
  *
  * The reduction is [CostReductionSource.SharedCardTypesWithLinkedExile], the one reduction source
  * whose amount depends on the spell being cast. Per the card's own ruling it counts *card types*,
@@ -45,24 +51,18 @@ val CemeteryProwler = card("Cemetery Prowler") {
 
     keywords(Keyword.VIGILANCE)
 
-    // Whenever this creature enters or attacks, exile a card from a graveyard.
+    // Whenever this creature enters …
     triggeredAbility {
-        trigger = Triggers.or(Triggers.EntersBattlefield, Triggers.Attacks)
-        effect = Effects.Pipeline {
-            val graveyardCards = gather(
-                CardSource.FromZone(Zone.GRAVEYARD, Player.Each, GameObjectFilter.Any)
-            )
-            val picked = chooseExactly(
-                1,
-                from = graveyardCards,
-                useTargetingUI = true,
-                prompt = "Exile a card from a graveyard",
-                selectedLabel = "Exile",
-                name = "prowlerExile",
-            )
-            exile(picked, linkToSource = true)
-        }
-        description = "Whenever Cemetery Prowler enters or attacks, exile a card from a graveyard."
+        trigger = Triggers.EntersBattlefield
+        effect = exileFromAGraveyard()
+        description = "When Cemetery Prowler enters, exile a card from a graveyard."
+    }
+
+    // … or attacks, exile a card from a graveyard.
+    triggeredAbility {
+        trigger = Triggers.Attacks
+        effect = exileFromAGraveyard()
+        description = "Whenever Cemetery Prowler attacks, exile a card from a graveyard."
     }
 
     // Spells you cast cost {1} less to cast for each card type they share with cards exiled with
@@ -94,4 +94,21 @@ val CemeteryProwler = card("Cemetery Prowler") {
                 "exiled two creature cards, creature spells you cast cost {1} less, not {2} less."
         )
     }
+}
+
+/** "Exile a card from a graveyard.", linked to the Prowler — the payload of both trigger halves. */
+private fun exileFromAGraveyard(): Effect = Effects.Pipeline {
+    val graveyards = gather(
+        CardSource.FromZone(Zone.GRAVEYARD, Player.Each, GameObjectFilter.Any),
+        name = "graveyards",
+    )
+    val exiled = chooseExactly(
+        1,
+        from = graveyards,
+        useTargetingUI = true,
+        prompt = "Exile a card from a graveyard",
+        selectedLabel = "Exile",
+        name = "exiled",
+    )
+    exile(exiled, linkToSource = true)
 }

@@ -24,10 +24,13 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
  * this creature deals 2 damage to that player.
  *
  * The exile is *linked* to the Gatekeeper (CR 607), so "the exiled card" is
- * [EntityReference.LinkedExiledCard] — the same read-side handle Mirrodin's imprint cards use. The
- * payoff trigger is one ability over two events ([Triggers.or] of a land play and a spell cast),
- * matching the printed single ability: a land play is never also a spell cast, so the disjunction
- * can't double-fire.
+ * [EntityReference.LinkedExiledCard] — the same read-side handle Mirrodin's imprint cards use.
+ *
+ * The payoff is written as **two** triggered abilities, one per event, rather than as one ability
+ * over an `EventPattern.AnyOf`. The two are behaviourally identical — a land play is never also a
+ * spell cast, so the pair cannot double-fire — and the split form is what the corpus writes
+ * (sixty cards to the union's three) and therefore what Argentum Assay reads and prints. Writing
+ * the union here would put the card outside the differential gate for no gain.
  *
  * "If it shares a card type with the exiled card" is a genuine intervening-"if" (CR 603.4), not a
  * trigger filter: it is checked again on resolution, so a Gatekeeper whose exiled card has since
@@ -50,35 +53,43 @@ val CemeteryGatekeeper = card("Cemetery Gatekeeper") {
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
         effect = Effects.Pipeline {
-            val graveyardCards = gather(
-                CardSource.FromZone(Zone.GRAVEYARD, Player.Each, GameObjectFilter.Any)
+            val graveyards = gather(
+                CardSource.FromZone(Zone.GRAVEYARD, Player.Each, GameObjectFilter.Any),
+                name = "graveyards",
             )
-            val picked = chooseExactly(
+            val exiled = chooseExactly(
                 1,
-                from = graveyardCards,
+                from = graveyards,
                 useTargetingUI = true,
                 prompt = "Exile a card from a graveyard",
                 selectedLabel = "Exile",
-                name = "gatekeeperExile",
+                name = "exiled",
             )
-            exile(picked, linkToSource = true)
+            exile(exiled, linkToSource = true)
         }
         description = "When Cemetery Gatekeeper enters, exile a card from a graveyard."
     }
 
-    // Whenever a player plays a land or casts a spell, if it shares a card type with the exiled
-    // card, Cemetery Gatekeeper deals 2 damage to that player.
+    // Whenever a player plays a land …
     triggeredAbility {
-        trigger = Triggers.or(
-            Triggers.anyPlayerPlaysLand(),
-            Triggers.AnyPlayerCastsSpell,
-        )
+        trigger = Triggers.anyPlayerPlaysLand()
         interveningIf = Conditions.TriggeringSpellMatches(
             GameObjectFilter.Any.sharingCardTypeWith(EntityReference.LinkedExiledCard())
         )
         effect = Effects.DealDamage(2, EffectTarget.PlayerRef(Player.TriggeringPlayer))
-        description = "Whenever a player plays a land or casts a spell, if it shares a card type " +
-            "with the exiled card, Cemetery Gatekeeper deals 2 damage to that player."
+        description = "Whenever a player plays a land, if it shares a card type with the exiled " +
+            "card, Cemetery Gatekeeper deals 2 damage to that player."
+    }
+
+    // … or casts a spell, if it shares a card type with the exiled card, deal 2 to that player.
+    triggeredAbility {
+        trigger = Triggers.AnyPlayerCastsSpell
+        interveningIf = Conditions.TriggeringSpellMatches(
+            GameObjectFilter.Any.sharingCardTypeWith(EntityReference.LinkedExiledCard())
+        )
+        effect = Effects.DealDamage(2, EffectTarget.PlayerRef(Player.TriggeringPlayer))
+        description = "Whenever a player casts a spell, if it shares a card type with the exiled " +
+            "card, Cemetery Gatekeeper deals 2 damage to that player."
     }
 
     metadata {

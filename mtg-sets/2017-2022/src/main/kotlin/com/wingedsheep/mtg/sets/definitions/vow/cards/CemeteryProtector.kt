@@ -25,7 +25,8 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
  *
  * The white half of the Crimson Vow cemetery cycle — the same linked exile (CR 607) and
  * intervening-"if" over the triggering object as [CemeteryGatekeeper], scoped to your own plays
- * rather than every player's.
+ * rather than every player's, and split into one ability per event for the reason that card's KDoc
+ * records.
  */
 val CemeteryProtector = card("Cemetery Protector") {
     manaCost = "{2}{W}{W}"
@@ -44,42 +45,43 @@ val CemeteryProtector = card("Cemetery Protector") {
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
         effect = Effects.Pipeline {
-            val graveyardCards = gather(
-                CardSource.FromZone(Zone.GRAVEYARD, Player.Each, GameObjectFilter.Any)
+            val graveyards = gather(
+                CardSource.FromZone(Zone.GRAVEYARD, Player.Each, GameObjectFilter.Any),
+                name = "graveyards",
             )
-            val picked = chooseExactly(
+            val exiled = chooseExactly(
                 1,
-                from = graveyardCards,
+                from = graveyards,
                 useTargetingUI = true,
                 prompt = "Exile a card from a graveyard",
                 selectedLabel = "Exile",
-                name = "protectorExile",
+                name = "exiled",
             )
-            exile(picked, linkToSource = true)
+            exile(exiled, linkToSource = true)
         }
         description = "When Cemetery Protector enters, exile a card from a graveyard."
     }
 
-    // Whenever you play a land or cast a spell, if it shares a card type with the exiled card,
-    // create a 1/1 white Human creature token.
+    // Whenever you play a land …
     triggeredAbility {
-        trigger = Triggers.or(
-            Triggers.youPlayLand(),
-            Triggers.YouCastSpell,
-        )
+        trigger = Triggers.youPlayLand()
         interveningIf = Conditions.TriggeringSpellMatches(
             GameObjectFilter.Any.sharingCardTypeWith(EntityReference.LinkedExiledCard())
         )
-        effect = Effects.CreateToken(
-            power = 1,
-            toughness = 1,
-            colors = setOf(Color.WHITE),
-            creatureTypes = setOf("Human"),
-            name = "Human",
-            imageUri = "https://cards.scryfall.io/normal/front/7/d/7d13a93a-a43d-4cf5-8300-8341f3b7f1b1.jpg?1783924701",
+        effect = humanToken()
+        description = "Whenever you play a land, if it shares a card type with the exiled card, " +
+            "create a 1/1 white Human creature token."
+    }
+
+    // … or cast a spell, if it shares a card type with the exiled card, create a Human.
+    triggeredAbility {
+        trigger = Triggers.YouCastSpell
+        interveningIf = Conditions.TriggeringSpellMatches(
+            GameObjectFilter.Any.sharingCardTypeWith(EntityReference.LinkedExiledCard())
         )
-        description = "Whenever you play a land or cast a spell, if it shares a card type with " +
-            "the exiled card, create a 1/1 white Human creature token."
+        effect = humanToken()
+        description = "Whenever you cast a spell, if it shares a card type with the exiled card, " +
+            "create a 1/1 white Human creature token."
     }
 
     metadata {
@@ -95,3 +97,12 @@ val CemeteryProtector = card("Cemetery Protector") {
         )
     }
 }
+
+/** The 1/1 white Human both halves of the Protector's payoff create. */
+private fun humanToken() = Effects.CreateToken(
+    power = 1,
+    toughness = 1,
+    colors = setOf(Color.WHITE),
+    creatureTypes = setOf("Human"),
+    imageUri = "https://cards.scryfall.io/normal/front/7/d/7d13a93a-a43d-4cf5-8300-8341f3b7f1b1.jpg?1783924701",
+)
