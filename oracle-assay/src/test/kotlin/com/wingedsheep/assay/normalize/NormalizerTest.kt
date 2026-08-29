@@ -193,6 +193,49 @@ class NormalizerTest : StringSpec({
         n.restore(n.lines) shouldBe f.oracleText
     }
 
+    // CR 201.4: inside a quoted granted ability the two self-references stop denoting one object —
+    // the name is the card that printed the ability, the noun is the permanent that gained it. The
+    // name therefore gets its own token there, and only there; the inverse is unchanged, because
+    // both tokens replay the one positional list.
+    "a card naming itself inside a quoted ability is a different token from the noun" {
+        val f = face(
+            "Trusty Boomerang",
+            "Equipped creature has \"{1}, {T}: Tap target creature. " +
+                "Return Trusty Boomerang to its owner's hand.\"",
+            typeLine = "Artifact — Equipment",
+        )
+        val n = Normalizer.normalize(f)
+
+        // "Equipped" canonicalizes to "Enchanted": one model, two words chosen by the type line.
+        n.lines shouldBe listOf(
+            "Enchanted creature has \"{1}, {T}: Tap target creature. " +
+                "Return ${Normalizer.GRANTED_SELF} to its owner's hand.\""
+        )
+        n.restore(n.lines) shouldBe f.oracleText
+    }
+
+    "the noun inside a quoted ability still abstracts to the ordinary token" {
+        val f = face(
+            "Umbral Mantle",
+            "Enchanted creature has \"{3}, {Q}: This creature gets +2/+2 until end of turn.\"",
+            typeLine = "Artifact — Equipment",
+        )
+        val n = Normalizer.normalize(f)
+
+        n.lines shouldBe listOf(
+            "Enchanted creature has \"{3}, {Q}: ${Normalizer.SELF} gets +2/+2 until end of turn.\""
+        )
+        n.restore(n.lines) shouldBe f.oracleText
+    }
+
+    "outside a quotation the name and the noun are still one token" {
+        val f = face("Grizzly Bears", "When Grizzly Bears enters, this creature gets +1/+1.")
+        val n = Normalizer.normalize(f)
+
+        n.lines shouldBe listOf("When ${Normalizer.SELF} enters, ${Normalizer.SELF} gets +1/+1.")
+        n.restore(n.lines) shouldBe f.oracleText
+    }
+
     "the self-reference noun follows the printed type line" {
         Reminders.selfNoun("Creature — Angel") shouldBe "this creature"
         Reminders.selfNoun("Artifact") shouldBe "this artifact"

@@ -279,6 +279,31 @@ object Primitives {
     val itPronoun: Phrase<Unit> = constant("it", Unit)
 
     /**
+     * The subject of a *later* clause when that subject is the **target an earlier clause chose** —
+     * "Untap target creature. **It** gets +2/+4…", "…and put a +1/+1 counter on **that creature**."
+     *
+     * The third position [self] and the [selfNamed]/[itPronoun] pair index, and the one that makes
+     * [SelfSteps.retargetable] a shape rather than a rule: the same vocabulary, aimed at
+     * [Targets.bound] instead of at the source. It is reachable only from a later position in a
+     * clause run — [Steps] never offers it first — which is what keeps "it" denoting one thing in
+     * each position rather than two things in one.
+     *
+     * **Which spelling is canonical was measured, not chosen.** Over the Oracle bulk, counting the
+     * lines that print each anaphor in this position: "put a counter on **it**" 2122 against "on
+     * **that creature**" 86; "**It** gains …" 311 against "**That creature** gains …" 56; "**It**
+     * gets …" 38 against 12. So the pronoun prints and the demonstratives parse. The one verb that
+     * disagrees is untap — 66 against 69, near enough to even — and a per-verb canonical is the
+     * frozen-word defect this whole family exists to undo, so untap follows the measurement with
+     * the rest and the sixty-nine lines that spell it the other way come back as variants.
+     */
+    val targetPronoun: Phrase<Unit> = oneOf(
+        "the object an earlier clause chose",
+        constant("it", Unit),
+        alternate(constant("that creature", Unit)),
+        alternate(constant("that permanent", Unit)),
+    )
+
+    /**
      * Plurals whose singular the general rules would get wrong *in either direction*.
      *
      * The "-ves" family needs to be listed rather than derived, because the inverse is not a rule:

@@ -5,6 +5,7 @@ import com.wingedsheep.assay.syntax.parseLine
 import com.wingedsheep.assay.syntax.printLine
 import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -62,7 +63,13 @@ class SequencesTest : StringSpec({
                 targetRequirements = listOf(Targets.permanent(GameObjectFilter.Creature)),
             )
         )
-        roundTrips("Target creature gets +1/+3 until end of turn. Untap that creature.")
+        // "That creature" is the demonstrative; the pronoun is what prints. See
+        // [Primitives.targetPronoun] — the choice of canonical is a corpus measurement, and untap is
+        // the one verb where the two spellings are near even.
+        Grammar.abilityLine.printLine(
+            fragment("Target creature gets +1/+3 until end of turn. Untap that creature.")
+        ) shouldBe "Target creature gets +1/+3 until end of turn. Untap it."
+        roundTrips("Target creature gets +1/+3 until end of turn. Untap it.")
     }
 
     // The bug the differential found: the same four words mean the source in one position and the
@@ -161,6 +168,69 @@ class SequencesTest : StringSpec({
             "When ~ enters, tap target creature an opponent controls. " +
                 "It doesn't untap during its controller's next untap step."
         )
+    }
+
+    // The `.` decline band. The name is not an anaphor — it denotes the card in any sentence — so a
+    // later clause can spell it, and ninety-four lines were dying on their own full stop for want of
+    // that one membership.
+    "the source's name reads in a later clause as well as a first one" {
+        fragment("Draw a card. Put a +1/+1 counter on ~.") shouldBe CardFragment(
+            script = CardScript(
+                spellEffect = Effects.Composite(
+                    listOf(
+                        Effects.DrawCards(1),
+                        Effects.AddCounters("+1/+1", 1, EffectTarget.Self),
+                    )
+                )
+            )
+        )
+        roundTrips("Draw a card. Put a +1/+1 counter on ~.")
+        roundTrips("{T}: Add {C}. Put a point counter on ~.")
+        roundTrips("{2}, {T}: Draw a card. Transform ~.")
+        // " and " is an alternate join, so the same line prints with the full stop the run canonicalizes on.
+        Grammar.abilityLine.printLine(
+            fragment("Whenever a land you control enters, draw a card and put a +1/+1 counter on ~.")
+        ) shouldBe "Whenever a land you control enters, draw a card. Put a +1/+1 counter on ~."
+    }
+
+    // …and the pronoun in that position is the *target*, over the whole retargetable vocabulary
+    // rather than the five sentences somebody had written out by hand.
+    "a later clause's pronoun reaches every verb the source's does" {
+        fragment("Put two +1/+1 counters on target creature. Untap it.") shouldBe CardFragment(
+            script = CardScript(
+                spellEffect = Effects.Composite(
+                    listOf(
+                        Effects.AddCounters("+1/+1", 2, Targets.bound()),
+                        Effects.Untap(Targets.bound()),
+                    )
+                ),
+                targetRequirements = listOf(Targets.permanent(GameObjectFilter.Creature)),
+            )
+        )
+        roundTrips("Put two +1/+1 counters on target creature. Untap it.")
+        roundTrips("Untap target creature. It gets +2/+4 and gains reach until end of turn.")
+        roundTrips("Target creature gets +2/+0 until end of turn. Regenerate it.")
+        roundTrips("Put a +1/+1 counter on target creature. It gains vigilance until end of turn.")
+    }
+
+    // A pronoun with nothing to point at is not a model — Creeping Tar Pit spells "it" about the
+    // permanent the same clause animated, and reading it as a target would round-trip perfectly.
+    "a run that reads the target slot without declaring it declines" {
+        Grammar.abilityLine
+            .parseLine("~ becomes a 3/3 Elemental creature until end of turn. Untap it.")
+            .shouldBeInstanceOf<ParseOutcome.Declined>()
+    }
+
+    // The four zone verbs the pronoun used to be frozen into. "Exile ~." is twenty-nine spells'
+    // whole second line, and it was unreadable because the rule spelled its subject in the template.
+    "the zone verbs take a subject like every other member" {
+        fragment("Exile ~.") shouldBe CardFragment(
+            script = CardScript(spellEffect = Effects.Move(EffectTarget.Self, Zone.EXILE))
+        )
+        roundTrips("Exile ~.")
+        roundTrips("{2}{U}{U}: Return ~ to its owner's hand.")
+        roundTrips("Shuffle ~ into its owner's library.")
+        roundTrips("Put ~ on top of its owner's library.")
     }
 
     // The wrappers are clauses, so a trigger and an activated ability get sequences for free.
