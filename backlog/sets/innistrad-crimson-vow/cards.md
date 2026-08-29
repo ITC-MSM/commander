@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 238 / 273
+**Implemented:** 241 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -77,7 +77,7 @@
 - [x] Dominating Vampire
 - [x] Doomed Dissenter
 - [ ] Dormant Grove
-- [ ] Dorothea, Vengeful Victim
+- [x] Dorothea, Vengeful Victim
 - [x] Dread Fugue
 - [x] Dreadfeast Demon
 - [x] Dreadlight Monstrosity
@@ -115,7 +115,7 @@
 - [x] Groom's Finery
 - [x] Gryff Rider
 - [x] Gryffwing Cavalry
-- [ ] Gutter Skulker
+- [x] Gutter Skulker
 - [x] Halana and Alena, Partners
 - [x] Hallowed Haunting
 - [x] Hamlet Vanguard
@@ -191,7 +191,7 @@
 - [x] Pointed Discussion
 - [x] Pyre Spawn
 - [ ] Radiant Grace
-- [ ] Ragged Recluse
+- [x] Ragged Recluse
 - [x] Reckless Impulse
 - [x] Reclusive Taxidermist
 - [x] Rending Flame
