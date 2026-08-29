@@ -1,7 +1,11 @@
 package com.wingedsheep.engine.handlers.effects.token
 
 import com.wingedsheep.engine.core.CardEntityFactory
+import com.wingedsheep.engine.core.DecisionContext
+import com.wingedsheep.engine.core.DecisionPhase
+import com.wingedsheep.engine.core.DevourMintedTokenContinuation
 import com.wingedsheep.engine.core.EffectResult
+import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
@@ -22,6 +26,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.EntersTapped
+import com.wingedsheep.sdk.scripting.EntersWithDevour
 
 /**
  * Mints a token that is a copy of a bare [CardDefinition] — one not instantiated in any zone —
@@ -50,27 +55,81 @@ import com.wingedsheep.sdk.scripting.EntersTapped
  *  - **[EntersWithChoice]** (Alloy Golem, "as this enters, choose a color") pauses for a player
  *    decision via [PermanentEntryReplacements]; the chosen value is recorded in
  *    `CastChoicesComponent` and the token's ETB triggers fire from the resumer afterward.
+ *  - **[EntersWithDevour]** (Predator Dragon's devour, Famished Worldsire's devour land) pauses
+ *    for the controller to pick what to sacrifice — see [mint]'s `devourCounters` parameter for
+ *    why that pause happens *before* the token is placed.
  *
  * "When ~ enters" *triggered* abilities fire off the emitted [ZoneChangeEvent] (when there is no
  * choice) or from the [EntersWithChoiceOnBattlefieldContinuation] resumer (when a choice paused —
  * we deliberately omit the [ZoneChangeEvent] in that case so the triggers aren't detected twice).
  *
- * (Rarer as-enters replacements that pause for their own decision — Amplify reveal, Devour
- * sacrifice, EntersAsCopy — are not applied to minted tokens; a minted copy of such a creature
- * simply enters with zero amplify/devour counters. They are vanishingly rare in a random-creature
- * pool and would require generalizing their spell-keyed continuations.)
+ * (The remaining as-enters replacements that pause for their own decision — Amplify reveal,
+ * EntersAsCopy — are still not applied to minted tokens; a minted copy of such a creature simply
+ * enters with zero amplify counters. They would require generalizing their spell-keyed
+ * continuations the way devour's was.)
  */
 object TokenFromDefinition {
 
     private val conditionEvaluator = ConditionEvaluator()
 
+    /**
+     * @param devourCounters counters already earned by a Devour as-enters replacement (CR 702.82),
+     *   or `null` when devour has not been resolved yet. Devour asks its question *before* the
+     *   token exists rather than after: a devour creature is typically a 0/0 (Famished Worldsire),
+     *   so placing the token first and counting the sacrifices afterwards would leave a 0/0 on the
+     *   battlefield across a player decision for state-based actions to bin. The first call
+     *   therefore pauses on [DevourMintedTokenContinuation], and its resumer calls back in with
+     *   the multiplied count — placed alongside the token's printed enters-with counters, before
+     *   its ETB triggers can see it. A definition with no devour never pauses and this stays null.
+     */
     fun mint(
         state: GameState,
         cardDef: CardDefinition,
         controllerId: EntityId,
         cardRegistry: CardRegistry,
         staticAbilityHandler: StaticAbilityHandler? = null,
+        devourCounters: Int? = null,
     ): EffectResult {
+        // As-enters: Devour (CR 702.82) and its variants, raised before the token is minted — see
+        // [devourCounters]. Skipped when the controller has nothing to sacrifice; devour then just
+        // adds no counters, which is also what choosing zero permanents does (CR 702.82a).
+        val devour = cardDef.script.replacementEffects.filterIsInstance<EntersWithDevour>().firstOrNull()
+        if (devourCounters == null && devour != null) {
+            val candidates = PermanentEntryReplacements.devourSacrificeCandidates(
+                state, controllerId, devour, enteringId = null
+            )
+            if (candidates.isNotEmpty()) {
+                val decisionId = "devour-minted-token-${cardDef.name}-${controllerId.value}"
+                val decision = SelectCardsDecision(
+                    id = decisionId,
+                    playerId = controllerId,
+                    prompt = "${devour.description.substringBefore(" (")}: sacrifice any number of " +
+                        "${devour.sacrificeFilter.description}s for ${cardDef.name}",
+                    context = DecisionContext(
+                        sourceId = null,
+                        sourceName = cardDef.name,
+                        phase = DecisionPhase.RESOLUTION
+                    ),
+                    options = candidates,
+                    minSelections = 0,
+                    maxSelections = candidates.size,
+                    useTargetingUI = true
+                )
+                val paused = state
+                    .pushContinuation(
+                        DevourMintedTokenContinuation(
+                            decisionId = decisionId,
+                            cardDefinitionId = cardDef.name,
+                            controllerId = controllerId,
+                            multiplier = devour.multiplier,
+                            counterType = devour.counterType.description
+                        )
+                    )
+                    .withPendingDecision(decision)
+                return EffectResult.paused(paused, decision)
+            }
+        }
+
         val (tokenId, stateWithId) = state.newEntity()
 
         // Token is owned and controlled by the player creating it.
@@ -120,10 +179,22 @@ object TokenFromDefinition {
         )
 
         // As-enters: the token's own + global "enters with counters" (CR 614).
-        val (stateWithCounters, counterEvents) = EntersWithReplacements.applyOnEntry(
+        val (stateWithCounters, entersWithEvents) = EntersWithReplacements.applyOnEntry(
             newState, tokenId, controllerId, cardRegistry
         )
         newState = stateWithCounters
+        val counterEvents = entersWithEvents.toMutableList()
+
+        // As-enters: the Devour counters earned by the sacrifice made before the mint. Routed
+        // through the same helper as the printed enters-with counters so placement modifiers
+        // (Hardened Scales, Solemnity) and the "a counter was placed this turn" tracker apply.
+        if (devour != null && devourCounters != null && devourCounters > 0) {
+            val (devourState, devourEvents) = EntersWithReplacements.placeEntryCounters(
+                newState, tokenId, devour.counterType, devourCounters, controllerId, cardDef.name
+            )
+            newState = devourState
+            counterEvents.addAll(devourEvents)
+        }
 
         // As-enters: "choose X as this enters" (CR 614.12). Pauses for a player decision; the
         // resumer records the choice and fires the token's ETB triggers off a synthesized

@@ -506,6 +506,32 @@ data class DevourEntersContinuation(
 ) : ContinuationFrame
 
 /**
+ * Resume after the player selects permanents to sacrifice for Devour on a token minted from a
+ * bare card definition (CR 702.82) — the Momir Basic avatar's random-creature token.
+ *
+ * The sibling of [DevourEntersContinuation] for the path where nothing was ever cast. There is no
+ * entity to hang the pause on: the token does not exist yet, because devour is an as-enters
+ * replacement (CR 614) and a devour creature is typically a 0/0 that state-based actions would bin
+ * on arrival if it were placed first and counted afterwards. So the decision is raised *before*
+ * the mint, keyed by the chosen [cardDefinitionId], and the resumer re-enters
+ * [com.wingedsheep.engine.handlers.effects.token.TokenFromDefinition.mint] with the resulting
+ * counter count so the token enters already carrying it.
+ *
+ * @property cardDefinitionId Name of the definition the token will copy
+ * @property controllerId The player creating (and controlling) the token
+ * @property multiplier Counters placed per sacrificed permanent
+ * @property counterType Serialized counter type (string form of [com.wingedsheep.sdk.scripting.events.CounterTypeFilter])
+ */
+@Serializable
+data class DevourMintedTokenContinuation(
+    override val decisionId: String,
+    val cardDefinitionId: String,
+    val controllerId: EntityId,
+    val multiplier: Int,
+    val counterType: String
+) : ContinuationFrame
+
+/**
  * Resume after player chooses a budget modal combination (e.g., Season cycle pawprint modes).
  *
  * The executor pre-computes all valid combinations of modes that fit within the budget
