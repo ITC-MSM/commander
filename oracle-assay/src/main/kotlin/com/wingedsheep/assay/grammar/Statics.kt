@@ -27,6 +27,7 @@ import com.wingedsheep.sdk.scripting.CompositeStaticAbility
 import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
 import com.wingedsheep.sdk.scripting.CostModification
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
 import com.wingedsheep.sdk.scripting.GrantCantBeCountered
 import com.wingedsheep.sdk.scripting.GrantDynamicStatsEffect
@@ -605,20 +606,30 @@ object Statics {
      * `GroupFilter.attachedCreature()` are *scoped* filters, not battlefield ones, so a lord rule
      * can never print an aura's line or a self-buff — the reconstruct-and-compare refuses them, and
      * [attachedPump] and the conditional rules below keep their own sentences.
+     *
+     * ### Why the *result* is a type parameter too
+     *
+     * `A` is what the sentence denotes, and for three of the four callers it is one `StaticAbility`.
+     * [lordPumpAndKeyword] is the fourth and denotes a **list** — "get +2/+2 and have trample" is a
+     * Layer 7c pump plus a Layer 6 grant, two abilities from one sentence, exactly as
+     * [pumpAndKeyword] reads the attached version. Generalising the result is what lets that rule
+     * inherit all three prefix rows ("", "all ", "other ") and the reconstruct-and-compare rather
+     * than restating them; the alternative was a second three-row generator that would drift from
+     * this one the first time either was edited.
      */
-    private fun <V> lordStatic(
+    private fun <V, A> lordStatic(
         verb: String,
         name: String,
         parameter: Phrase<V>,
-        ability: (V, GroupFilter) -> StaticAbility,
-        read: (StaticAbility) -> Pair<V, GroupFilter>?,
+        ability: (V, GroupFilter) -> A,
+        read: (A) -> Pair<V, GroupFilter>?,
         // A quoted granted ability already ends in its own full stop, inside the quotation marks;
         // every other thing a lord gives out does not. The terminator is therefore the parameter's
         // business rather than the shape's, and this is the one place it shows.
         terminator: String = ".",
-    ): List<Phrase<StaticAbility>> {
-        fun rule(prefix: String, canonicalForm: Boolean, excludeSelf: Boolean): Phrase<StaticAbility> {
-            val inner = phrase<StaticAbility>("$prefix{filter} $verb {v}$terminator", name = name) {
+    ): List<Phrase<A>> {
+        fun rule(prefix: String, canonicalForm: Boolean, excludeSelf: Boolean): Phrase<A> {
+            val inner = phrase<A>("$prefix{filter} $verb {v}$terminator", name = name) {
                 slot("filter", Filters.plural)
                 slot("v", parameter)
                 build {
@@ -1011,12 +1022,12 @@ object Statics {
         damageByToughness(qualified = false),
         damageByToughness(qualified = true),
         attachedDamageByToughness,
-    ) + combatRestrictions + compositeLord + Amounts.perScope(::selfPumpPerCount) + SpellCosts.all + lordStatic(
+    ) + combatRestrictions + compositeLord + Amounts.perScope(::selfPumpPerCount) + SpellCosts.all + lordStatic<Pair<Int, Int>, StaticAbility>(
         "get", "a group gets",
         parameter = Primitives.statModifiers,
         ability = { (power, toughness), group -> ModifyStats(power, toughness, group) },
         read = { (it as? ModifyStats)?.let { s -> (s.powerBonus to s.toughnessBonus) to s.filter } },
-    ) + lordStatic(
+    ) + lordStatic<Keyword, StaticAbility>(
         "have", "a group has a keyword",
         parameter = Keywords.keyword,
         ability = { keyword, group -> GrantKeyword(keyword, group) },
@@ -1024,7 +1035,7 @@ object Statics {
             val grant = ability as? GrantKeyword ?: return@lordStatic null
             Keyword.entries.firstOrNull { it.name == grant.keyword }?.let { it to grant.filter }
         },
-    ) + lordStatic(
+    ) + lordStatic<ActivatedAbility, StaticAbility>(
         // "All Slivers have "{T}: Regenerate target Sliver."" — a *whole activated ability* as the
         // thing granted, which is why [Activated.ability] is a slot here: the quoted text is the
         // same English an ability line prints, so the entire activated-ability grammar arrives with
@@ -1044,6 +1055,66 @@ object Statics {
         build { listOf(it.value<StaticAbility>("one")) }
         match { it.singleOrNull()?.let { ability -> bind("one" to ability) } }
     }
+
+    /**
+     * "Other Giant creatures you control get +2/+2 and have trample." — Sunrise Sovereign, Goblin
+     * King, and 251 more cards: the tribal lord that hands out a body *and* a keyword.
+     *
+     * The line-level twin of [pumpAndKeyword], and the same model for the same reason — the pump
+     * applies in Layer 7c and each grant in Layer 6, so one printed sentence denotes a *list* of
+     * top-level statics rather than a compound "pump and grant" SDK type. What differs is only the
+     * subject: [pumpAndKeyword]'s is the attachment, this one's is [Filters.plural] inside a
+     * `GroupFilter`, so it arrives as a [lordStatic] parameter and inherits that generator's three
+     * prefix rows — including "other ", which is the row Oracle prints for almost every lord.
+     *
+     * The keyword count is [Keywords.keywordRun]'s slot, so "get +1/+1 and have flying and haste"
+     * is the same rule as "get +2/+2 and have trample". The abilities are reconstructed and
+     * compared, pump first then the grants in printed order, so a card carrying them the other way
+     * round declines rather than being reordered into agreement — the rule [pumpAndKeyword] states
+     * and 27 hand-written cards obey.
+     *
+     * ### The keyword clause lives in the parameter, not the verb
+     *
+     * [lordStatic]'s shape is `{filter} <verb> {v}<terminator>`, so the whole of "+2/+2 and have
+     * trample" is one `{v}`. That is what keeps the "and have" join out of the generator, where it
+     * would have to be optional for the three callers that do not print it, and it is why this rule
+     * needs no template of its own.
+     */
+    private val lordPumpAndKeyword: List<Phrase<List<StaticAbility>>> = run {
+        fun abilitiesFor(body: PumpAndKeywords, group: GroupFilter): List<StaticAbility> =
+            listOf<StaticAbility>(ModifyStats(body.stats.first, body.stats.second, group)) +
+                body.keywords.map { GrantKeyword(it, group) }
+
+        fun read(abilities: List<StaticAbility>): Pair<PumpAndKeywords, GroupFilter>? {
+            if (abilities.size < 2) return null
+            val stats = abilities.first() as? ModifyStats ?: return null
+            val keywords = mutableListOf<Keyword>()
+            for (part in abilities.drop(1)) {
+                val grant = part as? GrantKeyword ?: return null
+                if (grant.filter != stats.filter) return null
+                keywords += Keyword.entries.firstOrNull { it.name == grant.keyword } ?: return null
+            }
+            return PumpAndKeywords(stats.powerBonus to stats.toughnessBonus, keywords) to stats.filter
+        }
+
+        val parameter: Phrase<PumpAndKeywords> =
+            phrase("{mod} and have {kws}", name = "a body and keywords") {
+                slot("mod", Primitives.statModifiers)
+                slot("kws", Keywords.keywordRun)
+                build { PumpAndKeywords(it.value("mod"), it.value("kws")) }
+                match { body -> bind("mod" to body.stats, "kws" to body.keywords) }
+            }
+
+        lordStatic(
+            "get", "a group gets and has",
+            parameter = parameter,
+            ability = ::abilitiesFor,
+            read = ::read,
+        )
+    }
+
+    /** What [lordPumpAndKeyword]'s single `{v}` slot carries: the pump, and the keywords beside it. */
+    private data class PumpAndKeywords(val stats: Pair<Int, Int>, val keywords: List<Keyword>)
 
     /**
      * "Enchanted creature gets +2/+2 and has flying.", "…gets +2/+0 and has first strike, vigilance,
@@ -1148,10 +1219,16 @@ object Statics {
      * two or more grants, [pumpAndKeyword] a pump first, and each [ConditionalForm] a distinct
      * combination of the two under a condition — so printing is decided by the model rather than by
      * the alternation's order, the property every `oneOf` in this grammar is written to have.
+     *
+     * [lordPumpAndKeyword] has [pumpAndKeyword]'s list shape and is separated from it by the
+     * *filter* rather than by the shape: one carries `GroupFilter.attachedCreature()`, the other a
+     * battlefield group, and each reconstructs-and-compares against its own, so neither can print
+     * the other's model. The two are also disjoint in text — an attachment's subject conjugates
+     * singular ("gets … and has"), a group's plural ("get … and have").
      */
     val line: Phrase<List<StaticAbility>> = oneOf(
         "static abilities",
-        listOf(pumpAndKeyword, pumpAndQuotedAbility, attachedKeywordRun) +
+        listOf(pumpAndKeyword, pumpAndQuotedAbility, attachedKeywordRun) + lordPumpAndKeyword +
             ConditionalForm.entries.flatMap { form ->
                 listOf(
                     conditionalSelfStatic(leading = false, form = form),

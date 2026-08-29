@@ -23,7 +23,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
 /**
  * "Create a 1/1 green Insect creature token." — the token clauses.
  *
- * One shape with four slots (the count, the stats, the colours, the creature type) plus an optional
+ * One shape with four slots (the count, the stats, the colours, the creature types) plus an optional
  * granted run, and a *row* per printed variation, because English changes several words at once: the
  * article and the noun's number move with the count, and the keyword rider is a suffix the kernel's
  * fixed templates cannot make optional. Six rows out of two axes is what the axes cost; nothing
@@ -144,6 +144,48 @@ object Tokens {
     // ---------------------------------------------------------------------------------------
 
     /**
+     * A token's creature types — "Elf **Warrior**", "Kithkin **Soldier**", "Merfolk **Wizard**".
+     *
+     * A run rather than a slot, for the same reason [colours] is one: `CreateTokenEffect` holds a
+     * `Set<String>`, and 476 cards print two words where 1,928 print one. A single-type slot could
+     * only ever read the smaller half, and the two halves are not two constructs — the noun phrase
+     * is one list whose length the card chooses, so it is [separated] with `min = 1` and the
+     * one-word case stays the same parse it always was rather than becoming a second rule.
+     *
+     * ### Where the printed order comes from
+     *
+     * Colours are printed in WUBRG and [ordered] derives that from [Color]'s own declaration order,
+     * so a `Set<Color>` prints deterministically without the model recording a sequence. **Creature
+     * types have no such total order**: "Elf Warrior" is race-then-class, a convention of Magic's
+     * style guide that the SDK publishes no data for, and inventing a race/class table here would be
+     * exactly the "recovering information versus inventing it" line [Primitives.subtype] draws.
+     *
+     * So the order is taken from the set's own iteration, which is the one place the information
+     * actually survives: `setOf("Elf", "Warrior")` is a `LinkedHashSet`, kotlinx decodes a JSON
+     * array into one too, and this rule's own `build` inserts in printed order. Every path that
+     * reaches [printedTypes] therefore carries the sequence the card was written with.
+     *
+     * What that costs is stated rather than hidden: two `CreateTokenEffect`s that are `==` — sets
+     * have no order to disagree about — can print differently. Neither gate minds, and the
+     * distinction is which one they ask. The touchstone starts from *text*, so it round-trips this
+     * rule's own insertion order and is exact. The differential compares *models*, so a golden that
+     * happens to spell `setOf("Warrior", "Elf")` still agrees. The one thing that would break is a
+     * renderer printing a type line from a model nobody parsed, and that is Phase 4's problem to
+     * solve with an ordered field, not this rule's to pre-empt with a guessed table.
+     */
+    private val typeRun: Phrase<List<Subtype>> =
+        separated("creature types", Primitives.subtype, separator = " ", min = 1)
+
+    /**
+     * [typeRun]'s inverse: the types a token holds, in the order it holds them.
+     *
+     * Null on the empty set, which is a token with no creature type at all — a shape this sentence
+     * cannot spell, since the template has no empty cell for the noun.
+     */
+    private fun printedTypes(types: Set<String>): List<Subtype>? =
+        types.takeIf { it.isNotEmpty() }?.map { Subtype(it) }
+
+    /**
      * How many tokens a clause makes, as the two things that vary with it: the printed count and
      * the amount the model holds.
      *
@@ -208,20 +250,23 @@ object Tokens {
         tapped: Boolean = false,
         suffix: String = "",
         suffixName: String = "",
+        tally: Amounts.Scope? = null,
     ): Phrase<CardScript> {
         val noun = if (count.plural) "creature tokens" else "creature token"
         val rider = if (keywords) " with {kws}" else ""
         val entry = if (tapped) "tapped " else ""
+        val counted = if (tally == null) "" else " for each {filter}${tally.surface}"
         val name = "create " + (if (count.plural) "tokens" else "a token") +
             (if (tapped) " tapped" else "") +
-            (if (keywords) " with keywords" else "") + suffixName
+            (if (keywords) " with keywords" else "") + suffixName +
+            (if (tally == null) "" else " per ${tally.where}")
 
         fun scriptFor(
             amount: DynamicAmount,
             power: Int,
             toughness: Int,
             colours: Set<Color>,
-            type: Subtype,
+            types: List<Subtype>,
             granted: Set<Keyword>,
         ) = CardScript(
             spellEffect = Effects.CreateToken(
@@ -229,42 +274,67 @@ object Tokens {
                 power = power,
                 toughness = toughness,
                 colors = colours,
-                creatureTypes = setOf(type.value),
+                creatureTypes = types.map { it.value }.toSet(),
                 keywords = granted,
                 tapped = tapped,
             )
         )
 
-        return phrase("create ${count.surface} $entry{p}/{t} {color} {type} $noun$rider$suffix", name = name) {
+        return phrase("create ${count.surface} $entry{p}/{t} {color} {types} $noun$rider$counted$suffix", name = name) {
             if (count.words != null) slot("n", count.words)
             slot("p", Primitives.cardinal)
             slot("t", Primitives.cardinal)
             slot("color", colours)
-            slot("type", Primitives.subtype)
+            slot("types", typeRun)
             if (keywords) slot("kws", Keywords.keywordRun)
+            if (tally != null) slot("filter", Filters.filter)
             build { bindings ->
                 val granted = if (keywords) bindings.value<List<Keyword>>("kws").toSet() else emptySet()
+                val amount = if (tally == null) {
+                    count.amountFor(bindings)
+                } else {
+                    DynamicAmount.AggregateBattlefield(
+                        tally.player,
+                        tally.narrowing(bindings.value("filter")) ?: return@build null,
+                    )
+                }
                 scriptFor(
-                    count.amountFor(bindings),
+                    amount,
                     bindings.int("p"),
                     bindings.int("t"),
                     bindings.value("color"),
-                    bindings.value("type"),
+                    bindings.value("types"),
                     granted,
                 )
             }
             match { script ->
                 val token = script.spellEffect as? CreateTokenEffect ?: return@match null
-                if (!count.spells(token.count)) return@match null
                 if (keywords == token.keywords.isEmpty()) return@match null
                 if (token.tapped != tapped) return@match null
-                val type = token.creatureTypes.singleOrNull() ?: return@match null
+                val types = printedTypes(token.creatureTypes) ?: return@match null
+                // The counted rows rebuild the amount from the two things the clause spells — the
+                // player and the noun phrase — so an aggregate carrying anything else (a sum rather
+                // than a count, an excluded self, a counter type) fails the compare below instead of
+                // being printed as a plain "for each".
+                val counting = if (tally == null) {
+                    if (!count.spells(token.count)) return@match null
+                    null
+                } else {
+                    val aggregate = token.count as? DynamicAmount.AggregateBattlefield ?: return@match null
+                    if (aggregate.player != tally.player) return@match null
+                    tally.narrowing(aggregate.filter) ?: return@match null
+                }
+                val amount = if (counting == null) {
+                    token.count
+                } else {
+                    DynamicAmount.AggregateBattlefield(tally!!.player, counting)
+                }
                 if (script != scriptFor(
-                        token.count,
+                        amount,
                         token.power,
                         token.toughness,
                         token.colors,
-                        Subtype(type),
+                        types,
                         token.keywords,
                     )
                 ) {
@@ -275,8 +345,9 @@ object Tokens {
                     "p" to token.power,
                     "t" to token.toughness,
                     "color" to token.colors,
-                    "type" to Subtype(type),
+                    "types" to types,
                     "kws" to token.keywords.sortedBy { it.ordinal },
+                    "filter" to counting,
                 )
             }
         }
@@ -386,6 +457,20 @@ object Tokens {
                 suffix = " for each nontoken creature put into your graveyard from the battlefield this turn",
                 suffixName = " per creature that died this turn",
             ) +
+            // "Create a 1/1 green Elf Warrior creature token **for each Elf you control**." —
+            // Elvish Promenade, Beacon of Creation, Elvish Promenade's whole family. The count is
+            // the noun phrase rather than a number word, so it goes through [Amounts.scopes] like
+            // every other battlefield tally in the grammar and reaches all three of its rows with
+            // one instantiation. The article stays singular: English counts the *kind* of token
+            // once and lets the clause say how many, which is why this crosses the "a" row and no
+            // other. `tapped` crosses it because a counted clause can still enter tapped, and the
+            // keyword rider because "for each" sits between the noun and the rider in print.
+            Amounts.perScope { scope ->
+                createToken(counts.first(), keywords = false, tally = scope)
+            } +
+            Amounts.perScope { scope ->
+                createToken(counts.first(), keywords = true, tally = scope)
+            } +
             // "X Food tokens" is not printed — the predefined nouns take the article and the number
             // word only, so the X row is left out rather than written against nothing.
             PREDEFINED.flatMap { token ->
