@@ -901,6 +901,41 @@
     ]
 }
 
+// Doran, the Siege Tower
+{
+    "name": "Doran, the Siege Tower",
+    "manaCost": "{W}{B}{G}",
+    "typeLine": "Legendary Creature — Treefolk Shaman",
+    "oracleText": "Each creature assigns combat damage equal to its toughness rather than its power.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 5
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "AssignDamageEqualToToughness",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "onlyWhenToughnessGreaterThanPower": false
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "247",
+        "rarity": "RARE",
+        "artist": "Mark Zug",
+        "flavorText": "\"Each year that passes rings you inwardly with memory and might. Wield your heart, and the world will tremble.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/0/b006b169-295d-4ead-8e8e-29a9c3246025.jpg?1783942855"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Elvish Handservant
 {
     "name": "Elvish Handservant",
@@ -1228,6 +1263,61 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Eyes of the Wisent
+{
+    "name": "Eyes of the Wisent",
+    "manaCost": "{1}{G}",
+    "typeLine": "Kindred Enchantment — Elemental",
+    "oracleText": "Whenever an opponent casts a blue spell during your turn, you may create a 4/4 green Elemental creature token.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasColor",
+                                "color": "BLUE"
+                            }
+                        ]
+                    },
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "CreateToken",
+                        "power": 4,
+                        "toughness": 4,
+                        "colors": [
+                            "GREEN"
+                        ],
+                        "creatureTypes": [
+                            "Elemental"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/8/b/8b4ef48d-a328-4eb9-a2e3-925c1cd38b1a.jpg?1783942837"
+                    }
+                },
+                "triggerRestriction": "IsYourTurn"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "210",
+        "rarity": "RARE",
+        "artist": "Aleksi Briclot",
+        "flavorText": "Calm as a wisent's watch\n—Elvish expression meaning \"safe\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/6/c6725b96-7390-4599-9d5f-ba08755605af.jpg?1783942865"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -1957,6 +2047,69 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Glarewielder
+{
+    "name": "Glarewielder",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Elemental Shaman",
+    "oracleText": "Haste\nWhen this creature enters, up to two target creatures can't block this turn.\nEvoke {1}{R} (You may cast this spell for its evoke cost. If you do, it's sacrificed when it enters.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "HASTE",
+        "EVOKE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Evoke",
+            "cost": "{1}{R}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "CantBlockTargetCreatures",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "count": 2,
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target"
+                },
+                "descriptionOverride": "up to two target creatures can't block this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "171",
+        "rarity": "UNCOMMON",
+        "artist": "Nils Hamm",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/9/59fdc845-7165-40f3-a082-21a502b3f0f6.jpg?1783942876"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -2945,6 +3098,78 @@
         "artist": "Quinton Hoover",
         "flavorText": "Eidren, perfect of Lys Alana, ordered hundreds of trees uprooted and rearranged into a pattern he deemed beautiful. Thus the Gilt-Leaf Wood was born.",
         "imageUri": "https://cards.scryfall.io/normal/front/3/a/3aaff934-cc79-4a01-a4be-3c4936605e4e.jpg?1783942859"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Masked Admirers
+{
+    "name": "Masked Admirers",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Creature — Elf Shaman",
+    "oracleText": "When this creature enters, draw a card.\nWhenever you cast a creature spell, you may pay {G}{G}. If you do, return this card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "draw a card."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{G}{G}"
+                        }
+                    },
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": "Self",
+                        "destination": "Hand",
+                        "fromZone": "Graveyard"
+                    }
+                },
+                "activeZones": [
+                    "Graveyard"
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "230",
+        "rarity": "RARE",
+        "artist": "Eric Fortune",
+        "flavorText": "\"Beauty determines value, and we determine beauty.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/9/c9cf01d6-7d5d-4638-9884-733797c9f502.jpg?1783942860"
     },
     "colorIdentityOverride": [
         "GREEN"
@@ -4083,6 +4308,55 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Smokebraider
+{
+    "name": "Smokebraider",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Elemental Shaman",
+    "oracleText": "{T}: Add two mana in any combination of colors. Spend this mana only to cast Elemental spells or activate abilities of Elementals.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddDynamicMana",
+                    "amountSource": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "allowedColors": [
+                        "WHITE",
+                        "BLUE",
+                        "BLACK",
+                        "RED",
+                        "GREEN"
+                    ],
+                    "restriction": {
+                        "type": "SubtypeSpellsOrAbilitiesOnly",
+                        "subtype": "Elemental"
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "189",
+        "artist": "Anthony S. Waters",
+        "flavorText": "\"Be silent and listen to your inner fire. Only then can you walk the Path of Flame.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/3/e3c6227b-bd43-47e8-927f-f8a78c532591.jpg?1783942871"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
