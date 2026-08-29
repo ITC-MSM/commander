@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 248 / 273
+**Implemented:** 251 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -88,7 +88,7 @@
 - [x] Edgar's Awakening
 - [x] Edgar, Charmed Groom
 - [x] End the Festivities
-- [ ] Eruth, Tormented Prophet
+- [x] Eruth, Tormented Prophet
 - [x] Estwald Shieldbasher
 - [x] Evolving Wilds
 - [ ] Faithbound Judge
@@ -141,7 +141,7 @@
 - [x] Investigator's Journal
 - [x] Island
 - [ ] Jacob Hauken, Inspector
-- [ ] Katilda, Dawnhart Martyr
+- [x] Katilda, Dawnhart Martyr
 - [ ] Kaya, Geist Hunter
 - [x] Kessig Flamebreather
 - [x] Kessig Wolfrider
@@ -162,7 +162,7 @@
 - [x] Massive Might
 - [x] Militia Rallier
 - [x] Mindleech Ghoul
-- [ ] Mirrorhall Mimic
+- [x] Mirrorhall Mimic
 - [x] Mischievous Catgeist
 - [x] Moldgraf Millipede
 - [x] Mountain
