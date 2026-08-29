@@ -548,6 +548,38 @@
     ]
 }
 
+// Caterwauling Boggart
+{
+    "name": "Caterwauling Boggart",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Goblin Shaman",
+    "oracleText": "Goblins you control and Elementals you control have menace. (They can't be blocked except by two or more creatures.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "MENACE",
+                "filter": {
+                    "baseFilter": "permanent Goblin|Elemental ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "157",
+        "artist": "Steven Belledin",
+        "flavorText": "\"As far as I can tell, that frog dangling from the stick serves absolutely no purpose whatsoever.\"\n—Gaddock Teeg",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/e/ee8337bf-9fe8-45a0-974c-8911306b19ea.jpg?1783942880"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Cloudcrown Oak
 {
     "name": "Cloudcrown Oak",
@@ -3327,6 +3359,59 @@
     ]
 }
 
+// Kinsbaile Balloonist
+{
+    "name": "Kinsbaile Balloonist",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Kithkin Soldier",
+    "oracleText": "Flying\nWhenever this creature attacks, you may have target creature gain flying until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GrantKeyword",
+                        "keyword": "FLYING",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
+                    },
+                    "descriptionOverride": "you may have target creature gain flying until end of turn."
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target"
+                },
+                "descriptionOverride": "you may have target creature gain flying until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "23",
+        "artist": "Zoltan Boros & Gabor Szikszai",
+        "flavorText": "Even when a giant's tantrum turns the sky into a chaotic gale, the path of the balloonist never falters.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b6053c20-3632-43e2-8560-259d0c12f235.jpg?1783942913"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Kinsbaile Skirmisher
 {
     "name": "Kinsbaile Skirmisher",
@@ -3649,6 +3734,54 @@
     ]
 }
 
+// Lace with Moonglove
+{
+    "name": "Lace with Moonglove",
+    "manaCost": "{2}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gains deathtouch until end of turn. (Any amount of damage it deals to a creature is enough to destroy that creature.)\nDraw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "DEATHTOUCH",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "225",
+        "artist": "Rebecca Guay",
+        "flavorText": "\"Which is more filled with poison: the flower of the moonglove or the minds of elves?\"\n—Vessifrus, flamekin demagogue",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/2/32f209d6-c194-4208-864d-f8a44b88997f.jpg?1783942862"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Leaf Gilder
 {
     "name": "Leaf Gilder",
@@ -3746,6 +3879,70 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Mad Auntie
+{
+    "name": "Mad Auntie",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Goblin Shaman",
+    "oracleText": "Other Goblin creatures you control get +1/+1.\n{T}: Regenerate another target Goblin.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Regenerate",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "permanent Goblin",
+                            "excludeSelf": true
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature Goblin ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "123",
+        "rarity": "RARE",
+        "artist": "Wayne Reynolds",
+        "flavorText": "One part cunning, one part wise, and many, many parts demented.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/9/39b1655b-ab0a-40d9-8d4d-55d13310ede1.jpg?1783942887",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "The second ability can target any Goblin permanent except the Mad Auntie whose ability is being activated. It can target a different Mad Auntie."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -4880,6 +5077,44 @@
     ]
 }
 
+// Protective Bubble
+{
+    "name": "Protective Bubble",
+    "manaCost": "{3}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature can't be blocked and has shroud. (It can't be the target of spells or abilities.)",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CantBeBlocked",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "AttachedTo"
+                }
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "SHROUD"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "80",
+        "artist": "Steve Ellis",
+        "flavorText": "Skilled merrow rudders ensure their charges arrive on time and without incident.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7ab1db58-66b6-4b92-9dcd-e044fa383469.jpg?1783942900"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Rootgrapple
 {
     "name": "Rootgrapple",
@@ -5852,6 +6087,77 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Treefolk Harbinger
+{
+    "name": "Treefolk Harbinger",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Treefolk Druid",
+    "oracleText": "When this creature enters, you may search your library for a Treefolk or Forest card, reveal it, then shuffle and put that card on top.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "Treefolk|Forest"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        "ShuffleLibrary",
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Top"
+                            },
+                            "revealed": true
+                        },
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "descriptionOverride": "you may search your library for a Treefolk or Forest card, reveal it, then shuffle and put that card on top."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "239",
+        "rarity": "UNCOMMON",
+        "artist": "Larry MacDougall",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/e/9ef45cdc-2e1c-40c7-8978-b09a50f511fb.jpg?1783942856"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
