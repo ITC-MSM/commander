@@ -1,17 +1,13 @@
 package com.wingedsheep.mtg.sets.definitions.ktk.cards
 
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.CardDestination
-import com.wingedsheep.sdk.scripting.effects.CardSource
-import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
-import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
-import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
-import com.wingedsheep.sdk.scripting.effects.SelectionMode
+import com.wingedsheep.sdk.scripting.effects.CardOrder
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
-import com.wingedsheep.sdk.dsl.Effects
 
 /**
  * Scout the Borders
@@ -19,6 +15,9 @@ import com.wingedsheep.sdk.dsl.Effects
  * Sorcery
  * Reveal the top five cards of your library. You may put a creature or land card
  * from among them into your hand. Put the rest into your graveyard.
+ *
+ * `Patterns.Library.lookAtTopAndTakeMatching` is this sentence: the card used to restate the recipe
+ * step by step, which only differed from it in the name of the pipeline collection.
  */
 val ScoutTheBorders = card("Scout the Borders") {
     manaCost = "{2}{G}"
@@ -27,32 +26,13 @@ val ScoutTheBorders = card("Scout the Borders") {
     oracleText = "Reveal the top five cards of your library. You may put a creature or land card from among them into your hand. Put the rest into your graveyard."
 
     spell {
-        effect = Effects.Composite(
-            listOf(
-                GatherCardsEffect(
-                    source = CardSource.TopOfLibrary(DynamicAmount.Fixed(5)),
-                    storeAs = "revealed",
-                    revealed = true
-                ),
-                SelectFromCollectionEffect(
-                    from = "revealed",
-                    selection = SelectionMode.ChooseUpTo(DynamicAmount.Fixed(1)),
-                    filter = GameObjectFilter.Companion.CreatureOrLand,
-                    storeSelected = "kept",
-                    storeRemainder = "rest",
-                    selectedLabel = "Put in hand",
-                    remainderLabel = "Put in graveyard",
-                    showAllCards = true
-                ),
-                MoveCollectionEffect(
-                    from = "kept",
-                    destination = CardDestination.ToZone(Zone.HAND)
-                ),
-                MoveCollectionEffect(
-                    from = "rest",
-                    destination = CardDestination.ToZone(Zone.GRAVEYARD)
-                )
-            )
+        effect = Patterns.Library.lookAtTopAndTakeMatching(
+            count = DynamicAmount.Fixed(5),
+            filter = GameObjectFilter.CreatureOrLand,
+            prompt = "You may put a creature or land card from among them into your hand",
+            revealed = true,
+            restDestination = CardDestination.ToZone(Zone.GRAVEYARD),
+            restOrder = CardOrder.Preserve
         )
     }
 

@@ -1,6 +1,7 @@
 package com.wingedsheep.assay.grammar
 
 import com.wingedsheep.assay.syntax.Phrase
+import com.wingedsheep.assay.syntax.SentenceCase
 import com.wingedsheep.assay.syntax.alternate
 import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.constant
@@ -70,15 +71,21 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * the two slots as the same type would have let the grammar print "put one of them into your hand in
  * a random order", a sentence no card writes and the model cannot carry.
  *
+ * ### The two layers the take sentence added
+ *
+ * "You may put a creature card from among them **onto the battlefield**" was written down here as an
+ * SDK finding rather than a rule for one release: `lookAtTopRevealMatchingToHand` hardcoded the hand,
+ * and hand-building the pipeline would have restated a recipe the SDK owns. It is now
+ * `Patterns.Library.lookAtTopAndTakeMatching`, whose parameters are again exactly the words that
+ * vary, and two more layers read them — [seen] for "look at" against "reveal", and [Take] for how
+ * many of the pile you take and of what. See [takeMatchingRule].
+ *
  * ### What is deliberately not here
  *
- * - **"You may put a creature card from among them onto the battlefield."** — the same recipe as
- *   [lookAtTopRevealMatchingToHand] with a different destination for the kept card, and the facade
- *   hardcodes the hand. That is an **SDK finding**, not a rule to write around: widening
- *   `lookAtTopRevealMatchingToHand` with a `keepDestination` is a capability change to `mtg-sdk` and
- *   goes through `add-feature`, and hand-building the pipeline here would restate a recipe the SDK
- *   already owns — the exact thing this file exists to stop. ~20 corpus lines, all of them the
- *   "onto the battlefield" and "onto the battlefield tapped" spellings.
+ * - **A second keep pile.** "You may put up to one land card from among them onto the battlefield
+ *   tapped **and up to one Elf card from among them into your hand**" — Bounty of Skemfar — is two
+ *   selections over one gather, which is a second `SelectFromCollection` the recipe has no room for.
+ *   That is a different pipeline, not a longer sentence.
  * - **Somebody else's library.** Every rule here fixes `Player.You`, because the printed noun phrase
  *   for another player's library ("target opponent's", "each player's") is a *target* vocabulary and
  *   not a possessive word — [Library.lookAtOpponentTopAndBury] is what one costs today. The count
@@ -119,6 +126,39 @@ object TopOfLibrary {
         constant("the top X cards", DynamicAmount.XValue),
     )
 
+    /**
+     * How many cards you see **and whether everyone else sees them** — "look at the top four cards
+     * of your library" against "reveal the top four cards of your library".
+     *
+     * One printed verb, one `Boolean` on the gather step the count already comes off
+     * ([GatherCardsEffect.revealed]), so this is [topCards] with one more field rather than a second
+     * copy of every sentence below it. `Patterns.Library.lookAtTopAndKeep` has taken `revealed` as a
+     * parameter all along and the grammar was calling it with the word frozen at "look at" — the
+     * file's own lesson, one layer up from where it first landed.
+     *
+     * `Patterns.Library.revealTopPutAllMatchingToHand` spells the same reveal as a separate
+     * `RevealCollectionEffect` step instead, which is a second SDK spelling of one fact and a
+     * finding rather than something to fold here: folding would make the two recipes print the same
+     * English from two different models. The hand-written corpus votes for the flag — Scout the
+     * Borders, written from this very sentence, sets `revealed = true` on its gather.
+     */
+    private data class Seen(val count: DynamicAmount, val revealed: Boolean)
+
+    /** "look at {top} of your library" / "reveal {top} of your library" — [Seen]'s two rows. */
+    private val seen: Phrase<Seen> = oneOf(
+        "the top cards of your library, looked at or revealed",
+        phrase("look at {top} of your library", name = "look at the top cards of your library") {
+            slot("top", topCards)
+            build { Seen(it.value("top"), revealed = false) }
+            match { if (it.revealed) null else bind("top" to it.count) }
+        },
+        phrase("reveal {top} of your library", name = "reveal the top cards of your library") {
+            slot("top", topCards)
+            build { Seen(it.value("top"), revealed = true) }
+            match { if (it.revealed) bind("top" to it.count) else null }
+        },
+    )
+
     /** True where English would spell the pile as a plural — everything but a single named card. */
     private fun isPlural(count: DynamicAmount): Boolean = count != DynamicAmount.Fixed(1)
 
@@ -148,6 +188,18 @@ object TopOfLibrary {
         constant("into your hand", CardDestination.ToZone(Zone.HAND)),
         constant("into your graveyard", CardDestination.ToZone(Zone.GRAVEYARD)),
         constant("onto the battlefield", CardDestination.ToZone(Zone.BATTLEFIELD)),
+        // "…onto the battlefield tapped", "…tapped and attacking". Two more rows rather than a
+        // "tapped" suffix layer over the battlefield row, because `ZonePlacement` types them as
+        // three disjoint values of one field and English writes them as three whole prepositional
+        // phrases — the same argument the row above makes against a preposition slot.
+        constant(
+            "onto the battlefield tapped",
+            CardDestination.ToZone(Zone.BATTLEFIELD, placement = ZonePlacement.Tapped),
+        ),
+        constant(
+            "onto the battlefield tapped and attacking",
+            CardDestination.ToZone(Zone.BATTLEFIELD, placement = ZonePlacement.TappedAndAttacking),
+        ),
         constant(
             "on the bottom of your library",
             CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Bottom),
@@ -195,6 +247,8 @@ object TopOfLibrary {
         alternate(constant("the rest of them", Unit)),
         alternate(constant("the rest of those cards", Unit)),
         alternate(constant("the rest of the cards", Unit)),
+        alternate(constant("the rest of the cards revealed this way", Unit)),
+        alternate(constant("the rest of the revealed cards", Unit)),
     )
 
     /** A destination together with the order the cards arrive in — one `MoveCollectionEffect`. */
@@ -223,6 +277,113 @@ object TopOfLibrary {
     )
 
     // ---------------------------------------------------------------------------------------
+    // Layer 3 — which of the cards you saw you take
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * How many of the pile you take and what they have to be — one `SelectionMode` and one filter,
+     * spelled as one phrase.
+     *
+     * **The option word lives in here, with the verb, because English fuses the two.** "You may put
+     * **a** creature card", "put **up to two** permanent cards" and "put any number of Equipment
+     * cards" are three spellings of one field: whether a card is taken at all is the *same* fact as
+     * how many, and `SelectionMode` says so — `ChooseUpTo(1)` is exactly "you may take one". A layer
+     * that spelled only the quantifier would have had to leave "you may" to the sentence above it,
+     * and that sentence would then have had to decide the option word from a value it had handed
+     * away. This is [topCards]' rule about the noun ("the top card" / "the top four cards") applied
+     * to the verb phrase in front of it: the words that agree stay in one phrase.
+     *
+     * `ChooseExactly` is the fourth value and the only mandatory one, and it is the reason there are
+     * two sentences below rather than one — see [takeMatchingRule].
+     */
+    private data class Take(val selection: SelectionMode, val filter: GameObjectFilter)
+
+    /**
+     * A [Take] row whose count is fixed by the row itself — everything but "up to *n*".
+     *
+     * [canonicalForm] is what splits one model's two printed spellings: "you may put any number of
+     * Equipment cards" and "put any number of Equipment cards" are the same `ChooseAnyNumber`, so
+     * one prints and the other only parses.
+     */
+    private fun takeRow(
+        template: String,
+        name: String,
+        noun: Phrase<GameObjectFilter>,
+        selection: SelectionMode,
+        canonicalForm: Boolean = true,
+    ): Phrase<Take> {
+        val rule = phrase<Take>(template, name = name) {
+            slot("f", noun)
+            build { Take(selection, it.value("f")) }
+            match { if (it.selection == selection) bind("f" to it.filter) else null }
+            canonical = canonicalForm
+        }
+        return if (canonicalForm) rule else alternate(rule)
+    }
+
+    /**
+     * "put up to two permanent cards", "you may put up to three enchantment cards" — the counted
+     * [Take].
+     *
+     * [Cardinals.word] starts at two, which is what keeps this row disjoint from the "you may put a
+     * creature card" row above it: `ChooseUpTo(1)` has exactly one canonical spelling and it is the
+     * one with the article, so nothing can print as "up to one".
+     */
+    private fun takeUpToRow(template: String, name: String, canonicalForm: Boolean = true): Phrase<Take> {
+        val rule = phrase<Take>(template, name = name) {
+            slot("n", Cardinals.word)
+            slot("f", Filters.pluralCards)
+            build { Take(SelectionMode.ChooseUpTo(DynamicAmount.Fixed(it.int("n"))), it.value("f")) }
+            match { take ->
+                val upTo = take.selection as? SelectionMode.ChooseUpTo ?: return@match null
+                val n = (upTo.count as? DynamicAmount.Fixed)?.amount ?: return@match null
+                if (!Cardinals.spellable(n)) return@match null
+                bind("n" to n, "f" to take.filter)
+            }
+            canonical = canonicalForm
+        }
+        return if (canonicalForm) rule else alternate(rule)
+    }
+
+    /**
+     * The takes that are **optional in the printed verb** — "you may put a creature card", "you may
+     * put any number of snow permanent cards".
+     *
+     * Disjoint from [countedTake] on the `SelectionMode` itself, which is what lets the two
+     * sentences below print different word orders without either of them being able to print the
+     * other's models.
+     */
+    private val optionalTake: Phrase<Take> = oneOf(
+        "cards you may take from the pile",
+        takeRow(
+            "you may put {f}", "you may take one matching card",
+            Filters.indefiniteCard, SelectionMode.ChooseUpTo(DynamicAmount.Fixed(1)),
+        ),
+        takeRow(
+            "you may put any number of {f}", "you may take any number of matching cards",
+            Filters.pluralCards, SelectionMode.ChooseAnyNumber,
+        ),
+        takeRow(
+            "put any number of {f}", "take any number of matching cards",
+            Filters.pluralCards, SelectionMode.ChooseAnyNumber, canonicalForm = false,
+        ),
+    )
+
+    /** The takes whose printed verb is bare — "put a land card", "put up to two artifact cards". */
+    private val countedTake: Phrase<Take> = oneOf(
+        "cards you take from the pile, counted",
+        takeRow(
+            "put {f}", "take one matching card",
+            Filters.indefiniteCard, SelectionMode.ChooseExactly(DynamicAmount.Fixed(1)),
+        ),
+        takeUpToRow("put up to {n} {f}", "take up to several matching cards"),
+        takeUpToRow(
+            "you may put up to {n} {f}", "you may take up to several matching cards",
+            canonicalForm = false,
+        ),
+    )
+
+    // ---------------------------------------------------------------------------------------
     // Reading a pipeline back
     // ---------------------------------------------------------------------------------------
 
@@ -243,6 +404,13 @@ object TopOfLibrary {
         val source = (steps.firstOrNull() as? GatherCardsEffect)?.source as? CardSource.TopOfLibrary
             ?: return null
         return source.count.takeIf { !source.isMill }
+    }
+
+    /** [gatheredCount] plus the gather's own reveal flag — the whole of what [seen] spells. */
+    private fun gatheredSeen(steps: List<Effect>): Seen? {
+        val gather = steps.firstOrNull() as? GatherCardsEffect ?: return null
+        val count = gatheredCount(steps) ?: return null
+        return Seen(count, gather.revealed)
     }
 
     /** The one selection step of a pipeline, or null when it has none or several. */
@@ -323,6 +491,115 @@ object TopOfLibrary {
     }
 
     /**
+     * "Look at the top five cards of your library. You may put a land card from among them onto the
+     * battlefield tapped. Put the rest on the bottom of your library in a random order." — Elvish
+     * Rejuvenator, Summoning Trap, Gather the Pack, Mayael the Anima, and the most-printed sentence
+     * in this whole file's family.
+     *
+     * It is [lookAtTopRevealMatchingToHand] with the three words that rule freezes turned into
+     * slots — the verb ([seen]), how many and of what ([Take]), and where they go ([place]) — which
+     * is why the SDK grew `Patterns.Library.lookAtTopAndTakeMatching` under it and the older recipe
+     * now delegates there. The two sentences stay apart on one field: this one moves the kept cards
+     * without turning them face up, and that rule's does ("you may **reveal** a creature card … and
+     * put **it** into your hand"), so exactly one of them can print any given script.
+     *
+     * ### Why two instantiations, and what decides the word order
+     *
+     * The two printed joins — "…into your hand. Put the rest into your graveyard." against "…into
+     * your hand **and** the rest into your graveyard." — carry nothing the model can hold, so one of
+     * them prints per script and the other only parses. Which one is canonical is **decided by the
+     * `SelectionMode`**, measured over the corpus's 77 printings of the sentence:
+     *
+     * | Take | Separate sentences | Joined |
+     * |---|---:|---:|
+     * | "you may put a …" — `ChooseUpTo(1)` | **38** | 0 |
+     * | "you may put any number of …" — `ChooseAnyNumber` | **9** | 5 |
+     * | "put a …" — `ChooseExactly(1)` | 2 | **11** |
+     * | "put up to n …" — `ChooseUpTo(n)` | 7 | 5 |
+     *
+     * The option word and the join move together: a take English spells with "you may" is written as
+     * two sentences and a bare "put" is written as one. So the same split that gives [optionalTake]
+     * and [countedTake] their disjoint halves of `SelectionMode` gives each of them its own
+     * canonical order, and neither can print the other's models. This is [impulseRule]'s lesson
+     * about durations, arriving at a third field.
+     *
+     * ### The prompt is the printed sentence
+     *
+     * The facade needs a decision label and no printed word supplies one — the class of field
+     * `Folds.dropPresentation` drops by name. Rather than invent prose, both directions rebuild it
+     * from the very layers the rule just read: `{take} from among them {keep}`, capitalized. Two
+     * parses of one line therefore stay equal, and a compiled card's decision reads back as its own
+     * Oracle text.
+     */
+    private fun takeMatchingRule(
+        template: String,
+        name: String,
+        alsoSpelledTemplate: String,
+        alsoSpelledName: String,
+        take: Phrase<Take>,
+    ): Phrase<CardScript> {
+        fun scriptFor(pile: Seen, taken: Take, keep: CardDestination, rest: Disposition): CardScript? {
+            val sentence = (take.unparse(taken) ?: return null) +
+                " from among them " + (place.unparse(keep) ?: return null)
+            return CardScript(
+                spellEffect = Patterns.Library.lookAtTopAndTakeMatching(
+                    count = pile.count,
+                    filter = taken.filter,
+                    prompt = SentenceCase.capitalize(sentence),
+                    selection = taken.selection,
+                    revealed = pile.revealed,
+                    keepDestination = keep,
+                    restDestination = rest.destination,
+                    restOrder = rest.order,
+                ),
+            )
+        }
+        return phrase(template, name = name) {
+            slot("seen", seen)
+            slot("take", take)
+            slot("keep", place)
+            slot("remainder", theRest)
+            slot("rest", disposition)
+            alsoSpelled(alsoSpelledTemplate, name = alsoSpelledName)
+            build { scriptFor(it.value("seen"), it.value("take"), it.value("keep"), it.value("rest")) }
+            match { script ->
+                val steps = steps(script) ?: return@match null
+                val pile = gatheredSeen(steps) ?: return@match null
+                val select = selection(steps) ?: return@match null
+                val taken = Take(select.selection, select.filter)
+                val keep = movedTo(steps, "kept") ?: return@match null
+                val rest = movedTo(steps, "rest") ?: return@match null
+                if (script != scriptFor(pile, taken, keep.destination, rest)) return@match null
+                bind(
+                    "seen" to pile,
+                    "take" to taken,
+                    "keep" to keep.destination,
+                    "remainder" to Unit,
+                    "rest" to rest,
+                )
+            }
+        }
+    }
+
+    /** "…You may put a creature card from among them onto the battlefield. Put the rest …" */
+    private val lookAtTopAndMayTakeMatching: Phrase<CardScript> = takeMatchingRule(
+        template = "{seen}. {take} from among them {keep}. put {remainder} {rest}",
+        name = "look at the top cards and take the matching ones you want",
+        alsoSpelledTemplate = "{seen}. {take} from among them {keep} and {remainder} {rest}",
+        alsoSpelledName = "look at the top cards and take the matching ones you want (joined)",
+        take = optionalTake,
+    )
+
+    /** "…Put a land card from among them into your hand and the rest into your graveyard." */
+    private val lookAtTopAndTakeMatchingCounted: Phrase<CardScript> = takeMatchingRule(
+        template = "{seen}. {take} from among them {keep} and {remainder} {rest}",
+        name = "look at the top cards and take a counted number of matching ones",
+        alsoSpelledTemplate = "{seen}. {take} from among them {keep}. put {remainder} {rest}",
+        alsoSpelledName = "look at the top cards and take a counted number of matching ones (split)",
+        take = countedTake,
+    )
+
+    /**
      * "Look at the top seven cards of your library. Put two of them into your hand and the rest into
      * your graveyard." — the counted keep, with both destinations as slots.
      *
@@ -339,20 +616,21 @@ object TopOfLibrary {
      * which — the configuration this module treats as a bug that has not surfaced yet.
      */
     private val lookAtTopAndKeep: Phrase<CardScript> = run {
-        fun scriptFor(count: DynamicAmount, keep: Int, to: CardDestination, rest: Disposition) = CardScript(
+        fun scriptFor(pile: Seen, keep: Int, to: CardDestination, rest: Disposition) = CardScript(
             spellEffect = Patterns.Library.lookAtTopAndKeep(
-                count = count,
+                count = pile.count,
                 keepCount = DynamicAmount.Fixed(keep),
                 keepDestination = to,
                 restDestination = rest.destination,
+                revealed = pile.revealed,
                 restOrder = rest.order,
             ),
         )
         phrase(
-            "look at {top} of your library. put {k} {pile} {keep} and {remainder} {rest}",
+            "{seen}. put {k} {pile} {keep} and {remainder} {rest}",
             name = "look at the top cards and keep some",
         ) {
-            slot("top", topCards)
+            slot("seen", seen)
             slot("k", Cardinals.pronominal)
             slot("pile", ofThePile)
             slot("keep", place)
@@ -364,26 +642,26 @@ object TopOfLibrary {
             // spelling and belongs here rather than to [Steps]' clause run, which could not split a
             // gather from the selection that consumes it.
             alsoSpelled(
-                "you look at {top} of your library, then put {k} {pile} {keep} and {remainder} {rest}",
+                "you {seen}, then put {k} {pile} {keep} and {remainder} {rest}",
                 name = "look at the top cards and keep some (one sentence)",
             )
             build { bindings ->
-                val count = bindings.value<DynamicAmount>("top")
+                val pile = bindings.value<Seen>("seen")
                 val keep = bindings.int("k")
-                if (leavesExactlyOne(count, keep)) return@build null
-                scriptFor(count, keep, bindings.value("keep"), bindings.value("rest"))
+                if (leavesExactlyOne(pile.count, keep)) return@build null
+                scriptFor(pile, keep, bindings.value("keep"), bindings.value("rest"))
             }
             match { script ->
                 val steps = steps(script) ?: return@match null
-                val count = gatheredCount(steps) ?: return@match null
+                val pile = gatheredSeen(steps) ?: return@match null
                 val mode = selection(steps)?.selection as? SelectionMode.ChooseExactly ?: return@match null
                 val keep = (mode.count as? DynamicAmount.Fixed)?.amount ?: return@match null
-                if (!Cardinals.spellablePronominally(keep) || leavesExactlyOne(count, keep)) return@match null
+                if (!Cardinals.spellablePronominally(keep) || leavesExactlyOne(pile.count, keep)) return@match null
                 val to = movedTo(steps, "kept")?.takeIf { it.order == CardOrder.Preserve } ?: return@match null
                 val rest = movedTo(steps, "rest") ?: return@match null
-                if (script != scriptFor(count, keep, to.destination, rest)) return@match null
+                if (script != scriptFor(pile, keep, to.destination, rest)) return@match null
                 bind(
-                    "top" to count,
+                    "seen" to pile,
                     "k" to keep,
                     "pile" to Unit,
                     "keep" to to.destination,
@@ -408,43 +686,45 @@ object TopOfLibrary {
      * about numbers you have.
      */
     private val lookAtTopAndKeepAllButOne: Phrase<CardScript> = run {
-        fun scriptFor(count: Int, keep: Int, to: CardDestination, rest: Disposition) = CardScript(
+        fun scriptFor(pile: Seen, keep: Int, to: CardDestination, rest: Disposition) = CardScript(
             spellEffect = Patterns.Library.lookAtTopAndKeep(
-                count = DynamicAmount.Fixed(count),
+                count = pile.count,
                 keepCount = DynamicAmount.Fixed(keep),
                 keepDestination = to,
                 restDestination = rest.destination,
+                revealed = pile.revealed,
                 restOrder = rest.order,
             ),
         )
         phrase(
-            "look at {top} of your library. put {k} {pile} {keep} and the other {rest}",
+            "{seen}. put {k} {pile} {keep} and the other {rest}",
             name = "look at the top cards and keep all but one",
         ) {
-            slot("top", topCards)
+            slot("seen", seen)
             slot("k", Cardinals.pronominal)
             slot("pile", ofThePile)
             slot("keep", place)
             slot("rest", disposition)
             build { bindings ->
-                val count = bindings.value<DynamicAmount>("top")
+                val pile = bindings.value<Seen>("seen")
                 val keep = bindings.int("k")
-                if (!leavesExactlyOne(count, keep)) return@build null
-                scriptFor((count as DynamicAmount.Fixed).amount, keep, bindings.value("keep"), bindings.value("rest"))
+                if (!leavesExactlyOne(pile.count, keep)) return@build null
+                if (!Cardinals.spellable((pile.count as DynamicAmount.Fixed).amount)) return@build null
+                scriptFor(pile, keep, bindings.value("keep"), bindings.value("rest"))
             }
             match { script ->
                 val steps = steps(script) ?: return@match null
-                val gathered = gatheredCount(steps) ?: return@match null
-                val count = (gathered as? DynamicAmount.Fixed)?.amount ?: return@match null
+                val pile = gatheredSeen(steps) ?: return@match null
+                val count = (pile.count as? DynamicAmount.Fixed)?.amount ?: return@match null
                 val mode = selection(steps)?.selection as? SelectionMode.ChooseExactly ?: return@match null
                 val keep = (mode.count as? DynamicAmount.Fixed)?.amount ?: return@match null
-                if (!leavesExactlyOne(gathered, keep)) return@match null
+                if (!leavesExactlyOne(pile.count, keep)) return@match null
                 if (!Cardinals.spellable(count) || !Cardinals.spellablePronominally(keep)) return@match null
                 val to = movedTo(steps, "kept")?.takeIf { it.order == CardOrder.Preserve } ?: return@match null
                 val rest = movedTo(steps, "rest") ?: return@match null
-                if (script != scriptFor(count, keep, to.destination, rest)) return@match null
+                if (script != scriptFor(pile, keep, to.destination, rest)) return@match null
                 bind(
-                    "top" to DynamicAmount.Fixed(count),
+                    "seen" to pile,
                     "k" to keep,
                     "pile" to Unit,
                     "keep" to to.destination,
@@ -686,6 +966,8 @@ object TopOfLibrary {
 
     val clauses: List<Phrase<CardScript>> = listOf(
         lookAtTopRevealMatchingToHand,
+        lookAtTopAndMayTakeMatching,
+        lookAtTopAndTakeMatchingCounted,
         revealTopPutAllMatchingToHand,
         lookAtTopAndKeepAllButOne,
         lookAtTopAndKeep,

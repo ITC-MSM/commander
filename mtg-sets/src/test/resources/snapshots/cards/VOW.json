@@ -2366,16 +2366,14 @@
                         }
                     },
                     "filter": "land",
-                    "storeSelected": "toBattlefield",
+                    "storeSelected": "kept",
                     "storeRemainder": "rest",
-                    "prompt": "Put up to two land cards onto the battlefield tapped",
-                    "selectedLabel": "Put onto the battlefield tapped",
-                    "remainderLabel": "Put on the bottom of your library",
+                    "prompt": "Put up to two land cards from among them onto the battlefield tapped",
                     "showAllCards": true
                 },
                 {
                     "type": "MoveCollection",
-                    "from": "toBattlefield",
+                    "from": "kept",
                     "destination": {
                         "type": "ToZone",
                         "zone": "Battlefield",
@@ -3861,6 +3859,96 @@
     ]
 }
 
+// Consuming Tide
+{
+    "name": "Consuming Tide",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Each player chooses a nonland permanent they control. Return all nonland permanents not chosen this way to their owners' hands. Then you draw a card for each opponent who has more cards in their hand than you.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "BattlefieldMatching",
+                        "filter": "nonland permanent"
+                    },
+                    "storeAs": "gathered0"
+                },
+                {
+                    "type": "ChooseOnePerCategory",
+                    "from": "gathered0",
+                    "categories": [
+                        {
+                            "cardPredicates": [
+                                "IsNonland",
+                                "IsPermanent"
+                            ]
+                        }
+                    ],
+                    "storeAs": "kept1"
+                },
+                {
+                    "type": "FilterCollection",
+                    "from": "gathered0",
+                    "filter": {
+                        "type": "ExcludeOtherCollection",
+                        "otherCollectionName": "kept1"
+                    },
+                    "storeMatching": "matching2"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "matching2",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "CountPlayersWith",
+                        "scope": "EachOpponent",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "Count",
+                                "player": "You",
+                                "zone": "Hand"
+                            },
+                            "operator": "GT",
+                            "right": {
+                                "type": "Count",
+                                "player": "ControllerOfSource",
+                                "zone": "Hand"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "53",
+        "rarity": "RARE",
+        "artist": "Viko Menezes",
+        "flavorText": "\"Nephalia's tides obey an unforgiving moon.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/8/5865f0f1-28a6-49ac-b61e-135845075d1f.jpg?1783924899",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Starting with the player whose turn it is, each player chooses a nonland permanent they control. Players get to know what permanents have been chose by players that chose before them as they make their choice. Then all nonland permanents that weren't chosen by any player are returned to their owners' hands at the same time."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Courier Bat
 {
     "name": "Courier Bat",
@@ -4058,6 +4146,96 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Creepy Puppeteer
+{
+    "name": "Creepy Puppeteer",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Human Rogue",
+    "oracleText": "Haste\nWhenever this creature attacks, if you attacked with exactly one other creature this combat, you may have that creature's base power and toughness become 4/3 until end of turn.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": {
+                                    "cardPredicates": [
+                                        "IsCreature"
+                                    ],
+                                    "statePredicates": [
+                                        "AttackedThisCombat"
+                                    ],
+                                    "controllerPredicate": "ControlledByYou"
+                                },
+                                "excludeSelf": true
+                            }
+                        },
+                        "body": {
+                            "type": "SetBaseStats",
+                            "target": "Self",
+                            "power": {
+                                "type": "Fixed",
+                                "amount": 4
+                            },
+                            "toughness": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "duration": "EndOfTurn"
+                        }
+                    },
+                    "descriptionOverride": "Whenever this creature attacks, if you attacked with exactly one other creature this combat, you may have that creature's base power and toughness become 4/3 until end of turn."
+                },
+                "interveningIf": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ],
+                            "statePredicates": [
+                                "AttackedThisCombat"
+                            ]
+                        },
+                        "excludeSelf": true
+                    },
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever this creature attacks, if you attacked with exactly one other creature this combat, you may have that creature's base power and toughness become 4/3 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "151",
+        "rarity": "RARE",
+        "artist": "Marie Magny",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/b/0bd17b9f-fd93-47d4-9cc4-cd333d0004f5.jpg?1783924838"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -12162,6 +12340,291 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Odric, Blood-Cursed
+{
+    "name": "Odric, Blood-Cursed",
+    "manaCost": "{1}{R}{W}",
+    "typeLine": "Legendary Creature — Vampire Soldier",
+    "oracleText": "When Odric enters, create X Blood tokens, where X is the number of abilities from among flying, first strike, double strike, deathtouch, haste, hexproof, indestructible, lifelink, menace, reach, trample, and vigilance found among creatures you control. (Count each ability only once.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Blood",
+                    "dynamicCount": {
+                        "type": "Add",
+                        "left": {
+                            "type": "Add",
+                            "left": {
+                                "type": "Add",
+                                "left": {
+                                    "type": "Add",
+                                    "left": {
+                                        "type": "Add",
+                                        "left": {
+                                            "type": "Add",
+                                            "left": {
+                                                "type": "Add",
+                                                "left": {
+                                                    "type": "Add",
+                                                    "left": {
+                                                        "type": "Add",
+                                                        "left": {
+                                                            "type": "Add",
+                                                            "left": {
+                                                                "type": "Add",
+                                                                "left": {
+                                                                    "type": "Conditional",
+                                                                    "condition": {
+                                                                        "type": "Exists",
+                                                                        "player": "You",
+                                                                        "zone": "Battlefield",
+                                                                        "filter": "creature kw:flying"
+                                                                    },
+                                                                    "ifTrue": {
+                                                                        "type": "Fixed",
+                                                                        "amount": 1
+                                                                    },
+                                                                    "ifFalse": {
+                                                                        "type": "Fixed",
+                                                                        "amount": 0
+                                                                    }
+                                                                },
+                                                                "right": {
+                                                                    "type": "Conditional",
+                                                                    "condition": {
+                                                                        "type": "Exists",
+                                                                        "player": "You",
+                                                                        "zone": "Battlefield",
+                                                                        "filter": "creature kw:first_strike"
+                                                                    },
+                                                                    "ifTrue": {
+                                                                        "type": "Fixed",
+                                                                        "amount": 1
+                                                                    },
+                                                                    "ifFalse": {
+                                                                        "type": "Fixed",
+                                                                        "amount": 0
+                                                                    }
+                                                                }
+                                                            },
+                                                            "right": {
+                                                                "type": "Conditional",
+                                                                "condition": {
+                                                                    "type": "Exists",
+                                                                    "player": "You",
+                                                                    "zone": "Battlefield",
+                                                                    "filter": "creature kw:double_strike"
+                                                                },
+                                                                "ifTrue": {
+                                                                    "type": "Fixed",
+                                                                    "amount": 1
+                                                                },
+                                                                "ifFalse": {
+                                                                    "type": "Fixed",
+                                                                    "amount": 0
+                                                                }
+                                                            }
+                                                        },
+                                                        "right": {
+                                                            "type": "Conditional",
+                                                            "condition": {
+                                                                "type": "Exists",
+                                                                "player": "You",
+                                                                "zone": "Battlefield",
+                                                                "filter": "creature kw:deathtouch"
+                                                            },
+                                                            "ifTrue": {
+                                                                "type": "Fixed",
+                                                                "amount": 1
+                                                            },
+                                                            "ifFalse": {
+                                                                "type": "Fixed",
+                                                                "amount": 0
+                                                            }
+                                                        }
+                                                    },
+                                                    "right": {
+                                                        "type": "Conditional",
+                                                        "condition": {
+                                                            "type": "Exists",
+                                                            "player": "You",
+                                                            "zone": "Battlefield",
+                                                            "filter": "creature kw:haste"
+                                                        },
+                                                        "ifTrue": {
+                                                            "type": "Fixed",
+                                                            "amount": 1
+                                                        },
+                                                        "ifFalse": {
+                                                            "type": "Fixed",
+                                                            "amount": 0
+                                                        }
+                                                    }
+                                                },
+                                                "right": {
+                                                    "type": "Conditional",
+                                                    "condition": {
+                                                        "type": "Exists",
+                                                        "player": "You",
+                                                        "zone": "Battlefield",
+                                                        "filter": "creature kw:hexproof"
+                                                    },
+                                                    "ifTrue": {
+                                                        "type": "Fixed",
+                                                        "amount": 1
+                                                    },
+                                                    "ifFalse": {
+                                                        "type": "Fixed",
+                                                        "amount": 0
+                                                    }
+                                                }
+                                            },
+                                            "right": {
+                                                "type": "Conditional",
+                                                "condition": {
+                                                    "type": "Exists",
+                                                    "player": "You",
+                                                    "zone": "Battlefield",
+                                                    "filter": "creature kw:indestructible"
+                                                },
+                                                "ifTrue": {
+                                                    "type": "Fixed",
+                                                    "amount": 1
+                                                },
+                                                "ifFalse": {
+                                                    "type": "Fixed",
+                                                    "amount": 0
+                                                }
+                                            }
+                                        },
+                                        "right": {
+                                            "type": "Conditional",
+                                            "condition": {
+                                                "type": "Exists",
+                                                "player": "You",
+                                                "zone": "Battlefield",
+                                                "filter": "creature kw:lifelink"
+                                            },
+                                            "ifTrue": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            },
+                                            "ifFalse": {
+                                                "type": "Fixed",
+                                                "amount": 0
+                                            }
+                                        }
+                                    },
+                                    "right": {
+                                        "type": "Conditional",
+                                        "condition": {
+                                            "type": "Exists",
+                                            "player": "You",
+                                            "zone": "Battlefield",
+                                            "filter": "creature kw:menace"
+                                        },
+                                        "ifTrue": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        },
+                                        "ifFalse": {
+                                            "type": "Fixed",
+                                            "amount": 0
+                                        }
+                                    }
+                                },
+                                "right": {
+                                    "type": "Conditional",
+                                    "condition": {
+                                        "type": "Exists",
+                                        "player": "You",
+                                        "zone": "Battlefield",
+                                        "filter": "creature kw:reach"
+                                    },
+                                    "ifTrue": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    },
+                                    "ifFalse": {
+                                        "type": "Fixed",
+                                        "amount": 0
+                                    }
+                                }
+                            },
+                            "right": {
+                                "type": "Conditional",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": "creature kw:trample"
+                                },
+                                "ifTrue": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "ifFalse": {
+                                    "type": "Fixed",
+                                    "amount": 0
+                                }
+                            }
+                        },
+                        "right": {
+                            "type": "Conditional",
+                            "condition": {
+                                "type": "Exists",
+                                "player": "You",
+                                "zone": "Battlefield",
+                                "filter": "creature kw:vigilance"
+                            },
+                            "ifTrue": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "ifFalse": {
+                                "type": "Fixed",
+                                "amount": 0
+                            }
+                        }
+                    }
+                },
+                "descriptionOverride": "When Odric enters, create X Blood tokens, where X is the number of abilities from among flying, first strike, double strike, deathtouch, haste, hexproof, indestructible, lifelink, menace, reach, trample, and vigilance found among creatures you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "243",
+        "rarity": "RARE",
+        "artist": "Chris Rallis",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/1/81a79f5f-a65a-4b43-b58c-cdfa09cc7855.jpg?1783924793",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Odric, Blood-Cursed counts the number of the listed abilities found, not the number of creatures with those abilities. If you control a single creature with both reach and vigilance as Odric enters the battlefield, you create two Blood tokens. On the other hand, if you control two creatures that each have flying, you create a single Blood token."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "Variants of an ability are counted as that ability and are not counted multiple times. For example, if you control a creature with hexproof from blue and another creature with hexproof from black, you create a single Blood token."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
     ]
 }
 

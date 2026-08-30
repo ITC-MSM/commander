@@ -195,27 +195,49 @@ object LibraryPatterns {
     }
 
     /**
-     * "Look at the top [count] cards of your library. You may reveal a card matching [filter] from
-     * among them and put it into your hand. Put the rest [restDestination] (defaults to the bottom
-     * of your library) [restOrder] (defaults to a random order)." — Radagast the Brown / Star
-     * Charter shape. The reveal is optional ([SelectionMode.ChooseUpTo] of 1), filtered, and the
-     * selected card is revealed as it moves to hand.
+     * "[Look at|Reveal] the top [count] cards of your library. You may put [selection] card(s)
+     * matching [filter] from among them [keepDestination]. Put the rest [restDestination]
+     * [restOrder]." — Elvish Rejuvenator, Summoning Trap, Gather the Pack, Mayael the Anima, and
+     * the ~90 other printings of the most-printed shape in the whole look-at-the-top family.
+     *
+     * One pipeline, and **every printed word that varies between those cards is a parameter of it**:
+     *
+     * | Printed words | Parameter |
+     * |---|---|
+     * | "Look at" / "Reveal" the top N | [revealed] — a public reveal or a private look |
+     * | "a creature card" / "any number of Equipment cards" / "up to two permanent cards" | [selection] + [filter] |
+     * | "into your hand" / "onto the battlefield" / "onto the battlefield tapped" | [keepDestination] |
+     * | "and put **it**" — the kept card turned face up as it moves | [keepRevealed] |
+     * | "Put the rest into your graveyard" / "on the bottom … in a random order" | [restDestination] + [restOrder] |
+     *
+     * [lookAtTopRevealMatchingToHand] is one point in that space and delegates here; it is kept
+     * under its own name because "You may **reveal** a creature card from among them **and put it
+     * into your hand**" is a distinct printed sentence, not because it is a distinct recipe.
+     *
+     * Both halves of the choice are shown ([SelectFromCollectionEffect.showAllCards]): the card told
+     * the player to look at all [count] of them, so cards that do not match [filter] are displayed
+     * and merely unselectable.
      */
-    fun lookAtTopRevealMatchingToHand(
+    fun lookAtTopAndTakeMatching(
         count: DynamicAmount,
         filter: GameObjectFilter,
         prompt: String,
+        selection: SelectionMode = SelectionMode.ChooseUpTo(DynamicAmount.Fixed(1)),
+        revealed: Boolean = false,
+        keepDestination: CardDestination = CardDestination.ToZone(Zone.HAND),
+        keepRevealed: Boolean = false,
         restDestination: CardDestination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Bottom),
         restOrder: CardOrder = CardOrder.Random
     ): CompositeEffect = CompositeEffect(
         listOf(
             GatherCardsEffect(
                 source = CardSource.TopOfLibrary(count),
-                storeAs = "looked"
+                storeAs = "looked",
+                revealed = revealed
             ),
             SelectFromCollectionEffect(
                 from = "looked",
-                selection = SelectionMode.ChooseUpTo(DynamicAmount.Fixed(1)),
+                selection = selection,
                 filter = filter,
                 storeSelected = "kept",
                 storeRemainder = "rest",
@@ -224,8 +246,8 @@ object LibraryPatterns {
             ),
             MoveCollectionEffect(
                 from = "kept",
-                destination = CardDestination.ToZone(Zone.HAND),
-                revealed = true
+                destination = keepDestination,
+                revealed = keepRevealed
             ),
             MoveCollectionEffect(
                 from = "rest",
@@ -233,6 +255,32 @@ object LibraryPatterns {
                 order = restOrder
             )
         )
+    )
+
+    /**
+     * "Look at the top [count] cards of your library. You may reveal a card matching [filter] from
+     * among them and put it into your hand. Put the rest [restDestination] (defaults to the bottom
+     * of your library) [restOrder] (defaults to a random order)." — Radagast the Brown / Star
+     * Charter shape. The reveal is optional ([SelectionMode.ChooseUpTo] of 1), filtered, and the
+     * selected card is revealed as it moves to hand.
+     *
+     * The "reveal it as it goes to hand" spelling of [lookAtTopAndTakeMatching], which is where
+     * every other word of the sentence is a parameter. It builds the identical pipeline it always
+     * has.
+     */
+    fun lookAtTopRevealMatchingToHand(
+        count: DynamicAmount,
+        filter: GameObjectFilter,
+        prompt: String,
+        restDestination: CardDestination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Bottom),
+        restOrder: CardOrder = CardOrder.Random
+    ): CompositeEffect = lookAtTopAndTakeMatching(
+        count = count,
+        filter = filter,
+        prompt = prompt,
+        keepRevealed = true,
+        restDestination = restDestination,
+        restOrder = restOrder
     )
 
     /**
