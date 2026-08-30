@@ -128,6 +128,13 @@ data class ModalPreChosenContinuation(
     val sourceName: String?,
     val xValue: Int? = null,
     val triggeringEntityId: EntityId? = null,
+    /**
+     * The enclosing resolution's pipeline, so the modes still queued behind a paused one read the
+     * same stored collections/numbers the modes before them did. Without it a choose-two modal
+     * whose first mode pauses would run its second mode against an empty pipeline.
+     */
+    val pipeline: com.wingedsheep.engine.handlers.PipelineState =
+        com.wingedsheep.engine.handlers.PipelineState.EMPTY,
     val remainingEntries: List<PreTargetedEffectEntry>
 ) : ContinuationFrame
 

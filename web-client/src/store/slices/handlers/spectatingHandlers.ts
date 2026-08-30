@@ -2,6 +2,7 @@
  * Handlers for spectating, combat UI, and disconnect messages.
  */
 import type { MessageHandlers } from '@/network/messageHandlers.ts'
+import { keepAttackerPreview, keepBlockerPreview } from './combatPreview'
 import type { SetState, GetState } from './types'
 
 type SpectatingHandlerKeys =
@@ -75,6 +76,11 @@ export function createSpectatingHandlers(set: SetState, get: GetState): Pick<Mes
         }
       }
 
+      // The spectator stream carries the full client state, so the declaration step bounds the
+      // preview exactly as it does for players. A stream without it drops the preview rather
+      // than keeping it — a missing arrow is a nicety lost, a stuck one is the bug.
+      const spectatorStep = msg.gameState?.currentStep ?? null
+
       set((state) => ({
         spectatingState: {
           gameSessionId: msg.gameSessionId,
@@ -91,8 +97,16 @@ export function createSpectatingHandlers(set: SetState, get: GetState): Pick<Mes
           combat: msg.combat,
           decisionStatus: msg.decisionStatus ?? null,
         },
-        opponentAttackerTargets: msg.combat ? null : state.opponentAttackerTargets,
-        opponentBlockerAssignments: (msg.combat?.attackers?.some(a => a.blockedBy.length > 0) || !msg.combat) ? null : state.opponentBlockerAssignments,
+        opponentAttackerTargets: keepAttackerPreview(spectatorStep, msg.combat != null)
+          ? state.opponentAttackerTargets
+          : null,
+        opponentBlockerAssignments: keepBlockerPreview(
+          spectatorStep,
+          msg.combat != null,
+          msg.combat?.attackers?.some(a => a.blockedBy.length > 0) ?? false,
+        )
+          ? state.opponentBlockerAssignments
+          : null,
       }))
     },
 

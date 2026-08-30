@@ -5792,6 +5792,19 @@ Triggers.youCastSpell(
   control" covers both halves of "King of the Oathbreakers or another Spirit you control becomes the
   target of a spell" because the source itself matches the filter. Pair with
   `Effects.PhaseOut(EffectTarget.TriggeringEntity)` to phase out the targeted permanent.
+- `BecomesTargetOfAuraSpell(binding = SELF)` — the bound permanent becomes the target of an **Aura
+  spell** (Brine Comber // Brinebound Gift). Where `spellsOnly` says only *that* a spell did the
+  targeting, this narrows *which kind*: it sets `BecomesTargetEvent.sourceFilter`, a
+  `GameObjectFilter?` matched against the **targeting** object rather than the targeted one, to
+  `Enchantment.withSubtype(Subtype.AURA)` — and keeps `spellsOnly = true`, which is not redundant
+  with it (an Aura already on the battlefield could target with an activated ability and match the
+  same card types). `binding` is a parameter because the card spells the same wording twice: SELF on
+  the front face ("this creature becomes the target"), `TriggerBinding.ATTACHED` on the back
+  ("enchanted creature becomes the target"), which reaches it through `AttachmentTriggerDetector`.
+  An Aura spell chooses its target as it is cast (CR 303.4a), so this never fires for the Aura a
+  permanent is already enchanted by — only for a new one being cast at it. `sourceFilter` is
+  general: any `EventPattern.BecomesTargetEvent` may carry one, and its `description` prints the
+  filter's subtype alone when it has one ("an Aura spell", not "an Aura enchantment spell").
 - `BecomesTargetOfAbility(filter = Any, byYou = false, includePlayerTargets = false)` — the exact mirror of
   `BecomesTargetOfSpell`: something becomes the target of an **ability** (activated *or* triggered),
   never a spell. Sets `BecomesTargetEvent(abilitiesOnly = true)`, reading the same `sourceIsSpell`

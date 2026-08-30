@@ -130,6 +130,8 @@ class AIPlayerTest : FunSpec({
                 is SimulationResult.Terminal -> result.state.shouldNotBeNull()
                 is SimulationResult.NeedsDecision -> result.decision.shouldNotBeNull()
                 is SimulationResult.Illegal -> {}
+                is SimulationResult.StoppedAtLimit ->
+                    error("Ordinary legal-action simulation exhausted its automatic transition limit")
             }
         }
     }
@@ -284,18 +286,20 @@ class AIPlayerTest : FunSpec({
                 val pass = actions.find { it.actionType == "PassPriority" }
                 val passResult = if (pass != null) simulator.simulate(state, pass.action) else null
                 val passScore = if (passResult != null) {
-                    evaluator.evaluate(passResult.state, passResult.state.projectedState, p1)
+                    passResult.scoreOrRankLast { evaluator.evaluate(it, it.projectedState, p1) }
                 } else 0.0
 
                 println("=== AI ACTION SCORES ===")
                 println("Pass score: $passScore")
                 for (a in actions.filter { it.affordable && it.actionType != "PassPriority" && !it.isManaAbility }) {
                     val result = simulator.simulate(state, a.action)
-                    val score = evaluator.evaluate(result.state, result.state.projectedState, p1)
+                    val score = result.scoreOrRankLast { evaluator.evaluate(it, it.projectedState, p1) }
                     val resultType = when (result) {
                         is SimulationResult.Terminal -> "Terminal(stack=${result.state.stack.size})"
                         is SimulationResult.NeedsDecision -> "NeedsDecision(${result.decision::class.simpleName})"
                         is SimulationResult.Illegal -> "Illegal(${result.reason})"
+                        is SimulationResult.StoppedAtLimit ->
+                            "StoppedAtLimit(${result.automaticTransitions}/${result.limit})"
                     }
                     println("  ${a.actionType}(${a.description}): score=$score, result=$resultType")
                 }

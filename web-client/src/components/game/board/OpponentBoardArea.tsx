@@ -304,8 +304,10 @@ export function OpponentBoardArea({
           <Battlefield isOpponent={!bottomHalf} playerId={opponent.playerId} spectatorMode={spectatorMode} />
         </div>
 
-        {/* Opponent deck/graveyard (right side) */}
-        <ZonePile player={opponent} isOpponent />
+        {/* Opponent deck/graveyard (right side). Multi-board cells (hideHand) sit inside a strip
+            whose paddingTop already clears the Fullscreen/Concede button row, so the pile column
+            must not reserve that room a second time — the double-count clipped the Exile pile. */}
+        <ZonePile player={opponent} isOpponent reserveConcedeRoom={layout === 'grid' || !hideHand} />
       </div>
     </div>
   )

@@ -1,23 +1,11 @@
 package com.wingedsheep.ai.engine.hidden
 
-import com.wingedsheep.engine.core.CardEntityFactory
+import com.wingedsheep.engine.hidden.HiddenSlotRewrite
 import com.wingedsheep.engine.registry.CardRegistry
-import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.identity.CantBeCopiedComponent
-import com.wingedsheep.engine.state.components.identity.CantBeCounteredComponent
-import com.wingedsheep.engine.state.components.identity.ControllerComponent
-import com.wingedsheep.engine.state.components.identity.HasMorphAbilityComponent
-import com.wingedsheep.engine.state.components.identity.HexproofFromComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
-import com.wingedsheep.engine.state.components.identity.ProtectionComponent
-import com.wingedsheep.engine.state.components.identity.RevealedToComponent
-import com.wingedsheep.engine.state.components.identity.SelfZoneRedirectComponent
-import com.wingedsheep.engine.state.components.identity.ToxicComponent
-import com.wingedsheep.engine.state.components.stack.ChosenTarget
-import com.wingedsheep.engine.state.components.stack.TargetsComponent
 import com.wingedsheep.engine.view.Visibility
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardDefinition
@@ -92,9 +80,7 @@ class Determinizer(
             for ((entityId, cardDef) in hidden.zip(definitions)) {
                 val old = sampled.getEntity(entityId) ?: continue
                 val ownerId = old.get<OwnerComponent>()?.playerId ?: opponentId
-                var replacement = CardEntityFactory.create(cardDef, ownerId)
-                old.get<RevealedToComponent>()?.let { replacement = replacement.with(it) }
-                sampled = sampled.withEntity(entityId, replacement)
+                sampled = HiddenSlotRewrite.rewrite(sampled, entityId, cardDef, ownerId)
             }
 
             val libraryKey = ZoneKey(opponentId, Zone.LIBRARY)
@@ -126,16 +112,7 @@ class Determinizer(
             visibility.revealsTopOfLibraryPublicly(state, opponentId) ||
                 (opponentId == viewerId && visibility.hasLookAtTopOfLibrary(state, viewerId))
         }
-        val referencedByStack = state.stack.flatMapTo(mutableSetOf()) { stackId ->
-            state.getEntity(stackId)?.get<TargetsComponent>()?.targets.orEmpty().mapNotNull {
-                when (it) {
-                    is ChosenTarget.Card -> it.cardId
-                    is ChosenTarget.Permanent -> it.entityId
-                    is ChosenTarget.Spell -> it.spellEntityId
-                    is ChosenTarget.Player -> null
-                }
-            }
-        }
+        val referencedByStack = HiddenSlotRewrite.stackReferencedEntities(state)
         return candidates.filter { id ->
             id != visibleTop &&
                 id !in referencedByStack &&
@@ -144,31 +121,24 @@ class Determinizer(
                 // fallback until those shapes share a common reference visitor.
                 state.continuationStack.isEmpty() &&
                 !visibility.isCardRevealedTo(state, id, viewerId) &&
-                isSafeToRewrite(state.getEntity(id))
+                isSafeToRewrite(state, id)
         }
     }
 
     /**
-     * A normal hidden card has only definition-derived identity/ownership components. Anything
-     * else may be referenced by an in-flight effect or carry state that a different definition
-     * cannot legally inherit, so it is pinned.
+     * A normal hidden card has only components [com.wingedsheep.engine.core.CardEntityFactory]
+     * derives from its printed definition. Anything else may be referenced by an in-flight effect
+     * or carry state that a different definition cannot legally inherit, so the slot is pinned.
+     * A card whose definition is no longer registered is pinned too: without it there is nothing to
+     * compare the slot against.
      */
-    private fun isSafeToRewrite(container: ComponentContainer?): Boolean {
-        if (container == null) return false
-        return container.all().all {
-            it is CardComponent ||
-                it is OwnerComponent ||
-                it is ControllerComponent ||
-                it is RevealedToComponent ||
-                it is CantBeCounteredComponent ||
-                it is CantBeCopiedComponent ||
-                it is HasMorphAbilityComponent ||
-                it is com.wingedsheep.engine.state.components.identity.HasDisguiseAbilityComponent ||
-                it is ProtectionComponent ||
-                it is SelfZoneRedirectComponent ||
-                it is HexproofFromComponent ||
-                it is ToxicComponent
-        }
+    private fun isSafeToRewrite(state: GameState, entityId: EntityId): Boolean {
+        val container = state.getEntity(entityId) ?: return false
+        val ownerId = container.get<OwnerComponent>()?.playerId ?: return false
+        val definition = container.get<CardComponent>()
+            ?.let { cardRegistry.getCard(it.cardDefinitionId) }
+            ?: return false
+        return HiddenSlotRewrite.runtimeBlockers(container, definition, ownerId).isEmpty()
     }
 
     private fun fromKnownDecklist(

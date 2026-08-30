@@ -1492,6 +1492,21 @@ class TriggerMatcher(
         if (trigger.spellsOnly && !event.sourceIsSpell) return false
         if (trigger.abilitiesOnly && event.sourceIsSpell) return false
 
+        // "becomes the target of an **Aura** spell" (Brine Comber) — narrow by the targeting
+        // object's own card data. The source is a spell on the stack (or the permanent whose
+        // ability targeted), so the same PredicateEvaluator call the targetFilter uses below reads
+        // it: projected types when it has a battlefield projection, base card data otherwise. A
+        // source with no card data (a spell that has already left the stack) fails closed.
+        val sourceFilter = trigger.sourceFilter
+        if (sourceFilter != null) {
+            val sourceContainer = state.getEntity(event.sourceEntityId) ?: return false
+            if (!sourceContainer.has<CardComponent>()) return false
+            val sourcePredicateContext = PredicateContext(controllerId = controllerId, sourceId = sourceId)
+            if (!PredicateEvaluator().matches(
+                    state, state.projectedState, event.sourceEntityId, sourceFilter, sourcePredicateContext
+                )) return false
+        }
+
         // Valiant: check if the targeting spell/ability is controlled by "you" (the trigger's controller)
         if (trigger.byYou && event.controllerId != controllerId) return false
 
@@ -2176,6 +2191,16 @@ class TriggerMatcher(
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsEnchanted -> {
             if (event.fromZone == Zone.BATTLEFIELD) event.lastKnown?.wasEnchanted == true
             else hasAttachmentOfKind(state, event.entityId, equipment = false)
+        }
+        // "Whenever an *attacking* creature is put into your graveyard from the battlefield"
+        // (Kithkin Mourncaller) is only answerable from the snapshot: the permanent is removed
+        // from combat as it leaves (CR 506.4), so its `AttackingComponent` is gone by gating time.
+        // `PredicateEvaluator` already falls back to `wasAttacking` for the resolution-time reading
+        // (Garna, Bloodfist of Keld); without this arm the trigger path would fail open and fire
+        // for every matching creature that dies, attacking or not.
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttacking -> {
+            if (event.fromZone == Zone.BATTLEFIELD) event.lastKnown?.wasAttacking == true
+            else matchesStatePredicateForTrigger(predicate, state, event.entityId)
         }
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.Or ->
             predicate.predicates.any { matchesStatePredicateForZoneChangeTrigger(it, state, event, sourceId) }

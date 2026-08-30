@@ -90,7 +90,12 @@ class ChooseTargetsHandler : AiDecisionHandler<ChooseTargetsDecision> {
                         result[req.index] = listOf(validTargets[index])
                     }
                 }
-                if (result.isNotEmpty()) {
+                // Every requirement or none: a partial map is not a parse, it's an unanswerable
+                // response. `DecisionValidators.validateTargets` rejects a mandatory requirement
+                // left out, and the controller only falls back to the engine AI when parsing
+                // returns null — so a partial answer would be submitted, rejected, and never
+                // retried, wedging the game on a decision no one answers.
+                if (result.size == decision.targetRequirements.size) {
                     TargetsResponse(decisionId = decision.id, selectedTargets = result)
                 } else null
             }

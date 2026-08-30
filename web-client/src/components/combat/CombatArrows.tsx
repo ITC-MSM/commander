@@ -278,6 +278,14 @@ export function CombatArrows() {
   // Check if we're still in combat phase
   const isInCombatPhase = currentStep && COMBAT_STEPS.has(currentStep as Step)
 
+  // The opponent's streamed declaration previews are only meaningful while that declaration is
+  // being made. Without this bound a preview that never became a declaration (the attacker
+  // cancelled, or declared no attackers) has nothing to clear it — `gameState.combat` stays
+  // null, which is the very condition the preview draws under — and its arrows stay painted
+  // for the rest of the game. The store clears the stale value too; this keeps it unpaintable.
+  const isDeclareAttackersStep = currentStep === Step.DECLARE_ATTACKERS
+  const isDeclareBlockersStep = currentStep === Step.DECLARE_BLOCKERS
+
   // Check if we're selecting damage order (hide blocker arrows during this UI)
   const isSelectingDamageOrder = pendingDecision?.type === 'OrderObjectsDecision' &&
     pendingDecision?.context?.phase === 'COMBAT'
@@ -371,7 +379,7 @@ export function CombatArrows() {
             }
           }
         }
-      } else if (opponentBlockerAssignments && Object.keys(opponentBlockerAssignments).length > 0 && isInCombatPhase) {
+      } else if (opponentBlockerAssignments && Object.keys(opponentBlockerAssignments).length > 0 && isDeclareBlockersStep) {
         // Use opponent's real-time blocker assignments (for attacking player, only during combat)
         for (const [blockerIdStr, attackerIds] of Object.entries(opponentBlockerAssignments)) {
           const blockerId = blockerIdStr as EntityId
@@ -523,7 +531,7 @@ export function CombatArrows() {
       }
 
       // Compute opponent's real-time attacker target arrows (for defending player and spectators, always show)
-      if (opponentAttackerTargets && opponentAttackerTargets.selectedAttackers.length > 0 && !gameStateCombat) {
+      if (opponentAttackerTargets && opponentAttackerTargets.selectedAttackers.length > 0 && !gameStateCombat && isDeclareAttackersStep) {
         for (const [attackerIdStr, targetId] of Object.entries(opponentAttackerTargets.attackerTargets)) {
           const attackerId = attackerIdStr as EntityId
           if (!opponentAttackerTargets.selectedAttackers.includes(attackerId)) continue
@@ -569,7 +577,7 @@ export function CombatArrows() {
             newIndicators.push({ x: pos.x, y: pos.y, direction, attackerId, color: indicatorColorFor(targetId) })
           }
         }
-      } else if (opponentAttackerTargets && opponentAttackerTargets.selectedAttackers.length > 0 && !gameStateCombat) {
+      } else if (opponentAttackerTargets && opponentAttackerTargets.selectedAttackers.length > 0 && !gameStateCombat && isDeclareAttackersStep) {
         // Opponent's real-time attacker selections (for defending player and spectators)
         for (const attackerId of opponentAttackerTargets.selectedAttackers) {
           const targetId = opponentAttackerTargets.attackerTargets[attackerId]
@@ -612,7 +620,7 @@ export function CombatArrows() {
     updateArrows()
     const interval = setInterval(updateArrows, 100)
     return () => clearInterval(interval)
-  }, [combatState, gameStateCombat, opponentAttackerTargets, opponentBlockerAssignments, isDeclaringBlockers, isInCombatPhase, cards, isSpectating, isSelectingDamageOrder, players, teamMap, isMulti, viewedOpponentId, viewingPlayerId])
+  }, [combatState, gameStateCombat, opponentAttackerTargets, opponentBlockerAssignments, isDeclaringBlockers, isInCombatPhase, isDeclareAttackersStep, isDeclareBlockersStep, cards, isSpectating, isSelectingDamageOrder, players, teamMap, isMulti, viewedOpponentId, viewingPlayerId])
 
   // Don't render during full-screen overlay decisions
   if (hasOverlayDecision) {
@@ -621,11 +629,12 @@ export function CombatArrows() {
 
   // Don't render if no arrows to show (only show during combat phase)
   const hasBlockers = isDeclaringBlockers ||
-    (opponentBlockerAssignments && Object.keys(opponentBlockerAssignments).length > 0 && isInCombatPhase) ||
+    (opponentBlockerAssignments && Object.keys(opponentBlockerAssignments).length > 0 && isDeclareBlockersStep) ||
     (gameStateCombat && gameStateCombat.blockers.length > 0 && isInCombatPhase)
   const hasAttackers = gameStateCombat && gameStateCombat.attackers.length > 0
   const hasSelectedAttackers = combatState?.mode === 'declareAttackers' && combatState.selectedAttackers.length > 0
-  const hasOpponentAttackers = opponentAttackerTargets && opponentAttackerTargets.selectedAttackers.length > 0
+  const hasOpponentAttackers =
+    opponentAttackerTargets && opponentAttackerTargets.selectedAttackers.length > 0 && isDeclareAttackersStep
   if (!hasBlockers && !hasAttackers && !hasSelectedAttackers && !hasOpponentAttackers && !draggingBlockerId && !draggingAttackerId) {
     return null
   }

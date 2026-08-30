@@ -1685,9 +1685,17 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * They are mutually exclusive: asking for both would match nothing, and throws — as does the
      * equally contradictory [byYou] + [byOpponent] pair.
      *
-     * Note that [spellsOnly] / [abilitiesOnly] narrow *what did the targeting*, while
-     * [includeSpellTargets] / [includePlayerTargets] widen *what got targeted*; the two axes are
-     * independent.
+     * [sourceFilter] is the finer-grained sibling of that pair: where [spellsOnly] says only *that*
+     * a spell did the targeting, [sourceFilter] says **which kind** of spell or ability did it —
+     * "becomes the target of an **Aura** spell" (Brine Comber). It is matched against the targeting
+     * object's card data, so it reads the spell's printed types off the stack; a targeted-by-ability
+     * event whose source is a permanent reads that permanent instead. Pair it with [spellsOnly] when
+     * the printed wording says "spell", since a permanent's *ability* would otherwise match the same
+     * card types (an Aura already on the battlefield targeting with an activated ability).
+     *
+     * Note that [spellsOnly] / [abilitiesOnly] / [sourceFilter] narrow *what did the targeting*,
+     * while [includeSpellTargets] / [includePlayerTargets] widen *what got targeted*; the two axes
+     * are independent.
      */
     @SerialName("BecomesTargetEvent")
     @Serializable
@@ -1699,7 +1707,8 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         val includeSpellTargets: Boolean = false,
         val spellsOnly: Boolean = false,
         val includePlayerTargets: Boolean = false,
-        val abilitiesOnly: Boolean = false
+        val abilitiesOnly: Boolean = false,
+        val sourceFilter: GameObjectFilter? = null
     ) : EventPattern {
         init {
             require(!(spellsOnly && abilitiesOnly)) {
@@ -1726,7 +1735,28 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
             } else {
                 append(describeObjectForEvent(targetFilter))
             }
+            // `sourceFilter` names the targeting object, so it supplies the noun the "of …"
+            // phrase would otherwise fill with the bare word "spell"/"ability": "becomes the
+            // target of an Aura spell". Its own article agrees with the filter's leading word.
+            //
+            // A subtype already implies its card type, and Magic drops the type word when one is
+            // present — "an Aura spell", never "an Aura enchantment spell". So the printed noun is
+            // the subtype alone whenever the filter carries one; the filter itself keeps both
+            // predicates, because matching still wants the card type.
+            val sourceNoun = sourceFilter?.let { f ->
+                val kind = when {
+                    spellsOnly -> "spell"
+                    abilitiesOnly -> "ability"
+                    else -> "spell or ability"
+                }
+                val subtype = f.cardPredicates
+                    .filterIsInstance<com.wingedsheep.sdk.scripting.predicates.CardPredicate.HasSubtype>()
+                    .singleOrNull()
+                    ?.takeIf { f.controllerPredicate == null && f.statePredicates.isEmpty() && f.anyOf.isEmpty() }
+                "${f.indefiniteArticle} ${subtype?.description ?: f.description} $kind"
+            }
             when {
+                sourceNoun != null -> append(" becomes the target of $sourceNoun")
                 spellsOnly -> append(" becomes the target of a spell")
                 abilitiesOnly -> append(" becomes the target of an ability")
                 else -> append(" becomes the target of a spell or ability")
@@ -1738,7 +1768,9 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
 
         override fun applyTextReplacement(replacer: TextReplacer): EventPattern {
             val newFilter = targetFilter.applyTextReplacement(replacer)
-            return if (newFilter !== targetFilter) copy(targetFilter = newFilter) else this
+            val newSourceFilter = sourceFilter?.applyTextReplacement(replacer)
+            return if (newFilter !== targetFilter || newSourceFilter !== sourceFilter)
+                copy(targetFilter = newFilter, sourceFilter = newSourceFilter) else this
         }
     }
 
