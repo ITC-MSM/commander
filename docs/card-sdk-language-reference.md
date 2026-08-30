@@ -3029,10 +3029,21 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   Ancestral Memories — keep exactly K to hand. `restOrder = CardOrder.Random` for "on the bottom in a
   random order"; `keepFaceDown = FaceDownMode.CLOAK` (or `MANIFEST`) when the kept cards go to the
   battlefield face down — Hide in Plain Sight's "look at the top five, cloak two of them".
+- `lookAtTopAndTakeMatching(count, filter, prompt, selection?, revealed?, keepDestination?,
+  keepRevealed?, restDestination?, restOrder?)` — Elvish Rejuvenator / Summoning Trap / Gather the Pack
+  shape, and the general form of the two recipes below it: "[Look at|Reveal] the top `count` cards of
+  your library. [You may] put [a|any number of|up to N] `filter` from among them `keepDestination`. Put
+  the rest `restDestination` `restOrder`." Every printed word that varies is a parameter — `revealed`
+  is "Look at" against "Reveal" (the flag on the gather), `selection` is the quantifier
+  (`ChooseUpTo(1)` for "you may put a…", `ChooseAnyNumber`, `ChooseUpTo(n)`, `ChooseExactly(1)` for a
+  bare mandatory "put a…"), `keepDestination` takes `ZonePlacement.Tapped` /
+  `TappedAndAttacking` for "onto the battlefield tapped [and attacking]", and `keepRevealed` turns the
+  kept card face up as it moves. Prefer this over hand-rolling the four-step pipeline.
 - `lookAtTopRevealMatchingToHand(count, filter, prompt, restDestination?, restOrder?)` — Radagast the
   Brown / Star Charter shape: look at top `count`, **optionally** reveal one card matching `filter` to
   hand, rest to `restDestination` (default bottom of library) in `restOrder` (default
-  `CardOrder.Random`). `count` is a `DynamicAmount` (e.g. `DynamicAmounts.triggeringManaValue()`).
+  `CardOrder.Random`). `count` is a `DynamicAmount` (e.g. `DynamicAmounts.triggeringManaValue()`). The
+  "reveal it as it goes to hand" point of `lookAtTopAndTakeMatching`'s space; it delegates there.
 - `revealTopPutAllMatchingToHand(count, filter, restDestination?, restOrder?)` — Marina Vendrell shape:
   **mandatorily** reveal the top `count`, auto-route *every* card matching `filter` to hand (a
   choice-free `FilterCollection` partition, not a "keep up to one" choice), rest to `restDestination`

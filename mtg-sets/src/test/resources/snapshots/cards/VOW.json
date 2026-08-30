@@ -2366,16 +2366,14 @@
                         }
                     },
                     "filter": "land",
-                    "storeSelected": "toBattlefield",
+                    "storeSelected": "kept",
                     "storeRemainder": "rest",
-                    "prompt": "Put up to two land cards onto the battlefield tapped",
-                    "selectedLabel": "Put onto the battlefield tapped",
-                    "remainderLabel": "Put on the bottom of your library",
+                    "prompt": "Put up to two land cards from among them onto the battlefield tapped",
                     "showAllCards": true
                 },
                 {
                     "type": "MoveCollection",
-                    "from": "toBattlefield",
+                    "from": "kept",
                     "destination": {
                         "type": "ToZone",
                         "zone": "Battlefield",
