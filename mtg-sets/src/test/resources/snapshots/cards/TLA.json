@@ -10281,7 +10281,10 @@
                 {
                     "effect": {
                         "type": "RemoveAnyNumberOfCounters",
-                        "maxTotal": 3
+                        "maxTotal": {
+                            "type": "Fixed",
+                            "amount": 3
+                        }
                     },
                     "targetRequirements": [
                         {
