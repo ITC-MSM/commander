@@ -69,6 +69,7 @@ enum class CounterType {
     HASTE,
     MENACE,
     STASH,
+    CROAK,
     BLIGHT,
     COIN,
     FLOOD,
@@ -300,6 +301,13 @@ object Counters {
      */
     const val MENACE = "menace"
     const val STASH = "stash"
+
+    /**
+     * Croak counter (VOW — Grolnok, the Omnivore). A pure marker: it grants nothing on its own
+     * and exists only so the card's play permission has something to filter exile by, the same
+     * role [STASH] plays for Tinybones, Bauble Burglar.
+     */
+    const val CROAK = "croak"
     const val BLIGHT = "blight"
     const val COIN = "coin"
     const val FLOOD = "flood"
