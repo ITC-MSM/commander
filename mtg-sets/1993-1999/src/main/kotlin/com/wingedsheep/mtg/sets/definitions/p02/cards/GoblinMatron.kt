@@ -26,10 +26,10 @@ import com.wingedsheep.sdk.scripting.effects.SearchDestination
  * the whole search rather than sitting inside it.
  *
  * The filter is `Any.withSubtype`, **not** `Permanent.withSubtype`, and the difference is live
- * rather than pedantic: Tarfire is a `Kindred Instant — Goblin`, so it is a Goblin card that is not
- * a permanent, and fetching it is a real Lorwyn-era line. Argentum Assay currently reads the phrase
- * the narrower way and so reports this card as DIVERGENT; the card is right and the parser is not —
- * see the PR body for the measurements.
+ * rather than pedantic: Tarfire is a `Kindred Instant — Goblin` and Boggart Birth Rite a
+ * `Kindred Sorcery — Goblin`, so a Goblin card need not be a permanent, and fetching one is a real
+ * Lorwyn-era line. Argentum Assay used to read the phrase the narrower way; this card is what
+ * caught it, and the grammar now reads card position correctly.
  */
 val GoblinMatron = card("Goblin Matron") {
     manaCost = "{2}{R}"
