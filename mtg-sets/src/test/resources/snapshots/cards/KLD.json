@@ -3780,7 +3780,7 @@
 {
     "name": "Self-Assembler",
     "manaCost": "{5}",
-    "typeLine": "Artifact Creature — Assembly",
+    "typeLine": "Artifact Creature — Assembly-Worker",
     "oracleText": "When this creature enters, you may search your library for an Assembly-Worker creature card, reveal it, put it into your hand, then shuffle.",
     "creatureStats": {
         "power": 4,

@@ -13,7 +13,7 @@ class TypeLineTest : DescribeSpec({
             parsed.subtypes shouldBe setOf(Subtype("Assembly-Worker"))
         }
 
-        it("preserves another hyphenated subtype") {
+        it("splits Urza's Power-Plant into two land types, keeping the hyphen") {
             val parsed = TypeLine.parse("Land — Urza's Power-Plant")
 
             parsed.cardTypes shouldBe setOf(CardType.LAND)

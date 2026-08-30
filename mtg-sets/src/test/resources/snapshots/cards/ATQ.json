@@ -4637,7 +4637,7 @@
 {
     "name": "Urza's Power Plant",
     "manaCost": "",
-    "typeLine": "Land — Urza's Power",
+    "typeLine": "Land — Urza's Power-Plant",
     "oracleText": "{T}: Add {C}. If you control an Urza's Mine and an Urza's Tower, add {C}{C} instead.",
     "script": {
         "activatedAbilities": [

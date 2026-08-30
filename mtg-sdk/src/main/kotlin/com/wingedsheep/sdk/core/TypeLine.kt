@@ -50,8 +50,15 @@ data class TypeLine(
     }
 
     companion object {
+        /**
+         * Splits the types from the subtypes. An em/en dash always separates; an ASCII "-"
+         * only when it stands alone between spaces, so hyphenated subtypes ("Assembly-Worker",
+         * "Power-Plant") keep their hyphen instead of being cut in half.
+         */
+        private val TYPE_SUBTYPE_SEPARATOR = Regex("[—–]|\\s+-\\s+")
+
         fun parse(typeLineString: String): TypeLine {
-            val parts = typeLineString.split(Regex("[—–]|\\s+-\\s+")).map { it.trim() }
+            val parts = typeLineString.split(TYPE_SUBTYPE_SEPARATOR).map { it.trim() }
             val typesPart = parts[0]
             val subtypesPart = parts.getOrNull(1)
 
