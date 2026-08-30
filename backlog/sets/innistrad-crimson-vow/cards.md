@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 253 / 273
+**Implemented:** 256 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -54,11 +54,11 @@
 - [x] Cloaked Cadet
 - [x] Cobbled Lancer
 - [x] Concealing Curtains
-- [ ] Consuming Tide
+- [x] Consuming Tide
 - [x] Courier Bat
 - [x] Cradle of Safety
 - [x] Crawling Infestation
-- [ ] Creepy Puppeteer
+- [x] Creepy Puppeteer
 - [x] Cruel Witness
 - [x] Crushing Canopy
 - [x] Cultivator Colossus
@@ -172,7 +172,7 @@
 - [x] Necroduality
 - [x] Nurturing Presence
 - [x] Oakshade Stalker
-- [ ] Odric, Blood-Cursed
+- [x] Odric, Blood-Cursed
 - [x] Old Rutstein
 - [x] Olivia's Attendants
 - [ ] Olivia, Crimson Bride
