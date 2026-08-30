@@ -12,6 +12,8 @@ import com.wingedsheep.engine.mechanics.mana.LandManaColorInspector
 import com.wingedsheep.engine.mechanics.mana.ManaColorSetResolver
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.handlers.effects.permanent.counters.resolveCounterType
+import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
@@ -188,6 +190,12 @@ class ManaAbilityEnumerator : ActionEnumerator {
                         is CostAtom.ExileTopOfLibrary -> {
                             if (state.getZone(ZoneKey(playerId, Zone.LIBRARY)).size < atom.count) affordable = false
                         }
+                        // "Remove a charge counter from this land: Add one mana of any color" (the
+                        // vivid lands) — unpayable once the counters are gone, and the same gate the
+                        // non-mana enumerator applies.
+                        is CostAtom.RemoveCounters -> {
+                            if (!canPayRemoveCounters(state, playerId, container.get<CountersComponent>(), atom, context)) affordable = false
+                        }
                         // Other atoms (mana, life, discard, …) — engine validates at payment.
                         else -> {}
                     }
@@ -251,6 +259,12 @@ class ManaAbilityEnumerator : ActionEnumerator {
                                     // CR 701.17b — see the single-atom branch above.
                                     is CostAtom.Mill -> {
                                         if (state.getZone(ZoneKey(playerId, Zone.LIBRARY)).size < atom.count) {
+                                            affordable = false; break
+                                        }
+                                    }
+                                    // "{T}, Remove a charge counter from this land: …" — see above.
+                                    is CostAtom.RemoveCounters -> {
+                                        if (!canPayRemoveCounters(state, playerId, container.get<CountersComponent>(), atom, context)) {
                                             affordable = false; break
                                         }
                                     }
@@ -509,6 +523,31 @@ class ManaAbilityEnumerator : ActionEnumerator {
             controllerId = playerId,
             cardRegistry = context.cardRegistry,
         ).toList()
+    }
+
+    /**
+     * A fixed-count [CostAtom.RemoveCounters] is payable only when the counters are actually there —
+     * on the source for a self-scoped cost, or across the matching permanents otherwise. Mirrors
+     * the gate in [ActivatedAbilityEnumerator]; without it a mana ability whose cost eats a counter
+     * was offered (and failed at payment) long after the last counter was spent.
+     */
+    private fun canPayRemoveCounters(
+        state: GameState,
+        playerId: EntityId,
+        counters: CountersComponent?,
+        atom: CostAtom.RemoveCounters,
+        context: EnumerationContext,
+    ): Boolean {
+        val needed = (atom.count as? DynamicAmount.Fixed)?.amount ?: return true
+        if (needed <= 0) return true
+        val available = if (atom.self) {
+            val type = atom.counterType?.let { resolveCounterType(it) }
+            if (type != null) counters?.getCount(type) ?: 0 else counters?.counters?.values?.sum() ?: 0
+        } else {
+            context.costUtils.buildRemoveCountersPermanents(state, playerId, atom.filter, atom.counterType)
+                .sumOf { it.availableCounters }
+        }
+        return available >= needed
     }
 
     private fun pickChoiceEffect(effect: Effect): AddManaOfChoiceEffect? = when (effect) {
