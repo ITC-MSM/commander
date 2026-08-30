@@ -1523,7 +1523,14 @@ class ClientStateTransformer(
             impending = cardDef?.keywordAbilities
                 ?.filterIsInstance<KeywordAbility.Impending>()
                 ?.firstOrNull()
-                ?.let { ClientImpending(cost = it.cost.toString(), time = it.time) }
+                ?.let { ClientImpending(cost = it.cost.toString(), time = it.time) },
+            // Evoke (CR 702.74): same reason as impending — the alternative cost has to be on the
+            // card so the menu can offer both prices even when only one of them is affordable.
+            evoke = cardDef?.keywordAbilities
+                ?.filterIsInstance<KeywordAbility.Evoke>()
+                ?.firstOrNull()
+                ?.cost
+                ?.toString()
         )
     }
 
