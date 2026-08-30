@@ -469,6 +469,15 @@ combat state, attachments — leaving only the immutable identity (`CardComponen
   the immutable `GameState` — modifying a component means creating a new container, which means
   creating a new entity map, which means creating a new `GameState`.
 
+Because a card entity is a slot rather than an identity, a simulation caller can swap the definition
+occupying a hidden hand or library slot without disturbing the entity id, its zone position, or any
+reference pointing at it — that is what `HiddenSlotRewrite` (`rules-engine/hidden`) does, and what
+lets the AI reason about hypothetical opponent hands. It derives the safe set from what
+`CardEntityFactory` would build for the card currently there, so a slot carrying anything else —
+last-known battlefield information, a reveal someone has been shown — is refused rather than
+transplanted. `HiddenWorldMaterializer` is the all-or-nothing caller (`docs/ai/architecture.md`
+covers the sampling one).
+
 ### 2.3 Rule 613: Base State vs. Projected State
 
 **Principle:** The engine explicitly separates stored state from derived state.
