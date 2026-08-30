@@ -7066,6 +7066,87 @@
     "colorIdentityOverride": []
 }
 
+// Warren Pilferers
+{
+    "name": "Warren Pilferers",
+    "manaCost": "{4}{B}",
+    "typeLine": "Creature — Goblin Rogue",
+    "oracleText": "When this creature enters, return target creature card from your graveyard to your hand. If that card is a Goblin card, this creature gains haste until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "filter": "creature Goblin"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature card from your graveyard"
+                                },
+                                "destination": "Hand"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "HASTE",
+                                "target": "Self"
+                            }
+                        ]
+                    },
+                    "otherwise": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature card from your graveyard"
+                        },
+                        "destination": "Hand"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target creature card from your graveyard"
+                },
+                "descriptionOverride": "Return target creature card from your graveyard to your hand. If that card is a Goblin card, this creature gains haste until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "146",
+        "artist": "Wayne Reynolds",
+        "flavorText": "\"What do they need all this stuff for? They're dead. We're alive. Simple enough.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/c/bc98177b-34a6-44e1-9abd-6fd8df09fc70.jpg?1783942882"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Warren-Scourge Elf
 {
     "name": "Warren-Scourge Elf",
