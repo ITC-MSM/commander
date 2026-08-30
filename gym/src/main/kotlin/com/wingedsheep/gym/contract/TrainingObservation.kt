@@ -131,8 +131,11 @@ data class ManaPoolView(
 /**
  * A zone's contents from [TrainingObservation.perspectivePlayerId]'s point of view.
  *
- * When [hidden] is true (opponent's hand, any library), [cards] is empty and
- * only [size] is meaningful. This mirrors real-MTG information hiding.
+ * [hidden] says some identities in the zone are concealed from the perspective player
+ * (an opponent's hand, any library); [size] is then the true count while [cards] carries
+ * only the entries this perspective knows. That subset is usually empty, but a hand-peek
+ * effect leaves the cards it showed visible to the player who saw them, so a two-card
+ * hidden hand can legitimately list one card. This mirrors real-MTG information hiding.
  */
 @Serializable
 data class ZoneView(
@@ -228,6 +231,10 @@ data class StackItemView(
     val kind: StackItemKind,
     /** Printed oracle text of the card, or an ability's description. */
     val oracleText: String = "",
+    /**
+     * The chosen targets, in the order they were chosen, flattened to entity ids. A player
+     * target contributes the player's own entity id.
+     */
     val targets: List<EntityId> = emptyList()
 )
 
