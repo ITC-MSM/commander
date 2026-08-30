@@ -66,23 +66,46 @@ class DecisionValidatorsCompletenessTest : FunSpec({
         ).shouldNotBeNull()
     }
 
-    test("ordering response contains every object exactly once") {
+    test("a target group keyed to a requirement the decision never declared is rejected") {
+        // The mirror of an omitted group. The count checks walk the declared requirements, so an
+        // undeclared group is never reached by them — an empty one would otherwise pass unexamined.
+        val decision = targetDecision()
+
+        DecisionValidators.validate(
+            decision,
+            TargetsResponse(decision.id, mapOf(0 to listOf(first), 2 to emptyList())),
+        ).shouldNotBeNull()
+    }
+
+    test("ordering response is any permutation of the objects, each exactly once") {
         val decision = OrderObjectsDecision(
             id = "order",
             playerId = player,
             prompt = "Order",
             context = context,
-            objects = listOf(first),
+            objects = listOf(first, second),
         )
 
+        // Reordering is the whole point of the decision, so both orders have to be accepted.
         DecisionValidators.validate(
             decision,
-            OrderedResponse(decision.id, listOf(first)),
+            OrderedResponse(decision.id, listOf(first, second)),
         ).shouldBeNull()
 
         DecisionValidators.validate(
             decision,
+            OrderedResponse(decision.id, listOf(second, first)),
+        ).shouldBeNull()
+
+        // Repeating one object in place of another: same set, wrong contents.
+        DecisionValidators.validate(
+            decision,
             OrderedResponse(decision.id, listOf(first, first)),
+        ).shouldNotBeNull()
+
+        DecisionValidators.validate(
+            decision,
+            OrderedResponse(decision.id, listOf(first)),
         ).shouldNotBeNull()
     }
 

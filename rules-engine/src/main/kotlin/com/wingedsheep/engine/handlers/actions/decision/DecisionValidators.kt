@@ -182,9 +182,14 @@ object DecisionValidators {
             return "Expected target selection response"
         }
 
-        // Legality and per-requirement duplicates are checked against what was actually submitted:
-        // a group the decision never declared still can't name a target that isn't legal for it.
+        // Legality and per-requirement duplicates are checked against what was actually submitted.
+        // A group keyed to a requirement the decision never declared is the mirror of an omitted
+        // one: the counts below iterate the *declared* requirements, so an undeclared group is
+        // never reached by them and an empty one would slip through unexamined.
         for ((reqIndex, selectedIds) in response.selectedTargets) {
+            if (decision.targetRequirements.none { it.index == reqIndex }) {
+                return "Unknown target requirement $reqIndex"
+            }
             val legalForReq = decision.legalTargets[reqIndex] ?: emptyList()
             for (id in selectedIds) {
                 if (id !in legalForReq) {
