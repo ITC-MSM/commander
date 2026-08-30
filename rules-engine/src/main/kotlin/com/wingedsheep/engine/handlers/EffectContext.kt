@@ -68,6 +68,14 @@ data class EffectContext(
      * effect-resolution context — there is no candidate once an effect is executing.
      */
     val candidatePlayerId: EntityId? = null,
+    /**
+     * The face-change tally [sourceId] carried when this ability was put onto the stack (CR
+     * 701.28f). `TransformEffectExecutor` compares it against the source's current tally and
+     * ignores a self-transform when the two differ — the permanent has already turned over since,
+     * so the instruction does nothing. Null for spells, for a non-double-faced source, and for
+     * synthesized abilities that carry no such restriction.
+     */
+    val sourceFaceChanges: Int? = null,
     val targets: List<ChosenTarget> = emptyList(),
     /**
      * Positionally-aligned view of [targets]: the same length as the originally-chosen target
@@ -540,6 +548,7 @@ data class EffectContext(
             controllerId = ability.controllerId,
             granterId = ability.granterId,
             abilityIdentity = ability.abilityIdentity,
+            sourceFaceChanges = ability.sourceFaceChanges,
             targets = targets,
             triggerDamageAmount = ability.triggerDamageAmount,
             triggerCounterCount = ability.triggerCounterCount,

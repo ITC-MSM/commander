@@ -893,6 +893,13 @@ class TriggerProcessor(
             description = ability.description,
             abilityIdentity = state.abilityIdentityOf(trigger.sourceId, ability.id),
             granterId = trigger.granterId,
+            // CR 701.28f — freeze the source's face-change clock as the trigger goes on the stack,
+            // so an instruction inside it to transform that same permanent is ignored if the
+            // permanent turns over first (a second trigger of a countdown card such as
+            // Soulcipher Board must not flip it straight back).
+            sourceFaceChanges = state.getEntity(trigger.sourceId)
+                ?.get<com.wingedsheep.engine.state.components.identity.DoubleFacedComponent>()
+                ?.faceChanges,
             descriptionOverride = ability.descriptionOverride,
             triggerDamageAmount = trigger.triggerContext.damageAmount,
             triggeringEntityId = trigger.triggerContext.triggeringEntityId,
