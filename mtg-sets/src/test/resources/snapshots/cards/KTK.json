@@ -10194,12 +10194,12 @@
                             "amount": 5
                         }
                     },
-                    "storeAs": "revealed",
+                    "storeAs": "looked",
                     "revealed": true
                 },
                 {
                     "type": "SelectFromCollection",
-                    "from": "revealed",
+                    "from": "looked",
                     "selection": {
                         "type": "ChooseUpTo",
                         "count": {
@@ -10210,8 +10210,7 @@
                     "filter": "creature|land",
                     "storeSelected": "kept",
                     "storeRemainder": "rest",
-                    "selectedLabel": "Put in hand",
-                    "remainderLabel": "Put in graveyard",
+                    "prompt": "You may put a creature or land card from among them into your hand",
                     "showAllCards": true
                 },
                 {
