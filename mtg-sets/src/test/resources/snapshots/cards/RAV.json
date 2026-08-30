@@ -3685,6 +3685,164 @@
     ]
 }
 
+// Lurking Informant
+{
+    "name": "Lurking Informant",
+    "manaCost": "{1}{U/B}",
+    "typeLine": "Creature — Human Rogue",
+    "oracleText": "({U/B} can be paid with either {U} or {B}.)\n{2}, {T}: Look at the top card of target player's library. You may put that card into that player's graveyard.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "peeked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "peeked",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "toGraveyard",
+                            "storeRemainder": "toTop",
+                            "selectedLabel": "Put into that player's graveyard",
+                            "remainderLabel": "Leave on top of that player's library"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toGraveyard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toTop",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                },
+                                "placement": "Top"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "descriptionOverride": "{2}, {T}: Look at the top card of target player's library. You may put that card into that player's graveyard."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "249",
+        "artist": "Ron Spears",
+        "flavorText": "In the undercity, forgetfulness is often encouraged at the point of a blade.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/1/012a7f5d-f798-4030-86e3-05956487a383.jpg?1783943604"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
+// Mnemonic Nexus
+{
+    "name": "Mnemonic Nexus",
+    "manaCost": "{3}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Each player shuffles their graveyard into their library.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Players",
+                "players": "Each"
+            },
+            "body": {
+                "type": "Composite",
+                "effects": [
+                    {
+                        "type": "GatherCards",
+                        "source": {
+                            "type": "FromZone",
+                            "zone": "Graveyard"
+                        },
+                        "storeAs": "graveyardCards"
+                    },
+                    {
+                        "type": "MoveCollection",
+                        "from": "graveyardCards",
+                        "destination": {
+                            "type": "ToZone",
+                            "zone": "Library",
+                            "placement": "Shuffled"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "59",
+        "rarity": "UNCOMMON",
+        "artist": "Stephen Tappin",
+        "flavorText": "True enlightenment comes not with a new thought, but with understanding of all the old ones.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/0/200edda9-7ad9-47fc-837e-37ec9e5b4b51.jpg?1783943682"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Moroii
 {
     "name": "Moroii",
@@ -4299,6 +4457,72 @@
     "colorIdentityOverride": [
         "WHITE",
         "GREEN"
+    ]
+}
+
+// Psychic Drain
+{
+    "name": "Psychic Drain",
+    "manaCost": "{X}{U}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Target player mills X cards and you gain X life.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": "XValue",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "GainLife",
+                    "amount": "XValue"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "target player"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "220",
+        "rarity": "UNCOMMON",
+        "artist": "Nick Percival",
+        "flavorText": "\"Gold can be reearned, goods restored. The moroii steal youth, more precious than either, and once gone, it's gone forever.\"\n—Berta Suszat, civic healer",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/0/d00fd2d8-76ce-4334-b772-a5dc64fc2989.jpg?1783943615"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
     ]
 }
 
@@ -5586,6 +5810,98 @@
     ]
 }
 
+// Telling Time
+{
+    "name": "Telling Time",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Look at the top three cards of your library. Put one of those cards into your hand, one on top of your library, and one on the bottom of your library.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 3
+                        }
+                    },
+                    "storeAs": "looked"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "looked",
+                    "selection": {
+                        "type": "ChooseExactly",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "toHand",
+                    "storeRemainder": "notTaken",
+                    "selectedLabel": "Put into your hand",
+                    "remainderLabel": "Keep in your library"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "toHand",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "notTaken",
+                    "selection": {
+                        "type": "ChooseExactly",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "toTop",
+                    "storeRemainder": "toBottom",
+                    "selectedLabel": "Put on top of your library",
+                    "remainderLabel": "Put on the bottom of your library"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "toTop",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Library",
+                        "placement": "Top"
+                    }
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "toBottom",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Library",
+                        "placement": "Bottom"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "69",
+        "rarity": "UNCOMMON",
+        "artist": "Scott M. Fischer",
+        "flavorText": "Mastery is achieved when \"telling time\" becomes \"telling time what to do.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/563e6cf4-e86f-4538-85a1-3abbc83b303d.jpg?1783943677"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Temple Garden
 {
     "name": "Temple Garden",
@@ -5619,6 +5935,120 @@
     "colorIdentityOverride": [
         "GREEN",
         "WHITE"
+    ]
+}
+
+// Thoughtpicker Witch
+{
+    "name": "Thoughtpicker Witch",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "{1}, Sacrifice a creature: Look at the top two cards of target opponent's library, then exile one of them.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "peeked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "peeked",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "toExile",
+                            "storeRemainder": "toTop",
+                            "selectedLabel": "Exile",
+                            "remainderLabel": "Leave on top of that player's library"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toExile",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toTop",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                },
+                                "placement": "Top"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetOpponent",
+                        "id": "target opponent"
+                    }
+                ],
+                "descriptionOverride": "{1}, Sacrifice a creature: Look at the top two cards of target opponent's library, then exile one of them."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "109",
+        "artist": "Pete Venters",
+        "flavorText": "\"Once the brew gets the brains nice and pickled, they're a lot easier to pick through.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b6f8df33-a955-403c-aafc-85e5589c5041.jpg?1783943661"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
