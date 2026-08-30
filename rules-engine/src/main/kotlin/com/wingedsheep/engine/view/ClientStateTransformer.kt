@@ -3259,6 +3259,18 @@ class ClientStateTransformer(
                 )
             )
         }
+        for (granted in state.grantedStateTriggeredAbilities) {
+            if (granted.entityId != entityId) continue
+            if (!seenGrantDescriptions.add(granted.ability.description)) continue
+            effects.add(
+                ClientCardEffect(
+                    effectId = "granted_state_trig_${granted.ability.id.value}",
+                    name = "Granted Ability",
+                    description = granted.ability.description,
+                    icon = "granted-ability"
+                )
+            )
+        }
         for (granted in state.grantedActivatedAbilities) {
             if (granted.entityId != entityId) continue
             if (!seenGrantDescriptions.add(granted.ability.description)) continue

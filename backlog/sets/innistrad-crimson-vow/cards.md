@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 265 / 273
+**Implemented:** 266 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -175,7 +175,7 @@
 - [x] Odric, Blood-Cursed
 - [x] Old Rutstein
 - [x] Olivia's Attendants
-- [ ] Olivia, Crimson Bride
+- [x] Olivia, Crimson Bride
 - [x] Ollenbock Escort
 - [x] Overcharged Amalgam
 - [x] Packsong Pup

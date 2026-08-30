@@ -59,8 +59,16 @@ class StateTriggerPoller(
             val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
             // Fold in unlocked Room-face state triggers (CR 709.5) so a locked door's state
             // trigger stays inert until its door is unlocked (Promising Stairs).
-            val abilities = com.wingedsheep.engine.state.components.identity.RoomFaceStatics
+            val printed = com.wingedsheep.engine.state.components.identity.RoomFaceStatics
                 .activeStateTriggeredAbilities(container, cardDef)
+            // Abilities *granted* to this permanent poll exactly like printed ones — the latch is
+            // keyed by (entityId, AbilityId), and a granted ability carries its own AbilityId.
+            // Olivia, Crimson Bride's reanimated creature gains "When you don't control a legendary
+            // Vampire, exile this creature" this way.
+            val granted = workingState.grantedStateTriggeredAbilities
+                .filter { it.entityId == permanentId }
+                .map { it.ability }
+            val abilities = if (granted.isEmpty()) printed else printed + granted
             if (abilities.isEmpty()) continue
 
             val effectContext = EffectContext(

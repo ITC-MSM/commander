@@ -223,11 +223,12 @@ class EndedDurationExpiryCheck : StateBasedActionCheck {
      *
      * Covers [GameState.grantedActivatedAbilities] and [GameState.grantedStaticAbilities] — the two
      * grant stores a "for as long as …" duration can reach today. [GameState.grantedTriggeredAbilities],
-     * [GameState.grantedReplacementEffects] and [GameState.globalGrantedTriggeredAbilities] are
+     * [GameState.grantedStateTriggeredAbilities], [GameState.grantedReplacementEffects] and
+     * [GameState.globalGrantedTriggeredAbilities] are
      * deliberately *not* pruned here: no card grants into them with a conditional duration, so they
      * only ever need the `EndOfTurn` / `UntilYourNextTurn` filters in `CleanupPhaseManager`. Their
-     * executors do accept any [Duration] though, so the first card that grants a trigger or
-     * replacement effect "for as long as …" has to be added here (and carry a `sourceId` for a
+     * executors do accept any [Duration] though, so the first card that grants a trigger, state
+     * trigger, or replacement effect "for as long as …" has to be added here (and carry a `sourceId` for a
      * source-keyed gate) or it will leak exactly the way the activated-ability grant did.
      *
      * The latch is one-way by nature: a pruned grant is never re-added. Returns the same
