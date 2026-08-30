@@ -142,19 +142,26 @@ class DecisionResponder(
             return bestResponse
         }
 
-        // Multi-target: simulate the best target for each requirement independently
+        // Multi-target: simulate the best target for each requirement independently. Every probe
+        // still has to be a *complete* answer to the decision — `DecisionValidators.validateTargets`
+        // rejects a response that leaves a mandatory requirement out, and a rejected probe comes
+        // back as `SimulationResult.Illegal` carrying the unchanged state, so every candidate would
+        // score identically: the pick would collapse to "the first legal target", and the optional
+        // pick-vs-skip comparison below would tie and always skip. Varying one requirement against a
+        // fixed baseline for the others keeps the comparison meaningful.
+        val baseline = minimalCompleteSelection(decision)
         val selected = decision.targetRequirements.associate { req ->
             val targets = decision.legalTargets[req.index] ?: emptyList()
             if (targets.isEmpty()) {
                 req.index to emptyList()
             } else {
                 val best = pickBestBySimulation(state, targets.take(maxCandidates), playerId) { target ->
-                    TargetsResponse(decision.id, mapOf(req.index to listOf(target)))
+                    TargetsResponse(decision.id, baseline + (req.index to listOf(target)))
                 }
                 // For optional targets, compare best pick against skipping
                 if (req.minTargets == 0) {
-                    val pickResponse = TargetsResponse(decision.id, mapOf(req.index to listOf(best)))
-                    val skipResponse = TargetsResponse(decision.id, mapOf(req.index to emptyList()))
+                    val pickResponse = TargetsResponse(decision.id, baseline + (req.index to listOf(best)))
+                    val skipResponse = TargetsResponse(decision.id, baseline + (req.index to emptyList()))
                     val pickScore = evaluateResult(simulator.simulateDecision(state, pickResponse), playerId)
                     val skipScore = evaluateResult(simulator.simulateDecision(state, skipResponse), playerId)
                     if (skipScore >= pickScore) req.index to emptyList()
@@ -765,11 +772,22 @@ class DecisionResponder(
         } ?: candidates.first()
     }
 
-    private fun cancelOrFirst(decision: ChooseTargetsDecision): DecisionResponse {
-        if (decision.canCancel) return CancelDecisionResponse(decision.id)
-        val selected = decision.targetRequirements.associate { req ->
+    /**
+     * The cheapest *complete* answer to [decision]: every declared requirement filled to its
+     * minimum from the targets that are legal for it, optional ones left empty.
+     *
+     * Completeness is the point. `DecisionValidators.validateTargets` rejects a response that omits
+     * a mandatory requirement, so a partial map is not a weaker answer but an illegal one — which
+     * is why this doubles as the fixed background a per-requirement probe varies one slot against.
+     */
+    internal fun minimalCompleteSelection(decision: ChooseTargetsDecision): Map<Int, List<EntityId>> =
+        decision.targetRequirements.associate { req ->
             req.index to (decision.legalTargets[req.index] ?: emptyList()).take(req.minTargets)
         }
+
+    private fun cancelOrFirst(decision: ChooseTargetsDecision): DecisionResponse {
+        if (decision.canCancel) return CancelDecisionResponse(decision.id)
+        val selected = minimalCompleteSelection(decision)
         return TargetsResponse(decision.id, selected)
     }
 

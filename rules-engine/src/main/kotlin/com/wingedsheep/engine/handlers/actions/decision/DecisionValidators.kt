@@ -182,6 +182,8 @@ object DecisionValidators {
             return "Expected target selection response"
         }
 
+        // Legality and per-requirement duplicates are checked against what was actually submitted:
+        // a group the decision never declared still can't name a target that isn't legal for it.
         for ((reqIndex, selectedIds) in response.selectedTargets) {
             val legalForReq = decision.legalTargets[reqIndex] ?: emptyList()
             for (id in selectedIds) {
@@ -195,68 +197,65 @@ object DecisionValidators {
             if (selectedIds.size != selectedIds.toSet().size) {
                 return "The same target can't be chosen more than once for requirement $reqIndex"
             }
+        }
 
-            val req = decision.targetRequirements.find { it.index == reqIndex }
-            if (req != null) {
-                if (selectedIds.size < req.minTargets) {
-                    return "Not enough targets for requirement $reqIndex: need at least ${req.minTargets}"
+        // Every *declared* requirement is then checked against the group that answered it, so the
+        // counts and the aggregate restrictions are driven by the decision rather than by whatever
+        // the response happened to contain. An omitted group is an empty selection for its
+        // requirement, not a way to bypass its minimum — which is what lets an optional group
+        // (`minTargets == 0`) stay absent while a mandatory one can't.
+        for (req in decision.targetRequirements) {
+            val selectedIds = response.selectedTargets[req.index] ?: emptyList()
+            val reqIndex = req.index
+            if (selectedIds.size < req.minTargets) {
+                return "Not enough targets for requirement $reqIndex: need at least ${req.minTargets}"
+            }
+            if (selectedIds.size > req.maxTargets) {
+                return "Too many targets for requirement $reqIndex: maximum is ${req.maxTargets}"
+            }
+            // "... from a single graveyard" — every chosen card target must share an owner.
+            if (req.sameOwner && selectedIds.size > 1 && state != null) {
+                val owners = selectedIds.mapNotNull { id ->
+                    state.getEntity(id)?.get<OwnerComponent>()?.playerId
                 }
-                if (selectedIds.size > req.maxTargets) {
-                    return "Too many targets for requirement $reqIndex: maximum is ${req.maxTargets}"
-                }
-                // "... from a single graveyard" — every chosen card target must share an owner.
-                if (req.sameOwner && selectedIds.size > 1 && state != null) {
-                    val owners = selectedIds.mapNotNull { id ->
-                        state.getEntity(id)?.get<OwnerComponent>()?.playerId
-                    }
-                    if (owners.toSet().size > 1) {
-                        return "Targets for requirement $reqIndex must be from a single graveyard"
-                    }
-                }
-                // "... with total mana value N or less" — the summed mana value of the chosen card
-                // targets may not exceed the resolved cap (Fire Lord Sozin's "total mana value X or
-                // less"; the cap was baked to a concrete int at decision-build time). CR 601.2c.
-                val manaCap = req.totalManaValueAtMost
-                if (manaCap != null && state != null) {
-                    val totalManaValue = selectedIds.sumOf { id ->
-                        state.getEntity(id)?.get<CardComponent>()?.manaValue ?: 0
-                    }
-                    if (totalManaValue > manaCap) {
-                        return "Targets for requirement $reqIndex exceed total mana value $manaCap"
-                    }
-                }
-                // "... with different names" — no two chosen targets may share a name (Behold the
-                // Sinister Six!). TargetValidator is authoritative; this rejects it interactively too.
-                if (req.differentNames && selectedIds.size > 1 && state != null) {
-                    val names = selectedIds.map { id ->
-                        state.projectedState.getName(id) ?: state.getEntity(id)?.get<CardComponent>()?.name
-                    }
-                    if (names.size != names.toSet().size) {
-                        return "Targets for requirement $reqIndex must have different names"
-                    }
-                }
-                // "For each other player, ... up to one target creature that player controls" — no
-                // two chosen targets may share a controller (Kaya, Spirits' Justice). TargetValidator
-                // is authoritative; this rejects it interactively too.
-                if (req.differentControllers && selectedIds.size > 1 && state != null) {
-                    val controllers = selectedIds.map { id ->
-                        state.projectedState.getController(id)
-                            ?: state.getEntity(id)?.get<ControllerComponent>()?.playerId
-                    }
-                    if (controllers.size != controllers.toSet().size) {
-                        return "Targets for requirement $reqIndex must be controlled by different players"
-                    }
+                if (owners.toSet().size > 1) {
+                    return "Targets for requirement $reqIndex must be from a single graveyard"
                 }
             }
-        }
-
-        // Omitting a requirement is an empty selection for that group, not a way to bypass its
-        // minimum. Optional target groups may still be absent from the response.
-        val omittedRequired = decision.targetRequirements.firstOrNull { req ->
-            req.minTargets > 0 && req.index !in response.selectedTargets
-        }
-        if (omittedRequired != null) {
-            return "Not enough targets for requirement ${omittedRequired.index}: need at least ${omittedRequired.minTargets}"
+            // "... with total mana value N or less" — the summed mana value of the chosen card
+            // targets may not exceed the resolved cap (Fire Lord Sozin's "total mana value X or
+            // less"; the cap was baked to a concrete int at decision-build time). CR 601.2c.
+            val manaCap = req.totalManaValueAtMost
+            if (manaCap != null && state != null) {
+                val totalManaValue = selectedIds.sumOf { id ->
+                    state.getEntity(id)?.get<CardComponent>()?.manaValue ?: 0
+                }
+                if (totalManaValue > manaCap) {
+                    return "Targets for requirement $reqIndex exceed total mana value $manaCap"
+                }
+            }
+            // "... with different names" — no two chosen targets may share a name (Behold the
+            // Sinister Six!). TargetValidator is authoritative; this rejects it interactively too.
+            if (req.differentNames && selectedIds.size > 1 && state != null) {
+                val names = selectedIds.map { id ->
+                    state.projectedState.getName(id) ?: state.getEntity(id)?.get<CardComponent>()?.name
+                }
+                if (names.size != names.toSet().size) {
+                    return "Targets for requirement $reqIndex must have different names"
+                }
+            }
+            // "For each other player, ... up to one target creature that player controls" — no
+            // two chosen targets may share a controller (Kaya, Spirits' Justice). TargetValidator
+            // is authoritative; this rejects it interactively too.
+            if (req.differentControllers && selectedIds.size > 1 && state != null) {
+                val controllers = selectedIds.map { id ->
+                    state.projectedState.getController(id)
+                        ?: state.getEntity(id)?.get<ControllerComponent>()?.playerId
+                }
+                if (controllers.size != controllers.toSet().size) {
+                    return "Targets for requirement $reqIndex must be controlled by different players"
+                }
+            }
         }
         return null
     }
@@ -405,21 +404,32 @@ object DecisionValidators {
         if (response !is OrderedResponse) {
             return "Expected ordering response"
         }
-        if (response.orderedObjects.size != decision.objects.size ||
-            response.orderedObjects.toSet() != decision.objects.toSet()
-        ) {
+        if (!isSameCollection(response.orderedObjects, decision.objects)) {
             return "Ordered objects must contain exactly the same objects as the decision"
         }
         return null
     }
+
+    /**
+     * True when [submitted] holds exactly the objects in [expected] — same count, same contents.
+     *
+     * Both conditions are load-bearing, and set equality alone is not enough: it discards
+     * multiplicity, so a one-object ordering answered with `[first, first]` has the same set as
+     * `[first]`. Comparing sizes as well makes an ordering response a permutation of the decision's
+     * objects — every object, exactly once — while still allowing any legal reordering.
+     */
+    private fun isSameCollection(submitted: List<EntityId>, expected: List<EntityId>): Boolean =
+        submitted.size == expected.size && submitted.toSet() == expected.toSet()
 
     private fun validateSplitPiles(decision: SplitPilesDecision, response: DecisionResponse): String? {
         if (response !is PilesSplitResponse) {
             return "Expected pile split response"
         }
 
-        val allCards = response.piles.flatten().toSet()
-        if (allCards != decision.cards.toSet()) {
+        // Flattened rather than set-compared: a card can't be in two piles at once, so a split that
+        // duplicates one card and drops another has the same set as a legal one (the multiplicity
+        // hole [isSameCollection] closes for orderings).
+        if (!isSameCollection(response.piles.flatten(), decision.cards)) {
             return "Piles must contain exactly the same cards as the decision"
         }
         if (response.piles.size != decision.numberOfPiles) {
@@ -550,13 +560,9 @@ object DecisionValidators {
             return "Expected ordered response for library reorder"
         }
 
-        val expectedSet = decision.cards.toSet()
-        val responseSet = response.orderedObjects.toSet()
-        if (expectedSet != responseSet) {
-            return "Invalid reorder: response must contain the same cards"
-        }
-        if (response.orderedObjects.size != decision.cards.size) {
-            return "Invalid reorder: response must contain exactly ${decision.cards.size} cards"
+        if (!isSameCollection(response.orderedObjects, decision.cards)) {
+            return "Invalid reorder: response must contain exactly the ${decision.cards.size} cards " +
+                "of the decision, each once"
         }
         return null
     }
