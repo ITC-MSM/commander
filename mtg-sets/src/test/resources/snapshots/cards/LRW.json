@@ -257,6 +257,51 @@
     ]
 }
 
+// Blind-Spot Giant
+{
+    "name": "Blind-Spot Giant",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Giant Warrior",
+    "oracleText": "This creature can't attack or block unless you control another Giant.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CantAttackUnless",
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "permanent Giant",
+                    "excludeSelf": true
+                }
+            },
+            {
+                "type": "CantBlockUnless",
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "permanent Giant",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "153",
+        "artist": "Jim Murray",
+        "flavorText": "Among the solitude-loving giantkind, teamwork is unusual. But he appreciates hearing the occasional \"Swing down and to your left.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/5/75aaca31-8ed5-4e8a-8332-1cca77903f88.jpg?1783942880"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Bog-Strider Ash
 {
     "name": "Bog-Strider Ash",
@@ -353,6 +398,61 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Boggart Forager
+{
+    "name": "Boggart Forager",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Goblin Rogue",
+    "oracleText": "{R}, Sacrifice this creature: Target player shuffles their library.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{R}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "ShuffleLibrary",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target player"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "descriptionOverride": "{R}, Sacrifice this creature: Target player shuffles their library."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "154",
+        "artist": "Ron Spencer",
+        "flavorText": "\"Reach in this hole, lose a hand. Reach in that hole, find a sparkly.\"\n—Auntie wisdom",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fbc26374-d8de-4740-b1ec-ac92cfedbebc.jpg?1783942881"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -1188,6 +1288,45 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Elvish Eulogist
+{
+    "name": "Elvish Eulogist",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Elf Shaman",
+    "oracleText": "Sacrifice this creature: You gain 1 life for each Elf card in your graveyard.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "filter": "Elf"
+                    }
+                },
+                "descriptionOverride": "Sacrifice this creature: You gain 1 life for each Elf card in your graveyard."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "205",
+        "artist": "Ben Thompson",
+        "flavorText": "\"No matter how adept our artistic skill, our effigies can never hope to capture the vibrant beauty of a living elf. Perhaps that is truly why we mourn.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/564b9d31-3079-45e3-acb3-a74169aa332e.jpg?1783942865"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -2509,6 +2648,37 @@
     ]
 }
 
+// Glimmerdust Nap
+{
+    "name": "Glimmerdust Nap",
+    "manaCost": "{2}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant tapped creature\nEnchanted creature doesn't untap during its controller's untap step.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "DOESNT_UNTAP"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature tapped"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "68",
+        "artist": "Greg Staples",
+        "flavorText": "The dreams of giants are as long as time and as deep as the earth. Thus they are prized by the dream-harvesting fae.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e05a4ce4-dbd5-4c47-8b40-c145c7f5d06c.jpg?1783942901"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Goldmeadow Dodger
 {
     "name": "Goldmeadow Dodger",
@@ -2684,6 +2854,57 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Hamletback Goliath
+{
+    "name": "Hamletback Goliath",
+    "manaCost": "{6}{R}",
+    "typeLine": "Creature — Giant Warrior",
+    "oracleText": "Whenever another creature enters, you may put X +1/+1 counters on this creature, where X is that creature's power.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "AddDynamicCounters",
+                        "counterType": "+1/+1",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "Triggering",
+                            "numericProperty": "Power"
+                        },
+                        "target": "Self"
+                    },
+                    "descriptionOverride": "you may put X +1/+1 counters on this creature, where X is that creature's power."
+                },
+                "descriptionOverride": "you may put X +1/+1 counters on this creature, where X is that creature's power."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "173",
+        "rarity": "RARE",
+        "artist": "Paolo Parente & Brian Snõddy",
+        "flavorText": "\"If you live on a giant's back, there's only one individual you'll ever need to fear.\"\n—Gaddock Teeg",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/96f71692-6389-462f-933e-b18b5aa7d76b.jpg?1783942876"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -5280,6 +5501,83 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Seedguide Ash
+{
+    "name": "Seedguide Ash",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Treefolk Druid",
+    "oracleText": "When this creature dies, you may search your library for up to three Forest cards, put them onto the battlefield tapped, then shuffle.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "land Forest"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 3
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield",
+                                    "placement": "Tapped"
+                                }
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    },
+                    "descriptionOverride": "you may search your library for up to three Forest cards, put them onto the battlefield tapped, then shuffle."
+                },
+                "descriptionOverride": "you may search your library for up to three Forest cards, put them onto the battlefield tapped, then shuffle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "235",
+        "rarity": "UNCOMMON",
+        "artist": "John Avon",
+        "flavorText": "\"May you shade three generations of seedlings.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/eca605c0-6270-4238-bb77-0bbfd7568807.jpg?1783942856"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
