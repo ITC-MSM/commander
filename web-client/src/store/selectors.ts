@@ -19,6 +19,7 @@ import {
   groupCards,
 } from './cardGrouping'
 import { teamLabel } from './teamLabel'
+import { castOfferFace } from '@/utils/castFace'
 
 /**
  * Select the game state (works for both normal play and spectating).
@@ -935,6 +936,10 @@ export function useGroupedZoneCards(zoneId: ZoneId): readonly GroupedCard[] {
  * Future Sight-like effects, and exile cards playable via Mind's Desire-like effects.
  * These are shown as translucent cards appended to the player's hand for discoverability.
  * Excludes simple mana abilities and unaffordable actions (same filtering as useHasLegalActions).
+ *
+ * A ghost is an *offer*, not the card as its zone holds it: a disturb card (CR 702.146a) is cast
+ * back face up (CR 712.8c), so it joins the hand as the spirit it becomes rather than the creature
+ * lying in the graveyard. {@link castOfferFace} does that swap wherever the server flags it.
  */
 export function useGhostCards(playerId: EntityId | null): readonly ClientCard[] {
   const gameState = useGameStore(selectGameState)
@@ -992,10 +997,12 @@ export function useGhostCards(playerId: EntityId | null): readonly ClientCard[] 
       }
     }
 
-    // Return deduplicated ClientCard objects
+    // Return deduplicated ClientCard objects, each shown as the face it would be cast as
+    const actionsByCard = getLegalActionsIndex(legalActions).byCard
     return Array.from(ghostCardIds)
       .map((id) => gameState.cards[id])
       .filter((card): card is ClientCard => card != null)
+      .map((card) => castOfferFace(card, actionsByCard.get(card.id) ?? EMPTY_ACTIONS))
   }, [gameState, legalActions, playerId])
 }
 

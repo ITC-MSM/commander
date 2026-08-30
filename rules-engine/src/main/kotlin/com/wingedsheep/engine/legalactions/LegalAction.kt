@@ -178,6 +178,19 @@ data class LegalAction(
     // Source zone
     val sourceZone: String? = null,
 
+    /**
+     * True when taking this action puts the card on the stack **back face up** (CR 712.8c) — i.e.
+     * the spell the player is being offered is the card's *back* face, not the face the zone it
+     * sits in is showing. Disturb (CR 702.146a) is the only enumerated offer that does this today.
+     *
+     * Sent to the client because a face-down-in-its-zone offer is otherwise invisible: a disturb
+     * card sits in the graveyard printed front face up, so an offer rendered from the card's own
+     * characteristics shows the wrong name, art and text for the spell it would actually cast.
+     * The client must never re-derive this from the disturb keyword — which face a cast uses is a
+     * rules question, and [description] / [manaCostString] are already read off that face here.
+     */
+    val castsTransformed: Boolean = false,
+
     // Tap-creatures-for-total-power selection (shared by Crew N and Saddle N: the player taps
     // any number of eligible creatures whose combined power meets [tapForPowerRequired]).
     val tapForPower: Boolean = false,
