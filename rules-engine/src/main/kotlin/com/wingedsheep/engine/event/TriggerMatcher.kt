@@ -1172,8 +1172,23 @@ class TriggerMatcher(
             // YOUR graveyard from the battlefield" cares about ownership, since a permanent
             // always goes to its owner's graveyard regardless of who last controlled it
             // (CR 400.3, e.g. Soulcatchers' Aerie).
+            //
+            // The three sources are ordered by which one can actually answer "who controlled it
+            // as it changed zones":
+            //  - leaving the battlefield: the entity is gone, so the LKI snapshot is the only
+            //    answer (CR 603.10);
+            //  - entering the battlefield: the permanent is live, so its projected controller is
+            //    authoritative — and it is NOT the owner whenever the entry carried a control
+            //    override. Reanimating a card out of its owner's graveyard under your control
+            //    (Virtue of Persistence, Shark Shredder) makes you the controller while the
+            //    opponent still owns it, so falling back to `ownerId` fired *their* "whenever a
+            //    creature you control enters" triggers off *your* permanent;
+            //  - anything that never touched the battlefield (a mill, a discard) has no
+            //    controller at all, and `ownerId` is the right and only reading.
             trigger.filter.controllerPredicate?.let { pred ->
-                val effectiveController = event.lastKnown?.controllerId ?: event.ownerId
+                val effectiveController = event.lastKnown?.controllerId
+                    ?: projected.getController(event.entityId)
+                    ?: event.ownerId
                 val controllerMatches = pred.evaluateWith { leaf ->
                     when (leaf) {
                         is ControllerPredicate.ControlledByYou -> effectiveController == controllerId

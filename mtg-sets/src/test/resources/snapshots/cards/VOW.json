@@ -15797,6 +15797,175 @@
     ]
 }
 
+// Sorin the Mirthless
+{
+    "name": "Sorin the Mirthless",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Legendary Planeswalker — Sorin",
+    "oracleText": "+1: Look at the top card of your library. You may reveal that card and put it into your hand. If you do, you lose life equal to its mana value.\n−2: Create a 2/3 black Vampire creature token with flying and lifelink.\n−7: Sorin deals 13 damage to any target. You gain 13 life.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "TopOfLibrary",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeAs": "looked"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "looked",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "kept",
+                                    "storeRemainder": "rest",
+                                    "prompt": "You may reveal the top card of your library and put it into your hand (you lose life equal to its mana value)",
+                                    "showAllCards": true
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "kept",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Hand"
+                                    },
+                                    "revealed": true
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "rest",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Library",
+                                        "placement": "Top"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "kept",
+                            "ifNotEmpty": {
+                                "type": "LoseLife",
+                                "amount": {
+                                    "type": "StoredCardManaValue",
+                                    "collectionName": "kept"
+                                },
+                                "target": "Controller"
+                            }
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Look at the top card of your library. You may reveal that card and put it into your hand. If you do, you lose life equal to its mana value."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -2
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 3,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Vampire"
+                    ],
+                    "keywords": [
+                        "FLYING",
+                        "LIFELINK"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/e/b/ebd12ac1-d1b2-4e22-9a17-8f3964294e35.jpg?1783924698"
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Create a 2/3 black Vampire creature token with flying and lifelink."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -7
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 13
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "any target"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 13
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Sorin deals 13 damage to any target. You gain 13 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "131",
+        "rarity": "MYTHIC",
+        "artist": "Martina Fačková",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cc7ff5f4-a7cc-41a1-a22b-8cf67ad18707.jpg?1783924850",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "If you choose not to reveal the card you looked at with Sorin's first loyalty ability, it stays on top of your library."
+            }
+        ]
+    },
+    "startingLoyalty": 4,
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Soulcipher Board
 {
     "name": "Soulcipher Board",
@@ -16945,6 +17114,170 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Toxrill, the Corrosive
+{
+    "name": "Toxrill, the Corrosive",
+    "manaCost": "{5}{B}{B}",
+    "typeLine": "Legendary Creature — Slug Horror",
+    "oracleText": "At the beginning of each end step, put a slime counter on each creature you don't control.\nCreatures you don't control get -1/-1 for each slime counter on them.\nWhenever a creature you don't control with a slime counter on it dies, create a 1/1 black Slug creature token.\n{U}{B}, Sacrifice a Slug: Draw a card.",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 7
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:opponent"
+                        }
+                    },
+                    "body": {
+                        "type": "AddCounters",
+                        "counterType": "slime",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "At the beginning of each end step, put a slime counter on each creature you don't control."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "HasCounter",
+                                "counterType": "slime"
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByOpponent"
+                    },
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Slug"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/6/e/6e2ae34f-4558-46e0-95c5-e00d813fa355.jpg?1783924698"
+                },
+                "descriptionOverride": "Whenever a creature you don't control with a slime counter on it dies, create a 1/1 black Slug creature token."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{U}{B}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "permanent Slug"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{U}{B}, Sacrifice a Slug: Draw a card."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "creature ctrl:opponent"
+                },
+                "powerBonus": {
+                    "type": "Multiply",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "AffectedEntity",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "slime"
+                            }
+                        }
+                    },
+                    "multiplier": -1
+                },
+                "toughnessBonus": {
+                    "type": "Multiply",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "AffectedEntity",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "slime"
+                            }
+                        }
+                    },
+                    "multiplier": -1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "132",
+        "rarity": "MYTHIC",
+        "artist": "Simon Dominic",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/4/84e64f38-b1f3-47cd-8cfb-a4861369aca3.jpg?1783924850",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Toxrill, the Corrosive's second and third abilities apply to all creatures you don't control with slime counters, even if those slime counters came from a source other than Toxrill's first ability."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "Toxrill's third ability triggers when a creature an opponent controls with a slime counter on it dies for any reason, not just due to its toughness being decreased by Toxrill's second ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -18290,6 +18623,122 @@
         "artist": "Richard Wright",
         "imageUri": "https://cards.scryfall.io/normal/front/2/5/2577e5fd-903a-44ce-989a-d53d56511ad3.jpg?1783924780"
     }
+}
+
+// Voltaic Visionary
+{
+    "name": "Voltaic Visionary",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "{T}: This creature deals 2 damage to you. Exile the top card of your library. You may play that card this turn. Activate only as a sorcery.\nWhen you play a card exiled with this creature, transform this creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "You"
+                            },
+                            "damageSource": "Self"
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "voltaicExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "voltaicExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "voltaicExiled",
+                            "onPlayRider": "Transform"
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "This creature deals 2 damage to you. Exile the top card of your library. You may play that card this turn. When you play a card exiled this way, transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Volt-Charged Berserker",
+        "manaCost": "",
+        "typeLine": "Creature — Human Berserker",
+        "oracleText": "This creature can't block.",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 3
+        },
+        "script": {
+            "staticAbilities": [
+                "CantBlock"
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "183",
+            "rarity": "UNCOMMON",
+            "artist": "Francisco Miyara",
+            "flavorText": "She finally realized that chaos was meant to run rampant, as was she.",
+            "imageUri": "https://cards.scryfall.io/normal/back/a/8/a8b85386-462b-46f8-9412-fd47ed1dc1da.jpg?1783924827"
+        },
+        "colorIdentityOverride": [
+            "RED"
+        ],
+        "colorIndicator": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "183",
+        "rarity": "UNCOMMON",
+        "artist": "Francisco Miyara",
+        "flavorText": "She spent many years trying to harness chaos.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a8b85386-462b-46f8-9412-fd47ed1dc1da.jpg?1783924827",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Playing a card this way follows all the normal timing rules for that card. For example, if you play a land this way, you may do so only during your main phase while the stack is empty and only if you haven't yet played a land (unless another effect allows you to play additional lands)."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "When you play a spell exiled this way, Voltaic Visionary will transform before that spell resolves."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "If Voltaic Visionary transforms into Volt-Charged Berserker after it has been declared as a blocker, it will not be removed from combat and is still blocking."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
 }
 
 // Wandering Mind
