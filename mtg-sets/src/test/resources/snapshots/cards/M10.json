@@ -1,3 +1,29 @@
+// Angel's Mercy
+{
+    "name": "Angel's Mercy",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Instant",
+    "oracleText": "You gain 7 life.",
+    "script": {
+        "spellEffect": {
+            "type": "GainLife",
+            "amount": {
+                "type": "Fixed",
+                "amount": 7
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "2",
+        "artist": "Andrew Robinson",
+        "flavorText": "\"Until that day I cursed the angels, those uncaring lights in the sky. They rewarded my scorn with the gift of time, every year of which I've spent in devotion to their names.\"\n—Torian Sha, soul warden",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/b/9b911124-3646-4014-b574-13fee44bfad5.jpg?1783942405"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Ant Queen
 {
     "name": "Ant Queen",
@@ -142,6 +168,79 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Borderland Ranger
+{
+    "name": "Borderland Ranger",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Human Scout Ranger",
+    "oracleText": "When this creature enters, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "basicland"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "169",
+        "artist": "Jesper Ejsing",
+        "flavorText": "\"Only fools and bandits use roads.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/d/bdd0f8c8-1a1f-4d9b-a6e1-3654f3995012.jpg?1783942366"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
