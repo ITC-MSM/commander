@@ -5703,6 +5703,65 @@
     "colorIdentityOverride": []
 }
 
+// Silvergill Douser
+{
+    "name": "Silvergill Douser",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Merfolk Wizard",
+    "oracleText": "{T}: Target creature gets -X/-0 until end of turn, where X is the number of Merfolk and/or Faeries you control.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Multiply",
+                        "amount": {
+                            "type": "AggregateBattlefield",
+                            "player": "You",
+                            "filter": "permanent Merfolk|Faerie"
+                        },
+                        "multiplier": -1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "Target creature gets -X/-0 until end of turn, where X is the number of Merfolk and/or Faeries you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "87",
+        "artist": "Daren Bader",
+        "flavorText": "\"The Silvergill school monitors traffic on the Lanes, ensuring that the riffraff don't interfere with travelers.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/8/8875c883-8d56-406b-bd89-42199a6e79f5.jpg?1783942898"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Skeletal Changeling
 {
     "name": "Skeletal Changeling",
