@@ -6202,6 +6202,331 @@
     ]
 }
 
+// Vivid Crag
+{
+    "name": "Vivid Crag",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped with two charge counters on it.\n{T}: Add {R}.\n{T}, Remove a charge counter from this land: Add one mana of any color.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {R}."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomRemoveCounters",
+                                "counterType": "charge",
+                                "self": true
+                            }
+                        }
+                    ]
+                },
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}, Remove a charge counter from this land: Add one mana of any color."
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped",
+            {
+                "type": "EntersWithCounters",
+                "counterType": {
+                    "type": "Named",
+                    "name": "charge"
+                },
+                "count": 2,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "275",
+        "rarity": "UNCOMMON",
+        "artist": "Martina Pilcerova",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/3/539001dc-69f0-42c0-b5c3-37d7b12eb79e.jpg?1783942847"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Vivid Creek
+{
+    "name": "Vivid Creek",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped with two charge counters on it.\n{T}: Add {U}.\n{T}, Remove a charge counter from this land: Add one mana of any color.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {U}."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomRemoveCounters",
+                                "counterType": "charge",
+                                "self": true
+                            }
+                        }
+                    ]
+                },
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}, Remove a charge counter from this land: Add one mana of any color."
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped",
+            {
+                "type": "EntersWithCounters",
+                "counterType": {
+                    "type": "Named",
+                    "name": "charge"
+                },
+                "count": 2,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "276",
+        "rarity": "UNCOMMON",
+        "artist": "Fred Fields",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/e/2e3c2935-84ee-446d-b247-2f574ea84a8f.jpg?1783942846"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Vivid Grove
+{
+    "name": "Vivid Grove",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped with two charge counters on it.\n{T}: Add {G}.\n{T}, Remove a charge counter from this land: Add one mana of any color.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {G}."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomRemoveCounters",
+                                "counterType": "charge",
+                                "self": true
+                            }
+                        }
+                    ]
+                },
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}, Remove a charge counter from this land: Add one mana of any color."
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped",
+            {
+                "type": "EntersWithCounters",
+                "counterType": {
+                    "type": "Named",
+                    "name": "charge"
+                },
+                "count": 2,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "277",
+        "rarity": "UNCOMMON",
+        "artist": "Howard Lyon",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/6646babe-edd8-4367-ba8f-89af4f859dd8.jpg?1783942846"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Vivid Marsh
+{
+    "name": "Vivid Marsh",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped with two charge counters on it.\n{T}: Add {B}.\n{T}, Remove a charge counter from this land: Add one mana of any color.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {B}."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomRemoveCounters",
+                                "counterType": "charge",
+                                "self": true
+                            }
+                        }
+                    ]
+                },
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}, Remove a charge counter from this land: Add one mana of any color."
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped",
+            {
+                "type": "EntersWithCounters",
+                "counterType": {
+                    "type": "Named",
+                    "name": "charge"
+                },
+                "count": 2,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "278",
+        "rarity": "UNCOMMON",
+        "artist": "John Avon",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/31f806c7-0063-4270-b37c-5363c41a7621.jpg?1783942846"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Vivid Meadow
+{
+    "name": "Vivid Meadow",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped with two charge counters on it.\n{T}: Add {W}.\n{T}, Remove a charge counter from this land: Add one mana of any color.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {W}."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomRemoveCounters",
+                                "counterType": "charge",
+                                "self": true
+                            }
+                        }
+                    ]
+                },
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}, Remove a charge counter from this land: Add one mana of any color."
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped",
+            {
+                "type": "EntersWithCounters",
+                "counterType": {
+                    "type": "Named",
+                    "name": "charge"
+                },
+                "count": 2,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "279",
+        "rarity": "UNCOMMON",
+        "artist": "Rob Alexander",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/5/a535790b-d416-4807-bca0-acf6b192101c.jpg?1783942846"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Wanderer's Twig
 {
     "name": "Wanderer's Twig",
