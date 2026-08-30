@@ -1,0 +1,232 @@
+package com.wingedsheep.engine.hidden
+
+import com.wingedsheep.engine.core.CardEntityFactory
+import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.OwnerComponent
+import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.model.GameRng
+
+/**
+ * An explicit assignment of card definitions to unresolved hidden-zone entity slots.
+ *
+ * This request deliberately contains no sampling policy. The caller decides which slots are
+ * unresolved, which definitions occupy them, and which random stream future simulated game events
+ * use. Assigning definitions to the existing entity ids also assigns the ordered library: zone
+ * membership and entity order are preserved exactly. The keys must include every slot the caller
+ * considers unresolved; unmentioned slots are intentionally left unchanged because the complete
+ * [GameState] substrate cannot reveal a semantic omission.
+ */
+data class HiddenWorldMaterializationRequest(
+    val slotAssignments: Map<EntityId, CardDefinition>,
+    val futureRng: GameRng,
+)
+
+/** Why an explicit hidden-world assignment cannot safely be applied. */
+enum class UnsupportedHiddenWorldKind {
+    /** The request names a missing entity, an unknown source definition, or a non-hand/library slot. */
+    INVALID_ASSIGNMENT,
+
+    /** A stack target, pending decision, or continuation frame depends on the identity being replaced. */
+    IN_FLIGHT_REFERENCES,
+
+    /** The hidden object carries state beyond its printed-definition-derived components. */
+    RUNTIME_STATE,
+}
+
+data class UnsupportedHiddenWorld(
+    val kind: UnsupportedHiddenWorldKind,
+    val entityId: EntityId? = null,
+    val details: List<String> = emptyList(),
+)
+
+sealed interface HiddenWorldMaterializationResult {
+    data class Materialized(val state: GameState) : HiddenWorldMaterializationResult
+    data class Unsupported(val reason: UnsupportedHiddenWorld) : HiddenWorldMaterializationResult
+}
+
+/**
+ * Applies caller-supplied hidden card identities to a hypothetical engine state.
+ *
+ * This is the engine-coherence half of hidden-world construction, not a visibility oracle or a
+ * determinizer. It never chooses slots, reads their current identities as candidate assignments,
+ * checks deck composition, or assigns probabilities. A caller operating from incomplete
+ * information must name every unresolved slot itself. The source definition is inspected only to
+ * verify that the slot's component shape is factory-derived; it is never copied into an assignment.
+ *
+ * Supported slots are ordinary cards in hand or library. Their entity ids, owners, controller
+ * component, zone membership, and zone order are preserved while [CardEntityFactory] rebuilds
+ * every component derived from the requested definition. An object with any other runtime state —
+ * a reveal someone has already been shown included — is refused rather than transplanting that
+ * state onto a different card. The mechanics live in [HiddenSlotRewrite], shared with the AI's
+ * determinizer so the two cannot disagree about what is safe.
+ *
+ * References stored elsewhere in the state keep pointing at the same entity. Live consumers
+ * therefore see the assigned current definition, while frozen historical snapshots remain frozen.
+ * The materializer validates current structural safety, not whether the assignment could have been
+ * reached through the state's recorded history.
+ *
+ * [HiddenWorldMaterializationRequest.slotAssignments] is also the caller's explicit declaration of
+ * which slots are unresolved. Unmentioned slots are deliberately preserved. Because [GameState]
+ * itself always contains complete identities, this utility cannot infer that a caller omitted a
+ * semantically hidden slot and is not an information-security boundary.
+ *
+ * [HiddenWorldMaterializationRequest.futureRng] is mandatory and is installed verbatim.
+ * Consequently a hypothetical world never inherits the source state's authoritative future random
+ * stream unless the caller explicitly asks for that exact generator. Search callers that require
+ * information separation must derive this generator from caller-owned randomness, not [GameState.rng].
+ */
+class HiddenWorldMaterializer(
+    private val cardRegistry: CardRegistry,
+) {
+    /**
+     * A request is answered as a whole: either every named slot is installed, or nothing is and the
+     * first obstruction is reported. Partial worlds are not a useful answer to "is this hypothesis
+     * coherent", and a caller that wants per-slot pinning is choosing a sampling policy this class
+     * deliberately doesn't own.
+     */
+    fun materialize(
+        state: GameState,
+        request: HiddenWorldMaterializationRequest,
+    ): HiddenWorldMaterializationResult {
+        // Gated whether or not the request names slots: an empty assignment still installs
+        // `futureRng`, and rewriting the future random stream of a state that is mid-decision is
+        // the same hazard as rewriting a card in it.
+        unsupportedInFlightState(state)?.let { return it }
+
+        val stackReferenced = HiddenSlotRewrite.stackReferencedEntities(state)
+        var materialized = state
+
+        // Slots are independent, so the order only decides *which* obstruction is reported when a
+        // request has several. Sorting makes that report stable across equal requests.
+        for ((entityId, replacementDefinition) in request.slotAssignments.entries.sortedBy { it.key.value }) {
+            val container = state.getEntity(entityId)
+                ?: return unsupported(
+                    UnsupportedHiddenWorldKind.INVALID_ASSIGNMENT,
+                    entityId,
+                    listOf("entity does not exist"),
+                )
+            if (entityId in stackReferenced) {
+                return unsupported(
+                    UnsupportedHiddenWorldKind.IN_FLIGHT_REFERENCES,
+                    entityId,
+                    listOf("slot is the chosen target of a stack object"),
+                )
+            }
+            val zones = state.zones.filterValues { entityId in it }
+            val occurrences = zones.values.sumOf { zone -> zone.count { it == entityId } }
+            if (occurrences != 1 || zones.keys.singleOrNull()?.zoneType !in SUPPORTED_ZONES) {
+                return unsupported(
+                    UnsupportedHiddenWorldKind.INVALID_ASSIGNMENT,
+                    entityId,
+                    listOf(
+                        if (occurrences == 0) "entity is not in a zone"
+                        else if (occurrences > 1) "entity occurs in zones $occurrences times"
+                        else "supported slots are HAND/LIBRARY; found ${zones.keys.single().zoneType.name}"
+                    ),
+                )
+            }
+            val zoneKey = zones.keys.single()
+
+            val ownerId = container.get<OwnerComponent>()?.playerId
+                ?: return unsupported(
+                    UnsupportedHiddenWorldKind.INVALID_ASSIGNMENT,
+                    entityId,
+                    listOf("entity has no owner"),
+                )
+            if (zoneKey.ownerId != ownerId) {
+                return unsupported(
+                    UnsupportedHiddenWorldKind.INVALID_ASSIGNMENT,
+                    entityId,
+                    listOf("zone owner ${zoneKey.ownerId.value} differs from card owner ${ownerId.value}"),
+                )
+            }
+            val currentCard = container.get<CardComponent>()
+                ?: return unsupported(
+                    UnsupportedHiddenWorldKind.INVALID_ASSIGNMENT,
+                    entityId,
+                    listOf("entity has no card identity"),
+                )
+            if (currentCard.ownerId != ownerId) {
+                return unsupported(
+                    UnsupportedHiddenWorldKind.INVALID_ASSIGNMENT,
+                    entityId,
+                    listOf("card identity owner differs from OwnerComponent"),
+                )
+            }
+            val currentDefinition = cardRegistry.getCard(currentCard.cardDefinitionId)
+                ?: return unsupported(
+                    UnsupportedHiddenWorldKind.INVALID_ASSIGNMENT,
+                    entityId,
+                    listOf("source definition is not registered: ${currentCard.cardDefinitionId}"),
+                )
+            val blockers = HiddenSlotRewrite.runtimeBlockers(container, currentDefinition, ownerId)
+            if (blockers.isNotEmpty()) {
+                return unsupported(UnsupportedHiddenWorldKind.RUNTIME_STATE, entityId, blockers)
+            }
+            if (isTransformBackFace(replacementDefinition)) {
+                return unsupported(
+                    UnsupportedHiddenWorldKind.INVALID_ASSIGNMENT,
+                    entityId,
+                    listOf("replacement HAND/LIBRARY identity is a DFC back face: ${replacementDefinition.name}"),
+                )
+            }
+            val replacementDefinitionId = CardEntityFactory.create(replacementDefinition, ownerId)
+                .require<CardComponent>()
+                .cardDefinitionId
+            if (cardRegistry.getCard(replacementDefinitionId) != replacementDefinition) {
+                return unsupported(
+                    UnsupportedHiddenWorldKind.INVALID_ASSIGNMENT,
+                    entityId,
+                    listOf("replacement definition is not registered: $replacementDefinitionId"),
+                )
+            }
+            materialized = HiddenSlotRewrite.rewrite(materialized, entityId, replacementDefinition, ownerId)
+        }
+
+        return HiddenWorldMaterializationResult.Materialized(
+            materialized.copy(rng = request.futureRng)
+        )
+    }
+
+    /**
+     * Continuation frames and pending decisions carry entity references in per-effect shapes with
+     * no common visitor, so neither can be audited slot by slot the way stack targets can. Both are
+     * therefore whole-state refusals: a search root taken at a quiet priority point has neither.
+     */
+    private fun unsupportedInFlightState(state: GameState): HiddenWorldMaterializationResult.Unsupported? {
+        val details = buildList {
+            state.pendingDecision?.let { add(it::class.simpleName ?: "PendingDecision") }
+            if (state.continuationStack.isNotEmpty()) {
+                add("continuationDepth=${state.continuationStack.size}")
+            }
+        }
+        if (details.isEmpty()) return null
+        return unsupported(UnsupportedHiddenWorldKind.IN_FLIGHT_REFERENCES, details = details)
+    }
+
+    /**
+     * Transform DFCs register their back face as a standalone definition so the transform machinery
+     * can resolve it, but a back face is never a legal card identity in hand or library. Modal DFC
+     * backs are outside this check by construction: they are faces of one definition, not separate
+     * registrations, so a caller cannot name one in the first place.
+     */
+    private fun isTransformBackFace(definition: CardDefinition): Boolean =
+        cardRegistry.getFrontFace(definition.name) != null
+
+    private fun unsupported(
+        kind: UnsupportedHiddenWorldKind,
+        entityId: EntityId? = null,
+        details: List<String> = emptyList(),
+    ): HiddenWorldMaterializationResult.Unsupported =
+        HiddenWorldMaterializationResult.Unsupported(
+            UnsupportedHiddenWorld(kind, entityId, details)
+        )
+
+    private companion object {
+        val SUPPORTED_ZONES = setOf(Zone.HAND, Zone.LIBRARY)
+    }
+}
