@@ -593,6 +593,8 @@ object ZoneTransitionService {
                 newState = newState.copy(
                     grantedTriggeredAbilities = newState.grantedTriggeredAbilities
                         .filter { it.entityId != entityId },
+                    grantedStateTriggeredAbilities = newState.grantedStateTriggeredAbilities
+                        .filter { it.entityId != entityId },
                     grantedActivatedAbilities = newState.grantedActivatedAbilities
                         .filter { it.entityId != entityId }
                 )

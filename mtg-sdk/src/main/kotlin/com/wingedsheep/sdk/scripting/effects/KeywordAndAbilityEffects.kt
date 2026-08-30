@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.Duration
+import com.wingedsheep.sdk.scripting.StateTriggeredAbility
 import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -116,6 +117,48 @@ data class GrantTriggeredAbilityEffect(
     val ability: TriggeredAbility,
     val target: EffectTarget,
     val duration: Duration = Duration.EndOfTurn
+) : Effect, SelfReferentialDescription {
+    override val descriptionTemplate: String = buildString {
+        append("${target.selfNounToken} gains \"${ability.description}\"")
+        if (duration.description.isNotEmpty()) append(" ${duration.description}")
+    }
+    override val description: String get() = defaultResolvedDescription
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect {
+        val newAbility = ability.applyTextReplacement(replacer)
+        return if (newAbility !== ability) copy(ability = newAbility) else this
+    }
+}
+
+/**
+ * The permanent [target] names **gains a state-triggered ability** (CR 603.8) for [duration].
+ *
+ * The granted-ability sibling of [GrantTriggeredAbilityEffect]: that one grants an ability that
+ * fires off a [com.wingedsheep.sdk.scripting.GameEvent], this one grants an ability that fires
+ * when its condition *becomes* true, polled at every priority pass. The two need separate effects
+ * because the engine reads them through different paths — a `TriggeredAbility` reaches the
+ * `TriggerIndex`, while a [StateTriggeredAbility] is only ever produced by the
+ * `StateTriggerPoller`, which has its own latch bookkeeping.
+ *
+ * Authored on Olivia, Crimson Bride, whose reanimated creature gains
+ * `"When you don't control a legendary Vampire, exile this creature."` — a state trigger, not an
+ * event trigger: nothing *happens* when the last legendary Vampire leaves, so there is no event
+ * to match; the condition simply starts being true.
+ *
+ * The default [duration] is [Duration.Permanent], not [Duration.EndOfTurn]. A granted state
+ * trigger is a durable rider on the permanent — the printed cards that grant one say nothing
+ * about end of turn — where a granted event trigger is usually a one-turn pump.
+ *
+ * @property ability The state-triggered ability to grant
+ * @property target The permanent to grant the ability to
+ * @property duration How long the grant lasts
+ */
+@SerialName("GrantStateTriggeredAbility")
+@Serializable
+data class GrantStateTriggeredAbilityEffect(
+    val ability: StateTriggeredAbility,
+    val target: EffectTarget,
+    val duration: Duration = Duration.Permanent
 ) : Effect, SelfReferentialDescription {
     override val descriptionTemplate: String = buildString {
         append("${target.selfNounToken} gains \"${ability.description}\"")

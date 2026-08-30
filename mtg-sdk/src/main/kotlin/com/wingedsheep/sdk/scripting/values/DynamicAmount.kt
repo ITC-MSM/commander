@@ -327,6 +327,17 @@ enum class ContextPropertyKey(val description: String) {
      * enchantment."
      */
     TRIGGER_COUNTERS_PLACED_AMOUNT("that many"),
+    /**
+     * Number of counters removed in the triggering [CountersRemovedEvent] payload — the removal
+     * mirror of [TRIGGER_COUNTERS_PLACED_AMOUNT], used by Magma Pummeler's "When one or more
+     * counters are removed from this creature this way, it deals **that much** damage to any
+     * target."
+     *
+     * Reads the same trigger-count slot as the placement key (the engine's `TriggerContext` fills
+     * `counterCount` from either event), and exists as its own name because a card that removes
+     * counters should not have to spell its amount "counters placed".
+     */
+    TRIGGER_COUNTERS_REMOVED_AMOUNT("that much"),
     /** Total counters of any kind on the source as it last existed on the battlefield (Shadow Urchin). */
     LAST_KNOWN_TOTAL_COUNTER_COUNT("the number of counters on it"),
     /** Total cards exiled and linked to the source permanent (Veteran Survivor). */

@@ -344,7 +344,8 @@ object DamageUtils {
         // counter left to spend.
         if (!isPlayer) {
             val counterShield = applyPreventByRemovingCounterToDamage(
-                newState, targetId, isCombatDamage = isCombatDamage, cantBePrevented = cantBePrevented
+                newState, targetId, isCombatDamage = isCombatDamage, cantBePrevented = cantBePrevented,
+                damageAmount = effectiveAmount
             )
             if (counterShield != null) {
                 newState = counterShield.state

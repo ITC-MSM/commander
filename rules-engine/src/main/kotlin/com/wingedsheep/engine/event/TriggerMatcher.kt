@@ -830,6 +830,9 @@ class TriggerMatcher(
                 // Counters.ANY is the wildcard "counters of any type" sentinel.
                 if (trigger.counterType != com.wingedsheep.sdk.core.Counters.ANY &&
                     !counterTypesMatch(trigger.counterType, event.counterType)) return false
+                // "…removed from this creature **this way**": only the removal a
+                // PreventDamageByRemovingCounter replacement performed counts (Magma Pummeler).
+                if (trigger.byDamagePrevention && !event.byDamagePrevention) return false
                 // "The last counter is removed": *this* removal must have emptied the permanent of
                 // that counter type. Read the count the event recorded, not the live one — two
                 // attackers damaging the same battle produce two removals in one batch, and by
