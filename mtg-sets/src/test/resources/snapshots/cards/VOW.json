@@ -16841,7 +16841,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature own:you",
+                    "filter": "creature nontoken own:you",
                     "to": "Graveyard"
                 },
                 "binding": "ANY",

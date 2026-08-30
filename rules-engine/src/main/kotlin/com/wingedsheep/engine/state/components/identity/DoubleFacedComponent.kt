@@ -27,7 +27,22 @@ data class DoubleFacedComponent(
     /** Which face is currently up. */
     val currentFace: Face = Face.FRONT,
     /** Saved front-face card data used to restore Rule 712.8a when leaving the battlefield. */
-    val frontFaceCard: CardComponent? = null
+    val frontFaceCard: CardComponent? = null,
+    /**
+     * How many times this object has turned over — CR 701.28f's "has it transformed or converted
+     * since the ability was put onto the stack?" clock.
+     *
+     * A plain monotonic tally rather than a face comparison, because two flips return the object
+     * to the face it started on while still counting as having transformed. Every face swap bumps
+     * it, whichever direction and whatever the cause: a [com.wingedsheep.sdk.scripting.effects
+     * .TransformEffect], a day/night convert, a craft return. Never reset — an object that leaves
+     * and re-enters the battlefield keeps its tally, so a stale ability from before the move can
+     * never mistake the new object's clock for its own.
+     *
+     * Read back through [com.wingedsheep.engine.handlers.EffectContext.sourceFaceChanges], which
+     * carries the value an ability's source had when the ability went on the stack.
+     */
+    val faceChanges: Int = 0
 ) : Component {
     @Serializable
     enum class Face { FRONT, BACK }

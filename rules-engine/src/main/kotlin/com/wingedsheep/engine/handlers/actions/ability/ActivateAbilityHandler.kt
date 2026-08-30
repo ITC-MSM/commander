@@ -1928,6 +1928,12 @@ class ActivateAbilityHandler(
                 cardComponent.cardDefinitionId, ability.id
             ),
             granterId = staticGranterId,
+            // CR 701.28f — freeze the source's face-change clock as the ability goes on the stack;
+            // an instruction inside it to transform that same permanent is ignored if the permanent
+            // turns over before this resolves.
+            sourceFaceChanges = state.getEntity(action.sourceId)
+                ?.get<com.wingedsheep.engine.state.components.identity.DoubleFacedComponent>()
+                ?.faceChanges,
             // Lock in the activation-time damage division (CR 601.2d) so removal in response
             // can't hand the controller a fresh division at resolution.
             damageDistribution = action.damageDistribution
