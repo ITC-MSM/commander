@@ -683,6 +683,25 @@ data class PreventDamage(
 }
 
 /**
+ * How many counters a [PreventDamageByRemovingCounter] spends on one damage event.
+ *
+ * Two values because Oracle prints exactly two rules, and the difference is not a number the card
+ * names — it is which of the two it means. A count would be a third thing neither card says.
+ */
+@Serializable
+enum class CounterRemovalAmount {
+    /** One counter per damage event, however large the damage (Unbreathing Horde, shield counters). */
+    One,
+
+    /**
+     * As many counters as the damage would have dealt, bounded by the counters present — "prevent
+     * that damage and remove **that many** counters from it" (Magma Pummeler). Damage beyond the
+     * counter count is still prevented in full; the excess simply has nothing left to remove.
+     */
+    EqualToDamage
+}
+
+/**
  * Prevent damage that would be dealt to this permanent and remove one counter of [counterType]
  * from it — the printed twin of the shield counter's prevention half (CR 122.1c).
  *
@@ -693,7 +712,7 @@ data class PreventDamage(
  * parameter of the prevention — it is what the ability *is*, and it makes the effect need a
  * state-returning application path where plain prevention is a pure arithmetic reduction.
  *
- * Two rules the printed rulings pin down, both shared with shield counters:
+ * Two rules the printed rulings pin down, both defaults here and both shared with shield counters:
  *
  * - **Exactly one counter per damage event**, however large the damage and however many counters
  *   are on the permanent. A creature blocking two attackers is dealt combat damage once (CR 510.2),
@@ -703,6 +722,11 @@ data class PreventDamage(
  *   still prevented — there is simply nothing to remove. (Unbreathing Horde only survives that way
  *   while something else is holding its toughness above 0.)
  *
+ * Both are *defaults*, not the whole family. [removalAmount] and [requiresCounter] are the two axes
+ * on which **Magma Pummeler** inverts them: "If damage would be dealt to this creature **while it
+ * has a +1/+1 counter on it**, prevent that damage and remove **that many** +1/+1 counters from
+ * it." Leave both alone for the Unbreathing Horde shape.
+ *
  * [appliesTo] defaults to "any damage that would be dealt to this permanent"; narrow its
  * `damageType`, `source` or `amount` for a card that only shields part of the picture.
  */
@@ -710,12 +734,36 @@ data class PreventDamage(
 @Serializable
 data class PreventDamageByRemovingCounter(
     val counterType: CounterTypeFilter = CounterTypeFilter.PlusOnePlusOne,
+    /**
+     * How many counters the prevention spends. [CounterRemovalAmount.One] is the printed default
+     * (Unbreathing Horde, shield counters); [CounterRemovalAmount.EqualToDamage] is Magma
+     * Pummeler's "remove **that many**", bounded by the counters actually present — damage above
+     * the count is still prevented in full, and every counter goes (the printed ruling).
+     */
+    val removalAmount: CounterRemovalAmount = CounterRemovalAmount.One,
+    /**
+     * When true the ability only applies *while the permanent has a counter of [counterType]* —
+     * Magma Pummeler's "while it has a +1/+1 counter on it". With no counter the replacement does
+     * not fire at all and the damage is dealt normally. The default `false` is the printed
+     * Unbreathing Horde rule, where the prevention happens regardless.
+     */
+    val requiresCounter: Boolean = false,
     override val appliesTo: EventPattern = EventPattern.DamageEvent(
         recipient = RecipientFilter.Self
     )
 ) : ReplacementEffect {
-    override val description: String =
-        "If ${appliesTo.description}, prevent that damage and remove a ${counterType.description} counter from it"
+    override val description: String = buildString {
+        append("If ${appliesTo.description}")
+        if (requiresCounter) append(" while it has a ${counterType.description} counter on it")
+        append(", prevent that damage and remove ")
+        append(
+            when (removalAmount) {
+                CounterRemovalAmount.One -> "a ${counterType.description} counter"
+                CounterRemovalAmount.EqualToDamage -> "that many ${counterType.description} counters"
+            }
+        )
+        append(" from it")
+    }
 
     override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
         val newAppliesTo = appliesTo.applyTextReplacement(replacer)

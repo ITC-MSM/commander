@@ -11673,7 +11673,7 @@ The priority groups are (CR 616.1a–f):
   `restrictions: List<Condition>` (default empty) gates the prevention on extra conditions evaluated
   against the source's controller — the same pattern as `ModifyLifeLoss.restrictions`. Use it for
   "as long as …, prevent …" statics (Spirit of Resistance: a five-distinct-colors `Compare` gate).
-- `ReplacementEffect.PreventDamageByRemovingCounter(counterType = PlusOnePlusOne, appliesTo = DamageEvent(recipient = Self))`
+- `ReplacementEffect.PreventDamageByRemovingCounter(counterType = PlusOnePlusOne, removalAmount = CounterRemovalAmount.One, requiresCounter = false, appliesTo = DamageEvent(recipient = Self))`
   — "If this creature would be dealt damage, prevent that damage and remove a +1/+1 counter from it"
   (Unbreathing Horde). The printed twin of the shield counter's prevention half (CR 122.1c), wired at
   the same two chokepoints (`DamageUtils.dealDamageToTarget` and
@@ -11687,6 +11687,21 @@ The priority groups are (CR 616.1a–f):
   arithmetic. Only self-recipient patterns are honoured; a card shielding *other* permanents this way
   would need a battlefield-wide scan. A permanent carrying both this and a shield counter spends only
   the shield counter (once the shield prevents the damage there is nothing left to replace).
+  Both printed rules above are **defaults**, and `removalAmount` / `requiresCounter` are the axes that
+  invert them for **Magma Pummeler** ("If damage would be dealt to this creature *while it has a +1/+1
+  counter on it*, prevent that damage and remove *that many* +1/+1 counters from it"):
+  `CounterRemovalAmount.EqualToDamage` spends as many counters as the damage would have dealt, bounded
+  by the counters present — damage above the count is still prevented in full, it simply has nothing
+  left to remove — and `requiresCounter = true` makes the ability not apply at all with no counter, so
+  the damage is dealt normally. In combat the amount read is the **per-target total** of that step's
+  assignments, because CR 510.2 makes all combat damage one event: a creature double-blocked for 2 and
+  3 loses five counters, not two then three.
+  The removal emits its `CountersRemovedEvent` with `byDamagePrevention = true`, which is the "**this
+  way**" scope `Triggers.countersRemovedFrom(byDamagePrevention = true)` matches — the Pummeler's
+  reflexive "When one or more counters are removed from this creature this way, it deals that much
+  damage to any target" must not fire for a counter paid as a cost or removed by an opponent. The
+  payoff amount is `ContextPropertyKey.TRIGGER_COUNTERS_REMOVED_AMOUNT` (the removal mirror of
+  `TRIGGER_COUNTERS_PLACED_AMOUNT`), i.e. the counters **removed** — not the damage that was prevented.
 - `CapDamage(maxAmount, appliesTo)` — clamp matching damage to `maxAmount` (a *replacement* distinct
   from prevent/modify; applied after all amplification). Divine Presence: `CapDamage(3, DamageEvent(recipient = Any))`.
 - `SetMinimumDamage(minAmount = 0, dynamicMinimum?, appliesTo)` — the **floor** mirror of `CapDamage`:

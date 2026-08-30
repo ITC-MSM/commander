@@ -154,7 +154,7 @@
 - [x] Lantern of the Lost
 - [x] Lightning Wolf
 - [x] Lunar Rejection
-- [ ] Magma Pummeler
+- [x] Magma Pummeler
 - [x] Manaform Hellkite
 - [x] Markov Purifier
 - [x] Markov Retribution

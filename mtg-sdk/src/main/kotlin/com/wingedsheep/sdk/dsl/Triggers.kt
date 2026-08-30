@@ -1497,12 +1497,14 @@ object Triggers {
         filter: GameObjectFilter = GameObjectFilter.Any,
         counterType: String = Counters.ANY,
         lastRemoved: Boolean = false,
+        byDamagePrevention: Boolean = false,
         binding: TriggerBinding = TriggerBinding.ANY,
     ): TriggerSpec = TriggerSpec(
         event = CountersRemovedEvent(
             counterType = counterType,
             filter = filter,
             lastRemoved = lastRemoved,
+            byDamagePrevention = byDamagePrevention,
         ),
         binding = binding
     )
