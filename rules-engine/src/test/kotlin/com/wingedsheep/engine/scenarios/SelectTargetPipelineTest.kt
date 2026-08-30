@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.effects.SelectTargetEffect
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
@@ -52,9 +53,29 @@ class SelectTargetPipelineTest : FunSpec({
         )
     )
 
+    val OptionalPipelineBolt = CardDefinition.sorcery(
+        name = "Optional Pipeline Bolt",
+        manaCost = ManaCost.parse("{R}"),
+        oracleText = "Choose up to one creature. Deal 3 damage to it.",
+        script = CardScript.spell(
+            effect = CompositeEffect(
+                listOf(
+                    SelectTargetEffect(
+                        requirement = TargetCreature(optional = true),
+                        storeAs = "chosen"
+                    ),
+                    DealDamageEffect(
+                        amount = 3,
+                        target = EffectTarget.PipelineTarget("chosen")
+                    )
+                )
+            )
+        )
+    )
+
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
-        driver.registerCards(TestCards.all + listOf(PipelineBolt))
+        driver.registerCards(TestCards.all + listOf(PipelineBolt, OptionalPipelineBolt))
         return driver
     }
 
@@ -96,6 +117,27 @@ class SelectTargetPipelineTest : FunSpec({
         // With only one legal creature, SelectTargetEffect auto-selects.
         // DealDamageEffect deals 3 to the 2/2 Bear → it dies.
         driver.assertInGraveyard(opponent, "Grizzly Bears")
+    }
+
+    test("single legal target is still offered when selecting it is optional") {
+        val driver = createDriver()
+        driver.initMirrorMatch(
+            deck = Deck.of("Mountain" to 40),
+            startingLife = 20
+        )
+
+        val (caster, opponent) = setupForCast(driver)
+        val bear = driver.putCreatureOnBattlefield(opponent, "Grizzly Bears")
+
+        val boltId = driver.putCardInHand(caster, "Optional Pipeline Bolt")
+        driver.castSpell(caster, boltId)
+        driver.bothPass()
+
+        val decision = driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
+        decision.targetRequirements.single().minTargets shouldBe 0
+
+        driver.submitTargetSelection(caster, emptyList())
+        driver.getCreatures(opponent).shouldContain(bear)
     }
 
     test("multiple legal targets presents decision and deals damage to chosen") {

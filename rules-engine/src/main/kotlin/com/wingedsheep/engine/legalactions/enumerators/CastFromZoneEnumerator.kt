@@ -24,6 +24,7 @@ import com.wingedsheep.engine.state.components.identity.PlayWithFixedAlternative
 import com.wingedsheep.engine.state.components.identity.PlayWithoutPayingCostComponent
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.legalactions.utils.CostEnumerationUtils
+import com.wingedsheep.engine.legalactions.utils.TargetEnumerationUtils
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
@@ -2651,7 +2652,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         val firstReqInfo = targetReqInfos.first()
 
                         val canAutoSelect = targetReqs.size == 1 &&
-                            context.targetUtils.shouldAutoSelectPlayerTarget(firstReq, firstReqInfo.validTargets)
+                            TargetEnumerationUtils.shouldAutoSelectPlayerTarget(firstReq, firstReqInfo.validTargets)
 
                         if (canAutoSelect) {
                             val autoSelectedTarget = ChosenTarget.Player(firstReqInfo.validTargets.first())

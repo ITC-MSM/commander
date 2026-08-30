@@ -1,5 +1,6 @@
 package com.wingedsheep.ai.engine
 
+import com.wingedsheep.ai.engine.rollout.FastDecisionResponder
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.legalactions.EnumerationMode
 import com.wingedsheep.engine.legalactions.LegalAction
@@ -67,6 +68,14 @@ class GameSimulator(
     /** Guard against recursive resolution — inner simulations (from DecisionResponder
      *  evaluating alternatives) should NOT re-enter the resolver. */
     private var isResolving = false
+
+    /**
+     * The constant-time policy used while [isResolving] blocks the strategic resolver.
+     *
+     * Only reached from inside a resolver's own simulation, where the choice is between one cheap
+     * heuristic answer and abandoning the resolution entirely.
+     */
+    private val fallbackResponder = FastDecisionResponder()
     /**
      * Simulate an action and resolve the stack to completion.
      *
@@ -154,23 +163,32 @@ class GameSimulator(
                     iterations++
                     continue
                 }
-                // Non-trivial decision: try the pluggable resolver (but not recursively —
-                // inner simulations from DecisionResponder evaluating alternatives break here)
+                // Non-trivial decision: hand it to the pluggable resolver.
                 val resolver = decisionResolver
-                if (resolver != null && !isResolving) {
+                if (resolver != null) {
                     if (iterations >= maxAutomaticTransitions) {
                         return stoppedAtLimit(current, allEvents, iterations)
                     }
-                    try {
-                        isResolving = true
-                        val response = resolver(current.state, decision)
-                        val submitAction = SubmitDecision(decision.playerId, response)
-                        current = processor.process(current.state, submitAction).result
-                        allEvents = allEvents + current.events
-                        iterations++
-                    } finally {
-                        isResolving = false
+                    val response = if (isResolving) {
+                        // The strategic resolver scores its alternatives by simulating them, so it
+                        // cannot be re-entered from inside one of its own simulations. Answering
+                        // with the O(1) rollout policy is what the playout path already does, and
+                        // it beats stopping: an abandoned resolution scores a board with the ward
+                        // unpaid or the combat damage unassigned — a position the game never
+                        // actually reaches.
+                        fallbackResponder.respond(current.state, decision, decision.playerId)
+                    } else {
+                        try {
+                            isResolving = true
+                            resolver(current.state, decision)
+                        } finally {
+                            isResolving = false
+                        }
                     }
+                    val submitAction = SubmitDecision(decision.playerId, response)
+                    current = processor.process(current.state, submitAction).result
+                    allEvents = allEvents + current.events
+                    iterations++
                     continue
                 }
                 return SimulationResult.NeedsDecision(current.state, decision, allEvents)

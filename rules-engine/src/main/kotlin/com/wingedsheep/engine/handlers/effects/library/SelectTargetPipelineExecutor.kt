@@ -17,8 +17,12 @@ import kotlin.reflect.KClass
  * Finds legal targets using [TargetFinder], then:
  * - **No legal targets** → stores empty collection, pipeline continues
  * - **Single legal target (non-optional)** → auto-selects, stores in [updatedCollections]
- * - **Multiple legal targets** → creates [ChooseTargetsDecision], pushes
- *   [SelectTargetPipelineContinuation], returns paused
+ * - **Multiple legal targets, or a single one the player may decline** → creates
+ *   [ChooseTargetsDecision], pushes [SelectTargetPipelineContinuation], returns paused
+ *
+ * The requirement is single-target by construction — [createDecision] offers one slot — so a
+ * requirement asking for more is rejected up front rather than turned into a decision no response
+ * can satisfy.
  */
 class SelectTargetPipelineExecutor(
     private val targetFinder: TargetFinder = TargetFinder()
@@ -56,14 +60,14 @@ class SelectTargetPipelineExecutor(
             )
         }
 
-        if (legalTargets.size == 1) {
-            // Single legal target — auto-select
+        if (legalTargets.size == 1 && effect.requirement.requiresExactlyOneTarget) {
+            // Single mandatory legal target — auto-select
             return EffectResult.success(state).copy(
                 updatedCollections = mapOf(effect.storeAs to legalTargets)
             )
         }
 
-        // Multiple legal targets — pause for player decision
+        // Multiple legal targets or an optional singleton — pause for player decision
         return createDecision(state, context, effect, legalTargets)
     }
 
@@ -77,10 +81,14 @@ class SelectTargetPipelineExecutor(
         val controllerId = context.controllerId
         val sourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name }
 
+        require(effect.requirement.count == 1) {
+            "SelectTargetEffect offers one target slot, but ${effect.requirement.description} asks " +
+                "for ${effect.requirement.count}"
+        }
         val requirementInfo = TargetRequirementInfo(
             index = 0,
             description = effect.requirement.description,
-            minTargets = 1,
+            minTargets = effect.requirement.effectiveMinCount,
             maxTargets = 1
         )
 

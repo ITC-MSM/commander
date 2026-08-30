@@ -99,6 +99,17 @@ sealed interface TargetRequirement : TextReplaceable<TargetRequirement> {
 
     /** Effective minimum after considering optional/unlimited flags */
     val effectiveMinCount: Int get() = if (optional || unlimited) 0 else minCount
+
+    /**
+     * True when this requirement takes exactly one target and declining it is not legal.
+     *
+     * The engine may fill such a requirement without asking whenever exactly one legal object
+     * exists — every other shape leaves the player a real choice, including "up to one target",
+     * whose empty selection stays legal no matter how few objects are on the battlefield
+     * (CR 601.2c). Read this rather than re-deriving it: the two spellings drifted apart once
+     * already.
+     */
+    val requiresExactlyOneTarget: Boolean get() = count == 1 && effectiveMinCount == 1
 }
 
 // =============================================================================
