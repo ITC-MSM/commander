@@ -224,7 +224,7 @@ class ObservationProjectedStateTest : ScenarioTestBase() {
     }
 
     private fun observe(state: GameState, viewer: EntityId): TrainingObservation =
-        ObservationBuilder()
+        ObservationBuilder(cardRegistry)
             .build(state, viewer, legalActions = emptyList())
             .observation as TrainingObservation
 

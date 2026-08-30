@@ -63,7 +63,7 @@ class TrainingObservationTest : FunSpec({
     test("observation includes all basic state fields and round-trips through JSON") {
         val env = newEnv()
         val perspective = env.playerIds[0]
-        val result = ObservationBuilder().build(env.state, perspective, env.legalActions())
+        val result = ObservationBuilder(env.cardRegistry).build(env.state, perspective, env.legalActions())
 
         val obs = result.observation as TrainingObservation
         obs.perspectivePlayerId shouldBe perspective
@@ -85,7 +85,7 @@ class TrainingObservationTest : FunSpec({
     test("an actionId from the observation resolves to a steppable action") {
         val env = newEnv()
         val perspective = env.playerIds[0]
-        val result = ObservationBuilder().build(env.state, perspective, env.legalActions())
+        val result = ObservationBuilder(env.cardRegistry).build(env.state, perspective, env.legalActions())
 
         val passView = result.observation.legalActions.first { it.description.contains("Pass", ignoreCase = true) || it.kind.contains("Pass", ignoreCase = true) }
         val resolved = result.registry.resolve(passView.actionId)
@@ -104,7 +104,7 @@ class TrainingObservationTest : FunSpec({
         val me = env.playerIds[0]
         val opponent = env.playerIds[1]
 
-        val masked = ObservationBuilder().build(env.state, me, env.legalActions())
+        val masked = ObservationBuilder(env.cardRegistry).build(env.state, me, env.legalActions())
             .observation as TrainingObservation
         val myHand = masked.zones.single { it.ownerId == me && it.zoneType == Zone.HAND }
         val theirHand = masked.zones.single { it.ownerId == opponent && it.zoneType == Zone.HAND }
@@ -117,7 +117,12 @@ class TrainingObservationTest : FunSpec({
         // Every library is hidden regardless of perspective.
         masked.zones.filter { it.zoneType == Zone.LIBRARY }.forEach { it.hidden.shouldBeTrue() }
 
-        val revealed = ObservationBuilder().build(env.state, me, env.legalActions(), revealAll = true)
+        val revealed = ObservationBuilder(env.cardRegistry).build(
+            env.state,
+            me,
+            env.legalActions(),
+            revealAll = true,
+        )
             .observation as TrainingObservation
         val theirHandRevealed = revealed.zones.single { it.ownerId == opponent && it.zoneType == Zone.HAND }
         theirHandRevealed.hidden.shouldBeFalse()
@@ -130,7 +135,11 @@ class TrainingObservationTest : FunSpec({
         val env = newEnv()
         val me = env.playerIds[0]
 
-        val obs = ObservationBuilder().build(env.state, me, env.legalActions()).observation as TrainingObservation
+        val obs = ObservationBuilder(env.cardRegistry).build(
+            env.state,
+            me,
+            env.legalActions(),
+        ).observation as TrainingObservation
         val myHand = obs.zones.single { it.ownerId == me && it.zoneType == Zone.HAND }
 
         // At least one card should be in the opening hand; every card there
@@ -157,7 +166,7 @@ class TrainingObservationTest : FunSpec({
         opponentHand.size shouldBeGreaterThan 1
 
         fun observe(state: GameState) =
-            ObservationBuilder().build(state, me, env.legalActions()).observation as TrainingObservation
+            ObservationBuilder(env.cardRegistry).build(state, me, env.legalActions()).observation as TrainingObservation
 
         fun revealing(cardId: EntityId): GameState =
             env.state.withEntity(
@@ -185,7 +194,7 @@ class TrainingObservationTest : FunSpec({
         val opponentHand = env.state.getZone(ZoneKey(opponent, Zone.HAND))
 
         fun digestRevealing(cardId: EntityId): String =
-            ObservationBuilder().build(
+            ObservationBuilder(env.cardRegistry).build(
                 env.state.withEntity(
                     cardId,
                     env.state.getEntity(cardId)!!.with(RevealedToComponent.to(me))
@@ -194,7 +203,7 @@ class TrainingObservationTest : FunSpec({
                 env.legalActions()
             ).observation.stateDigest
 
-        val nothingKnown = ObservationBuilder().build(env.state, me, env.legalActions())
+        val nothingKnown = ObservationBuilder(env.cardRegistry).build(env.state, me, env.legalActions())
             .observation.stateDigest
 
         digestRevealing(opponentHand[0]) shouldNotBe nothingKnown
@@ -222,7 +231,7 @@ class TrainingObservationTest : FunSpec({
         }
 
         fun observe(state: GameState) =
-            ObservationBuilder().build(state, me, env.legalActions()).observation as TrainingObservation
+            ObservationBuilder(env.cardRegistry).build(state, me, env.legalActions()).observation as TrainingObservation
 
         val atOpponent = observe(casting(opponent))
         val item = atOpponent.stack.single()
@@ -254,7 +263,7 @@ class TrainingObservationTest : FunSpec({
             )
             .copy(stack = listOf(abilityId))
 
-        val item = (ObservationBuilder().build(state, me, env.legalActions())
+        val item = (ObservationBuilder(env.cardRegistry).build(state, me, env.legalActions())
             .observation as TrainingObservation).stack.single()
 
         // An ability is its own entity with no CardComponent, so it used to arrive unnamed,
@@ -268,7 +277,7 @@ class TrainingObservationTest : FunSpec({
         val env = newEnv()
         val me = env.playerIds[0]
         val opponent = env.playerIds[1]
-        val base = ObservationBuilder().build(env.state, me, env.legalActions())
+        val base = ObservationBuilder(env.cardRegistry).build(env.state, me, env.legalActions())
             .observation as TrainingObservation
 
         val stackItem = StackItemView(
@@ -295,7 +304,7 @@ class TrainingObservationTest : FunSpec({
     test("stateDigest is unambiguous when a card name contains the encoding's delimiters") {
         val env = newEnv()
         val me = env.playerIds[0]
-        val base = ObservationBuilder().build(env.state, me, env.legalActions())
+        val base = ObservationBuilder(env.cardRegistry).build(env.state, me, env.legalActions())
             .observation as TrainingObservation
 
         fun item(id: String, name: String) = StackItemView(
@@ -319,14 +328,14 @@ class TrainingObservationTest : FunSpec({
         val env = newEnv()
         val me = env.playerIds[0]
 
-        val a = ObservationBuilder().build(env.state, me, env.legalActions()).observation
-        val b = ObservationBuilder().build(env.state, me, env.legalActions()).observation
+        val a = ObservationBuilder(env.cardRegistry).build(env.state, me, env.legalActions()).observation
+        val b = ObservationBuilder(env.cardRegistry).build(env.state, me, env.legalActions()).observation
         a.stateDigest shouldBe b.stateDigest
 
         // Advance a step and verify the digest changes.
         val pass = env.legalActions().first { it.action is PassPriority }
         env.step(pass.action)
-        val c = ObservationBuilder().build(env.state, me, env.legalActions()).observation
+        val c = ObservationBuilder(env.cardRegistry).build(env.state, me, env.legalActions()).observation
         c.stateDigest shouldNotBe a.stateDigest
     }
 })

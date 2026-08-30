@@ -7,12 +7,12 @@ import com.wingedsheep.engine.core.ChooseTargetsDecision
 import com.wingedsheep.engine.state.components.battlefield.PhasedOutComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownModeComponent
-import com.wingedsheep.engine.state.nameVisibleTo
 import com.wingedsheep.engine.state.nameVisibleToAll
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
@@ -244,14 +244,24 @@ class FaceDownGameLogMaskingTest : FunSpec({
         val controller = d.activePlayer!!
         val opponent = d.getOpponent(controller)
         val hidden = d.putFaceDown(controller, "Disguised Angel", FaceDownMode.DISGUISE)
+        val visibility = Visibility(d.cardRegistry)
 
-        // CR 708.5 — you may look at a face-down permanent you control. Per-viewer text honours
-        // that; the flat game-log strings cannot and mask for everyone.
-        nameVisibleTo(d.state, hidden, "Disguised Angel", controller) shouldBe "Disguised Angel"
-        nameVisibleTo(d.state, hidden, "Disguised Angel", opponent) shouldBe "Face-down creature"
+        // CR 708.5 — you may look at a face-down permanent you control. Text with an audience asks
+        // the shared identity authority and picks its label from that answer; the flat game-log
+        // strings have no audience to ask about and mask for everyone.
+        visibility.isCardIdentityVisibleTo(d.state, Zone.BATTLEFIELD, hidden, controller) shouldBe true
+        visibility.isCardIdentityVisibleTo(d.state, Zone.BATTLEFIELD, hidden, opponent) shouldBe false
         withClue("a spectator is never the player who may look") {
-            nameVisibleTo(d.state, hidden, "Disguised Angel", controller, isSpectator = true) shouldBe
-                "Face-down creature"
+            visibility.isCardIdentityVisibleTo(
+                d.state,
+                Zone.BATTLEFIELD,
+                hidden,
+                controller,
+                isSpectator = true,
+            ) shouldBe false
+        }
+        withClue("the flat game-log string masks for everyone, controller included") {
+            nameVisibleToAll(d.state, hidden, "Disguised Angel") shouldBe "Face-down creature"
         }
     }
 

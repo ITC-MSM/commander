@@ -29,6 +29,7 @@ import com.wingedsheep.engine.core.SplitPilesDecision
 import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.core.YesNoResponse
 import com.wingedsheep.engine.legalactions.LegalAction
+import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -41,10 +42,9 @@ import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
-import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
+import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.identity.PlayerComponent
-import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.engine.state.components.player.PlayerLostComponent
 import com.wingedsheep.engine.state.components.stack.AbilityOnStackComponent
@@ -53,8 +53,8 @@ import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.state.components.stack.TargetsComponent
 import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
-import com.wingedsheep.engine.state.identityVisibleTo
 import com.wingedsheep.engine.state.nameVisibleToAll
+import com.wingedsheep.engine.view.Visibility
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
@@ -64,14 +64,13 @@ import com.wingedsheep.sdk.model.EntityId
  *
  * ## Information hiding
  *
- * By default, opponent hand and everyone's library are hidden
- * ([ZoneView.hidden] = true). A hidden zone is not necessarily an empty one:
- * a card a hand-peek effect has shown this perspective stays visible to it
- * (`RevealedToComponent`), so [ZoneView.cards] carries the subset this player
- * knows while [ZoneView.size] stays the true count. A face-down object reports
- * only what the player looking at it may know (CR 708.5 — see
- * `identityVisibleTo`). Set [revealAll] to `true` to disable masking — only
- * appropriate for debug scripts; never for real self-play training.
+ * Identity visibility comes from the engine's [Visibility] authority, so a hidden zone is not
+ * necessarily an empty one. A card a hand-peek effect has shown this perspective stays visible to
+ * it, and so does a top card the perspective may legitimately see, which means [ZoneView.cards]
+ * carries the subset this player knows while [ZoneView.size] stays the true count and
+ * [ZoneView.hidden] stays true. A face-down object reports only what the player looking at it may
+ * know (CR 708.5). Set [revealAll] to `true` to disable masking — only appropriate for debug
+ * scripts; never for real self-play training.
  *
  * ## Projected vs. base state
  *
@@ -82,8 +81,11 @@ import com.wingedsheep.sdk.model.EntityId
  * zones — see `GameState.getBattlefield`).
  */
 class ObservationBuilder(
+    cardRegistry: CardRegistry,
     private val schemaHash: String = SchemaHash.CURRENT
 ) {
+    private val visibility = Visibility(cardRegistry)
+
     fun build(
         state: GameState,
         perspectivePlayerId: EntityId,
@@ -200,17 +202,25 @@ class ObservationBuilder(
             for (zone in perPlayerZones) {
                 val key = ZoneKey(playerId, zone)
                 val ids = state.getZone(key)
-                val hidden = !revealAll && isHiddenFrom(zone, playerId, perspectivePlayerId)
-                // A hidden zone still exposes what this perspective has already been shown —
-                // "look at target opponent's hand" leaves those cards visible to the viewer.
-                val knownIds = if (hidden) ids.filter { isRevealedTo(state, it, perspectivePlayerId) } else ids
-                val cards = knownIds.map {
-                    buildEntityFeatures(state, it, zone, perspectivePlayerId, revealAll)
+                val wholeZoneVisible = revealAll ||
+                    visibility.isZoneVisibleTo(state, key, perspectivePlayerId)
+                // A hidden zone still exposes what this perspective may know — a card a hand-peek
+                // effect showed it, or a top card it is entitled to see. Which of those apply is
+                // the engine's question, not this builder's.
+                val cards = ids.mapNotNull { entityId ->
+                    val identityVisible = revealAll || visibility.isCardIdentityVisibleTo(
+                        state,
+                        key,
+                        entityId,
+                        perspectivePlayerId,
+                    )
+                    if (!wholeZoneVisible && !identityVisible) null
+                    else buildEntityFeatures(state, entityId, zone, identityVisible)
                 }
                 views += ZoneView(
                     ownerId = playerId,
                     zoneType = zone,
-                    hidden = hidden,
+                    hidden = !wholeZoneVisible,
                     size = ids.size,
                     cards = cards
                 )
@@ -218,20 +228,6 @@ class ObservationBuilder(
         }
         return views
     }
-
-    private fun isHiddenFrom(zone: Zone, owner: EntityId, perspective: EntityId): Boolean = when (zone) {
-        Zone.LIBRARY -> true
-        Zone.HAND -> owner != perspective
-        else -> false
-    }
-
-    /**
-     * Mirrors `Visibility.isCardRevealedTo`. The gym builder deliberately stops at the per-card
-     * component: the whole-hand reveal that class also honours needs a `CardRegistry` to find the
-     * granting static ability, which an observation builder has no other use for.
-     */
-    private fun isRevealedTo(state: GameState, entityId: EntityId, perspective: EntityId): Boolean =
-        state.getEntity(entityId)?.get<RevealedToComponent>()?.isRevealedTo(perspective) == true
 
     // =========================================================================
     // Entities
@@ -241,8 +237,7 @@ class ObservationBuilder(
         state: GameState,
         entityId: EntityId,
         zone: Zone,
-        perspectivePlayerId: EntityId,
-        revealAll: Boolean
+        identityVisible: Boolean,
     ): EntityFeatures {
         val container = state.getEntity(entityId) ?: ComponentContainer.EMPTY
         val card = container.get<CardComponent>()
@@ -251,13 +246,13 @@ class ObservationBuilder(
 
         val onBattlefield = zone == Zone.BATTLEFIELD
 
-        // CR 708.5 — only the player who may look at a face-down object learns which card it is.
-        // Projection already masks a face-down permanent's characteristics down to the 2/2 with no
-        // name of CR 708.2a, but the printed fields below read the card underneath directly and
-        // have no projection entry to hide behind, so they are gated here. A face-down card in
-        // exile has no projection entry at all — hence the gate on the base-state fallbacks too.
-        val identityHidden = !revealAll &&
-            !identityVisibleTo(state, entityId, perspectivePlayerId)
+        // CR 708.5 — only a player entitled to look at a face-down object learns which card it
+        // is, and the caller already asked the engine's [Visibility] authority who that is.
+        // Projection masks a face-down permanent's characteristics down to the 2/2 with no name of
+        // CR 708.2a, but the printed fields below read the card underneath directly and have no
+        // projection entry to hide behind, so they are gated here. A face-down card in exile has
+        // no projection entry at all — hence the gate on the base-state fallbacks too.
+        val identityHidden = !identityVisible
 
         val types: Set<String> = when {
             pv != null -> pv.types.toSet()
@@ -339,7 +334,7 @@ class ObservationBuilder(
         state: GameState,
         entityId: EntityId,
         perspectivePlayerId: EntityId,
-        revealAll: Boolean
+        revealAll: Boolean,
     ): StackItemView {
         val container = state.getEntity(entityId)
         val card = container?.get<CardComponent>()
@@ -362,9 +357,15 @@ class ObservationBuilder(
             ?: triggered?.let { it.descriptionOverride ?: it.description }
             ?: activated?.descriptionOverride
             ?: ""
-        // A spell cast face down is one its opponents may not read either (CR 708.4/708.5).
-        val identityHidden = !revealAll &&
-            !identityVisibleTo(state, entityId, perspectivePlayerId)
+        // A spell cast face down is one its opponents may not read either (CR 708.4/708.5). The
+        // stack is not part of `state.zones`, so there is no key to pass — the visibility authority
+        // derives one from the spell's caster rather than us inventing an owner.
+        val identityHidden = !revealAll && !visibility.isCardIdentityVisibleTo(
+            state,
+            Zone.STACK,
+            entityId,
+            perspectivePlayerId,
+        )
         return StackItemView(
             entityId = entityId,
             // A stack object never gets a Layer-4 projection entry, so `projectedState` has no

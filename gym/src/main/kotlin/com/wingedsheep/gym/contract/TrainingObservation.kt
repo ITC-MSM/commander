@@ -72,8 +72,9 @@ data class TrainingObservation(
 
     /**
      * Per-zone entity views. A `(ownerId, zoneType)` pair appears at most once.
-     * Hidden zones (opponent hand, libraries) expose [ZoneView.hidden] = true
-     * and [ZoneView.cards] is empty (only [ZoneView.size] is populated).
+     * [ZoneView.hidden] means the zone is not wholly public to this perspective. [ZoneView.cards]
+     * contains only the identities this perspective may know, so an individually revealed card can
+     * appear while the zone remains hidden and [ZoneView.size] still reports its true size.
      */
     val zones: List<ZoneView>,
 
@@ -131,11 +132,14 @@ data class ManaPoolView(
 /**
  * A zone's contents from [TrainingObservation.perspectivePlayerId]'s point of view.
  *
- * [hidden] says some identities in the zone are concealed from the perspective player
- * (an opponent's hand, any library); [size] is then the true count while [cards] carries
- * only the entries this perspective knows. That subset is usually empty, but a hand-peek
- * effect leaves the cards it showed visible to the player who saw them, so a two-card
- * hidden hand can legitimately list one card. This mirrors real-MTG information hiding.
+ * [hidden] reports the structural fact that the zone is not wholly public to this perspective (an
+ * opponent's hand, any library) — a stable feature, so an agent's input distribution does not shift
+ * as reveals come and go. It is deliberately not "something here is unknown": [size] is the true
+ * count while [cards] carries only the entries this perspective knows, and that subset can be the
+ * whole zone. A hand-peek effect leaves the cards it showed visible to the player who saw them, so
+ * a two-card hidden hand can legitimately list one card — or, for a one-card library under a public
+ * top-card reveal, all of it. Hidden-zone slot IDs and the positions of known cards among unknown
+ * ones are intentionally not part of this schema.
  */
 @Serializable
 data class ZoneView(
