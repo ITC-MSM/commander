@@ -164,8 +164,15 @@ class AiResponseParser {
     fun parseMulliganChoice(response: String): Boolean? {
         val lower = response.trim().lowercase()
 
-        if (lower.contains("keep") || lower == "a" || lower == "[a]") return true
-        if (lower.contains("mulligan") || lower == "b" || lower == "[b]") return false
+        if (lower == "a" || lower == "[a]") return true
+        if (lower == "b" || lower == "[b]") return false
+
+        // A model that restates both options ("mulligan - I wouldn't keep this") names no choice by
+        // substring alone, so only decide when exactly one of the two words is present.
+        val keepCount = Regex("""\bkeep\w*\b""").findAll(lower).count()
+        val mulliganCount = Regex("""\bmulligan\w*\b""").findAll(lower).count()
+        if (keepCount > 0 && mulliganCount == 0) return true
+        if (mulliganCount > 0 && keepCount == 0) return false
 
         return parseYesNo(response) // "yes" = keep, "no" = mulligan
     }

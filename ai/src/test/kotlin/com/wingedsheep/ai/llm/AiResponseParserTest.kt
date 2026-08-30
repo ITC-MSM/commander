@@ -28,4 +28,15 @@ class AiResponseParserTest : StringSpec({
     "returns null for an unparseable mulligan response" {
         parser.parseMulliganChoice("Draw seven cards").shouldBeNull()
     }
+
+    "does not let a restated option outrank the stated choice" {
+        parser.parseMulliganChoice("Mulligan - I would not keep this hand").shouldBeNull()
+        parser.parseMulliganChoice("No, do not keep it - mulligan") shouldBe false
+        parser.parseMulliganChoice("Yes, keep - no mulligan needed") shouldBe true
+    }
+
+    "matches keep and mulligan as whole words" {
+        parser.parseMulliganChoice("Some housekeeping first").shouldBeNull()
+        parser.parseMulliganChoice("Keeping this hand") shouldBe true
+    }
 })
