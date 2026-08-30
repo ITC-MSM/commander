@@ -612,10 +612,11 @@ function GameCardImpl({
   }), [legalActions, card.id])
   const playableAction = playableActions[0]
   // Open the action menu when the card has more than one way to be played — including cards
-  // whose only affordable option is an alternative cast (cycling/typecycling/plot), so the
-  // player still sees the grayed-out "Cast"/"Play land" and can choose deliberately or cancel
-  // instead of silently auto-firing the lone affordable action.
-  const shouldShowCastModal = computeShouldShowCastModal(playableActions)
+  // whose only affordable option is an alternative cast (cycling/typecycling/plot) or whose
+  // second price is a keyword alternative cost the server couldn't afford to enumerate
+  // (impending, evoke), so the player still sees the grayed-out sibling and can choose
+  // deliberately or cancel instead of silently auto-firing the lone affordable action.
+  const shouldShowCastModal = computeShouldShowCastModal(playableActions, card)
   const canDragToPlay = (inHand || enableDragToCast) && playableAction && !isInCombatMode && !isInTargetingMode
 
   // What it costs to play this card from a face-up zone (hand or, for Commander, the command zone).

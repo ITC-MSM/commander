@@ -145,6 +145,13 @@ data class RemoveCountersEffect(
  * "Remove up to three counters from target creature." (Heartless Act, [maxTotal] = 3.)
  * "Remove a counter from it." ([minTotal] = [maxTotal] = 1 — the kind is the player's choice, the
  * count is not.)
+ * "Remove X counters from target permanent, where X is the mana value of the exiled card."
+ * (Cemetery Desecrator, [minTotal] = [maxTotal] = `StoredCardManaValue`.)
+ *
+ * Both bounds are [DynamicAmount]s, matching the additive mirror [AddCountersUpToEffect.max]:
+ * the printed count is as often a resolution-time value ("X counters, where X is …") as a literal,
+ * and the two effects had no reason to spell the same thing differently. `DynamicAmount.Fixed`
+ * covers the literal case.
  *
  * The floor matters because a bare ceiling silently makes every such removal optional: "remove a
  * counter" modelled as `maxTotal = 1` alone lets the controller answer 0 to every prompt and still
@@ -161,26 +168,39 @@ data class RemoveCountersEffect(
  *
  * @property target The permanent to remove counters from.
  * @property maxTotal The total budget across all kinds, or null for no cap.
- * @property minTotal The total that must be removed across all kinds; 0 makes the removal optional.
+ * @property minTotal The total that must be removed across all kinds; a literal 0 makes the
+ *   removal optional. A *dynamic* floor is never treated as optional up front — it can only be
+ *   evaluated at resolution — so a card whose count may legitimately come out as 0 should say so
+ *   with `DynamicAmount.Fixed(0)` rather than a computed zero.
  */
 @SerialName("RemoveAnyNumberOfCounters")
 @Serializable
 data class RemoveAnyNumberOfCountersEffect(
     val target: EffectTarget = EffectTarget.ContextTarget(0),
-    val maxTotal: Int? = null,
-    val minTotal: Int = 0
+    val maxTotal: DynamicAmount? = null,
+    val minTotal: DynamicAmount = DynamicAmount.Fixed(0)
 ) : Effect {
     override val description: String = when {
-        minTotal > 0 && minTotal == maxTotal ->
-            "Remove $minTotal counter${if (minTotal != 1) "s" else ""} from ${target.description}"
-        minTotal > 0 && maxTotal != null ->
-            "Remove $minTotal to $maxTotal counters from ${target.description}"
-        minTotal > 0 ->
-            "Remove at least $minTotal counter${if (minTotal != 1) "s" else ""} from ${target.description}"
+        !isLiteralZero(minTotal) && minTotal == maxTotal ->
+            "Remove ${minTotal.description} ${counterWord(minTotal)} from ${target.description}"
+        !isLiteralZero(minTotal) && maxTotal != null ->
+            "Remove ${minTotal.description} to ${maxTotal.description} counters from ${target.description}"
+        !isLiteralZero(minTotal) ->
+            "Remove at least ${minTotal.description} ${counterWord(minTotal)} from ${target.description}"
         maxTotal != null ->
-            "Remove up to $maxTotal counter${if (maxTotal != 1) "s" else ""} from ${target.description}"
+            "Remove up to ${maxTotal.description} ${counterWord(maxTotal)} from ${target.description}"
         else ->
             "Remove any number of counters from ${target.description}"
+    }
+
+    private companion object {
+        /** Only a printed literal 0 makes a removal optional; a computed one isn't known yet. */
+        fun isLiteralZero(amount: DynamicAmount): Boolean =
+            amount is DynamicAmount.Fixed && amount.amount == 0
+
+        /** Singular only for a literal 1 — every dynamic count reads as a plural. */
+        fun counterWord(amount: DynamicAmount): String =
+            if (amount is DynamicAmount.Fixed && amount.amount == 1) "counter" else "counters"
     }
 }
 

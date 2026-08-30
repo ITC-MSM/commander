@@ -214,3 +214,86 @@ describe('playLadderOptions', () => {
     expect(playLadderOptions(options)).toEqual([])
   })
 })
+
+describe('buildActionOptions — keyword alternative costs (evoke, impending)', () => {
+  const mulldrifter = card('{4}{U}', { name: 'Mulldrifter', evoke: '{2}{U}' } as Partial<ClientCard>)
+
+  it('offers the evoke price next to the printed one when only evoke is affordable', () => {
+    // The server enumerates only the casts it can pay for, so an unaffordable hard cast arrives as
+    // nothing at all. Before this, that left one option and the drag-to-play path fired it — you
+    // evoked a Mulldrifter you meant to hard-cast, and sacrificed it, without being asked.
+    const options = buildActionOptions(mulldrifter, [
+      action({
+        action: { type: 'CastSpell', alternativeCostType: 'EVOKE' },
+        actionType: 'CastWithAlternativeCost',
+        description: 'Evoke Mulldrifter ({2}{U})',
+        manaCostString: '{2}{U}',
+      }),
+    ])
+    expect(options.map((o) => o.key)).toEqual(['cast', 'evoke'])
+    expect(options[0]).toMatchObject({ label: 'Cast Mulldrifter', manaCost: '{4}{U}', isAvailable: false, action: null })
+    expect(options[1]).toMatchObject({ label: 'Evoke Mulldrifter', manaCost: '{2}{U}', isAvailable: true })
+    expect(options[1]!.hint).toContain('sacrificed')
+  })
+
+  it('offers the evoke price grayed out when only the hard cast is affordable', () => {
+    // The other direction: seven lands and no evoke action enumerated (it is affordable too, but a
+    // server that omits it must not cost the player the choice).
+    const options = buildActionOptions(mulldrifter, [
+      action({ manaCostString: '{4}{U}' }),
+    ])
+    expect(options.map((o) => o.key)).toEqual(['cast', 'evoke'])
+    expect(options[0]).toMatchObject({ isAvailable: true })
+    expect(options[1]).toMatchObject({ label: 'Evoke Mulldrifter', manaCost: '{2}{U}', isAvailable: false, action: null })
+  })
+
+  it('wires both cast actions to their own option when the player can afford either', () => {
+    const options = buildActionOptions(mulldrifter, [
+      action({ manaCostString: '{4}{U}' }),
+      action({
+        action: { type: 'CastSpell', alternativeCostType: 'EVOKE' },
+        actionType: 'CastWithAlternativeCost',
+        description: 'Evoke Mulldrifter ({2}{U})',
+        manaCostString: '{2}{U}',
+      }),
+    ])
+    expect(options.map((o) => o.key)).toEqual(['cast', 'evoke'])
+    expect(options.every((o) => o.isAvailable && o.action !== null)).toBe(true)
+  })
+
+  it('still pairs impending with the printed cost, keeping its time-counter glyph', () => {
+    const overlord = card('{5}{W}{W}', {
+      name: 'Overlord of the Mistmoors',
+      impending: { cost: '{2}{W}{W}', time: 4 },
+    } as Partial<ClientCard>)
+    const options = buildActionOptions(overlord, [
+      action({
+        action: { type: 'CastSpell', alternativeCostType: 'IMPENDING' },
+        actionType: 'CastWithAlternativeCost',
+        description: 'Impending Overlord of the Mistmoors ({2}{W}{W})',
+        manaCostString: '{2}{W}{W}',
+      }),
+    ])
+    expect(options.map((o) => o.key)).toEqual(['cast', 'impending'])
+    expect(options[1]).toMatchObject({ label: 'Cast for Impending', manaCost: '{2}{W}{W}', impendingTime: 4 })
+  })
+
+  it('keeps any further cost variant the server offered alongside the pair', () => {
+    const options = buildActionOptions(mulldrifter, [
+      action({ manaCostString: '{4}{U}' }),
+      action({
+        action: { type: 'CastSpell', alternativeCostType: 'EVOKE' },
+        actionType: 'CastWithAlternativeCost',
+        description: 'Evoke Mulldrifter ({2}{U})',
+        manaCostString: '{2}{U}',
+      }),
+      action({
+        action: { type: 'CastSpell', alternativeCostType: 'GRANTED' },
+        actionType: 'CastWithAlternativeCost',
+        description: 'Cast Mulldrifter (Omniscience)',
+        manaCostString: '{0}',
+      }),
+    ])
+    expect(options.map((o) => o.key)).toEqual(['cast', 'evoke', 'cast-extra-0'])
+  })
+})
