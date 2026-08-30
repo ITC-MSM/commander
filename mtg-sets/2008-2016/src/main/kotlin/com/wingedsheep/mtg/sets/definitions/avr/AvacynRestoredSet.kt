@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.avr
 
-import com.wingedsheep.mtg.sets.definitions.por.PortalSet
 import com.wingedsheep.mtg.sets.discovery.CardDiscovery
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.MtgSet
@@ -23,11 +22,15 @@ object AvacynRestoredSet : MtgSet {
     override val displayName = "Avacyn Restored"
     override val releaseDate = "2012-05-04"
     override val block = "Innistrad"
-    override val basicLandsFallback = PortalSet
     override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)
+    }
+
+    /** Avacyn Restored's own basics: three arts each of the five types, collector numbers 230-244. */
+    override val basicLands: List<CardDefinition> by lazy {
+        CardDiscovery.findBasicLandsIn(CARDS_PACKAGE, code)
     }
 
     override val printings: List<Printing> by lazy {

@@ -696,6 +696,16 @@ data class GameObjectFilter(
      * of [sharingCreatureTypeWith] — see [CardPredicate.SharesCardTypeWith] for why the two axes
      * stay apart.
      */
+    /**
+     * Must share a card type with **any** card exiled with the filtering ability's source — "shares
+     * a card type with a card exiled with this creature" (Cemetery Illuminator). The pile-wide form
+     * of [sharingCardTypeWith]`(EntityReference.LinkedExiledCard())`; see
+     * [CardPredicate.SharesCardTypeWithLinkedExile].
+     */
+    fun sharingCardTypeWithLinkedExile() = copy(
+        cardPredicates = cardPredicates + CardPredicate.SharesCardTypeWithLinkedExile
+    )
+
     fun sharingCardTypeWith(entity: EntityReference) = copy(
         cardPredicates = cardPredicates + CardPredicate.SharesCardTypeWith(entity)
     )
@@ -817,6 +827,15 @@ data class GameObjectFilter(
      */
     fun attackingYouOrYourPlaneswalkers() = copy(
         statePredicates = statePredicates + StatePredicate.IsAttackingYouOrYourPlaneswalkers
+    )
+
+    /**
+     * Must be attacking the player the filtering ability's source is attached to — "creatures
+     * attacking enchanted player" (Curse of Hospitality). The attachment-scoped sibling of
+     * [attackingAnOpponent]; only meaningful on an Aura that enchants a player.
+     */
+    fun attackingEnchantedPlayer() = copy(
+        statePredicates = statePredicates + StatePredicate.IsAttackingEnchantedPlayer
     )
 
     /**

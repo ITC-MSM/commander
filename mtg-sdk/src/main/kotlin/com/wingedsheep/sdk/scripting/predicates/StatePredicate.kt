@@ -132,6 +132,28 @@ sealed interface StatePredicate {
         override val description: String = "attacking you or a planeswalker you control"
     }
 
+    /**
+     * Attacking the player the asking ability's *source* is attached to — "creatures attacking
+     * enchanted player" (Curse of Hospitality). The attachment-scoped sibling of
+     * [IsAttackingAnOpponent] and [IsAttackingYouOrYourPlaneswalkers]: those two scope the defender
+     * against the ability's *controller*, and an Aura curse has to scope it against the player its
+     * source enchants, who is neither the controller nor necessarily the only opponent.
+     *
+     * The defender must be the enchanted *player*, not a planeswalker they control or a battle they
+     * protect — [com.wingedsheep.sdk.scripting.references.Player.EnchantedPlayer] only ever resolves
+     * to a player, so those drop out by construction, the same way `getOpponents` makes them drop
+     * out of [IsAttackingAnOpponent].
+     *
+     * No last-known fallback, for [IsAttackingAnOpponent]'s reason: the frozen snapshot records only
+     * *that* a permanent was attacking, never whom. Fails closed when the source isn't an Aura
+     * attached to a player.
+     */
+    @SerialName("IsAttackingEnchantedPlayer")
+    @Serializable
+    data object IsAttackingEnchantedPlayer : Entity {
+        override val description: String = "attacking enchanted player"
+    }
+
     @SerialName("IsBlocking")
     @Serializable
     data object IsBlocking : Entity {

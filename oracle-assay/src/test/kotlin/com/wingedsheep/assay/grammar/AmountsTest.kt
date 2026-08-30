@@ -154,12 +154,16 @@ class AmountsTest : StringSpec({
     // The counted verbs' second spelling
     // ---------------------------------------------------------------------------------------
 
-    // Life is not in the band: "for each" is its canonical spelling and outnumbers "equal to"
-    // 131 to 23, so offering both would be two printed forms for one model. See
-    // [Steps.countedSteps] for what it would take to unify them.
-    "life keeps its numeral and declines the clause the damage verbs read" {
+    // Life joined the band with the life-amount rewrite: the seven life rows became one
+    // `LifeChange` table over `countedStepPair`, so the clause the damage verbs read is now a
+    // second *input* spelling rather than a decline. It is an `alsoSpelled` alternate, not a
+    // second printed form — "for each" outnumbers "equal to" 131 to 23 in print and stays
+    // canonical, so the clause reads and reprints as the numeral form.
+    "life reads its numeral, and the damage verbs' clause reprints as it" {
         roundTrips("You gain 3 life.")
-        declines("You gain life equal to the number of creatures you control.")
+        Grammar.abilityLine.printLine(
+            fragment("You gain life equal to the number of creatures you control.")
+        ) shouldBe "You gain 1 life for each creature you control."
     }
 
     "damage puts the clause where the amount's shape says it goes" {

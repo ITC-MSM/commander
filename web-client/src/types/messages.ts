@@ -968,6 +968,13 @@ export interface LegalActionInfo {
   readonly availableManaColors?: readonly string[]
   /** Source zone if this action is from a non-hand zone (e.g., "LIBRARY" for Future Sight) */
   readonly sourceZone?: string
+  /**
+   * True when this cast puts the card on the stack **back face up** (CR 712.8c) — a disturb cast
+   * (CR 702.146a). The card is sitting in its zone printed *front* face up, so the offer must be
+   * rendered from the card's `backFace*` fields, not from its own name/art/text. Server-decided:
+   * which face a cast uses is a rules question, never one the client derives from a keyword.
+   */
+  readonly castsTransformed?: boolean
   /** Max block counts for blockers that can block more than one attacker */
   readonly blockerMaxBlockCounts?: Readonly<Record<EntityId, number>>
   /** Pre-computed mandatory blocker→attacker assignments from Provoke / MustBeBlockedByAll */

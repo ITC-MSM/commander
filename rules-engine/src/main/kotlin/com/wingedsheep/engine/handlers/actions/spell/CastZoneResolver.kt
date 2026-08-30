@@ -661,7 +661,7 @@ class CastZoneResolver(
                         ?.get<CastFromTopOfLibraryUsesThisTurnComponent>()?.uses ?: 0
                     val maxCasts = unwrapped.maxCastsPerTurn
                     val hasUse = maxCasts == null || uses < maxCasts
-                    if (hasUse && matchesCardFilter(cardComponent, unwrapped.filter)) return true
+                    if (hasUse && matchesCardFilter(cardComponent, unwrapped.filter, state, entityId)) return true
                 }
                 if (unwrapped is PlayLandsAndCastFilteredFromTopOfLibrary) {
                     // A null spellFilter is a lands-only permission: nothing is castable.
@@ -702,7 +702,7 @@ class CastZoneResolver(
                     unwrapped.spellFilter?.let { matchesCardFilter(cardComponent, it) } == true
                 ) return null
                 if (unwrapped !is CastSpellTypesFromTopOfLibrary ||
-                    !matchesCardFilter(cardComponent, unwrapped.filter)
+                    !matchesCardFilter(cardComponent, unwrapped.filter, state, entityId)
                 ) continue
                 val maxCasts = unwrapped.maxCastsPerTurn ?: return null
                 val uses = state.getEntity(entityId)
@@ -875,14 +875,32 @@ class CastZoneResolver(
     }
 
     companion object {
-        fun matchesCardFilter(card: CardComponent, filter: GameObjectFilter): Boolean {
+        /**
+         * @param state the game state, and [grantingSourceId] the permanent whose static ability
+         *   supplies the filter. Both are optional and only
+         *   [CardPredicate.SharesCardTypeWithLinkedExile] reads them — a filter that talks about the
+         *   granting permanent's linked-exile pile (Cemetery Illuminator) can't be judged from the
+         *   card alone. Callers that have no source leave them null and that predicate fails closed,
+         *   which is the same policy the rest of this `when` applies to source-relative predicates.
+         */
+        fun matchesCardFilter(
+            card: CardComponent,
+            filter: GameObjectFilter,
+            state: GameState? = null,
+            grantingSourceId: EntityId? = null,
+        ): Boolean {
             for (predicate in filter.cardPredicates) {
-                if (!matchesCardPredicate(card, predicate)) return false
+                if (!matchesCardPredicate(card, predicate, state, grantingSourceId)) return false
             }
             return true
         }
 
-        private fun matchesCardPredicate(card: CardComponent, predicate: CardPredicate): Boolean {
+        private fun matchesCardPredicate(
+            card: CardComponent,
+            predicate: CardPredicate,
+            state: GameState? = null,
+            grantingSourceId: EntityId? = null,
+        ): Boolean {
             val cmc = card.manaCost.cmc
             val power = card.baseStats?.basePower
             val toughness = card.baseStats?.baseToughness
@@ -956,9 +974,9 @@ class CastZoneResolver(
                 is CardPredicate.HasActivatedAbility -> card.hasActivatedAbility
                 is CardPredicate.HasNonManaActivatedAbility -> card.hasNonManaActivatedAbility
                 // --- Combinators ---
-                is CardPredicate.Or -> predicate.predicates.any { matchesCardPredicate(card, it) }
-                is CardPredicate.And -> predicate.predicates.all { matchesCardPredicate(card, it) }
-                is CardPredicate.Not -> !matchesCardPredicate(card, predicate.predicate)
+                is CardPredicate.Or -> predicate.predicates.any { matchesCardPredicate(card, it, state, grantingSourceId) }
+                is CardPredicate.And -> predicate.predicates.all { matchesCardPredicate(card, it, state, grantingSourceId) }
+                is CardPredicate.Not -> !matchesCardPredicate(card, predicate.predicate, state, grantingSourceId)
                 // Predicates that can't be judged from a card's static characteristics alone —
                 // they need runtime/interaction context (a chosen value, another entity, X, a
                 // pipeline variable/stored group, the recipient/source of an effect), or describe
@@ -966,6 +984,21 @@ class CastZoneResolver(
                 // and matching a condition we can't verify would silently widen the grant, so they
                 // fail closed. This `when` is exhaustive: adding a CardPredicate forces a decision
                 // here rather than leaking through a permissive `else`.
+                // "shares a card type with a card exiled with this creature" (Cemetery
+                // Illuminator). Unlike its neighbours in the fail-closed bucket below this one
+                // *can* be judged here: the pile hangs off the granting permanent, which every
+                // caller that supplies a source already has in hand. Printed type lines on both
+                // sides — a card in a library and a card in exile have no battlefield projection.
+                CardPredicate.SharesCardTypeWithLinkedExile -> {
+                    val source = grantingSourceId
+                    if (state == null || source == null) false else {
+                        val exiledTypes = com.wingedsheep.engine.handlers.effects.linkedexile
+                            .LinkedExileLookup.exiledCards(state, source)
+                            .mapNotNull { state.getEntity(it)?.get<CardComponent>()?.typeLine?.cardTypes }
+                            .flatMapTo(mutableSetOf()) { it }
+                        card.typeLine.cardTypes.any { it in exiledTypes }
+                    }
+                }
                 is CardPredicate.IsToken,
                 is CardPredicate.IsNontoken,
                 is CardPredicate.HasChosenColor,

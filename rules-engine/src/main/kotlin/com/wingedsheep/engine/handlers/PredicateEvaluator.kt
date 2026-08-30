@@ -881,6 +881,25 @@ class PredicateEvaluator {
                 entityTypes.any { it in referenceTypes }
             }
 
+            // "shares a card type with a card exiled with this creature" (Cemetery Illuminator).
+            // The pile-wide sibling of SharesCardTypeWith: reads *every* card still in the source's
+            // linked-exile pile, because the Illuminator keeps exiling on each enter and attack and
+            // "a card exiled with this creature" means any of them. Printed type lines on both
+            // sides — a card in exile and a card in a library have no battlefield projection whose
+            // types a continuous effect could have changed (the same reading CostCalculator's
+            // SharedCardTypesWithLinkedExile takes). Fails closed with no source in context.
+            CardPredicate.SharesCardTypeWithLinkedExile -> {
+                val sourceId = context?.sourceId ?: return false
+                val exiledTypes = com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExileLookup
+                    .exiledCards(state, sourceId)
+                    .mapNotNull { state.getEntity(it)?.get<CardComponent>()?.typeLine?.cardTypes }
+                    .flatMapTo(mutableSetOf()) { types -> types.map { it.name } }
+                if (exiledTypes.isEmpty()) return false
+                val entityTypes = cardTypesOf(state, projected, entityId, projectedValues?.types)
+                    .ifEmpty { card.typeLine.cardTypes.mapTo(mutableSetOf()) { it.name } }
+                entityTypes.any { it in exiledTypes }
+            }
+
             is CardPredicate.SharesNameWith -> {
                 val referenceId = resolveEntityReference(state, predicate.entity, context) ?: return false
                 // Projected first so a renamed permanent (Layer 3, CR 613.1c) compares under its
@@ -1352,6 +1371,21 @@ class PredicateEvaluator {
                                 projected.isPlaneswalker(defenderId)
                             )
                     )
+            }
+            // "Attacking enchanted player": the defender has to be the player the *source* Aura is
+            // attached to (Curse of Hospitality). Scoped by attachment rather than by controller,
+            // so unlike the two predicates above it reads `context.sourceId`: a planeswalker or battle the
+            // enchanted player controls never matches (only a player id survives `in state.turnOrder`).
+            // No last-known fallback, for
+            // IsAttackingAnOpponent's reason.
+            StatePredicate.IsAttackingEnchantedPlayer -> {
+                val enchanted = context?.sourceId
+                    ?.let { state.getEntity(it) }
+                    ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
+                    ?.targetId
+                    ?.takeIf { it in state.turnOrder }
+                val defenderId = container.get<AttackingComponent>()?.defenderId
+                enchanted != null && defenderId == enchanted
             }
             StatePredicate.IsBlocking -> container.has<BlockingComponent>()
             StatePredicate.IsBlocked -> {
@@ -2065,6 +2099,7 @@ class PredicateEvaluator {
             CardPredicate.SharesColorWithRecipient,
             is CardPredicate.SharesCreatureTypeWith,
             is CardPredicate.SharesCardTypeWith,
+            CardPredicate.SharesCardTypeWithLinkedExile,
             is CardPredicate.SharesColorWith,
             is CardPredicate.SharesManaValueWith,
             is CardPredicate.SharesNameWith,

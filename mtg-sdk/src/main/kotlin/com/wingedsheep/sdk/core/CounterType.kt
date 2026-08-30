@@ -69,6 +69,7 @@ enum class CounterType {
     HASTE,
     MENACE,
     STASH,
+    CROAK,
     BLIGHT,
     COIN,
     FLOOD,
@@ -158,6 +159,9 @@ enum class CounterType {
      * card that uses it reads its own count back through `Conditions.SourceCounterCountAtLeast`.
      */
     HUNGER,
+
+    /** Slime counter (VOW — Toxrill, the Corrosive). See [Counters.SLIME]. */
+    SLIME,
 
     /** Javelin counter (FEM — Icatian Javelineers). See [Counters.JAVELIN]. */
     JAVELIN,
@@ -297,6 +301,13 @@ object Counters {
      */
     const val MENACE = "menace"
     const val STASH = "stash"
+
+    /**
+     * Croak counter (VOW — Grolnok, the Omnivore). A pure marker: it grants nothing on its own
+     * and exists only so the card's play permission has something to filter exile by, the same
+     * role [STASH] plays for Tinybones, Bauble Burglar.
+     */
+    const val CROAK = "croak"
     const val BLIGHT = "blight"
     const val COIN = "coin"
     const val FLOOD = "flood"
@@ -566,6 +577,20 @@ object Counters {
     const val HONE = "hone"
     const val STORAGE = "storage"
     const val HUNGER = "hunger"
+
+    /**
+     * Slime counter (VOW — Toxrill, the Corrosive). A pure marker with no inherent rule of its
+     * own, like [STORAGE] and [HUNGER]: Toxrill's own static ability is what reads the tally
+     * ("creatures you don't control get -1/-1 for each slime counter on them"), and his dies
+     * trigger only asks whether one is present. Per the printed ruling, both of those apply to
+     * *any* slime counter, including ones placed by another source — so the counter is deliberately
+     * not modelled as an ability of the permanent carrying it.
+     *
+     * NOT a stat counter: a slime counter shrinks a creature only while a Toxrill is on the
+     * battlefield, so it must stay out of `STAT_COUNTERS` and out of the intrinsic P/T folding in
+     * `EffectApplicator.applyCounters`.
+     */
+    const val SLIME = "slime"
 
     /**
      * Javelin counter (FEM — Icatian Javelineers). A plain resource counter: the creature enters

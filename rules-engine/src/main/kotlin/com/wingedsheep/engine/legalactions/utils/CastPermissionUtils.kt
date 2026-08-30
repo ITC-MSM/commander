@@ -474,8 +474,18 @@ class CastPermissionUtils(
         return null
     }
 
-    fun getCastFromTopOfLibraryFilter(state: GameState, playerId: EntityId): GameObjectFilter? {
-        var filter: GameObjectFilter? = null
+    /**
+     * Every live [CastSpellTypesFromTopOfLibrary] permission [playerId] controls, paired with the
+     * permanent granting it. One entry per granting permanent rather than a single OR'd filter,
+     * because a filter can be *source-relative* — Cemetery Illuminator's "shares a card type with a
+     * card exiled with this creature" reads the granting permanent's own linked-exile pile, and
+     * folding two permanents' filters into one loses which pile to read. The caller matches the top
+     * card against each pair in turn; matching any of them is permission enough.
+     */
+    fun getCastFromTopOfLibraryGrants(
+        state: GameState,
+        playerId: EntityId
+    ): List<Pair<EntityId, GameObjectFilter>> = buildList {
         for (entityId in state.getBattlefield(playerId)) {
             val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
             val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
@@ -485,12 +495,10 @@ class CastPermissionUtils(
                         ?.get<CastFromTopOfLibraryUsesThisTurnComponent>()?.uses ?: 0
                     val maxCasts = ability.maxCastsPerTurn
                     if (maxCasts != null && uses >= maxCasts) continue
-                    if (ability.filter == GameObjectFilter.Any) return GameObjectFilter.Any
-                    filter = filter?.let { it or ability.filter } ?: ability.filter
+                    add(entityId to ability.filter)
                 }
             }
         }
-        return filter
     }
 
     /**

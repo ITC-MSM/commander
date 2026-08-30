@@ -1367,6 +1367,7 @@ class CostCalculator(
             }
             is CardPredicate.SharesCreatureTypeWith -> true
             is CardPredicate.SharesCardTypeWith -> true
+            CardPredicate.SharesCardTypeWithLinkedExile -> true
             is CardPredicate.SharesColorWith -> true
             is CardPredicate.SharesManaValueWith -> true
             is CardPredicate.SharesNameWith -> true

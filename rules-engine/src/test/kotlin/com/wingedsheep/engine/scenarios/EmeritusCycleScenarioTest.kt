@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.state.components.battlefield.PreparedComponent
 import com.wingedsheep.engine.state.components.battlefield.PreparedSpellCopyComponent
@@ -260,6 +261,79 @@ class EmeritusCycleScenarioTest : ScenarioTestBase() {
                 }
                 withClue("Exiling eight cards re-prepares Emeritus of Ideation") {
                     game.isPrepared("Emeritus of Ideation") shouldBe true
+                }
+            }
+
+            test("fewer than eight cards in the graveyard: nothing is exiled and it stays unprepared") {
+                // CR 608.2d — a player can't choose an option that's impossible. With one card in
+                // the graveyard "exile eight cards" can't be performed, so the optional payment is
+                // not on offer at all: no card leaves the graveyard and it doesn't become prepared.
+                var builder = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Emeritus of Ideation", summoningSickness = false)
+                    .withLandsOnBattlefield(1, "Island", 6)
+                    .withLifeTotal(2, 20)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .withCardInGraveyard(1, "Island")
+                repeat(5) { builder = builder.withCardInLibrary(1, "Island") }
+                repeat(5) { builder = builder.withCardInLibrary(2, "Forest") }
+                val game = builder.build()
+
+                game.advanceToPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
+                game.declareAttackers(mapOf("Emeritus of Ideation" to 2))
+                game.resolveStack()
+                if (game.hasPendingDecision()) {
+                    game.answerYesNo(true)
+                    game.resolveStack()
+                }
+                withClue("It does not become prepared") {
+                    game.isPrepared("Emeritus of Ideation") shouldBe false
+                }
+                withClue("The lone graveyard card is not exiled") {
+                    game.findCardsInGraveyard(1, "Island").size shouldBe 1
+                }
+            }
+
+            test("a graveyard shrunk in response takes the option away") {
+                // The option is judged as the trigger resolves, not when it triggered: eight cards
+                // at declare-attackers, seven by resolution, so there is nothing to offer — and the
+                // seven survivors must not be exiled for a payment that can't be completed.
+                var builder = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Emeritus of Ideation", summoningSickness = false)
+                    .withCardOnBattlefield(1, "Withered Wretch", summoningSickness = false)
+                    .withLandsOnBattlefield(1, "Island", 6)
+                    .withLifeTotal(2, 20)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                repeat(8) { builder = builder.withCardInGraveyard(1, "Island") }
+                repeat(5) { builder = builder.withCardInLibrary(1, "Island") }
+                repeat(5) { builder = builder.withCardInLibrary(2, "Forest") }
+                val game = builder.build()
+
+                game.advanceToPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
+                game.declareAttackers(mapOf("Emeritus of Ideation" to 2))
+                // The attack trigger is on the stack; eat one graveyard card in response to it.
+                val wretch = game.findPermanent("Withered Wretch")!!
+                val wretchAbility = cardRegistry.getCard("Withered Wretch")!!.activatedAbilities[0].id
+                val eaten = game.findCardsInGraveyard(1, "Island").first()
+                game.execute(
+                    ActivateAbility(
+                        game.player1Id, wretch, wretchAbility,
+                        targets = listOf(ChosenTarget.Card(eaten, game.player1Id, Zone.GRAVEYARD)),
+                    )
+                ).error shouldBe null
+                game.resolveStack()
+                if (game.hasPendingDecision()) {
+                    game.answerYesNo(true)
+                    game.resolveStack()
+                }
+                withClue("Only the eaten card left the graveyard") {
+                    game.findCardsInGraveyard(1, "Island").size shouldBe 7
+                }
+                withClue("It does not become prepared") {
+                    game.isPrepared("Emeritus of Ideation") shouldBe false
                 }
             }
         }

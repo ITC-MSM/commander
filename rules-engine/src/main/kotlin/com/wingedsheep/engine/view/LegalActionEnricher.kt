@@ -139,6 +139,7 @@ class LegalActionEnricher(
             availableManaSources = if (shouldExposeManaSources(action)) manaSourceInfos else null,
             eligibleRestrictedMana = eligibleRestrictedMana,
             sourceZone = action.sourceZone,
+            castsTransformed = action.castsTransformed,
             tapForPower = action.tapForPower,
             tapForPowerRequired = action.tapForPowerRequired,
             tapForPowerCreatures = action.tapForPowerCreatures?.map { it.toDto() },

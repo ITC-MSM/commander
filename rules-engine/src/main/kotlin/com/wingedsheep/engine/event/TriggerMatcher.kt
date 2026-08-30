@@ -1172,8 +1172,23 @@ class TriggerMatcher(
             // YOUR graveyard from the battlefield" cares about ownership, since a permanent
             // always goes to its owner's graveyard regardless of who last controlled it
             // (CR 400.3, e.g. Soulcatchers' Aerie).
+            //
+            // The three sources are ordered by which one can actually answer "who controlled it
+            // as it changed zones":
+            //  - leaving the battlefield: the entity is gone, so the LKI snapshot is the only
+            //    answer (CR 603.10);
+            //  - entering the battlefield: the permanent is live, so its projected controller is
+            //    authoritative — and it is NOT the owner whenever the entry carried a control
+            //    override. Reanimating a card out of its owner's graveyard under your control
+            //    (Virtue of Persistence, Shark Shredder) makes you the controller while the
+            //    opponent still owns it, so falling back to `ownerId` fired *their* "whenever a
+            //    creature you control enters" triggers off *your* permanent;
+            //  - anything that never touched the battlefield (a mill, a discard) has no
+            //    controller at all, and `ownerId` is the right and only reading.
             trigger.filter.controllerPredicate?.let { pred ->
-                val effectiveController = event.lastKnown?.controllerId ?: event.ownerId
+                val effectiveController = event.lastKnown?.controllerId
+                    ?: projected.getController(event.entityId)
+                    ?: event.ownerId
                 val controllerMatches = pred.evaluateWith { leaf ->
                     when (leaf) {
                         is ControllerPredicate.ControlledByYou -> effectiveController == controllerId
@@ -1511,7 +1526,13 @@ class TriggerMatcher(
         trigger: EventPattern.DealsDamageEvent,
         event: DamageDealtEvent,
         state: GameState,
-        controllerId: EntityId? = null
+        controllerId: EntityId? = null,
+        /**
+         * The permanent bearing the observing ability. Only [RecipientFilter.EnchantedPlayer] reads
+         * it — that filter scopes the recipient by the source's *attachment* rather than by its
+         * controller — so callers that can't supply it leave it null and that filter fails closed.
+         */
+        abilitySourceId: EntityId? = null
     ): Boolean {
         val combatMatches = trigger.damageType == DamageType.Any ||
             (trigger.damageType == DamageType.Combat && event.isCombatDamage) ||
@@ -1555,6 +1576,18 @@ class TriggerMatcher(
                         state, state.projectedState, event.targetId, filter,
                         PredicateContext(controllerId = controllerId)
                     )
+            }
+            // "deals combat damage to enchanted player" (Curse of Hospitality). The recipient must
+            // be the player the observing Aura is attached to, so this reads `abilitySourceId`, not
+            // `controllerId`. The `in state.turnOrder` check is what keeps a planeswalker the
+            // enchanted player controls out: only a player id survives it.
+            RecipientFilter.EnchantedPlayer -> {
+                val enchanted = abilitySourceId
+                    ?.let { state.getEntity(it) }
+                    ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
+                    ?.targetId
+                    ?.takeIf { it in state.turnOrder }
+                enchanted != null && event.targetId == enchanted
             }
             RecipientFilter.Self -> false // handled elsewhere
             else -> false
@@ -2240,6 +2273,7 @@ class TriggerMatcher(
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttackingAlone,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttackingAnOpponent,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttackingYouOrYourPlaneswalkers,
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttackingEnchantedPlayer,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsBlocking,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsBlocked,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsUnblocked,

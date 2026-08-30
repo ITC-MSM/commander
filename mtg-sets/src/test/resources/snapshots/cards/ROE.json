@@ -932,6 +932,46 @@
     ]
 }
 
+// Shrivel
+{
+    "name": "Shrivel",
+    "manaCost": "{1}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "All creatures get -1/-1 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            },
+            "body": {
+                "type": "ModifyStats",
+                "powerModifier": {
+                    "type": "Fixed",
+                    "amount": -1
+                },
+                "toughnessModifier": {
+                    "type": "Fixed",
+                    "amount": -1
+                },
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "126",
+        "artist": "Jung Park",
+        "flavorText": "\"Have you ever killed insects nibbling at your crops? I think that's what the Eldrazi believe they're doing to us.\"\n—Sheyda, Ondu gamekeeper",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a87c80a1-5818-45fd-9a37-a2ee3396626e.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Wildheart Invoker
 {
     "name": "Wildheart Invoker",

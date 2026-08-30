@@ -77,7 +77,7 @@
 {
     "name": "Arcbound Prototype",
     "manaCost": "{1}{W}",
-    "typeLine": "Artifact Creature — Assembly",
+    "typeLine": "Artifact Creature — Assembly-Worker",
     "oracleText": "Modular 2 (This creature enters with two +1/+1 counters on it. When it dies, you may put its +1/+1 counters on target artifact creature.)",
     "creatureStats": {
         "power": 0,

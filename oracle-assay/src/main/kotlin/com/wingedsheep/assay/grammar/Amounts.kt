@@ -31,6 +31,7 @@ import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.ContextPropertyKey
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.scripting.values.EntityReference
 import com.wingedsheep.sdk.scripting.values.TurnTracker
 
 /**
@@ -505,6 +506,73 @@ object Amounts {
 
     /** Everything a "where X is …" clause, or an "equal to …" one, can define. */
     val count: Phrase<DynamicAmount> = oneOf("a count", plainCount, doubled)
+
+    // ---------------------------------------------------------------------------------------
+    // A characteristic read off an object — the possessive noun phrase, as the product it is
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * **What a possessive noun phrase can read**, as the [EntityNumericProperty] half of
+     * `DynamicAmount.EntityProperty`.
+     *
+     * The SDK types this amount as a product — an [EntityReference] and a property of it — and
+     * English spells it as exactly that product: a possessive naming the object, then the noun
+     * naming the characteristic. So the grammar is the product too, one table per axis, which is
+     * why this is three rows rather than the twenty-one printed phrases they cross into.
+     *
+     * The rows are measured, not chosen. Over the Oracle bulk, counting "equal to ⟨possessive⟩
+     * ⟨noun⟩": power 503, mana value 157, toughness 133, and nothing else reaches double figures.
+     *
+     * **"…equal to its mana *cost*" is deliberately not a row** (44 lines). It is not a number: it
+     * names the symbols to pay, and every one of those lines is an alternative-cost sentence
+     * ("…you may pay life equal to its mana value rather than paying its mana cost"). A row here
+     * would read a cost as a quantity, which is the fail-closed rule this module states about
+     * refusing a value the sentence does not say.
+     */
+    private data class Characteristic(val noun: String, val property: EntityNumericProperty)
+
+    private val characteristics: List<Characteristic> = listOf(
+        Characteristic("power", EntityNumericProperty.Power),
+        Characteristic("toughness", EntityNumericProperty.Toughness),
+        Characteristic("mana value", EntityNumericProperty.ManaValue),
+    )
+
+    /**
+     * The layer itself — "**its** power", "**~'s** toughness", "**that card's** mana value" —
+     * **instantiated per anaphor position** rather than published as a row of [count].
+     *
+     * That is the whole design decision here, and it is forced by the corpus. One printed word
+     * names a different object in every sentence it stands in: Syr Ginger's "its" is the source it
+     * sacrificed, Divine Offering's is the artifact the previous clause destroyed, Grim Feast's is
+     * the creature its filtered trigger matched, and Dark Confidant's is the card it just revealed.
+     * Nothing in the words says which; the *position* says it, exactly as it does for the nominative
+     * pronoun ([Primitives.self], [Primitives.targetPronoun], [Primitives.itsPronoun]) and for
+     * [SelfSteps.retargetable]'s three instantiations of one clause vocabulary.
+     *
+     * So a row in [count] would be wrong in two directions at once. It would be wrong for the
+     * reader — every position would read "its" as one fixed reference — and it would collide with
+     * what [count] already has: [counterCount] slots [Primitives.self], so inside this vocabulary
+     * "it" *already* denotes the source, and a second anaphor in the same alternation is two
+     * readings of one text rather than a choice.
+     *
+     * @param possessive how this position spells the object — a [Primitives] possessive vocabulary.
+     * @param reference what the possessive denotes here.
+     */
+    fun propertyOf(
+        possessive: Phrase<Unit>,
+        reference: EntityReference,
+        tag: String,
+    ): Phrase<DynamicAmount> = oneOf(
+        "a characteristic of $tag",
+        characteristics.map { characteristic ->
+            val amount = DynamicAmount.EntityProperty(reference, characteristic.property)
+            phrase<DynamicAmount>("{owner} ${characteristic.noun}", name = "$tag's ${characteristic.noun}") {
+                slot("owner", possessive)
+                build { amount }
+                match { if (it == amount) bind("owner" to Unit) else null }
+            }
+        },
+    )
 
     // ---------------------------------------------------------------------------------------
     // A counter count that is not a numeral — the layer the three counter positions share

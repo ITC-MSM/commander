@@ -84,11 +84,21 @@ class ActionProcessor(
             return ProcessedAction(ExecutionResult.error(state, validationError))
         }
 
-        // Execute the action, then update which revealed/returned cards opponents may see
-        // (cards revealed into hand or bounced back to hand stay visible until a same-named
-        // card is played — see [RevealedInHandTracker]).
-        val result = com.wingedsheep.engine.mechanics.RevealedInHandTracker
-            .applyAfterAction(registry.execute(state, action))
+        val executed = registry.execute(state, action)
+
+        // Action handlers may compose several immutable intermediate states before a nested
+        // handler or resumed continuation rejects a later step. The public action contract is
+        // atomic on error: retain only the message and hand back the entry state itself. A
+        // rejected attempt therefore skips event-driven post-action bookkeeping entirely — its
+        // events describe work that is being thrown away and must not reach the tracker.
+        val result = if (executed.error != null) {
+            ExecutionResult.error(state, executed.error)
+        } else {
+            // Cards revealed into hand or bounced back to hand stay visible until a same-named
+            // card is played — see [RevealedInHandTracker]. Paused actions are accepted in-flight
+            // actions, so they retain this existing bookkeeping just like completed successes.
+            com.wingedsheep.engine.mechanics.RevealedInHandTracker.applyAfterAction(executed)
+        }
         val undoPolicy = if (computeUndo) {
             UndoPolicyComputer.compute(action, state, result, services.cardRegistry)
         } else {

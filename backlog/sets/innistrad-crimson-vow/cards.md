@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 256 / 273
+**Implemented:** 263 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -42,7 +42,7 @@
 - [x] Catapult Fodder
 - [ ] Cemetery Desecrator
 - [x] Cemetery Gatekeeper
-- [ ] Cemetery Illuminator
+- [x] Cemetery Illuminator
 - [x] Cemetery Protector
 - [x] Cemetery Prowler
 - [x] Ceremonial Knife
@@ -62,7 +62,7 @@
 - [x] Cruel Witness
 - [x] Crushing Canopy
 - [x] Cultivator Colossus
-- [ ] Curse of Hospitality
+- [x] Curse of Hospitality
 - [x] Dawnhart Disciple
 - [x] Dawnhart Geist
 - [x] Daybreak Combatants
@@ -73,7 +73,7 @@
 - [x] Diregraf Scavenger
 - [x] Distracting Geist
 - [x] Diver Skaab
-- [ ] Dollhouse of Horrors
+- [x] Dollhouse of Horrors
 - [x] Dominating Vampire
 - [x] Doomed Dissenter
 - [x] Dormant Grove
@@ -111,7 +111,7 @@
 - [x] Gluttonous Guest
 - [x] Graf Reaver
 - [x] Grisly Ritual
-- [ ] Grolnok, the Omnivore
+- [x] Grolnok, the Omnivore
 - [x] Groom's Finery
 - [x] Gryff Rider
 - [x] Gryffwing Cavalry
@@ -220,7 +220,7 @@
 - [x] Skull Skaab
 - [x] Skywarp Skaab
 - [x] Snarling Wolf
-- [ ] Sorin the Mirthless
+- [x] Sorin the Mirthless
 - [x] Soulcipher Board
 - [x] Spiked Ripsaw
 - [x] Splendid Reclamation
@@ -241,7 +241,7 @@
 - [x] Thirst for Discovery
 - [x] Torens, Fist of the Angels
 - [x] Toxic Scorpion
-- [ ] Toxrill, the Corrosive
+- [x] Toxrill, the Corrosive
 - [x] Traveling Minister
 - [x] Twinblade Geist
 - [x] Ulvenwald Oddity
@@ -259,7 +259,7 @@
 - [x] Voldaren Bloodcaster
 - [x] Voldaren Epicure
 - [x] Voldaren Estate
-- [ ] Voltaic Visionary
+- [x] Voltaic Visionary
 - [x] Wandering Mind
 - [x] Wanderlight Spirit
 - [x] Wash Away

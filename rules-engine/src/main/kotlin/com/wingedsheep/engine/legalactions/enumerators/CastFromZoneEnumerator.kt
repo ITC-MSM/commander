@@ -210,16 +210,19 @@ class CastFromZoneEnumerator : ActionEnumerator {
         val playerId = context.playerId
 
         val canPlayAllFromTop = context.castPermissionUtils.hasPlayFromTopOfLibrary(state, playerId)
-        val castFromTopFilter = if (!canPlayAllFromTop) {
-            context.castPermissionUtils.getCastFromTopOfLibraryFilter(state, playerId)
-        } else null
+        // One entry per granting permanent: a source-relative filter (Cemetery Illuminator's
+        // "shares a card type with a card exiled with this creature") has to be evaluated against
+        // the permanent that granted it, so the pairs can't be folded into a single filter.
+        val castFromTopGrants = if (!canPlayAllFromTop) {
+            context.castPermissionUtils.getCastFromTopOfLibraryGrants(state, playerId)
+        } else emptyList()
         val canPlayLandsFromTop = canPlayAllFromTop ||
             context.castPermissionUtils.hasPlayLandsFromTopOfLibrary(state, playerId)
         val castFilteredFromTopFilter = if (!canPlayAllFromTop) {
             context.castPermissionUtils.getCastFilteredFromTopOfLibraryFilter(state, playerId)
         } else null
 
-        if (!canPlayAllFromTop && castFromTopFilter == null && !canPlayLandsFromTop && castFilteredFromTopFilter == null) return
+        if (!canPlayAllFromTop && castFromTopGrants.isEmpty() && !canPlayLandsFromTop && castFilteredFromTopFilter == null) return
 
         val library = state.getLibrary(playerId)
         if (library.isEmpty()) return
@@ -242,9 +245,12 @@ class CastFromZoneEnumerator : ActionEnumerator {
 
         // Non-land spell on top of library
         val topCardMatchesFilter = canPlayAllFromTop ||
-            (castFromTopFilter != null && context.predicateEvaluator.matches(
-                state, state.projectedState, topCardId, castFromTopFilter, PredicateContext(controllerId = playerId)
-            )) ||
+            castFromTopGrants.any { (grantSourceId, grantFilter) ->
+                context.predicateEvaluator.matches(
+                    state, state.projectedState, topCardId, grantFilter,
+                    PredicateContext(controllerId = playerId, sourceId = grantSourceId)
+                )
+            } ||
             (castFilteredFromTopFilter != null && context.predicateEvaluator.matches(
                 state, state.projectedState, topCardId, castFilteredFromTopFilter, PredicateContext(controllerId = playerId)
             ))
@@ -1576,7 +1582,9 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         action = disturbAction,
                         affordable = false,
                         manaCostString = disturb.cost.toString(),
-                        sourceZone = "GRAVEYARD"
+                        sourceZone = "GRAVEYARD",
+                        // CR 712.8c: the spell is the back face, so the client renders the offer as it.
+                        castsTransformed = true
                     )
                 )
                 continue
@@ -1602,7 +1610,9 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         action = disturbAction,
                         affordable = false,
                         manaCostString = costString,
-                        sourceZone = "GRAVEYARD"
+                        sourceZone = "GRAVEYARD",
+                        // CR 712.8c: the spell is the back face, so the client renders the offer as it.
+                        castsTransformed = true
                     )
                 )
                 continue
@@ -1636,7 +1646,9 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         targetRequirements = if (targetInfos.size > 1) targetInfos else null,
                         manaCostString = costString,
                         autoTapPreview = autoTapPreview,
-                        sourceZone = "GRAVEYARD"
+                        sourceZone = "GRAVEYARD",
+                        // CR 712.8c: the spell is the back face, so the client renders the offer as it.
+                        castsTransformed = true
                     )
                 )
             } else {
@@ -1647,7 +1659,9 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         action = disturbAction,
                         manaCostString = costString,
                         autoTapPreview = autoTapPreview,
-                        sourceZone = "GRAVEYARD"
+                        sourceZone = "GRAVEYARD",
+                        // CR 712.8c: the spell is the back face, so the client renders the offer as it.
+                        castsTransformed = true
                     )
                 )
             }

@@ -296,6 +296,55 @@
     "colorIdentityOverride": []
 }
 
+// Dark Favor
+{
+    "name": "Dark Favor",
+    "manaCost": "{1}{B}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nWhen this Aura enters, you lose 1 life.\nEnchanted creature gets +3/+1.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Controller"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 3,
+                "toughnessBonus": 1
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "89",
+        "artist": "Allen Williams",
+        "flavorText": "When he began to curse what he held holy, his strength grew unrivaled.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/2/a258a235-086e-429b-9ac1-3178f902658b.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Devouring Swarm
 {
     "name": "Devouring Swarm",
@@ -449,6 +498,30 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Gladecover Scout
+{
+    "name": "Gladecover Scout",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Elf Scout",
+    "oracleText": "Hexproof (This creature can't be the target of spells or abilities your opponents control.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "HEXPROOF"
+    ],
+    "metadata": {
+        "collectorNumber": "178",
+        "artist": "Allen Williams",
+        "flavorText": "\"The forest is my cover and I hold it close. In such a tight embrace, there is no room for wickedness.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/6/26710d5c-01d1-498b-9f54-521dfd195843.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -805,6 +878,54 @@
     ]
 }
 
+// Trollhide
+{
+    "name": "Trollhide",
+    "manaCost": "{2}{G}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature gets +2/+2 and has \"{1}{G}: Regenerate this creature.\" (The next time the creature would be destroyed this turn, instead tap it, remove it from combat, and heal all damage on it.)",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2
+            },
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{1}{G}"
+                        }
+                    },
+                    "effect": {
+                        "type": "Regenerate",
+                        "target": "Self"
+                    }
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "199",
+        "artist": "Steven Belledin",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/2/32c8d6ed-4764-433b-9617-363e46e5b250.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Warstorm Surge
 {
     "name": "Warstorm Surge",
@@ -860,5 +981,48 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Wring Flesh
+{
+    "name": "Wring Flesh",
+    "manaCost": "{B}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets -3/-1 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": -3
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": -1
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "118",
+        "artist": "Izzy",
+        "flavorText": "\"Don't blame me. You're the one walking around with skin.\"\n—Zul Ashur, lich lord",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/663df3e8-12e5-46cf-9da7-39961feaa7f9.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
