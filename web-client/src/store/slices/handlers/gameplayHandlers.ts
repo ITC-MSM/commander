@@ -8,6 +8,7 @@ import type { ClientGameState, ClientEvent, LegalActionInfo, PendingDecision, Op
 import { trackEvent, setInGame } from '@/utils/analytics.ts'
 import { applyStateDelta } from '@/network/deltaApplicator.ts'
 import { getWebSocket, clearLobbyId, requestReauth } from '../shared'
+import { keepAttackerPreview, keepBlockerPreview } from './combatPreview'
 import type { SetState, GetState } from './types'
 import type {
   LogEntry,
@@ -541,8 +542,17 @@ function processStateUpdate(
           ? null
           : { cardIds: filteredReveal.cardIds, cardNames: filteredReveal.cardNames, imageUris: filteredReveal.imageUris, source: filteredReveal.source, isYourReveal: filteredReveal.revealingPlayerId === playerId, fromZone: filteredReveal.fromZone ?? null, toZone: filteredReveal.toZone ?? null, ...(filteredReveal.cardOwnerIsYours ? { cardOwnerIsYours: filteredReveal.cardOwnerIsYours } : {}) })
       : cardsRevealedEvent ? null : state.revealedCardsInfo,
-    opponentAttackerTargets: resolvedState.combat ? null : state.opponentAttackerTargets,
-    opponentBlockerAssignments: (resolvedState.combat?.blockers?.length || !resolvedState.combat) ? null : state.opponentBlockerAssignments,
+    // The opponent's streamed declaration previews expire with their own declaration step.
+    opponentAttackerTargets: keepAttackerPreview(resolvedState.currentStep, resolvedState.combat != null)
+      ? state.opponentAttackerTargets
+      : null,
+    opponentBlockerAssignments: keepBlockerPreview(
+      resolvedState.currentStep,
+      resolvedState.combat != null,
+      (resolvedState.combat?.blockers?.length ?? 0) > 0,
+    )
+      ? state.opponentBlockerAssignments
+      : null,
   }))
 
   // Auto-initialize inline distribute state for DistributeDecision
