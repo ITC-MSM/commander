@@ -680,6 +680,52 @@
     ]
 }
 
+// Cenn's Heir
+{
+    "name": "Cenn's Heir",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Kithkin Soldier",
+    "oracleText": "Whenever this creature attacks, it gets +1/+1 until end of turn for each other attacking Kithkin.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "AggregateBattlefield",
+                        "player": "Each",
+                        "filter": "creature Kithkin attacking",
+                        "excludeSelf": true
+                    },
+                    "toughnessModifier": {
+                        "type": "AggregateBattlefield",
+                        "player": "Each",
+                        "filter": "creature Kithkin attacking",
+                        "excludeSelf": true
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever this creature attacks, it gets +1/+1 until end of turn for each other attacking Kithkin."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "8",
+        "artist": "Steven Belledin",
+        "flavorText": "\"His home clachan's familial spirit bolsters his own, but he will be ready to preside over the town as cenn only after he learns to project that strength to others.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/7/a7610d2f-e35f-42fa-a3fb-fcae54bf5a1d.jpg?1783942917"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Cloudcrown Oak
 {
     "name": "Cloudcrown Oak",
