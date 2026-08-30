@@ -211,6 +211,49 @@
     ]
 }
 
+// Blazing Archon
+{
+    "name": "Blazing Archon",
+    "manaCost": "{6}{W}{W}{W}",
+    "typeLine": "Creature — Archon",
+    "oracleText": "Flying\nCreatures can't attack you.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CantBeAttackedBy",
+                "attackerFilter": {
+                    "cardPredicates": [
+                        "IsCreature"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "4",
+        "rarity": "RARE",
+        "artist": "Zoltan Boros & Gabor Szikszai",
+        "flavorText": "\"Through the haze of battle I saw the glint of sun on golden mane, the sheen of glory clad in mail, and I dropped my sword and wept at the idiocy of war.\"\n—Dravin, Gruul deserter",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/d/cd0bc05b-ec48-41fd-a97a-ffb0d5a2dee0.jpg?1783943707",
+        "rulings": [
+            {
+                "date": "2014-02-01",
+                "text": "Unless some effect explicitly says otherwise, a creature that can't attack you can still attack a planeswalker you control."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Blockbuster
 {
     "name": "Blockbuster",
@@ -2881,6 +2924,51 @@
     ]
 }
 
+// Golgari Germination
+{
+    "name": "Golgari Germination",
+    "manaCost": "{1}{B}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever a nontoken creature you control dies, create a 1/1 green Saproling creature token.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature nontoken ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Saproling"
+                    ]
+                },
+                "descriptionOverride": "Whenever a nontoken creature you control dies, create a 1/1 green Saproling creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "209",
+        "rarity": "UNCOMMON",
+        "artist": "Thomas M. Baxa",
+        "flavorText": "The Golgari don't bury their dead. They plant them.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/4/24a1db16-d936-4f92-9611-327a988ce04c.jpg?1783943620"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Golgari Guildmage
 {
     "name": "Golgari Guildmage",
@@ -3863,6 +3951,134 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Loxodon Gatekeeper
+{
+    "name": "Loxodon Gatekeeper",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Creature — Elephant Soldier",
+    "oracleText": "Artifacts, creatures, and lands your opponents control enter tapped.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "PermanentsEnterTapped",
+                "appliesTo": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact ctrl:opponent",
+                    "to": "Battlefield"
+                }
+            },
+            {
+                "type": "PermanentsEnterTapped",
+                "appliesTo": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:opponent",
+                    "to": "Battlefield"
+                }
+            },
+            {
+                "type": "PermanentsEnterTapped",
+                "appliesTo": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "land ctrl:opponent",
+                    "to": "Battlefield"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "25",
+        "rarity": "RARE",
+        "artist": "Carl Critchlow",
+        "flavorText": "The gatekeepers are so fastidious that even the winds must wait to pass.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/8/781476a1-73a9-4f43-9f71-d29c97ecc69a.jpg?1783943696"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Loxodon Hierarch
+{
+    "name": "Loxodon Hierarch",
+    "manaCost": "{2}{G}{W}",
+    "typeLine": "Creature — Elephant Cleric",
+    "oracleText": "When this creature enters, you gain 4 life.\n{G}{W}, Sacrifice this creature: Regenerate each creature you control.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{G}{W}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "Regenerate",
+                        "target": "Self"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "214",
+        "rarity": "RARE",
+        "artist": "Kev Walker",
+        "flavorText": "\"I have lived long, and I remember how this city once was. If my death serves to bring back the Ravnica in my memory, then so be it.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/1/a1d3ccca-8040-4a5f-9f2b-6fdb1a033234.jpg?1783943619",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The second ability sets up individual regeneration shields for each creature you control. They are each used up as necessary during the turn and wear off when the turn ends."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
     ]
 }
 
@@ -5860,6 +6076,56 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Stoneshaker Shaman
+{
+    "name": "Stoneshaker Shaman",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Human Shaman",
+    "oracleText": "At the beginning of each player's end step, that player sacrifices an untapped land of their choice.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForceSacrifice",
+                    "filter": "land untapped",
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                },
+                "descriptionOverride": "At the beginning of each player's end step, that player sacrifices an untapped land of their choice."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "145",
+        "rarity": "UNCOMMON",
+        "artist": "Jeff Miracola",
+        "flavorText": "There is no place in Ravnica for stagnation, no room for lands unfilled and untilled.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/7/17a0edb0-697a-4e0b-872b-f3c15c19cbda.jpg?1783943646",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "If the player doesn't have an untapped land as Stoneshaker Shaman's ability resolves, that player does nothing."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
