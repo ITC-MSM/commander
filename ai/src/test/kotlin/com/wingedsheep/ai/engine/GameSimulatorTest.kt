@@ -14,16 +14,19 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
+import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.doubles.shouldBeLessThan
 import io.kotest.matchers.ints.shouldBeExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.kotest.matchers.types.shouldNotBeInstanceOf
 
 private val TwoModeSpell: CardDefinition = card("Test Two Mode Spell") {
     manaCost = "{G}"
@@ -136,5 +139,66 @@ class GameSimulatorTest : FunSpec({
             .shouldBeInstanceOf<SimulationResult.Illegal>()
 
         illegal.reason shouldContain "priority"
+    }
+
+    // ── The live-play contract: a limit stop costs a candidate, never the decision ──
+    //
+    // The AI is a heuristic that ranks candidates. If a limit stop propagated out of `chooseAction`
+    // or `respond` instead, `EngineAiPlayerController` would not catch it, `AiWebSocketSession`
+    // would log it and submit nothing, and neither of `GameStallGuard`'s counters — actions
+    // applied, actions rejected — could see the wedged game that follows.
+
+    test("a strategist drops a limit-stopped candidate instead of abandoning the decision") {
+        val fixture = boltFixture()
+        val simulator = GameSimulator(fixture.registry, maxAutomaticTransitions = 1)
+        val strategist = Strategist(simulator, AIPlayer.defaultEvaluator())
+        val legalActions = simulator.getLegalActions(fixture.driver.state, fixture.caster)
+
+        withClue("one automatic pass leaves Lightning Bolt unresolved, so its candidate is unscorable") {
+            simulator.simulate(fixture.driver.state, fixture.cast)
+                .shouldBeInstanceOf<SimulationResult.StoppedAtLimit>()
+        }
+
+        val chosen = shouldNotThrowAny {
+            strategist.chooseAction(fixture.driver.state, legalActions, fixture.caster)
+        }
+        chosen.action.shouldNotBeInstanceOf<CastSpell>()
+    }
+
+    test("a decision resolver whose own simulations stop at the limit does not throw out of simulate") {
+        val registry = CardRegistry().apply { register(TestCards.all + TwoModeSpell) }
+        val driver = GameTestDriver().apply {
+            registerCards(TestCards.all + TwoModeSpell)
+            initMirrorMatch(Deck.of("Forest" to 20), startingLife = 20)
+            passPriorityUntil(Step.PRECOMBAT_MAIN)
+        }
+        val caster = driver.player1
+        val spell = driver.putCardInHand(caster, TwoModeSpell.name)
+        driver.giveMana(caster, Color.GREEN, 1)
+
+        // The wiring AIPlayer.create uses: the responder answers decisions the simulator pauses on,
+        // and its own inner simulations run through the same bounded simulator. A throw anywhere in
+        // that nest escapes the *outer* simulate(), past every caller that type-checks the result.
+        val simulator = GameSimulator(registry, maxAutomaticTransitions = 1)
+        val responder = DecisionResponder(simulator, AIPlayer.defaultEvaluator())
+        simulator.decisionResolver = { state, decision -> responder.respond(state, decision, decision.playerId) }
+
+        shouldNotThrowAny {
+            simulator.simulate(
+                driver.state,
+                CastSpell(caster, spell, paymentStrategy = PaymentStrategy.FromPool),
+            )
+        }
+    }
+
+    test("scoreOrRankLast puts an unfinished simulation below any real boundary") {
+        val fixture = boltFixture()
+        val state = fixture.driver.state
+
+        val stopped = SimulationResult.StoppedAtLimit(state, emptyList(), automaticTransitions = 1, limit = 1)
+            .scoreOrRankLast { 0.0 }
+        val terminal = SimulationResult.Terminal(state, emptyList()).scoreOrRankLast { 0.0 }
+
+        stopped.shouldBeLessThan(terminal)
     }
 })

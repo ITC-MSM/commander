@@ -16,57 +16,39 @@ import com.wingedsheep.sdk.model.EntityId
  * Because GameState is immutable, simulating an action is just calling process()
  * on the same state — no rollback or cleanup needed.
  */
-class GameSimulator private constructor(
+class GameSimulator(
     private val cardRegistry: CardRegistry,
-    private val processor: ActionProcessor,
-    private val enumerator: LegalActionEnumerator,
-    private val resolveThroughCombatDamage: Boolean,
-    private val maxAutomaticTransitions: Int,
+    private val processor: ActionProcessor = ActionProcessor(EngineServices(cardRegistry), computeUndo = false),
+    private val enumerator: LegalActionEnumerator = LegalActionEnumerator.create(cardRegistry),
+    /**
+     * Carry a simulation past the empty stack to the end of the combat damage step, when blockers
+     * are already declared.
+     *
+     * A quiet state is "the stack is empty", which inside combat is *before damage*. Three puzzles
+     * fail on exactly that gap — `instants-05` (Fog), `activate-05` (firebreathing) and their
+     * relatives all pay mana now for something that only materialises when damage is dealt, so the
+     * post-simulation board is strictly worse than passing and the AI passes. Phase 7 answers this
+     * with full playouts; this answers only the case where the answer is already determined, which
+     * is why it costs one step rather than two turns.
+     *
+     * **Scoped to blockers-already-declared on purpose.** From `DECLARE_ATTACKERS` the outcome
+     * still depends on how the defender blocks, and nothing here would declare those blocks — the
+     * simulation would either stall or silently score an unblocked alpha strike. Once blocks are
+     * in, the only thing between the current state and the damage is the damage.
+     *
+     * Off for [AiProfile.LEGACY_V0], which has to stay frozen, and off by default so a
+     * `GameSimulator` built anywhere else keeps its historical horizon.
+     */
+    private val resolveThroughCombatDamage: Boolean = false,
+    /**
+     * How many automatic transitions — auto-passed priorities and auto-answered trivial decisions —
+     * one `simulate` call may spend before it gives up and reports [SimulationResult.StoppedAtLimit].
+     *
+     * The shipped value is an order of magnitude above any real resolution; it is a parameter only
+     * so a test can reach the guard deterministically instead of building a board that loops.
+     */
+    private val maxAutomaticTransitions: Int = DEFAULT_MAX_AUTOMATIC_TRANSITIONS,
 ) {
-    constructor(
-        cardRegistry: CardRegistry,
-        processor: ActionProcessor = ActionProcessor(EngineServices(cardRegistry), computeUndo = false),
-        enumerator: LegalActionEnumerator = LegalActionEnumerator.create(cardRegistry),
-        /**
-         * Carry a simulation past the empty stack to the end of the combat damage step, when blockers
-         * are already declared.
-         *
-         * A quiet state is "the stack is empty", which inside combat is *before damage*. Three puzzles
-         * fail on exactly that gap — `instants-05` (Fog), `activate-05` (firebreathing) and their
-         * relatives all pay mana now for something that only materialises when damage is dealt, so the
-         * post-simulation board is strictly worse than passing and the AI passes. Phase 7 answers this
-         * with full playouts; this answers only the case where the answer is already determined, which
-         * is why it costs one step rather than two turns.
-         *
-         * **Scoped to blockers-already-declared on purpose.** From `DECLARE_ATTACKERS` the outcome
-         * still depends on how the defender blocks, and nothing here would declare those blocks — the
-         * simulation would either stall or silently score an unblocked alpha strike. Once blocks are
-         * in, the only thing between the current state and the damage is the damage.
-         *
-         * Off for [AiProfile.LEGACY_V0], which has to stay frozen, and off by default so a
-         * `GameSimulator` built anywhere else keeps its historical horizon.
-         */
-        resolveThroughCombatDamage: Boolean = false,
-    ) : this(
-        cardRegistry = cardRegistry,
-        processor = processor,
-        enumerator = enumerator,
-        resolveThroughCombatDamage = resolveThroughCombatDamage,
-        maxAutomaticTransitions = 100,
-    )
-
-    /** Test seam for deterministically reaching the automatic-transition guard. */
-    internal constructor(
-        cardRegistry: CardRegistry,
-        maxAutomaticTransitions: Int,
-    ) : this(
-        cardRegistry = cardRegistry,
-        processor = ActionProcessor(EngineServices(cardRegistry), computeUndo = false),
-        enumerator = LegalActionEnumerator.create(cardRegistry),
-        resolveThroughCombatDamage = false,
-        maxAutomaticTransitions = maxAutomaticTransitions,
-    )
-
     init {
         require(maxAutomaticTransitions > 0) { "maxAutomaticTransitions must be positive" }
     }
@@ -268,6 +250,16 @@ class GameSimulator private constructor(
             return false
         }
         return state.getBattlefield().any { state.getEntity(it)?.has<AttackingComponent>() == true }
+    }
+
+    companion object {
+        /**
+         * The shipped bound on automatic transitions per `simulate` call.
+         *
+         * Chosen the same way the server's `GameStallGuard` thresholds are: far above anything a
+         * real resolution reaches, so only a genuinely stuck automatic resolution ever meets it.
+         */
+        const val DEFAULT_MAX_AUTOMATIC_TRANSITIONS = 100
     }
 }
 
