@@ -303,6 +303,58 @@ object Primitives {
         alternate(constant("that permanent", Unit)),
     )
 
+    // ---------------------------------------------------------------------------------------
+    // The same three anaphors in the **possessive** — what reads a characteristic off the object
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * The possessive of [self] — "**~'s** power", "**its** power".
+     *
+     * A sibling vocabulary rather than a derivation from [self], because English does not inflect
+     * these regularly and the inverse is what a printer needs: "it" possessivizes to "its" with no
+     * apostrophe, `~` takes one, and "that creature" takes one too. A rule that appended `'s` would
+     * print "it's power" — a different word — so the possessive form is spelled in the table and the
+     * two vocabularies stay parallel by construction rather than by a lowering.
+     *
+     * The canonical/alternate split is [self]'s, unchanged: normalization has already abstracted
+     * "this creature's base power" to "~'s base power" (see
+     * [com.wingedsheep.assay.normalize.Normalizer], whose tokenizer ends a word at the apostrophe
+     * for exactly this), so the name is what prints and the pronoun parses.
+     */
+    val selfPossessive: Phrase<Unit> = oneOf(
+        "this permanent's",
+        constant("${Normalizer.SELF}'s", Unit),
+        alternate(constant("its", Unit)),
+    )
+
+    /** [selfNamed]'s possessive — the half that means the source in every position there is. */
+    val selfNamedPossessive: Phrase<Unit> = constant("${Normalizer.SELF}'s", Unit)
+
+    /** [itPronoun]'s possessive — the half a filtered trigger reads as the object it matched. */
+    val itsPronoun: Phrase<Unit> = constant("its", Unit)
+
+    /**
+     * [targetPronoun]'s possessive — "**its** mana value", "**that creature's** toughness".
+     *
+     * Two rows more than the nominative has, and they are the corpus's: an earlier clause in this
+     * position can have chosen a *card* ("Return target creature card from your graveyard to the
+     * battlefield. You gain life equal to **its** mana value.") or a *spell* ("Counter target spell.
+     * … **that spell's** mana value"), and Oracle names those with the noun rather than the
+     * permanent word. All four denote `EntityReference.Target`; the noun is printed shape.
+     *
+     * Which spelling is canonical is [targetPronoun]'s measurement, re-taken for the possessive over
+     * the Oracle bulk: "its ⟨characteristic⟩" 525 lines against the demonstratives' 149 together. So
+     * the pronoun prints and the four nouns parse, exactly as in the nominative.
+     */
+    val targetPossessive: Phrase<Unit> = oneOf(
+        "the object an earlier clause chose, possessive",
+        constant("its", Unit),
+        alternate(constant("that creature's", Unit)),
+        alternate(constant("that permanent's", Unit)),
+        alternate(constant("that card's", Unit)),
+        alternate(constant("that spell's", Unit)),
+    )
+
     /**
      * Plurals whose singular the general rules would get wrong *in either direction*.
      *

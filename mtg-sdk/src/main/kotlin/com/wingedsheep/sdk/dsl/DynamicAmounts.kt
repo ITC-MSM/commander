@@ -642,6 +642,14 @@ object DynamicAmounts {
     fun sourceToughness(): DynamicAmount =
         DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.Toughness)
 
+    /**
+     * The source's own mana value — the ninth cell of the source/target/triggering grid the two
+     * neighbouring blocks fill for power and toughness, and the only one that had no name.
+     * "{2}, {T}, Sacrifice this artifact: You gain life equal to its mana value."
+     */
+    fun sourceManaValue(): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.ManaValue)
+
     /** Power of the creature the source Aura/Equipment is attached to. */
     fun enchantedCreaturePower(): DynamicAmount =
         DynamicAmount.EntityProperty(EntityReference.EnchantedCreature, EntityNumericProperty.Power)

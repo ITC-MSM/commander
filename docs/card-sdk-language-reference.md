@@ -10548,6 +10548,28 @@ both spellings, and the ability its bare-noun line grants says "Regenerate this 
   Evaluates to 0 when no creature shares a type. Used by White Lotus Tile ("Add X mana of any one
   color, where X is …") — pair with `AddManaOfChoiceEffect(ManaColorSet.AnyColor, amount = …)`.
 
+### An object's characteristics
+
+`EntityProperty(entity, property)` reads one number off one object, and the `DynamicAmounts` facades
+name the grid its two axes cross — the entity (`Source` / `Target(index)` / `Triggering` /
+`Sacrificed(index)` / `EnchantedCreature` / …) against the property (`Power` / `Toughness` /
+`ManaValue` / `CounterCount` / …). The three that carry nearly every printed "…equal to its ⟨noun⟩":
+
+| | power | toughness | mana value |
+|---|---|---|---|
+| the source | `sourcePower()` | `sourceToughness()` | `sourceManaValue()` |
+| a chosen target | `targetPower(i)` | `targetToughness(i)` | `targetManaValue(i)` |
+| the triggering object | `triggeringPower()` | `triggeringToughness()` | `triggeringManaValue()` |
+
+Which entity a card's printed "its" means is decided by the sentence, not by the word: "Destroy
+target artifact. You gain life equal to **its** mana value." is `targetManaValue()`, "Whenever
+another creature you control dies, you gain life equal to **its** toughness." is
+`triggeringToughness()`, and "{2}, {T}, Sacrifice this artifact: You gain life equal to **its** mana
+value." is `sourceManaValue()`.
+
+Also on `Sacrificed`: `sacrificedPower(i)` / `sacrificedToughness(i)`, for a cost that sacrifices
+something other than the source.
+
 ### Counters
 
 - `CountersOnSource(type)` — counters of `type` on the source permanent.
