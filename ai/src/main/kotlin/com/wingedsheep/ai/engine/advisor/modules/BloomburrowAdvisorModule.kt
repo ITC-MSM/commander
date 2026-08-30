@@ -1,11 +1,12 @@
 package com.wingedsheep.ai.engine.advisor.modules
 
 import com.wingedsheep.ai.engine.advisor.*
-import com.wingedsheep.ai.engine.evaluation.BoardPresence
-import com.wingedsheep.engine.core.*
-import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.ai.engine.anyOpponent
+import com.wingedsheep.ai.engine.evaluation.BoardPresence
+import com.wingedsheep.ai.engine.requireNoAutomaticResolutionStop
+import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Phase
@@ -106,7 +107,7 @@ private fun pickBestGiftMode(context: AdvisorDecisionContext, decision: ChooseMo
         val result = context.simulator.simulateDecision(
             context.state,
             ModesChosenResponse(decision.id, listOf(mode.index))
-        )
+        ).requireNoAutomaticResolutionStop("Gift-mode evaluation")
         val score = context.evaluator.evaluate(result.state, result.state.projectedState, context.playerId)
         // Apply gift penalty to mode 2 (gift mode is always index 1)
         val adjusted = if (mode.index == 1) score - penalty else score
@@ -756,6 +757,7 @@ object BiteSpellAdvisor : CardAdvisor {
                     mapOf(req0.index to listOf(mine), req1.index to listOf(theirs))
                 )
                 val result = context.simulator.simulateDecision(context.state, response)
+                    .requireNoAutomaticResolutionStop("Paired-target evaluation")
                 val score = context.evaluator.evaluate(
                     result.state, result.state.projectedState, context.playerId
                 )

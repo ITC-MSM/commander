@@ -16,31 +16,61 @@ import com.wingedsheep.sdk.model.EntityId
  * Because GameState is immutable, simulating an action is just calling process()
  * on the same state — no rollback or cleanup needed.
  */
-class GameSimulator(
+class GameSimulator private constructor(
     private val cardRegistry: CardRegistry,
-    private val processor: ActionProcessor = ActionProcessor(EngineServices(cardRegistry), computeUndo = false),
-    private val enumerator: LegalActionEnumerator = LegalActionEnumerator.create(cardRegistry),
-    /**
-     * Carry a simulation past the empty stack to the end of the combat damage step, when blockers
-     * are already declared.
-     *
-     * A quiet state is "the stack is empty", which inside combat is *before damage*. Three puzzles
-     * fail on exactly that gap — `instants-05` (Fog), `activate-05` (firebreathing) and their
-     * relatives all pay mana now for something that only materialises when damage is dealt, so the
-     * post-simulation board is strictly worse than passing and the AI passes. Phase 7 answers this
-     * with full playouts; this answers only the case where the answer is already determined, which
-     * is why it costs one step rather than two turns.
-     *
-     * **Scoped to blockers-already-declared on purpose.** From `DECLARE_ATTACKERS` the outcome
-     * still depends on how the defender blocks, and nothing here would declare those blocks — the
-     * simulation would either stall or silently score an unblocked alpha strike. Once blocks are
-     * in, the only thing between the current state and the damage is the damage.
-     *
-     * Off for [AiProfile.LEGACY_V0], which has to stay frozen, and off by default so a
-     * `GameSimulator` built anywhere else keeps its historical horizon.
-     */
-    private val resolveThroughCombatDamage: Boolean = false,
+    private val processor: ActionProcessor,
+    private val enumerator: LegalActionEnumerator,
+    private val resolveThroughCombatDamage: Boolean,
+    private val maxAutomaticTransitions: Int,
 ) {
+    constructor(
+        cardRegistry: CardRegistry,
+        processor: ActionProcessor = ActionProcessor(EngineServices(cardRegistry), computeUndo = false),
+        enumerator: LegalActionEnumerator = LegalActionEnumerator.create(cardRegistry),
+        /**
+         * Carry a simulation past the empty stack to the end of the combat damage step, when blockers
+         * are already declared.
+         *
+         * A quiet state is "the stack is empty", which inside combat is *before damage*. Three puzzles
+         * fail on exactly that gap — `instants-05` (Fog), `activate-05` (firebreathing) and their
+         * relatives all pay mana now for something that only materialises when damage is dealt, so the
+         * post-simulation board is strictly worse than passing and the AI passes. Phase 7 answers this
+         * with full playouts; this answers only the case where the answer is already determined, which
+         * is why it costs one step rather than two turns.
+         *
+         * **Scoped to blockers-already-declared on purpose.** From `DECLARE_ATTACKERS` the outcome
+         * still depends on how the defender blocks, and nothing here would declare those blocks — the
+         * simulation would either stall or silently score an unblocked alpha strike. Once blocks are
+         * in, the only thing between the current state and the damage is the damage.
+         *
+         * Off for [AiProfile.LEGACY_V0], which has to stay frozen, and off by default so a
+         * `GameSimulator` built anywhere else keeps its historical horizon.
+         */
+        resolveThroughCombatDamage: Boolean = false,
+    ) : this(
+        cardRegistry = cardRegistry,
+        processor = processor,
+        enumerator = enumerator,
+        resolveThroughCombatDamage = resolveThroughCombatDamage,
+        maxAutomaticTransitions = 100,
+    )
+
+    /** Test seam for deterministically reaching the automatic-transition guard. */
+    internal constructor(
+        cardRegistry: CardRegistry,
+        maxAutomaticTransitions: Int,
+    ) : this(
+        cardRegistry = cardRegistry,
+        processor = ActionProcessor(EngineServices(cardRegistry), computeUndo = false),
+        enumerator = LegalActionEnumerator.create(cardRegistry),
+        resolveThroughCombatDamage = false,
+        maxAutomaticTransitions = maxAutomaticTransitions,
+    )
+
+    init {
+        require(maxAutomaticTransitions > 0) { "maxAutomaticTransitions must be positive" }
+    }
+
     /**
      * Optional resolver for non-trivial decisions encountered during simulation.
      * Set after constructing the [DecisionResponder] to enable full spell resolution
@@ -61,7 +91,9 @@ class GameSimulator(
      * After executing the action, both players auto-pass priority until
      * the stack is empty (spells resolve) or a non-trivial decision is needed.
      * This ensures the evaluator sees the actual effect of casting a spell,
-     * not just "spell on stack, lands tapped".
+     * not just "spell on stack, lands tapped". If automatic resolution still has work after
+     * [maxAutomaticTransitions], the unfinished state is returned as
+     * [SimulationResult.StoppedAtLimit], never as successful completion.
      */
     fun simulate(state: GameState, action: GameAction): SimulationResult {
         val result = processor.process(state, action).result
@@ -113,12 +145,17 @@ class GameSimulator(
         var current = result
         var allEvents = result.events
         var iterations = 0
-        val maxIterations = 100
 
-        while (iterations < maxIterations) {
+        while (true) {
             val error = current.error
             if (error != null) {
                 return SimulationResult.Illegal(current.state, allEvents, error)
+            }
+
+            // Terminal means the simulator has reached its stopping boundary. A real game end is
+            // one such boundary and remains distinguishable through GameState.gameOver.
+            if (current.state.gameOver) {
+                return SimulationResult.Terminal(current.state, allEvents)
             }
 
             // Auto-resolve trivial decisions; use decisionResolver for non-trivial ones
@@ -126,6 +163,9 @@ class GameSimulator(
                 val decision = current.pendingDecision!!
                 val trivialResponse = trivialResponseFor(decision)
                 if (trivialResponse != null) {
+                    if (iterations >= maxAutomaticTransitions) {
+                        return stoppedAtLimit(current, allEvents, iterations)
+                    }
                     val submitAction = SubmitDecision(decision.playerId, trivialResponse)
                     current = processor.process(current.state, submitAction).result
                     allEvents = allEvents + current.events
@@ -136,6 +176,9 @@ class GameSimulator(
                 // inner simulations from DecisionResponder evaluating alternatives break here)
                 val resolver = decisionResolver
                 if (resolver != null && !isResolving) {
+                    if (iterations >= maxAutomaticTransitions) {
+                        return stoppedAtLimit(current, allEvents, iterations)
+                    }
                     try {
                         isResolving = true
                         val response = resolver(current.state, decision)
@@ -148,7 +191,7 @@ class GameSimulator(
                     }
                     continue
                 }
-                break
+                return SimulationResult.NeedsDecision(current.state, decision, allEvents)
             }
 
             // Stack is non-empty — auto-pass priority for whoever has it
@@ -157,6 +200,9 @@ class GameSimulator(
             val state = current.state
             val priorityPlayerId = state.priorityPlayerId
             if (state.stack.isNotEmpty() && priorityPlayerId != null && !state.gameOver) {
+                if (iterations >= maxAutomaticTransitions) {
+                    return stoppedAtLimit(current, allEvents, iterations)
+                }
                 val passAction = PassPriority(priorityPlayerId)
                 current = processor.process(state, passAction).result
                 allEvents = allEvents + current.events
@@ -168,26 +214,32 @@ class GameSimulator(
             // blockers already declared it is a *pre-damage* state, and the whole point of the
             // candidate may be the damage; pass priority to advance the step and look again.
             if (resolveThroughCombatDamage && isPreDamageCombatState(state)) {
-                if (priorityPlayerId == null || state.gameOver) break
+                if (priorityPlayerId == null || state.gameOver) {
+                    return SimulationResult.Terminal(state, allEvents)
+                }
+                if (iterations >= maxAutomaticTransitions) {
+                    return stoppedAtLimit(current, allEvents, iterations)
+                }
                 current = processor.process(state, PassPriority(priorityPlayerId)).result
                 allEvents = allEvents + current.events
                 iterations++
                 continue
             }
 
-            break
-        }
-
-        val finalError = current.error
-        return when {
-            finalError != null ->
-                SimulationResult.Illegal(current.state, allEvents, finalError)
-            current.isPaused ->
-                SimulationResult.NeedsDecision(current.state, current.pendingDecision!!, allEvents)
-            else ->
-                SimulationResult.Terminal(current.state, allEvents)
+            return SimulationResult.Terminal(state, allEvents)
         }
     }
+
+    private fun stoppedAtLimit(
+        current: ExecutionResult,
+        events: List<GameEvent>,
+        automaticTransitions: Int,
+    ): SimulationResult.StoppedAtLimit = SimulationResult.StoppedAtLimit(
+        state = current.state,
+        events = events,
+        automaticTransitions = automaticTransitions,
+        limit = maxAutomaticTransitions,
+    )
 
     /**
      * Returns a trivial response if there's exactly one legal choice, null otherwise.
