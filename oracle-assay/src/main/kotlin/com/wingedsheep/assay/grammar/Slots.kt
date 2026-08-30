@@ -58,6 +58,40 @@ internal object Slots {
         return renamed.takeIf { undone == script }
     }
 
+    /**
+     * Whether [script] reads a characteristic off [entity] anywhere — an
+     * `EntityProperty(entity, property)` however deeply nested, with [property] optionally pinned.
+     *
+     * A JSON walk for this file's own reason: an `Effect` is a deep sealed tree with no visitor, so
+     * there is no typed way to ask whether a value occurs anywhere inside one. The shape is matched
+     * by its discriminators rather than by an exact value, because what varies below them — the
+     * counter kind, the target index — is not what either caller is asking about.
+     *
+     * Both callers are guards on a fold, and both are asking the same question in different words:
+     * *does this line read a property of an object the sentence has not actually pinned down?*
+     * [Steps]' `renumbered` asks it of the target, [Activated]' `abilityFor` of a source its own
+     * cost has already removed. Their KDocs carry the reasons.
+     */
+    fun readsPropertyOf(script: CardScript, entity: String, property: String? = null): Boolean {
+        val tree = runCatching {
+            CardSerialization.json.encodeToJsonElement(CardScript.serializer(), script)
+        }.getOrNull() ?: return false
+        return readsProperty(tree, entity, property)
+    }
+
+    private fun readsProperty(element: JsonElement, entity: String, property: String?): Boolean =
+        when (element) {
+            is JsonObject ->
+                (element["type"].text() == "EntityProperty" &&
+                    (element["entity"] as? JsonObject)?.get("type").text() == entity &&
+                    (property == null ||
+                        (element["numericProperty"] as? JsonObject)?.get("type").text() == property)) ||
+                    element.values.any { readsProperty(it, entity, property) }
+
+            is JsonArray -> element.any { readsProperty(it, entity, property) }
+            else -> false
+        }
+
     /** Whether [script] refers to slot [name] anywhere — a clause reading a target it did not declare. */
     fun references(script: CardScript, name: String): Boolean {
         val tree = runCatching {

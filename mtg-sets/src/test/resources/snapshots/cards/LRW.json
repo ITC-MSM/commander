@@ -257,6 +257,51 @@
     ]
 }
 
+// Blind-Spot Giant
+{
+    "name": "Blind-Spot Giant",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Giant Warrior",
+    "oracleText": "This creature can't attack or block unless you control another Giant.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CantAttackUnless",
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "permanent Giant",
+                    "excludeSelf": true
+                }
+            },
+            {
+                "type": "CantBlockUnless",
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "permanent Giant",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "153",
+        "artist": "Jim Murray",
+        "flavorText": "Among the solitude-loving giantkind, teamwork is unusual. But he appreciates hearing the occasional \"Swing down and to your left.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/5/75aaca31-8ed5-4e8a-8332-1cca77903f88.jpg?1783942880"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Bog-Strider Ash
 {
     "name": "Bog-Strider Ash",
@@ -356,6 +401,61 @@
     ]
 }
 
+// Boggart Forager
+{
+    "name": "Boggart Forager",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Goblin Rogue",
+    "oracleText": "{R}, Sacrifice this creature: Target player shuffles their library.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{R}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "ShuffleLibrary",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target player"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "descriptionOverride": "{R}, Sacrifice this creature: Target player shuffles their library."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "154",
+        "artist": "Ron Spencer",
+        "flavorText": "\"Reach in this hole, lose a hand. Reach in that hole, find a sparkly.\"\n—Auntie wisdom",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fbc26374-d8de-4740-b1ec-ac92cfedbebc.jpg?1783942881"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Boggart Harbinger
 {
     "name": "Boggart Harbinger",
@@ -421,6 +521,69 @@
         "rarity": "UNCOMMON",
         "artist": "Steve Prescott",
         "imageUri": "https://cards.scryfall.io/normal/front/8/e/8ea8d2b8-bcac-410d-aa5a-e4a74f7d5315.jpg?1783942893"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Boggart Loggers
+{
+    "name": "Boggart Loggers",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Goblin Rogue",
+    "oracleText": "Forestwalk (This creature can't be blocked as long as defending player controls a Forest.)\n{2}{B}, Sacrifice this creature: Destroy target Treefolk or Forest.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FORESTWALK"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{B}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target Treefolk or Forest"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "permanent Treefolk|Forest"
+                        },
+                        "id": "target Treefolk or Forest"
+                    }
+                ],
+                "descriptionOverride": "Destroy target Treefolk or Forest."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "103",
+        "artist": "Jesper Ejsing",
+        "flavorText": "\"Auntie Flint lent axes to Nibb and Gyik, thinking they'd share their experiences with her. She's still waiting for them to come back.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/e/9ed9a638-c3f9-48dd-9633-5c52146e0dcd.jpg?1783942893"
     },
     "colorIdentityOverride": [
         "BLACK"
@@ -577,6 +740,52 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Cenn's Heir
+{
+    "name": "Cenn's Heir",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Kithkin Soldier",
+    "oracleText": "Whenever this creature attacks, it gets +1/+1 until end of turn for each other attacking Kithkin.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "AggregateBattlefield",
+                        "player": "Each",
+                        "filter": "creature Kithkin attacking",
+                        "excludeSelf": true
+                    },
+                    "toughnessModifier": {
+                        "type": "AggregateBattlefield",
+                        "player": "Each",
+                        "filter": "creature Kithkin attacking",
+                        "excludeSelf": true
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever this creature attacks, it gets +1/+1 until end of turn for each other attacking Kithkin."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "8",
+        "artist": "Steven Belledin",
+        "flavorText": "\"His home clachan's familial spirit bolsters his own, but he will be ready to preside over the town as cenn only after he learns to project that strength to others.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/7/a7610d2f-e35f-42fa-a3fb-fcae54bf5a1d.jpg?1783942917"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -1188,6 +1397,45 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Elvish Eulogist
+{
+    "name": "Elvish Eulogist",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Elf Shaman",
+    "oracleText": "Sacrifice this creature: You gain 1 life for each Elf card in your graveyard.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "filter": "Elf"
+                    }
+                },
+                "descriptionOverride": "Sacrifice this creature: You gain 1 life for each Elf card in your graveyard."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "205",
+        "artist": "Ben Thompson",
+        "flavorText": "\"No matter how adept our artistic skill, our effigies can never hope to capture the vibrant beauty of a living elf. Perhaps that is truly why we mourn.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/564b9d31-3079-45e3-acb3-a74169aa332e.jpg?1783942865"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -2509,6 +2757,37 @@
     ]
 }
 
+// Glimmerdust Nap
+{
+    "name": "Glimmerdust Nap",
+    "manaCost": "{2}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant tapped creature\nEnchanted creature doesn't untap during its controller's untap step.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "DOESNT_UNTAP"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature tapped"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "68",
+        "artist": "Greg Staples",
+        "flavorText": "The dreams of giants are as long as time and as deep as the earth. Thus they are prized by the dream-harvesting fae.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e05a4ce4-dbd5-4c47-8b40-c145c7f5d06c.jpg?1783942901"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Goldmeadow Dodger
 {
     "name": "Goldmeadow Dodger",
@@ -2681,6 +2960,182 @@
         "artist": "Jesper Ejsing",
         "flavorText": "Although they're protective of all creatures, many treefolk are especially fond of the empathic kithkin.",
         "imageUri": "https://cards.scryfall.io/normal/front/3/1/311c5f1d-7e3b-4397-b05b-f20bde2dc164.jpg?1783942863"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Hamletback Goliath
+{
+    "name": "Hamletback Goliath",
+    "manaCost": "{6}{R}",
+    "typeLine": "Creature — Giant Warrior",
+    "oracleText": "Whenever another creature enters, you may put X +1/+1 counters on this creature, where X is that creature's power.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "AddDynamicCounters",
+                        "counterType": "+1/+1",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "Triggering",
+                            "numericProperty": "Power"
+                        },
+                        "target": "Self"
+                    },
+                    "descriptionOverride": "you may put X +1/+1 counters on this creature, where X is that creature's power."
+                },
+                "descriptionOverride": "you may put X +1/+1 counters on this creature, where X is that creature's power."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "173",
+        "rarity": "RARE",
+        "artist": "Paolo Parente & Brian Snõddy",
+        "flavorText": "\"If you live on a giant's back, there's only one individual you'll ever need to fear.\"\n—Gaddock Teeg",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/96f71692-6389-462f-933e-b18b5aa7d76b.jpg?1783942876"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Harpoon Sniper
+{
+    "name": "Harpoon Sniper",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Merfolk Archer",
+    "oracleText": "{W}, {T}: This creature deals X damage to target attacking or blocking creature, where X is the number of Merfolk you control.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{W}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "permanent Merfolk"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target attacking or blocking creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    {
+                                        "type": "StateOr",
+                                        "predicates": [
+                                            "IsAttacking",
+                                            "IsBlocking"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        "id": "target attacking or blocking creature"
+                    }
+                ],
+                "descriptionOverride": "{W}, {T}: This creature deals X damage to target attacking or blocking creature, where X is the number of Merfolk you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "rarity": "UNCOMMON",
+        "artist": "Dominick Domingo",
+        "flavorText": "Made from whiskergill bones, merrow spinebows can fire bolts through tree trunks.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c10ccaef-2a75-43d6-95f2-c3690ae5c87a.jpg?1783942914"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Heal the Scars
+{
+    "name": "Heal the Scars",
+    "manaCost": "{3}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Regenerate target creature. You gain life equal to that creature's toughness.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Regenerate",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Target",
+                        "numericProperty": "Toughness"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "217",
+        "artist": "Carl Frank",
+        "flavorText": "Elvish battle-magic has evolved two specialties: inflicting wounds that scar, and healing wounds without scarring. Politics determines the recipients of each.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/8/b802a7fe-9c8b-4bc3-95d8-4a5dafcf2c75.jpg?1783942862"
     },
     "colorIdentityOverride": [
         "GREEN"
@@ -4794,6 +5249,69 @@
     ]
 }
 
+// Nectar Faerie
+{
+    "name": "Nectar Faerie",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flying\n{B}, {T}: Target Faerie or Elf gains lifelink until end of turn. (Damage dealt by the creature also causes its controller to gain that much life.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{B}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target Faerie or Elf"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "permanent Faerie|Elf"
+                        },
+                        "id": "target Faerie or Elf"
+                    }
+                ],
+                "descriptionOverride": "{B}, {T}: Target Faerie or Elf gains lifelink until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "130",
+        "rarity": "UNCOMMON",
+        "artist": "Thomas Denmark",
+        "flavorText": "\"The unpredictable fae are just as likely to provide a blight as a boon.\"\n—Desmera, perfect of Wren's Run",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/9/d943b877-805d-4bc8-a3ae-abec00fa51a6.jpg?1783942885"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Nightshade Stinger
 {
     "name": "Nightshade Stinger",
@@ -5115,6 +5633,68 @@
     ]
 }
 
+// Quill-Slinger Boggart
+{
+    "name": "Quill-Slinger Boggart",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Goblin Warrior",
+    "oracleText": "Whenever a player casts a Kithkin spell, you may have target player lose 1 life.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasSubtype",
+                                "subtype": "Kithkin"
+                            }
+                        ]
+                    },
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "LoseLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target player"
+                        }
+                    },
+                    "descriptionOverride": "Whenever a player casts a Kithkin spell, you may have target player lose 1 life."
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target player"
+                },
+                "descriptionOverride": "Whenever a player casts a Kithkin spell, you may have target player lose 1 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "137",
+        "artist": "Warren Mahy",
+        "flavorText": "\"A good day in Goldmeadow is one in which I don't spend all evening picking quills out of my backside.\"\n—Calydd, kithkin farmer",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c3a15a9d-46d7-4181-8131-50ba46a11c7b.jpg?1783942885"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Rootgrapple
 {
     "name": "Rootgrapple",
@@ -5174,6 +5754,62 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Runed Stalactite
+{
+    "name": "Runed Stalactite",
+    "manaCost": "{1}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature gets +1/+1 and is every creature type.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1
+            },
+            "IsAllCreatureTypes"
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "260",
+        "artist": "Jim Pavelec",
+        "flavorText": "When a changeling adopts a form no other changeling has taken, a rune appears in the caverns of Velis Vel to mark the event.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/b/9be88336-83c7-422d-8826-13ceb8db5534.jpg?1783942852"
+    },
+    "colorIdentityOverride": []
 }
 
 // Scarred Vinebreeder
@@ -5283,6 +5919,83 @@
     ]
 }
 
+// Seedguide Ash
+{
+    "name": "Seedguide Ash",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Treefolk Druid",
+    "oracleText": "When this creature dies, you may search your library for up to three Forest cards, put them onto the battlefield tapped, then shuffle.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "land Forest"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 3
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield",
+                                    "placement": "Tapped"
+                                }
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    },
+                    "descriptionOverride": "you may search your library for up to three Forest cards, put them onto the battlefield tapped, then shuffle."
+                },
+                "descriptionOverride": "you may search your library for up to three Forest cards, put them onto the battlefield tapped, then shuffle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "235",
+        "rarity": "UNCOMMON",
+        "artist": "John Avon",
+        "flavorText": "\"May you shade three generations of seedlings.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/eca605c0-6270-4238-bb77-0bbfd7568807.jpg?1783942856"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Sentinels of Glen Elendra
 {
     "name": "Sentinels of Glen Elendra",
@@ -5357,6 +6070,65 @@
         "imageUri": "https://cards.scryfall.io/normal/front/b/5/b5e85acc-ed12-4036-8193-739721c3e178.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Silvergill Douser
+{
+    "name": "Silvergill Douser",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Merfolk Wizard",
+    "oracleText": "{T}: Target creature gets -X/-0 until end of turn, where X is the number of Merfolk and/or Faeries you control.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Multiply",
+                        "amount": {
+                            "type": "AggregateBattlefield",
+                            "player": "You",
+                            "filter": "permanent Merfolk|Faerie"
+                        },
+                        "multiplier": -1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "Target creature gets -X/-0 until end of turn, where X is the number of Merfolk and/or Faeries you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "87",
+        "artist": "Daren Bader",
+        "flavorText": "\"The Silvergill school monitors traffic on the Lanes, ensuring that the riffraff don't interfere with travelers.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/8/8875c883-8d56-406b-bd89-42199a6e79f5.jpg?1783942898"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
 }
 
 // Skeletal Changeling
@@ -6161,6 +6933,59 @@
     ]
 }
 
+// Triclopean Sight
+{
+    "name": "Triclopean Sight",
+    "manaCost": "{1}{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Flash\nEnchant creature\nWhen this Aura enters, untap enchanted creature.\nEnchanted creature gets +1/+1 and has vigilance.",
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": "EnchantedCreature",
+                    "tap": false
+                },
+                "descriptionOverride": "When this Aura enters, untap enchanted creature."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "VIGILANCE"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "artist": "Scott Hampton",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/444b5d72-ac5b-43d2-b5dc-0cc4bf63e43d.jpg?1783942908"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Veteran of the Depths
 {
     "name": "Veteran of the Depths",
@@ -6600,6 +7425,87 @@
     "colorIdentityOverride": []
 }
 
+// Warren Pilferers
+{
+    "name": "Warren Pilferers",
+    "manaCost": "{4}{B}",
+    "typeLine": "Creature — Goblin Rogue",
+    "oracleText": "When this creature enters, return target creature card from your graveyard to your hand. If that card is a Goblin card, this creature gains haste until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "filter": "creature Goblin"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature card from your graveyard"
+                                },
+                                "destination": "Hand"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "HASTE",
+                                "target": "Self"
+                            }
+                        ]
+                    },
+                    "otherwise": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature card from your graveyard"
+                        },
+                        "destination": "Hand"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target creature card from your graveyard"
+                },
+                "descriptionOverride": "Return target creature card from your graveyard to your hand. If that card is a Goblin card, this creature gains haste until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "146",
+        "artist": "Wayne Reynolds",
+        "flavorText": "\"What do they need all this stuff for? They're dead. We're alive. Simple enough.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/c/bc98177b-34a6-44e1-9abd-6fd8df09fc70.jpg?1783942882"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Warren-Scourge Elf
 {
     "name": "Warren-Scourge Elf",
@@ -6627,6 +7533,58 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Wellgabber Apothecary
+{
+    "name": "Wellgabber Apothecary",
+    "manaCost": "{4}{W}",
+    "typeLine": "Creature — Merfolk Cleric",
+    "oracleText": "{1}{W}: Prevent all damage that would be dealt to target tapped Merfolk or Kithkin creature this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "PreventDamageShield",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target tapped Merfolk or Kithkin creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature Merfolk|Kithkin tapped"
+                        },
+                        "id": "target tapped Merfolk or Kithkin creature"
+                    }
+                ],
+                "descriptionOverride": "Prevent all damage that would be dealt to target tapped Merfolk or Kithkin creature this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "47",
+        "artist": "Brandon Dorman",
+        "flavorText": "\"You've discovered that boggarts bite, I see. And will the militia be chasing this lot? . . . Ah, you're staying in town to avoid Nath's hunt. Wise. Now this poultice . . .\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/2/129933ba-60a0-4764-a705-28fa7bb10bd3.jpg?1783942907"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

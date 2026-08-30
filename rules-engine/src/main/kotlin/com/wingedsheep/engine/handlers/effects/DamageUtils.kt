@@ -1803,9 +1803,16 @@ object DamageUtils {
             is RecipientFilter.AnyPlayer -> targetId in state.turnOrder
             is RecipientFilter.AnyPlayerOrPlaneswalker ->
                 targetId in state.turnOrder || projected.isPlaneswalker(targetId)
+            // The attachment target, whatever it is: a creature for the first two, a player for
+            // EnchantedPlayer. The `in state.turnOrder` check on the last one is what keeps the
+            // player-scoped filter from matching a permanent the Aura happens to be on.
             is RecipientFilter.EnchantedCreature, is RecipientFilter.EquippedCreature -> {
                 val attachedTo = state.getEntity(hostId)?.get<AttachedToComponent>()?.targetId
                 targetId == attachedTo
+            }
+            is RecipientFilter.EnchantedPlayer -> {
+                val attachedTo = state.getEntity(hostId)?.get<AttachedToComponent>()?.targetId
+                attachedTo != null && attachedTo in state.turnOrder && targetId == attachedTo
             }
             is RecipientFilter.AnyCreature -> projected.isCreature(targetId)
             is RecipientFilter.CreatureYouControl ->

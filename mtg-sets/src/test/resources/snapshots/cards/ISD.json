@@ -657,6 +657,44 @@
     ]
 }
 
+// Bramblecrush
+{
+    "name": "Bramblecrush",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy target noncreature permanent.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "noncreature permanent"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "172",
+        "rarity": "UNCOMMON",
+        "artist": "Drew Baker",
+        "flavorText": "\"Civilization is fertilizer.\"\n—Garruk Wildspeaker",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/0/60fa219e-5dba-4d49-9cae-40d254f140e4.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Bump in the Night
 {
     "name": "Bump in the Night",
@@ -4699,6 +4737,54 @@
         "imageUri": "https://cards.scryfall.io/normal/front/5/d/5d495d85-6458-44d5-b3b4-5e09569057e3.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Pitchburn Devils
+{
+    "name": "Pitchburn Devils",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Devil",
+    "oracleText": "When this creature dies, it deals 3 damage to any target.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "156",
+        "artist": "Johann Bodin",
+        "flavorText": "The ingenuity of goblins, the depravity of demons, and the smarts of sheep.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/3/d31d3de5-4028-457f-8eba-82e829061a40.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
 }
 
 // Purify the Grave

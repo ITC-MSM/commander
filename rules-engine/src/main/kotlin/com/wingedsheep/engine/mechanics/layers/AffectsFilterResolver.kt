@@ -367,7 +367,7 @@ internal class AffectsFilterResolver {
 
             // Check state predicates
             for (predicate in baseFilter.statePredicates) {
-                if (!matchesStatePredicateForProjection(state, entityId, predicate, container, isFaceDown, projectedValues, controller)) {
+                if (!matchesStatePredicateForProjection(state, entityId, predicate, container, isFaceDown, projectedValues, controller, sourceId)) {
                     return@filter false
                 }
             }
@@ -394,7 +394,14 @@ internal class AffectsFilterResolver {
          * [StatePredicate.IsEnchantedByAura]'s Aura). Null when the source has no controller, in
          * which case those predicates fail closed rather than matching everything.
          */
-        sourceController: EntityId?
+        sourceController: EntityId?,
+        /**
+         * The permanent whose static ability is being projected. Needed by predicates that read the
+         * source's own attachment rather than its controller — currently
+         * [StatePredicate.IsAttackingEnchantedPlayer], which has to find the player the source Aura
+         * enchants. Null when there is no source in scope, in which case those predicates fail closed.
+         */
+        sourceId: EntityId?
     ): Boolean = when (predicate) {
         // Everything this resolver is handed is already a battlefield permanent, so the predicate
         // is trivially satisfied here; it only does work in PredicateEvaluator, where an object
@@ -433,6 +440,20 @@ internal class AffectsFilterResolver {
                                 ?.contains(com.wingedsheep.sdk.core.CardType.PLANESWALKER) == true
                         )
                 )
+        }
+        // "Attacking enchanted player" — the defender must be the player the *source* Aura is
+        // attached to (Curse of Hospitality). Scoped by attachment rather than by controller, so
+        // unlike its two siblings above it reads `sourceId`, not `sourceController`. The
+        // `in state.turnOrder` check is what keeps a planeswalker or battle the enchanted player
+        // controls out: only a player id survives it.
+        StatePredicate.IsAttackingEnchantedPlayer -> {
+            val enchanted = sourceId
+                ?.let { state.getEntity(it) }
+                ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
+                ?.targetId
+                ?.takeIf { it in state.turnOrder }
+            val defenderId = container.get<AttackingComponent>()?.defenderId
+            enchanted != null && defenderId == enchanted
         }
         StatePredicate.IsBlocking -> container.has<BlockingComponent>()
         StatePredicate.IsBlocked -> {
@@ -688,13 +709,13 @@ internal class AffectsFilterResolver {
         StatePredicate.HasLockedDoor ->
             container.get<RoomComponent>()?.lockedFaces?.isNotEmpty() == true
         is StatePredicate.Or -> predicate.predicates.any {
-            matchesStatePredicateForProjection(state, entityId, it, container, isFaceDown, projectedValues, sourceController)
+            matchesStatePredicateForProjection(state, entityId, it, container, isFaceDown, projectedValues, sourceController, sourceId)
         }
         is StatePredicate.And -> predicate.predicates.all {
-            matchesStatePredicateForProjection(state, entityId, it, container, isFaceDown, projectedValues, sourceController)
+            matchesStatePredicateForProjection(state, entityId, it, container, isFaceDown, projectedValues, sourceController, sourceId)
         }
         is StatePredicate.Not -> !matchesStatePredicateForProjection(
-            state, entityId, predicate.predicate, container, isFaceDown, projectedValues, sourceController
+            state, entityId, predicate.predicate, container, isFaceDown, projectedValues, sourceController, sourceId
         )
     }
 
@@ -903,6 +924,7 @@ internal class AffectsFilterResolver {
         CardPredicate.SharesColorWithRecipient,
         is CardPredicate.SharesCreatureTypeWith,
         is CardPredicate.SharesCardTypeWith,
+        CardPredicate.SharesCardTypeWithLinkedExile,
         is CardPredicate.SharesColorWith,
         is CardPredicate.SharesManaValueWith,
         is CardPredicate.SharesNameWith,

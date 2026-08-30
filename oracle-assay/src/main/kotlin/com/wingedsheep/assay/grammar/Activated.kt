@@ -103,6 +103,7 @@ object Activated {
         val effect = script.spellEffect ?: return null
         val targets = script.targetRequirements
         if (script != CardScript(spellEffect = effect, targetRequirements = targets)) return null
+        if (removesTheSource(cost) && Slots.readsPropertyOf(script, entity = "Source", property = "CounterCount")) return null
         val manaAbility = targets.isEmpty() && producesMana(effect) && !movesLibraryCard(cost, effect)
         return ActivatedAbility(
             id = ID,
@@ -118,6 +119,33 @@ object Activated {
             restrictions = restrictions,
             activateFromZone = Recursion.functionsIn(effect, cost) ?: Zone.BATTLEFIELD,
         )
+    }
+
+    /**
+     * A cost that puts the source somewhere else before the ability resolves — CR 113.7a's
+     * last-known-information case, as an activation cost.
+     *
+     * "{4}, {T}, Sacrifice ~: Each opponent loses life equal to the number of soul counters on ~."
+     * (Ravenous Amulet) is the shape. [Amounts]' `counterCount` reads the source's **live** tally,
+     * and by resolution the source is in the graveyard, so that reading evaluates to zero: the
+     * sentence round-trips byte-perfectly and means a different card. The SDK has the right value
+     * for this position, `DynamicAmount.LastKnownSourceCounters`, and the card corpus writes it.
+     *
+     * Which of the two a clause means is decided by the *ability around it* and a step cannot see
+     * that — the same finding [Amounts]' `namesX` records for the trigger position, refused there
+     * for the same reason. So this refuses too, rather than emitting the model that evaluates to
+     * zero. Deriving the translation instead is the better answer and it is a piece of work of its
+     * own: it has to run in both directions, because a golden carrying the last-known value must
+     * come back as the live one before [Steps.step] can print it.
+     *
+     * P/T needs no such rule and that asymmetry is the engine's, not an oversight: the SDK applies
+     * the last-known snapshot to `EntityProperty(Source, Power|Toughness)` automatically, so
+     * "{T}, Sacrifice ~: You gain life equal to its power." is already correct as written.
+     */
+    private fun removesTheSource(cost: AbilityCost): Boolean = when (cost) {
+        AbilityCost.SacrificeSelf, AbilityCost.ExileSelf -> true
+        is AbilityCost.Composite -> cost.costs.any(::removesTheSource)
+        else -> false
     }
 
     /**

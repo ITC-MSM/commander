@@ -783,7 +783,21 @@ data class SpellCounteredEvent(
 @SerialName("AbilityCounteredEvent")
 data class AbilityCounteredEvent(
     val abilityEntityId: EntityId,
-    val description: String
+    val description: String,
+    /**
+     * The countered ability's source and controller, captured before the ability object is
+     * destroyed. Countering removes an ability from the stack and it ceases to exist
+     * (Rule 701.6a), so [abilityEntityId] resolves to nothing by the time this event is read —
+     * these fields are the only surviving record of what was countered.
+     *
+     * [controllerId] is the *ability's* controller, which need not be whoever controls
+     * [sourceId] now: once on the stack an ability exists independently of its source
+     * (Rule 113.7a). Null only for a stack object carrying neither ability component — the same
+     * case that yields the "Unknown ability" [description].
+     */
+    val sourceId: EntityId? = null,
+    val sourceName: String? = null,
+    val controllerId: EntityId? = null,
 ) : GameEvent
 
 /**

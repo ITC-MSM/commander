@@ -538,3 +538,70 @@
         "BLUE"
     ]
 }
+
+// Thunderbolt
+{
+    "name": "Thunderbolt",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Thunderbolt deals 3 damage to target player or planeswalker.\n• Thunderbolt deals 4 damage to target creature with flying.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetPlayerOrPlaneswalker",
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Thunderbolt deals 3 damage to target player or planeswalker"
+                },
+                {
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 4
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature kw:flying"
+                            },
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Thunderbolt deals 4 damage to target creature with flying"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "115",
+        "artist": "Dylan Martens",
+        "flavorText": "\"Most wizards consider a thunderbolt to be a proper retort.\"\n—Ertai, wizard adept",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/0/a0a4b641-2eb3-482b-91a1-236ebe2a7a41.jpg?1783946723"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}

@@ -2680,6 +2680,145 @@
     ]
 }
 
+// Cemetery Illuminator
+{
+    "name": "Cemetery Illuminator",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Flying\nWhenever this creature enters or attacks, exile a card from a graveyard.\nYou may look at the top card of your library any time.\nOnce each turn, you may cast a spell from the top of your library if it shares a card type with a card exiled with this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "player": "Each"
+                            },
+                            "storeAs": "graveyards"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "graveyards",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "exiled",
+                            "prompt": "Exile a card from a graveyard",
+                            "selectedLabel": "Exile",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "exiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When Cemetery Illuminator enters, exile a card from a graveyard."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "player": "Each"
+                            },
+                            "storeAs": "graveyards"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "graveyards",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "exiled",
+                            "prompt": "Exile a card from a graveyard",
+                            "selectedLabel": "Exile",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "exiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever Cemetery Illuminator attacks, exile a card from a graveyard."
+            }
+        ],
+        "staticAbilities": [
+            "LookAtTopOfLibrary",
+            {
+                "type": "CastSpellTypesFromTopOfLibrary",
+                "filter": {
+                    "cardPredicates": [
+                        "SharesCardTypeWithLinkedExile"
+                    ]
+                },
+                "maxCastsPerTurn": 1
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "50",
+        "rarity": "MYTHIC",
+        "artist": "Uriah Voth",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/f/5f619464-dc3b-4265-b4e4-2578034bf5bf.jpg?1783924900",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Card types that can be exiled from a graveyard include artifact, creature, enchantment, land, planeswalker, instant, and sorcery. Legendary, basic, and snow are supertypes, not card types. Human, Equipment, and Aura are subtypes, not card types."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "Cemetery Illuminator's ability allows you to cast a spell that shares a card type with the exiled card, even if the card on top of the library doesn't. For example, if you've exiled an artifact card, you could cast The Omenkeel from the top of your library, even though it's the back face of the modal double-faced card Cosima, God of the Voyage, which isn't an artifact."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Cemetery Protector
 {
     "name": "Cemetery Protector",
@@ -4402,6 +4541,94 @@
     ]
 }
 
+// Curse of Hospitality
+{
+    "name": "Curse of Hospitality",
+    "manaCost": "{2}{R}",
+    "typeLine": "Enchantment — Aura Curse",
+    "oracleText": "Enchant player\nCreatures attacking enchanted player have trample.\nWhenever a creature deals combat damage to enchanted player, that player exiles the top card of their library. Until end of turn, that creature's controller may play that card and they may spend mana as though it were mana of any color to cast that spell.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "RecipientEnchantedPlayer",
+                    "sourceFilter": "creature"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "player": "TriggeringPlayer"
+                            },
+                            "storeAs": "cursedCard",
+                            "lookAudience": "None"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "cursedCard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile",
+                                "player": "TriggeringPlayer"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "cursedCard",
+                            "withAnyManaType": true,
+                            "recipient": "ControllerOfTriggeringEntity"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever a creature deals combat damage to enchanted player, that player exiles the top card of their library. Until end of turn, that creature's controller may play that card and they may spend mana as though it were mana of any color to cast that spell."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "TRAMPLE",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "IsAttackingEnchantedPlayer"
+                        ]
+                    }
+                }
+            }
+        ],
+        "auraTarget": "TargetPlayer"
+    },
+    "metadata": {
+        "collectorNumber": "152",
+        "rarity": "RARE",
+        "artist": "Dominik Mayer",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/5/45bcb839-4cff-4349-9892-0c76ae81929c.jpg?1783924838",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Curse of Hospitality's triggered ability triggers once for each creature that dealt combat damage to the enchanted player."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Dawnhart Disciple
 {
     "name": "Dawnhart Disciple",
@@ -5146,6 +5373,107 @@
     "colorIdentityOverride": [
         "BLUE"
     ]
+}
+
+// Dollhouse of Horrors
+{
+    "name": "Dollhouse of Horrors",
+    "manaCost": "{5}",
+    "typeLine": "Artifact",
+    "oracleText": "{1}, {T}, Exile a creature card from your graveyard: Create a token that's a copy of the exiled card, except it's a 0/0 Construct artifact in addition to its other types and it has \"This token gets +1/+1 for each Construct you control.\" It gains haste until end of turn. Activate only as a sorcery.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomExileFrom",
+                                "zone": "Graveyard",
+                                "filter": "creature"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "ExiledAsCost",
+                            "storeAs": "dollhouseExiled"
+                        },
+                        {
+                            "type": "CreateTokenCopyOfTarget",
+                            "target": {
+                                "type": "PipelineTarget",
+                                "collectionName": "dollhouseExiled"
+                            },
+                            "overridePower": 0,
+                            "overrideToughness": 0,
+                            "addedKeywords": [
+                                "HASTE"
+                            ],
+                            "addedSubtypes": [
+                                "Construct"
+                            ],
+                            "addedStaticAbilities": [
+                                {
+                                    "type": "GrantDynamicStats",
+                                    "filter": {
+                                        "baseFilter": "permanent",
+                                        "scope": "Self"
+                                    },
+                                    "powerBonus": {
+                                        "type": "AggregateBattlefield",
+                                        "player": "You",
+                                        "filter": "permanent Construct"
+                                    },
+                                    "toughnessBonus": {
+                                        "type": "AggregateBattlefield",
+                                        "player": "You",
+                                        "filter": "permanent Construct"
+                                    }
+                                }
+                            ],
+                            "addCardTypes": [
+                                "ARTIFACT"
+                            ]
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Create a token that's a copy of the exiled card, except it's a 0/0 Construct artifact in addition to its other types and it has \"This token gets +1/+1 for each Construct you control.\" It gains haste until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "255",
+        "rarity": "RARE",
+        "artist": "Muhammad Firdaus",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/9/396abc9e-a738-430d-85cc-448ace2548f9.jpg?1783924786",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "The token creature counts itself when counting Constructs you control."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "If the exiled creature card has any characteristic-defining abilities that define its power and/or toughness, those abilities are not copied."
+            }
+        ]
+    }
 }
 
 // Dominating Vampire
@@ -7646,6 +7974,106 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Grolnok, the Omnivore
+{
+    "name": "Grolnok, the Omnivore",
+    "manaCost": "{2}{G}{U}",
+    "typeLine": "Legendary Creature — Frog",
+    "oracleText": "Whenever a Frog you control attacks, mill three cards.\nWhenever a permanent card is put into your graveyard from your library, exile it with a croak counter on it.\nYou may play lands and cast spells from among cards you own in exile with croak counters on them.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AttackEvent",
+                    "filter": "creature Frog ctrl:you"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "permanent own:you",
+                    "from": "Library",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "TriggeringEntity",
+                    "destination": "Exile",
+                    "fromZone": "Graveyard",
+                    "addCounterType": "CROAK"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "MayPlayCardsFromExile",
+                "filter": {
+                    "statePredicates": [
+                        {
+                            "type": "HasCounter",
+                            "counterType": "croak"
+                        }
+                    ],
+                    "controllerPredicate": "OwnedByYou"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "238",
+        "rarity": "RARE",
+        "artist": "Simon Dominic",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7aaba76b-9cec-4c2b-b0eb-8f44201f6422.jpg?1783924793",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Grolnok, the Omnivore's second ability exiles all permanent cards that are put into your graveyard from your library, not just those that you mill when a Frog you control attacks."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "Grolnok's last ability allows you to play lands and cast spells from among all cards you own in exile with croak counters on them, regardless of whether they were put there by the Grolnok that's currently on the battlefield or by an earlier incarnation."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
     ]
 }
 
@@ -15797,6 +16225,175 @@
     ]
 }
 
+// Sorin the Mirthless
+{
+    "name": "Sorin the Mirthless",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Legendary Planeswalker — Sorin",
+    "oracleText": "+1: Look at the top card of your library. You may reveal that card and put it into your hand. If you do, you lose life equal to its mana value.\n−2: Create a 2/3 black Vampire creature token with flying and lifelink.\n−7: Sorin deals 13 damage to any target. You gain 13 life.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "TopOfLibrary",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeAs": "looked"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "looked",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "kept",
+                                    "storeRemainder": "rest",
+                                    "prompt": "You may reveal the top card of your library and put it into your hand (you lose life equal to its mana value)",
+                                    "showAllCards": true
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "kept",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Hand"
+                                    },
+                                    "revealed": true
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "rest",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Library",
+                                        "placement": "Top"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "kept",
+                            "ifNotEmpty": {
+                                "type": "LoseLife",
+                                "amount": {
+                                    "type": "StoredCardManaValue",
+                                    "collectionName": "kept"
+                                },
+                                "target": "Controller"
+                            }
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Look at the top card of your library. You may reveal that card and put it into your hand. If you do, you lose life equal to its mana value."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -2
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 3,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Vampire"
+                    ],
+                    "keywords": [
+                        "FLYING",
+                        "LIFELINK"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/e/b/ebd12ac1-d1b2-4e22-9a17-8f3964294e35.jpg?1783924698"
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Create a 2/3 black Vampire creature token with flying and lifelink."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -7
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 13
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "any target"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 13
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Sorin deals 13 damage to any target. You gain 13 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "131",
+        "rarity": "MYTHIC",
+        "artist": "Martina Fačková",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cc7ff5f4-a7cc-41a1-a22b-8cf67ad18707.jpg?1783924850",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "If you choose not to reveal the card you looked at with Sorin's first loyalty ability, it stays on top of your library."
+            }
+        ]
+    },
+    "startingLoyalty": 4,
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Soulcipher Board
 {
     "name": "Soulcipher Board",
@@ -16945,6 +17542,170 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Toxrill, the Corrosive
+{
+    "name": "Toxrill, the Corrosive",
+    "manaCost": "{5}{B}{B}",
+    "typeLine": "Legendary Creature — Slug Horror",
+    "oracleText": "At the beginning of each end step, put a slime counter on each creature you don't control.\nCreatures you don't control get -1/-1 for each slime counter on them.\nWhenever a creature you don't control with a slime counter on it dies, create a 1/1 black Slug creature token.\n{U}{B}, Sacrifice a Slug: Draw a card.",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 7
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:opponent"
+                        }
+                    },
+                    "body": {
+                        "type": "AddCounters",
+                        "counterType": "slime",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "At the beginning of each end step, put a slime counter on each creature you don't control."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "HasCounter",
+                                "counterType": "slime"
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByOpponent"
+                    },
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Slug"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/6/e/6e2ae34f-4558-46e0-95c5-e00d813fa355.jpg?1783924698"
+                },
+                "descriptionOverride": "Whenever a creature you don't control with a slime counter on it dies, create a 1/1 black Slug creature token."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{U}{B}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "permanent Slug"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{U}{B}, Sacrifice a Slug: Draw a card."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "creature ctrl:opponent"
+                },
+                "powerBonus": {
+                    "type": "Multiply",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "AffectedEntity",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "slime"
+                            }
+                        }
+                    },
+                    "multiplier": -1
+                },
+                "toughnessBonus": {
+                    "type": "Multiply",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "AffectedEntity",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "slime"
+                            }
+                        }
+                    },
+                    "multiplier": -1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "132",
+        "rarity": "MYTHIC",
+        "artist": "Simon Dominic",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/4/84e64f38-b1f3-47cd-8cfb-a4861369aca3.jpg?1783924850",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Toxrill, the Corrosive's second and third abilities apply to all creatures you don't control with slime counters, even if those slime counters came from a source other than Toxrill's first ability."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "Toxrill's third ability triggers when a creature an opponent controls with a slime counter on it dies for any reason, not just due to its toughness being decreased by Toxrill's second ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -18290,6 +19051,122 @@
         "artist": "Richard Wright",
         "imageUri": "https://cards.scryfall.io/normal/front/2/5/2577e5fd-903a-44ce-989a-d53d56511ad3.jpg?1783924780"
     }
+}
+
+// Voltaic Visionary
+{
+    "name": "Voltaic Visionary",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "{T}: This creature deals 2 damage to you. Exile the top card of your library. You may play that card this turn. Activate only as a sorcery.\nWhen you play a card exiled with this creature, transform this creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "You"
+                            },
+                            "damageSource": "Self"
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "voltaicExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "voltaicExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "voltaicExiled",
+                            "onPlayRider": "Transform"
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "This creature deals 2 damage to you. Exile the top card of your library. You may play that card this turn. When you play a card exiled this way, transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Volt-Charged Berserker",
+        "manaCost": "",
+        "typeLine": "Creature — Human Berserker",
+        "oracleText": "This creature can't block.",
+        "creatureStats": {
+            "power": 4,
+            "toughness": 3
+        },
+        "script": {
+            "staticAbilities": [
+                "CantBlock"
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "183",
+            "rarity": "UNCOMMON",
+            "artist": "Francisco Miyara",
+            "flavorText": "She finally realized that chaos was meant to run rampant, as was she.",
+            "imageUri": "https://cards.scryfall.io/normal/back/a/8/a8b85386-462b-46f8-9412-fd47ed1dc1da.jpg?1783924827"
+        },
+        "colorIdentityOverride": [
+            "RED"
+        ],
+        "colorIndicator": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "183",
+        "rarity": "UNCOMMON",
+        "artist": "Francisco Miyara",
+        "flavorText": "She spent many years trying to harness chaos.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a8b85386-462b-46f8-9412-fd47ed1dc1da.jpg?1783924827",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Playing a card this way follows all the normal timing rules for that card. For example, if you play a land this way, you may do so only during your main phase while the stack is empty and only if you haven't yet played a land (unless another effect allows you to play additional lands)."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "When you play a spell exiled this way, Voltaic Visionary will transform before that spell resolves."
+            },
+            {
+                "date": "2021-11-19",
+                "text": "If Voltaic Visionary transforms into Volt-Charged Berserker after it has been declared as a blocker, it will not be removed from combat and is still blocking."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
 }
 
 // Wandering Mind

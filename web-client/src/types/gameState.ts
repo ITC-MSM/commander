@@ -231,6 +231,14 @@ export interface ClientCard {
   readonly backFaceOracleText?: string | null
   /** Back face image URI for DFCs. */
   readonly backFaceImageUri?: string | null
+  /**
+   * Back face printed power / toughness and keywords — the siblings of `backFaceName` and
+   * friends, so a view showing the back face doesn't pair its art and text with the front's
+   * stats and keyword chips.
+   */
+  readonly backFacePower?: number | null
+  readonly backFaceToughness?: number | null
+  readonly backFaceKeywords?: readonly Keyword[]
 
   /** Combat state (if in combat) */
   readonly isAttacking: boolean

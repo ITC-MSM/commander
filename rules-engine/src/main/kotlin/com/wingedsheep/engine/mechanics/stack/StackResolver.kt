@@ -3351,9 +3351,16 @@ class StackResolver(
         val container = state.getEntity(abilityId)
             ?: return ExecutionResult.error(state, "Ability not found: $abilityId")
 
-        val description = container.get<TriggeredAbilityOnStackComponent>()?.description
-            ?: container.get<ActivatedAbilityOnStackComponent>()?.let { "${it.sourceName}'s ability" }
+        val triggeredAbility = container.get<TriggeredAbilityOnStackComponent>()
+        val activatedAbility = container.get<ActivatedAbilityOnStackComponent>()
+        val description = triggeredAbility?.description
+            ?: activatedAbility?.let { "${it.sourceName}'s ability" }
             ?: "Unknown ability"
+        // Read the source and controller off the stack object while it still exists — the ability
+        // is about to cease to exist, and this is the last point either is knowable.
+        val sourceId = triggeredAbility?.sourceId ?: activatedAbility?.sourceId
+        val sourceName = triggeredAbility?.sourceName ?: activatedAbility?.sourceName
+        val controllerId = triggeredAbility?.controllerId ?: activatedAbility?.controllerId
 
         // "Abilities can't be countered" (Spider-Punk): a battlefield GrantCantBeCountered with
         // includesAbilities = true whose filter matches this ability makes the counter fizzle — the
@@ -3362,12 +3369,24 @@ class StackResolver(
             return ExecutionResult.success(state)
         }
 
-        // Remove from stack — abilities don't go to any zone
-        val newState = state.removeFromStack(abilityId)
+        // A countered ability is cancelled and removed from the stack (Rule 701.6a); it goes to no
+        // zone, and like a resolved ability (Rule 608.2n) it ceases to exist. Destroying the entity
+        // as well as the stack entry keeps that symmetry with the resolution paths, which all call
+        // removeEntity — otherwise every countered ability lingers in `entities` for the rest of the
+        // game and rides along in every serialized GameState.
+        val newState = state.removeEntity(abilityId)
 
         return ExecutionResult.success(
             newState,
-            listOf(AbilityCounteredEvent(abilityId, description))
+            listOf(
+                AbilityCounteredEvent(
+                    abilityEntityId = abilityId,
+                    description = description,
+                    sourceId = sourceId,
+                    sourceName = sourceName,
+                    controllerId = controllerId,
+                )
+            )
         )
     }
 

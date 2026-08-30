@@ -3744,6 +3744,180 @@ a noun phrase — `Filters` → `ManaValues` → `Amounts` → `Filters` is a ge
 the JVM answers an initialization cycle by handing back a half-built object whose slot reads `null`.
 Duplicating either vocabulary to break it is the one thing this module exists to prevent, so the
 indirection is in the kernel and knows nothing about mana values.
+## The life amount, and the possessive that names an object
+
+"…life equal to …" — the tail ranking's **number two when it was picked**: **114 cards, 81 of them
+solely, over 115 lines**, second only to the bare `.`. It is not one construct. It is three
+independent layers stacked behind one caret, and separating them is most of the work.
+
+```
+When ~ dies, each opponent loses 5 life. You gain life equal to the life lost this way.
+                                                  ^ expected a number
+```
+
+The caret is not on "life equal to" at all — it is on the word after the *verb*. Seven life rules
+were `countedStep`s, whose only variable is a numeral, while the damage verbs beside them had been
+`countedStepPair`s (numeral **and** "equal to …" clause, from one call site) since the counting band.
+So the family is the seven sentences having no clause form, and everything the clause would say is a
+second question.
+
+Whole-corpus coverage went 9,511 → **9,538 cards read whole**; declined lines 34,535 → 34,495. The
+baked verdict ledger moved 9,228 → **9,255 whole**: thirty cards in, three out, and all three of
+those are a pre-existing wrong reading this band's own guard caught (below). The
+differential is the number that matters here and it did not move: **54 divergences before, the same
+54 after**, card for card — with two more cards compared and agreeing. Both of the divergences this
+band *did* introduce were bugs in it, and both are below.
+
+### The collision the old KDoc deferred, and why the domain split beats both alternatives
+
+The rows were not `countedStepPair`s for a stated reason, and it was a real one:
+
+> "You gain 1 life for each creature you control" and "You gain life equal to the number of creatures
+> you control" are one model, and Oracle prints the first 131 times against the second's 23 — so the
+> "for each" family below is the canonical spelling, and adding the clause here would be a second
+> rule that can print the same value.
+
+The KDoc then weighed two ways out and rejected both. Refusing the clause loses the 23 lines. Making
+the whole clause an `alternate` loses more: `gainLifeForEach` spells only *battlefield* aggregates, so
+a life gain counting a graveyard would parse with nothing able to print it. Its conclusion was that
+the fix is to give the distributive form the full `Amounts.count` vocabulary — a band of its own.
+
+There is a third way, and it is the module's own first-listed answer to ambiguity applied to the
+**amount** instead of to the sentence. Split the domain: the distributive keeps the tallies it can
+print, the "equal to" clause keeps everything else, and the lines that print the clause over one of
+those tallies read through an `alternate` and print back as the distributive. Neither half loses
+anything, because **each value has exactly one printer**.
+
+The detail that makes the partition total is which set the predicate names. It is what the
+distributive can **print**, not what it can read, and those differ: `Amounts.scopes`' bare row is an
+`alternate` — English omits the clause and means the whole battlefield — so a tally only that row
+could spell has no canonical printer over there and has to stay this band's. Testing `Scope.canonical`
+is the whole of it, and without that test a handful of aggregates would round-trip into a model
+nothing could print back.
+
+### The possessive is a product, and the SDK had already factored it
+
+The clause form on its own is worth about 35 of the family's lines — the counts `Amounts.count` could
+already spell. The other 136 are one construct:
+
+| | power | toughness | mana value |
+|---|---|---|---|
+| the source (`~'s`, "its", "this creature's") | 503 | 133 | 157 |
+| a chosen target ("its", "that creature's", "that card's", "that spell's") | | | |
+| the triggering object ("its") | | | |
+
+`DynamicAmount.EntityProperty` is an `EntityReference` × an `EntityNumericProperty`, and English
+spells it as exactly that product: a possessive naming the object, then the noun naming the
+characteristic. So the grammar is the product too — two tables, one rule — which is three rows and a
+possessive vocabulary rather than the twenty-one printed phrases they cross into. The rows are
+measured: over the Oracle bulk, power 503, mana value 157, toughness 133, and nothing else reaches
+double figures.
+
+**"…equal to its mana *cost*" is not a row**, though it is printed 44 times. It is not a number: it
+names the symbols to pay, and every one of those lines is an alternative-cost sentence ("…you may pay
+life equal to its mana value rather than paying its mana cost"). Reading a cost as a quantity is
+precisely the value-the-sentence-does-not-say this module refuses.
+
+### One word, five objects, and the position is the only thing that says which
+
+The layer cannot be a row of `Amounts.count`, and the corpus is what forces it. "Its" names a
+different object in every sentence it stands in:
+
+| card | "its" | |
+|---|---|---|
+| Syr Ginger, the Meal Ender | the source it sacrificed | `Source` |
+| Divine Offering | the artifact the clause before it destroyed | `Target(0)` |
+| Grim Feast | the creature its filtered trigger matched | `Triggering` |
+| Dark Confidant | the card it just revealed | — |
+| Tribute to Hunger | the creature an opponent sacrificed | `Sacrificed(0)` |
+
+Nothing in the words says which. So this is `SelfSteps.retargetable`'s treatment one layer down:
+`Amounts.propertyOf(possessive, reference, tag)` is a shape, the three instantiations go exactly where
+their **nominative twins** already live — the source beside `SelfSteps.anaphoric` in a first clause,
+the target beside `Continuations` in a later one, the triggering object beside `SelfSteps.triggering`
+inside a filtered trigger — and the sentences, their scripts and their fail-closed reconstructions stay
+one piece of code.
+
+A row in `count` would also have collided with what is already there: `counterCount` slots
+`Primitives.self`, so inside that vocabulary "it" **already** denotes the source, and a second anaphor
+in the same alternation is two readings of one text.
+
+The possessive vocabularies are spelled rather than derived from the nominative ones. "It"
+possessivizes to "its" with no apostrophe while `~` and "that creature" take one, so a lowering that
+appended `'s` would print "it's power" — a different word. Which spelling is canonical is
+`targetPronoun`'s measurement re-taken in the possessive: "its ⟨characteristic⟩" 525 lines against the
+demonstratives' 149, so the pronoun prints and the four nouns parse.
+
+### A later position is two lists, not one
+
+The target reading went into `Cascade.laterAtom` and the target-position cards still declined on their
+own full stop. `laterClause` — the vocabulary for a later clause of an ordinary sentence run — does not
+slot `laterAtom`; it builds its own list, and `Continuations.all` appears in **both**. A rule registered
+in one of the two later positions is registered in half of them, and the symptom is a caret at the end
+of a line that has otherwise parsed.
+
+### The differential caught two, and one of them was byte-perfect and wrong
+
+**Tribute to Hunger.** "Target opponent sacrifices a creature of their choice. You gain life equal to
+**that creature's** toughness." The line declares exactly one target and it is the *opponent*; the
+noun the possessive names is the creature they sacrificed, which the SDK spells
+`EntityReference.Sacrificed`. The reading round-tripped byte-perfectly and meant a player's toughness.
+
+`renumbered`'s existing dangling-anaphor guard could not see it: `EntityReference.Target(0)` is an
+**ordinal into the line's requirements**, not a slot name, so `Slots.references` walks straight past
+it. The target reading therefore needs a guard of its own, and it is the same guard one axis over —
+the line must declare exactly one target, and that requirement must be one that can never resolve to
+a player. It is an allow-list, so a requirement the SDK adds later has to be admitted on purpose. The
+sacrificed-object anaphor is a position of its own, and the ranking now names it directly.
+
+**Ravenous Amulet.** "{4}, {T}, Sacrifice ~: Each opponent loses life equal to the number of soul
+counters on ~." A gap in `Amounts.counterCount` that this band merely made *reachable*: it reads the
+source's **live** tally, and the ability's own cost has already sacrificed the source, so the amount
+resolves to zero. `Amounts.namesX` records exactly this and refuses the value in the trigger position,
+because "which of the three a line means is decided by the ability it is lifted into, and a step cannot
+see that." The activated-ability fold is a second such position, so it refuses too. Deriving the
+translation instead is the better answer and is work of its own — it has to run in both directions,
+since a golden carrying the last-known value must come back as the live one before `Steps.step` can
+print it.
+
+P/T needs no such rule, and the asymmetry is the engine's rather than a guess:
+`DynamicAmountEvaluator` has an explicit last-known fallback for power and toughness, keyed on the
+source and triggering ids, and none for `CounterCount` — `counterCountOf` reads the live
+`CountersComponent` and answers 0 when the entity no longer has one. So Syr Ginger's "{2}, {T},
+Sacrifice ~: You gain life equal to its power." reads as written, and the counter form cannot.
+
+**The refusal then found three more of the same defect**, which is what re-baking the verdict ledger
+is for. Shrine of Burning Rage, War Dance and Glittering Stockpile each sacrifice the source in the
+cost and read its counters in the effect, and each had been counted as *read whole* while denoting a
+value that resolves to zero. None of the three is hand-written, so nothing shipped wrong — but three
+byte-perfect wrong readings is a better description of the ledger's old number than the ledger gave.
+They are the only cards this band moves **out** of `whole`, against thirty moved in.
+
+### The SDK finding is one missing name
+
+`DynamicAmounts` names the source/target/triggering grid against power/toughness/mana value, and it
+was **eight cells of nine** — `sourceManaValue()` had no name while its eight neighbours did. Naming an
+existing composition is the one kind of `mtg-sdk` change this module may make on its own, and this is
+the second time a band has found the grid's one empty cell (the card's-mana-value band found
+`ManaValueEqualsDynamic` the same way). An axis that is complete in eight of nine places is a table
+someone filled in by hand.
+
+### What is left
+
+The three atoms this band deliberately did not take, in the order the corpus ranks them:
+
+- **The sacrificed-object anaphor** — a fourth instantiation of `propertyOf` at a position the grammar
+  does not have yet. This is where the family's own residue went: with the three positions readable,
+  the ranking re-keys the rest onto `the sacrificed creature's` at **25 cards, 19 of them solely, over
+  26 lines**, which is the decomposition confirming itself.
+- **The "this way" back-reference** — "the life lost this way" (18), "the damage prevented this way"
+  (8), "the damage dealt this way" (6). Not a board read at all: it names what the clause before it
+  did, which is `Effects.DrainLife` and `ContextProperty`, a different model and a different band.
+- **The damage verbs' empty `leading` vocabulary.** `countedStepPair`'s property-first order — "~ deals
+  damage equal to its power to target creature" — has been a live rule with nothing but `counterCount`
+  to fill it. `propertyOf` now exists; instantiating it there is a few lines and reaches 195 printed
+  lines the split was written for.
+
 ## The mana spend restriction
 
 "Spend this mana only to cast creature spells." — the tail ranking's **top family by every column**:

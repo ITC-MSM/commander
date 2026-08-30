@@ -24,6 +24,7 @@ import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.ChooseActionEffect
 import com.wingedsheep.sdk.scripting.effects.CollectEvidenceEffect
@@ -32,6 +33,7 @@ import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.DynamicHint
 import com.wingedsheep.sdk.scripting.effects.Gate
 import com.wingedsheep.sdk.scripting.effects.GatedEffect
+import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
 import com.wingedsheep.sdk.scripting.effects.PayDynamicLifeEffect
@@ -40,6 +42,8 @@ import com.wingedsheep.sdk.scripting.effects.PayLifeEffect
 import com.wingedsheep.sdk.scripting.effects.PayManaCostEffect
 import com.wingedsheep.sdk.scripting.effects.PayManaCostRepeatedlyEffect
 import com.wingedsheep.sdk.scripting.effects.DamageRecipient
+import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
+import com.wingedsheep.sdk.scripting.effects.SelectionMode
 import com.wingedsheep.sdk.scripting.effects.SuccessCriterion
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -73,6 +77,7 @@ class GatedEffectExecutor(
     private val manaSolver = ManaSolver(cardRegistry)
     private val conditionEvaluator = ConditionEvaluator()
     private val dynamicAmountEvaluator = DynamicAmountEvaluator()
+    private val predicateEvaluator = PredicateEvaluator()
 
     override fun execute(
         state: GameState,
@@ -159,6 +164,17 @@ class GatedEffectExecutor(
                         ?.let { effectExecutor(state, it, context) }
                         ?: EffectResult.success(state)
                 }
+            }
+            // CR 608.2d — a player can't choose an option that's impossible. "You may exile eight
+            // cards from your graveyard. If you do, this creature becomes prepared" can't be chosen
+            // with fewer than eight cards there: the inner action gate could never clear its
+            // CollectionNonEmpty bar. Offering the prompt anyway lets a "yes" partially perform the
+            // exile — CR 609.3's do-as-much-as-possible, which governs *mandatory* instructions,
+            // not an option that was never available — and spends those cards for nothing.
+            if (!optionalActionCanClearItsBar(state, effect.then, context)) {
+                return effect.otherwise
+                    ?.let { effectExecutor(state, it, context) }
+                    ?: EffectResult.success(state)
             }
         }
 
@@ -650,6 +666,62 @@ class GatedEffectExecutor(
             }
             else -> true
         }
+
+    /**
+     * Can the "if you do" action under a "you may" still clear its own success bar?
+     *
+     * Recognizes one idiom — "you may [choose exactly N cards from a gathered pool and move
+     * them]. If you do, …": a [Gate.DoAction] scored by [SuccessCriterion.CollectionNonEmpty]
+     * whose named collection is filled by a [SelectFromCollectionEffect] over a
+     * [GatherCardsEffect]'s pool. When that pool holds fewer cards than the criterion demands, no
+     * answer to the yes/no can make the gate succeed, so the option isn't a legal choice at all
+     * (CR 608.2d) and the prompt is skipped. Anything else answers `true` — prompt as before.
+     *
+     * The count is deliberately generous: a selection's `restrictions` can narrow it further, and
+     * they aren't applied here, so the prompt is only ever withheld when the payment is impossible
+     * outright. Gathering is a pure read — it stores a collection and changes no state and emits no
+     * events — so probing it here costs nothing and can't be observed.
+     */
+    private fun optionalActionCanClearItsBar(
+        state: GameState,
+        then: Effect,
+        context: EffectContext
+    ): Boolean {
+        var inner = then
+        while (true) {
+            val gated = inner as? GatedEffect ?: return true
+            when (val gate = gated.gate) {
+                // The `effectOncePerTurn` lowering sits between the consent gate and the action.
+                is Gate.OnceEachTurn -> inner = gated.then
+                is Gate.DoAction -> return actionCanClearItsBar(state, gate, context)
+                else -> return true
+            }
+        }
+    }
+
+    private fun actionCanClearItsBar(
+        state: GameState,
+        gate: Gate.DoAction,
+        context: EffectContext
+    ): Boolean {
+        val criterion = gate.successCriterion as? SuccessCriterion.CollectionNonEmpty ?: return true
+        val steps = (gate.action as? CompositeEffect)?.effects ?: listOf(gate.action)
+        val select = steps.filterIsInstance<SelectFromCollectionEffect>()
+            .firstOrNull { it.storeSelected == criterion.name } ?: return true
+        if (select.selection !is SelectionMode.ChooseExactly) return true
+        val gather = steps.filterIsInstance<GatherCardsEffect>()
+            .firstOrNull { it.storeAs == select.from } ?: return true
+        val pool = effectExecutor(state, gather, context).updatedCollections[select.from] ?: return true
+        val eligible = if (select.filter == GameObjectFilter.Any) {
+            pool
+        } else {
+            val predicateContext = PredicateContext.fromEffectContext(context)
+            pool.filter { cardId ->
+                predicateEvaluator.matches(state, state.projectedState, cardId, select.filter, predicateContext)
+            }
+        }
+        return eligible.size >= criterion.min
+    }
 
     /**
      * Resolve a [Gate.DoAction] gate (the lowered `IfYouDoEffect`). Follows the former

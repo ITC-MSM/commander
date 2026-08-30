@@ -103,6 +103,27 @@ sealed interface RecipientFilter {
         override val description = "enchanted creature"
     }
 
+    /**
+     * The *player* the observing ability's source Aura is attached to — "deals combat damage to
+     * enchanted player" (Curse of Hospitality). The enchant-player sibling of [EnchantedCreature]
+     * (CR 303, [com.wingedsheep.sdk.scripting.references.Player.EnchantedPlayer]).
+     *
+     * Scoped by the source's *attachment*, not by its controller, which is why an Aura curse can't
+     * reuse [Opponent]: a curse on one opponent must not fire off damage dealt to another. Matches
+     * only when the attachment target is a player, so a planeswalker that player controls never
+     * counts; fails closed when the source isn't attached to a player.
+     *
+     * Pair with `binding = TriggerBinding.ANY` and a `sourceFilter`, not with
+     * [com.wingedsheep.sdk.scripting.TriggerBinding.ATTACHED]: the text needs the *damaging
+     * creature* as the triggering entity ("that creature's controller"), and a source-filtered
+     * observer is what binds it there.
+     */
+    @SerialName("RecipientEnchantedPlayer")
+    @Serializable
+    data object EnchantedPlayer : RecipientFilter {
+        override val description = "enchanted player"
+    }
+
     @SerialName("RecipientEquippedCreature")
     @Serializable
     data object EquippedCreature : RecipientFilter {

@@ -12,6 +12,7 @@ import { useHasHover } from '@/hooks/useHasHover.ts'
 import { ManaCost, AbilityText } from '../../ui/ManaSymbols'
 import { buildActionOptions, playCostRange, playLadderOptions } from '@/utils/actionOptions.ts'
 import { parseManaCost, totalManaNeeded } from '@/utils/manaCost.ts'
+import { castOfferFace } from '@/utils/castFace.ts'
 
 /**
  * Game board card preview — wraps the shared HoverCardPreview with
@@ -27,7 +28,14 @@ export function CardPreview() {
 
   // All hooks must be called before any early return
   const cardActions = useCardLegalActions(hoveredCardId)
-  const card = hoveredCardId && gameState ? gameState.cards[hoveredCardId] ?? null : null
+  // Preview the face the card would be *cast* as, so a disturb card in the graveyard previews as
+  // the spirit it becomes (CR 712.8c) — matching the ghost card offered in hand. Press F still
+  // flips to the printed front, which `castOfferFace` leaves in the back-face slots.
+  const rawCard = hoveredCardId && gameState ? gameState.cards[hoveredCardId] ?? null : null
+  const card = useMemo(
+    () => (rawCard ? castOfferFace(rawCard, cardActions) : null),
+    [rawCard, cardActions]
+  )
 
   // Check if hovered card is in the player's hand
   const isInHand = useMemo(() => {

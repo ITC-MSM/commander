@@ -2548,6 +2548,13 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     player "doesn't": the prompt is skipped and `otherwise` runs directly. Lets "you may sacrifice an
     artifact. If you don't, …" apply its else automatically when the controller has no artifact (the
     no-target analogue of a targeted "may" with no legal targets falling to its else branch).
+    The executor skips the prompt on its own in one more case, no authoring needed: a `then` that is
+    a `Gate.DoAction` scored by `SuccessCriterion.CollectionNonEmpty(name, min)` whose collection is
+    filled by a `SelectFromCollectionEffect(ChooseExactly)` over a `GatherCardsEffect` pool holding
+    fewer than `min` cards. No answer could clear that bar, so the option isn't a legal choice
+    (CR 608.2d) — **Emeritus of Ideation** with seven cards in the graveyard isn't asked whether to
+    exile eight, and the seven aren't spent for nothing. (CR 609.3's do-as-much-as-possible governs
+    *mandatory* instructions; it doesn't turn an unavailable option into a partial payment.)
   - `Gate.MayPay(cost)` — "You may [cost]. If you do, [then]." `cost` is a cost **effect**
     (`PayManaCostEffect`, `PayDynamicManaCostEffect`, `PayLifeEffect`, `SacrificeEffect`, or a
     `CompositeEffect` of them). An unaffordable cost (fixed mana, dynamic mana, and life are
@@ -4161,6 +4168,15 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   `.sharingCreatureTypeWith`. A reference that resolves to nothing matches nothing. Evaluated for real in
   targeting/search/count contexts; inert (false) in static-projection, permissive (true) in
   cost-calculation.
+- `.sharingCardTypeWithLinkedExile()` — `CardPredicate.SharesCardTypeWithLinkedExile`: shares ≥1 card type
+  with **any** card still exiled with the filtering ability's source (CR 607 linked abilities). The
+  pile-wide form of `.sharingCardTypeWith(EntityReference.LinkedExiledCard())`, which reads one index —
+  a card that keeps exiling (Cemetery Illuminator, one per enter *and* per attack) means "a card exiled
+  with this creature", which an index can't say. Card types only, per the cemetery cycle's shared ruling.
+  An empty pile matches nothing. Cemetery Illuminator:
+  `CastSpellTypesFromTopOfLibrary(GameObjectFilter.Any.sharingCardTypeWithLinkedExile(), maxCastsPerTurn = 1)`.
+  The cost-side reading of the same pile is `CostReductionSource.SharedCardTypesWithLinkedExile`
+  (Cemetery Prowler).
 - `.sharingColorWith(entity)` — `CardPredicate.SharesColorWith(entity)`: shares ≥1 (projected) color with
   a referenced entity (e.g. `EntityReference.Triggering`). Mirror of `.sharingCreatureTypeWith(entity)`.
   Colorless entities share no color (never match). Used by Spreading Plague ("destroy all other creatures
@@ -4621,6 +4637,14 @@ work for abilities-on-stack (which carry no `CardComponent`).
   so it matches regardless of who controls the attacker; fails closed without controller context and
   has no last-known fallback, exactly like its mirror. Tomik, Wielder of Law counts the attacking batch
   with it: `Compare(DynamicAmounts.battlefield(Player.Each, GameObjectFilter.Creature.attackingYouOrYourPlaneswalkers()).count(), GTE, Fixed(2))`.
+- `IsAttackingEnchantedPlayer` (filter builder `attackingEnchantedPlayer()`) — attacking the player the
+  filtering ability's **source Aura is attached to** (CR 303 enchant player). The attachment-scoped third
+  of the trio above: `IsAttackingAnOpponent` and `IsAttackingYouOrYourPlaneswalkers` both scope the
+  defender against the ability's *controller*, which is the wrong player for a Curse — a curse on one
+  opponent must not read as "any opponent". Only a player id matches, so a planeswalker the enchanted
+  player controls drops out; fails closed when the source isn't attached to a player, and has no
+  last-known fallback like its two siblings. Curse of Hospitality: `GrantKeyword(Keyword.TRAMPLE,
+  GroupFilter(GameObjectFilter.Creature.attackingEnchantedPlayer()))`.
 - `IsBlocking` — declared as blocker this combat.
 - `HasLockedDoor` (filter builder `hasLockedDoor()`) — a Room permanent (CR 709.5) with at least one locked
   door, i.e. a half lacking its "unlocked" designation (CR 709.5c). Reads the engine's
@@ -5293,6 +5317,16 @@ Named sugar for the common cases; reach for the factories for any other combinat
 - `OneOrMoreCreaturesDealCombatDamageToYou(filter = Creature)` — **defensive combat-damage batch trigger** (ANY binding): "whenever one or more creatures deal combat damage to *you*" (Witch-king of Angmar). Fires at most once per combat-damage batch regardless of how many creatures connected with the trigger's controller (the damaged player), unlike per-source `dealsDamage(recipient = You, …)` which fires once per connecting creature. The triggering entity is an arbitrary matching damager. Pair with the `dealtCombatDamageToSourceControllerThisTurn()` filter for "...each opponent sacrifices a creature that dealt combat damage to you this turn".
 - `TakesDamage` — source is dealt damage by any source (SELF binding).
 - `YouAreDealtDamage` — "whenever **you're** dealt damage" (ANY binding, `DealsDamageEvent(recipient = You)` with no source filter): the *player*-recipient sibling of `TakesDamage`, firing for **every** source — a creature in combat, a burn spell, an artifact. Fires once per damage instance; read the amount with `DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT)` for "put that many counters" payoffs (Sun Droplet), and the triggering entity is the damage source.
+- `RecipientFilter.EnchantedPlayer` — the *player* the observing ability's source Aura is attached to (CR
+  303 enchant player), the enchant-player sibling of `RecipientFilter.EnchantedCreature`. Scoped by the
+  source's **attachment**, not its controller, so a Curse on one opponent can't fire off damage dealt to
+  another — which is exactly why `RecipientFilter.Opponent` is wrong for a Curse. Matches only when the
+  attachment target is a player. Pair it with `binding = TriggerBinding.ANY` + a `sourceFilter`, **not**
+  with `ATTACHED`: the source filter is what binds the *damaging creature* as the triggering entity, which
+  is what "that creature's controller" needs. Curse of Hospitality: `Triggers.dealsDamage(damageType =
+  DamageType.Combat, recipient = RecipientFilter.EnchantedPlayer, sourceFilter = GameObjectFilter.Creature,
+  binding = TriggerBinding.ANY)`, paying off into `GrantMayPlayFromExileEffect(recipient =
+  EffectTarget.ControllerOfTriggeringEntity)`.
 - `damageDealtToYou(sourceFilter?, damageType?)` — the source-restricted factory behind `YouAreDealtDamage`: "whenever [a source matching the filter] deals damage to you". `GameObjectFilter.Creature` for Aurification's "whenever a creature deals damage to you"; `GameObjectFilter.Any.opponentControls()` for Farsight Mask's "a source an opponent controls". "You" is the controller of the permanent bearing the trigger, and the filter's controller-relative predicates resolve against that same player. **Always use one of these two for a player-recipient damage trigger** — `RecipientFilter.You` is unmatchable on the general observer path (`TriggerMatcher.matchesDealsDamageTrigger` returns false for it) and reaches its ability only through the dedicated damage-to-you index.
 - `CreatureDealtDamageByThisDies` — Etali / Sengir / Soul Collector shape (SELF binding): "whenever a creature dealt damage by *this* permanent this turn dies". Uses `CreatureDealtDamageBySourceDiesEvent(sourceFilter = null)`.
 - `CreatureDealtDamageByAttachedDies` — the same event and the same tracker read one object further out (ATTACHED binding): "whenever a creature dealt damage by **equipped** creature this turn dies" (Scythe of the Wretched). The only difference from `CreatureDealtDamageByThisDies` is where the damage tracker is read from — the attachment target rather than the permanent bearing the trigger. The attachment is resolved when the creature *dies*, not when the damage was dealt, so an Equipment that moved between the two moments still fires (its own ruling) and an unattached Equipment never fires. Use this for any Equipment or Aura whose text says "equipped creature" / "enchanted creature" in a dealt-damage-dies trigger; `creatureDealtDamageBySourceDies(filter)` is for the board-wide observer wording instead.
@@ -7728,6 +7762,11 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   is unioned into `GameState.activeMayPlayFor`, so the existing exile play/cast machinery (enumeration,
   cast handler, land handler, cost paths, and the client's `playableFromExile` ghost-card affordance)
   covers it with no separate code path.
+  Grolnok, the Omnivore is the owner-scoped twin — `MayPlayCardsFromExile(GameObjectFilter.Any
+  .ownedByYou().withCounter(Counters.CROAK))`, no condition and no mana relaxation — reached by
+  exiling with `Effects.Exile(..., addCounterType = CounterType.CROAK)` off a per-card
+  `LIBRARY -> GRAVEYARD` `EventPattern.ZoneChangeEvent`. `Counters.CROAK` is a pure marker like
+  `Counters.STASH`: it grants nothing, it just gives the filter something to select on.
 - `MayCastSelfFromZones(zones, condition = null, additionalCost = null)` — intrinsic *self*
   permission: this card may be cast from any of `zones` (graveyard/exile) following normal timing
   and for its normal mana cost. Squee, the Immortal = `MayCastSelfFromZones(listOf(GRAVEYARD,
@@ -10547,6 +10586,28 @@ both spellings, and the ability its bare-noun line grants says "Regenerate this 
   honored), restricted to actual creature types so artifact/land subtypes never inflate the count.
   Evaluates to 0 when no creature shares a type. Used by White Lotus Tile ("Add X mana of any one
   color, where X is …") — pair with `AddManaOfChoiceEffect(ManaColorSet.AnyColor, amount = …)`.
+
+### An object's characteristics
+
+`EntityProperty(entity, property)` reads one number off one object, and the `DynamicAmounts` facades
+name the grid its two axes cross — the entity (`Source` / `Target(index)` / `Triggering` /
+`Sacrificed(index)` / `EnchantedCreature` / …) against the property (`Power` / `Toughness` /
+`ManaValue` / `CounterCount` / …). The three that carry nearly every printed "…equal to its ⟨noun⟩":
+
+| | power | toughness | mana value |
+|---|---|---|---|
+| the source | `sourcePower()` | `sourceToughness()` | `sourceManaValue()` |
+| a chosen target | `targetPower(i)` | `targetToughness(i)` | `targetManaValue(i)` |
+| the triggering object | `triggeringPower()` | `triggeringToughness()` | `triggeringManaValue()` |
+
+Which entity a card's printed "its" means is decided by the sentence, not by the word: "Destroy
+target artifact. You gain life equal to **its** mana value." is `targetManaValue()`, "Whenever
+another creature you control dies, you gain life equal to **its** toughness." is
+`triggeringToughness()`, and "{2}, {T}, Sacrifice this artifact: You gain life equal to **its** mana
+value." is `sourceManaValue()`.
+
+Also on `Sacrificed`: `sacrificedPower(i)` / `sacrificedToughness(i)`, for a cost that sacrifices
+something other than the source.
 
 ### Counters
 

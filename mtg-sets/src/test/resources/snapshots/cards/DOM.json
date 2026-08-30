@@ -8120,7 +8120,7 @@
 {
     "name": "Mishra's Self-Replicator",
     "manaCost": "{5}",
-    "typeLine": "Artifact Creature — Assembly",
+    "typeLine": "Artifact Creature — Assembly-Worker",
     "oracleText": "Whenever you cast a historic spell, you may pay {1}. If you do, create a token that's a copy of Mishra's Self-Replicator. (Artifacts, legendaries, and Sagas are historic.)",
     "creatureStats": {
         "power": 2,
