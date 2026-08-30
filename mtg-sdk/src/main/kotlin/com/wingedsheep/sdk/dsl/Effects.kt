@@ -674,6 +674,15 @@ object Effects {
     fun EachPlayerDiscards(count: Int = 1): Effect = HandPatterns.eachPlayerDiscards(count)
 
     /**
+     * Each player (including you) puts N cards from their hand on top of their library, each
+     * choosing their own — Sadistic Augermage. [EachPlayerDiscards] with the destination swapped
+     * for the top of the iterated player's own library, so it is a tuck rather than a discard and
+     * feeds no discard trigger. See [HandPatterns.eachPlayerPutsCardsOnTopOfLibrary].
+     */
+    fun EachPlayerPutsCardsOnTopOfLibrary(count: Int = 1): Effect =
+        HandPatterns.eachPlayerPutsCardsOnTopOfLibrary(count)
+
+    /**
      * Each opponent exiles N cards from their hand (Mindleech Ghoul). Same
      * ForEachPlayer(EachOpponent) → Gather → Select → Move pipeline as [EachOpponentDiscards], but
      * the destination is exile; each opponent chooses their own card(s).
