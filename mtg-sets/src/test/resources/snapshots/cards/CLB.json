@@ -367,7 +367,7 @@
                                 "source": {
                                     "type": "FromZone",
                                     "zone": "Library",
-                                    "filter": "permanent Dragon"
+                                    "filter": "Dragon"
                                 },
                                 "storeAs": "searchable"
                             },

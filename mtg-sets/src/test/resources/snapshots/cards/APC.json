@@ -2555,7 +2555,7 @@
                             "from": "looked",
                             "filter": {
                                 "type": "MatchesFilter",
-                                "filter": "permanent Elf"
+                                "filter": "Elf"
                             },
                             "storeMatching": "kept",
                             "storeNonMatching": "rest"

@@ -2354,7 +2354,7 @@
                             "source": {
                                 "type": "FromZone",
                                 "zone": "Library",
-                                "filter": "permanent Construct"
+                                "filter": "Construct"
                             },
                             "storeAs": "searchable"
                         },
