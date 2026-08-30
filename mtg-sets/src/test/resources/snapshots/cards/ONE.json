@@ -904,7 +904,7 @@
                                 "source": {
                                     "type": "FromZone",
                                     "zone": "Library",
-                                    "filter": "permanent Myr"
+                                    "filter": "Myr"
                                 },
                                 "storeAs": "searchable"
                             },

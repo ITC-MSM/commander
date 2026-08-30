@@ -4907,7 +4907,7 @@
                         {
                             "type": "TargetObject",
                             "filter": {
-                                "baseFilter": "permanent Villain own:you",
+                                "baseFilter": "Villain own:you",
                                 "zone": "Graveyard"
                             },
                             "id": "target Villain card in your graveyard"
@@ -4928,7 +4928,7 @@
                         {
                             "type": "TargetObject",
                             "filter": {
-                                "baseFilter": "permanent Hero own:you",
+                                "baseFilter": "Hero own:you",
                                 "zone": "Graveyard"
                             },
                             "id": "target Hero card in your graveyard"

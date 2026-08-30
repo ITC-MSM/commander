@@ -38,7 +38,7 @@ val SylvanMessenger = card("Sylvan Messenger") {
         trigger = Triggers.EntersBattlefield
         effect = Patterns.Library.revealTopPutAllMatchingToHand(
             count = DynamicAmount.Fixed(4),
-            filter = GameObjectFilter.Permanent.withSubtype(Subtype.ELF),
+            filter = GameObjectFilter.Any.withSubtype(Subtype.ELF),
             restOrder = CardOrder.ControllerChooses
         )
     }

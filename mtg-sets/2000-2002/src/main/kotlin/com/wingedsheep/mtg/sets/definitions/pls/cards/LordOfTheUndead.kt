@@ -41,7 +41,7 @@ val LordOfTheUndead = card("Lord of the Undead") {
     }
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{1}{B}"), Costs.Tap)
-        val t = target("target", TargetObject(filter = TargetFilter.PermanentInYourGraveyard.withSubtype(Subtype.ZOMBIE)))
+        val t = target("target", TargetObject(filter = TargetFilter.CardInGraveyard.withSubtype(Subtype.ZOMBIE).ownedByYou()))
         effect = Effects.Move(t, Zone.HAND)
     }
     metadata {
