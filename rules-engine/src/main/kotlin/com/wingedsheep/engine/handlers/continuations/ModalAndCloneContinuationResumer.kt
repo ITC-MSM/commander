@@ -1735,12 +1735,16 @@ internal fun processChosenModeQueue(
         )
     }
 
-    // Auto-select single player target.
+    // Auto-select a single mandatory player target.
     if (head.targetRequirements.size == 1) {
         val req = head.targetRequirements[0]
         val targets = legalTargetsMap[0] ?: emptyList()
         val isPlayerTarget = req is TargetPlayer || req is TargetOpponent
-        if (isPlayerTarget && targets.size == 1 && req.count == 1) {
+        if (isPlayerTarget &&
+            targets.size == 1 &&
+            req.count == 1 &&
+            req.effectiveMinCount == 1
+        ) {
             val chosenTargets = listOf(entityIdToChosenTarget(state, targets[0]))
             val context = EffectContext(
                 sourceId = sourceId,

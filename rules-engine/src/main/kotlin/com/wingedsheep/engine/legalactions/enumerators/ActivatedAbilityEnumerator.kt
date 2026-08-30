@@ -1004,7 +1004,11 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                             tapForGenericPermanents = abilityWaterbendPermanents,
                             tapForGenericLabel = TapForGeneric.WATERBEND.label.takeIf { ability.hasWaterbend }
                         ))
-                    } else if (targetReqs.size == 1 && firstReqInfo.validTargets.size == 1 && firstReqInfo.validTargets.first() == entityId) {
+                    } else if (targetReqs.size == 1 &&
+                        firstReq.effectiveMinCount == 1 &&
+                        firstReqInfo.validTargets.size == 1 &&
+                        firstReqInfo.validTargets.first() == entityId
+                    ) {
                         // Self-targeting: only valid target is the source itself — auto-select and offer repeat
                         val autoSelectedTarget = ChosenTarget.Permanent(entityId)
                         result.add(LegalAction(

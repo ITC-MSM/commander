@@ -56,14 +56,14 @@ class SelectTargetPipelineExecutor(
             )
         }
 
-        if (legalTargets.size == 1) {
-            // Single legal target — auto-select
+        if (legalTargets.size == 1 && effect.requirement.effectiveMinCount == 1) {
+            // Single mandatory legal target — auto-select
             return EffectResult.success(state).copy(
                 updatedCollections = mapOf(effect.storeAs to legalTargets)
             )
         }
 
-        // Multiple legal targets — pause for player decision
+        // Multiple legal targets or an optional singleton — pause for player decision
         return createDecision(state, context, effect, legalTargets)
     }
 
@@ -80,7 +80,7 @@ class SelectTargetPipelineExecutor(
         val requirementInfo = TargetRequirementInfo(
             index = 0,
             description = effect.requirement.description,
-            minTargets = 1,
+            minTargets = effect.requirement.effectiveMinCount,
             maxTargets = 1
         )
 
