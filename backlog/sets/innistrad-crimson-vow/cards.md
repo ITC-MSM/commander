@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 256 / 273
+**Implemented:** 259 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -220,7 +220,7 @@
 - [x] Skull Skaab
 - [x] Skywarp Skaab
 - [x] Snarling Wolf
-- [ ] Sorin the Mirthless
+- [x] Sorin the Mirthless
 - [x] Soulcipher Board
 - [x] Spiked Ripsaw
 - [x] Splendid Reclamation
@@ -241,7 +241,7 @@
 - [x] Thirst for Discovery
 - [x] Torens, Fist of the Angels
 - [x] Toxic Scorpion
-- [ ] Toxrill, the Corrosive
+- [x] Toxrill, the Corrosive
 - [x] Traveling Minister
 - [x] Twinblade Geist
 - [x] Ulvenwald Oddity
@@ -259,7 +259,7 @@
 - [x] Voldaren Bloodcaster
 - [x] Voldaren Epicure
 - [x] Voldaren Estate
-- [ ] Voltaic Visionary
+- [x] Voltaic Visionary
 - [x] Wandering Mind
 - [x] Wanderlight Spirit
 - [x] Wash Away
