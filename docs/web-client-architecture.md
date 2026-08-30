@@ -281,6 +281,15 @@ pick a "normal" cast out of `legalActions` with its own hand-maintained list of 
 exclude, so the three disagreed, and a card whose only cast was an adventure face or a kicker showed
 its printed cost with no sign that the printed cost wasn't the price.
 
+**Keyword alternative costs never come off the legal actions alone.** Impending (CR 702.176) and
+evoke (CR 702.74) both mean "you may cast this for [cost] rather than its mana cost", so the card has
+two live prices — but the enumerator emits only the casts the player can currently *afford*. The cost
+therefore rides on `ClientCard` (`impending`, `evoke`), and `keywordAlternativeCostFor(card)` turns it
+into the pair of buttons `buildActionOptions` always draws, graying out whichever side the server
+didn't enumerate. `shouldShowCastModal` reads the same helper, so drag-to-play opens the menu instead
+of firing the lone affordable cast: a Mulldrifter you can only afford to evoke must not evoke itself —
+and sacrifice itself — because you dragged it out of hand.
+
 Two rules for `playCostRange`: the **low** end applies each option's reduction floor, the **high** end
 deliberately doesn't (the top of the range is what a cast *asks* for before you spend anything on it);
 and only options that actually put the card into play count. Cycling, plotting and suspending are

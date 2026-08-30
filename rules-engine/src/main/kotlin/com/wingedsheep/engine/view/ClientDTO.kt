@@ -698,7 +698,18 @@ data class ClientCard(
      * player can't currently pay for — and annotate it with a time-counter glyph. Null for cards
      * without impending.
      */
-    val impending: ClientImpending? = null
+    val impending: ClientImpending? = null,
+
+    /**
+     * Evoke alternative cost (CR 702.74), derived from the card's `KeywordAbility.Evoke`. Present
+     * on any card whose definition has evoke, regardless of zone, so the client can always offer
+     * the evoke cast option alongside the normal cast — graying out whichever the player can't
+     * currently pay for. Null for cards without evoke.
+     *
+     * A bare cost string rather than a DTO of its own: evoke carries no second value the way
+     * [ClientImpending] carries its time-counter count.
+     */
+    val evoke: String? = null
 )
 
 /**

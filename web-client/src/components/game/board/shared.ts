@@ -13,6 +13,7 @@ import {
 } from './battlefieldLayout'
 import type { ResponsiveSizes, BadgeSizes } from '../../../hooks/useResponsive'
 import { getScryfallFallbackUrl } from '../../../utils/cardImages'
+import { keywordAlternativeCostFor } from '../../../utils/actionOptions'
 import type { ClientCard, LegalActionInfo } from '../../../types'
 import { CounterType, CounterTypeDisplayNames } from '../../../types'
 import { Color } from '../../../types/enums'
@@ -321,13 +322,33 @@ export function hasMultipleCastingOptions(cardLegalActions: LegalActionInfo[]): 
  * cancel). (Whether the grayed-out button reads "Cast" or "Play land" is decided later, by
  * `ActionMenu.buildActionOptions`, from the card's types — it doesn't affect this decision.)
  *
+ * A keyword alternative cost (impending, evoke) is the same situation reached from the other side:
+ * the card always has two prices, but the server enumerates only the affordable one, so a single
+ * `CastSpell` action here can still be one of two buttons the menu is about to draw. Evoke is the
+ * case that makes it bite — dragging out a Mulldrifter you can only afford to evoke used to cast
+ * it for its evoke cost on the spot, sacrificing the creature with no choice offered.
+ *
  * @param cardLegalActions Legal actions for this specific card from the server
+ * @param cardInfo The card itself, when known — carries the keyword alternative costs that never
+ *   appear in `cardLegalActions` because the player can't currently pay for them
  */
-export function shouldShowCastModal(cardLegalActions: LegalActionInfo[]): boolean {
+export function shouldShowCastModal(
+  cardLegalActions: LegalActionInfo[],
+  cardInfo?: ClientCard | null
+): boolean {
   if (cardLegalActions.length === 0) return false
   // More than one legal action, or multiple casting variants (morph + normal cast, etc.).
   if (cardLegalActions.length > 1) return true
   if (hasMultipleCastingOptions(cardLegalActions)) return true
+  // Impending / evoke: the printed cost and the keyword cost are both real prices for this card,
+  // so any cast of it is a choice between two buttons — whichever one the server could afford.
+  if (
+    cardInfo &&
+    keywordAlternativeCostFor(cardInfo) &&
+    cardLegalActions.some((a) => a.action.type === 'CastSpell')
+  ) {
+    return true
+  }
   // A lone alternative play mode still implies a second (possibly-unaffordable) option the
   // menu surfaces as a grayed-out button: "Play land" for lands, "Cast" for everything else.
   return cardLegalActions.some(
