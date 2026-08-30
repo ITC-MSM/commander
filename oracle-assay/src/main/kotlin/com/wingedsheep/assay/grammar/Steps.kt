@@ -60,10 +60,12 @@ import com.wingedsheep.sdk.scripting.effects.TapUntapEffect
 import com.wingedsheep.sdk.scripting.effects.TakeExtraTurnEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.targets.TargetCreatureOrPlaneswalker
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.scripting.values.EntityReference
 
 /**
  * The steps a spell performs — the pipeline family, and the rules that produce a `CardScript`
@@ -255,7 +257,7 @@ object Steps {
      * moves it behind the noun as a whole clause. Neither template can be derived from the other —
      * the amount changes *position*, not just spelling — so the pair is two strings; what must not
      * be two is the script, the reader and the fail-closed reconstruction, because those are what a
-     * second copy would drift on. This is [mayCountedStep]'s shape one axis over: one call site,
+     * second copy would drift on. This is [mayWrap]'s shape one axis over: one call site,
      * both printed forms.
      *
      * **The forms are disjoint by domain, not by alternation order.** A `Fixed` amount is the
@@ -290,6 +292,8 @@ object Steps {
         script: (DynamicAmount) -> CardScript,
         amount: (Effect) -> DynamicAmount?,
         leading: String? = null,
+        clauseDomain: (DynamicAmount) -> Boolean = { true },
+        spelledElsewhere: ((DynamicAmount) -> Boolean)? = null,
     ): List<Phrase<CardScript>> {
         /** The amount this model carries, or null when it is not in [domain]. */
         fun amountIn(model: CardScript, domain: (DynamicAmount) -> Boolean): DynamicAmount? {
@@ -317,7 +321,21 @@ object Steps {
             }
         }
         if (leading == null) {
-            return listOf(numeral, clause(equalTo, "$name, by a count") { it !is DynamicAmount.Fixed })
+            return listOfNotNull(
+                numeral,
+                clause(equalTo, "$name, by a count") { it !is DynamicAmount.Fixed && clauseDomain(it) },
+                // The values another family owns the printed form of, read here and printed there.
+                // Two rules over one surface with disjoint domains, which is what lets a verb whose
+                // amount has a second spelling stay unambiguous in both directions — see
+                // [countedSteps]' life rows, the only caller, for the collision this resolves.
+                spelledElsewhere?.let { elsewhere ->
+                    alternate(
+                        clause(equalTo, "$name, by a count spelled as a distributive") {
+                            it !is DynamicAmount.Fixed && elsewhere(it)
+                        }
+                    )
+                },
+            )
         }
         val heavy = { value: DynamicAmount -> value !is DynamicAmount.Fixed && value !is DynamicAmount.EntityProperty }
         val light = { value: DynamicAmount -> value is DynamicAmount.EntityProperty }
@@ -351,32 +369,184 @@ object Steps {
     }
 
     /**
-     * The same shape with "may" inserted after the clause's own subject — "You **may** gain 3 life."
+     * The **"may" contraction**, as a pair of lowerings a [LifeChange] row can carry.
      *
      * [mayClause] cannot reach these. It spells "you may {inner}" over a clause that states no
      * subject of its own ("draw a card"), and a clause that states "you" would come back as "you may
      * you gain 3 life": English contracts the wrapper's subject with the clause's, and the model is
      * the same `MayEffect` either way. So the contraction is a printed-shape fact, and it is written
-     * as a *variant of the same shape* rather than as a rule of its own — one call site per clause,
-     * with both spellings generated from one template, which is what stops the two drifting.
+     * as a *variant of the same row* rather than as a rule of its own — one call site, and the
+     * numeral and the "equal to …" clause both inherit the wrapper, which is what stops the two
+     * drifting.
      */
-    private fun mayCountedStep(
-        template: String,
-        name: String,
-        script: (Int) -> CardScript,
-        count: (Effect) -> Int?,
-    ): Phrase<CardScript> = countedStep(
-        template,
-        name,
-        script = { amount -> wrap(script(amount)) { MayEffect(it) } ?: script(amount) },
-        count = { effect ->
-            val gated = effect as? GatedEffect
-            if (gated == null || gated.gate !is Gate.MayDecide || gated != MayEffect(gated.then)) {
-                null
-            } else {
-                count(gated.then)
-            }
-        },
+    private fun mayWrap(script: (DynamicAmount) -> CardScript): (DynamicAmount) -> CardScript =
+        { amount -> wrap(script(amount)) { MayEffect(it) } ?: script(amount) }
+
+    /** [mayWrap]'s inverse: the amount under the decision, or null when the gate is not one. */
+    private fun mayUnwrap(amount: (Effect) -> DynamicAmount?): (Effect) -> DynamicAmount? = { effect ->
+        val gated = effect as? GatedEffect
+        if (gated == null || gated.gate !is Gate.MayDecide || gated != MayEffect(gated.then)) {
+            null
+        } else {
+            amount(gated.then)
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // The life verbs — one table over the recipient, in both of Oracle's spellings
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * One life-changing sentence: who it names, what it builds, and which of its amounts belong to
+     * it rather than to a family that spells them another way.
+     *
+     * A table because the seven rows differ in exactly two printed words and one `EffectTarget`.
+     * The two templates are both spelled out for [countedStepPair]'s reason — the amount changes
+     * *position* between them, not just spelling, so neither string derives from the other — while
+     * the script, the reader and the fail-closed reconstruction are written once per row.
+     */
+    private data class LifeChange(
+        /** "you gain {n} life" — the numeral spelling. */
+        val numeral: String,
+        /** "you gain life equal to {amount}" — the clause spelling of the same value. */
+        val equalTo: String,
+        val name: String,
+        val script: (DynamicAmount) -> CardScript,
+        val amount: (Effect) -> DynamicAmount?,
+        /** Which amounts this row's clause may print; see [gainLifeSpelledAsForEach]. */
+        val clauseDomain: (DynamicAmount) -> Boolean = { true },
+        /** …and which are another family's to print, read here as an `alternate`. */
+        val spelledElsewhere: ((DynamicAmount) -> Boolean)? = null,
+    )
+
+    /**
+     * **A battlefield tally, in any of the shapes [gainLifeForEachScope] and [gainLifePerAttacker]
+     * build** — the domain "you gain" hands to the distributive spelling.
+     *
+     * This predicate is the whole of the collision the life rows used to decline over. "You gain 1
+     * life for each creature you control" and "You gain life equal to the number of creatures you
+     * control" are one model, Oracle prints the first 131 times against the second's 23, and two
+     * rules that can each print it is the ambiguity this module never resolves by ordering.
+     *
+     * The resolution is the module's first-listed one — **disjoint domains** — applied to the
+     * *amount* rather than to the sentence: the distributive keeps the tallies it can print, the
+     * "equal to" clause keeps everything else — this predicate's complement — and the lines that
+     * print the clause over one of those tallies read through an `alternate` and print back as the
+     * distributive. That is strictly better than the two alternatives the older KDoc
+     * here weighed. Refusing the clause outright loses those lines; making the *whole* clause an
+     * alternate loses the graveyard and hand counts, which no distributive rule can print. Splitting
+     * the domain loses neither, because each half has exactly one printer.
+     *
+     * The predicate is what the distributive can **print**, not what it can read, and the two are
+     * not the same set. [Amounts.scopes]' bare row is an `alternate` — English omits the clause and
+     * means the whole battlefield — so a tally only that row could spell has no canonical printer
+     * over there and stays this band's. Testing `canonical` is what makes the partition total:
+     * every value has exactly one printer, in one of the two families, and none has two.
+     *
+     * Written as a function rather than read off the two families' own rules because those are
+     * declared several hundred lines below this one and an initializer that reached them would read
+     * a null — but it is still one definition with two readers, which is what stops the halves
+     * drifting.
+     *
+     * `Player.TargetOpponent` is absent for a reason worth stating: the distributive's targeted row
+     * puts a `TargetRequirement` beside the aggregate, so its script differs from this band's in a
+     * second place. [Amounts.count] cannot build that value at all — its three scopes are the
+     * untargeted ones — so the case is unreachable rather than handled.
+     */
+    private fun gainLifeSpelledAsForEach(value: DynamicAmount): Boolean {
+        val multiplied = value as? DynamicAmount.Multiply
+        if (multiplied != null && multiplied.multiplier < 2) return false
+        val aggregate = (multiplied?.amount ?: value) as? DynamicAmount.AggregateBattlefield ?: return false
+        // Anything the families do not build with the defaults — an `excludeSelf` tally, an
+        // aggregation that is not a count — is not theirs to print, so it stays here.
+        if (aggregate != DynamicAmount.AggregateBattlefield(aggregate.player, aggregate.filter)) return false
+        // [gainLifePerAttacker]: one fixed noun, and only in its multiplying spelling.
+        if (aggregate.player == Player.EachOpponent) {
+            return multiplied != null && aggregate.filter == GameObjectFilter.Creature.attacking()
+        }
+        return Amounts.scopes.any {
+            it.canonical && it.player == aggregate.player && it.narrowing(aggregate.filter) != null
+        }
+    }
+
+    /**
+     * The seven printed sentences that change a life total by an amount.
+     *
+     * The recipient is a row rather than a slot for [castPrefixes]' reason: it is a `Player` on the
+     * effect (or a `TargetRequirement` beside it), and a slot there would let one rule print four
+     * separate printed sentences.
+     */
+    private val lifeChanges: List<LifeChange> = listOf(
+        LifeChange(
+            "you gain {n} life", "you gain life equal to {amount}", "you gain life",
+            script = { CardScript(spellEffect = Effects.GainLife(it)) },
+            amount = ::lifeGainedAmount,
+            clauseDomain = { !gainLifeSpelledAsForEach(it) },
+            spelledElsewhere = ::gainLifeSpelledAsForEach,
+        ),
+        LifeChange(
+            "you may gain {n} life", "you may gain life equal to {amount}", "you may gain life",
+            script = mayWrap { CardScript(spellEffect = Effects.GainLife(it)) },
+            amount = mayUnwrap(::lifeGainedAmount),
+            // No distributive twin: [gainLifeForEach] builds a bare `GainLife`, never a gated one,
+            // so nothing else can print these and the clause keeps the whole vocabulary.
+        ),
+        LifeChange(
+            "target player gains {n} life", "target player gains life equal to {amount}",
+            "target player gains life",
+            script = {
+                CardScript(
+                    spellEffect = Effects.GainLife(it, Targets.bound()),
+                    targetRequirements = listOf(Targets.player()),
+                )
+            },
+            amount = ::lifeGainedAmount,
+        ),
+        LifeChange(
+            "you lose {n} life", "you lose life equal to {amount}", "you lose life",
+            script = { CardScript(spellEffect = Effects.LoseLife(it, EffectTarget.Controller)) },
+            amount = ::lifeLostAmount,
+        ),
+        LifeChange(
+            // "Each opponent loses 2 life" — the drain half of Bloomburrow's Bats, and 600-odd cards
+            // corpus-wide. `Effects.DrainLife` is not in the way — that is Exsanguinate's
+            // "…you gain life equal to the life lost this way", a different sentence and a different
+            // type; a fixed-both-ways drain is the `Composite` the sequence rules already build.
+            "each opponent loses {n} life", "each opponent loses life equal to {amount}",
+            "each opponent loses life",
+            script = {
+                CardScript(spellEffect = Effects.LoseLife(it, EffectTarget.PlayerRef(Player.EachOpponent)))
+            },
+            amount = ::lifeLostAmount,
+        ),
+        LifeChange(
+            "target player loses {n} life", "target player loses life equal to {amount}",
+            "target player loses life",
+            script = {
+                CardScript(
+                    spellEffect = Effects.LoseLife(it, Targets.bound()),
+                    targetRequirements = listOf(Targets.player()),
+                )
+            },
+            amount = ::lifeLostAmount,
+        ),
+        LifeChange(
+            // "Whenever ~ attacks, defending player loses 1 life and you gain 1 life." — Odious
+            // Witch and the attack-drain family, plus afflict's reminder text and the
+            // becomes-blocked payoffs.
+            //
+            // The recipient only *means* anything inside a combat trigger, and no rule here can see
+            // the sentence it lands in — but that is not the ambiguity the module refuses to
+            // register, because the surface denotes exactly one model wherever it appears. Oracle
+            // prints the phrase in no other position, so a card that made it meaningless would have
+            // to be written first.
+            "defending player loses {n} life", "defending player loses life equal to {amount}",
+            "defending player loses life",
+            script = {
+                CardScript(spellEffect = Effects.LoseLife(it, EffectTarget.PlayerRef(Player.DefendingPlayer)))
+            },
+            amount = ::lifeLostAmount,
+        ),
     )
 
     /**
@@ -385,102 +555,23 @@ object Steps {
      * scry and surveil are not, because their SDK count is an `Int` and no card writes them any way
      * but as a numeral.
      *
-     * **Life is deliberately not one of them, and the reason is a collision rather than an
-     * oversight.** "You gain 1 life for each creature you control" and "You gain life equal to the
-     * number of creatures you control" are one model, and Oracle prints the first 131 times against
-     * the second's 23 — so the "for each" family below is the canonical spelling, and adding the
-     * clause here would be a second rule that can print the same value. Making the clause an
-     * `alternate` does not work either: [gainLifeForEach] only spells *battlefield* aggregates, so a
-     * life gain counting a graveyard would parse with nothing able to print it. The fix is to give
-     * the "for each" form the same vocabulary treatment this band gave "equal to" — a singular noun
-     * phrase where this one takes [Amounts.count] — and that is a band of its own, not a row here.
+     * The life rows are the table above, in both spellings. They read [Amounts.count] whole, which
+     * is what makes the pair multiplicative: every row that vocabulary gains — the graveyard and
+     * hand tallies, the superlatives, the turn tallies — reaches all seven sentences without being
+     * told. The amount that is a *characteristic of an object* is not in that vocabulary and cannot
+     * be, because the word naming the object means a different object in each sentence position;
+     * see [lifeByProperty], which is the same seven rows over an amount instantiated per position.
      */
     private val countedSteps: List<Phrase<CardScript>> = listOf(
-        listOf(
-            countedStep(
-                "you gain {n} life", "you gain life",
-                script = { CardScript(spellEffect = Effects.GainLife(it)) },
-                count = ::lifeGained,
-            ),
-        ),
-        listOf(
-            mayCountedStep(
-                "you may gain {n} life", "you may gain life",
-                script = { CardScript(spellEffect = Effects.GainLife(it)) },
-                count = ::lifeGained,
-            ),
-        ),
-        listOf(
-            countedStep(
-                "target player gains {n} life", "target player gains life",
-                script = {
-                    CardScript(
-                        spellEffect = Effects.GainLife(it, Targets.bound()),
-                        targetRequirements = listOf(Targets.player()),
-                    )
-                },
-                count = ::lifeGained,
-            ),
-        ),
-        listOf(
-            countedStep(
-                "you lose {n} life", "you lose life",
-                script = { CardScript(spellEffect = Effects.LoseLife(it, EffectTarget.Controller)) },
-                count = ::lifeLost,
-            ),
-        ),
-        listOf(
-            // "Each opponent loses 2 life" — the drain half of Bloomburrow's Bats, and 600-odd cards
-            // corpus-wide. A row rather than a player slot for [castPrefixes]' reason: the recipient
-            // is a `Player` on the effect, and a slot there would also let the rule print "target
-            // opponent loses" and "each player loses", which are separate printed sentences with
-            // separate rows. `Effects.DrainLife` is not in the way — that is Exsanguinate's
-            // "…you gain life equal to the life lost this way", a different sentence and a different
-            // type; a fixed-both-ways drain is the `Composite` the sequence rules already build.
-            countedStep(
-                "each opponent loses {n} life", "each opponent loses life",
-                script = {
-                    CardScript(
-                        spellEffect = Effects.LoseLife(it, EffectTarget.PlayerRef(Player.EachOpponent)),
-                    )
-                },
-                count = ::lifeLost,
-            ),
-        ),
-        listOf(
-            countedStep(
-                "target player loses {n} life", "target player loses life",
-                script = {
-                    CardScript(
-                        spellEffect = Effects.LoseLife(it, Targets.bound()),
-                        targetRequirements = listOf(Targets.player()),
-                    )
-                },
-                count = ::lifeLost,
-            ),
-        ),
-        listOf(
-            // "Whenever ~ attacks, defending player loses 1 life and you gain 1 life." — Odious
-            // Witch and the attack-drain family, plus afflict's reminder text and the
-            // becomes-blocked payoffs. Another row of the recipient list above for that list's own
-            // reason: `Player.DefendingPlayer` is a value on the effect, and a slot over `Player`
-            // would let one rule print four separate printed sentences.
-            //
-            // The recipient only *means* anything inside a combat trigger, and no rule here can see
-            // the sentence it lands in — but that is not the ambiguity the module refuses to
-            // register, because the surface denotes exactly one model wherever it appears. Oracle
-            // prints the phrase in no other position, so a card that made it meaningless would have
-            // to be written first.
-            countedStep(
-                "defending player loses {n} life", "defending player loses life",
-                script = {
-                    CardScript(
-                        spellEffect = Effects.LoseLife(it, EffectTarget.PlayerRef(Player.DefendingPlayer)),
-                    )
-                },
-                count = ::lifeLost,
-            ),
-        ),
+        lifeChanges.flatMap { row ->
+            countedStepPair(
+                row.numeral, row.equalTo, row.name,
+                script = row.script,
+                amount = row.amount,
+                clauseDomain = row.clauseDomain,
+                spelledElsewhere = row.spelledElsewhere,
+            )
+        },
         listOf(
             countedStep(
                 "scry {n}", "scry",
@@ -999,7 +1090,7 @@ object Steps {
      * target creature gets …" is not a sentence — so Oracle reaches for "have" and de-inflects the
      * verb with it ("gets" → "get"). That inflection lives *inside* the wrapped clause, where a
      * slot cannot reach it, so the causative cannot be a spelling of the wrapper and has to be
-     * written at the clause's own call site. It is the same printed-shape fact [mayCountedStep]
+     * written at the clause's own call site. It is the same printed-shape fact [mayWrap]
      * records for "You **may** gain 3 life", and the same shape [Amounts]' `mayHaveTargetSuffer`
      * already writes for the two causatives it counted.
      *
@@ -2318,6 +2409,77 @@ object Steps {
      * thing whose meaning depends on where the clause sits. Everything here means the same in every
      * position, so it is built once.
      */
+    // ---------------------------------------------------------------------------------------
+    // The same seven sentences over a **characteristic of an object** — one shape, three positions
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * "You gain life equal to **its** toughness.", "Each opponent loses life equal to **that card's**
+     * mana value." — [lifeChanges]' rows over [Amounts.propertyOf] instead of [Amounts.count].
+     *
+     * A shape instantiated per anaphor position rather than a row of the shared vocabulary, and the
+     * corpus is what forces it: one printed word names a different object in every sentence it
+     * stands in. Syr Ginger's "its" is the source it sacrificed, Divine Offering's is the artifact
+     * the clause before it destroyed, Grim Feast's is the creature its filtered trigger matched.
+     * Nothing in the words says which — the position says it — so this is [SelfSteps.retargetable]'s
+     * treatment one layer down: the *amount* moves with the position while the seven sentences,
+     * their scripts and their fail-closed reconstructions stay one piece of code.
+     *
+     * The three instantiations are the three the rest of the file already draws, and they are
+     * offered exactly where their nominative twins are, which is what keeps one reading per text:
+     * [sourceLifeByProperty] beside [SelfSteps.anaphoric] in a first clause, [targetLifeByProperty]
+     * beside [Continuations] in a later one, [triggeringLifeByProperty] beside
+     * [SelfSteps.triggering] inside a filtered trigger. Registering any of them in two positions
+     * would be two models for one text — the bug the differential caught on "Untap target creature.
+     * It gets +2/+4", in a sentence where it would be just as invisible.
+     *
+     * There is no numeral twin and no leading form. "You gain its power life" is not English, and
+     * the value has no numeral spelling at all, so this is one clause per row rather than a
+     * [countedStepPair].
+     */
+    private fun lifeByProperty(
+        possessive: Phrase<Unit>,
+        reference: EntityReference,
+        tag: String,
+    ): List<Phrase<CardScript>> {
+        val characteristic = Amounts.propertyOf(possessive, reference, tag)
+        return lifeChanges.map { row ->
+            phrase<CardScript>(row.equalTo, name = "${row.name} by ${tag}'s characteristic") {
+                slot("amount", characteristic)
+                build { row.script(it.value("amount")) }
+                match { model ->
+                    val value = row.amount(model.spellEffect ?: return@match null) ?: return@match null
+                    if (model != row.script(value)) return@match null
+                    if (value !is DynamicAmount.EntityProperty || value.entity != reference) return@match null
+                    bind("amount" to value)
+                }
+            }
+        }
+    }
+
+    /** "…equal to **~'s** power." — the source, which every position but a filtered trigger reads. */
+    private val sourceLifeByProperty: List<Phrase<CardScript>> =
+        lifeByProperty(Primitives.selfPossessive, EntityReference.Source, "the source")
+
+    /**
+     * "…equal to **its** mana value." after a clause has chosen something — what [Continuations]'
+     * position reads.
+     *
+     * Offered in a later clause only, where the pronoun is the target's, so the same words never
+     * carry both this reading and [sourceLifeByProperty]'s.
+     */
+    private val targetLifeByProperty: List<Phrase<CardScript>> =
+        lifeByProperty(Primitives.targetPossessive, EntityReference.Target(), "the chosen object")
+
+    /**
+     * The filtered-trigger reading: the name still means the source, the pronoun means the object
+     * the trigger matched. Both are offered, with disjoint surfaces, exactly as
+     * [SelfSteps.triggering] offers its two.
+     */
+    private val triggeringLifeByProperty: List<Phrase<CardScript>> =
+        lifeByProperty(Primitives.selfNamedPossessive, EntityReference.Source, "the named source") +
+            lifeByProperty(Primitives.itsPronoun, EntityReference.Triggering, "the triggering permanent")
+
     private val nonAnaphoric: List<Phrase<CardScript>> =
         listOf(drawOne, drawMany, targetPlayerDrawsOne, targetPlayerDrawsMany) +
             countedSteps +
@@ -2588,6 +2750,28 @@ object Steps {
         // permanent. Nine lines print that shape. Refusing them is why [SelfSteps.continuing] can
         // be the whole retargetable vocabulary rather than the subset nobody had misread yet.
         if (refersWithoutDeclaring && declarers != 1) return null
+        // **A characteristic read off "the target" needs the target to *be* an object.**
+        //
+        // `EntityReference.Target(0)` is an ordinal into the line's requirements, so unlike the
+        // pronoun it is invisible to [Slots.references] and the guard above never sees it. Two ways
+        // it goes wrong, and the second is the one the differential caught. A line that declares no
+        // target at all leaves the reference dangling. And a line that declares a *player* — "Target
+        // opponent sacrifices a creature of their choice. You gain life equal to that creature's
+        // toughness." (Tribute to Hunger) — reads the opponent's toughness, because the noun the
+        // possessive names is the creature they sacrificed and the SDK spells that
+        // `EntityReference.Sacrificed`. Both round-trip byte-perfectly while meaning a different
+        // object, which is the class of bug this module's fail-closed rule exists for.
+        //
+        // The list is an allow-list rather than a list of the player requirements, so a requirement
+        // the SDK adds later has to be admitted on purpose. The sacrificed-object anaphor is a
+        // position of its own and is not written yet; until it is, the lines that name it decline
+        // rather than read as the target — 26 of them, which is the family the tail ranking keys
+        // this band's own residue onto.
+        if (parts.any { Slots.readsPropertyOf(it, entity = "Target") }) {
+            val declared = parts.flatMap { it.targetRequirements }.singleOrNull() ?: return null
+            val isObject = declared is TargetObject || declared is TargetCreatureOrPlaneswalker
+            if (!isObject) return null
+        }
         var index = 0
         return parts.map { part ->
             if (part.targetRequirements.isEmpty()) return@map part
@@ -2672,7 +2856,7 @@ object Steps {
          */
         private val laterAtom: Phrase<CardScript> = oneOf(
             "a later spell effect$tag",
-            nonAnaphoric + Continuations.all + positionScoped,
+            nonAnaphoric + Continuations.all + targetLifeByProperty + positionScoped,
         )
 
         private val gatedConsequence: Phrase<CardScript> = oneOf(
@@ -2855,7 +3039,7 @@ object Steps {
             // a member here, which is what lets "Draw a card. Put a +1/+1 counter on ~." and
             // "{T}: Add {C}. Put a point counter on ~." read at all.
             nonAnaphoric + mayClause + delayedClause + positionScoped +
-                Continuations.all + SelfSteps.named,
+                Continuations.all + targetLifeByProperty + SelfSteps.named,
         )
 
         /** A whole line's clauses, joined. The shape and its KDoc are [clauseRun]. */
@@ -2955,10 +3139,11 @@ object Steps {
             oneOf("a spell effect line$tag", listOf(plainStep) + Modal.clauses(sentence, tag))
     }
 
-    private val sourceCascade = Cascade(SelfSteps.anaphoric, tag = "")
+    private val sourceCascade = Cascade(SelfSteps.anaphoric + sourceLifeByProperty, tag = "")
 
     /** The cascade a filtered trigger's effect takes; see [SelfSteps.triggering]. */
-    private val triggeredCascade = Cascade(SelfSteps.triggering, tag = " in a filtered trigger")
+    private val triggeredCascade =
+        Cascade(SelfSteps.triggering + triggeringLifeByProperty, tag = " in a filtered trigger")
 
     /**
      * The cascade a **damage** trigger's effect takes — the source anaphor, plus the clauses whose
@@ -2976,7 +3161,11 @@ object Steps {
      * that position.
      */
     private val damageCascade =
-        Cascade(SelfSteps.anaphoric, tag = " after damage", positionScoped = Tokens.damageClauses)
+        Cascade(
+            SelfSteps.anaphoric + sourceLifeByProperty,
+            tag = " after damage",
+            positionScoped = Tokens.damageClauses,
+        )
 
     val step: Phrase<CardScript> = sourceCascade.step
 
@@ -3013,24 +3202,24 @@ object Steps {
             ?.takeIf { script.targetRequirements == listOf(Targets.player()) }
 
     /**
-     * The fixed amounts the counted verbs read back.
+     * The fixed amount a counted verb reads back.
      *
-     * Each recovers only the *number*; nothing here checks the target or the rest of the script,
+     * It recovers only the *number*; nothing here checks the target or the rest of the script,
      * because [countedStep]'s equality against its own `script(n)` already does, exhaustively. A
      * dynamic amount ("equal to the number of…") has no numeral to print, so it declines here.
      */
-    internal fun lifeGained(effect: Effect): Int? = (effect as? GainLifeEffect)?.amount?.fixed()
-
-    internal fun lifeLost(effect: Effect): Int? = (effect as? LoseLifeEffect)?.amount?.fixed()
-
     internal fun damageDealt(effect: Effect): Int? = (effect as? DealDamageEffect)?.amount?.fixed()
 
     /**
-     * The same reader before the `Fixed` unwrap, for [countedStepPair] — which needs the whole
-     * amount because the numeral and the "equal to …" clause are two domains of one value, not a
-     * number and something else.
+     * The same readers before the `Fixed` unwrap, for [countedStepPair] and [lifeByProperty] —
+     * which need the whole amount because the numeral and the "equal to …" clause are two domains
+     * of one value, not a number and something else.
      */
     internal fun damageDealtAmount(effect: Effect): DynamicAmount? = (effect as? DealDamageEffect)?.amount
+
+    internal fun lifeGainedAmount(effect: Effect): DynamicAmount? = (effect as? GainLifeEffect)?.amount
+
+    internal fun lifeLostAmount(effect: Effect): DynamicAmount? = (effect as? LoseLifeEffect)?.amount
 
     /**
      * The kind and the count an `AddCounters` effect carries, aimed at [target].
