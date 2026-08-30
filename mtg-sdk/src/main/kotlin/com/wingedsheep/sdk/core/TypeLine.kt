@@ -51,7 +51,7 @@ data class TypeLine(
 
     companion object {
         fun parse(typeLineString: String): TypeLine {
-            val parts = typeLineString.split("—", "–", "-").map { it.trim() }
+            val parts = typeLineString.split(Regex("[—–]|\\s+-\\s+")).map { it.trim() }
             val typesPart = parts[0]
             val subtypesPart = parts.getOrNull(1)
 
