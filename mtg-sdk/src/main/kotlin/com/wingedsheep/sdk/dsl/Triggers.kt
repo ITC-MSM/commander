@@ -1611,6 +1611,8 @@ object Triggers {
     //     turnedFaceUp(binding = TriggerBinding.ATTACHED)
     // - "At the beginning of enchanted creature's controller's <step>":
     //     phase(step, Player.You, binding = TriggerBinding.ATTACHED)
+    // - "Enchanted creature becomes the target of an Aura spell":
+    //     BecomesTargetOfAuraSpell(binding = TriggerBinding.ATTACHED)
     // -------------------------------------------------------------------------
 
     // =========================================================================
@@ -2050,6 +2052,27 @@ object Triggers {
         event = BecomesTargetEvent(targetFilter = filter, spellsOnly = true),
         binding = TriggerBinding.ANY
     )
+
+    /**
+     * Whenever the bound permanent becomes the target of an **Aura spell** (Brine Comber's front
+     * face; its back face is the same wording bound to the enchanted creature, hence [binding]).
+     *
+     * "Aura spell" narrows the *targeting* object, not the targeted one, so it rides
+     * [BecomesTargetEvent.sourceFilter] rather than `targetFilter`. `spellsOnly` is part of the
+     * printed wording and not redundant with the filter: an Aura already on the battlefield could
+     * target with an activated ability and match the same card types.
+     *
+     * An Aura spell targets exactly once, as it is cast (CR 303.4a), so this never fires for the
+     * Aura the bound permanent is already enchanted by — only for a *new* one being cast at it.
+     */
+    fun BecomesTargetOfAuraSpell(binding: TriggerBinding = TriggerBinding.SELF): TriggerSpec =
+        TriggerSpec(
+            event = BecomesTargetEvent(
+                spellsOnly = true,
+                sourceFilter = GameObjectFilter.Enchantment.withSubtype(Subtype.AURA)
+            ),
+            binding = binding
+        )
 
     /**
      * Mirror of [BecomesTargetOfSpell]: whenever something becomes the target of an **ability**

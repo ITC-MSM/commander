@@ -2,6 +2,7 @@ package com.wingedsheep.engine.event
 
 import com.wingedsheep.engine.core.AbilityActivatedEvent
 import com.wingedsheep.engine.core.AttackersDeclaredEvent
+import com.wingedsheep.engine.core.BecomesTargetEvent
 import com.wingedsheep.engine.core.DamageDealtEvent
 import com.wingedsheep.engine.core.TappedEvent
 import com.wingedsheep.engine.core.TransformedEvent
@@ -155,6 +156,9 @@ class AttachmentTriggerDetector(
             // "an ability of enchanted artifact … was activated" (Artifact Possession) — the
             // activated ability's source is the enchanted permanent.
             is AbilityActivatedEvent -> listOf(event.sourceId)
+            // "enchanted creature becomes the target of an Aura spell" (Brinebound Gift). The
+            // targeted object is the aura's host; the targeting source is checked by the matcher.
+            is BecomesTargetEvent -> listOf(event.targetEntityId)
             is ZoneChangeEvent -> {
                 if (event.fromZone == Zone.BATTLEFIELD) listOf(event.entityId) else emptyList()
             }
@@ -221,6 +225,16 @@ class AttachmentTriggerDetector(
             }
             is EventPattern.TurnFaceUpEvent -> {
                 event is TurnFaceUpEvent && event.entityId == attachedEntityId
+            }
+            // "Whenever enchanted creature becomes the target of an Aura spell" (Brinebound Gift).
+            // Identity with the host settles the binding, then the full SELF matcher runs every
+            // other axis (spellsOnly, sourceFilter, byYou, targetFilter) against the aura's own
+            // controller — reusing it rather than restating it keeps the two paths from drifting.
+            is EventPattern.BecomesTargetEvent -> {
+                event is BecomesTargetEvent && event.targetEntityId == attachedEntityId &&
+                    matcher.matchesBecomesTargetTrigger(
+                        trigger, TriggerBinding.ANY, event, auraId, auraControllerId, state
+                    )
             }
             // "When equipped creature transforms" (Neglected Heirloom). Identity with the attached
             // permanent plus the pattern's direction filter is the whole match — the same two checks
