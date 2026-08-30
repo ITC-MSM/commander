@@ -29,10 +29,14 @@ import com.wingedsheep.engine.core.BatchYesNoDecision
 import com.wingedsheep.engine.core.BatchYesNoResponse
 import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.core.YesNoResponse
+import com.wingedsheep.engine.handlers.actions.decision.DecisionValidators
 import com.wingedsheep.gym.GameEnvironment
+import com.wingedsheep.gym.trainer.defaults.ExactStructuredDecisionExpander
 import com.wingedsheep.gym.trainer.spi.ActionFeaturizer
 import com.wingedsheep.gym.trainer.spi.Evaluator
 import com.wingedsheep.gym.trainer.spi.StateFeaturizer
+import com.wingedsheep.gym.trainer.spi.StructuredDecisionExpander
+import com.wingedsheep.gym.trainer.spi.StructuredDecisionExpansion
 import com.wingedsheep.gym.trainer.spi.StructuredDecisionResolver
 import com.wingedsheep.gym.trainer.spi.TrainerContext
 import com.wingedsheep.engine.legalactions.LegalAction
@@ -59,10 +63,10 @@ import java.util.Random as JavaRandom
  *      - At a simple pending decision (YesNo, ChooseNumber, single-mode
  *        ChooseMode, ChooseColor, ChooseOption, single-select SelectCards)
  *        → every folded [DecisionResponse] becomes an edge.
- *      - At a complex pending decision (ChooseTargets, Distribute, Order,
- *        SplitPiles, Search, Reorder, AssignDamage, SelectManaSources,
- *        multi-select SelectCards, multi-mode ChooseMode, BudgetModal)
- *        → the [StructuredDecisionResolver] returns a *single* forced edge.
+ *      - At a structured pending decision → [StructuredDecisionExpander]
+ *        may expose a complete response set as independent edges. Unsupported
+ *        families retain a single policy-selected [StructuredDecisionResolver]
+ *        fallback edge.
  *    Then call the [Evaluator] to get priors and value.
  * 3. **Simulate (value)** — at terminal, use the game outcome; at an
  *    expanded leaf, use the evaluator's value (from the acting player's
@@ -81,12 +85,14 @@ import java.util.Random as JavaRandom
  * @param actionFeaturizer action → `(head, slot)` policy index
  * @param evaluator priors + value provider; typically a remote NN
  * @param structuredResolver called on complex engine decisions the
- *        folded-action-space can't express
+ *        [structuredExpander] does not support; this is a policy fallback
  * @param cPuct exploration constant; `1.0` is a sensible default
  * @param dirichletAlpha optional Dirichlet noise alpha applied to root
  *        priors only; `null` disables noise
  * @param dirichletWeight `(1-w) * prior + w * dirichlet` mix weight
  * @param rng seed for noise sampling
+ * @param structuredExpander policy-free source of complete structured
+ *        response sets; defaults to exact required-single-target expansion
  */
 class AlphaZeroSearch<T>(
     private val env: GameEnvironment,
@@ -97,7 +103,8 @@ class AlphaZeroSearch<T>(
     private val cPuct: Double = 1.0,
     private val dirichletAlpha: Double? = null,
     private val dirichletWeight: Double = 0.25,
-    private val rng: Random = Random.Default
+    private val rng: Random = Random.Default,
+    private val structuredExpander: StructuredDecisionExpander = ExactStructuredDecisionExpander
 ) {
     private val workingEnv: GameEnvironment = env.fork()
     private val javaRng: JavaRandom = JavaRandom(rng.nextLong())
@@ -181,6 +188,10 @@ class AlphaZeroSearch<T>(
             ?: error("Expanding a terminal node — should be caught earlier")
 
         val edges = enumerateEdges(node, acting)
+        check(edges.isNotEmpty()) {
+            val source = node.pendingDecision?.let { it::class.simpleName } ?: "priority state"
+            "No search edges for $source"
+        }
         node.edges = edges
 
         val ctx = TrainerContext(node.state, acting, node.pendingDecision)
@@ -233,33 +244,89 @@ class AlphaZeroSearch<T>(
 
         val foldedResponses = foldSimpleDecision(pending)
         if (foldedResponses != null) {
-            return foldedResponses.map { response ->
-                val submit = SubmitDecision(pending.playerId, response)
-                MctsEdge(
-                    action = submit,
-                    legalAction = null,
-                    slot = actionFeaturizer.slot(submit, ctx)
+            return foldedResponses.map { response -> responseEdge(pending, response, ctx) }
+        }
+
+        return when (val expansion = structuredExpander.expand(node.state, pending)) {
+            is StructuredDecisionExpansion.Complete -> {
+                val edges = completeStructuredEdges(node.state, pending, expansion.responses, ctx)
+                check(edges.isNotEmpty()) {
+                    "Complete response expansion for ${pending::class.simpleName} was empty " +
+                        "at a non-terminal search node"
+                }
+                edges
+            }
+
+            StructuredDecisionExpansion.Unsupported -> {
+                val response = structuredResolver.resolve(node.state, pending)
+                listOf(
+                    validatedResponseEdge(
+                        state = node.state,
+                        decision = pending,
+                        response = response,
+                        ctx = ctx,
+                        source = "Structured decision resolver"
+                    )
                 )
             }
         }
+    }
 
-        // Complex decision — resolver produces a forced single edge.
-        val response = structuredResolver.resolve(node.state, pending)
-        val submit = SubmitDecision(pending.playerId, response)
-        return listOf(
-            MctsEdge(
-                action = submit,
-                legalAction = null,
-                slot = actionFeaturizer.slot(submit, ctx)
+    private fun completeStructuredEdges(
+        state: GameState,
+        decision: PendingDecision,
+        responses: Sequence<DecisionResponse>,
+        ctx: TrainerContext
+    ): List<MctsEdge> {
+        val seen = mutableSetOf<DecisionResponse>()
+        return responses.map { response ->
+            check(seen.add(response)) {
+                "Structured expander returned duplicate ${response::class.simpleName}: $response"
+            }
+            validatedResponseEdge(
+                state = state,
+                decision = decision,
+                response = response,
+                ctx = ctx,
+                source = "Structured decision expander"
             )
+        }.toList()
+    }
+
+    private fun validatedResponseEdge(
+        state: GameState,
+        decision: PendingDecision,
+        response: DecisionResponse,
+        ctx: TrainerContext,
+        source: String
+    ): MctsEdge {
+        check(response.decisionId == decision.id) {
+            "$source returned response for ${response.decisionId}, expected ${decision.id}"
+        }
+        val validationError = DecisionValidators.validate(decision, response, state)
+        check(validationError == null) {
+            "$source returned an illegal ${response::class.simpleName}: $validationError"
+        }
+        return responseEdge(decision, response, ctx)
+    }
+
+    private fun responseEdge(
+        decision: PendingDecision,
+        response: DecisionResponse,
+        ctx: TrainerContext
+    ): MctsEdge {
+        val submit = SubmitDecision(decision.playerId, response)
+        return MctsEdge(
+            action = submit,
+            legalAction = null,
+            slot = actionFeaturizer.slot(submit, ctx)
         )
     }
 
     /**
      * Returns the list of concrete [DecisionResponse]s when the pending
      * decision folds cleanly into a discrete action space; returns `null`
-     * when the decision requires a structured response (handed to the
-     * [StructuredDecisionResolver]).
+     * when the structured expander or resolver owns it.
      */
     private fun foldSimpleDecision(d: PendingDecision): List<DecisionResponse>? = when (d) {
         is YesNoDecision -> listOf(YesNoResponse(d.id, true), YesNoResponse(d.id, false))
@@ -296,6 +363,11 @@ class AlphaZeroSearch<T>(
     private fun createChild(parent: MctsNode, edge: MctsEdge, rootPlayer: EntityId): MctsNode {
         workingEnv.restore(parent.state, parent.playerIds, 0)
         workingEnv.step(edge.action)
+        if (edge.action is SubmitDecision) {
+            check(workingEnv.lastRejection == null) {
+                "Search decision edge was rejected by the engine: ${workingEnv.lastRejection}"
+            }
+        }
         return buildNode(
             workingEnv.state,
             workingEnv.playerIds,
@@ -400,10 +472,10 @@ class MctsSearchResult(
 }
 
 /**
- * Default [StructuredDecisionResolver] — picks a uniformly-random valid
- * response for any structured decision. Good enough for getting a training
- * loop to run end-to-end; replace with a heuristic or learned resolver for
- * real training runs.
+ * Default [StructuredDecisionResolver] — picks a random minimum-cardinality
+ * response for the target, card-selection, and mode families it supports.
+ * This is a fallback policy, not uniform enumeration of the legal response
+ * space. Replace it with a domain policy when unsupported decisions can occur.
  */
 class RandomStructuredResolver(private val rng: Random = Random.Default) : StructuredDecisionResolver {
     override fun resolve(state: GameState, decision: PendingDecision): DecisionResponse {

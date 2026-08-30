@@ -19,6 +19,14 @@ import com.wingedsheep.engine.core.GameAction
  *    [TrainerContext]s — that's how a `PassPriority` can be slot 0 in the
  *    "priority" head when it's an action and unused entirely in the
  *    "target" head when that's the active decision.
+ *
+ * A policy slot is not MCTS edge identity. Search keeps concrete actions as
+ * independent edges even when their slots collide, but colliding responses
+ * receive the same learned prior and cannot produce distinct categorical
+ * training targets. A production featurizer that learns structured choices
+ * should therefore be injective across the responses legal in one state.
+ * The current self-play row has one `headUsed`, so concurrent alternatives
+ * for a decision should also use one policy head.
  */
 interface ActionFeaturizer {
 

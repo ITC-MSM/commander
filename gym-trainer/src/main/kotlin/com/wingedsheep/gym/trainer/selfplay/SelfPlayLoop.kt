@@ -8,6 +8,7 @@ import com.wingedsheep.gym.trainer.spi.ActionFeaturizer
 import com.wingedsheep.gym.trainer.spi.Evaluator
 import com.wingedsheep.gym.trainer.spi.SelfPlaySink
 import com.wingedsheep.gym.trainer.spi.StateFeaturizer
+import com.wingedsheep.gym.trainer.spi.StructuredDecisionExpander
 import com.wingedsheep.gym.trainer.spi.StructuredDecisionResolver
 import com.wingedsheep.gym.trainer.spi.TrainerContext
 import com.wingedsheep.sdk.model.EntityId
@@ -46,7 +47,9 @@ class SelfPlayLoop<T>(
     private val temperature: Double = 1.0,
     private val temperatureMoves: Int = 30,
     private val maxSteps: Int = 2000,
-    private val rng: Random = Random.Default
+    private val rng: Random = Random.Default,
+    private val structuredExpander: StructuredDecisionExpander =
+        com.wingedsheep.gym.trainer.defaults.ExactStructuredDecisionExpander
 ) {
     /** Run one game. Returns the winner (null = draw / truncation). */
     fun playGame(config: GameConfig, gameId: String = UUID.randomUUID().toString()): GameOutcome {
@@ -68,7 +71,8 @@ class SelfPlayLoop<T>(
                 cPuct = cPuct,
                 dirichletAlpha = dirichletAlpha,
                 dirichletWeight = dirichletWeight,
-                rng = rng
+                rng = rng,
+                structuredExpander = structuredExpander
             )
             val result = search.run(simulationsPerMove)
 
