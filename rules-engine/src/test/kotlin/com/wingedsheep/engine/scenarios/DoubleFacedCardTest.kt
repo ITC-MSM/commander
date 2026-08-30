@@ -15,9 +15,15 @@ import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.model.Deck
+import com.wingedsheep.sdk.core.TypeLine
+import com.wingedsheep.sdk.model.CreatureStats
+import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.AbilityId
+import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
+import com.wingedsheep.sdk.scripting.effects.TransformEffect
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -237,4 +243,73 @@ class DoubleFacedCardTest : FunSpec({
         projected.getPower(entityId) shouldBe 6
         projected.getToughness(entityId) shouldBe 6
     }
+    /**
+     * CR 701.28f — "If an activated or triggered ability of a permanent that isn't a delayed
+     * triggered ability of that permanent tries to transform it, the permanent does so only if it
+     * hasn't transformed or converted since the ability was put onto the stack. […] if the
+     * permanent has already transformed or converted, an instruction to do either is ignored."
+     *
+     * Activating the free self-transform twice stacks two copies of the same instruction. The
+     * first turns the permanent over; the second must do nothing rather than turn it straight
+     * back. That second flip is what made a transformed Soulcipher Board disappear from the
+     * battlefield mid-combat.
+     */
+    test("a permanent's own ability does not transform it a second time from the same stack") {
+        val driver = GameTestDriver()
+        driver.registerCards(TestCards.all + SelfTransformer)
+        driver.initMirrorMatch(deck = Deck.of("Forest" to 20, "Island" to 20), skipMulligans = true)
+        val caster = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val entityId = driver.putCreatureOnBattlefield(caster, "Self Transformer")
+        driver.removeSummoningSickness(entityId)
+
+        fun activate() {
+            val action = driver.legalActions(caster)
+                .first { it.description.contains("Transform", ignoreCase = true) }
+            driver.submitSuccess(action.action)
+        }
+
+        // Both instances go on the stack before either resolves.
+        activate()
+        activate()
+        driver.assertStackSize(2)
+
+        driver.bothPass() // first instance: turns it over
+        driver.getCardName(entityId) shouldBe "Self Transformer Back"
+
+        driver.bothPass() // second instance: CR 701.28f ignores its transform instruction
+        driver.getCardName(entityId) shouldBe "Self Transformer Back"
+        driver.state.getEntity(entityId)!!.get<DoubleFacedComponent>()!!
+            .currentFace shouldBe DoubleFacedComponent.Face.BACK
+    }
 })
+
+/**
+ * A 1/1 DFC whose front face carries a free activated ability that turns it over — the minimal
+ * shape CR 701.28f governs, since two activations can sit on the stack together.
+ */
+private val SelfTransformer: CardDefinition = CardDefinition.doubleFacedCreature(
+    frontFace = CardDefinition(
+        name = "Self Transformer",
+        manaCost = ManaCost.parse("{1}"),
+        typeLine = TypeLine.creature(setOf(Subtype("Human"))),
+        oracleText = "Transform this creature.",
+        creatureStats = CreatureStats(1, 1),
+        script = CardScript.permanent(
+            ActivatedAbility(
+                id = AbilityId("self-transformer-flip"),
+                cost = AbilityCost.Free,
+                effect = TransformEffect(EffectTarget.Self),
+            )
+        )
+    ),
+    backFace = CardDefinition.creature(
+        name = "Self Transformer Back",
+        manaCost = ManaCost.ZERO,
+        subtypes = setOf(Subtype("Spirit")),
+        power = 3,
+        toughness = 3,
+        oracleText = ""
+    )
+)

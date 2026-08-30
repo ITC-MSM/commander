@@ -72,6 +72,23 @@ class TransformEffectExecutor(
             return EffectResult.success(state)
         }
 
+        // CR 701.28f — an activated or triggered ability of a permanent that tries to transform
+        // *that same permanent* does so only if the permanent hasn't transformed or converted
+        // since the ability was put onto the stack; otherwise the instruction is ignored. The
+        // shape it protects is a countdown card whose triggers can stack up: two creature cards
+        // hit the graveyard at once while Soulcipher Board is on its last omen counter, and
+        // without this the first trigger flips it to Cipherbound Spirit and the second — finding
+        // no counters to remove and so passing its own "if it has no omen counters" check —
+        // flips it straight back. Same story for Thing in the Ice on one ice counter with two
+        // spells on the stack.
+        if (targetId == context.sourceId &&
+            context.sourceFaceChanges != null &&
+            context.sourceFaceChanges != state.getEntity(targetId)
+                ?.get<DoubleFacedComponent>()?.faceChanges
+        ) {
+            return EffectResult.success(state)
+        }
+
         // A non-DFC target is a silent no-op (CR 701.27b — "if a permanent that isn't a
         // transforming double-faced permanent would transform, nothing happens").
         val (newState, event) = flipDfcInPlace(state, cardRegistry, targetId)
@@ -190,9 +207,14 @@ internal fun setDfcFace(
 
     // Rule 712.8a: save the front face card so ZoneTransitionService can restore it
     // without a registry lookup when the DFC leaves the battlefield on its back face.
+    // The face-change tally advances on every real swap — CR 701.28f's clock, see
+    // [DoubleFacedComponent.faceChanges].
+    val faceChanges = dfc.faceChanges + if (nextFace == dfc.currentFace) 0 else 1
     val updatedDfc = when (nextFace) {
-        DoubleFacedComponent.Face.BACK -> dfc.copy(currentFace = nextFace, frontFaceCard = currentCard)
-        DoubleFacedComponent.Face.FRONT -> dfc.copy(currentFace = nextFace, frontFaceCard = null)
+        DoubleFacedComponent.Face.BACK ->
+            dfc.copy(currentFace = nextFace, frontFaceCard = currentCard, faceChanges = faceChanges)
+        DoubleFacedComponent.Face.FRONT ->
+            dfc.copy(currentFace = nextFace, frontFaceCard = null, faceChanges = faceChanges)
     }
 
     val staticAbilityHandler = StaticAbilityHandler(cardRegistry)
@@ -419,11 +441,16 @@ internal fun returnDfcFace(
             dfcBackFaceManaValue(cardRegistry.getCard(dfc.frontCardDefinitionId), currentCard.manaValue)
         } else null,
     )
+    val returnFaceChanges = dfc.faceChanges + if (destinationFace == dfc.currentFace) 0 else 1
     val updatedDfc = when (destinationFace) {
         // currentCard is the front face here (the entity reverts to its front face on leaving the
         // battlefield, Rule 712.8a) — stash it so the back face can restore it on its next exit.
-        DoubleFacedComponent.Face.BACK -> dfc.copy(currentFace = destinationFace, frontFaceCard = currentCard)
-        DoubleFacedComponent.Face.FRONT -> dfc.copy(currentFace = destinationFace, frontFaceCard = null)
+        DoubleFacedComponent.Face.BACK -> dfc.copy(
+            currentFace = destinationFace, frontFaceCard = currentCard, faceChanges = returnFaceChanges
+        )
+        DoubleFacedComponent.Face.FRONT -> dfc.copy(
+            currentFace = destinationFace, frontFaceCard = null, faceChanges = returnFaceChanges
+        )
     }
 
     val prepared = state.updateEntity(entityId) { c ->

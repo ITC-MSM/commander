@@ -295,6 +295,14 @@ data class TriggeredAbilityOnStackComponent(
      */
     val carriedPipeline: com.wingedsheep.engine.handlers.PipelineState? = null,
     /**
+     * The source permanent's [com.wingedsheep.engine.state.components.identity.DoubleFacedComponent]
+     * face-change tally the moment this ability was put onto the stack — CR 701.28f's clock. If the
+     * source has turned over since, an instruction in this ability to transform *it* is ignored.
+     * Null when the source is not a double-faced permanent, and for synthesized abilities (copies,
+     * reflexive triggers) that carry no restriction.
+     */
+    val sourceFaceChanges: Int? = null,
+    /**
      * The ability's intervening-"if" clause (CR 603.4), carried onto the stack object because the
      * ability itself is no longer reachable by the time this resolves — the trigger has been
      * detected, the source may have left the battlefield, and the granting static may be gone.
@@ -383,6 +391,14 @@ data class ActivatedAbilityOnStackComponent(
      * Boomerang's "Return [this Equipment] to its owner's hand". Null for non-granted abilities.
      */
     val granterId: EntityId? = null,
+    /**
+     * The source permanent's [com.wingedsheep.engine.state.components.identity.DoubleFacedComponent]
+     * face-change tally the moment this ability was put onto the stack — CR 701.28f's clock. If the
+     * source has turned over since, an instruction in this ability to transform *it* is ignored.
+     * Null when the source is not a double-faced permanent, and for synthesized abilities (copies,
+     * reflexive triggers) that carry no restriction.
+     */
+    val sourceFaceChanges: Int? = null,
     /**
      * Division chosen at activation for a `DividedDamageEffect` ability (target -> damage), locked
      * onto the stack object so responding removal can't make the controller re-divide (CR 601.2d).

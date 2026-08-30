@@ -1,12 +1,22 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
+import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
+import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.ControllerComponent
+import com.wingedsheep.engine.state.components.identity.TokenComponent
+import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.vow.cards.SoulcipherBoard
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.CounterType
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.TypeLine
+import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.model.CreatureStats
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
@@ -23,12 +33,38 @@ import io.kotest.matchers.shouldNotBe
  *  this artifact. Then if it has no omen counters on it, transform it."
  *
  * Covers the new [com.wingedsheep.sdk.core.Counters.OMEN] countdown counter, the per-card (not
- * batching) graveyard trigger, and the transform once the last counter is gone.
+ * batching) graveyard trigger, and the transform once the last counter is gone — plus the two
+ * ways the countdown must *not* run: a dying creature token isn't a card, and a second trigger
+ * resolving after the board has already turned over must not turn it back (CR 701.28f).
  */
 class SoulcipherBoardScenarioTest : FunSpec({
 
     fun omenCounters(driver: GameTestDriver, id: EntityId): Int =
         driver.state.getEntity(id)?.get<CountersComponent>()?.getCount(CounterType.OMEN) ?: 0
+
+    /** A real 1/1 creature token — no card definition behind it, so it is not a creature card. */
+    fun GameTestDriver.createMouseToken(playerId: EntityId): EntityId {
+        val tokenId = EntityId.generate()
+        val container = ComponentContainer.of(
+            CardComponent(
+                cardDefinitionId = "token:Mouse",
+                name = "Mouse Token",
+                manaCost = ManaCost.ZERO,
+                typeLine = TypeLine.parse("Creature - Mouse"),
+                baseStats = CreatureStats(1, 1),
+                colors = setOf(Color.WHITE),
+                ownerId = playerId,
+            ),
+            TokenComponent,
+            ControllerComponent(playerId),
+            SummoningSicknessComponent,
+        )
+        replaceState(
+            state.withEntity(tokenId, container)
+                .addToZone(ZoneKey(playerId, Zone.BATTLEFIELD), tokenId)
+        )
+        return tokenId
+    }
 
     /** Cast Soulcipher Board for real so its enters-with-counters replacement runs. */
     fun boardOnBattlefield(): Pair<GameTestDriver, EntityId> {
@@ -120,6 +156,71 @@ class SoulcipherBoardScenarioTest : FunSpec({
 
         driver.getGraveyard(me).contains(bolt) shouldBe true
         withClue("only creature cards count down the omen counters") {
+            omenCounters(driver, board) shouldBe 3
+        }
+    }
+    /**
+     * Two creature cards reaching the graveyard together put *two* triggers on the stack. With one
+     * omen counter left, the first removes it and transforms the board; the second then finds no
+     * counter to remove and a counter count of zero, so its "then if it has no omen counters"
+     * check passes and it reaches the transform instruction too.
+     *
+     * CR 701.28f: that instruction is ignored, because the permanent has already transformed since
+     * that ability was put onto the stack. Before the rule was enforced the board flipped straight
+     * back to its artifact face and Cipherbound Spirit vanished from the battlefield.
+     */
+    test("a second trigger resolving after the transform does not turn the board back over") {
+        val (driver, board) = boardOnBattlefield()
+        val me = driver.activePlayer!!
+        val opp = driver.getOpponent(me)
+
+        driver.addComponent(board, CountersComponent(mapOf(CounterType.OMEN to 1)))
+
+        // Two of my creatures trade in combat, so both hit my graveyard at the same time.
+        val attackerA = driver.putCreatureOnBattlefield(me, "Grizzly Bears")
+        val attackerB = driver.putCreatureOnBattlefield(me, "Grizzly Bears")
+        driver.removeSummoningSickness(attackerA)
+        driver.removeSummoningSickness(attackerB)
+        val blockerA = driver.putCreatureOnBattlefield(opp, "Grizzly Bears")
+        val blockerB = driver.putCreatureOnBattlefield(opp, "Grizzly Bears")
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(me, listOf(attackerA, attackerB), opp).error shouldBe null
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+        driver.declareBlockers(
+            opp,
+            mapOf(blockerA to listOf(attackerA), blockerB to listOf(attackerB))
+        ).error shouldBe null
+        driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
+
+        withClue("both creature cards did reach my graveyard, so both triggers fired") {
+            driver.getGraveyardCardNames(me).count { it == "Grizzly Bears" } shouldBe 2
+        }
+        withClue("the transformed permanent stays on the battlefield as Cipherbound Spirit") {
+            driver.getCardName(board) shouldBe "Cipherbound Spirit"
+            driver.findPermanent(me, "Cipherbound Spirit") shouldNotBe null
+            driver.findPermanent(me, "Soulcipher Board") shouldBe null
+        }
+    }
+
+    /**
+     * "Whenever a creature **card** is put into your graveyard" — a token creature dying is not a
+     * card and never counts the board down (the card's second Gatherer ruling).
+     */
+    test("a dying creature token removes no counter") {
+        val (driver, board) = boardOnBattlefield()
+        val me = driver.activePlayer!!
+
+        val token = driver.createMouseToken(me)
+        val bolt = driver.putCardInHand(me, "Lightning Bolt")
+        driver.giveMana(me, Color.RED, 1)
+        driver.castSpell(me, bolt, listOf(token)).isSuccess shouldBe true
+        driver.bothPass()
+
+        withClue("the token died") {
+            driver.getPermanents(me).contains(token) shouldBe false
+        }
+        withClue("a token is not a creature card, so the countdown does not run") {
             omenCounters(driver, board) shouldBe 3
         }
     }

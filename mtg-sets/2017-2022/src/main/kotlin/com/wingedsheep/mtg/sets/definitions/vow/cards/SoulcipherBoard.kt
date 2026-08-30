@@ -54,6 +54,17 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * counters, not one. "From anywhere" is expressed by leaving `from` unset. The follow-up
  * "Then if it has no omen counters on it" is an intervening check at resolution, so it is a
  * [ConditionalEffect] over the *current* counter count rather than a second trigger.
+ *
+ * `nontoken()` is the printed word "**card**": a dying creature *token* is not a card and never
+ * counts down the board (the card's second Gatherer ruling says so outright). The engine's LKI
+ * matcher answers it off the death event's `wasToken` snapshot, since 704.5d has already swept the
+ * token by the time the trigger is matched.
+ *
+ * Two triggers can be waiting on the stack together — two creature cards hitting the graveyard at
+ * once — and the second one finds no counter to remove and a counter count of zero, so its "then
+ * if" check passes. It does *not* flip the permanent back: CR 701.28f ignores an ability's
+ * instruction to transform the permanent it's on once that permanent has transformed since the
+ * ability went on the stack, which the engine enforces in `TransformEffectExecutor`.
  */
 
 private val SoulcipherBoardFront = card("Soulcipher Board") {
@@ -87,7 +98,7 @@ private val SoulcipherBoardFront = card("Soulcipher Board") {
     triggeredAbility {
         trigger = TriggerSpec(
             event = ZoneChangeEvent(
-                filter = GameObjectFilter.Creature.ownedByYou(),
+                filter = GameObjectFilter.Creature.ownedByYou().nontoken(),
                 to = Zone.GRAVEYARD,
             ),
             binding = TriggerBinding.ANY,
