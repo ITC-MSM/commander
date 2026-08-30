@@ -3,6 +3,7 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.core.ChooseNumberDecision
 import com.wingedsheep.engine.core.ChooseOptionDecision
 import com.wingedsheep.engine.core.ChooseTargetsDecision
+import com.wingedsheep.engine.core.CombatResolutionDecision
 import com.wingedsheep.engine.core.NumberChosenResponse
 import com.wingedsheep.engine.core.OptionChosenResponse
 import com.wingedsheep.engine.core.PendingDecision
@@ -236,23 +237,37 @@ class CemeteryDesecratorScenarioTest : FunSpec({
         val foe = driver.player2
 
         val desecrator = driver.putCreatureOnBattlefield(you, "Cemetery Desecrator")
+        driver.removeSummoningSickness(desecrator)
         val courser = stockGraveyard(driver)
 
-        driver.putCardInHand(you, "Doom Blade")
-        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
-        driver.giveMana(you, Color.BLACK, 1)
-        driver.giveColorlessMana(you, 1)
-        driver.castSpellWithTargets(
-            you,
-            driver.findCardInHand(you, "Doom Blade")!!,
-            listOf(entityIdToChosenTarget(driver.state, desecrator))
-        ).error shouldBe null
-        driver.settle()
+        // Killed in combat rather than by removal: the Desecrator is black, so Doom Blade — the
+        // only destroy effect in TestCards — can't legally target it. Two blockers because the
+        // Desecrator has menace (CR 702.110b), which is incidentally the keyword under test here.
+        val blockerA = driver.putCreatureOnBattlefield(foe, "Force of Nature")
+        val blockerB = driver.putCreatureOnBattlefield(foe, "Centaur Courser")
 
-        val select = driver.advanceUntil("the exile selection") { it is SelectCardsDecision }
-            as SelectCardsDecision
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(you, listOf(desecrator), foe).error shouldBe null
+        driver.bothPass()
+        driver.declareBlockers(
+            foe,
+            mapOf(blockerA to listOf(desecrator), blockerB to listOf(desecrator))
+        ).error shouldBe null
+        // Walk combat until the blocked 4/4 is actually dead — how many priority rounds and
+        // damage confirmations that takes is not this test's business.
+        var safety = 0
+        while (!driver.getGraveyard(you).contains(desecrator) && safety++ < 14) {
+            when (val d = driver.pendingDecision) {
+                null -> driver.bothPass()
+                is CombatResolutionDecision -> driver.confirmCombatDamage()
+                else -> error("unexpected decision before the Desecrator died: ${d::class.simpleName} ${d.prompt}")
+            }
+        }
+
         // The Desecrator is in a graveyard by now, and is the one card "another" excludes.
         driver.getGraveyard(you).contains(desecrator) shouldBe true
+        val select = driver.advanceUntil("the exile selection") { it is SelectCardsDecision }
+            as SelectCardsDecision
         select.options.contains(desecrator) shouldBe false
         select.options.contains(courser) shouldBe true
     }

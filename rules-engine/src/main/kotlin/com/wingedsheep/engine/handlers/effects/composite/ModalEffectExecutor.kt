@@ -207,7 +207,12 @@ class ModalEffectExecutor(
             sourceId = context.sourceId,
             sourceName = sourceName,
             xValue = context.xValue,
-            triggeringEntityId = context.triggeringEntityId
+            triggeringEntityId = context.triggeringEntityId,
+            // The resolution so far, carried into each mode. A mode's effect can read what an
+            // earlier step of the same resolution stored — Cemetery Desecrator's two modes both
+            // spell X as `StoredCardManaValue("exiledCard")`, the collection its reflexive
+            // trigger's action half filled. Dropping it made every such amount read 0.
+            pipeline = context.pipeline
         )
         return processPreTargetedEffectQueue(state, entries, baseCtx, effectExecutor, targetValidator, emptyList())
     }
@@ -257,7 +262,16 @@ internal data class PreTargetedEffectContext(
     val sourceId: com.wingedsheep.sdk.model.EntityId?,
     val sourceName: String?,
     val xValue: Int?,
-    val triggeringEntityId: com.wingedsheep.sdk.model.EntityId?
+    val triggeringEntityId: com.wingedsheep.sdk.model.EntityId?,
+    /**
+     * Pipeline state the enclosing resolution had already built — stored collections, numbers,
+     * chosen values — which each mode's own [EffectContext] inherits. Only the per-mode
+     * `namedTargets` are rebuilt on top of it, because those *are* per mode.
+     *
+     * Defaults to empty for the callers that genuinely have no enclosing pipeline (splice, CR
+     * 702.47b: each spliced card's text is its own resolution).
+     */
+    val pipeline: PipelineState = PipelineState.EMPTY
 )
 
 /**
@@ -319,8 +333,12 @@ internal fun processPreTargetedEffectQueue(
         controllerId = ctx.controllerId,
         xValue = ctx.xValue,
         targets = head.targets,
-        pipeline = PipelineState(
-            namedTargets = EffectContext.buildNamedTargets(head.targetRequirements, head.targets)
+        // The enclosing resolution's pipeline, with this mode's own named targets laid over it.
+        // A bare `PipelineState(namedTargets = …)` here dropped every stored collection, number
+        // and chosen value the resolution had accumulated before the modal.
+        pipeline = ctx.pipeline.copy(
+            namedTargets = ctx.pipeline.namedTargets +
+                EffectContext.buildNamedTargets(head.targetRequirements, head.targets)
         ),
         triggeringEntityId = ctx.triggeringEntityId
     )
@@ -336,6 +354,7 @@ internal fun processPreTargetedEffectQueue(
                 sourceName = ctx.sourceName,
                 xValue = ctx.xValue,
                 triggeringEntityId = ctx.triggeringEntityId,
+                pipeline = ctx.pipeline,
                 remainingEntries = tail
             )
         )
