@@ -22,7 +22,7 @@ const BASE_PILE_COUNT = 3
 // Reserve room above the opponent's pile column for the absolutely-positioned
 // Concede button so the top pile doesn't render under it.
 const OPPONENT_TOP_RESERVED = 52
-const MIN_PILE_WIDTH = 28
+const MIN_PILE_WIDTH = 24
 
 /**
  * Native tooltip for the Deck pile. When the top card is face up, lead with its name — that's
@@ -36,8 +36,16 @@ function deckPileTitle(canBrowseDeck: boolean, isOwnDeck: boolean, topCard: Clie
 
 /**
  * Deck, graveyard, exile — and, when present, a dedicated Plotted pile — display.
+ *
+ * `reserveConcedeRoom` keeps the top pile clear of the absolutely-positioned Concede button.
+ * Multiplayer overview cells pass false: their strip already clears the button row with its own
+ * paddingTop, and reserving it again here pushed the Exile pile past the cell's overflow clip.
  */
-export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer; isOpponent?: boolean }) {
+export function ZonePile({
+  player,
+  isOpponent = false,
+  reserveConcedeRoom = isOpponent,
+}: { player: ClientPlayer; isOpponent?: boolean; reserveConcedeRoom?: boolean }) {
   const graveyardCards = useZoneCards(graveyard(player.playerId))
   const topGraveyardCard = graveyardCards[graveyardCards.length - 1]
   const exileCards = useZoneCards(exile(player.playerId))
@@ -98,25 +106,31 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
   // viewports. Without this, the third pile (Exile) overflows and is clipped
   // by the opponentArea/playerArea overflow:hidden.
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const [fittedPileWidth, setFittedPileWidth] = useState(responsive.pileWidth)
+  const [fit, setFit] = useState({ pileWidth: responsive.pileWidth, showLabels: true })
 
   useLayoutEffect(() => {
     const el = containerRef.current
     const parent = el?.parentElement
     if (!parent) return
 
-    const reservedTop = isOpponent ? OPPONENT_TOP_RESERVED : 0
+    const reservedTop = reserveConcedeRoom ? OPPONENT_TOP_RESERVED : 0
     const reservedBottom = isOpponent ? 0 : responsive.sectionGap * 2
     const totalGap = responsive.cardGap * (pileCount - 1)
-    const totalLabel = LABEL_HEIGHT * pileCount
-    const fixedOverhead = reservedTop + reservedBottom + totalGap + totalLabel
 
     const compute = (availableHeight: number) => {
-      const heightForPiles = Math.max(0, availableHeight - fixedOverhead)
-      const maxPileHeight = heightForPiles / pileCount
-      const widthFromHeight = Math.floor(maxPileHeight / CARD_RATIO)
+      const widthFor = (withLabels: boolean) => {
+        const labelOverhead = withLabels ? LABEL_HEIGHT * pileCount : 0
+        const heightForPiles = Math.max(0, availableHeight - reservedTop - reservedBottom - totalGap - labelOverhead)
+        return Math.floor(heightForPiles / pileCount / CARD_RATIO)
+      }
+      // Labels are the first thing to give: in a short multiplayer cell, a labelled column
+      // can't fit even minimum-width piles, and the Exile pile (bottom of the column) gets
+      // clipped by the cell's overflow:hidden. Trading the labels for pile height keeps every
+      // pile visible — counts, artwork, and tooltips still identify the zones.
+      const showLabels = widthFor(true) >= MIN_PILE_WIDTH
+      const widthFromHeight = widthFor(showLabels)
       const next = Math.max(MIN_PILE_WIDTH, Math.min(responsive.pileWidth, widthFromHeight))
-      setFittedPileWidth(next)
+      setFit({ pileWidth: next, showLabels })
     }
 
     compute(parent.clientHeight)
@@ -126,9 +140,10 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
     })
     obs.observe(parent)
     return () => obs.disconnect()
-  }, [isOpponent, pileCount, responsive.pileWidth, responsive.cardGap, responsive.sectionGap])
+  }, [isOpponent, reserveConcedeRoom, pileCount, responsive.pileWidth, responsive.cardGap, responsive.sectionGap])
 
-  const effectivePileWidth = fittedPileWidth
+  const effectivePileWidth = fit.pileWidth
+  const showLabels = fit.showLabels
   const effectivePileHeight = Math.round(effectivePileWidth * CARD_RATIO)
 
   // Find any graveyard cards that are being targeted by spells on the stack
@@ -154,6 +169,18 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
     width: effectivePileWidth,
     height: effectivePileHeight,
     borderRadius: responsive.isMobile ? 4 : 6,
+  }
+
+  // Clamp labels to the column so a wide label ("Graveyard") can't spill past the cell's
+  // overflow clip — at the table's rightmost column that clip edge is the viewport edge,
+  // and the spill rendered as sheared half-letters.
+  const zoneLabelStyle: React.CSSProperties = {
+    ...styles.zoneLabel,
+    fontSize: responsive.isMobile ? 8 : 10,
+    maxWidth: effectivePileWidth + 10,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   }
 
   // Position piles at the far end of each player's battlefield row (opponent:
@@ -227,7 +254,7 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
           {showsTopLibraryCard && <div style={styles.deckTopRevealedBadge}>👁</div>}
           <div style={{ ...styles.pileCount, fontSize: responsive.fontSize.small }}>{player.librarySize}</div>
         </div>
-        <span style={{ ...styles.zoneLabel, fontSize: responsive.isMobile ? 8 : 10 }}>Deck</span>
+        {showLabels && <span style={zoneLabelStyle}>Deck</span>}
       </div>
 
       {/* Graveyard */}
@@ -283,7 +310,7 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
             )
           })}
         </div>
-        <span style={{ ...styles.zoneLabel, fontSize: responsive.isMobile ? 8 : 10 }}>Graveyard</span>
+        {showLabels && <span style={zoneLabelStyle}>Graveyard</span>}
       </div>
 
       {/* Exile */}
@@ -309,7 +336,7 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
             <div style={{ ...styles.pileCount, fontSize: responsive.fontSize.small }}>{player.exileSize}</div>
           )}
         </div>
-        <span style={{ ...styles.zoneLabel, fontSize: responsive.isMobile ? 8 : 10 }}>Exile</span>
+        {showLabels && <span style={zoneLabelStyle}>Exile</span>}
       </div>
 
       {/* Plotted (CR 718) — only present when this player has plotted spells waiting. A
@@ -336,9 +363,11 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
               {plottedCards.length}
             </div>
           </div>
-          <span style={{ ...styles.zoneLabel, ...styles.plottedZoneLabel, fontSize: responsive.isMobile ? 8 : 10 }}>
-            ⚐ Plotted
-          </span>
+          {showLabels && (
+            <span style={{ ...zoneLabelStyle, ...styles.plottedZoneLabel }}>
+              ⚐ Plotted
+            </span>
+          )}
         </div>
       )}
 
@@ -366,9 +395,11 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
               {paradigmCards.length}
             </div>
           </div>
-          <span style={{ ...styles.zoneLabel, ...styles.paradigmZoneLabel, fontSize: responsive.isMobile ? 8 : 10 }}>
-            ◈ Paradigm
-          </span>
+          {showLabels && (
+            <span style={{ ...zoneLabelStyle, ...styles.paradigmZoneLabel }}>
+              ◈ Paradigm
+            </span>
+          )}
         </div>
       )}
 
@@ -420,9 +451,11 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
               {suspendedCards.length}
             </div>
           </div>
-          <span style={{ ...styles.zoneLabel, ...styles.suspendedZoneLabel, fontSize: responsive.isMobile ? 8 : 10 }}>
-            ⏳ Suspended
-          </span>
+          {showLabels && (
+            <span style={{ ...zoneLabelStyle, ...styles.suspendedZoneLabel }}>
+              ⏳ Suspended
+            </span>
+          )}
         </div>
       )}
 
