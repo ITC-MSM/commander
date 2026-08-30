@@ -328,6 +328,30 @@
     ]
 }
 
+// Deadly Recluse
+{
+    "name": "Deadly Recluse",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Spider",
+    "oracleText": "Reach (This creature can block creatures with flying.)\nDeathtouch (Any amount of damage this deals to a creature is enough to destroy it.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "REACH",
+        "DEATHTOUCH"
+    ],
+    "metadata": {
+        "collectorNumber": "175",
+        "artist": "Warren Mahy",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/a/6ab810f1-21d6-4a98-b77a-e455370aa6cc.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Disentomb
 {
     "name": "Disentomb",
@@ -816,6 +840,31 @@
     ]
 }
 
+// Griffin Sentinel
+{
+    "name": "Griffin Sentinel",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Griffin",
+    "oracleText": "Flying\nVigilance (Attacking doesn't cause this creature to tap.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "metadata": {
+        "collectorNumber": "12",
+        "artist": "Warren Mahy",
+        "flavorText": "Once a griffin sentinel adopts a territory as its own, only death can force it to betray its post.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/6784b663-b117-45a2-bde4-72e080058ea7.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Honor of the Pure
 {
     "name": "Honor of the Pure",
@@ -1094,6 +1143,47 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Planar Cleansing
+{
+    "name": "Planar Cleansing",
+    "manaCost": "{3}{W}{W}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy all nonland permanents.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "BattlefieldMatching",
+                        "filter": "nonland permanent"
+                    },
+                    "storeAs": "destroyAll_gathered"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "destroyAll_gathered",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    },
+                    "moveType": "Destroy"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "24",
+        "rarity": "RARE",
+        "artist": "Michael Komarck",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/0/30ee0d57-e404-4599-9b6e-f8ab8a95f9fa.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -1421,6 +1511,64 @@
     "colorIdentityOverride": [
         "GREEN",
         "WHITE"
+    ]
+}
+
+// Tome Scour
+{
+    "name": "Tome Scour",
+    "manaCost": "{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Target player mills five cards.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 5
+                        },
+                        "player": {
+                            "type": "ContextPlayer",
+                            "index": 0
+                        },
+                        "isMill": true
+                    },
+                    "storeAs": "milled"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "milled",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard",
+                        "player": {
+                            "type": "ContextPlayer",
+                            "index": 0
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "target player"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "76",
+        "artist": "Steven Belledin",
+        "flavorText": "Genius is overrated, especially when it's someone else's.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fdbdf96b-e7c5-42e5-9a16-03daafde40af.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
