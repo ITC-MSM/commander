@@ -54,8 +54,30 @@ fun nameVisibleTo(
     isSpectator: Boolean = false,
 ): String {
     val masked = faceDownDisplayName(state, entityId) ?: return fallback
-    val mayLook = !isSpectator && viewingPlayerId == playerWhoMayLookAt(state, entityId)
-    return if (mayLook) fallback else masked
+    return if (identityVisibleTo(state, entityId, viewingPlayerId, isSpectator)) fallback else masked
+}
+
+/**
+ * Whether [viewingPlayerId] may read [entityId]'s *printed* identity — the name, rules text, mana
+ * cost and card definition of the card underneath.
+ *
+ * True for everything except a face-down object another player controls (CR 708.5). Use it to gate
+ * the printed fields that no other layer masks: a face-down permanent's projected characteristics
+ * are already the 2/2 with no name that CR 708.2a describes, but the card's own printed text has no
+ * projection entry to hide behind.
+ *
+ * Controller-only, matching the rule. A grant that widens it (Lens of Clarity's "you may look at
+ * face-down creatures") is layered on top by the caller that supports it — see
+ * [com.wingedsheep.engine.view.ClientStateTransformer].
+ */
+fun identityVisibleTo(
+    state: GameState,
+    entityId: EntityId,
+    viewingPlayerId: EntityId,
+    isSpectator: Boolean = false,
+): Boolean {
+    faceDownDisplayName(state, entityId) ?: return true
+    return !isSpectator && viewingPlayerId == playerWhoMayLookAt(state, entityId)
 }
 
 /**
