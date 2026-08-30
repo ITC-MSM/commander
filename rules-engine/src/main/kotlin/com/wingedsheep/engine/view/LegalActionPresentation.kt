@@ -170,6 +170,14 @@ data class LegalActionInfo(
      */
     val availableManaColors: List<String>? = null,
     val sourceZone: String? = null,
+    /**
+     * True when this cast puts the card on the stack **back face up** (CR 712.8c) — disturb
+     * (CR 702.146a) today. The card sits in its zone printed *front* face up, so a client that
+     * renders the offer from the card's own name/art/text shows the wrong spell; it must swap in
+     * the `backFace*` fields of [ClientCard] instead. Mirrors
+     * [com.wingedsheep.engine.legalactions.LegalAction.castsTransformed].
+     */
+    val castsTransformed: Boolean = false,
     val blockerMaxBlockCounts: Map<EntityId, Int>? = null,
     val mandatoryBlockerAssignments: Map<EntityId, List<EntityId>>? = null,
     val maxRepeatableActivations: Int? = null,

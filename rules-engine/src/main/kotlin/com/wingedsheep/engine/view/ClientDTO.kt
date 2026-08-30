@@ -625,6 +625,19 @@ data class ClientCard(
     val backFaceImageUri: String? = null,
 
     /**
+     * Back face's printed power / toughness, and its printed keywords.
+     *
+     * The siblings of [backFaceName] / [backFaceTypeLine] / [backFaceOracleText], and they exist
+     * for the same reason: a client showing the back face — a hover flip, or the disturb offer a
+     * graveyard card is rendered as (CR 712.8c) — otherwise pairs the back's art and text with the
+     * *front's* stats and keyword chips. Printed values, not projected ones: the back face of a
+     * card outside the battlefield has no projection entry of its own.
+     */
+    val backFacePower: Int? = null,
+    val backFaceToughness: Int? = null,
+    val backFaceKeywords: Set<Keyword> = emptySet(),
+
+    /**
      * For planeswalkers on the battlefield: every loyalty ability on the card, in declaration
      * order. Lets the client show the full menu with unavailable abilities grayed out instead of
      * hiding them. Null for non-planeswalkers and for planeswalkers outside the battlefield.
