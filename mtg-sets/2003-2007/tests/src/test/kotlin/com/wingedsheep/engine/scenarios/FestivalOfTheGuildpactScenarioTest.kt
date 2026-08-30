@@ -46,6 +46,9 @@ class FestivalOfTheGuildpactScenarioTest : ScenarioTestBase() {
                     game.handSize(1) shouldBe handBefore
                 }
 
+                // Player 1 still holds priority after their own spell resolved; hand it over
+                // so the opponent can respond with the Bolt.
+                game.passPriority()
                 game.castSpellTargetingPlayer(2, "Lightning Bolt", 1).error shouldBe null
                 game.resolveStack()
 
@@ -71,6 +74,9 @@ class FestivalOfTheGuildpactScenarioTest : ScenarioTestBase() {
                 game.castXSpell(1, "Festival of the Guildpact", 1).error shouldBe null
                 game.resolveStack()
 
+                // Player 1 still holds priority after their own spell resolved; hand it over
+                // so the opponent can respond with the Bolt.
+                game.passPriority()
                 game.castSpellTargetingPlayer(2, "Lightning Bolt", 1).error shouldBe null
                 game.resolveStack()
 
