@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 261 / 273
+**Implemented:** 263 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -73,7 +73,7 @@
 - [x] Diregraf Scavenger
 - [x] Distracting Geist
 - [x] Diver Skaab
-- [ ] Dollhouse of Horrors
+- [x] Dollhouse of Horrors
 - [x] Dominating Vampire
 - [x] Doomed Dissenter
 - [x] Dormant Grove
@@ -111,7 +111,7 @@
 - [x] Gluttonous Guest
 - [x] Graf Reaver
 - [x] Grisly Ritual
-- [ ] Grolnok, the Omnivore
+- [x] Grolnok, the Omnivore
 - [x] Groom's Finery
 - [x] Gryff Rider
 - [x] Gryffwing Cavalry
