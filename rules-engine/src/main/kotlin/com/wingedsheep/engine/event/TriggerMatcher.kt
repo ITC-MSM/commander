@@ -1492,6 +1492,21 @@ class TriggerMatcher(
         if (trigger.spellsOnly && !event.sourceIsSpell) return false
         if (trigger.abilitiesOnly && event.sourceIsSpell) return false
 
+        // "becomes the target of an **Aura** spell" (Brine Comber) — narrow by the targeting
+        // object's own card data. The source is a spell on the stack (or the permanent whose
+        // ability targeted), so the same PredicateEvaluator call the targetFilter uses below reads
+        // it: projected types when it has a battlefield projection, base card data otherwise. A
+        // source with no card data (a spell that has already left the stack) fails closed.
+        val sourceFilter = trigger.sourceFilter
+        if (sourceFilter != null) {
+            val sourceContainer = state.getEntity(event.sourceEntityId) ?: return false
+            if (!sourceContainer.has<CardComponent>()) return false
+            val sourcePredicateContext = PredicateContext(controllerId = controllerId, sourceId = sourceId)
+            if (!PredicateEvaluator().matches(
+                    state, state.projectedState, event.sourceEntityId, sourceFilter, sourcePredicateContext
+                )) return false
+        }
+
         // Valiant: check if the targeting spell/ability is controlled by "you" (the trigger's controller)
         if (trigger.byYou && event.controllerId != controllerId) return false
 
