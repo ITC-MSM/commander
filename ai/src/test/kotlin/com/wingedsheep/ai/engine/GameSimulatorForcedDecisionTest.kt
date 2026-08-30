@@ -1,5 +1,6 @@
 package com.wingedsheep.ai.engine
 
+import com.wingedsheep.ai.engine.rollout.FastDecisionResponder
 import com.wingedsheep.engine.core.ChooseNumberDecision
 import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.core.PassPriority
@@ -17,6 +18,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
@@ -85,5 +87,43 @@ class GameSimulatorForcedDecisionTest : FunSpec({
         val manaDecision = result.decision.shouldBeInstanceOf<SelectManaSourcesDecision>()
         manaDecision.availableSources.size shouldBe 2
         manaDecision.autoPaySuggestion.size shouldBe 1
+    }
+
+    test("a resolver that cannot re-enter still finishes the payment on rollout policy") {
+        val driver = GameTestDriver()
+        driver.registerCards(TestCards.all)
+        driver.initMirrorMatch(Deck.of("Forest" to 40))
+
+        val payer = driver.player1
+        val source = driver.putCreatureOnBattlefield(payer, "Goblin Guide")
+        driver.putLandOnBattlefield(payer, "Forest")
+        driver.putLandOnBattlefield(payer, "Forest")
+
+        val payment = CostPaymentService(EngineServices(driver.cardRegistry)).pay(
+            state = driver.state,
+            payerId = payer,
+            cost = Costs.pay.Mana(ManaCost.parse("{G}")),
+            sourceId = source,
+        ).shouldBeInstanceOf<PaymentResult.Pending>()
+
+        val accept = YesNoResponse(payment.pendingDecision.id, choice = true)
+
+        // A strategic resolver scores its options by simulating them, so the inner simulation runs
+        // with the resolver locked out. The line it replays reaches this very mana decision again:
+        // without a fallback the inner run abandons the resolution and scores a board with the
+        // cost half-paid.
+        val simulator = GameSimulator(driver.cardRegistry)
+        var innerResult: SimulationResult? = null
+        simulator.decisionResolver = { state, decision ->
+            if (innerResult == null) {
+                innerResult = simulator.simulateDecision(payment.state, accept)
+            }
+            FastDecisionResponder().respond(state, decision, decision.playerId)
+        }
+
+        simulator.simulateDecision(payment.state, accept)
+            .shouldBeInstanceOf<SimulationResult.Terminal>()
+
+        innerResult.shouldNotBeNull().shouldBeInstanceOf<SimulationResult.Terminal>()
     }
 })

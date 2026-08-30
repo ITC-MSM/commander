@@ -13,14 +13,13 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
 import com.wingedsheep.engine.state.components.battlefield.withCastChoice
+import com.wingedsheep.engine.legalactions.utils.TargetEnumerationUtils
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Mode
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
-import com.wingedsheep.sdk.scripting.targets.TargetOpponent
-import com.wingedsheep.sdk.scripting.targets.TargetPlayer
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 class ModalAndCloneContinuationResumer(
@@ -1739,12 +1738,7 @@ internal fun processChosenModeQueue(
     if (head.targetRequirements.size == 1) {
         val req = head.targetRequirements[0]
         val targets = legalTargetsMap[0] ?: emptyList()
-        val isPlayerTarget = req is TargetPlayer || req is TargetOpponent
-        if (isPlayerTarget &&
-            targets.size == 1 &&
-            req.count == 1 &&
-            req.effectiveMinCount == 1
-        ) {
+        if (TargetEnumerationUtils.shouldAutoSelectPlayerTarget(req, targets)) {
             val chosenTargets = listOf(entityIdToChosenTarget(state, targets[0]))
             val context = EffectContext(
                 sourceId = sourceId,

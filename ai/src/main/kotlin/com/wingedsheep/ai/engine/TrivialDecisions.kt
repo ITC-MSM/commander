@@ -41,10 +41,8 @@ object TrivialDecisions {
         // cap. Cross-requirement distinctness is not represented on ChooseTargetsDecision, so a
         // multi-requirement response cannot be proved unique here.
         is ChooseTargetsDecision -> {
-            val requirementIndices = decision.targetRequirements.map { it.index }
             val allForced = !decision.canCancel &&
-                requirementIndices.size <= 1 &&
-                requirementIndices.size == requirementIndices.toSet().size &&
+                decision.targetRequirements.size <= 1 &&
                 decision.targetRequirements.all { req ->
                     val targets = decision.legalTargets[req.index] ?: emptyList()
                     targets.size == 1 &&
