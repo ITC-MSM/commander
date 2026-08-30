@@ -203,8 +203,16 @@ class Strategist(
         val dropped = if (insightSink != null) mutableListOf<AiActionOption>() else null
         var searched = 0
         if (pass != null) {
+            val passSimulation = simulator.simulate(evaluationState, pass.action)
             leaves += pass
-            leafStates += simulator.simulate(evaluationState, pass.action).state
+            // The pass leaf is positional — `leafScores.first()` below is this entry — so an
+            // unfinished simulation cannot drop it. Fall back to the position we are standing in,
+            // which is the same "do nothing" reference the no-pass branch uses.
+            leafStates += if (passSimulation is SimulationResult.StoppedAtLimit) {
+                evaluationState
+            } else {
+                passSimulation.state
+            }
         }
         for (action in affordable) {
             searched++
@@ -214,6 +222,9 @@ class Strategist(
                 // modal/additional payments. If materializing the concrete action cannot pass the
                 // authoritative processor, it is not a candidate the AI may submit.
                 simulation is SimulationResult.Illegal -> false
+                // Automatic resolution ran out of transitions, so the retained board is mid-flight.
+                // Scoring it would rank a candidate on a position it never actually reaches.
+                simulation is SimulationResult.StoppedAtLimit -> false
                 simulation is SimulationResult.NeedsDecision -> true
                 // A line that walks back into a position we have already acted from has accomplished
                 // nothing, whatever the leaf score says — and it is not a one-off mistake, because it
@@ -231,10 +242,11 @@ class Strategist(
                 dropped?.add(
                     droppedOption(
                         evaluationState, action, materialized,
-                        note = if (illegal) {
-                            "dropped — illegal once materialized"
-                        } else {
-                            "dropped — leads back to a position already acted from"
+                        note = when {
+                            illegal -> "dropped — illegal once materialized"
+                            simulation is SimulationResult.StoppedAtLimit ->
+                                "dropped — simulation ran out of automatic transitions"
+                            else -> "dropped — leads back to a position already acted from"
                         },
                         submittable = !illegal,
                     )
@@ -429,7 +441,13 @@ class Strategist(
         // Ordered so the budget that already refines pays nothing at all here — no digest, no
         // second simulation. `chooseAction` digests the leaf it keeps either way.
         if (budget.allowances.refineTargetsBySimulation) return materialized to simulation
-        if (simulation is SimulationResult.Illegal || simulation is SimulationResult.NeedsDecision) {
+        // The three results whose state `chooseAction` never digests. A StoppedAtLimit board is
+        // mid-flight, so refining targets against its digest would compare against a position the
+        // candidate does not actually reach — hand it back and let the caller drop it.
+        if (simulation is SimulationResult.Illegal ||
+            simulation is SimulationResult.NeedsDecision ||
+            simulation is SimulationResult.StoppedAtLimit
+        ) {
             return materialized to simulation
         }
         if (StateProgress.digest(simulation.state) != here) return materialized to simulation
@@ -739,11 +757,14 @@ class Strategist(
                 // A target that resolves back into the position we are standing in is not a target
                 // choice, it is a no-op wearing one — Aphetto Alchemist untapping itself. Rank it
                 // below every real option, so `chooseAction` only ever drops the whole ability as
-                // inert when *no* target does anything.
-                if (StateProgress.digest(result.state) == here) {
-                    Double.NEGATIVE_INFINITY
-                } else {
-                    evaluator.evaluate(result.state, result.state.projectedState, playerId)
+                // inert when *no* target does anything. A target whose simulation never finished
+                // ranks there too, for the same reason: we cannot say what it does.
+                result.scoreOrRankLast { leaf ->
+                    if (StateProgress.digest(leaf) == here) {
+                        Double.NEGATIVE_INFINITY
+                    } else {
+                        evaluator.evaluate(leaf, leaf.projectedState, playerId)
+                    }
                 }
             } ?: continue
             chosenTargets[i] = TargetSelection.toChosenTarget(state, info, best, playerId)

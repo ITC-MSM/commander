@@ -1,5 +1,6 @@
 package com.wingedsheep.ai.training
 
+import com.wingedsheep.ai.engine.SimulationResult
 import com.wingedsheep.engine.core.GameConfig
 import com.wingedsheep.engine.core.GameInitializer
 import com.wingedsheep.engine.core.PlayerConfig
@@ -69,5 +70,19 @@ class DecisionTrainingRecordTest : FunSpec({
         a.others.single().visibleHand shouldHaveSize 0
         b.others.single().visibleHand shouldHaveSize 0
         a.others.single().handSize shouldBe b.others.single().handSize
+    }
+
+    test("training observations require a completed simulation boundary") {
+        val state = root(2)
+
+        completedEvaluationState(SimulationResult.Terminal(state, emptyList())) shouldBe state
+        completedEvaluationState(
+            SimulationResult.StoppedAtLimit(
+                state = state,
+                events = emptyList(),
+                automaticTransitions = 100,
+                limit = 100,
+            )
+        ) shouldBe null
     }
 })

@@ -744,9 +744,15 @@ class DecisionResponder(
     // Helpers
     // ═════════════════════════════════════════════════════════════════════
 
-    private fun evaluateResult(result: SimulationResult, playerId: EntityId): Double {
-        return evaluator.evaluate(result.state, result.state.projectedState, playerId)
-    }
+    /**
+     * The scoring chokepoint every `respond*` comparison runs through.
+     *
+     * A candidate whose automatic resolution never finished ranks below every candidate that
+     * reached a real boundary: the AI still has to answer the decision it was asked, and refusing
+     * to answer at all is how a live game wedges with no backstop able to see it.
+     */
+    private fun evaluateResult(result: SimulationResult, playerId: EntityId): Double =
+        result.scoreOrRankLast { evaluator.evaluate(it, it.projectedState, playerId) }
 
     private fun <T> pickBestBySimulation(
         state: GameState,

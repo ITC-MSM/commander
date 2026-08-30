@@ -1,8 +1,10 @@
 package com.wingedsheep.gym
 
+import com.wingedsheep.ai.engine.AutomaticResolutionLimitException
 import com.wingedsheep.ai.engine.DecisionResponder
 import com.wingedsheep.ai.engine.GameSimulator
 import com.wingedsheep.ai.engine.SimulationResult
+import com.wingedsheep.ai.engine.requireNoAutomaticResolutionStop
 import com.wingedsheep.ai.engine.evaluation.BoardEvaluator
 import com.wingedsheep.ai.engine.evaluation.CompositeBoardEvaluator
 import com.wingedsheep.ai.engine.evaluation.BoardPresence
@@ -173,6 +175,8 @@ class GameEnvironment private constructor(
      *               or a [SubmitDecision] when responding to a [pendingDecision].
      * @return [StepResult] with the new state, events, rewards, and termination flag.
      * @throws IllegalStateException if the game hasn't been started via [reset].
+     * @throws AutomaticResolutionLimitException if automatic resolution exhausts its progress
+     * guard; the environment is left at the pre-step state.
      */
     fun step(action: GameAction): StepResult {
         check(playerIds.isNotEmpty()) { "Call reset() before step()" }
@@ -181,7 +185,7 @@ class GameEnvironment private constructor(
             simulator.simulateDecision(state, action.response)
         } else {
             simulator.simulate(state, action)
-        }
+        }.requireNoAutomaticResolutionStop("Gym step")
 
         state = simResult.state
         events = events + simResult.events
