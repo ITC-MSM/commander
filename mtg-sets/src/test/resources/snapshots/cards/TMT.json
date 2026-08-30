@@ -5143,8 +5143,14 @@
                     "action": {
                         "type": "RemoveAnyNumberOfCounters",
                         "target": "Self",
-                        "maxTotal": 1,
-                        "minTotal": 1
+                        "maxTotal": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "minTotal": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
                     },
                     "reflexiveEffect": {
                         "type": "MoveToZone",

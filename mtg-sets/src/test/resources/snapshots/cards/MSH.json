@@ -10838,8 +10838,14 @@
                                                     "type": "PipelineTarget",
                                                     "collectionName": "hydeCounterSource"
                                                 },
-                                                "maxTotal": 1,
-                                                "minTotal": 1
+                                                "maxTotal": {
+                                                    "type": "Fixed",
+                                                    "amount": 1
+                                                },
+                                                "minTotal": {
+                                                    "type": "Fixed",
+                                                    "amount": 1
+                                                }
                                             },
                                             "successCriterion": "SuccessCriterion.CountersRemoved"
                                         },

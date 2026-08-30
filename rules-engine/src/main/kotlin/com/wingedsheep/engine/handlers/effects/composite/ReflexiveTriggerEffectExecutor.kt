@@ -227,7 +227,9 @@ class ReflexiveTriggerEffectExecutor(
         // action that can't pay it in full can't be performed at all.
         is com.wingedsheep.sdk.scripting.effects.RemoveAnyNumberOfCountersEffect ->
             countersOn(state, context, action.target)
-                ?.let { it >= action.minTotal.coerceAtLeast(1) } ?: true
+                ?.let {
+                    it >= amountEvaluator.evaluate(state, action.minTotal, context).coerceAtLeast(1)
+                } ?: true
         is com.wingedsheep.sdk.scripting.effects.RemoveCountersEffect ->
             countersOn(state, context, action.target, kind = action.counterType)
                 ?.let { it >= action.count } ?: true
@@ -351,8 +353,15 @@ class ReflexiveTriggerEffectExecutor(
 
     /**
      * How many cards a [GatherCardsEffect] would collect right now, or null when the source isn't a
-     * plain single-player zone read (target-driven and multi-player sources are left unscored, so
-     * the enclosing feasibility check fails open).
+     * zone read at all (target-driven sources are left unscored, so the enclosing feasibility check
+     * fails open).
+     *
+     * Multi-player references fan out exactly as
+     * [com.wingedsheep.engine.handlers.effects.library.GatherCardsExecutor] fans them out, so
+     * "exile another card from **a** graveyard" (Cemetery Desecrator — `Player.Each`) is scored
+     * rather than failing open. Left unscored it would arm CR 603.12's "when you do" on a table
+     * where every graveyard is empty: the pipeline gathers nothing, selects nothing, and still
+     * reports success.
      */
     private fun gatherableCount(
         state: GameState,
@@ -360,13 +369,26 @@ class ReflexiveTriggerEffectExecutor(
         context: EffectContext
     ): Int? {
         val source = gather.source as? CardSource.FromZone ?: return null
-        val playerId = TargetResolutionUtils.resolvePlayerRef(source.player, context, state) ?: return null
-        val cards = state.getZone(ZoneKey(playerId, source.zone))
+        val playerIds = gatherPlayers(source.player, context, state) ?: return null
+        val cards = playerIds.flatMap { state.getZone(ZoneKey(it, source.zone)) }
         if (source.filter == GameObjectFilter.Any) return cards.size
         val predicateContext = PredicateContext.fromEffectContext(context)
         return cards.count { cardId ->
             predicateEvaluator.matches(state, state.projectedState, cardId, source.filter, predicateContext)
         }
+    }
+
+    /** Mirrors `GatherCardsExecutor.resolvePlayers` — the zone owners a gather would read. */
+    private fun gatherPlayers(
+        player: com.wingedsheep.sdk.scripting.references.Player,
+        context: EffectContext,
+        state: GameState
+    ): List<EntityId>? = when (player) {
+        is com.wingedsheep.sdk.scripting.references.Player.Each,
+        is com.wingedsheep.sdk.scripting.references.Player.ActivePlayerFirst -> state.turnOrder
+        is com.wingedsheep.sdk.scripting.references.Player.EachOpponent ->
+            state.turnOrder.filter { it != context.controllerId }
+        else -> TargetResolutionUtils.resolvePlayerRef(player, context, state)?.let { listOf(it) }
     }
 
     /**

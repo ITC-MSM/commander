@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.handlers.effects.permanent.counters
 
 import com.wingedsheep.engine.core.EffectResult
+import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.state.GameState
@@ -17,11 +18,18 @@ import kotlin.reflect.KClass
  * with `minTotal` set too, its mandatory form "Remove a counter from it" (Leatherhead, Swamp
  * Stalker), where the player picks the kind but not whether.
  *
+ * Both bounds are [com.wingedsheep.sdk.scripting.values.DynamicAmount]s and are evaluated here,
+ * once, against the state the effect resolves in — "Remove X counters from target permanent, where
+ * X is the mana value of the exiled card" (Cemetery Desecrator). The walk downstream only ever
+ * sees the two resulting numbers.
+ *
  * The prompt-per-kind walk itself — the budget cap, the floor, and the forced steps that are
  * applied rather than asked — lives in [RemoveAnyNumberOfCountersFlow], shared with the
  * continuation resumer that carries it on after each answer.
  */
-class RemoveAnyNumberOfCountersExecutor : EffectExecutor<RemoveAnyNumberOfCountersEffect> {
+class RemoveAnyNumberOfCountersExecutor(
+    private val amountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator()
+) : EffectExecutor<RemoveAnyNumberOfCountersEffect> {
 
     override val effectType: KClass<RemoveAnyNumberOfCountersEffect> = RemoveAnyNumberOfCountersEffect::class
 
@@ -30,7 +38,7 @@ class RemoveAnyNumberOfCountersExecutor : EffectExecutor<RemoveAnyNumberOfCounte
         effect: RemoveAnyNumberOfCountersEffect,
         context: EffectContext
     ): EffectResult {
-        val maxTotal = effect.maxTotal
+        val maxTotal = effect.maxTotal?.let { amountEvaluator.evaluate(state, it, context) }
         if (maxTotal != null && maxTotal <= 0) return EffectResult.success(state, emptyList())
 
         val targetId = context.resolveTarget(effect.target)
@@ -52,7 +60,7 @@ class RemoveAnyNumberOfCountersExecutor : EffectExecutor<RemoveAnyNumberOfCounte
         // The floor can't exceed the budget or what's actually there — a permanent carrying one
         // counter satisfies "remove a counter" by losing it, and can't be asked for more.
         val available = counters.counters.values.sum()
-        val floor = effect.minTotal
+        val floor = amountEvaluator.evaluate(state, effect.minTotal, context)
             .coerceAtMost(maxTotal ?: Int.MAX_VALUE)
             .coerceAtMost(available)
             .coerceAtLeast(0)
