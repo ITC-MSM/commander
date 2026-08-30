@@ -8,6 +8,7 @@ import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.mtg.sets.definitions.por.PortalSet
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
+import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -134,6 +135,72 @@ class TrainingObservationTest : FunSpec({
         decoded.zones.flatMap { it.cards }.forEach { c ->
             // Every serialized card either has empty oracle text or preserves it.
             c.oracleText shouldBe (obs.zones.flatMap { it.cards }.first { it.entityId == c.entityId }.oracleText)
+        }
+    }
+
+    test("stateDigest includes known card details supplied inside a hidden zone") {
+        val env = newEnv()
+        val me = env.playerIds[0]
+        val base = ObservationBuilder().build(env.state, me, env.legalActions())
+            .observation as TrainingObservation
+
+        val hiddenIndex = base.zones.indexOfFirst {
+            it.hidden && it.zoneType == Zone.HAND
+        }
+        hiddenIndex shouldNotBe -1
+
+        val hidden = base.zones[hiddenIndex]
+        val template = base.zones
+            .first { !it.hidden && it.cards.isNotEmpty() }
+            .cards.first()
+
+        val knownA = template.copy(
+            entityId = EntityId.of("known-hidden-card"),
+            cardDefinitionId = "known-a",
+            name = "Known A",
+            ownerId = hidden.ownerId,
+        )
+        val knownB = knownA.copy(
+            cardDefinitionId = "known-b",
+            name = "Known B",
+        )
+
+        fun withKnown(card: EntityFeatures): TrainingObservation {
+            val zones = base.zones.toMutableList()
+            zones[hiddenIndex] = hidden.copy(cards = listOf(card))
+            return base.copy(zones = zones)
+        }
+
+        StateDigest.compute(withKnown(knownA)) shouldNotBe
+            StateDigest.compute(withKnown(knownB))
+    }
+
+    test("stateDigest includes observable stack details") {
+        val env = newEnv()
+        val me = env.playerIds[0]
+        val opponent = env.playerIds[1]
+        val base = ObservationBuilder().build(env.state, me, env.legalActions())
+            .observation as TrainingObservation
+
+        val targetA = EntityId.of("target-a")
+        val targetB = EntityId.of("target-b")
+        val stackItem = StackItemView(
+            entityId = EntityId.of("stack-item"),
+            controllerId = me,
+            name = "Visible Spell",
+            kind = StackItemKind.SPELL,
+            oracleText = "Visible rules text",
+            targets = listOf(targetA),
+        )
+        val baseline = StateDigest.compute(base.copy(stack = listOf(stackItem)))
+
+        listOf(
+            stackItem.copy(controllerId = opponent),
+            stackItem.copy(name = "Different Visible Spell"),
+            stackItem.copy(oracleText = "Different visible rules text"),
+            stackItem.copy(targets = listOf(targetB)),
+        ).forEach { changed ->
+            StateDigest.compute(base.copy(stack = listOf(changed))) shouldNotBe baseline
         }
     }
 

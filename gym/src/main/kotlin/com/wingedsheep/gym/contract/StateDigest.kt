@@ -60,7 +60,9 @@ object StateDigest {
                 sb.append("Z[").append(z.ownerId.value).append('/').append(z.zoneType.name)
                     .append("]:hidden=").append(z.hidden)
                     .append(":size=").append(z.size)
-                if (!z.hidden) {
+                // A hidden zone may still contain identities this perspective knows. Encode every
+                // supplied card; a completely unknown hidden zone has an empty cards list.
+                if (z.cards.isNotEmpty()) {
                     sb.append(":ids=")
                     z.cards.forEach { c ->
                         sb.append(c.entityId.value).append(',')
@@ -74,7 +76,12 @@ object StateDigest {
         // Stack — order is meaningful (bottom → top).
         obs.stack.forEachIndexed { i, s ->
             sb.append("S[").append(i).append("]=").append(s.entityId.value)
-                .append(':').append(s.kind.name).append('|')
+                .append(":ctl=").append(s.controllerId?.value)
+                .append(":name=").append(s.name)
+                .append(":kind=").append(s.kind.name)
+                .append(":text=").append(s.oracleText)
+                .append(":targets=").append(s.targets.joinToString(",") { it.value })
+                .append("|")
         }
 
         // Pending decision — identity + kind only; per-option IDs are not
