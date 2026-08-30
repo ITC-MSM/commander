@@ -6,9 +6,10 @@ package com.wingedsheep.gym.contract
  * DTO shape has drifted.
  *
  * Bump [CURRENT] whenever any `@Serializable` data class in this package
- * changes shape in a way that would break a downstream consumer. The value
- * itself is arbitrary; uniqueness is what matters.
+ * changes shape — or a field changes what it means — in a way that would
+ * break a downstream consumer. The value itself is arbitrary; uniqueness is
+ * what matters.
  */
 object SchemaHash {
-    const val CURRENT: String = "argentum-gym-contract@v1.3-action-params"
+    const val CURRENT: String = "argentum-gym-contract@v1.4-object-semantics"
 }

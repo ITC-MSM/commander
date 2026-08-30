@@ -3,7 +3,6 @@ package com.wingedsheep.gym.contract
 import com.wingedsheep.engine.core.AssignDamageDecision
 import com.wingedsheep.engine.core.BatchYesNoDecision
 import com.wingedsheep.engine.core.BatchYesNoResponse
-import com.wingedsheep.engine.core.CombatResolutionDecision
 import com.wingedsheep.engine.core.BudgetModalDecision
 import com.wingedsheep.engine.core.BudgetModalResponse
 import com.wingedsheep.engine.core.CardsSelectedResponse
@@ -14,6 +13,7 @@ import com.wingedsheep.engine.core.ChooseOptionDecision
 import com.wingedsheep.engine.core.ChooseReplacementDecision
 import com.wingedsheep.engine.core.ChooseTargetsDecision
 import com.wingedsheep.engine.core.ColorChosenResponse
+import com.wingedsheep.engine.core.CombatResolutionDecision
 import com.wingedsheep.engine.core.DecisionResponse
 import com.wingedsheep.engine.core.DistributeDecision
 import com.wingedsheep.engine.core.ModesChosenResponse
@@ -31,8 +31,6 @@ import com.wingedsheep.engine.core.YesNoResponse
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
-import com.wingedsheep.engine.state.FACE_DOWN_CARD_DISPLAY_NAME
-import com.wingedsheep.engine.state.FACE_DOWN_DISPLAY_NAME
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
@@ -48,14 +46,16 @@ import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.identity.PlayerComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
+import com.wingedsheep.engine.state.components.player.PlayerLostComponent
 import com.wingedsheep.engine.state.components.stack.AbilityOnStackComponent
 import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
-import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
 import com.wingedsheep.engine.state.components.stack.TargetsComponent
-import com.wingedsheep.engine.state.components.player.PlayerLostComponent
+import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
+import com.wingedsheep.engine.state.nameVisibleToAll
 import com.wingedsheep.engine.view.Visibility
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 
@@ -68,9 +68,9 @@ import com.wingedsheep.sdk.model.EntityId
  * necessarily an empty one. A card a hand-peek effect has shown this perspective stays visible to
  * it, and so does a top card the perspective may legitimately see, which means [ZoneView.cards]
  * carries the subset this player knows while [ZoneView.size] stays the true count and
- * [ZoneView.hidden] stays true. Public face-down objects retain their public projected
- * characteristics but never expose the underlying card identity. Set [revealAll] to `true` to
- * disable masking — only appropriate for debug scripts; never for real self-play training.
+ * [ZoneView.hidden] stays true. A face-down object reports only what the player looking at it may
+ * know (CR 708.5). Set [revealAll] to `true` to disable masking — only appropriate for debug
+ * scripts; never for real self-play training.
  *
  * ## Projected vs. base state
  *
@@ -246,41 +246,47 @@ class ObservationBuilder(
 
         val onBattlefield = zone == Zone.BATTLEFIELD
 
+        // CR 708.5 — only a player entitled to look at a face-down object learns which card it
+        // is, and the caller already asked the engine's [Visibility] authority who that is.
+        // Projection masks a face-down permanent's characteristics down to the 2/2 with no name of
+        // CR 708.2a, but the printed fields below read the card underneath directly and have no
+        // projection entry to hide behind, so they are gated here. A face-down card in exile has
+        // no projection entry at all — hence the gate on the base-state fallbacks too.
+        val identityHidden = !identityVisible
+
         val types: Set<String> = when {
             pv != null -> pv.types.toSet()
-            !identityVisible -> emptySet()
+            identityHidden -> emptySet()
             card != null -> card.typeLine.cardTypes.mapTo(mutableSetOf()) { it.name }
             else -> emptySet()
         }
         val subtypes: Set<String> = when {
             pv != null -> pv.subtypes.toSet()
-            !identityVisible -> emptySet()
+            identityHidden -> emptySet()
             card != null -> card.typeLine.subtypes.mapTo(mutableSetOf()) { it.value }
             else -> emptySet()
         }
         val colors: Set<String> = when {
             pv != null -> pv.colors.toSet()
-            !identityVisible -> emptySet()
+            identityHidden -> emptySet()
             card != null -> card.colors.mapTo(mutableSetOf()) { it.name }
             else -> emptySet()
         }
         val keywords: Set<String> = when {
             pv != null -> pv.keywords.toSet()
-            !identityVisible -> emptySet()
+            identityHidden -> emptySet()
             card != null -> card.baseKeywords.mapTo(mutableSetOf()) { it.name }
             else -> emptySet()
         }
 
-        val maskedName = if (zone == Zone.EXILE) {
-            FACE_DOWN_CARD_DISPLAY_NAME
-        } else {
-            FACE_DOWN_DISPLAY_NAME
-        }
-
         return EntityFeatures(
             entityId = entityId,
-            cardDefinitionId = card?.cardDefinitionId.takeIf { identityVisible },
-            name = if (identityVisible) card?.name ?: "" else maskedName,
+            cardDefinitionId = if (identityHidden) null else card?.cardDefinitionId,
+            name = if (identityHidden) {
+                nameVisibleToAll(state, entityId, "")
+            } else {
+                pv?.name ?: card?.name ?: ""
+            },
             zone = zone,
             ownerId = container.get<OwnerComponent>()?.playerId ?: card?.ownerId,
             controllerId = if (onBattlefield) projected.getController(entityId) else null,
@@ -288,11 +294,19 @@ class ObservationBuilder(
             subtypes = subtypes,
             colors = colors,
             keywords = keywords,
-            manaCost = if (identityVisible) card?.manaCost?.toString() ?: "" else "",
-            manaValue = if (identityVisible) card?.manaValue ?: 0 else 0,
-            oracleText = if (identityVisible) card?.oracleText ?: "" else "",
-            power = if (onBattlefield) projected.getPower(entityId) else null,
-            toughness = if (onBattlefield) projected.getToughness(entityId) else null,
+            manaCost = if (identityHidden) "" else card?.manaCost?.toString() ?: "",
+            manaValue = if (identityHidden) 0 else card?.manaValue ?: 0,
+            oracleText = if (identityHidden) "" else card?.oracleText ?: "",
+            power = if (onBattlefield && projected.isCreature(entityId)) {
+                projected.getPower(entityId)
+            } else {
+                null
+            },
+            toughness = if (onBattlefield && projected.isCreature(entityId)) {
+                projected.getToughness(entityId)
+            } else {
+                null
+            },
             tapped = onBattlefield && container.get<TappedComponent>() != null,
             // Only creatures meaningfully suffer summoning sickness — the engine attaches the
             // marker to every entering permanent so Vehicles / animated lands inherit the
@@ -301,7 +315,8 @@ class ObservationBuilder(
             // played Mountain would mislead the agent into thinking it can't tap for mana.
             summoningSick = onBattlefield
                 && container.get<SummoningSicknessComponent>() != null
-                && projected.isCreature(entityId),
+                && projected.isCreature(entityId)
+                && !projected.hasKeyword(entityId, Keyword.HASTE),
             faceDown = container.get<FaceDownComponent>() != null,
             damageMarked = container.get<DamageComponent>()?.amount ?: 0,
             counters = container.get<CountersComponent>()?.counters
@@ -326,22 +341,31 @@ class ObservationBuilder(
         val triggered = container?.get<TriggeredAbilityOnStackComponent>()
         val activated = container?.get<ActivatedAbilityOnStackComponent>()
         val legacyAbility = container?.get<AbilityOnStackComponent>()
-        // The stack is not part of `state.zones`, so there is no key to pass here — the visibility
-        // authority derives one from the spell's caster rather than us inventing an owner.
-        val identityVisible = revealAll || visibility.isCardIdentityVisibleTo(
-            state,
-            Zone.STACK,
-            entityId,
-            perspectivePlayerId,
-        )
-        // Stack kind inference — fall back to OTHER. A more precise classification
-        // can be added once the stack carries explicit metadata.
+        // Abilities first: an ability's entity carries no CardComponent of its own, so the card
+        // branch is the general one and must not shadow the specific ones.
         val kind = when {
             triggered != null -> StackItemKind.TRIGGERED_ABILITY
             activated != null || legacyAbility != null -> StackItemKind.ACTIVATED_ABILITY
             card != null -> StackItemKind.SPELL
             else -> StackItemKind.OTHER
         }
+        // An ability's entity holds only its stack component — `StackResolver` builds it from that
+        // alone, with no CardComponent — so the source name and description are the only identity
+        // an agent can read for it.
+        val name = card?.name ?: triggered?.sourceName ?: activated?.sourceName ?: ""
+        val text = card?.oracleText
+            ?: triggered?.let { it.descriptionOverride ?: it.description }
+            ?: activated?.descriptionOverride
+            ?: ""
+        // A spell cast face down is one its opponents may not read either (CR 708.4/708.5). The
+        // stack is not part of `state.zones`, so there is no key to pass — the visibility authority
+        // derives one from the spell's caster rather than us inventing an owner.
+        val identityHidden = !revealAll && !visibility.isCardIdentityVisibleTo(
+            state,
+            Zone.STACK,
+            entityId,
+            perspectivePlayerId,
+        )
         return StackItemView(
             entityId = entityId,
             // A stack object never gets a Layer-4 projection entry, so `projectedState` has no
@@ -352,15 +376,9 @@ class ObservationBuilder(
                 ?: legacyAbility?.controllerId
                 ?: container?.get<ControllerComponent>()?.playerId
                 ?: container?.get<SpellOnStackComponent>()?.casterId,
-            // An ability on the stack is never face down, so it keeps its source name; only a
-            // spell cast face down loses its identity here.
-            name = if (identityVisible) {
-                card?.name ?: triggered?.sourceName ?: activated?.sourceName ?: ""
-            } else {
-                FACE_DOWN_DISPLAY_NAME
-            },
+            name = if (identityHidden) nameVisibleToAll(state, entityId, name) else name,
             kind = kind,
-            oracleText = if (identityVisible) card?.oracleText ?: "" else "",
+            oracleText = if (identityHidden) "" else text,
             targets = container?.get<TargetsComponent>()?.targets.orEmpty().map(::targetEntityId)
         )
     }
