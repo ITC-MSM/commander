@@ -12065,6 +12065,72 @@
     ]
 }
 
+// Magma Pummeler
+{
+    "name": "Magma Pummeler",
+    "manaCost": "{X}{R}{R}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "This creature enters with X +1/+1 counters on it.\nIf damage would be dealt to this creature while it has a +1/+1 counter on it, prevent that damage and remove that many +1/+1 counters from it. When one or more counters are removed from this creature this way, it deals that much damage to any target.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "CountersRemovedEvent",
+                    "counterType": "+1/+1",
+                    "byDamagePrevention": true
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_COUNTERS_REMOVED_AMOUNT"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                },
+                "descriptionOverride": "When one or more counters are removed from this creature this way, it deals that much damage to any target."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithDynamicCounters",
+                "count": "XValue"
+            },
+            {
+                "type": "PreventDamageByRemovingCounter",
+                "removalAmount": "EqualToDamage",
+                "requiresCounter": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "169",
+        "rarity": "UNCOMMON",
+        "artist": "Filip Burburan",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/42f133d6-35c3-49b7-85f6-d6cfa6bac3d9.jpg?1783924830",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "If an amount of damage would be dealt to Magma Pummeler greater than the number of +1/+1 counters on it, all of that damage is prevented, and all of those counters are removed. In most cases, this will result in Magma Pummeler having 0 toughness, so it will be put into its owner's graveyard. Its reflexive triggered ability still triggers and it will still deal that much damage to any target."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Manaform Hellkite
 {
     "name": "Manaform Hellkite",
@@ -13765,6 +13831,97 @@
         "imageUri": "https://cards.scryfall.io/normal/front/d/9/d9702fa3-9323-4e2f-92c9-6c31df198af2.jpg?1783924826"
     },
     "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Olivia, Crimson Bride
+{
+    "name": "Olivia, Crimson Bride",
+    "manaCost": "{4}{B}{R}",
+    "typeLine": "Legendary Creature — Vampire Noble",
+    "oracleText": "Flying, haste\nWhenever Olivia attacks, return target creature card from your graveyard to the battlefield tapped and attacking. It gains \"When you don't control a legendary Vampire, exile this creature.\"",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "creature card from your graveyard"
+                            },
+                            "destination": "Battlefield",
+                            "placement": "TappedAndAttacking",
+                            "fromZone": "Graveyard"
+                        },
+                        {
+                            "type": "GrantStateTriggeredAbility",
+                            "ability": {
+                                "id": "ability_2",
+                                "condition": {
+                                    "type": "Exists",
+                                    "player": "You",
+                                    "zone": "Battlefield",
+                                    "filter": {
+                                        "cardPredicates": [
+                                            "IsCreature",
+                                            "IsLegendary",
+                                            {
+                                                "type": "HasSubtype",
+                                                "subtype": "Vampire"
+                                            }
+                                        ]
+                                    },
+                                    "negate": true
+                                },
+                                "effect": {
+                                    "type": "MoveToZone",
+                                    "target": "Self",
+                                    "destination": "Exile"
+                                },
+                                "descriptionOverride": "When you don't control a legendary Vampire, exile this creature."
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "creature card from your graveyard"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "creature card from your graveyard"
+                },
+                "descriptionOverride": "Whenever Olivia attacks, return target creature card from your graveyard to the battlefield tapped and attacking. It gains \"When you don't control a legendary Vampire, exile this creature.\""
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "245",
+        "rarity": "MYTHIC",
+        "artist": "Anna Steinbauer",
+        "flavorText": "Her grand wedding had one goal: to unite the vampire bloodlines under her rule.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/0/301dacc9-ef92-4515-b907-a70d6c3fd73e.jpg?1783924788"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
         "RED"
     ]
 }
