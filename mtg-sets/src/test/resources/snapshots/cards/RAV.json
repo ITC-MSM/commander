@@ -1094,6 +1094,104 @@
     ]
 }
 
+// Compulsive Research
+{
+    "name": "Compulsive Research",
+    "manaCost": "{2}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Target player draws three cards. Then that player discards two cards unless they discard a land card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "player"
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "chooser": "TargetPlayer",
+                            "storeSelected": "discarded",
+                            "prompt": "Choose 2 cards to discard, or 1 land card",
+                            "restrictions": [
+                                {
+                                    "type": "ReducedMinimumIfMatches",
+                                    "reducedMinimum": 1,
+                                    "filter": "land"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "moveType": "Discard"
+                        }
+                    ]
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "player"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "40",
+        "artist": "Michael Sutfin",
+        "flavorText": "\"Four parts molten bronze, yes . . . one part frozen mercury, yes, yes . . . but then what?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/0/20b9c057-b80a-4e4e-a0d7-34b7ff3a69f4.jpg?1783943689",
+        "rulings": [
+            {
+                "date": "2017-03-14",
+                "text": "The target player can discard either one land card or two cards which may or may not be lands. The player can discard one land and one other card or two land cards if they choose."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Conclave Equenaut
 {
     "name": "Conclave Equenaut",
@@ -2553,6 +2651,48 @@
     ]
 }
 
+// Festival of the Guildpact
+{
+    "name": "Festival of the Guildpact",
+    "manaCost": "{X}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Prevent the next X damage that would be dealt to you this turn.\nDraw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "PreventDamageShield",
+                    "amount": "XValue"
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "17",
+        "rarity": "UNCOMMON",
+        "artist": "Alex Horley-Orlandelli",
+        "flavorText": "Everyone knows that violence at the Festival brings the worst of luck, so for at least one day a year arms are laid down in favor of brimming goblets.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d15fc49c-07a9-4e55-a977-24f7b7c2df1a.jpg?1783943700",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "You draw a card when Festival of the Guildpact resolves, not when damage is prevented."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Fiery Conclusion
 {
     "name": "Fiery Conclusion",
@@ -3612,6 +3752,98 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Helldozer
+{
+    "name": "Helldozer",
+    "manaCost": "{3}{B}{B}{B}",
+    "typeLine": "Creature — Zombie Giant",
+    "oracleText": "{B}{B}{B}, {T}: Destroy target land. If that land was nonbasic, untap this creature.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{B}{B}{B}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "EntityMatches",
+                                    "entity": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    },
+                                    "filter": {
+                                        "cardPredicates": [
+                                            "IsLand",
+                                            {
+                                                "type": "Not",
+                                                "predicate": "IsBasicLand"
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "TapUntap",
+                                "target": "Self",
+                                "tap": false
+                            }
+                        },
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "destination": "Graveyard",
+                            "byDestruction": true
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "land"
+                        }
+                    }
+                ],
+                "descriptionOverride": "Destroy target land. If that land was nonbasic, untap this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "88",
+        "rarity": "RARE",
+        "artist": "Zoltan Boros & Gabor Szikszai",
+        "flavorText": "Sometimes you go to hell, and sometimes hell comes to you.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/f/2ff5be07-166c-4b51-9ca5-655e21c32370.jpg?1783943669"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -5802,6 +6034,82 @@
     ]
 }
 
+// Sadistic Augermage
+{
+    "name": "Sadistic Augermage",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "When this creature dies, each player puts a card from their hand on top of their library.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "ActivePlayerFirst"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "toLibrary",
+                                "prompt": "Choose a card to put on top of your library"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "toLibrary",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Library",
+                                    "placement": "Top"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "When this creature dies, each player puts a card from their hand on top of their library."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "103",
+        "artist": "Nick Percival",
+        "flavorText": "\"Don't worry. I know the drill.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/0/40283989-c2cc-4f17-a817-2c548d2ce71f.jpg?1783943663"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Sandsower
 {
     "name": "Sandsower",
@@ -7125,6 +7433,92 @@
         "GREEN",
         "WHITE"
     ]
+}
+
+// Terrarion
+{
+    "name": "Terrarion",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "This artifact enters tapped.\n{2}, {T}, Sacrifice this artifact: Add two mana in any combination of colors.\nWhen this artifact is put into a graveyard from the battlefield, draw a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "When this artifact is put into a graveyard from the battlefield, draw a card."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "AddDynamicMana",
+                    "amountSource": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "allowedColors": [
+                        "WHITE",
+                        "BLUE",
+                        "BLACK",
+                        "RED",
+                        "GREEN"
+                    ]
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "Add two mana in any combination of colors."
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "273",
+        "artist": "Luca Zontini",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/5/05c4b07f-c6ed-4a92-aab3-54ee6adfb793.jpg?1783943595",
+        "rulings": [
+            {
+                "date": "2016-07-13",
+                "text": "You must choose the colors of mana Terrarion produces before its last ability has you draw a card."
+            },
+            {
+                "date": "2016-07-13",
+                "text": "Terrarion's last ability triggers no matter how it's put into a graveyard from the battlefield."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "You can get either two mana of the same color or one mana each of different colors."
+            }
+        ]
+    }
 }
 
 // Thoughtpicker Witch
