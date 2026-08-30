@@ -391,6 +391,22 @@ class PlayLandHandler(
             ?: printedCardComponent
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
 
+        // "This land enters with two charge counters on it" (the vivid lands) and the global
+        // enters-with replacements other permanents carry (Doubling Season's extra counters,
+        // keyword grants). Lands bypass ZoneTransitionService, so the entry counters that every
+        // other permanent gets from ZoneMovementUtils / StackResolver are applied here — before the
+        // tapped and as-enters branches below, since each of those is its own exit and the counters
+        // belong to the entry regardless of which branch finishes it. The events are carried into
+        // every exit so counter-placement triggers still see them.
+        val entersWithEvents: List<com.wingedsheep.engine.core.GameEvent> = if (cardDef != null) {
+            val (afterOwn, ownEvents) = com.wingedsheep.engine.handlers.effects.EntersWithReplacements
+                .applyFromDefinition(newState, action.cardId, cardDef, action.playerId)
+            val (afterGlobal, globalEvents) = com.wingedsheep.engine.handlers.effects.EntersWithReplacements
+                .applyGlobal(afterOwn, action.cardId, action.playerId, cardRegistry)
+            newState = afterGlobal
+            ownEvents + globalEvents
+        } else emptyList()
+
         // OnEnterRunEffect — generic "as ~ enters, run [effect]" replacement.
         // Runs BEFORE the EntersTapped check so effects like
         // Effects.Tap(EffectTarget.Self) (Game Trail's "otherwise" rider) apply
@@ -414,6 +430,7 @@ class PlayLandHandler(
                     action.playerId,
                 )
                 val onEnterEvents = mutableListOf<com.wingedsheep.engine.core.GameEvent>(zoneChangeEvent)
+                onEnterEvents.addAll(entersWithEvents)
                 riderPlayEvent?.let { onEnterEvents.add(it) }
                 onEnterEvents.add(landPlayedEvent)
                 newState = newState.tick()
@@ -523,7 +540,7 @@ class PlayLandHandler(
                         Zone.BATTLEFIELD,
                         action.playerId
                     )
-                    val events = listOf(zoneChangeEvent) + listOfNotNull(riderPlayEvent, landPlayedEvent)
+                    val events = listOf(zoneChangeEvent) + entersWithEvents + listOfNotNull(riderPlayEvent, landPlayedEvent)
                     newState = newState.tick()
 
                     val decisionId = "pay-life-or-enter-tapped-${action.cardId.value}"
@@ -609,7 +626,7 @@ class PlayLandHandler(
                     Zone.BATTLEFIELD,
                     action.playerId
                 )
-                val events = listOf(zoneChangeEvent) + listOfNotNull(riderPlayEvent, landPlayedEvent)
+                val events = listOf(zoneChangeEvent) + entersWithEvents + listOfNotNull(riderPlayEvent, landPlayedEvent)
                 newState = newState.tick()
 
                 // Build the choice prompt + entity-keyed continuation via the shared on-battlefield
@@ -648,7 +665,7 @@ class PlayLandHandler(
             action.playerId
         )
 
-        val events = listOf(zoneChangeEvent) + listOfNotNull(riderPlayEvent, landPlayedEvent)
+        val events = listOf(zoneChangeEvent) + entersWithEvents + listOfNotNull(riderPlayEvent, landPlayedEvent)
         newState = newState.tick()
 
         // Detect and process any triggers from the land entering (e.g., landfall)
