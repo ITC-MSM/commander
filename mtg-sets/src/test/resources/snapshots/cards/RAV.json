@@ -2194,6 +2194,110 @@
     ]
 }
 
+// Drooling Groodion
+{
+    "name": "Drooling Groodion",
+    "manaCost": "{3}{B}{B}{G}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "{2}{B}{G}, Sacrifice a creature: Target creature gets +2/+2 until end of turn. Another target creature gets -2/-2 until end of turn.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{B}{G}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            }
+                        },
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": -2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": -2
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "another target creature"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    },
+                    {
+                        "type": "TargetOther",
+                        "baseRequirement": {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            }
+                        },
+                        "id": "another target creature"
+                    }
+                ],
+                "descriptionOverride": "Target creature gets +2/+2 until end of turn. Another target creature gets -2/-2 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "204",
+        "rarity": "UNCOMMON",
+        "artist": "Kev Walker",
+        "flavorText": "\"The Golgari expand, yes, but I refuse to call their tainted creations 'growth.'\"\n—Veszka, Selesnya evangel",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/e/de33c222-0d74-4eb5-8794-39f3601eb8f4.jpg?1783943621"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Duskmantle, House of Shadow
 {
     "name": "Duskmantle, House of Shadow",
@@ -2924,6 +3028,65 @@
     ]
 }
 
+// Goblin Fire Fiend
+{
+    "name": "Goblin Fire Fiend",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Goblin Berserker",
+    "oracleText": "Haste\nThis creature must be blocked if able.\n{R}: This creature gets +1/+0 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{R}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "This creature gets +1/+0 until end of turn."
+            }
+        ],
+        "staticAbilities": [
+            "MustBeBlockedStatic"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "127",
+        "artist": "Paolo Parente",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/4/64d3b2d2-4ec2-495d-833d-7476cbfc80f6.jpg?1783943654",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "If Goblin Fire Fiend is attacking, the defending player must assign at least one blocker to it during the declare blockers step if that player controls any creatures that could block Goblin Fire Fiend."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Golgari Germination
 {
     "name": "Golgari Germination",
@@ -3566,6 +3729,43 @@
     ]
 }
 
+// Indentured Oaf
+{
+    "name": "Indentured Oaf",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Ogre Warrior",
+    "oracleText": "Prevent all damage that this creature would deal to red creatures.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "PreventDamage",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": {
+                        "type": "RecipientMatching",
+                        "filter": "creature red"
+                    },
+                    "source": "SourceSelf"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "133",
+        "rarity": "UNCOMMON",
+        "artist": "Glenn Fabry",
+        "flavorText": "All it knows is the difference between friend and food.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/f/af6e976c-3c0b-4ba5-b614-e1b576b57e86.jpg?1783943651"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Infectious Host
 {
     "name": "Infectious Host",
@@ -3810,6 +4010,36 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Light of Sanction
+{
+    "name": "Light of Sanction",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "Prevent all damage that would be dealt to creatures you control by sources you control.",
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "PreventDamage",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "CreatureYouControl",
+                    "source": "SourceYouControl"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "24",
+        "rarity": "RARE",
+        "artist": "Michael Phillippi",
+        "flavorText": "The Legion looks after its own.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/a/daff382a-980e-4f0c-b26c-70c8a43c66f1.jpg?1783943697"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -5157,6 +5387,58 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Sabertooth Alley Cat
+{
+    "name": "Sabertooth Alley Cat",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Creature — Cat",
+    "oracleText": "This creature attacks each combat if able.\n{1}{R}: Creatures without defender can't block this creature this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "GrantCantBeBlockedExceptBy",
+                    "target": "Self",
+                    "blockerFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "HasKeyword",
+                                "keyword": "DEFENDER"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "Creatures without defender can't block this creature this turn."
+            }
+        ],
+        "staticAbilities": [
+            "MustAttack"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "140",
+        "artist": "Carl Critchlow",
+        "flavorText": "It has eight lives' worth of hunger to satisfy.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/9/b9ec817c-c414-4a56-b455-748c6e5cac0d.jpg?1783943647"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
