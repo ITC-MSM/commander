@@ -743,6 +743,59 @@
     ]
 }
 
+// Char
+{
+    "name": "Char",
+    "manaCost": "{2}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Char deals 4 damage to any target and 2 damage to you.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "You"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "AnyTarget",
+                "id": "any target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "117",
+        "rarity": "RARE",
+        "artist": "Adam Rex",
+        "flavorText": "Izzet mages often acquire their magic reagents from dubious sources, so the potency of their spells is never predictable.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/f/ff3a24af-e995-4d05-ac2c-e9676048675d.jpg?1783943658"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Chord of Calling
 {
     "name": "Chord of Calling",
@@ -1133,6 +1186,42 @@
     "colorIdentityOverride": [
         "BLUE",
         "BLACK"
+    ]
+}
+
+// Convolute
+{
+    "name": "Convolute",
+    "manaCost": "{2}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target spell unless its controller pays {4}.",
+    "script": {
+        "spellEffect": {
+            "type": "Counter",
+            "condition": {
+                "type": "CounterCondition.UnlessPaysMana",
+                "cost": "{4}"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                },
+                "id": "target spell"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "41",
+        "artist": "Dany Orizio",
+        "flavorText": "The words came to the sorcerer's lips but refused to budge any further.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/a/fac88052-96a3-4a4d-95a2-c5a652fcb275.jpg?1783943688"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -3505,6 +3594,97 @@
     ]
 }
 
+// Lore Broker
+{
+    "name": "Lore Broker",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Human Rogue",
+    "oracleText": "{T}: Each player draws a card, then discards a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Players",
+                                "players": "ActivePlayerFirst"
+                            },
+                            "body": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Players",
+                                "players": "ActivePlayerFirst"
+                            },
+                            "body": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose a card to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "57",
+        "rarity": "UNCOMMON",
+        "artist": "Alan Pollack",
+        "flavorText": "Lies are sold as often as truths—and used just as effectively.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/7/c7935b2b-aebe-44b3-b91b-52978bb4ded5.jpg?1783943683"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Moroii
 {
     "name": "Moroii",
@@ -3838,6 +4018,62 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Peel from Reality
+{
+    "name": "Peel from Reality",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Return target creature you control and target creature you don't control to their owners' hands.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    },
+                    "destination": "Hand"
+                },
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you don't control"
+                    },
+                    "destination": "Hand"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "target creature you control"
+            },
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:opponent"
+                },
+                "id": "target creature you don't control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "61",
+        "artist": "Puddnhead",
+        "flavorText": "When House Dimir's secrets are in danger of exposure, the guild takes drastic measures to cover its tracks.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/4/e4e6ca71-ba17-4a16-a331-b787363874e2.jpg?1783943682"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -4829,6 +5065,50 @@
     "colorIdentityOverride": [
         "WHITE",
         "GREEN"
+    ]
+}
+
+// Sell-Sword Brute
+{
+    "name": "Sell-Sword Brute",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Mercenary",
+    "oracleText": "When this creature dies, it deals 2 damage to you.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "You"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "142",
+        "artist": "Jeff Miracola",
+        "flavorText": "\"Killing is easy. Just wrap your hand around the haft, and wrap your enemy around the blade.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/b/db513835-af5a-4ff3-8cf8-31936732a4db.jpg?1783943647"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -6225,5 +6505,39 @@
     "colorIdentityOverride": [
         "BLACK",
         "GREEN"
+    ]
+}
+
+// Zephyr Spirit
+{
+    "name": "Zephyr Spirit",
+    "manaCost": "{5}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "When this creature blocks, return it to its owner's hand.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 6
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "BlockEvent",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "76",
+        "artist": "Tomas Giorello",
+        "flavorText": "A spiteful force exists on Ravnica that binds these ghosts to the land of the living but forbids them to touch it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/6/e6cbe78f-4325-416b-bf23-282efed5b407.jpg?1783943675"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
