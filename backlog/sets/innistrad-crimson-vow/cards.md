@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 260 / 273
+**Implemented:** 261 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -62,7 +62,7 @@
 - [x] Cruel Witness
 - [x] Crushing Canopy
 - [x] Cultivator Colossus
-- [ ] Curse of Hospitality
+- [x] Curse of Hospitality
 - [x] Dawnhart Disciple
 - [x] Dawnhart Geist
 - [x] Daybreak Combatants
