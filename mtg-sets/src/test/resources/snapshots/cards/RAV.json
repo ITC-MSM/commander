@@ -743,6 +743,52 @@
     ]
 }
 
+// Cerulean Sphinx
+{
+    "name": "Cerulean Sphinx",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Creature — Sphinx",
+    "oracleText": "Flying\n{U}: This creature's owner shuffles it into their library.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{U}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Library",
+                    "placement": "Shuffled"
+                },
+                "descriptionOverride": "This creature's owner shuffles it into their library."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "39",
+        "rarity": "RARE",
+        "artist": "Jim Murray",
+        "flavorText": "\"About the sphinx, I have mixed feelings. Their wisdom I crave, but their secrecy I can't tolerate.\"\n—Szadek",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/c/dc95d4a6-ad4b-46c5-8a75-e70102363844.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Char
 {
     "name": "Char",
@@ -961,6 +1007,47 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Coalhauler Swine
+{
+    "name": "Coalhauler Swine",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Creature — Boar Beast",
+    "oracleText": "Whenever this creature is dealt damage, it deals that much damage to each player.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DamageReceivedEvent",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_DAMAGE_AMOUNT"
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "Each"
+                    }
+                },
+                "descriptionOverride": "Whenever this creature is dealt damage, it deals that much damage to each player."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "119",
+        "artist": "Daren Bader",
+        "flavorText": "Nothing stops industry in Ravnica—certainly not the safety of its workers.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/c/bc001cef-3afd-4128-989f-ac99dc76b243.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -2220,6 +2307,49 @@
     ]
 }
 
+// Empty the Catacombs
+{
+    "name": "Empty the Catacombs",
+    "manaCost": "{3}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Each player returns all creature cards from their graveyard to their hand.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Graveyard",
+                        "player": "Each",
+                        "filter": "creature"
+                    },
+                    "storeAs": "graveyardCreatures"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "graveyardCreatures",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "86",
+        "rarity": "RARE",
+        "artist": "Mark A. Nelson",
+        "flavorText": "When the dead are laid to rest in Ravnica, it's usually just a nap.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/4/e41cbd0b-9f54-4e8f-9a4b-fed8e435a2e0.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Farseek
 {
     "name": "Farseek",
@@ -3441,6 +3571,57 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Junktroller
+{
+    "name": "Junktroller",
+    "manaCost": "{4}",
+    "typeLine": "Artifact Creature — Golem",
+    "oracleText": "Defender\n{T}: Put target card from a graveyard on the bottom of its owner's library.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 6
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Library",
+                    "placement": "Bottom"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {},
+                            "zone": "Graveyard"
+                        },
+                        "id": "target"
+                    }
+                ],
+                "descriptionOverride": "Put target card from a graveyard on the bottom of its owner's library."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "264",
+        "rarity": "UNCOMMON",
+        "artist": "Chippy",
+        "flavorText": "One man's trash is another man's troller.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/e/5e2c5f0a-755f-4d4f-b5f8-a938562797f9.jpg"
+    },
+    "colorIdentityOverride": []
 }
 
 // Keening Banshee
@@ -4978,6 +5159,105 @@
     ]
 }
 
+// Seeds of Strength
+{
+    "name": "Seeds of Strength",
+    "manaCost": "{G}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +1/+1 until end of turn.\nTarget creature gets +1/+1 until end of turn.\nTarget creature gets +1/+1 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "first"
+                    }
+                },
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "second"
+                    }
+                },
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "third"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "first"
+            },
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "second"
+            },
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "third"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "227",
+        "artist": "Ralph Horsley",
+        "flavorText": "Beneath the beauty of light and seed is the might of Vitu-Ghazi.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/f/bfa1ac13-adbd-439a-90b2-9c506aec0836.jpg",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "You may choose the same creature as a target multiple times since the card says “target creature” multiple times. You may give three different creatures +1/+1 each, one creature +2/+2 and another creature +1/+1, or a single creature +3/+3."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "GREEN"
+    ]
+}
+
 // Seismic Spike
 {
     "name": "Seismic Spike",
@@ -5159,6 +5439,43 @@
         "rarity": "UNCOMMON",
         "artist": "Mark Zug",
         "imageUri": "https://cards.scryfall.io/normal/front/2/1/21061ce3-d098-4057-b341-c5db6ee1b6d4.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "GREEN"
+    ]
+}
+
+// Selesnya Sagittars
+{
+    "name": "Selesnya Sagittars",
+    "manaCost": "{3}{G}{W}",
+    "typeLine": "Creature — Elf Archer",
+    "oracleText": "Reach (This creature can block creatures with flying.)\nThis creature can block an additional creature each combat.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CanBlockAdditionalForCreatureGroup",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "229",
+        "rarity": "UNCOMMON",
+        "artist": "Edward P. Beard, Jr.",
+        "flavorText": "\"What's their strike range, you ask? Let's put it this way: sagittars aim their bows using *maps*.\"\n—Otak, Tin Street shopkeep",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/a/9a72e933-d977-4be9-985f-8b8cf1267f8c.jpg"
     },
     "colorIdentityOverride": [
         "WHITE",
