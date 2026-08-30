@@ -55,7 +55,7 @@ class AttachmentTriggerDetector(
                     // aura's own ZoneChangeEvent. Only equipment stays on the battlefield.
                     if (isZoneChange && ability.trigger is EventPattern.ZoneChangeEvent &&
                         !entry.cardComponent.typeLine.isEquipment) continue
-                    if (matchesAttachedTrigger(ability.trigger, event, entityId, entry.controllerId, state)) {
+                    if (matchesAttachedTrigger(ability.trigger, event, entityId, entry.controllerId, entry.entityId, state)) {
                         triggers.add(
                             PendingTrigger(
                                 ability = ability,
@@ -171,6 +171,7 @@ class AttachmentTriggerDetector(
         event: EngineGameEvent,
         attachedEntityId: com.wingedsheep.sdk.model.EntityId,
         auraControllerId: com.wingedsheep.sdk.model.EntityId,
+        auraId: com.wingedsheep.sdk.model.EntityId,
         state: GameState
     ): Boolean {
         return when (trigger) {
@@ -180,7 +181,7 @@ class AttachmentTriggerDetector(
             is EventPattern.DealsDamageEvent -> {
                 event is DamageDealtEvent &&
                     event.sourceId == attachedEntityId &&
-                    matcher.matchesDealsDamageTrigger(trigger, event, state, auraControllerId)
+                    matcher.matchesDealsDamageTrigger(trigger, event, state, auraControllerId, auraId)
             }
             is EventPattern.AttackEvent -> {
                 event is AttackersDeclaredEvent && attachedEntityId in event.attackers &&

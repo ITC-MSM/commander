@@ -99,7 +99,7 @@ class DamageTriggerDetector(
             if (trigger is EventPattern.DealsDamageEvent && ability.binding == TriggerBinding.SELF) {
                 // Pass the ability's controller so RecipientFilter.Matching can evaluate
                 // controller-relative recipient filters (e.g. "a creature an opponent controls").
-                if (matcher.matchesDealsDamageTrigger(trigger, event, state, controllerId)) {
+                if (matcher.matchesDealsDamageTrigger(trigger, event, state, controllerId, sourceId)) {
                     triggers.add(
                         PendingTrigger(
                             ability = ability,
@@ -307,7 +307,7 @@ class DamageTriggerDetector(
         // Batch ("one or more") observers fire once per event batch, not once per
         // damage event — handled by detectDamageObserverBatchTriggers.
         if (trigger.batch) return
-        if (!matcher.matchesDealsDamageTrigger(trigger, event, state, controllerId)) return
+        if (!matcher.matchesDealsDamageTrigger(trigger, event, state, controllerId, sourceId)) return
         // When the trigger has a sourceFilter (e.g., "creature you control deals
         // combat damage"), the triggering entity is the damage SOURCE (the creature),
         // not the damage recipient. This allows effects like "exile it" to reference
@@ -372,7 +372,7 @@ class DamageTriggerDetector(
                 if (ability.binding != TriggerBinding.ANY) continue
 
                 val firstMatching = damageEvents.firstOrNull { event ->
-                    matcher.matchesDealsDamageTrigger(trigger, event, state, entry.controllerId)
+                    matcher.matchesDealsDamageTrigger(trigger, event, state, entry.controllerId, entry.entityId)
                 }
                 if (firstMatching != null) {
                     triggers.add(

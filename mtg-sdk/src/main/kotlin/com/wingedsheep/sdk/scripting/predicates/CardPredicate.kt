@@ -962,6 +962,27 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
         }
     }
 
+    /**
+     * Matches objects that share a card type with **any** card exiled with the asking ability's
+     * source — "shares a card type with a card exiled with this creature" (Cemetery Illuminator).
+     *
+     * The pile-wide form of [SharesCardTypeWith]`(EntityReference.LinkedExiledCard())`, which reads
+     * one index. Cemetery Illuminator exiles on every enter *and* every attack, so its pile grows
+     * and "a card exiled with this creature" means any of them — an index can't say that. Its
+     * cycle-mate Cemetery Prowler already reads the same whole pile on the cost side
+     * ([com.wingedsheep.sdk.scripting.CostReductionSource.SharedCardTypesWithLinkedExile]); this is
+     * that reading as a filter.
+     *
+     * Card types only, per CR 205.2a and the cycle's shared ruling: legendary/basic/snow are
+     * supertypes and Human/Equipment/Aura are subtypes, and none of them count. An empty pile — or
+     * one whose cards have all since left exile — matches nothing.
+     */
+    @SerialName("SharesCardTypeWithLinkedExile")
+    @Serializable
+    data object SharesCardTypeWithLinkedExile : CardPredicate {
+        override val description: String = "that shares a card type with a card exiled with this permanent"
+    }
+
     /** Matches objects that share a color with the referenced entity */
     @SerialName("SharesColorWith")
     @Serializable

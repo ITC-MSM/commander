@@ -1526,7 +1526,13 @@ class TriggerMatcher(
         trigger: EventPattern.DealsDamageEvent,
         event: DamageDealtEvent,
         state: GameState,
-        controllerId: EntityId? = null
+        controllerId: EntityId? = null,
+        /**
+         * The permanent bearing the observing ability. Only [RecipientFilter.EnchantedPlayer] reads
+         * it — that filter scopes the recipient by the source's *attachment* rather than by its
+         * controller — so callers that can't supply it leave it null and that filter fails closed.
+         */
+        abilitySourceId: EntityId? = null
     ): Boolean {
         val combatMatches = trigger.damageType == DamageType.Any ||
             (trigger.damageType == DamageType.Combat && event.isCombatDamage) ||
@@ -1570,6 +1576,18 @@ class TriggerMatcher(
                         state, state.projectedState, event.targetId, filter,
                         PredicateContext(controllerId = controllerId)
                     )
+            }
+            // "deals combat damage to enchanted player" (Curse of Hospitality). The recipient must
+            // be the player the observing Aura is attached to, so this reads `abilitySourceId`, not
+            // `controllerId`. The `in state.turnOrder` check is what keeps a planeswalker the
+            // enchanted player controls out: only a player id survives it.
+            RecipientFilter.EnchantedPlayer -> {
+                val enchanted = abilitySourceId
+                    ?.let { state.getEntity(it) }
+                    ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
+                    ?.targetId
+                    ?.takeIf { it in state.turnOrder }
+                enchanted != null && event.targetId == enchanted
             }
             RecipientFilter.Self -> false // handled elsewhere
             else -> false
@@ -2255,6 +2273,7 @@ class TriggerMatcher(
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttackingAlone,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttackingAnOpponent,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttackingYouOrYourPlaneswalkers,
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttackingEnchantedPlayer,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsBlocking,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsBlocked,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsUnblocked,

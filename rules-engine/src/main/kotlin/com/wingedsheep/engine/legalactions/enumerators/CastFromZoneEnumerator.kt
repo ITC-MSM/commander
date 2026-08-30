@@ -210,16 +210,19 @@ class CastFromZoneEnumerator : ActionEnumerator {
         val playerId = context.playerId
 
         val canPlayAllFromTop = context.castPermissionUtils.hasPlayFromTopOfLibrary(state, playerId)
-        val castFromTopFilter = if (!canPlayAllFromTop) {
-            context.castPermissionUtils.getCastFromTopOfLibraryFilter(state, playerId)
-        } else null
+        // One entry per granting permanent: a source-relative filter (Cemetery Illuminator's
+        // "shares a card type with a card exiled with this creature") has to be evaluated against
+        // the permanent that granted it, so the pairs can't be folded into a single filter.
+        val castFromTopGrants = if (!canPlayAllFromTop) {
+            context.castPermissionUtils.getCastFromTopOfLibraryGrants(state, playerId)
+        } else emptyList()
         val canPlayLandsFromTop = canPlayAllFromTop ||
             context.castPermissionUtils.hasPlayLandsFromTopOfLibrary(state, playerId)
         val castFilteredFromTopFilter = if (!canPlayAllFromTop) {
             context.castPermissionUtils.getCastFilteredFromTopOfLibraryFilter(state, playerId)
         } else null
 
-        if (!canPlayAllFromTop && castFromTopFilter == null && !canPlayLandsFromTop && castFilteredFromTopFilter == null) return
+        if (!canPlayAllFromTop && castFromTopGrants.isEmpty() && !canPlayLandsFromTop && castFilteredFromTopFilter == null) return
 
         val library = state.getLibrary(playerId)
         if (library.isEmpty()) return
@@ -242,9 +245,12 @@ class CastFromZoneEnumerator : ActionEnumerator {
 
         // Non-land spell on top of library
         val topCardMatchesFilter = canPlayAllFromTop ||
-            (castFromTopFilter != null && context.predicateEvaluator.matches(
-                state, state.projectedState, topCardId, castFromTopFilter, PredicateContext(controllerId = playerId)
-            )) ||
+            castFromTopGrants.any { (grantSourceId, grantFilter) ->
+                context.predicateEvaluator.matches(
+                    state, state.projectedState, topCardId, grantFilter,
+                    PredicateContext(controllerId = playerId, sourceId = grantSourceId)
+                )
+            } ||
             (castFilteredFromTopFilter != null && context.predicateEvaluator.matches(
                 state, state.projectedState, topCardId, castFilteredFromTopFilter, PredicateContext(controllerId = playerId)
             ))

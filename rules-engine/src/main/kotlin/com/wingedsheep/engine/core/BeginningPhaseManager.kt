@@ -553,6 +553,7 @@ class BeginningPhaseManager(
         StatePredicate.IsAttackingAlone,
         StatePredicate.IsAttackingAnOpponent,
         StatePredicate.IsAttackingYouOrYourPlaneswalkers,
+        StatePredicate.IsAttackingEnchantedPlayer,
         StatePredicate.IsBlocking,
         StatePredicate.IsBlocked,
         StatePredicate.IsUnblocked,
