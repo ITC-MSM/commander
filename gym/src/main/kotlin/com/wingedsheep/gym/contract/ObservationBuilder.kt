@@ -39,11 +39,19 @@ import com.wingedsheep.engine.state.components.battlefield.DamageComponent
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
+import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.identity.PlayerComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
+import com.wingedsheep.engine.state.components.stack.AbilityOnStackComponent
+import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent
+import com.wingedsheep.engine.state.components.stack.ChosenTarget
+import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
+import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
+import com.wingedsheep.engine.state.components.stack.TargetsComponent
 import com.wingedsheep.engine.state.components.player.PlayerLostComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
@@ -54,9 +62,12 @@ import com.wingedsheep.sdk.model.EntityId
  * ## Information hiding
  *
  * By default, opponent hand and everyone's library are hidden
- * ([ZoneView.hidden] = true, [ZoneView.cards] empty). Set [revealAll] to
- * `true` to disable masking — only appropriate for debug scripts; never
- * for real self-play training.
+ * ([ZoneView.hidden] = true). A hidden zone is not necessarily an empty one:
+ * a card a hand-peek effect has shown this perspective stays visible to it
+ * (`RevealedToComponent`), so [ZoneView.cards] carries the subset this player
+ * knows while [ZoneView.size] stays the true count. Set [revealAll] to `true`
+ * to disable masking — only appropriate for debug scripts; never for real
+ * self-play training.
  *
  * ## Projected vs. base state
  *
@@ -184,7 +195,10 @@ class ObservationBuilder(
                 val key = ZoneKey(playerId, zone)
                 val ids = state.getZone(key)
                 val hidden = !revealAll && isHiddenFrom(zone, playerId, perspectivePlayerId)
-                val cards = if (hidden) emptyList() else ids.map { buildEntityFeatures(state, it, zone) }
+                // A hidden zone still exposes what this perspective has already been shown —
+                // "look at target opponent's hand" leaves those cards visible to the viewer.
+                val knownIds = if (hidden) ids.filter { isRevealedTo(state, it, perspectivePlayerId) } else ids
+                val cards = knownIds.map { buildEntityFeatures(state, it, zone) }
                 views += ZoneView(
                     ownerId = playerId,
                     zoneType = zone,
@@ -202,6 +216,14 @@ class ObservationBuilder(
         Zone.HAND -> owner != perspective
         else -> false
     }
+
+    /**
+     * Mirrors `Visibility.isCardRevealedTo`. The gym builder deliberately stops at the per-card
+     * component: the whole-hand reveal that class also honours needs a `CardRegistry` to find the
+     * granting static ability, which an observation builder has no other use for.
+     */
+    private fun isRevealedTo(state: GameState, entityId: EntityId, perspective: EntityId): Boolean =
+        state.getEntity(entityId)?.get<RevealedToComponent>()?.isRevealedTo(perspective) == true
 
     // =========================================================================
     // Entities
@@ -281,21 +303,41 @@ class ObservationBuilder(
     private fun buildStackItem(state: GameState, entityId: EntityId): StackItemView {
         val container = state.getEntity(entityId)
         val card = container?.get<CardComponent>()
-        // Stack kind inference — fall back to OTHER. A more precise classification
-        // can be added once the stack carries explicit metadata.
+        val triggered = container?.get<TriggeredAbilityOnStackComponent>()
+        val activated = container?.get<ActivatedAbilityOnStackComponent>()
+        val legacyAbility = container?.get<AbilityOnStackComponent>()
         val kind = when {
-            card?.spellEffect != null -> StackItemKind.SPELL
+            triggered != null -> StackItemKind.TRIGGERED_ABILITY
+            activated != null || legacyAbility != null -> StackItemKind.ACTIVATED_ABILITY
             card != null -> StackItemKind.SPELL
             else -> StackItemKind.OTHER
         }
         return StackItemView(
             entityId = entityId,
-            controllerId = state.projectedState.getController(entityId),
-            name = card?.name ?: "",
+            // A stack object never gets a Layer-4 projection entry, so `projectedState` has no
+            // controller for one. Each stack component carries its own; a spell's is its
+            // ControllerComponent, else the caster — the fallback `ProjectedState` uses too.
+            controllerId = triggered?.controllerId
+                ?: activated?.controllerId
+                ?: legacyAbility?.controllerId
+                ?: container?.get<ControllerComponent>()?.playerId
+                ?: container?.get<SpellOnStackComponent>()?.casterId,
+            name = card?.name ?: triggered?.sourceName ?: activated?.sourceName ?: "",
             kind = kind,
             oracleText = card?.oracleText ?: "",
-            targets = emptyList()
+            targets = container?.get<TargetsComponent>()?.targets.orEmpty().map(::targetEntityId)
         )
+    }
+
+    /**
+     * The entity a chosen target names. A player target contributes the player's own entity id —
+     * players are entities here, so the flattened list stays unambiguous.
+     */
+    private fun targetEntityId(target: ChosenTarget): EntityId = when (target) {
+        is ChosenTarget.Player -> target.playerId
+        is ChosenTarget.Permanent -> target.entityId
+        is ChosenTarget.Card -> target.cardId
+        is ChosenTarget.Spell -> target.spellEntityId
     }
 
     // =========================================================================

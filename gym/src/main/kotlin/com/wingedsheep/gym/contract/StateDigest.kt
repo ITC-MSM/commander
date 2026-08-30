@@ -14,7 +14,9 @@ import java.security.MessageDigest
  * The canonical encoding sorts all unordered collections (sets, map keys) so
  * iteration-order variations cannot produce different digests for equivalent
  * states. Ordered collections (zone contents, stack) are encoded as-is: their
- * order is semantically meaningful.
+ * order is semantically meaningful. Free-form strings (names, oracle text) are
+ * length-prefixed by [appendText] so a value containing the encoding's own
+ * delimiters cannot make two different observations serialize alike.
  */
 object StateDigest {
 
@@ -60,15 +62,13 @@ object StateDigest {
                 sb.append("Z[").append(z.ownerId.value).append('/').append(z.zoneType.name)
                     .append("]:hidden=").append(z.hidden)
                     .append(":size=").append(z.size)
-                // A hidden zone may still contain identities this perspective knows. Encode every
-                // supplied card; a completely unknown hidden zone has an empty cards list.
-                if (z.cards.isNotEmpty()) {
-                    sb.append(":ids=")
-                    z.cards.forEach { c ->
-                        sb.append(c.entityId.value).append(',')
-                        encodeEntity(sb, c)
-                        sb.append(';')
-                    }
+                    .append(":ids=")
+                // Every card [ZoneView.cards] lists — which for a hidden zone is the subset this
+                // perspective has been shown, and for a fully concealed one is nothing at all.
+                z.cards.forEach { c ->
+                    sb.append(c.entityId.value).append(',')
+                    encodeEntity(sb, c)
+                    sb.append(';')
                 }
                 sb.append('|')
             }
@@ -77,31 +77,32 @@ object StateDigest {
         obs.stack.forEachIndexed { i, s ->
             sb.append("S[").append(i).append("]=").append(s.entityId.value)
                 .append(":ctl=").append(s.controllerId?.value)
-                .append(":name=").append(s.name)
                 .append(":kind=").append(s.kind.name)
-                .append(":text=").append(s.oracleText)
+                .append(":name=").appendText(s.name)
+                .append(":text=").appendText(s.oracleText)
                 .append(":targets=").append(s.targets.joinToString(",") { it.value })
-                .append("|")
+                .append('|')
         }
 
         // Pending decision — identity + kind only; per-option IDs are not
         // part of game identity.
         obs.pendingDecision?.let { d ->
-            sb.append("D=").append(d.decisionId).append(':').append(d.kind.name)
+            sb.append("D=").appendText(d.decisionId)
+                .append(':').append(d.kind.name)
                 .append(':').append(d.requiresStructuredResponse).append('|')
         }
     }
 
     private fun encodeEntity(sb: StringBuilder, e: EntityFeatures) {
-        sb.append("n=").append(e.name)
-            .append(",def=").append(e.cardDefinitionId)
+        sb.append("n=").appendText(e.name)
+            .append(",def=").appendText(e.cardDefinitionId)
             .append(",own=").append(e.ownerId?.value)
             .append(",ctl=").append(e.controllerId?.value)
             .append(",ty=").append(e.types.sorted().joinToString("/"))
             .append(",sub=").append(e.subtypes.sorted().joinToString("/"))
             .append(",col=").append(e.colors.sorted().joinToString("/"))
             .append(",kw=").append(e.keywords.sorted().joinToString("/"))
-            .append(",mc=").append(e.manaCost)
+            .append(",mc=").appendText(e.manaCost)
             .append(",mv=").append(e.manaValue)
             .append(",p=").append(e.power)
             .append(",t=").append(e.toughness)
@@ -115,4 +116,16 @@ object StateDigest {
             .append(",att=").append(e.attachedTo?.value)
             .append(",eqp=").append(e.attachments.joinToString("/") { it.value })
     }
+
+    /**
+     * Append a free-form string as `<length>:<value>`.
+     *
+     * Card names and oracle text are author-supplied and can contain every delimiter this
+     * encoding uses (`|`, `:`, `,`, `;`, newlines), so appending them raw would let two
+     * observations that differ — in how many stack items they hold, say — serialize to the
+     * same bytes. The length prefix makes the field self-delimiting. `null` is a bare `~`,
+     * which no length-prefixed value can spell (those always start with a digit).
+     */
+    private fun StringBuilder.appendText(value: String?): StringBuilder =
+        if (value == null) append('~') else append(value.length).append(':').append(value)
 }
