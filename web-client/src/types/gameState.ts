@@ -597,6 +597,14 @@ export interface ClientCard {
     /** Number of time counters the permanent enters with (e.g. 4). */
     readonly time: number
   } | null
+
+  /**
+   * Evoke alternative cost (CR 702.74), present iff the card definition has evoke — e.g. "{2}{U}"
+   * for Mulldrifter. Same job as `impending`: the action menu offers the evoke cast next to the
+   * normal cast in both directions, graying out whichever the player can't pay for, so a card you
+   * can only afford to evoke never casts itself the moment you drag it out.
+   */
+  readonly evoke?: string | null
 }
 
 /** One face of a split-layout card (CR 709). */

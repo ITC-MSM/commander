@@ -9,6 +9,10 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.TeamComponent
 import com.wingedsheep.sdk.model.EntityId
 
+/** Only a completed simulator boundary may become a quiet-state training observation. */
+internal fun completedEvaluationState(simulation: SimulationResult): GameState? =
+    (simulation as? SimulationResult.Terminal)?.state
+
 /** Optional offline collector. Production AI does not depend on or allocate this object. */
 class DecisionRecordFactory(registry: CardRegistry) {
     private val enumerator = LegalActionEnumerator.create(registry)
@@ -37,10 +41,10 @@ class DecisionRecordFactory(registry: CardRegistry) {
         val candidates = retained.map { legalAction ->
             val descriptor = TrainingRecordEncoding.action(legalAction.action)
             val simulation = simulator.simulate(state, legalAction.action)
-            require(simulation is SimulationResult.Terminal) {
+            val quiet = completedEvaluationState(simulation)
+            require(quiet != null) {
                 "Candidate is not fully specified or legal: ${descriptor.actionType} (${simulation::class.simpleName})"
             }
-            val quiet = simulation.state
             val observation = TrainingRecordEncoding.observation(quiet, actingPlayer)
             CandidateTrainingRecord(descriptor, observation, TrainingRecordEncoding.digest(observation))
         }
@@ -83,7 +87,13 @@ class DecisionRecordReplayer(registry: CardRegistry) {
         if (emitted.keys != record.candidates.map { it.descriptor.actionDigest }.toSet()) errors += "legal candidates differ"
         for (candidate in record.candidates) {
             val legal = emitted[candidate.descriptor.actionDigest] ?: continue
-            val quiet = simulator.simulate(reconstructedRoot, legal.action).state
+            val simulation = simulator.simulate(reconstructedRoot, legal.action)
+            val quiet = completedEvaluationState(simulation)
+            if (quiet == null) {
+                errors += "candidate did not reach a completed evaluation boundary: " +
+                    "${candidate.descriptor.actionDigest} (${simulation::class.simpleName})"
+                continue
+            }
             val digest = TrainingRecordEncoding.digest(TrainingRecordEncoding.observation(quiet, player))
             if (digest != candidate.quietStateDigest) errors += "quiet digest mismatch: ${candidate.descriptor.actionDigest}"
         }

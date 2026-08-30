@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 263 / 273
+**Implemented:** 265 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -36,11 +36,11 @@
 - [x] Bramble Armor
 - [x] Bramble Wurm
 - [x] Bride's Gown
-- [ ] Brine Comber
+- [x] Brine Comber
 - [x] By Invitation Only
 - [x] Cartographer's Survey
 - [x] Catapult Fodder
-- [ ] Cemetery Desecrator
+- [x] Cemetery Desecrator
 - [x] Cemetery Gatekeeper
 - [x] Cemetery Illuminator
 - [x] Cemetery Protector

@@ -1916,7 +1916,9 @@ object Effects {
      * Used by Heartless Act's "Remove up to three counters from target creature".
      */
     fun RemoveCountersUpTo(maxCount: Int, target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
-        com.wingedsheep.sdk.scripting.effects.RemoveAnyNumberOfCountersEffect(target, maxTotal = maxCount)
+        com.wingedsheep.sdk.scripting.effects.RemoveAnyNumberOfCountersEffect(
+            target, maxTotal = DynamicAmount.Fixed(maxCount)
+        )
 
     /**
      * "Remove a counter from [target]" — the player picks *which kind*, but not *whether*. The
@@ -1932,6 +1934,18 @@ object Effects {
     fun RemoveCounterOfAnyKind(
         target: EffectTarget = EffectTarget.ContextTarget(0),
         count: Int = 1
+    ): Effect = RemoveCounterOfAnyKind(target, DynamicAmount.Fixed(count))
+
+    /**
+     * [RemoveCounterOfAnyKind] with a resolution-time count — "Remove X counters from target
+     * permanent, where X is …" (Cemetery Desecrator). Floor and ceiling are the same amount, so
+     * the player still picks only *which kinds* come off; the executor clamps the floor to what
+     * the permanent actually carries, which is how "remove X" degrades to "remove as many as it
+     * has" without a separate spelling.
+     */
+    fun RemoveCounterOfAnyKind(
+        target: EffectTarget,
+        count: DynamicAmount
     ): Effect = com.wingedsheep.sdk.scripting.effects.RemoveAnyNumberOfCountersEffect(
         target, maxTotal = count, minTotal = count
     )

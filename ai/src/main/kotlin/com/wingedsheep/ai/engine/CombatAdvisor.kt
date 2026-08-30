@@ -752,7 +752,7 @@ class CombatAdvisor(
     ): Double? {
         val blockAction = DeclareBlockers(playerId, blockerMap)
         val simResult = simulator.simulate(state, blockAction)
-        if (simResult is SimulationResult.Illegal) return null
+        if (simResult is SimulationResult.Illegal || simResult is SimulationResult.StoppedAtLimit) return null
 
         var current = simResult.state
 
@@ -761,7 +761,9 @@ class CombatAdvisor(
         while (iterations < 50 && !current.gameOver && current.pendingDecision == null) {
             iterations++
             val priorityPlayer = current.priorityPlayerId ?: break
-            current = simulator.simulate(current, PassPriority(priorityPlayer)).state
+            val transition = simulator.simulate(current, PassPriority(priorityPlayer))
+            if (transition is SimulationResult.StoppedAtLimit) return null
+            current = transition.state
             if (current.phase != Phase.COMBAT) break
         }
 
@@ -963,7 +965,7 @@ class CombatAdvisor(
     ): GameState? {
         val attackAction = DeclareAttackers(playerId, attackerMap)
         val simResult = simulator.simulate(state, attackAction)
-        if (simResult is SimulationResult.Illegal) return null
+        if (simResult is SimulationResult.Illegal || simResult is SimulationResult.StoppedAtLimit) return null
         var current = simResult.state
 
         // Drive through combat: pass priority, handle blockers, resolve damage.
@@ -978,13 +980,17 @@ class CombatAdvisor(
                 val blockAction = legalActions.find { it.actionType == "DeclareBlockers" }
                 if (blockAction != null) {
                     val blockerAction = chooseBlockers(current, blockAction, opponentId, useSimulation = false)
-                    current = simulator.simulate(current, blockerAction).state
+                    val transition = simulator.simulate(current, blockerAction)
+                    if (transition is SimulationResult.StoppedAtLimit) return null
+                    current = transition.state
                     needsBlockerCheck = false
                     continue
                 }
             }
 
-            current = simulator.simulate(current, PassPriority(priorityPlayer)).state
+            val transition = simulator.simulate(current, PassPriority(priorityPlayer))
+            if (transition is SimulationResult.StoppedAtLimit) return null
+            current = transition.state
             if (current.phase != Phase.COMBAT) break
         }
 

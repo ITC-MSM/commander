@@ -6,6 +6,7 @@ import com.wingedsheep.engine.legalactions.AdditionalCostData
 import com.wingedsheep.engine.legalactions.EnumerationContext
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.legalactions.utils.AbilityCostReduction
+import com.wingedsheep.engine.legalactions.utils.TargetEnumerationUtils
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.Zone
@@ -231,7 +232,7 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
                     val firstInfo = targetInfos.first()
 
                     if (targetReqs.size == 1 &&
-                        context.targetUtils.shouldAutoSelectPlayerTarget(firstReq, firstInfo.validTargets)
+                        TargetEnumerationUtils.shouldAutoSelectPlayerTarget(firstReq, firstInfo.validTargets)
                     ) {
                         val autoSelectedTarget = ChosenTarget.Player(firstInfo.validTargets.first())
                         result.add(

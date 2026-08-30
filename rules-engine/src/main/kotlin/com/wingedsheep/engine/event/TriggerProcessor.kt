@@ -33,6 +33,7 @@ import com.wingedsheep.engine.handlers.effects.composite.asOptionalManaPayment
 import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.SelectionMode
 import com.wingedsheep.sdk.scripting.effects.StoreNumberEffect
+import com.wingedsheep.engine.legalactions.utils.TargetEnumerationUtils
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.components.player.PlayerLostComponent
 import com.wingedsheep.sdk.scripting.targets.TargetChooser
@@ -723,10 +724,8 @@ class TriggerProcessor(
         // "you may have target opponent discard a card" (Ebon Dragon) never asked in a two-player
         // game. An "up to one target player" requirement skips this via `effectiveMinCount == 0`.
         if (allRequirements.size == 1) {
-            val isPlayerTarget = targetRequirement is com.wingedsheep.sdk.scripting.targets.TargetPlayer ||
-                                 targetRequirement is com.wingedsheep.sdk.scripting.targets.TargetOpponent
             val legalTargets = allLegalTargets[0] ?: emptyList()
-            if (isPlayerTarget && legalTargets.size == 1 && targetRequirement.effectiveMinCount == 1 && targetRequirement.count == 1) {
+            if (TargetEnumerationUtils.shouldAutoSelectPlayerTarget(targetRequirement, legalTargets)) {
                 val autoSelectedTarget = legalTargets.first()
                 val chosenTarget = createChosenTarget(state, autoSelectedTarget)
                 return putTriggerOnStack(state, trigger, listOf(chosenTarget))
@@ -894,6 +893,13 @@ class TriggerProcessor(
             description = ability.description,
             abilityIdentity = state.abilityIdentityOf(trigger.sourceId, ability.id),
             granterId = trigger.granterId,
+            // CR 701.28f — freeze the source's face-change clock as the trigger goes on the stack,
+            // so an instruction inside it to transform that same permanent is ignored if the
+            // permanent turns over first (a second trigger of a countdown card such as
+            // Soulcipher Board must not flip it straight back).
+            sourceFaceChanges = state.getEntity(trigger.sourceId)
+                ?.get<com.wingedsheep.engine.state.components.identity.DoubleFacedComponent>()
+                ?.faceChanges,
             descriptionOverride = ability.descriptionOverride,
             triggerDamageAmount = trigger.triggerContext.damageAmount,
             triggeringEntityId = trigger.triggerContext.triggeringEntityId,
@@ -1156,13 +1162,11 @@ class TriggerProcessor(
                 )
             }
 
-            // Auto-select the lone legal player target instead of prompting (mirrors
+            // Auto-select the lone mandatory legal player target instead of prompting (mirrors
             // processTargetedTrigger's single-player-target shortcut).
             val soleReq = mode.targetRequirements.singleOrNull()
             val soleLegal = legalTargetsMap[0].orEmpty()
-            val isPlayerTarget = soleReq is com.wingedsheep.sdk.scripting.targets.TargetPlayer ||
-                soleReq is com.wingedsheep.sdk.scripting.targets.TargetOpponent
-            if (isPlayerTarget && soleLegal.size == 1 && soleReq.count == 1) {
+            if (soleReq != null && TargetEnumerationUtils.shouldAutoSelectPlayerTarget(soleReq, soleLegal)) {
                 targetsAccum = targetsAccum + listOf(listOf(createChosenTarget(state, soleLegal.first())))
                 ordinal++
                 continue

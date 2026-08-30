@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { attachmentStackLayout, hasMultipleCastingOptions, shouldShowCastModal } from './shared'
-import type { LegalActionInfo } from '../../../types'
+import type { ClientCard, LegalActionInfo } from '../../../types'
 import { entityId } from '../../../types'
 
 // --- Fixture builders -------------------------------------------------------
@@ -77,6 +77,33 @@ function playLandBackFace(): LegalActionInfo {
   }
 }
 
+/** A card with evoke (CR 702.74) — two real prices, only one of them ever enumerated. */
+const mulldrifter = {
+  name: 'Mulldrifter',
+  manaCost: '{4}{U}',
+  cardTypes: [],
+  evoke: '{2}{U}',
+} as unknown as ClientCard
+
+/** A card with impending (CR 702.176) — the same shape, with a time-counter count attached. */
+const overlord = {
+  name: 'Overlord of the Mistmoors',
+  manaCost: '{5}{W}{W}',
+  cardTypes: [],
+  impending: { cost: '{2}{W}{W}', time: 4 },
+} as unknown as ClientCard
+
+/** A card with neither, to prove the new branch doesn't widen to every cast. */
+const grizzlyBears = { name: 'Grizzly Bears', manaCost: '{1}{G}', cardTypes: [] } as unknown as ClientCard
+
+function evokeCast(): LegalActionInfo {
+  return {
+    actionType: 'CastWithAlternativeCost',
+    description: 'Evoke Mulldrifter ({2}{U})',
+    action: { type: 'CastSpell', playerId: PLAYER, cardId: CARD, useAlternativeCost: true, alternativeCostType: 'EVOKE' },
+  } as unknown as LegalActionInfo
+}
+
 describe('shouldShowCastModal', () => {
   it('does not open the menu when there are no legal actions', () => {
     expect(shouldShowCastModal([])).toBe(false)
@@ -131,6 +158,32 @@ describe('shouldShowCastModal', () => {
 
   it('opens the menu for a modal double-faced land — two land faces are two choices', () => {
     expect(shouldShowCastModal([playLand(), playLandBackFace()])).toBe(true)
+  })
+
+  // Evoke (CR 702.74) is the cycling case reached from the cast side: the card has two real
+  // prices, but the server enumerates only the affordable one. Dragging out a Mulldrifter you can
+  // only afford to evoke used to cast it for its evoke cost — and sacrifice it — unasked.
+  it('opens the menu for an evoke card whose only enumerated cast is the evoke one', () => {
+    expect(shouldShowCastModal([evokeCast()], mulldrifter)).toBe(true)
+  })
+
+  it('opens the menu for an evoke card whose only enumerated cast is the hard one', () => {
+    expect(shouldShowCastModal([castSpell()], mulldrifter)).toBe(true)
+  })
+
+  it('opens the menu for an impending card with a single enumerated cast', () => {
+    expect(shouldShowCastModal([castSpell()], overlord)).toBe(true)
+  })
+
+  // The keyword is a second *cast* price, not a second way to use the card in any zone: an evoke
+  // creature already on the battlefield offers its activated abilities, and those are not casts.
+  it('leaves a non-cast action alone even on an evoke card', () => {
+    expect(shouldShowCastModal([cycle()], mulldrifter)).toBe(true)
+    expect(shouldShowCastModal([playLand()], mulldrifter)).toBe(false)
+  })
+
+  it('does not open the menu for a plain card with no keyword alternative cost', () => {
+    expect(shouldShowCastModal([castSpell()], grizzlyBears)).toBe(false)
   })
 })
 

@@ -2286,6 +2286,174 @@
     ]
 }
 
+// Brine Comber
+{
+    "name": "Brine Comber",
+    "manaCost": "{1}{W}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Whenever this creature enters or becomes the target of an Aura spell, create a 1/1 white Spirit creature token with flying.\nDisturb {W}{U} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{W}{U}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Spirit"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/6/b/6bee4081-5d74-4cc2-ba2f-887bc8799513.jpg?1783924700"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "BecomesTargetEvent",
+                    "spellsOnly": true,
+                    "sourceFilter": "enchantment Aura"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Spirit"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/6/b/6bee4081-5d74-4cc2-ba2f-887bc8799513.jpg?1783924700"
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Brinebound Gift",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura",
+        "oracleText": "Enchant creature\nWhenever this Aura enters or enchanted creature becomes the target of an Aura spell, create a 1/1 white Spirit creature token with flying.\nIf this Aura would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Battlefield"
+                    },
+                    "effect": {
+                        "type": "CreateToken",
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Spirit"
+                        ],
+                        "keywords": [
+                            "FLYING"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/6/b/6bee4081-5d74-4cc2-ba2f-887bc8799513.jpg?1783924700"
+                    }
+                },
+                {
+                    "id": "ability_4",
+                    "trigger": {
+                        "type": "BecomesTargetEvent",
+                        "spellsOnly": true,
+                        "sourceFilter": "enchantment Aura"
+                    },
+                    "binding": "ATTACHED",
+                    "effect": {
+                        "type": "CreateToken",
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Spirit"
+                        ],
+                        "keywords": [
+                            "FLYING"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/6/b/6bee4081-5d74-4cc2-ba2f-887bc8799513.jpg?1783924700"
+                    }
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        },
+        "metadata": {
+            "collectorNumber": "233",
+            "rarity": "UNCOMMON",
+            "artist": "Olena Richards",
+            "imageUri": "https://cards.scryfall.io/normal/back/8/d/8d233bc5-8a08-4d38-abd4-21a112141afd.jpg?1783924801"
+        },
+        "colorIdentityOverride": [
+            "WHITE",
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "WHITE",
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "233",
+        "rarity": "UNCOMMON",
+        "artist": "Olena Richards",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/d/8d233bc5-8a08-4d38-abd4-21a112141afd.jpg?1783924801"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // By Invitation Only
 {
     "name": "By Invitation Only",
@@ -2530,6 +2698,273 @@
                 "text": "To satisfy Catapult Fodder's condition, each of the three creatures must have toughness greater than its own power, regardless of the power and toughness of the other two creatures."
             }
         ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Cemetery Desecrator
+{
+    "name": "Cemetery Desecrator",
+    "manaCost": "{4}{B}{B}",
+    "typeLine": "Creature — Zombie",
+    "oracleText": "Menace\nWhen this creature enters or dies, exile another card from a graveyard. When you do, choose one —\n• Remove X counters from target permanent, where X is the mana value of the exiled card.\n• Target creature an opponent controls gets -X/-X until end of turn, where X is the mana value of the exiled card.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Graveyard",
+                                    "player": "Each",
+                                    "filter": {
+                                        "statePredicates": [
+                                            {
+                                                "type": "StateNot",
+                                                "predicate": "IsSource"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "storeAs": "graveyardCards"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "graveyardCards",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "exiledCard",
+                                "prompt": "Exile another card from a graveyard",
+                                "showAllCards": true
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "exiledCard",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                }
+                            }
+                        ]
+                    },
+                    "optional": false,
+                    "reflexiveEffect": {
+                        "type": "Modal",
+                        "modes": [
+                            {
+                                "effect": {
+                                    "type": "RemoveAnyNumberOfCounters",
+                                    "maxTotal": {
+                                        "type": "StoredCardManaValue",
+                                        "collectionName": "exiledCard"
+                                    },
+                                    "minTotal": {
+                                        "type": "StoredCardManaValue",
+                                        "collectionName": "exiledCard"
+                                    }
+                                },
+                                "targetRequirements": [
+                                    {
+                                        "type": "TargetObject",
+                                        "filter": {
+                                            "baseFilter": "permanent"
+                                        },
+                                        "id": "target permanent"
+                                    }
+                                ],
+                                "description": "Remove X counters from target permanent, where X is the mana value of the exiled card"
+                            },
+                            {
+                                "effect": {
+                                    "type": "ModifyStats",
+                                    "powerModifier": {
+                                        "type": "Multiply",
+                                        "amount": {
+                                            "type": "StoredCardManaValue",
+                                            "collectionName": "exiledCard"
+                                        },
+                                        "multiplier": -1
+                                    },
+                                    "toughnessModifier": {
+                                        "type": "Multiply",
+                                        "amount": {
+                                            "type": "StoredCardManaValue",
+                                            "collectionName": "exiledCard"
+                                        },
+                                        "multiplier": -1
+                                    },
+                                    "target": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    }
+                                },
+                                "targetRequirements": [
+                                    {
+                                        "type": "TargetObject",
+                                        "filter": {
+                                            "baseFilter": "creature ctrl:opponent"
+                                        },
+                                        "id": "target creature an opponent controls"
+                                    }
+                                ],
+                                "description": "Target creature an opponent controls gets -X/-X until end of turn, where X is the mana value of the exiled card"
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Exile another card from a graveyard. When you do, choose one — remove X counters from target permanent, or target creature an opponent controls gets -X/-X until end of turn, where X is the mana value of the exiled card"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Graveyard",
+                                    "player": "Each",
+                                    "filter": {
+                                        "statePredicates": [
+                                            {
+                                                "type": "StateNot",
+                                                "predicate": "IsSource"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "storeAs": "graveyardCards"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "graveyardCards",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "exiledCard",
+                                "prompt": "Exile another card from a graveyard",
+                                "showAllCards": true
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "exiledCard",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                }
+                            }
+                        ]
+                    },
+                    "optional": false,
+                    "reflexiveEffect": {
+                        "type": "Modal",
+                        "modes": [
+                            {
+                                "effect": {
+                                    "type": "RemoveAnyNumberOfCounters",
+                                    "maxTotal": {
+                                        "type": "StoredCardManaValue",
+                                        "collectionName": "exiledCard"
+                                    },
+                                    "minTotal": {
+                                        "type": "StoredCardManaValue",
+                                        "collectionName": "exiledCard"
+                                    }
+                                },
+                                "targetRequirements": [
+                                    {
+                                        "type": "TargetObject",
+                                        "filter": {
+                                            "baseFilter": "permanent"
+                                        },
+                                        "id": "target permanent"
+                                    }
+                                ],
+                                "description": "Remove X counters from target permanent, where X is the mana value of the exiled card"
+                            },
+                            {
+                                "effect": {
+                                    "type": "ModifyStats",
+                                    "powerModifier": {
+                                        "type": "Multiply",
+                                        "amount": {
+                                            "type": "StoredCardManaValue",
+                                            "collectionName": "exiledCard"
+                                        },
+                                        "multiplier": -1
+                                    },
+                                    "toughnessModifier": {
+                                        "type": "Multiply",
+                                        "amount": {
+                                            "type": "StoredCardManaValue",
+                                            "collectionName": "exiledCard"
+                                        },
+                                        "multiplier": -1
+                                    },
+                                    "target": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    }
+                                },
+                                "targetRequirements": [
+                                    {
+                                        "type": "TargetObject",
+                                        "filter": {
+                                            "baseFilter": "creature ctrl:opponent"
+                                        },
+                                        "id": "target creature an opponent controls"
+                                    }
+                                ],
+                                "description": "Target creature an opponent controls gets -X/-X until end of turn, where X is the mana value of the exiled card"
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Exile another card from a graveyard. When you do, choose one — remove X counters from target permanent, or target creature an opponent controls gets -X/-X until end of turn, where X is the mana value of the exiled card"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "100",
+        "rarity": "MYTHIC",
+        "artist": "Dan Murayama Scott",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/8/48da33b1-d59c-43f1-8e55-480096b674e5.jpg?1783924869"
     },
     "colorIdentityOverride": [
         "BLACK"
@@ -16406,7 +16841,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature own:you",
+                    "filter": "creature nontoken own:you",
                     "to": "Graveyard"
                 },
                 "binding": "ANY",

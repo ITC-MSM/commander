@@ -132,16 +132,6 @@ class TargetEnumerationUtils(
             sourceId
         }
 
-    fun shouldAutoSelectPlayerTarget(
-        requirement: TargetRequirement,
-        validTargets: List<EntityId>
-    ): Boolean {
-        val isPlayerTarget = requirement is TargetPlayer || requirement is TargetOpponent
-        val requiresExactlyOne = requirement.count == 1 && requirement.effectiveMinCount == 1
-        val hasExactlyOneChoice = validTargets.size == 1
-        return isPlayerTarget && requiresExactlyOne && hasExactlyOneChoice
-    }
-
     fun findValidPermanentTargets(
         state: GameState,
         playerId: EntityId,
@@ -454,4 +444,22 @@ class TargetEnumerationUtils(
     fun playerHasProtectionFrom(state: GameState, playerId: EntityId, sourceId: EntityId?, casterId: EntityId): Boolean =
         com.wingedsheep.engine.mechanics.targeting.PlayerProtectionRules
             .isProtectedFromSource(state, playerId, sourceId, casterId)
+
+    companion object {
+        /**
+         * The one definition of "this player target is already decided".
+         *
+         * Every path that fills a target without asking — the four enumerators, the trigger
+         * processor, the modal resumer — goes through here, so the rule cannot drift between them
+         * again. It reads no state, hence the companion: the callers outside enumeration have no
+         * [TargetEnumerationUtils] instance to reach for.
+         */
+        fun shouldAutoSelectPlayerTarget(
+            requirement: TargetRequirement,
+            validTargets: List<EntityId>
+        ): Boolean {
+            val isPlayerTarget = requirement is TargetPlayer || requirement is TargetOpponent
+            return isPlayerTarget && requirement.requiresExactlyOneTarget && validTargets.size == 1
+        }
+    }
 }
