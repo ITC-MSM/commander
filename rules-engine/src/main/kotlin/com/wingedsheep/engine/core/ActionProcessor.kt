@@ -88,9 +88,9 @@ class ActionProcessor(
 
         // Action handlers may compose several immutable intermediate states before a nested
         // handler or resumed continuation rejects a later step. The public action contract is
-        // atomic on error: retain only the message and expose the exact entry state. In
-        // particular, do this before event-driven post-action bookkeeping so events from the
-        // rejected attempt cannot mutate the externally visible result.
+        // atomic on error: retain only the message and hand back the entry state itself. A
+        // rejected attempt therefore skips event-driven post-action bookkeeping entirely — its
+        // events describe work that is being thrown away and must not reach the tracker.
         val result = if (executed.error != null) {
             ExecutionResult.error(state, executed.error)
         } else {
