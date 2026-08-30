@@ -79,6 +79,34 @@ class SkywarpSkaabScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("one creature card in the graveyard: the may is never offered and nothing is exiled") {
+                // CR 608.2d — exiling two creature cards is impossible with one there, so the
+                // option isn't offered at all. The lone card must not be exiled for nothing.
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Skywarp Skaab")
+                    .withCardInGraveyard(1, "Grizzly Bears")
+                    .withCardInLibrary(1, "Plains")
+                    .withLandsOnBattlefield(1, "Island", 5)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.castSpell(1, "Skywarp Skaab").error shouldBe null
+                game.resolveStack()
+
+                withClue("no yes/no is raised for an exile that can't be completed") {
+                    game.hasPendingDecision() shouldBe false
+                }
+                withClue("the lone creature card stays in the graveyard") {
+                    game.isInGraveyard(1, "Grizzly Bears") shouldBe true
+                    game.isInExile(1, "Grizzly Bears") shouldBe false
+                }
+                withClue("no card was drawn") {
+                    game.isInHand(1, "Plains") shouldBe false
+                }
+            }
+
             test("declining the may leaves the graveyard untouched and draws no card") {
                 val game = scenario()
                     .withPlayers("Player1", "Player2")

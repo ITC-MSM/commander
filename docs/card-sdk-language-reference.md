@@ -2548,6 +2548,13 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     player "doesn't": the prompt is skipped and `otherwise` runs directly. Lets "you may sacrifice an
     artifact. If you don't, …" apply its else automatically when the controller has no artifact (the
     no-target analogue of a targeted "may" with no legal targets falling to its else branch).
+    The executor skips the prompt on its own in one more case, no authoring needed: a `then` that is
+    a `Gate.DoAction` scored by `SuccessCriterion.CollectionNonEmpty(name, min)` whose collection is
+    filled by a `SelectFromCollectionEffect(ChooseExactly)` over a `GatherCardsEffect` pool holding
+    fewer than `min` cards. No answer could clear that bar, so the option isn't a legal choice
+    (CR 608.2d) — **Emeritus of Ideation** with seven cards in the graveyard isn't asked whether to
+    exile eight, and the seven aren't spent for nothing. (CR 609.3's do-as-much-as-possible governs
+    *mandatory* instructions; it doesn't turn an unavailable option into a partial payment.)
   - `Gate.MayPay(cost)` — "You may [cost]. If you do, [then]." `cost` is a cost **effect**
     (`PayManaCostEffect`, `PayDynamicManaCostEffect`, `PayLifeEffect`, `SacrificeEffect`, or a
     `CompositeEffect` of them). An unaffordable cost (fixed mana, dynamic mana, and life are
