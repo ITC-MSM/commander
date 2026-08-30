@@ -8,9 +8,7 @@ import com.wingedsheep.engine.core.ChooseNumberDecision
 import com.wingedsheep.engine.core.ChooseOptionDecision
 import com.wingedsheep.engine.core.ChooseTargetsDecision
 import com.wingedsheep.engine.core.ColorChosenResponse
-import com.wingedsheep.engine.core.DamageAssignmentResponse
 import com.wingedsheep.engine.core.DecisionResponse
-import com.wingedsheep.engine.core.ManaSourcesSelectedResponse
 import com.wingedsheep.engine.core.ModesChosenResponse
 import com.wingedsheep.engine.core.NumberChosenResponse
 import com.wingedsheep.engine.core.OptionChosenResponse
@@ -31,21 +29,28 @@ import com.wingedsheep.engine.core.TargetsResponse
  * ([com.wingedsheep.ai.engine.rollout.FastDecisionResponder], inside a playout) start here and only
  * fall through to their own policy when the choice is real.
  *
- * Extracted from `GameSimulator` in Phase 7 unchanged, rather than reimplemented: a playout that
- * answered a forced decision differently from the simulator would make rollout scores incomparable
- * with the static ones they replace, for no benefit.
+ * This helper is deliberately conservative. Defaults, solver suggestions, and decisions whose
+ * uniqueness depends on state stay with the caller's policy; surfacing a forced decision is cheaper
+ * than silently making a strategic choice here.
  */
 object TrivialDecisions {
 
     /** The forced response to [decision], or null when the choice is a real one. */
     fun responseFor(decision: PendingDecision): DecisionResponse? = when (decision) {
-        // Single target, single requirement → auto-select
+        // A single requirement has one mandatory target, with no cancellation or state-dependent
+        // cap. Cross-requirement distinctness is not represented on ChooseTargetsDecision, so a
+        // multi-requirement response cannot be proved unique here.
         is ChooseTargetsDecision -> {
-            val allSingle = decision.targetRequirements.all { req ->
-                val targets = decision.legalTargets[req.index] ?: emptyList()
-                targets.size == 1 && req.minTargets == 1 && req.maxTargets == 1
-            }
-            if (allSingle) {
+            val allForced = !decision.canCancel &&
+                decision.targetRequirements.size <= 1 &&
+                decision.targetRequirements.all { req ->
+                    val targets = decision.legalTargets[req.index] ?: emptyList()
+                    targets.size == 1 &&
+                        req.minTargets == 1 &&
+                        req.maxTargets == 1 &&
+                        req.totalManaValueAtMost == null
+                }
+            if (allForced) {
                 TargetsResponse(
                     decisionId = decision.id,
                     selectedTargets = decision.targetRequirements.associate { req ->
@@ -55,36 +60,39 @@ object TrivialDecisions {
             } else null
         }
 
-        // Forced card selection (min == max == options.size)
+        // The shared response contract intentionally permits repeated IDs for distributed counter
+        // removal. Without metadata distinguishing that use, only zero/one-option selections can
+        // prove uniqueness here; larger all-options selections stay policy-owned.
         is SelectCardsDecision -> {
-            if (decision.minSelections == decision.options.size &&
+            val hasStateDependentConstraints = decision.onePerCardType ||
+                decision.onePerColor ||
+                decision.onePerCardName ||
+                decision.onePerBasicLandType ||
+                decision.onePerPower ||
+                decision.maxTotalManaValue != null ||
+                decision.minTotalManaValue != null ||
+                decision.maxTotalPower != null ||
+                decision.conditionalMinimums.isNotEmpty()
+            if (decision.options.size <= 1 &&
+                !hasStateDependentConstraints &&
+                decision.minSelections == decision.options.size &&
                 decision.maxSelections == decision.options.size
             ) {
                 CardsSelectedResponse(decision.id, decision.options)
             } else null
         }
 
-        // Damage assignment with defaults
-        is AssignDamageDecision -> {
-            if (decision.defaultAssignments.isNotEmpty()) {
-                DamageAssignmentResponse(decision.id, decision.defaultAssignments)
-            } else null
-        }
+        // A default assignment is an initial policy choice, not proof that no other distribution is
+        // legal. The rollout responder may still confirm it as its own heuristic.
+        is AssignDamageDecision -> null
 
-        // Mana sources — auto-pay is trivial only when the solver actually found a
-        // solution. When autoPaySuggestion is empty (e.g. the only available mana
-        // requires sacrificing a Treasure), autoPay=true errors and the resumer
-        // would re-prompt the same decision; fall through so the pluggable
-        // resolver (DecisionResponder.respondManaSelection) handles it.
-        is SelectManaSourcesDecision -> {
-            if (decision.autoPaySuggestion.isNotEmpty()) {
-                ManaSourcesSelectedResponse(decision.id, autoPay = true)
-            } else null
-        }
+        // autoPaySuggestion is one solver-selected payment. Manual source choices, mana abilities
+        // with side effects, and (when offered) declining remain strategy-owned.
+        is SelectManaSourcesDecision -> null
 
-        // Single option
+        // Single option with no separate cancel response.
         is ChooseOptionDecision -> {
-            if (decision.options.size == 1) {
+            if (!decision.canCancel && decision.options.size == 1) {
                 OptionChosenResponse(decision.id, 0)
             } else null
         }
@@ -96,10 +104,11 @@ object TrivialDecisions {
             } else null
         }
 
-        // Single mode, min==max==1
+        // Exact one-mode contract. A broader maximum is left conservative because the current
+        // response contract does not independently describe repeatability.
         is ChooseModeDecision -> {
             val available = decision.modes.filter { it.available }
-            if (available.size == 1 && decision.minModes == 1) {
+            if (available.size == 1 && decision.minModes == 1 && decision.maxModes == 1) {
                 ModesChosenResponse(decision.id, listOf(available.first().index))
             } else null
         }

@@ -12,6 +12,7 @@ import com.wingedsheep.engine.legalactions.TapForGenericPermanentData
 import com.wingedsheep.engine.legalactions.TapForPowerCreatureData
 import com.wingedsheep.engine.legalactions.TargetInfo
 import com.wingedsheep.engine.legalactions.utils.SelectionCostPresentation
+import com.wingedsheep.engine.legalactions.utils.TargetEnumerationUtils
 import com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost
 import com.wingedsheep.engine.mechanics.EscalateCosts
 import com.wingedsheep.engine.mechanics.ModalChooseCounts
@@ -1033,7 +1034,7 @@ class CastSpellEnumerator : ActionEnumerator {
 
                             // Check for auto-select (single player target, single valid choice)
                             val canAutoSelect = modeTargetReqs.size == 1 &&
-                                context.targetUtils.shouldAutoSelectPlayerTarget(firstReq, firstInfo.validTargets)
+                                TargetEnumerationUtils.shouldAutoSelectPlayerTarget(firstReq, firstInfo.validTargets)
 
                             if (canAutoSelect) {
                                 val autoTarget = ChosenTarget.Player(firstInfo.validTargets.first())
@@ -1187,7 +1188,7 @@ class CastSpellEnumerator : ActionEnumerator {
                 if (allRequirementsSatisfied) {
                     // Check if we can auto-select player targets (single target, single valid choice)
                     val canAutoSelect = targetReqs.size == 1 &&
-                        context.targetUtils.shouldAutoSelectPlayerTarget(firstReq, firstReqInfo.validTargets)
+                        TargetEnumerationUtils.shouldAutoSelectPlayerTarget(firstReq, firstReqInfo.validTargets)
 
                     if (canAutoSelect) {
                         // Auto-select the single valid player target
@@ -2442,7 +2443,7 @@ class CastSpellEnumerator : ActionEnumerator {
                         val firstReqInfo = targetReqInfos.first()
 
                         val canAutoSelect = targetReqs.size == 1 &&
-                            context.targetUtils.shouldAutoSelectPlayerTarget(firstReq, firstReqInfo.validTargets)
+                            TargetEnumerationUtils.shouldAutoSelectPlayerTarget(firstReq, firstReqInfo.validTargets)
 
                         if (canAutoSelect) {
                             val autoSelectedTarget = ChosenTarget.Player(firstReqInfo.validTargets.first())
@@ -2596,7 +2597,7 @@ class CastSpellEnumerator : ActionEnumerator {
                 val firstReqInfo = targetReqInfos.first()
 
                 val canAutoSelect = targetReqs.size == 1 &&
-                    context.targetUtils.shouldAutoSelectPlayerTarget(firstReq, firstReqInfo.validTargets)
+                    TargetEnumerationUtils.shouldAutoSelectPlayerTarget(firstReq, firstReqInfo.validTargets)
 
                 if (canAutoSelect) {
                     val autoSelectedTarget = ChosenTarget.Player(firstReqInfo.validTargets.first())
@@ -3129,7 +3130,7 @@ class CastSpellEnumerator : ActionEnumerator {
         // Auto-select a sole legal player target (e.g. "target player" in a 2-player game where
         // only one player is legal), matching the normal cast path's UX.
         val canAutoSelect = targetReqs.size == 1 &&
-            context.targetUtils.shouldAutoSelectPlayerTarget(firstReq, firstInfo.validTargets)
+            TargetEnumerationUtils.shouldAutoSelectPlayerTarget(firstReq, firstInfo.validTargets)
         if (canAutoSelect) {
             val autoTarget = ChosenTarget.Player(firstInfo.validTargets.first())
             result.add(

@@ -7,6 +7,7 @@ import com.wingedsheep.engine.mechanics.SummoningSicknessRules
 import com.wingedsheep.engine.mechanics.mana.TapForGeneric
 import com.wingedsheep.engine.legalactions.*
 import com.wingedsheep.engine.legalactions.utils.AbilityCostReduction
+import com.wingedsheep.engine.legalactions.utils.TargetEnumerationUtils
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.*
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -986,7 +987,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                     val firstReqInfo = targetReqInfos.first()
 
                     // Check if we can auto-select player targets (single target requirement, single valid choice)
-                    if (targetReqs.size == 1 && context.targetUtils.shouldAutoSelectPlayerTarget(firstReq, firstReqInfo.validTargets)) {
+                    if (targetReqs.size == 1 && TargetEnumerationUtils.shouldAutoSelectPlayerTarget(firstReq, firstReqInfo.validTargets)) {
                         val autoSelectedTarget = ChosenTarget.Player(firstReqInfo.validTargets.first())
                         result.add(LegalAction(
                             actionType = "ActivateAbility",
@@ -1004,7 +1005,11 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                             tapForGenericPermanents = abilityWaterbendPermanents,
                             tapForGenericLabel = TapForGeneric.WATERBEND.label.takeIf { ability.hasWaterbend }
                         ))
-                    } else if (targetReqs.size == 1 && firstReqInfo.validTargets.size == 1 && firstReqInfo.validTargets.first() == entityId) {
+                    } else if (targetReqs.size == 1 &&
+                        firstReq.requiresExactlyOneTarget &&
+                        firstReqInfo.validTargets.size == 1 &&
+                        firstReqInfo.validTargets.first() == entityId
+                    ) {
                         // Self-targeting: only valid target is the source itself — auto-select and offer repeat
                         val autoSelectedTarget = ChosenTarget.Permanent(entityId)
                         result.add(LegalAction(
