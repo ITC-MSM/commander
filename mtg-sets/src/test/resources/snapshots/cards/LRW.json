@@ -369,6 +369,71 @@
     ]
 }
 
+// Blades of Velis Vel
+{
+    "name": "Blades of Velis Vel",
+    "manaCost": "{1}{R}",
+    "typeLine": "Kindred Instant — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\nUp to two target creatures each get +2/+0 and gain all creature types until end of turn.",
+    "keywords": [
+        "CHANGELING"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": "IterationSpace.Targets",
+            "body": {
+                "type": "Composite",
+                "effects": [
+                    {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    {
+                        "type": "GrantKeyword",
+                        "keyword": "CHANGELING",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    }
+                ]
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "count": 2,
+                "optional": true,
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "152",
+        "artist": "Ron Spencer",
+        "flavorText": "\"The changing kind suffers as we do. We must join as one to quench our tyrants!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/a/5a3ac629-a8c9-4b84-a8ea-b775d7913238.jpg?1783942882"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Blind-Spot Giant
 {
     "name": "Blind-Spot Giant",
@@ -699,6 +764,59 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Boggart Shenanigans
+{
+    "name": "Boggart Shenanigans",
+    "manaCost": "{2}{R}",
+    "typeLine": "Kindred Enchantment — Goblin",
+    "oracleText": "Whenever another Goblin you control is put into a graveyard from the battlefield, you may have this enchantment deal 1 damage to target player or planeswalker.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "permanent Goblin ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target player or planeswalker"
+                        }
+                    },
+                    "descriptionOverride": "you may have this enchantment deal 1 damage to target player or planeswalker."
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayerOrPlaneswalker",
+                    "id": "target player or planeswalker"
+                },
+                "descriptionOverride": "you may have this enchantment deal 1 damage to target player or planeswalker."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "155",
+        "rarity": "UNCOMMON",
+        "artist": "Warren Mahy",
+        "flavorText": "Boggarts revel in discovering new sensations, from the texture of an otter pellet to the squeak of a dying warren mate.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/b/1b3c0ea9-270d-4738-9462-7f48fecb4bf4.jpg?1783942879"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -2112,6 +2230,56 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Faerie Tauntings
+{
+    "name": "Faerie Tauntings",
+    "manaCost": "{2}{B}",
+    "typeLine": "Kindred Enchantment — Faerie",
+    "oracleText": "Whenever you cast a spell during an opponent's turn, you may have each opponent lose 1 life.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "SpellCastEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "LoseLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": {
+                            "type": "PlayerRef",
+                            "player": "EachOpponent"
+                        }
+                    }
+                },
+                "triggerRestriction": "IsNotYourTurn",
+                "descriptionOverride": "Whenever you cast a spell during an opponent's turn, you may have each opponent lose 1 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "112",
+        "rarity": "UNCOMMON",
+        "artist": "Michael Sutfin",
+        "flavorText": "Beneath the fae's constant pranks runs a subtler undercurrent of mockery: the influence of Oona, their hidden queen.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/3/33727782-dafd-4a7c-96dd-6ffaf667cc6b.jpg?1783942890",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "You choose either to have each opponent lose 1 life or to have no opponent lose any life. You don't choose for each opponent individually."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -4331,6 +4499,55 @@
     ]
 }
 
+// Kithkin Mourncaller
+{
+    "name": "Kithkin Mourncaller",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Kithkin Scout",
+    "oracleText": "Whenever an attacking Kithkin or Elf is put into your graveyard from the battlefield, you may draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "permanent Kithkin|Elf attacking own:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "descriptionOverride": "you may draw a card."
+                },
+                "descriptionOverride": "you may draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "224",
+        "rarity": "UNCOMMON",
+        "artist": "Dominick Domingo",
+        "flavorText": "Eidren's hunts are dangerous affairs. All dread the inevitable recounting of those who died while flushing out his prey.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0a8b6f90-c609-4ffd-9136-9fd7a833ebb3.jpg?1783942861"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Knight of Meadowgrain
 {
     "name": "Knight of Meadowgrain",
@@ -5798,6 +6015,57 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Prowess of the Fair
+{
+    "name": "Prowess of the Fair",
+    "manaCost": "{1}{B}",
+    "typeLine": "Kindred Enchantment — Elf",
+    "oracleText": "Whenever another nontoken Elf is put into your graveyard from the battlefield, you may create a 1/1 green Elf Warrior creature token.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "permanent Elf nontoken own:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "CreateToken",
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "GREEN"
+                        ],
+                        "creatureTypes": [
+                            "Elf",
+                            "Warrior"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/2/7/27b171ac-b2ef-4a80-92d1-6d9e71f3e3ca.jpg?1783942838"
+                    },
+                    "descriptionOverride": "you may create a 1/1 green Elf Warrior creature token."
+                },
+                "descriptionOverride": "you may create a 1/1 green Elf Warrior creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "136",
+        "rarity": "UNCOMMON",
+        "artist": "Jeremy Jarvis",
+        "flavorText": "An elvish duel is a thing of beauty: the warriors' grace, the crash of steel, then the artful spray of blood.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/9/099badba-1c8a-4a74-80e9-133f2bafb94d.jpg?1783942884"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

@@ -2192,6 +2192,16 @@ class TriggerMatcher(
             if (event.fromZone == Zone.BATTLEFIELD) event.lastKnown?.wasEnchanted == true
             else hasAttachmentOfKind(state, event.entityId, equipment = false)
         }
+        // "Whenever an *attacking* creature is put into your graveyard from the battlefield"
+        // (Kithkin Mourncaller) is only answerable from the snapshot: the permanent is removed
+        // from combat as it leaves (CR 506.4), so its `AttackingComponent` is gone by gating time.
+        // `PredicateEvaluator` already falls back to `wasAttacking` for the resolution-time reading
+        // (Garna, Bloodfist of Keld); without this arm the trigger path would fail open and fire
+        // for every matching creature that dies, attacking or not.
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttacking -> {
+            if (event.fromZone == Zone.BATTLEFIELD) event.lastKnown?.wasAttacking == true
+            else matchesStatePredicateForTrigger(predicate, state, event.entityId)
+        }
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.Or ->
             predicate.predicates.any { matchesStatePredicateForZoneChangeTrigger(it, state, event, sourceId) }
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.And ->
