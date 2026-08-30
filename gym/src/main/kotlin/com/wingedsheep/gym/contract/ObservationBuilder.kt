@@ -39,12 +39,17 @@ import com.wingedsheep.engine.state.components.battlefield.DamageComponent
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.identity.PlayerComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.engine.state.components.player.PlayerLostComponent
+import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent
+import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
+import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 
@@ -243,7 +248,7 @@ class ObservationBuilder(
         return EntityFeatures(
             entityId = entityId,
             cardDefinitionId = card?.cardDefinitionId,
-            name = card?.name ?: "",
+            name = pv?.name ?: card?.name ?: "",
             zone = zone,
             ownerId = container.get<OwnerComponent>()?.playerId ?: card?.ownerId,
             controllerId = if (onBattlefield) projected.getController(entityId) else null,
@@ -254,8 +259,16 @@ class ObservationBuilder(
             manaCost = card?.manaCost?.toString() ?: "",
             manaValue = card?.manaValue ?: 0,
             oracleText = card?.oracleText ?: "",
-            power = if (onBattlefield) projected.getPower(entityId) else null,
-            toughness = if (onBattlefield) projected.getToughness(entityId) else null,
+            power = if (onBattlefield && projected.isCreature(entityId)) {
+                projected.getPower(entityId)
+            } else {
+                null
+            },
+            toughness = if (onBattlefield && projected.isCreature(entityId)) {
+                projected.getToughness(entityId)
+            } else {
+                null
+            },
             tapped = onBattlefield && container.get<TappedComponent>() != null,
             // Only creatures meaningfully suffer summoning sickness — the engine attaches the
             // marker to every entering permanent so Vehicles / animated lands inherit the
@@ -264,7 +277,8 @@ class ObservationBuilder(
             // played Mountain would mislead the agent into thinking it can't tap for mana.
             summoningSick = onBattlefield
                 && container.get<SummoningSicknessComponent>() != null
-                && projected.isCreature(entityId),
+                && projected.isCreature(entityId)
+                && Keyword.HASTE.name !in keywords,
             faceDown = container.get<FaceDownComponent>() != null,
             damageMarked = container.get<DamageComponent>()?.amount ?: 0,
             counters = container.get<CountersComponent>()?.counters
@@ -281,16 +295,23 @@ class ObservationBuilder(
     private fun buildStackItem(state: GameState, entityId: EntityId): StackItemView {
         val container = state.getEntity(entityId)
         val card = container?.get<CardComponent>()
-        // Stack kind inference — fall back to OTHER. A more precise classification
-        // can be added once the stack carries explicit metadata.
+        val spell = container?.get<SpellOnStackComponent>()
+        val triggeredAbility = container?.get<TriggeredAbilityOnStackComponent>()
+        val activatedAbility = container?.get<ActivatedAbilityOnStackComponent>()
         val kind = when {
-            card?.spellEffect != null -> StackItemKind.SPELL
-            card != null -> StackItemKind.SPELL
+            spell != null || card != null -> StackItemKind.SPELL
+            triggeredAbility != null -> StackItemKind.TRIGGERED_ABILITY
+            activatedAbility != null -> StackItemKind.ACTIVATED_ABILITY
             else -> StackItemKind.OTHER
         }
         return StackItemView(
             entityId = entityId,
-            controllerId = state.projectedState.getController(entityId),
+            // Battlefield projection deliberately has no entries for stack objects. Stack
+            // components are the engine authority for the caster/controller of each kind.
+            controllerId = spell?.casterId
+                ?: triggeredAbility?.controllerId
+                ?: activatedAbility?.controllerId
+                ?: container?.get<ControllerComponent>()?.playerId,
             name = card?.name ?: "",
             kind = kind,
             oracleText = card?.oracleText ?: "",
