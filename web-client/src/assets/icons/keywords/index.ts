@@ -128,6 +128,7 @@ export const counterManaClass: Record<string, string> = {
   HASTE: 'ability-haste',
   MENACE: 'ability-menace',
   STASH: 'counter-charge',
+  CROAK: 'counter-charge',
   BLIGHT: 'counter-skull',
   COIN: 'counter-charge',
   FLOOD: 'counter-flood',

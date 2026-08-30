@@ -3017,6 +3017,131 @@
     ]
 }
 
+// Harpoon Sniper
+{
+    "name": "Harpoon Sniper",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Merfolk Archer",
+    "oracleText": "{W}, {T}: This creature deals X damage to target attacking or blocking creature, where X is the number of Merfolk you control.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{W}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "permanent Merfolk"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target attacking or blocking creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    {
+                                        "type": "StateOr",
+                                        "predicates": [
+                                            "IsAttacking",
+                                            "IsBlocking"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        "id": "target attacking or blocking creature"
+                    }
+                ],
+                "descriptionOverride": "{W}, {T}: This creature deals X damage to target attacking or blocking creature, where X is the number of Merfolk you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "rarity": "UNCOMMON",
+        "artist": "Dominick Domingo",
+        "flavorText": "Made from whiskergill bones, merrow spinebows can fire bolts through tree trunks.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c10ccaef-2a75-43d6-95f2-c3690ae5c87a.jpg?1783942914"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Heal the Scars
+{
+    "name": "Heal the Scars",
+    "manaCost": "{3}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Regenerate target creature. You gain life equal to that creature's toughness.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Regenerate",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Target",
+                        "numericProperty": "Toughness"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "217",
+        "artist": "Carl Frank",
+        "flavorText": "Elvish battle-magic has evolved two specialties: inflicting wounds that scar, and healing wounds without scarring. Politics determines the recipients of each.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/8/b802a7fe-9c8b-4bc3-95d8-4a5dafcf2c75.jpg?1783942862"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Hearthcage Giant
 {
     "name": "Hearthcage Giant",
@@ -5124,6 +5249,69 @@
     ]
 }
 
+// Nectar Faerie
+{
+    "name": "Nectar Faerie",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flying\n{B}, {T}: Target Faerie or Elf gains lifelink until end of turn. (Damage dealt by the creature also causes its controller to gain that much life.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{B}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target Faerie or Elf"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "permanent Faerie|Elf"
+                        },
+                        "id": "target Faerie or Elf"
+                    }
+                ],
+                "descriptionOverride": "{B}, {T}: Target Faerie or Elf gains lifelink until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "130",
+        "rarity": "UNCOMMON",
+        "artist": "Thomas Denmark",
+        "flavorText": "\"The unpredictable fae are just as likely to provide a blight as a boon.\"\n—Desmera, perfect of Wren's Run",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/9/d943b877-805d-4bc8-a3ae-abec00fa51a6.jpg?1783942885"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Nightshade Stinger
 {
     "name": "Nightshade Stinger",
@@ -5445,6 +5633,68 @@
     ]
 }
 
+// Quill-Slinger Boggart
+{
+    "name": "Quill-Slinger Boggart",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Goblin Warrior",
+    "oracleText": "Whenever a player casts a Kithkin spell, you may have target player lose 1 life.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasSubtype",
+                                "subtype": "Kithkin"
+                            }
+                        ]
+                    },
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "LoseLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target player"
+                        }
+                    },
+                    "descriptionOverride": "Whenever a player casts a Kithkin spell, you may have target player lose 1 life."
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target player"
+                },
+                "descriptionOverride": "Whenever a player casts a Kithkin spell, you may have target player lose 1 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "137",
+        "artist": "Warren Mahy",
+        "flavorText": "\"A good day in Goldmeadow is one in which I don't spend all evening picking quills out of my backside.\"\n—Calydd, kithkin farmer",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c3a15a9d-46d7-4181-8131-50ba46a11c7b.jpg?1783942885"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Rootgrapple
 {
     "name": "Rootgrapple",
@@ -5504,6 +5754,62 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Runed Stalactite
+{
+    "name": "Runed Stalactite",
+    "manaCost": "{1}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature gets +1/+1 and is every creature type.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1
+            },
+            "IsAllCreatureTypes"
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "260",
+        "artist": "Jim Pavelec",
+        "flavorText": "When a changeling adopts a form no other changeling has taken, a rune appears in the caverns of Velis Vel to mark the event.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/b/9be88336-83c7-422d-8826-13ceb8db5534.jpg?1783942852"
+    },
+    "colorIdentityOverride": []
 }
 
 // Scarred Vinebreeder
@@ -6624,6 +6930,59 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Triclopean Sight
+{
+    "name": "Triclopean Sight",
+    "manaCost": "{1}{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Flash\nEnchant creature\nWhen this Aura enters, untap enchanted creature.\nEnchanted creature gets +1/+1 and has vigilance.",
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": "EnchantedCreature",
+                    "tap": false
+                },
+                "descriptionOverride": "When this Aura enters, untap enchanted creature."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "VIGILANCE"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "artist": "Scott Hampton",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/444b5d72-ac5b-43d2-b5dc-0cc4bf63e43d.jpg?1783942908"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

@@ -657,6 +657,49 @@
     ]
 }
 
+// Show of Valor
+{
+    "name": "Show of Valor",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +2/+4 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": 4
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "34",
+        "artist": "Anthony Palumbo",
+        "flavorText": "\"Duty, honor, and valor are either in your heart or they are not. You will never know for certain until you are tested.\"\n—Ajani Goldmane",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/b/abe4d19d-1c9f-4b05-bde2-a9290b52c28d.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Talrand's Invocation
 {
     "name": "Talrand's Invocation",
@@ -812,6 +855,161 @@
     ]
 }
 
+// Trading Post
+{
+    "name": "Trading Post",
+    "manaCost": "{4}",
+    "typeLine": "Artifact",
+    "oracleText": "{1}, {T}, Discard a card: You gain 4 life.\n{1}, {T}, Pay 1 life: Create a 0/1 white Goat creature token.\n{1}, {T}, Sacrifice a creature: Return target artifact card from your graveyard to your hand.\n{1}, {T}, Sacrifice an artifact: Draw a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomDiscard"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                },
+                "descriptionOverride": "{1}, {T}, Discard a card: You gain 4 life."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomPayLife",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 0,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Goat"
+                    ]
+                },
+                "descriptionOverride": "{1}, {T}, Pay 1 life: Create a 0/1 white Goat creature token."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact card from your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "target artifact card from your graveyard"
+                    }
+                ],
+                "descriptionOverride": "{1}, {T}, Sacrifice a creature: Return target artifact card from your graveyard to your hand."
+            },
+            {
+                "id": "ability_4",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "artifact"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{1}, {T}, Sacrifice an artifact: Draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "220",
+        "rarity": "RARE",
+        "artist": "Adam Paquette",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/0/20604b28-d096-40f8-a30c-3bc89e708676.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
 // Watercourser
 {
     "name": "Watercourser",
@@ -856,6 +1054,38 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Wild Guess
+{
+    "name": "Wild Guess",
+    "manaCost": "{R}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "As an additional cost to cast this spell, discard a card.\nDraw two cards.",
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            }
+        },
+        "additionalCosts": [
+            {
+                "type": "AdditionalAtom",
+                "atom": "AtomDiscard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "157",
+        "artist": "Lucas Graciano",
+        "flavorText": "No guts, no glory.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a4e513b8-25c2-4645-abcc-a6e9d5f51e09.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

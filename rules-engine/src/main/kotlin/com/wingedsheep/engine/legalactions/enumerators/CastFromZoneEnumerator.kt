@@ -1582,7 +1582,9 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         action = disturbAction,
                         affordable = false,
                         manaCostString = disturb.cost.toString(),
-                        sourceZone = "GRAVEYARD"
+                        sourceZone = "GRAVEYARD",
+                        // CR 712.8c: the spell is the back face, so the client renders the offer as it.
+                        castsTransformed = true
                     )
                 )
                 continue
@@ -1608,7 +1610,9 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         action = disturbAction,
                         affordable = false,
                         manaCostString = costString,
-                        sourceZone = "GRAVEYARD"
+                        sourceZone = "GRAVEYARD",
+                        // CR 712.8c: the spell is the back face, so the client renders the offer as it.
+                        castsTransformed = true
                     )
                 )
                 continue
@@ -1642,7 +1646,9 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         targetRequirements = if (targetInfos.size > 1) targetInfos else null,
                         manaCostString = costString,
                         autoTapPreview = autoTapPreview,
-                        sourceZone = "GRAVEYARD"
+                        sourceZone = "GRAVEYARD",
+                        // CR 712.8c: the spell is the back face, so the client renders the offer as it.
+                        castsTransformed = true
                     )
                 )
             } else {
@@ -1653,7 +1659,9 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         action = disturbAction,
                         manaCostString = costString,
                         autoTapPreview = autoTapPreview,
-                        sourceZone = "GRAVEYARD"
+                        sourceZone = "GRAVEYARD",
+                        // CR 712.8c: the spell is the back face, so the client renders the offer as it.
+                        castsTransformed = true
                     )
                 )
             }

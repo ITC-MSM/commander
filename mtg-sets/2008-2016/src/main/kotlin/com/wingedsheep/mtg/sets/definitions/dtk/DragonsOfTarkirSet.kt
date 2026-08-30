@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.dtk
 
-import com.wingedsheep.mtg.sets.definitions.ktk.KhansOfTarkirSet
 import com.wingedsheep.mtg.sets.discovery.CardDiscovery
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.MtgSet
@@ -23,11 +22,14 @@ object DragonsOfTarkirSet : MtgSet {
     override val displayName = "Dragons of Tarkir"
     override val releaseDate = "2015-03-27"
     override val block = "Khans of Tarkir"
-    override val basicLandsFallback = KhansOfTarkirSet
     override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)
+    }
+
+    override val basicLands: List<CardDefinition> by lazy {
+        CardDiscovery.findBasicLandsIn(CARDS_PACKAGE, code)
     }
 
     override val printings: List<Printing> by lazy {

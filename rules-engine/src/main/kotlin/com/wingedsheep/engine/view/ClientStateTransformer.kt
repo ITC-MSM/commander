@@ -1500,6 +1500,11 @@ class ClientStateTransformer(
             backFaceTypeLine = dfcBackFace(container, cardDef)?.typeLine?.toString() ?: modalBackFace?.typeLine?.toString(),
             backFaceOracleText = dfcBackFace(container, cardDef)?.oracleText ?: modalBackFace?.oracleText,
             backFaceImageUri = cardComponent.backFaceImageUri ?: dfcBackFace(container, cardDef)?.metadata?.imageUri ?: modalBackFace?.imageUri,
+            // A modal DFC's spell back lives in `cardFaces` and carries no P/T of its own, so only
+            // the transform back face (a permanent) contributes stats; keywords come from either.
+            backFacePower = dfcBackFace(container, cardDef)?.creatureStats?.basePower,
+            backFaceToughness = dfcBackFace(container, cardDef)?.creatureStats?.baseToughness,
+            backFaceKeywords = dfcBackFace(container, cardDef)?.keywords ?: modalBackFace?.keywords ?: emptySet(),
             planeswalkerAbilities = buildPlaneswalkerAbilities(cardDef, zoneKey),
             isRoom = cardDef?.isRoom == true,
             // `cardDef` already tracks the *displayed* face of a DFC (dfcBackFace resolves the

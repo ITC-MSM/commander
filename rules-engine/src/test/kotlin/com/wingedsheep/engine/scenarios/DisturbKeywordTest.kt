@@ -9,6 +9,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.view.CastProvenance
+import com.wingedsheep.engine.view.ClientStateTransformer
 import com.wingedsheep.engine.view.ClientEvent
 import com.wingedsheep.engine.view.ClientEventTransformer
 import com.wingedsheep.engine.support.GameTestDriver
@@ -31,6 +32,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.inspectors.forAll
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 
@@ -125,6 +127,48 @@ class DisturbKeywordTest : FunSpec({
         LegalActionEnumerator.create(driver.cardRegistry).enumerate(driver.state, playerId)
             .mapNotNull { it.action as? CastSpell }
             .filter { it.alternativeCostType == AlternativeCostType.DISTURB }
+
+    // The client renders a disturb card's graveyard offer in the player's hand as a "ghost" card.
+    // A card in the graveyard is printed FRONT face up, so without these two facts the ghost shows
+    // the wrong spell entirely — Test Geist's 1/1 Human instead of the 2/2 flying Spirit that would
+    // actually go on the stack (CR 712.8c).
+    test("the disturb offer is flagged as casting transformed, so the client can render the back face") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 40), startingLife = 20)
+        val player = driver.activePlayer!!
+
+        driver.putCardInGraveyard(player, "Test Geist")
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        driver.giveMana(player, Color.WHITE, 2)
+
+        val actions = LegalActionEnumerator.create(driver.cardRegistry).enumerate(driver.state, player)
+        val offer = actions.firstOrNull {
+            (it.action as? CastSpell)?.alternativeCostType == AlternativeCostType.DISTURB
+        }
+        offer.shouldNotBeNull()
+        offer.castsTransformed.shouldBeTrue()
+
+        // Every other cast the same player is offered is its own printed face.
+        actions.filter { it !== offer }.forAll { it.castsTransformed shouldBe false }
+    }
+
+    test("a disturb card in the graveyard carries its back face's stats and keywords to the client") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 40), startingLife = 20)
+        val player = driver.activePlayer!!
+
+        val geist = driver.putCardInGraveyard(player, "Test Geist")
+        val view = ClientStateTransformer(driver.cardRegistry).transform(driver.state, player).cards.getValue(geist)
+
+        // The card itself is still the front face — it is lying in the graveyard face up.
+        view.name shouldBe "Test Geist"
+        view.power shouldBe 1
+        // ...and everything the client needs to draw the offer's face rides alongside it.
+        view.backFaceName shouldBe "Test Geist Spirit"
+        view.backFacePower shouldBe 2
+        view.backFaceToughness shouldBe 2
+        view.backFaceKeywords shouldContain Keyword.FLYING
+    }
 
     test("disturb is offered only from the graveyard, never from hand (CR 702.146a)") {
         val driver = createDriver()

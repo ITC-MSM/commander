@@ -7762,6 +7762,11 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   is unioned into `GameState.activeMayPlayFor`, so the existing exile play/cast machinery (enumeration,
   cast handler, land handler, cost paths, and the client's `playableFromExile` ghost-card affordance)
   covers it with no separate code path.
+  Grolnok, the Omnivore is the owner-scoped twin — `MayPlayCardsFromExile(GameObjectFilter.Any
+  .ownedByYou().withCounter(Counters.CROAK))`, no condition and no mana relaxation — reached by
+  exiling with `Effects.Exile(..., addCounterType = CounterType.CROAK)` off a per-card
+  `LIBRARY -> GRAVEYARD` `EventPattern.ZoneChangeEvent`. `Counters.CROAK` is a pure marker like
+  `Counters.STASH`: it grants nothing, it just gives the filter something to select on.
 - `MayCastSelfFromZones(zones, condition = null, additionalCost = null)` — intrinsic *self*
   permission: this card may be cast from any of `zones` (graveyard/exile) following normal timing
   and for its normal mana cost. Squee, the Immortal = `MayCastSelfFromZones(listOf(GRAVEYARD,

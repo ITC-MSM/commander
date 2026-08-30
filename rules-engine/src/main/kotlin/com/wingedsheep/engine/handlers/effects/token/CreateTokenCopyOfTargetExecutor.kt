@@ -6,6 +6,7 @@ import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.copy.CopyExceptionApplier
+import com.wingedsheep.engine.mechanics.layers.ContinuousEffectSourceComponent
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.event.DelayedTriggeredAbility
@@ -212,6 +213,22 @@ class CreateTokenCopyOfTargetExecutor(
             if (staticAbilityHandler != null) {
                 container = staticAbilityHandler.addContinuousEffectComponent(container)
                 container = staticAbilityHandler.addReplacementEffectComponent(container)
+                // The "except it has \"[static ability]\"" clause has to *project*, not just be
+                // recorded. `grantedStaticAbilities` (written below) is a lookup table each static
+                // reader consults by hand — the equip-cost reducer, the combat rules — and the
+                // layer projector is not one of those readers. A granted ability that lives in a
+                // CR 613 layer (Dollhouse of Horrors' "This token gets +1/+1 for each Construct you
+                // control") was therefore silently inert, which for a 0/0 copy meant the token died
+                // to state-based actions the instant it entered. Lower it onto the token's own
+                // ContinuousEffectSourceComponent so the projector sees it like any printed static.
+                if (effect.addedStaticAbilities.isNotEmpty()) {
+                    val granted = staticAbilityHandler
+                        .lowerToContinuousEffectData(effect.addedStaticAbilities)
+                    val existing = container.get<ContinuousEffectSourceComponent>()?.effects.orEmpty()
+                    container = container.with(
+                        ContinuousEffectSourceComponent(existing + granted)
+                    )
+                }
             }
 
             newState = newState.withEntity(tokenId, container)

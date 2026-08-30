@@ -1550,6 +1550,42 @@
     }
 }
 
+// Howl of the Night Pack
+{
+    "name": "Howl of the Night Pack",
+    "manaCost": "{6}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create a 2/2 green Wolf creature token for each Forest you control.",
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "land Forest"
+            },
+            "power": 2,
+            "toughness": 2,
+            "colors": [
+                "GREEN"
+            ],
+            "creatureTypes": [
+                "Wolf"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "119",
+        "rarity": "UNCOMMON",
+        "artist": "Lars Grant-West",
+        "flavorText": "The murderous horrors of Raven's Run are legendary, but even that haunted place goes quiet when the night wolves howl.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/9/293f7768-6279-4f26-979f-ea4e48095ae5.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Hungry Spriggan
 {
     "name": "Hungry Spriggan",

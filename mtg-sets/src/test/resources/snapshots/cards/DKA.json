@@ -1414,6 +1414,31 @@
     ]
 }
 
+// Nephalia Seakite
+{
+    "name": "Nephalia Seakite",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Bird",
+    "oracleText": "Flash (You may cast this spell any time you could cast an instant.)\nFlying",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING"
+    ],
+    "metadata": {
+        "collectorNumber": "43",
+        "artist": "Wayne England",
+        "flavorText": "\"Keep one eye on the cliff road or you may fall to your death. Keep one eye on the sky or your death may fall on you.\"\n—Manfried Ulmach, Elgaud Master-at-Arms",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/7/174a1d08-cd79-43d6-897f-3ee9a682d15e.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Niblis of the Urn
 {
     "name": "Niblis of the Urn",
