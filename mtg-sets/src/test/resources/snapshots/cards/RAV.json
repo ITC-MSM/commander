@@ -3729,6 +3729,330 @@
     ]
 }
 
+// Hunted Dragon
+{
+    "name": "Hunted Dragon",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Creature — Dragon",
+    "oracleText": "Flying, haste\nWhen this creature enters, target opponent creates three 2/2 white Knight creature tokens with first strike.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLYING",
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Knight"
+                    ],
+                    "keywords": [
+                        "FIRST_STRIKE"
+                    ],
+                    "controller": {
+                        "type": "BoundVariable",
+                        "name": "target opponent"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "When this creature enters, target opponent creates three 2/2 white Knight creature tokens with first strike."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "131",
+        "rarity": "RARE",
+        "artist": "Mark Zug",
+        "flavorText": "The knights see a mighty quarry. The dragon sees breakfast, lunch, and dinner.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/2/d2b9cc6e-47db-47d5-84c9-975e4b618261.jpg?1783943652"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Hunted Horror
+{
+    "name": "Hunted Horror",
+    "manaCost": "{B}{B}",
+    "typeLine": "Creature — Horror",
+    "oracleText": "Trample\nWhen this creature enters, target opponent creates two 3/3 green Centaur creature tokens with protection from black.",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 7
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 3,
+                    "toughness": 3,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Centaur"
+                    ],
+                    "controller": {
+                        "type": "BoundVariable",
+                        "name": "target opponent"
+                    },
+                    "staticAbilities": [
+                        {
+                            "type": "GrantProtection",
+                            "color": "BLACK",
+                            "filter": {
+                                "baseFilter": "permanent",
+                                "scope": "Self"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "When this creature enters, target opponent creates two 3/3 green Centaur creature tokens with protection from black."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "90",
+        "rarity": "RARE",
+        "artist": "Paolo Parente",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/c/0ca680e3-2d10-4a32-8b0c-8b0c6be96540.jpg?1783943667"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Hunted Lammasu
+{
+    "name": "Hunted Lammasu",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Creature — Lammasu",
+    "oracleText": "Flying\nWhen this creature enters, target opponent creates a 4/4 black Horror creature token.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 4,
+                    "toughness": 4,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Horror"
+                    ],
+                    "controller": {
+                        "type": "BoundVariable",
+                        "name": "target opponent"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "When this creature enters, target opponent creates a 4/4 black Horror creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "22",
+        "rarity": "RARE",
+        "artist": "Mark Zug",
+        "flavorText": "The lammasu ruled the velds before the city grew. Now they roam Ravnica's skies, but their ancient enemies have not forgotten them.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/8/b84de052-65e5-4723-a746-5c554fa1612d.jpg?1783943698"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Hunted Phantasm
+{
+    "name": "Hunted Phantasm",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "This creature can't be blocked.\nWhen this creature enters, target opponent creates five 1/1 red Goblin creature tokens.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 6
+    },
+    "flags": [
+        "CANT_BE_BLOCKED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "RED"
+                    ],
+                    "creatureTypes": [
+                        "Goblin"
+                    ],
+                    "controller": {
+                        "type": "BoundVariable",
+                        "name": "target opponent"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "When this creature enters, target opponent creates five 1/1 red Goblin creature tokens."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "55",
+        "rarity": "RARE",
+        "artist": "Justin Sweet",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/a/faec8ab3-80c6-4b8f-a60d-50cc683e66b4.jpg?1783943684"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Hunted Troll
+{
+    "name": "Hunted Troll",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Creature — Troll Warrior",
+    "oracleText": "When this creature enters, target opponent creates four 1/1 blue Faerie creature tokens with flying.\n{G}: Regenerate this creature.",
+    "creatureStats": {
+        "power": 8,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLUE"
+                    ],
+                    "creatureTypes": [
+                        "Faerie"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "controller": {
+                        "type": "BoundVariable",
+                        "name": "target opponent"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "When this creature enters, target opponent creates four 1/1 blue Faerie creature tokens with flying."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                },
+                "descriptionOverride": "{G}: Regenerate this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "170",
+        "rarity": "RARE",
+        "artist": "Greg Staples",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fd9d891e-ae8c-485a-b999-d1e08fffd164.jpg?1783943635"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Indentured Oaf
 {
     "name": "Indentured Oaf",
