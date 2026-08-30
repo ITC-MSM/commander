@@ -240,6 +240,7 @@ class CardIdentityVisibilityTest : ScenarioTestBase() {
                         cardIds = setOf(exiled),
                         controllerId = game.player2Id,
                         permanent = true,
+                        timestamp = 0L,
                     )
                 )
 

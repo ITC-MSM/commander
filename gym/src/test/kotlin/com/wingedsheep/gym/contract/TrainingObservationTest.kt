@@ -166,7 +166,7 @@ class TrainingObservationTest : FunSpec({
         opponentHand.size shouldBeGreaterThan 1
 
         fun observe(state: GameState) =
-            ObservationBuilder().build(state, me, env.legalActions()).observation as TrainingObservation
+            ObservationBuilder(env.cardRegistry).build(state, me, env.legalActions()).observation as TrainingObservation
 
         fun revealing(cardId: EntityId): GameState =
             env.state.withEntity(
@@ -194,7 +194,7 @@ class TrainingObservationTest : FunSpec({
         val opponentHand = env.state.getZone(ZoneKey(opponent, Zone.HAND))
 
         fun digestRevealing(cardId: EntityId): String =
-            ObservationBuilder().build(
+            ObservationBuilder(env.cardRegistry).build(
                 env.state.withEntity(
                     cardId,
                     env.state.getEntity(cardId)!!.with(RevealedToComponent.to(me))
@@ -203,7 +203,7 @@ class TrainingObservationTest : FunSpec({
                 env.legalActions()
             ).observation.stateDigest
 
-        val nothingKnown = ObservationBuilder().build(env.state, me, env.legalActions())
+        val nothingKnown = ObservationBuilder(env.cardRegistry).build(env.state, me, env.legalActions())
             .observation.stateDigest
 
         digestRevealing(opponentHand[0]) shouldNotBe nothingKnown
@@ -231,7 +231,7 @@ class TrainingObservationTest : FunSpec({
         }
 
         fun observe(state: GameState) =
-            ObservationBuilder().build(state, me, env.legalActions()).observation as TrainingObservation
+            ObservationBuilder(env.cardRegistry).build(state, me, env.legalActions()).observation as TrainingObservation
 
         val atOpponent = observe(casting(opponent))
         val item = atOpponent.stack.single()
@@ -263,7 +263,7 @@ class TrainingObservationTest : FunSpec({
             )
             .copy(stack = listOf(abilityId))
 
-        val item = (ObservationBuilder().build(state, me, env.legalActions())
+        val item = (ObservationBuilder(env.cardRegistry).build(state, me, env.legalActions())
             .observation as TrainingObservation).stack.single()
 
         // An ability is its own entity with no CardComponent, so it used to arrive unnamed,
@@ -277,7 +277,7 @@ class TrainingObservationTest : FunSpec({
         val env = newEnv()
         val me = env.playerIds[0]
         val opponent = env.playerIds[1]
-        val base = ObservationBuilder().build(env.state, me, env.legalActions())
+        val base = ObservationBuilder(env.cardRegistry).build(env.state, me, env.legalActions())
             .observation as TrainingObservation
 
         val stackItem = StackItemView(
@@ -304,7 +304,7 @@ class TrainingObservationTest : FunSpec({
     test("stateDigest is unambiguous when a card name contains the encoding's delimiters") {
         val env = newEnv()
         val me = env.playerIds[0]
-        val base = ObservationBuilder().build(env.state, me, env.legalActions())
+        val base = ObservationBuilder(env.cardRegistry).build(env.state, me, env.legalActions())
             .observation as TrainingObservation
 
         fun item(id: String, name: String) = StackItemView(
