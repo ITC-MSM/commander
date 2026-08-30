@@ -527,6 +527,69 @@
     ]
 }
 
+// Boggart Loggers
+{
+    "name": "Boggart Loggers",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Goblin Rogue",
+    "oracleText": "Forestwalk (This creature can't be blocked as long as defending player controls a Forest.)\n{2}{B}, Sacrifice this creature: Destroy target Treefolk or Forest.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FORESTWALK"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{B}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target Treefolk or Forest"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "permanent Treefolk|Forest"
+                        },
+                        "id": "target Treefolk or Forest"
+                    }
+                ],
+                "descriptionOverride": "Destroy target Treefolk or Forest."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "103",
+        "artist": "Jesper Ejsing",
+        "flavorText": "\"Auntie Flint lent axes to Nibb and Gyik, thinking they'd share their experiences with her. She's still waiting for them to come back.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/e/9ed9a638-c3f9-48dd-9633-5c52146e0dcd.jpg?1783942893"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Boggart Sprite-Chaser
 {
     "name": "Boggart Sprite-Chaser",
