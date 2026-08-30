@@ -5,6 +5,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
+import com.wingedsheep.engine.state.components.identity.ForetoldComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.identity.PlayerComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
@@ -221,6 +222,27 @@ class CardIdentityVisibilityTest : ScenarioTestBase() {
 
             visibility.isCardIdentityVisibleTo(state, exileKey, exiled, game.player1Id) shouldBe false
             visibility.isCardIdentityVisibleTo(state, exileKey, exiled, game.player2Id) shouldBe false
+        }
+
+        // CR 702.143a: "That player may look at that card as long as it remains in exile." The
+        // engine stamps FaceDownComponent on a foretold card to mask it from opponents, so the
+        // CR 708.5 scoping above must not take the foreteller's own view away with it.
+        test("a foretold card stays visible to the player who foretold it") {
+            val game = scenario()
+                .withPlayers()
+                .withCardInExile(1, "Craw Wurm")
+                .build()
+            val exiled = game.state.getExile(game.player1Id).single()
+            val exileKey = ZoneKey(game.player1Id, Zone.EXILE)
+            val state = game.state.updateEntity(exiled) {
+                it.with(FaceDownComponent)
+                    .with(ForetoldComponent(controllerId = game.player1Id, turnForetold = 1))
+            }
+
+            visibility.isCardIdentityVisibleTo(state, exileKey, exiled, game.player1Id) shouldBe true
+            withClue("the opponent never gets to look") {
+                visibility.isCardIdentityVisibleTo(state, exileKey, exiled, game.player2Id) shouldBe false
+            }
         }
 
         // The other half of the same rule: an effect that says you may look *does* entitle you, and

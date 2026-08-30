@@ -9,6 +9,8 @@ import com.wingedsheep.engine.state.playerWhoMayLookAtFaceDown
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
+import com.wingedsheep.engine.state.components.identity.FaceDownComponent
+import com.wingedsheep.engine.state.components.identity.ForetoldComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
@@ -109,9 +111,9 @@ class Visibility(
             if (isSpectator) return false
             // CR 708.5: "At any time, you may look at a face-down spell you control on the stack or
             // a face-down permanent you control … You can't look at face-down cards in any other
-            // zone." Exile therefore gets no controller baseline — a face-down exiled card is
-            // hidden from its owner too, and the *only* way under it is an effect that grants
-            // access (foretell, Gonti's "you may look at and play"), checked below.
+            // zone." Exile therefore gets no controller baseline: a card put there by a plain
+            // "exile face down" rider is hidden from its owner too. Only an effect that grants
+            // access opens one, and every such effect names its grantee — see below.
             if (zoneKey.zoneType != Zone.EXILE &&
                 playerWhoMayLookAtFaceDown(state, entityId) == viewingPlayerId
             ) return true
@@ -120,7 +122,7 @@ class Visibility(
                 hasLookAtFaceDownCreatures(state, viewingPlayerId)
             ) return true
             if (zoneKey.zoneType == Zone.EXILE &&
-                state.hasMayPlayFor(entityId, viewingPlayerId, conditionEvaluator, cardRegistry)
+                grantsFaceDownExileAccessTo(state, entityId, viewingPlayerId)
             ) return true
             return false
         }
@@ -136,6 +138,31 @@ class Visibility(
         if (isCardRevealedTo(state, entityId, viewingPlayerId)) return true
         return isTopCard && zoneKey.ownerId == viewingPlayerId &&
             hasLookAtTopOfLibrary(state, viewingPlayerId)
+    }
+
+    /**
+     * Whether an effect entitles [viewingPlayerId] to look under face-down [entityId] in exile.
+     *
+     * CR 708.5 grants nothing here, so this is the whole permission, and each granting effect
+     * names the player it grants to:
+     *
+     * - **Foretell** (CR 702.143a) — "That player may look at that card as long as it remains in
+     *   exile." The engine stamps [FaceDownComponent] on a foretold card purely to mask it from
+     *   *opponents*, so reading [ForetoldComponent] is what keeps the foreteller's own view.
+     * - **May-play grants** — Gonti's "you may look at that card for as long as it remains
+     *   exiled", and the filter-defined grants [hasMayPlayFor] derives. Keyed on the same check
+     *   that drives castability, so a card the viewer may cast is never one they cannot see.
+     *
+     * A card exiled face down by a plain rider grants neither, and stays hidden from everyone.
+     */
+    private fun grantsFaceDownExileAccessTo(
+        state: GameState,
+        entityId: EntityId,
+        viewingPlayerId: EntityId,
+    ): Boolean {
+        val foretoldBy = state.getEntity(entityId)?.get<ForetoldComponent>()?.controllerId
+        if (foretoldBy == viewingPlayerId) return true
+        return state.hasMayPlayFor(entityId, viewingPlayerId, conditionEvaluator, cardRegistry)
     }
 
     /**
