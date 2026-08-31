@@ -2571,6 +2571,45 @@
     ]
 }
 
+// Faerie Trickery
+{
+    "name": "Faerie Trickery",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Kindred Instant — Faerie",
+    "oracleText": "Counter target non-Faerie spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard.",
+    "script": {
+        "spellEffect": {
+            "type": "Counter",
+            "counterDestination": "CounterDestination.Exile"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "NotSubtype",
+                                "subtype": "Faerie"
+                            }
+                        ]
+                    },
+                    "zone": "Stack"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "62",
+        "artist": "Terese Nielsen",
+        "flavorText": "The fae are so quick and their life spans so short that it's difficult to get retribution for their pranks.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/e/defb9f0b-195e-4aeb-92c1-8f827ad6724b.jpg?1783942904"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Fallowsage
 {
     "name": "Fallowsage",
@@ -3076,6 +3115,48 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Forced Fruition
+{
+    "name": "Forced Fruition",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever an opponent casts a spell, that player draws seven cards.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 7
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                },
+                "descriptionOverride": "Whenever an opponent casts a spell, that player draws seven cards."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "rarity": "RARE",
+        "artist": "William O'Connor",
+        "flavorText": "\"Petals within petals within petals, tadpole. The truth lurks below an opulence of illusion.\"\n—Neerdiv, fallowsage",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/7/f7ea1c6e-c0af-40b0-b492-8d71f496903e.jpg?1783942903"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -5212,6 +5293,54 @@
     ]
 }
 
+// Knucklebone Witch
+{
+    "name": "Knucklebone Witch",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Goblin Shaman",
+    "oracleText": "Whenever a Goblin you control is put into a graveyard from the battlefield, you may put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "permanent Goblin ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": "Self"
+                    },
+                    "descriptionOverride": "you may put a +1/+1 counter on this creature."
+                },
+                "descriptionOverride": "you may put a +1/+1 counter on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "120",
+        "rarity": "RARE",
+        "artist": "Jim Pavelec",
+        "flavorText": "Each bone honors its owner's best pranks.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/d/7d66b355-9aff-4cce-ae4a-42b233475dcf.jpg?1783942889"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Lace with Moonglove
 {
     "name": "Lace with Moonglove",
@@ -5549,6 +5678,85 @@
                 "text": "The second ability can target any Goblin permanent except the Mad Auntie whose ability is being activated. It can target a different Mad Auntie."
             }
         ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Marsh Flitter
+{
+    "name": "Marsh Flitter",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Faerie Rogue",
+    "oracleText": "Flying\nWhen this creature enters, create two 1/1 black Goblin Rogue creature tokens.\nSacrifice a Goblin: This creature has base power and toughness 3/3 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Goblin",
+                        "Rogue"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/f/4/f44d5271-5d10-46b2-9ba2-5788d99de2e6.jpg?1783942839"
+                },
+                "descriptionOverride": "create two 1/1 black Goblin Rogue creature tokens."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "permanent Goblin"
+                    }
+                },
+                "effect": {
+                    "type": "SetBaseStats",
+                    "target": "Self",
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "duration": "EndOfTurn"
+                },
+                "descriptionOverride": "Sacrifice a Goblin: This creature has base power and toughness 3/3 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "125",
+        "rarity": "UNCOMMON",
+        "artist": "Wayne Reynolds",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/4/040e1039-1943-4c2d-aa98-b7f9519de321.jpg?1783942888"
     },
     "colorIdentityOverride": [
         "BLACK"
@@ -8447,6 +8655,66 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Thundercloud Shaman
+{
+    "name": "Thundercloud Shaman",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Creature — Giant Shaman",
+    "oracleText": "When this creature enters, it deals damage equal to the number of Giants you control to each non-Giant creature.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    {
+                                        "type": "NotSubtype",
+                                        "subtype": "Giant"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "AggregateBattlefield",
+                            "player": "You",
+                            "filter": "permanent Giant"
+                        },
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "it deals damage equal to the number of Giants you control to each non-Giant creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "195",
+        "rarity": "UNCOMMON",
+        "artist": "Greg Staples",
+        "flavorText": "He cares not for the disasters his storm brings as long as his path ahead is clear.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/8/5864f207-2878-461b-8ff6-76475abc324d.jpg?1783942868"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
