@@ -26,7 +26,11 @@ class LoseGameExecutor : EffectExecutor<LoseGameEffect> {
         effect: LoseGameEffect,
         context: EffectContext
     ): EffectResult {
-        val targetId = context.resolvePlayerTarget(effect.target)
+        // State-aware resolution: the stateless overload only knows the four "chosen target"
+        // references, so an attachment- or relation-derived player (Sinner's Judgment's
+        // `Player.EnchantedPlayer`, `ChosenOpponent`, `OwnerOf`, …) silently resolved to null and
+        // the loss never happened. `resolvePlayerRef` is the switch that knows all of them.
+        val targetId = context.resolvePlayerTarget(effect.target, state)
             ?: return EffectResult.error(state, "No target player for LoseGameEffect")
 
         // Check if player has already lost
