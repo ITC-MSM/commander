@@ -3188,6 +3188,50 @@
     ]
 }
 
+// Gate Hound
+{
+    "name": "Gate Hound",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Dog",
+    "oracleText": "Creatures you control have vigilance as long as this creature is enchanted.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "VIGILANCE",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    }
+                },
+                "condition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            "IsEnchanted"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "artist": "Ralph Horsley",
+        "flavorText": "\"Ditri, I leave this checkpoint in your capable teeth.\"\n—Kitov, nightguard patrol",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/6/06732c6f-c3b5-4c68-82a0-655cffff79db.jpg?1783943700"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Gather Courage
 {
     "name": "Gather Courage",
@@ -3230,6 +3274,56 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Glare of Subdual
+{
+    "name": "Glare of Subdual",
+    "manaCost": "{2}{G}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "Tap an untapped creature you control: Tap target artifact or creature.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "filter": "creature"
+                    }
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact or creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact|creature"
+                        },
+                        "id": "target artifact or creature"
+                    }
+                ],
+                "descriptionOverride": "Tap an untapped creature you control: Tap target artifact or creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "207",
+        "rarity": "RARE",
+        "artist": "Zoltan Boros & Gabor Szikszai",
+        "flavorText": "The righteous light of Selesnya is channeled through the devout, striking out to blind the nonbelievers.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/d/ed6166c1-3c2e-47af-873e-d3b39f42bd27.jpg?1783943621"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
     ]
 }
 
@@ -4514,6 +4608,78 @@
     ]
 }
 
+// Instill Furor
+{
+    "name": "Instill Furor",
+    "manaCost": "{1}{R}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature has \"At the beginning of your end step, sacrifice this creature unless it attacked this turn.\"",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantTriggeredAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "END"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.WhenCondition",
+                            "condition": {
+                                "type": "Not",
+                                "condition": {
+                                    "type": "EntityMatches",
+                                    "entity": "Self",
+                                    "filter": {
+                                        "statePredicates": [
+                                            "AttackedThisTurn"
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        "then": {
+                            "type": "SacrificeTarget",
+                            "target": "Self"
+                        }
+                    },
+                    "descriptionOverride": "At the beginning of your end step, sacrifice this creature unless it attacked this turn."
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "134",
+        "rarity": "UNCOMMON",
+        "artist": "Jim Nelson",
+        "flavorText": "\"The Rakdos know little of technology, but they definitely know how to push buttons.\"\n—Trivaz, Izzet mage",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/6/f6164762-c02d-4553-9064-2b99ff6352c9.jpg?1783943651",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "Instill Furor grants a triggered ability that triggers at the end of the creature's controller's turn."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Once the ability triggers, nothing that happens to Instill Furor can prevent the ability from resolving."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Ivy Dancer
 {
     "name": "Ivy Dancer",
@@ -5765,6 +5931,55 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Phytohydra
+{
+    "name": "Phytohydra",
+    "manaCost": "{2}{G}{W}{W}",
+    "typeLine": "Creature — Plant Hydra",
+    "oracleText": "If damage would be dealt to this creature, put that many +1/+1 counters on it instead.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "ReplaceDamageWithCounters",
+                "counterType": "+1/+1",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "RecipientSelf"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "218",
+        "rarity": "RARE",
+        "artist": "Jim Murray",
+        "flavorText": "\"Look at this creature, so like the Conclave it serves. Cut one head and it grows two. Damage it and it flourishes.\"\n—Veszka, Selesnya evangel",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/6/86c336d2-cc14-4b74-a6f9-aab7a084d0de.jpg?1783943615",
+        "rulings": [
+            {
+                "date": "2024-01-12",
+                "text": "Phytohydra's ability doesn't prevent damage. Damage that can't be prevented will still be replaced by +1/+1 counters being put on Phytohydra."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If another effect would prevent damage from being dealt to Phytohydra or replace it with something else, Phytohydra's controller chooses which effect to apply first."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If Phytohydra blocks or is blocked by a creature with first strike or double strike, Phytohydra will get the counters during the first-strike combat damage step before it deals its own combat damage during the second combat damage step."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
     ]
 }
 
@@ -8377,6 +8592,50 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Twisted Justice
+{
+    "name": "Twisted Justice",
+    "manaCost": "{4}{U}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Target player sacrifices a creature of their choice. You draw cards equal to that creature's power.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ForceSacrifice",
+                    "filter": "creature",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target player"
+                    }
+                },
+                {
+                    "type": "DrawCards",
+                    "count": "TotalPowerSacrificedThisWay"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "target player"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "237",
+        "rarity": "UNCOMMON",
+        "artist": "Ralph Horsley",
+        "flavorText": "In Otiev's mind, he ruled in favor of the accused. But in his courtroom he was only a spectator, watching his hand deliver the sign of death.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/8/d8efa02d-c301-47e1-8cdf-26ff9e97a243.jpg?1783943608"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
     ]
 }
 
