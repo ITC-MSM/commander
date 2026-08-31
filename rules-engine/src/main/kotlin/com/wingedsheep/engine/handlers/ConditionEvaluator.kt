@@ -1582,12 +1582,18 @@ class ConditionEvaluator(
         context: EffectContext
     ): Boolean {
         val sourceId = context.sourceId ?: return false
-        val record = state.getEntity(sourceId)?.get<CastRecordComponent>() ?: return false
-        return record.whiteSpent >= condition.requiredWhite &&
-            record.blueSpent >= condition.requiredBlue &&
-            record.blackSpent >= condition.requiredBlack &&
-            record.redSpent >= condition.requiredRed &&
-            record.greenSpent >= condition.requiredGreen
+        // Read through ManaSpentReader rather than CastRecordComponent directly: that snapshot is
+        // only stamped when a *permanent* spell resolves onto the battlefield, so reading it alone
+        // made the condition permanently false for an instant or sorcery whose own resolution asks
+        // the question ("If {U} was spent to cast this spell", the Ravnica hybrid-rider cycle) —
+        // there the source is still a spell on the stack and its payment lives in
+        // SpellOnStackComponent. The reader covers both zones.
+        val spent = ManaSpentReader.coloredBuckets(state, sourceId)
+        return spent[0] >= condition.requiredWhite &&
+            spent[1] >= condition.requiredBlue &&
+            spent[2] >= condition.requiredBlack &&
+            spent[3] >= condition.requiredRed &&
+            spent[4] >= condition.requiredGreen
     }
 
     private fun evaluateIsInPhase(state: GameState, condition: IsInPhase, context: EffectContext): Boolean {
