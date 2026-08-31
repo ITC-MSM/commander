@@ -186,4 +186,5 @@ export const counterManaClass: Record<string, string> = {
   JAVELIN: 'counter-arrow',
   CREDIT: 'counter-gold',
   CUBE: 'counter-charge',
+  JUDGMENT: 'counter-shield',
 }
