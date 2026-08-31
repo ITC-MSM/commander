@@ -1495,6 +1495,89 @@
     ]
 }
 
+// Dauntless Dourbark
+{
+    "name": "Dauntless Dourbark",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Treefolk Warrior",
+    "oracleText": "Dauntless Dourbark's power and toughness are each equal to the number of Forests you control plus the number of Treefolk you control.\nThis creature has trample as long as you control another Treefolk.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "Add",
+                "left": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "land Forest"
+                },
+                "right": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "permanent Treefolk"
+                }
+            }
+        },
+        "toughness": {
+            "type": "Dynamic",
+            "source": {
+                "type": "Add",
+                "left": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "land Forest"
+                },
+                "right": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "permanent Treefolk"
+                }
+            }
+        }
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "TRAMPLE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "permanent Treefolk",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "203",
+        "rarity": "RARE",
+        "artist": "Jeremy Jarvis",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/d/ad87cb77-6b49-4e93-9151-29f53b48dd4b.jpg?1783942866",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "Dauntless Dourbark counts itself when determining its power and toughness."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "A permanent that's both a Forest and a Treefolk will be counted twice when determining Dauntless Dourbark's power and toughness."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Dawnfluke
 {
     "name": "Dawnfluke",
@@ -4196,6 +4279,69 @@
     ]
 }
 
+// Immaculate Magistrate
+{
+    "name": "Immaculate Magistrate",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Elf Shaman",
+    "oracleText": "{T}: Put a +1/+1 counter on target creature for each Elf you control.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddDynamicCounters",
+                    "counterType": "+1/+1",
+                    "amount": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "permanent Elf"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "{T}: Put a +1/+1 counter on target creature for each Elf you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "219",
+        "rarity": "RARE",
+        "artist": "Jim Nelson",
+        "flavorText": "Elves of the immaculate class weave flora into living creatures—sometimes to endorse an elite warrior, sometimes to create a breathing work of art.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/b/3bbf6137-4f50-4915-b608-7a03512476a2.jpg?1783942860",
+        "rulings": [
+            {
+                "date": "2020-11-10",
+                "text": "The number of counters to put on the target creature is determined only as Immaculate Magistrate's ability resolves. Elves coming and going later won't cause that creature to gain or lose +1/+1 counters."
+            },
+            {
+                "date": "2020-11-10",
+                "text": "The target creature doesn't have to be an Elf."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Imperious Perfect
 {
     "name": "Imperious Perfect",
@@ -4528,6 +4674,72 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Jagged-Scar Archers
+{
+    "name": "Jagged-Scar Archers",
+    "manaCost": "{1}{G}{G}",
+    "typeLine": "Creature — Elf Archer",
+    "oracleText": "Jagged-Scar Archers's power and toughness are each equal to the number of Elves you control.\n{T}: This creature deals damage equal to its power to target creature with flying.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "permanent Elf"
+            }
+        },
+        "toughness": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "permanent Elf"
+            }
+        }
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": "Power"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature with flying"
+                    },
+                    "damageSource": "Self"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature kw:flying"
+                        },
+                        "id": "target creature with flying"
+                    }
+                ],
+                "descriptionOverride": "{T}: This creature deals damage equal to its power to target creature with flying."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "222",
+        "rarity": "UNCOMMON",
+        "artist": "Paolo Parente",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/5/75fd5232-2dac-4bd9-a1f6-eb1a40154367.jpg?1783942861"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -5077,6 +5289,55 @@
         "artist": "Quinton Hoover",
         "flavorText": "Eidren, perfect of Lys Alana, ordered hundreds of trees uprooted and rearranged into a pattern he deemed beautiful. Thus the Gilt-Leaf Wood was born.",
         "imageUri": "https://cards.scryfall.io/normal/front/3/a/3aaff934-cc79-4a01-a4be-3c4936605e4e.jpg?1783942859"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Lignify
+{
+    "name": "Lignify",
+    "manaCost": "{1}{G}",
+    "typeLine": "Kindred Enchantment — Treefolk Aura",
+    "oracleText": "Enchant creature\nEnchanted creature is a Treefolk with base power and toughness 0/4 and loses all abilities.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "TransformPermanent",
+                "setSubtypes": [
+                    "Treefolk"
+                ]
+            },
+            "LoseAllAbilities",
+            {
+                "type": "SetBasePowerToughnessStatic",
+                "power": 0,
+                "toughness": 4
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "228",
+        "artist": "Jesper Ejsing",
+        "flavorText": "Bulgo paused, puzzled. What was that rustling sound, and why did he feel so stiff? And how could his *feet* be so thirsty?",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/6/264fd6c5-8d73-4928-aed7-5ed637426780.jpg?1783942859",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "Lignify overwrites characteristic-defining abilities that specify the enchanted creature's power or toughness (such as the one Dauntless Dourbark has) or that specify its creature types (such as changeling does)."
+            },
+            {
+                "date": "2009-10-01",
+                "text": "Lignify will not overwrite effects such as those from Glorious Anthem, counters, or Giant Growth that change the enchanted creature's power or toughness without setting it to a specific value. Apply such effects after applying Lignify."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "GREEN"
@@ -8246,6 +8507,55 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Timber Protector
+{
+    "name": "Timber Protector",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Treefolk Warrior",
+    "oracleText": "Other Treefolk creatures you control get +1/+1.\nOther Treefolk and Forests you control have indestructible.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 6
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature Treefolk ctrl:you",
+                    "excludeSelf": true
+                }
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "INDESTRUCTIBLE",
+                "filter": {
+                    "baseFilter": "permanent Treefolk|Forest ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "238",
+        "rarity": "RARE",
+        "artist": "Terese Nielsen & Philip Tan",
+        "flavorText": "In his presence, an ordinary grove becomes a bastion to turn spells and break armies.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/4/14b93784-cbe5-437a-8235-f6864e413b41.jpg?1783942856",
+        "rulings": [
+            {
+                "date": "2013-07-01",
+                "text": "If Timber Protector somehow becomes a Forest, it doesn't give itself indestructible."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
