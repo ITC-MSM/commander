@@ -114,8 +114,9 @@ class GameEnvironment private constructor(
      *
      * An illegal action leaves the state untouched, which on its own is indistinguishable from an
      * action that legitimately changed nothing (declaring no attackers, passing priority). Callers
-     * that must not swallow a rejection — the HTTP transport, which turns it into a 400 — read this;
-     * the trainer SPI, which only ever submits enumerated actions, can keep ignoring it.
+     * that must not swallow a rejection read this: the HTTP transport turns it into a 400, and MCTS
+     * asserts on it, since a rejected decision edge would otherwise become a child node identical to
+     * its parent and be searched as if it were progress.
      */
     var lastRejection: String? = null
         private set
