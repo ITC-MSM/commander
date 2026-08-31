@@ -54,6 +54,76 @@
     ]
 }
 
+// Amoeboid Changeling
+{
+    "name": "Amoeboid Changeling",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\n{T}: Target creature gains all creature types until end of turn.\n{T}: Target creature loses all creature types until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "CHANGELING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "CHANGELING",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "{T}: Target creature gains all creature types until end of turn."
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "LoseAllCreatureTypes",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "{T}: Target creature loses all creature types until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "artist": "Nils Hamm",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/6/068518d2-f061-4061-b208-158e991156b6.jpg?1783942906"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Ancient Amphitheater
 {
     "name": "Ancient Amphitheater",
@@ -1495,6 +1565,89 @@
     ]
 }
 
+// Dauntless Dourbark
+{
+    "name": "Dauntless Dourbark",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Treefolk Warrior",
+    "oracleText": "Dauntless Dourbark's power and toughness are each equal to the number of Forests you control plus the number of Treefolk you control.\nThis creature has trample as long as you control another Treefolk.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "Add",
+                "left": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "land Forest"
+                },
+                "right": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "permanent Treefolk"
+                }
+            }
+        },
+        "toughness": {
+            "type": "Dynamic",
+            "source": {
+                "type": "Add",
+                "left": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "land Forest"
+                },
+                "right": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "permanent Treefolk"
+                }
+            }
+        }
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "TRAMPLE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "permanent Treefolk",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "203",
+        "rarity": "RARE",
+        "artist": "Jeremy Jarvis",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/d/ad87cb77-6b49-4e93-9151-29f53b48dd4b.jpg?1783942866",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "Dauntless Dourbark counts itself when determining its power and toughness."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "A permanent that's both a Forest and a Treefolk will be counted twice when determining Dauntless Dourbark's power and toughness."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Dawnfluke
 {
     "name": "Dawnfluke",
@@ -1832,6 +1985,65 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Elvish Branchbender
+{
+    "name": "Elvish Branchbender",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Elf Druid",
+    "oracleText": "{T}: Until end of turn, target Forest becomes an X/X Treefolk creature in addition to its other types, where X is the number of Elves you control.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "BecomeCreature",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target Forest"
+                    },
+                    "power": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "permanent Elf"
+                    },
+                    "toughness": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "permanent Elf"
+                    },
+                    "creatureTypes": [
+                        "Treefolk"
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "land Forest"
+                        },
+                        "id": "target Forest"
+                    }
+                ],
+                "descriptionOverride": "{T}: Until end of turn, target Forest becomes an X/X Treefolk creature in addition to its other types, where X is the number of Elves you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "204",
+        "artist": "Ralph Horsley",
+        "flavorText": "\"How do the vinebred feel? Fah! We do not ask the puppet how it feels when the puppeteer bids it dance.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/1/5154fc12-a8f2-4a16-8b1f-f7415c87566d.jpg?1783942866"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -2488,6 +2700,45 @@
     ]
 }
 
+// Faerie Trickery
+{
+    "name": "Faerie Trickery",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Kindred Instant — Faerie",
+    "oracleText": "Counter target non-Faerie spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard.",
+    "script": {
+        "spellEffect": {
+            "type": "Counter",
+            "counterDestination": "CounterDestination.Exile"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "NotSubtype",
+                                "subtype": "Faerie"
+                            }
+                        ]
+                    },
+                    "zone": "Stack"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "62",
+        "artist": "Terese Nielsen",
+        "flavorText": "The fae are so quick and their life spans so short that it's difficult to get retribution for their pranks.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/e/defb9f0b-195e-4aeb-92c1-8f827ad6724b.jpg?1783942904"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Fallowsage
 {
     "name": "Fallowsage",
@@ -2993,6 +3244,48 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Forced Fruition
+{
+    "name": "Forced Fruition",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever an opponent casts a spell, that player draws seven cards.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 7
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                },
+                "descriptionOverride": "Whenever an opponent casts a spell, that player draws seven cards."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "rarity": "RARE",
+        "artist": "William O'Connor",
+        "flavorText": "\"Petals within petals within petals, tadpole. The truth lurks below an opulence of illusion.\"\n—Neerdiv, fallowsage",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/7/f7ea1c6e-c0af-40b0-b492-8d71f496903e.jpg?1783942903"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -4196,6 +4489,69 @@
     ]
 }
 
+// Immaculate Magistrate
+{
+    "name": "Immaculate Magistrate",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Elf Shaman",
+    "oracleText": "{T}: Put a +1/+1 counter on target creature for each Elf you control.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddDynamicCounters",
+                    "counterType": "+1/+1",
+                    "amount": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "permanent Elf"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "{T}: Put a +1/+1 counter on target creature for each Elf you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "219",
+        "rarity": "RARE",
+        "artist": "Jim Nelson",
+        "flavorText": "Elves of the immaculate class weave flora into living creatures—sometimes to endorse an elite warrior, sometimes to create a breathing work of art.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/b/3bbf6137-4f50-4915-b608-7a03512476a2.jpg?1783942860",
+        "rulings": [
+            {
+                "date": "2020-11-10",
+                "text": "The number of counters to put on the target creature is determined only as Immaculate Magistrate's ability resolves. Elves coming and going later won't cause that creature to gain or lose +1/+1 counters."
+            },
+            {
+                "date": "2020-11-10",
+                "text": "The target creature doesn't have to be an Elf."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Imperious Perfect
 {
     "name": "Imperious Perfect",
@@ -4528,6 +4884,72 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Jagged-Scar Archers
+{
+    "name": "Jagged-Scar Archers",
+    "manaCost": "{1}{G}{G}",
+    "typeLine": "Creature — Elf Archer",
+    "oracleText": "Jagged-Scar Archers's power and toughness are each equal to the number of Elves you control.\n{T}: This creature deals damage equal to its power to target creature with flying.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "permanent Elf"
+            }
+        },
+        "toughness": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "permanent Elf"
+            }
+        }
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": "Power"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature with flying"
+                    },
+                    "damageSource": "Self"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature kw:flying"
+                        },
+                        "id": "target creature with flying"
+                    }
+                ],
+                "descriptionOverride": "{T}: This creature deals damage equal to its power to target creature with flying."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "222",
+        "rarity": "UNCOMMON",
+        "artist": "Paolo Parente",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/5/75fd5232-2dac-4bd9-a1f6-eb1a40154367.jpg?1783942861"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -5000,6 +5422,54 @@
     ]
 }
 
+// Knucklebone Witch
+{
+    "name": "Knucklebone Witch",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Goblin Shaman",
+    "oracleText": "Whenever a Goblin you control is put into a graveyard from the battlefield, you may put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "permanent Goblin ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": "Self"
+                    },
+                    "descriptionOverride": "you may put a +1/+1 counter on this creature."
+                },
+                "descriptionOverride": "you may put a +1/+1 counter on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "120",
+        "rarity": "RARE",
+        "artist": "Jim Pavelec",
+        "flavorText": "Each bone honors its owner's best pranks.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/d/7d66b355-9aff-4cce-ae4a-42b233475dcf.jpg?1783942889"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Lace with Moonglove
 {
     "name": "Lace with Moonglove",
@@ -5077,6 +5547,55 @@
         "artist": "Quinton Hoover",
         "flavorText": "Eidren, perfect of Lys Alana, ordered hundreds of trees uprooted and rearranged into a pattern he deemed beautiful. Thus the Gilt-Leaf Wood was born.",
         "imageUri": "https://cards.scryfall.io/normal/front/3/a/3aaff934-cc79-4a01-a4be-3c4936605e4e.jpg?1783942859"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Lignify
+{
+    "name": "Lignify",
+    "manaCost": "{1}{G}",
+    "typeLine": "Kindred Enchantment — Treefolk Aura",
+    "oracleText": "Enchant creature\nEnchanted creature is a Treefolk with base power and toughness 0/4 and loses all abilities.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "TransformPermanent",
+                "setSubtypes": [
+                    "Treefolk"
+                ]
+            },
+            "LoseAllAbilities",
+            {
+                "type": "SetBasePowerToughnessStatic",
+                "power": 0,
+                "toughness": 4
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "228",
+        "artist": "Jesper Ejsing",
+        "flavorText": "Bulgo paused, puzzled. What was that rustling sound, and why did he feel so stiff? And how could his *feet* be so thirsty?",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/6/264fd6c5-8d73-4928-aed7-5ed637426780.jpg?1783942859",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "Lignify overwrites characteristic-defining abilities that specify the enchanted creature's power or toughness (such as the one Dauntless Dourbark has) or that specify its creature types (such as changeling does)."
+            },
+            {
+                "date": "2009-10-01",
+                "text": "Lignify will not overwrite effects such as those from Glorious Anthem, counters, or Giant Growth that change the enchanted creature's power or toughness without setting it to a specific value. Apply such effects after applying Lignify."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "GREEN"
@@ -5288,6 +5807,85 @@
                 "text": "The second ability can target any Goblin permanent except the Mad Auntie whose ability is being activated. It can target a different Mad Auntie."
             }
         ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Marsh Flitter
+{
+    "name": "Marsh Flitter",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Faerie Rogue",
+    "oracleText": "Flying\nWhen this creature enters, create two 1/1 black Goblin Rogue creature tokens.\nSacrifice a Goblin: This creature has base power and toughness 3/3 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Goblin",
+                        "Rogue"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/f/4/f44d5271-5d10-46b2-9ba2-5788d99de2e6.jpg?1783942839"
+                },
+                "descriptionOverride": "create two 1/1 black Goblin Rogue creature tokens."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "permanent Goblin"
+                    }
+                },
+                "effect": {
+                    "type": "SetBaseStats",
+                    "target": "Self",
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "duration": "EndOfTurn"
+                },
+                "descriptionOverride": "Sacrifice a Goblin: This creature has base power and toughness 3/3 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "125",
+        "rarity": "UNCOMMON",
+        "artist": "Wayne Reynolds",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/4/040e1039-1943-4c2d-aa98-b7f9519de321.jpg?1783942888"
     },
     "colorIdentityOverride": [
         "BLACK"
@@ -5573,6 +6171,61 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Militia's Pride
+{
+    "name": "Militia's Pride",
+    "manaCost": "{1}{W}",
+    "typeLine": "Kindred Enchantment — Kithkin",
+    "oracleText": "Whenever a nontoken creature you control attacks, you may pay {W}. If you do, create a 1/1 white Kithkin Soldier creature token that's tapped and attacking.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AttackEvent",
+                    "filter": "creature nontoken ctrl:you"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{W}"
+                        }
+                    },
+                    "then": {
+                        "type": "CreateToken",
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Kithkin",
+                            "Soldier"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/a/d/ad29eb21-7ee3-4a67-9601-a62ea0cbe4c0.jpg?1783942839",
+                        "tapped": true,
+                        "attacking": true
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "30",
+        "rarity": "RARE",
+        "artist": "Larry MacDougall",
+        "flavorText": "If you pick a fight with one kithkin, be ready to fight them all.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/3/53c8cde1-e447-422e-aed0-2571a77d3d29.jpg?1783942912"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -7993,6 +8646,102 @@
     ]
 }
 
+// Thieving Sprite
+{
+    "name": "Thieving Sprite",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Faerie Rogue",
+    "oracleText": "Flying\nWhen this creature enters, target player reveals X cards from their hand, where X is the number of Faeries you control. You choose one of those cards. That player discards that card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "player": "TargetPlayer"
+                            },
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered0",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "AggregateBattlefield",
+                                    "player": "You",
+                                    "filter": "permanent Faerie"
+                                }
+                            },
+                            "chooser": "TargetPlayer",
+                            "storeSelected": "selected1",
+                            "prompt": "Choose cards to reveal",
+                            "selectedLabel": "Reveal"
+                        },
+                        {
+                            "type": "RevealCollection",
+                            "from": "selected1"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "selected1",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "selected3",
+                            "prompt": "Choose a revealed card for that player to discard",
+                            "selectedLabel": "Discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected3",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": "TargetPlayer"
+                            },
+                            "moveType": "Discard"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target player"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "143",
+        "artist": "Dan Murayama Scott",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/b/9b5b51c3-60a8-45b2-9de0-605388091e8a.jpg?1783942881"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Thorn of Amethyst
 {
     "name": "Thorn of Amethyst",
@@ -8189,6 +8938,66 @@
     ]
 }
 
+// Thundercloud Shaman
+{
+    "name": "Thundercloud Shaman",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Creature — Giant Shaman",
+    "oracleText": "When this creature enters, it deals damage equal to the number of Giants you control to each non-Giant creature.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    {
+                                        "type": "NotSubtype",
+                                        "subtype": "Giant"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "AggregateBattlefield",
+                            "player": "You",
+                            "filter": "permanent Giant"
+                        },
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "it deals damage equal to the number of Giants you control to each non-Giant creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "195",
+        "rarity": "UNCOMMON",
+        "artist": "Greg Staples",
+        "flavorText": "He cares not for the disasters his storm brings as long as his path ahead is clear.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/8/5864f207-2878-461b-8ff6-76475abc324d.jpg?1783942868"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Tideshaper Mystic
 {
     "name": "Tideshaper Mystic",
@@ -8246,6 +9055,55 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Timber Protector
+{
+    "name": "Timber Protector",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Treefolk Warrior",
+    "oracleText": "Other Treefolk creatures you control get +1/+1.\nOther Treefolk and Forests you control have indestructible.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 6
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature Treefolk ctrl:you",
+                    "excludeSelf": true
+                }
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "INDESTRUCTIBLE",
+                "filter": {
+                    "baseFilter": "permanent Treefolk|Forest ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "238",
+        "rarity": "RARE",
+        "artist": "Terese Nielsen & Philip Tan",
+        "flavorText": "In his presence, an ordinary grove becomes a bastion to turn spells and break armies.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/4/14b93784-cbe5-437a-8235-f6864e413b41.jpg?1783942856",
+        "rulings": [
+            {
+                "date": "2013-07-01",
+                "text": "If Timber Protector somehow becomes a Forest, it doesn't give itself indestructible."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -9028,6 +9886,74 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Wings of Velis Vel
+{
+    "name": "Wings of Velis Vel",
+    "manaCost": "{1}{U}",
+    "typeLine": "Kindred Instant — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\nUntil end of turn, target creature has base power and toughness 4/4, gains all creature types, and gains flying.",
+    "keywords": [
+        "CHANGELING"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "SetBaseStats",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "duration": "EndOfTurn"
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "CHANGELING",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "97",
+        "artist": "Jim Pavelec",
+        "flavorText": "Changeling magic grants unusual wishes.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fb3c1f39-b6ac-4663-9623-bd573a1117b0.jpg?1783942894"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

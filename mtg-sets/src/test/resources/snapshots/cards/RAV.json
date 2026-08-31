@@ -2661,6 +2661,84 @@
     ]
 }
 
+// Faith's Fetters
+{
+    "name": "Faith's Fetters",
+    "manaCost": "{3}{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant permanent\nWhen this Aura enters, you gain 4 life.\nEnchanted permanent can't attack or block, and its activated abilities can't be activated unless they're mana abilities.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CantAttack",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "AttachedTo"
+                }
+            },
+            {
+                "type": "CantBlock",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "AttachedTo"
+                }
+            },
+            {
+                "type": "PreventActivatedAbilities",
+                "filter": {
+                    "cardPredicates": [
+                        "IsPermanent"
+                    ],
+                    "statePredicates": [
+                        "IsAttachedToBySource"
+                    ]
+                },
+                "nonManaAbilitiesOnly": true
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "permanent"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "16",
+        "artist": "Chippy",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/b/5b8ffba3-44a9-41ce-a5a1-37413346db2f.jpg?1783943702",
+        "rulings": [
+            {
+                "date": "2020-11-10",
+                "text": "If the target permanent is an illegal target by the time Faith's Fetters tries to resolve, it doesn't resolve. It won't enter the battlefield, so its enters-the-battlefield ability won't trigger."
+            },
+            {
+                "date": "2020-11-10",
+                "text": "Faith's Fetters doesn't stop static abilities, triggered abilities, or mana abilities from working. A mana ability is an ability that produces mana, not an ability that costs mana."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Farseek
 {
     "name": "Farseek",
@@ -3110,6 +3188,50 @@
     ]
 }
 
+// Gate Hound
+{
+    "name": "Gate Hound",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Dog",
+    "oracleText": "Creatures you control have vigilance as long as this creature is enchanted.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "VIGILANCE",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    }
+                },
+                "condition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            "IsEnchanted"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "artist": "Ralph Horsley",
+        "flavorText": "\"Ditri, I leave this checkpoint in your capable teeth.\"\n—Kitov, nightguard patrol",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/6/06732c6f-c3b5-4c68-82a0-655cffff79db.jpg?1783943700"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Gather Courage
 {
     "name": "Gather Courage",
@@ -3152,6 +3274,56 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Glare of Subdual
+{
+    "name": "Glare of Subdual",
+    "manaCost": "{2}{G}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "Tap an untapped creature you control: Tap target artifact or creature.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "filter": "creature"
+                    }
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact or creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact|creature"
+                        },
+                        "id": "target artifact or creature"
+                    }
+                ],
+                "descriptionOverride": "Tap an untapped creature you control: Tap target artifact or creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "207",
+        "rarity": "RARE",
+        "artist": "Zoltan Boros & Gabor Szikszai",
+        "flavorText": "The righteous light of Selesnya is channeled through the devout, striking out to blind the nonbelievers.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/d/ed6166c1-3c2e-47af-873e-d3b39f42bd27.jpg?1783943621"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
     ]
 }
 
@@ -4436,6 +4608,78 @@
     ]
 }
 
+// Instill Furor
+{
+    "name": "Instill Furor",
+    "manaCost": "{1}{R}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature has \"At the beginning of your end step, sacrifice this creature unless it attacked this turn.\"",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantTriggeredAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "END"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.WhenCondition",
+                            "condition": {
+                                "type": "Not",
+                                "condition": {
+                                    "type": "EntityMatches",
+                                    "entity": "Self",
+                                    "filter": {
+                                        "statePredicates": [
+                                            "AttackedThisTurn"
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        "then": {
+                            "type": "SacrificeTarget",
+                            "target": "Self"
+                        }
+                    },
+                    "descriptionOverride": "At the beginning of your end step, sacrifice this creature unless it attacked this turn."
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "134",
+        "rarity": "UNCOMMON",
+        "artist": "Jim Nelson",
+        "flavorText": "\"The Rakdos know little of technology, but they definitely know how to push buttons.\"\n—Trivaz, Izzet mage",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/6/f6164762-c02d-4553-9064-2b99ff6352c9.jpg?1783943651",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "Instill Furor grants a triggered ability that triggers at the end of the creature's controller's turn."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Once the ability triggers, nothing that happens to Instill Furor can prevent the ability from resolving."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Ivy Dancer
 {
     "name": "Ivy Dancer",
@@ -5178,6 +5422,68 @@
     ]
 }
 
+// Necromantic Thirst
+{
+    "name": "Necromantic Thirst",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nWhenever enchanted creature deals combat damage to a player, you may return target creature card from your graveyard to your hand.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "binding": "ATTACHED",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature card in your graveyard"
+                        },
+                        "destination": "Hand",
+                        "fromZone": "Graveyard"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target creature card in your graveyard"
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "97",
+        "artist": "Brandon Kitkouski",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0a46880c-a9f4-452d-8b91-51d8aa97cbd2.jpg?1783943667",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The target is chosen just after any creatures dealt lethal damage at the same time that the enchanted creature dealt damage have been put into the graveyard. That might include the enchanted creature itself, if it had trample and was blocked, for example."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Nightguard Patrol
 {
     "name": "Nightguard Patrol",
@@ -5625,6 +5931,55 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Phytohydra
+{
+    "name": "Phytohydra",
+    "manaCost": "{2}{G}{W}{W}",
+    "typeLine": "Creature — Plant Hydra",
+    "oracleText": "If damage would be dealt to this creature, put that many +1/+1 counters on it instead.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "ReplaceDamageWithCounters",
+                "counterType": "+1/+1",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "RecipientSelf"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "218",
+        "rarity": "RARE",
+        "artist": "Jim Murray",
+        "flavorText": "\"Look at this creature, so like the Conclave it serves. Cut one head and it grows two. Damage it and it flourishes.\"\n—Veszka, Selesnya evangel",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/6/86c336d2-cc14-4b74-a6f9-aab7a084d0de.jpg?1783943615",
+        "rulings": [
+            {
+                "date": "2024-01-12",
+                "text": "Phytohydra's ability doesn't prevent damage. Damage that can't be prevented will still be replaced by +1/+1 counters being put on Phytohydra."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If another effect would prevent damage from being dealt to Phytohydra or replace it with something else, Phytohydra's controller chooses which effect to apply first."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If Phytohydra blocks or is blocked by a creature with first strike or double strike, Phytohydra will get the counters during the first-strike combat damage step before it deals its own combat damage during the second combat damage step."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
     ]
 }
 
@@ -7320,6 +7675,104 @@
     ]
 }
 
+// Strands of Undeath
+{
+    "name": "Strands of Undeath",
+    "manaCost": "{3}{B}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nWhen this Aura enters, target player discards two cards.\n{B}: Regenerate enchanted creature.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "chooser": "TargetPlayer",
+                            "storeSelected": "discarded",
+                            "prompt": "Choose 2 cards to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "moveType": "Discard"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target player"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{B}"
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "EnchantedCreature"
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "108",
+        "artist": "Dave Allsop",
+        "flavorText": "\"Why limit yourself to mortal law when you can outlive those who enforce it?\"\n—Czaric, Orzhov prelate",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/3/93ced365-f445-4a4a-b33f-986279404fde.jpg?1783943661"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Sundering Vitae
 {
     "name": "Sundering Vitae",
@@ -8077,6 +8530,115 @@
     ]
 }
 
+// Transluminant
+{
+    "name": "Transluminant",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Dryad Shaman",
+    "oracleText": "{W}, Sacrifice this creature: Create a 1/1 white Spirit creature token with flying at the beginning of the next end step.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{W}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "CreateDelayedTrigger",
+                    "step": "END",
+                    "effect": {
+                        "type": "CreateToken",
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Spirit"
+                        ],
+                        "keywords": [
+                            "FLYING"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "186",
+        "artist": "Greg Hildebrandt",
+        "flavorText": "\"Forget yourself. Forget your city. Forget your homes, your families, the debts and obligations that hold you to this world.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/318ce4ef-38bd-4360-895f-457587164197.jpg?1783943629",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "If you use this ability during a turn's end phase, the chance to put \"at end of turn\"-triggered abilities on the stack has passed. You won't get the Spirit creature token until the beginning of the next end step."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Twisted Justice
+{
+    "name": "Twisted Justice",
+    "manaCost": "{4}{U}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Target player sacrifices a creature of their choice. You draw cards equal to that creature's power.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ForceSacrifice",
+                    "filter": "creature",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target player"
+                    }
+                },
+                {
+                    "type": "DrawCards",
+                    "count": "TotalPowerSacrificedThisWay"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "target player"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "237",
+        "rarity": "UNCOMMON",
+        "artist": "Ralph Horsley",
+        "flavorText": "In Otiev's mind, he ruled in favor of the accused. But in his courtroom he was only a spectator, watching his hand deliver the sign of death.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/8/d8efa02d-c301-47e1-8cdf-26ff9e97a243.jpg?1783943608"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Undercity Shade
 {
     "name": "Undercity Shade",
@@ -8701,6 +9263,81 @@
         "WHITE",
         "GREEN"
     ]
+}
+
+// Voyager Staff
+{
+    "name": "Voyager Staff",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "{2}, Sacrifice this artifact: Exile target creature. Return the exiled card to the battlefield under its owner's control at the beginning of the next end step.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            },
+                            "destination": "Exile"
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "step": "END",
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature"
+                                },
+                                "destination": "Battlefield"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "274",
+        "rarity": "UNCOMMON",
+        "artist": "Tsutomu Kawade",
+        "flavorText": "Voyager staffs are sought by those hoping to find an escape from the sprawling glut of Ravnica.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/6/76554c65-edea-48b0-b3a5-483dfe80eaac.jpg?1783943594",
+        "rulings": [
+            {
+                "date": "2024-01-12",
+                "text": "If a creature token is exiled by Voyager Staff's ability, it will cease to exist. It won't return to the battlefield."
+            }
+        ]
+    }
 }
 
 // War-Torch Goblin

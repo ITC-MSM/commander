@@ -418,19 +418,51 @@ internal fun returnDfcFace(
 ): ZoneTransitionResult {
     val container = state.getEntity(entityId)
         ?: return ZoneTransitionResult(state, emptyList())
-    val dfc = container.get<DoubleFacedComponent>()
-        ?: return ZoneTransitionResult(state, emptyList())
     val currentCard = container.get<CardComponent>()
         ?: return ZoneTransitionResult(state, emptyList())
     val ownerId = container.get<OwnerComponent>()?.playerId ?: currentCard.ownerId
         ?: return ZoneTransitionResult(state, emptyList())
+    val prepared = prepareDfcFaceSwap(state, cardRegistry, entityId, destinationFace)
+        ?: return ZoneTransitionResult(state, emptyList())
+    return ZoneTransitionService.moveToZone(
+        prepared,
+        entityId,
+        Zone.BATTLEFIELD,
+        options = ZoneEntryOptions(controllerId = ownerId, tapped = tapped)
+    )
+}
+
+/**
+ * Swap [entityId] to [destinationFace] **in place**, without moving it between zones — the half of
+ * [returnDfcFace] that decides *which face is up*, split out so a caller that owns its own
+ * battlefield-entry path can reuse it (Radiant Grace returns transformed *and* attached, and its
+ * attachment/controller wiring lives in `ReturnSelfToBattlefieldAttachedExecutor`).
+ *
+ * Returns `null` — and leaves the caller's state untouched — when the entity isn't a double-faced
+ * card that can show [destinationFace]. Callers whose card may not carry a [DoubleFacedComponent]
+ * yet (anything reached from a zone the card was discarded or milled into) run
+ * [ensureDoubleFacedComponent] first; this function deliberately does not, so the existing
+ * transform paths keep their "no component, no flip" behavior.
+ *
+ * Per Rule 712.8a the front face's [CardComponent] is stashed on the [DoubleFacedComponent] when
+ * going to the back face, so the restore-on-leave path can swap back without a registry lookup.
+ */
+internal fun prepareDfcFaceSwap(
+    state: GameState,
+    cardRegistry: CardRegistry,
+    entityId: EntityId,
+    destinationFace: DoubleFacedComponent.Face,
+): GameState? {
+    val container = state.getEntity(entityId) ?: return null
+    val dfc = container.get<DoubleFacedComponent>() ?: return null
+    val currentCard = container.get<CardComponent>() ?: return null
 
     val destinationDefinitionId = when (destinationFace) {
         DoubleFacedComponent.Face.FRONT -> dfc.frontCardDefinitionId
         DoubleFacedComponent.Face.BACK -> dfc.backCardDefinitionId
     }
     val destinationDef = cardRegistry.getCard(destinationDefinitionId)
-        ?: return ZoneTransitionResult(state, emptyList())
+        ?: return null
 
     // `currentCard` is the front face here (Rule 712.8a — the entity reverted to it on leaving the
     // battlefield), so it supplies the CR 712.8e mana value a nonmodal back face keeps.
@@ -453,13 +485,38 @@ internal fun returnDfcFace(
         )
     }
 
-    val prepared = state.updateEntity(entityId) { c ->
+    return state.updateEntity(entityId) { c ->
         withDfcFaceSelfRedirects(c.with(destinationCard).with(updatedDfc), destinationDef)
     }
-    return ZoneTransitionService.moveToZone(
-        prepared,
-        entityId,
-        Zone.BATTLEFIELD,
-        options = ZoneEntryOptions(controllerId = ownerId, tapped = tapped)
-    )
+}
+
+/**
+ * Stamp a [DoubleFacedComponent] onto [entityId] when its card definition has a back face but the
+ * entity carries no component yet, and return the updated state; `null` when the card is not
+ * double-faced at all.
+ *
+ * The component is only stamped when a DFC *spell* resolves onto the battlefield, so a card that
+ * was discarded, milled, or (as here) put into the graveyard as a state-based action can reach a
+ * "return it transformed" effect without one. A single-faced card told to enter transformed
+ * doesn't move at all (standing FIN ruling), which is what the `null` return lets callers express.
+ */
+internal fun ensureDoubleFacedComponent(
+    state: GameState,
+    cardRegistry: CardRegistry,
+    entityId: EntityId,
+): GameState? {
+    val container = state.getEntity(entityId) ?: return null
+    val cardComponent = container.get<CardComponent>() ?: return null
+    val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
+    val backFace = cardDef?.backFace ?: return null
+    if (container.get<DoubleFacedComponent>() != null) return state
+    return state.updateEntity(entityId) { c ->
+        c.with(
+            DoubleFacedComponent(
+                frontCardDefinitionId = cardDef.name,
+                backCardDefinitionId = backFace.name,
+                currentFace = DoubleFacedComponent.Face.FRONT
+            )
+        )
+    }
 }

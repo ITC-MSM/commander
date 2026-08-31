@@ -47,7 +47,7 @@ object EnterUntappedReplacements {
             val sourceControllerId = container.get<ControllerComponent>()?.playerId ?: continue
             for (effect in replacementComponent.replacementEffects) {
                 if (effect !is EntersUntapped) continue
-                if (matchesEnterFilter(effect.appliesTo, enteringEntityId, sourceControllerId, state)) {
+                if (matchesEnterFilter(effect.appliesTo, enteringEntityId, sourceId, sourceControllerId, state)) {
                     return true
                 }
             }
@@ -55,16 +55,24 @@ object EnterUntappedReplacements {
         return false
     }
 
+    /**
+     * [replacementSourceId] is the permanent that *grants* the replacement, not the one entering —
+     * the entering permanent is what the filter is evaluated against and is passed separately. The
+     * distinction only shows up for a source-relative predicate: "creatures enchanted player
+     * controls" has to read the granting Aura's own attachment, and would otherwise be asked about
+     * the entering creature's.
+     */
     private fun matchesEnterFilter(
         event: EventPattern,
         enteringEntityId: EntityId,
+        replacementSourceId: EntityId,
         sourceControllerId: EntityId,
         state: GameState,
     ): Boolean {
         if (event !is EventPattern.ZoneChangeEvent) return false
         if (event.to != Zone.BATTLEFIELD) return false
         val predicateContext = PredicateContext(
-            sourceId = enteringEntityId,
+            sourceId = replacementSourceId,
             controllerId = sourceControllerId,
         )
         return predicateEvaluator.matches(

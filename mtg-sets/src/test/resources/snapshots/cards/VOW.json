@@ -11600,6 +11600,150 @@
     ]
 }
 
+// Kaya, Geist Hunter
+{
+    "name": "Kaya, Geist Hunter",
+    "manaCost": "{1}{W}{B}",
+    "typeLine": "Legendary Planeswalker — Kaya",
+    "oracleText": "+1: Creatures you control gain deathtouch until end of turn. Put a +1/+1 counter on up to one target creature token you control.\n−2: Until end of turn, if one or more tokens would be created under your control, twice that many of those tokens are created instead.\n−6: Exile all cards from all graveyards, then create a 1/1 white Spirit creature token with flying for each card exiled this way.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "GrantKeyword",
+                                "keyword": "DEATHTOUCH",
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target creature token you control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature token ctrl:you"
+                        },
+                        "id": "up to one target creature token you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Creatures you control gain deathtouch until end of turn. Put a +1/+1 counter on up to one target creature token you control."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -2
+                },
+                "effect": {
+                    "type": "GrantReplacementEffect",
+                    "replacement": "MultiplyTokenCreation"
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Until end of turn, if one or more tokens would be created under your control, twice that many of those tokens are created instead."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -6
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "player": "Each"
+                            },
+                            "storeAs": "kayaGraveyards"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "kayaGraveyards",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "storeMovedAs": "kayaExiled"
+                        },
+                        {
+                            "type": "CreateToken",
+                            "count": {
+                                "type": "DistinctEntitiesInCollections",
+                                "collections": [
+                                    "kayaExiled"
+                                ]
+                            },
+                            "power": 1,
+                            "toughness": 1,
+                            "colors": [
+                                "WHITE"
+                            ],
+                            "creatureTypes": [
+                                "Spirit"
+                            ],
+                            "keywords": [
+                                "FLYING"
+                            ]
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true,
+                "descriptionOverride": "Exile all cards from all graveyards, then create a 1/1 white Spirit creature token with flying for each card exiled this way."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "240",
+        "rarity": "MYTHIC",
+        "artist": "Ryan Pancoast",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/9/a98a208c-ee2b-4672-a43b-f4a708585b1a.jpg?1783924793",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "The tokens that Kaya's second ability creates are exact copies of the tokens that were being created in the first place."
+            }
+        ]
+    },
+    "startingLoyalty": 3,
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
+}
+
 // Kessig Flamebreather
 {
     "name": "Kessig Flamebreather",
@@ -15141,6 +15285,110 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Radiant Grace
+{
+    "name": "Radiant Grace",
+    "manaCost": "{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature gets +1/+0 and has vigilance.\nWhen enchanted creature dies, return this card to the battlefield transformed under your control attached to target opponent.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ATTACHED",
+                "effect": {
+                    "type": "ReturnSelfToBattlefieldAttached",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target opponent"
+                    },
+                    "transformed": true
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "When enchanted creature dies, return this card to the battlefield transformed under your control attached to target opponent."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 0
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "VIGILANCE"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "backFace": {
+        "name": "Radiant Restraints",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura Curse",
+        "oracleText": "Enchant player\nCreatures enchanted player controls enter tapped.",
+        "script": {
+            "replacementEffects": [
+                {
+                    "type": "PermanentsEnterTapped",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "filter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ],
+                            "controllerPredicate": {
+                                "type": "ControlledByReferencedPlayer",
+                                "target": {
+                                    "type": "PlayerRef",
+                                    "player": "EnchantedPlayer"
+                                }
+                            }
+                        },
+                        "to": "Battlefield"
+                    }
+                }
+            ],
+            "auraTarget": "TargetPlayer"
+        },
+        "metadata": {
+            "collectorNumber": "31",
+            "rarity": "UNCOMMON",
+            "artist": "Campbell White",
+            "flavorText": "\"Even in times of brutal darkness, never mistake beauty and delicacy for weakness.\"\n—Thalia, Guardian of Thraben",
+            "imageUri": "https://cards.scryfall.io/normal/back/4/a/4a708243-42a1-4fa7-8b0b-9d5163da84bb.jpg?1783924919"
+        },
+        "colorIdentityOverride": [
+            "WHITE"
+        ],
+        "colorIndicator": [
+            "WHITE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "31",
+        "rarity": "UNCOMMON",
+        "artist": "Campbell White",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/a/4a708243-42a1-4fa7-8b0b-9d5163da84bb.jpg?1783924919"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
