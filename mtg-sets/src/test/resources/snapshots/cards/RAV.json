@@ -2396,6 +2396,72 @@
     ]
 }
 
+// Dryad's Caress
+{
+    "name": "Dryad's Caress",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Instant",
+    "oracleText": "You gain 1 life for each creature on the battlefield. If {W} was spent to cast this spell, untap all creatures you control.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "AggregateBattlefield",
+                        "player": "Each",
+                        "filter": "creature"
+                    }
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "ManaSpentToCastIncludes",
+                            "requiredWhite": 1
+                        }
+                    },
+                    "then": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            }
+                        },
+                        "body": {
+                            "type": "TapUntap",
+                            "target": "Self",
+                            "tap": false
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "160",
+        "artist": "Randy Gallegos",
+        "flavorText": "\"I awoke to the face of beauty, my body fully healed. In that moment I knew my destiny was the Conclave's to shape.\"\n—Rogad, Selesnya initiate",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/c/8cf707f2-1a62-458e-bcc8-8b1cd081f225.jpg?1783943640",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The spell checks on resolution to see if any mana of the stated color was spent to pay its cost. It doesn't matter how much mana of that color was spent."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If the spell is copied (such as with Twincast), the copy will never have had mana of the stated color paid for it, no matter what colors were spent on the original spell."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Duskmantle, House of Shadow
 {
     "name": "Duskmantle, House of Shadow",
@@ -5854,6 +5920,149 @@
     ]
 }
 
+// Ribbons of Night
+{
+    "name": "Ribbons of Night",
+    "manaCost": "{4}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Ribbons of Night deals 4 damage to target creature and you gain 4 life. If {U} was spent to cast this spell, draw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature"
+                    }
+                },
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "ManaSpentToCastIncludes",
+                            "requiredBlue": 1
+                        }
+                    },
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "101",
+        "rarity": "UNCOMMON",
+        "artist": "Ron Spears",
+        "flavorText": "\"My favorite meal is angel's flesh, slain in agony and iced with black vinegar.\"\n—Aszala of House Dimir",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/7/c7a2e910-5a61-4ca0-8d69-0a6d4ea12ed7.jpg?1783943663"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Rolling Spoil
+{
+    "name": "Rolling Spoil",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy target land. If {B} was spent to cast this spell, all creatures get -1/-1 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "land"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "ManaSpentToCastIncludes",
+                            "requiredBlack": 1
+                        }
+                    },
+                    "then": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature"
+                            }
+                        },
+                        "body": {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": -1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": -1
+                            },
+                            "target": "Self"
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "land"
+                },
+                "id": "land"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "179",
+        "rarity": "UNCOMMON",
+        "artist": "Ron Spencer",
+        "flavorText": "The shadow that fell over the grove was silent yet horribly alive, roiling with millions of tiny minions dedicated to the process of rot.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/6/e6c5546f-2429-4099-a9bd-eda3f52779b7.jpg?1783943633"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Roofstalker Wight
 {
     "name": "Roofstalker Wight",
@@ -6286,6 +6495,74 @@
     "colorIdentityOverride": [
         "WHITE",
         "RED"
+    ]
+}
+
+// Seed Spark
+{
+    "name": "Seed Spark",
+    "manaCost": "{3}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Destroy target artifact or enchantment. If {G} was spent to cast this spell, create two 1/1 green Saproling creature tokens.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "artifact or enchantment"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "ManaSpentToCastIncludes",
+                            "requiredGreen": 1
+                        }
+                    },
+                    "then": {
+                        "type": "CreateToken",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "GREEN"
+                        ],
+                        "creatureTypes": [
+                            "Saproling"
+                        ]
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "artifact|enchantment"
+                },
+                "id": "artifact or enchantment"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "30",
+        "rarity": "UNCOMMON",
+        "artist": "Jeff Miracola",
+        "flavorText": "\"If you ask me, those root-lovers value mindless dogma over progress.\"\n—Trivaz, Izzet mage",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/3/33af31cf-d730-4f54-a0be-3229cdccf60c.jpg?1783943695"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -8163,6 +8440,71 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Vigor Mortis
+{
+    "name": "Vigor Mortis",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return target creature card from your graveyard to the battlefield. If {G} was spent to cast this spell, that creature enters with an additional +1/+1 counter on it.",
+    "script": {
+        "spellEffect": {
+            "type": "Gated",
+            "gate": {
+                "type": "Gate.WhenCondition",
+                "condition": {
+                    "type": "ManaSpentToCastIncludes",
+                    "requiredGreen": 1
+                }
+            },
+            "then": {
+                "type": "MoveToZone",
+                "target": {
+                    "type": "BoundVariable",
+                    "name": "target creature card from your graveyard"
+                },
+                "destination": "Battlefield",
+                "fromZone": "Graveyard",
+                "addCounterType": "PLUS_ONE_PLUS_ONE"
+            },
+            "otherwise": {
+                "type": "MoveToZone",
+                "target": {
+                    "type": "BoundVariable",
+                    "name": "target creature card from your graveyard"
+                },
+                "destination": "Battlefield",
+                "fromZone": "Graveyard"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "target creature card from your graveyard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "111",
+        "rarity": "UNCOMMON",
+        "artist": "Dan Murayama Scott",
+        "flavorText": "After fear and weakness rot away, that which remains is stronger than its living form.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/f/8fe06560-bb3f-4f0b-ad3c-7257419eb8ef.jpg?1783943660",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The +1/+1 counter from this ability is in addition to any other counters the creature enters with."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
