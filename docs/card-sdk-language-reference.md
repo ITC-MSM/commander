@@ -2337,6 +2337,16 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   resulting entity ids under a pipeline collection; `markEnteredViaSourceAbility = true` stamps each
   card that lands on the battlefield with `EnteredViaAbilityComponent(this source)` so a later
   `GatherCards(CardSource.EnteredViaThisResolution)` can re-collect them from live battlefield state.
+  `lookableInExile = true` is the "**You may look at that card for as long as it remains exiled**"
+  rider: each card this move lands **face down in exile** is stamped `MayLookAtInExileComponent(the
+  effect's controller)`, which `Visibility.grantsFaceDownExileAccessTo` honours alongside foretell and
+  an active may-play permission. It is a *look* grant and nothing else — CR 708.5 gives exile no
+  controller baseline ("You can't look at face-down cards in any other zone"), so before this the only
+  ways to see a face-down exiled card were foretell and a play permission, and **Jacob Hauken,
+  Inspector**'s front face grants neither ("exile a card from your hand face down. You may look at
+  that card…", with the permission to play arriving only on the back face). Ignored for a card that
+  ends up face up or outside exile; the grant is read only from the exile branch, so it ends when the
+  card leaves exile.
 - `CardDestination.ToZoneExiledFrom(fallback = Zone.BATTLEFIELD)` — a **per-card** destination: each
   card goes back to the zone it was exiled from, i.e. CR 610.3's "this second one-shot effect returns
   the object to its previous zone". Backed by `ExiledFromZoneComponent`, which
@@ -7763,9 +7773,18 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   For the "pay life equal to its mana value rather than pay its mana cost" shape (Valgavoth, Terror
   Eater), set `withoutPayingManaCost = true` (waives the mana) and `additionalCost =
   Costs.additional.PayLifeEqualToManaValueOfSpell` (substitutes the life). When `filter` admits lands
-  (e.g. `GameObjectFilter.Any`, no `IsNonland` predicate), the permission also covers *playing* land
-  cards from the linked exile — surfaced by `PlayLandEnumerator` and authorized by `PlayLandHandler`
-  (lands cost no life). Pair with a `RedirectZoneChange(linkToSource = true)` to fill the exile pile.
+  (e.g. `GameObjectFilter.Any`), the permission also covers *playing* land cards from the linked
+  exile — surfaced by `PlayLandEnumerator` and authorized by `PlayLandHandler` (lands cost no life).
+  Both go through `LinkedExilePlayUtils.landGranterFor`, which runs the grant's `filter` against the
+  land card itself via the same `CastZoneResolver.matchesCardFilter` the cast path uses: a filter's
+  *shape* is not a proxy for "admits lands", since `Nonland` and `Creature` both exclude a land but
+  only the first carries an `IsNonland` predicate. **`oncePerTurn` is one allowance for the permanent,
+  not one per kind of play** — a land play stamps the same
+  `MayCastFromLinkedExileUsedThisTurnComponent` a cast stamps, so "Once during each of your turns, you
+  may play a land **or** cast a spell from among the cards exiled with this permanent without paying
+  its mana cost" (**Hauken's Insight**) spends one or the other, never both. Pair with a
+  `RedirectZoneChange(linkToSource = true)` or a `MoveCollection(linkToSource = true)` to fill the
+  exile pile.
   **Cast-this-way entry rider:** `entersWithCounter` (a `CounterType`) mirrors
   `MayCastFromGraveyard.entersWithCounter` for the linked-exile path — a permanent cast from this pile
   *under this grant* enters the battlefield with one such counter (`CastSpellHandler` freezes the same

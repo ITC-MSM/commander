@@ -369,6 +369,21 @@ class PlayLandHandler(
         // for them; without this, a permanent permission would silently re-authorize the
         // card if it later returned to exile.
         if (fromZone == Zone.EXILE) {
+            // Record once-per-turn linked-exile permission usage (Hauken's Insight — "Once during
+            // each of your turns, you may play a land or cast a spell"). Resolved against the
+            // pre-play `state`: the unlink below removes the card from its granter's pile, after
+            // which nothing connects the two. The marker is the same one `CastSpellHandler`
+            // stamps, which is what makes the land and the spell share one allowance.
+            val linkedGranter = com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExilePlayUtils
+                .landGranterFor(state, action.playerId, action.cardId, cardRegistry)
+            if (linkedGranter?.ability?.oncePerTurn == true) {
+                newState = newState.updateEntity(linkedGranter.sourceId) { c ->
+                    c.with(
+                        com.wingedsheep.engine.state.components.battlefield
+                            .MayCastFromLinkedExileUsedThisTurnComponent
+                    )
+                }
+            }
             newState = newState.removeMayPlayPermissionsForCard(action.cardId)
             // Drop the card from any linked-exile granter (Valgavoth) now that it has left exile,
             // so the granter no longer lists it. (Lands bypass ZoneTransitionService, which would

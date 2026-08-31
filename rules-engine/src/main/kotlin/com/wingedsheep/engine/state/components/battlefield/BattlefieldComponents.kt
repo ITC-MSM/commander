@@ -1423,6 +1423,12 @@ data class ExileEntryTurnComponent(
  * Marks a permanent as having had its [com.wingedsheep.sdk.scripting.GrantMayCastFromLinkedExile]
  * permission used this turn. Used to enforce the `oncePerTurn` flag on that static ability
  * (e.g., Maralen, Fae Ascendant). Cleared at end of turn by CleanupPhaseManager.
+ *
+ * Stamped by **both** play paths out of a linked-exile pile — `CastSpellHandler` for a cast and
+ * `PlayLandHandler` for a land play — because the allowance belongs to the permanent rather than
+ * to a kind of play: Hauken's Insight reads "Once during each of your turns, you may play a land
+ * **or** cast a spell from among the cards exiled with this permanent". One marker is what makes
+ * the "or" exclusive.
  */
 @Serializable
 data object MayCastFromLinkedExileUsedThisTurnComponent : Component

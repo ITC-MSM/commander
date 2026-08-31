@@ -26,6 +26,39 @@ data class RevealedToComponent(
 }
 
 /**
+ * The players who may look under a face-down card **while it is in exile** — the
+ * "You may look at that card for as long as it remains exiled" rider (Jacob Hauken, Inspector;
+ * Hauken's Insight).
+ *
+ * CR 708.5 grants nothing here ("You can't look at face-down cards in any other zone"), so every
+ * peek into face-down exile comes from an effect that names its grantee. This component is that
+ * grant in its plainest form — knowledge with no attached permission to play the card — and sits
+ * alongside the two grants [com.wingedsheep.engine.view.Visibility] already honours: foretell
+ * (via [ForetoldComponent]) and an active may-play permission.
+ *
+ * Read only from the exile branch of the face-down visibility check, so the grant is exile-scoped
+ * by construction: a card that leaves exile stops being covered by it, which is exactly what "for
+ * as long as it remains exiled" says.
+ *
+ * @param playerIds The players entitled to look. Accumulates — two effects can each grant a look
+ *   at the same exiled card.
+ */
+@Serializable
+data class MayLookAtInExileComponent(
+    val playerIds: Set<EntityId>
+) : Component {
+    fun withPlayer(playerId: EntityId): MayLookAtInExileComponent =
+        copy(playerIds = playerIds + playerId)
+
+    fun mayLook(playerId: EntityId): Boolean = playerId in playerIds
+
+    companion object {
+        fun to(playerId: EntityId): MayLookAtInExileComponent =
+            MayLookAtInExileComponent(setOf(playerId))
+    }
+}
+
+/**
  * Marks a card in exile as castable via its warp ability.
  * Applied when a warped permanent is exiled by the warp end-step trigger.
  * The card can be re-cast for its warp cost from exile, and the warp loop continues.
