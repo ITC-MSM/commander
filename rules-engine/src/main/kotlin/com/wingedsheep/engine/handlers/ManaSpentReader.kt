@@ -16,14 +16,14 @@ import com.wingedsheep.sdk.model.EntityId
  * onto the battlefield without being cast, or is a copy created on the stack — no mana was
  * spent in either case), which is CR-faithful for "the mana spent to cast it" payoffs.
  *
- * Shared by [PredicateEvaluator] (mana-value-vs-mana-spent predicates) and
- * [DynamicAmountEvaluator] (Converge / total-mana-spent amounts) so the read path can never
- * drift between the two.
+ * Shared by [PredicateEvaluator] (mana-value-vs-mana-spent predicates),
+ * [DynamicAmountEvaluator] (Converge / total-mana-spent amounts) and [ConditionEvaluator]
+ * (`ManaSpentToCastIncludes`) so the read path can never drift between them.
  */
 object ManaSpentReader {
 
     /** The five colored buckets (W, U, B, R, G) spent to cast [entityId]; colorless excluded. */
-    private fun coloredBuckets(state: GameState, entityId: EntityId): IntArray {
+    fun coloredBuckets(state: GameState, entityId: EntityId): IntArray {
         val container = state.getEntity(entityId) ?: return IntArray(5)
         container.get<SpellOnStackComponent>()?.let {
             return intArrayOf(it.manaSpentWhite, it.manaSpentBlue, it.manaSpentBlack, it.manaSpentRed, it.manaSpentGreen)
