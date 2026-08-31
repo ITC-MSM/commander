@@ -14,6 +14,7 @@ dependencies {
     implementation(kotlin("reflect"))
 
     testImplementation(project(":mtg-sets"))
+    testImplementation(testFixtures(project(":rules-engine")))
     testImplementation(libs.kotestRunner)
     testImplementation(libs.kotestAssertions)
     testImplementation(libs.kotestProperty)

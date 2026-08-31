@@ -2339,6 +2339,7 @@ const passiveCounterPalette: Record<string, CounterBadgePalette> = {
   JAVELIN: { bg: 'rgba(44, 38, 26, 0.95)', border: 'rgba(210, 180, 120, 0.7)', color: '#e0cba0' },
   CREDIT: { bg: 'rgba(48, 42, 18, 0.95)', border: 'rgba(226, 196, 96, 0.7)', color: '#ecd98a' },
   CUBE: { bg: 'rgba(34, 30, 52, 0.95)', border: 'rgba(168, 150, 220, 0.7)', color: '#c6b6ea' },
+  JUDGMENT: { bg: 'rgba(52, 46, 24, 0.95)', border: 'rgba(232, 208, 132, 0.75)', color: '#f2e2a4', glow: 'rgba(232, 208, 132, 0.6)' },
   MINUS_ZERO_MINUS_ONE: { bg: 'rgba(60, 20, 20, 0.95)', border: 'rgba(220, 120, 120, 0.7)', color: '#e09c9c' },
 }
 

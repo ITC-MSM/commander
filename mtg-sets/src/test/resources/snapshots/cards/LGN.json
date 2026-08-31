@@ -1188,7 +1188,7 @@
                             "source": {
                                 "type": "FromZone",
                                 "zone": "Library",
-                                "filter": "permanent Zombie"
+                                "filter": "Zombie"
                             },
                             "storeAs": "searchable"
                         },

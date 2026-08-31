@@ -144,6 +144,11 @@ object Filters {
      * card type it implies is not recoverable from the word — "Goblin" is a creature, "Equipment" an
      * artifact, "Gate" a land — and the SDK publishes no list to rank against for the latter two.
      * Guessing would be the reversible-but-wrong class again, so the rest decline.
+     *
+     * Because these five *are* recoverable, this row owns them in **every** position the cascade is
+     * instantiated for, including card and spell position, where the rule for a bare subtype is
+     * otherwise [nonPermanentSubtype]. That is what [Primitives.nonBasicLandSubtype] holds them out
+     * of, and holding them out is what keeps "a Forest card" to one reading.
      */
     private val BASIC_LAND_TYPES: List<TypeNoun> = Subtype.ALL_BASIC_LAND_TYPES.map { type ->
         // "Plains" is its own plural — the one invariant among the five, and the same trap
@@ -334,10 +339,19 @@ object Filters {
      * the anaphors, and for the same reason: the distinction exists in the sentence and nowhere in
      * the model, so no remap on the finished filter could recover it. Registering the rule in the
      * shared cascade instead would give one value two printed forms in permanent position.
+     *
+     * The leaf is [Primitives.nonBasicLandSubtype] rather than [Primitives.subtype]: the five basic
+     * land types are the one set of words this position must **not** take, because [BASIC_LAND_TYPES]
+     * already stands them in the type noun's slot with `IsLand` on them, here as everywhere else.
+     * Reading them both ways gave "a Forest card" two readings — `Land.withSubtype` from the type
+     * noun and `Any.withSubtype` from this rule — and that was ten hard ambiguities in the corpus,
+     * every tutor for a basic land type by name (Nature's Lore, Wood Elves, Land Grant, Three Visits,
+     * Gift of Estates, Liliana's Shade, Silverglade Elemental, Vorinclex, Merfolk Wayfinder, Corpse
+     * Harvester). See that leaf's KDoc for why those five and no others.
      */
     private fun nonPermanentSubtype(suffix: String): Phrase<GameObjectFilter> =
         phrase("{subtype}", name = "a non-permanent subtype$suffix") {
-            slot("subtype", Primitives.subtype)
+            slot("subtype", Primitives.nonBasicLandSubtype)
             build { GameObjectFilter.Any.withSubtype(it.value<Subtype>("subtype")) }
             match { filter ->
                 val subtype = (filter.cardPredicates.singleOrNull() as? CardPredicate.HasSubtype)?.subtype

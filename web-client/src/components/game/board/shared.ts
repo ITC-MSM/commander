@@ -787,6 +787,10 @@ export const PASSIVE_COUNTER_TYPES: readonly CounterType[] = [
   CounterType.JAVELIN,
   CounterType.CREDIT,
   CounterType.CUBE,
+  // Innistrad: Crimson Vow. Faithbound Judge // Sinner's Judgment counts to three on both
+  // faces, and on the Aura face the third counter *ends the game* — a tally a player has to be
+  // able to read off the board.
+  CounterType.JUDGMENT,
   CounterType.PLUS_ONE_PLUS_TWO,
   CounterType.PLUS_TWO_PLUS_TWO,
   CounterType.MINUS_TWO_MINUS_TWO,

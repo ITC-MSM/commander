@@ -2,13 +2,13 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 267 / 273
+**Implemented:** 270 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
 - [x] Alchemist's Gambit
 - [x] Alchemist's Retrieval
-- [ ] Alluring Suitor
+- [x] Alluring Suitor
 - [x] Ancestral Anger
 - [x] Ancient Lumberknot
 - [x] Angelic Quartermaster
@@ -91,7 +91,7 @@
 - [x] Eruth, Tormented Prophet
 - [x] Estwald Shieldbasher
 - [x] Evolving Wilds
-- [ ] Faithbound Judge
+- [x] Faithbound Judge
 - [x] Falkenrath Celebrants
 - [x] Falkenrath Forebear
 - [x] Fear of Death
@@ -201,7 +201,7 @@
 - [x] Retrieve
 - [x] Rot-Tide Gargantua
 - [x] Runebound Wolf
-- [ ] Runo Stromkirk
+- [x] Runo Stromkirk
 - [x] Rural Recruit
 - [x] Sanctify
 - [x] Sanguine Statuette

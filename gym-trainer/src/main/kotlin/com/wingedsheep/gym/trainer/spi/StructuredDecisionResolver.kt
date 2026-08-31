@@ -12,14 +12,16 @@ import com.wingedsheep.engine.state.GameState
  * multi-mode `ChooseModeDecision` — that the gym can't fold into a single
  * numeric action space.
  *
- * MCTS treats the result as a *forced* single edge (no exploration), which
- * keeps the self-play loop running but does not train the network on
- * structured decisions. A production project can either:
+ * This is a strategic policy seam: it chooses one response. It remains the
+ * fallback when [StructuredDecisionExpander] reports a decision family as unsupported; that
+ * resolver-selected edge is not claimed to be the complete legal response set.
+ * Supplying a custom [ActionFeaturizer] cannot expose responses that were
+ * already collapsed here; enumeration belongs in [StructuredDecisionExpander].
  *
- *  - supply a smarter resolver that samples from a heuristic distribution, or
- *  - pre-flatten structured decisions into the action space via a custom
- *    [ActionFeaturizer] and an `Evaluator` that knows how to emit priors for
- *    them.
+ * The chosen response is checked against the engine's authoritative decision validator before it
+ * becomes a search edge, so a resolver is free to be strategically bad but not illegal: an
+ * unsatisfiable answer fails loudly rather than being submitted and silently rejected, which would
+ * leave the search a child node identical to its parent.
  */
 fun interface StructuredDecisionResolver {
     fun resolve(state: GameState, decision: PendingDecision): DecisionResponse
