@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.Targets as SdkTargets
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.conditions.Condition
@@ -104,38 +105,95 @@ object Steps {
     // Draw
     // ---------------------------------------------------------------------------------------
 
-    private val drawOne: Phrase<CardScript> = phrase("draw a card", name = "draw a card") {
-        build { CardScript(spellEffect = Effects.DrawCards(1)) }
-        match { script -> if (drawnByController(script) == 1) bind() else null }
-    }
-
-    private val drawMany: Phrase<CardScript> = phrase("draw {n} cards", name = "draw cards") {
-        slot("n", Cardinals.word)
-        build { CardScript(spellEffect = Effects.DrawCards(it.int("n"))) }
-        match { script ->
-            val count = drawnByController(script) ?: return@match null
-            // The singular is drawOne's to print, and anything Cardinals cannot spell as a word has
-            // no surface form here at all. Refusing both is what keeps printing total-or-null
-            // rather than total-or-wrong.
-            if (count >= 2 && Cardinals.spellable(count)) bind("n" to count) else null
-        }
-    }
-
-    private val targetPlayerDrawsOne: Phrase<CardScript> =
-        phrase("target player draws a card", name = "target player draws a card") {
-            build { targetPlayerDraws(1) }
-            match { script -> if (drawnByTarget(script) == 1) bind() else null }
-        }
-
-    private val targetPlayerDrawsMany: Phrase<CardScript> =
-        phrase("target player draws {n} cards", name = "target player draws cards") {
-            slot("n", Cardinals.word)
-            build { targetPlayerDraws(it.int("n")) }
+    /**
+     * The draws — "Draw a card.", "You draw three cards…", "Target opponent draws a card."
+     *
+     * One effect with two variables, the count and who draws, and English spells the second as the
+     * sentence's **subject**. That makes it a template per subject rather than a slot, for
+     * [lifeChanges]' reason twice over: the recipient is an `EffectTarget` on the effect *and* a
+     * `TargetRequirement` beside it, and `TargetPlayer` and `TargetOpponent` are distinct
+     * requirements rather than a narrowing of one. [Hand.discard] is the same shape solved the same
+     * way.
+     *
+     * @param count null slots the numeral through [Cardinals.word]; a number fixes it, which is what
+     *   lets the singular ("a card") and the plural ("{n} cards") be separate printed sentences.
+     * @param youSpelled the same sentence with its subject printed — see [youDrawn].
+     */
+    private fun draw(
+        template: String,
+        name: String,
+        count: Int?,
+        target: EffectTarget,
+        requirements: List<TargetRequirement>,
+        youSpelled: Pair<String, String>? = null,
+    ): Phrase<CardScript> {
+        fun scriptFor(cards: Int) = CardScript(
+            spellEffect = Effects.DrawCards(cards, target),
+            targetRequirements = requirements,
+        )
+        return phrase(template, name = name) {
+            if (count == null) slot("n", Cardinals.word)
+            build { bindings -> scriptFor(count ?: bindings.int("n")) }
             match { script ->
-                val count = drawnByTarget(script) ?: return@match null
-                if (count >= 2 && Cardinals.spellable(count)) bind("n" to count) else null
+                val cards = count ?: drawCount(script) ?: return@match null
+                // The singular is the fixed row's to print, and anything Cardinals cannot spell as a
+                // word has no surface form here at all. Refusing both is what keeps printing
+                // total-or-null rather than total-or-wrong.
+                if (count == null && (cards < 2 || !Cardinals.spellable(cards))) return@match null
+                if (script != scriptFor(cards)) return@match null
+                if (count == null) bind("n" to cards) else bind()
             }
+            youSpelled?.let { (surface, alternateName) -> alsoSpelled(surface, alternateName) }
         }
+    }
+
+    /**
+     * "**You** draw three cards and you lose 3 life." — the controller's draw with its subject said.
+     *
+     * The bare imperative already means the controller, so the subject adds nothing to the model and
+     * cannot be canonical: "Draw two cards." is what the corpus overwhelmingly prints. Oracle says
+     * "you" when the sentence carries a *second* clause it has to contrast against — Ancient Craving
+     * and Ambition's Cost both pair it with "and you lose 3 life" — so it is a printed-shape fact
+     * and belongs on the same row as an [com.wingedsheep.assay.syntax.PhraseBuilder.alsoSpelled],
+     * sharing that row's reader and never printing. Exactly [mayWrap]'s argument for the "may"
+     * contraction, one step out: a subject the model has no room for is a spelling, not a rule.
+     *
+     * The line therefore comes back as `Draw three cards. You lose 3 life.` — a
+     * [com.wingedsheep.assay.gate.LineVerdict.VARIANT], which says the reading was right and only
+     * the spelling moved.
+     */
+    private val drawOne: Phrase<CardScript> = draw(
+        "draw a card", "draw a card",
+        count = 1, target = EffectTarget.Controller, requirements = emptyList(),
+        youSpelled = "you draw a card" to "you draw a card",
+    )
+
+    private val drawMany: Phrase<CardScript> = draw(
+        "draw {n} cards", "draw cards",
+        count = null, target = EffectTarget.Controller, requirements = emptyList(),
+        youSpelled = "you draw {n} cards" to "you draw cards",
+    )
+
+    private val targetPlayerDrawsOne: Phrase<CardScript> = draw(
+        "target player draws a card", "target player draws a card",
+        count = 1, target = Targets.bound(), requirements = listOf(Targets.player()),
+    )
+
+    private val targetPlayerDrawsMany: Phrase<CardScript> = draw(
+        "target player draws {n} cards", "target player draws cards",
+        count = null, target = Targets.bound(), requirements = listOf(Targets.player()),
+    )
+
+    /** "Target **opponent** draws a card." — Bargain, Trade Secrets, Lord of Tresserhorn. */
+    private val targetOpponentDrawsOne: Phrase<CardScript> = draw(
+        "target opponent draws a card", "target opponent draws a card",
+        count = 1, target = Targets.bound(), requirements = listOf(Targets.opponent()),
+    )
+
+    private val targetOpponentDrawsMany: Phrase<CardScript> = draw(
+        "target opponent draws {n} cards", "target opponent draws cards",
+        count = null, target = Targets.bound(), requirements = listOf(Targets.opponent()),
+    )
 
     // ---------------------------------------------------------------------------------------
     // One permanent, one verb
@@ -1628,30 +1686,57 @@ object Steps {
      * prints the sentence without it, but the SDK has *no distinct value* for the version that has
      * it, so the bare form is not a row of this shape — it is a card whose reading is still open.
      *
+     * ### The causative is a second surface on the same row, not an `alsoSpelled`
+     *
+     * "You may have target opponent **sacrifice** a creature of their choice." is the same sacrifice
+     * behind a consent gate, and English marks the gate by moving the subject inside "have" and
+     * dropping the verb's agreement. An `alsoSpelled` cannot carry it: that mechanism shares the
+     * row's `build`, and this model is `MayEffect(ForceSacrificeEffect(…))` rather than the bare
+     * effect. So it is a parameter on the row — two printed words and one wrapper — which is
+     * [mayWrap]'s argument for the "may gain life" contraction applied to a whole script.
+     *
+     * The wrapped model is *also* reachable by composition, as [mayClause] over the plain row, which
+     * would print the sentence "you may target opponent sacrifices a creature of their choice" that
+     * no card carries. It never wins: `nonAnaphoric` precedes `mayClause` in [simpleClause], and
+     * `OneOfPhrase.unparse` takes the first canonical branch that can print. `StepsTest` asserts the
+     * printed form so that ordering is a checked fact rather than an accident.
+     *
      * @param count null spells the singular through [Filters.indefinite], which carries the article;
      *   a phrase spells the plural, over [Filters.plural].
+     * @param causative the "you may have … sacrifice" surface and its `MayEffect` wrapper.
      */
     private fun forcedSacrifice(
         subject: SacrificeSubject,
         count: Phrase<Int>?,
         countName: String,
+        causative: Boolean = false,
     ): Phrase<CardScript> {
-        fun scriptFor(filter: GameObjectFilter, n: Int) = CardScript(
+        fun bare(filter: GameObjectFilter, n: Int) = CardScript(
             spellEffect = Effects.Sacrifice(filter, n, subject.target),
             targetRequirements = subject.targets,
         )
+        fun scriptFor(filter: GameObjectFilter, n: Int): CardScript {
+            val script = bare(filter, n)
+            return if (causative) wrap(script) { MayEffect(it) } ?: script else script
+        }
         val counted = if (count == null) "" else "{n} "
-        return phrase(
-            "${subject.surface} sacrifices $counted{filter} of their choice",
-            name = "${subject.surface} sacrifices $countName",
-        ) {
+        // English's causative rewrite: the subject moves inside "you may have …" and the finite verb
+        // becomes the bare infinitive. Two printed words differ; the rest of the row is unchanged.
+        val template = if (causative) {
+            "you may have ${subject.surface} sacrifice $counted{filter} of their choice"
+        } else {
+            "${subject.surface} sacrifices $counted{filter} of their choice"
+        }
+        val nameSubject = if (causative) "you may have ${subject.surface}" else subject.surface
+        return phrase(template, name = "$nameSubject sacrifices $countName") {
             if (count != null) slot("n", count)
             slot("filter", if (count == null) Filters.indefinite else Filters.plural)
             build { bindings ->
                 scriptFor(bindings.value("filter"), if (count == null) 1 else bindings.int("n"))
             }
             match { script ->
-                val effect = script.spellEffect as? ForceSacrificeEffect ?: return@match null
+                val inner = if (causative) unwrapMay(script) ?: return@match null else script
+                val effect = inner.spellEffect as? ForceSacrificeEffect ?: return@match null
                 if (count == null) {
                     if (effect.count != 1) return@match null
                 } else {
@@ -1662,6 +1747,21 @@ object Steps {
                 else bind("n" to effect.count, "filter" to effect.filter)
             }
         }
+    }
+
+    /**
+     * [wrap]'s inverse for a bare "you may" gate: the script under the decision, or null when the
+     * top-level effect is not exactly one.
+     *
+     * The same test [mayUnwrap] makes on an amount, lifted to the whole script — a `GatedEffect`
+     * whose gate is `Gate.MayDecide` *and* which equals `MayEffect(its own consequence)`, so a gate
+     * carrying anything extra (an `otherwise` branch, a cost) declines rather than reading as a
+     * plain may.
+     */
+    private fun unwrapMay(script: CardScript): CardScript? {
+        val gated = script.spellEffect as? GatedEffect ?: return null
+        if (gated.gate !is Gate.MayDecide || gated != MayEffect(gated.then)) return null
+        return script.copy(spellEffect = gated.then)
     }
 
     /**
@@ -1881,7 +1981,18 @@ object Steps {
             forcedSacrifice(it, count = null, countName = "one permanent"),
             forcedSacrifice(it, count = Cardinals.word, countName = "several permanents"),
         )
-    } + quantifiedPermanentStepFamilies.flatten()
+    } + listOf(
+        // The causative, for the one subject Oracle prints it with — Predatory Nightstalker's
+        // "you may have target opponent sacrifice a creature of their choice." The other three
+        // subjects get no row: a rule that prints on zero cards is, in this file's own words, a
+        // card whose reading is still open, and `each player` has no printed causative at all.
+        forcedSacrifice(
+            SacrificeSubject("target opponent", Targets.bound(), listOf(Targets.opponent())),
+            count = null,
+            countName = "one permanent",
+            causative = true,
+        ),
+    ) + quantifiedPermanentStepFamilies.flatten()
 
     // ---------------------------------------------------------------------------------------
     // Whole groups — "Creatures you control get +1/+1", "Destroy all white creatures"
@@ -2084,6 +2195,44 @@ object Steps {
         }
     }
 
+    /**
+     * "Return each other creature you control to its owner's hand." — Denizen of the Deep.
+     *
+     * Its own rule rather than an [otherGroupStep] row, because the SDK spelling differs where it
+     * matters. [otherGroupStep] builds `ForEachInGroup`, which iterates and applies; a bounce sweep
+     * is the **gather-then-move pipeline** `Patterns.Group.returnAllToHand` lowers to, and the
+     * difference is the one [destroyAll]'s KDoc records: the gather reads the battlefield through
+     * *projected* state, so a filter naming a characteristic a continuous effect can change is
+     * evaluated against what the permanents actually are. Every hand-written mass bounce in the
+     * corpus uses the pipeline, so this is also the spelling the differential can compare.
+     *
+     * "Each other" plus a singular noun rather than "all other" plus a plural: which one a card
+     * prints is a fact about the sentence's shape, not about the group, so the noun is
+     * [Filters.filter] — the article-less singular — exactly as [groupStep]'s `plural = false` rows
+     * take it.
+     *
+     * The untargeted **"return all {filter} to their owners' hands"** sweep — 32 corpus cards, and
+     * the natural companion — is deliberately not here: those cards are hand-written against the
+     * raw gather/move pair rather than the facade, so the row needs the differential run that
+     * settles which spelling is canonical. It is this band's named next row.
+     */
+    private val returnOtherGroupToHand: Phrase<CardScript> = run {
+        fun scriptFor(filter: GameObjectFilter) = CardScript(
+            spellEffect = Patterns.Group.returnAllToHand(GroupFilter(filter, excludeSelf = true)),
+        )
+        phrase("return each other {filter} to its owner's hand", name = "return each other to hand") {
+            slot("filter", Filters.filter)
+            build { scriptFor(it.value("filter")) }
+            match { script ->
+                // Both sweeps lower to the same gather-then-move pair, so the destructuring is
+                // [destroyedGroup]'s; the reconstruct-and-compare below is what tells them apart.
+                val filter = destroyedGroup(script.spellEffect) ?: return@match null
+                if (script != scriptFor(filter)) return@match null
+                bind("filter" to filter)
+            }
+        }
+    }
+
     private val groupSteps: List<Phrase<CardScript>> = listOf(
         destroyAll,
         groupStep("exile all {filter}", "exile all", plural = true) { Effects.Exile(it) },
@@ -2098,6 +2247,7 @@ object Steps {
         },
         otherGroupStep("tap all other {filter}", "tap all other") { Effects.Tap(it) },
         otherGroupStep("untap all other {filter}", "untap all other") { Effects.Untap(it) },
+        returnOtherGroupToHand,
         destroyAllNoRegenerate,
         parameterizedGroupStep(
             "{filter} get {v} until end of turn", "a group gets",
@@ -2481,7 +2631,14 @@ object Steps {
             lifeByProperty(Primitives.itsPronoun, EntityReference.Triggering, "the triggering permanent")
 
     private val nonAnaphoric: List<Phrase<CardScript>> =
-        listOf(drawOne, drawMany, targetPlayerDrawsOne, targetPlayerDrawsMany) +
+        listOf(
+            drawOne,
+            drawMany,
+            targetPlayerDrawsOne,
+            targetPlayerDrawsMany,
+            targetOpponentDrawsOne,
+            targetOpponentDrawsMany,
+        ) +
             countedSteps +
             xDamageSteps +
             damageToTargetPermanent +
@@ -3187,20 +3344,6 @@ object Steps {
     // Model helpers — the `match` side, kept out of the rules so like rules read alike
     // ---------------------------------------------------------------------------------------
 
-    private fun targetPlayerDraws(count: Int) = CardScript(
-        spellEffect = Effects.DrawCards(count, Targets.bound()),
-        targetRequirements = listOf(Targets.player()),
-    )
-
-    /** The count on a bare "the caster draws" script, or null when the script is anything else. */
-    private fun drawnByController(script: CardScript): Int? =
-        drawCount(script, requireTarget = false)?.takeIf { script.targetRequirements.isEmpty() }
-
-    /** …and on a "target player draws" script, which must carry the matching requirement. */
-    private fun drawnByTarget(script: CardScript): Int? =
-        drawCount(script, requireTarget = true)
-            ?.takeIf { script.targetRequirements == listOf(Targets.player()) }
-
     /**
      * The fixed amount a counted verb reads back.
      *
@@ -3331,11 +3474,16 @@ object Steps {
 
     internal fun DynamicAmount.fixed(): Int? = (this as? DynamicAmount.Fixed)?.amount
 
-    private fun drawCount(script: CardScript, requireTarget: Boolean): Int? {
+    /**
+     * The number of cards a draw script draws, or null when the script is not a bare draw.
+     *
+     * It recovers only the *number*: who draws, and whether the requirement beside the effect
+     * matches that subject, is [draw]'s own `script != scriptFor(cards)` comparison to make, which
+     * checks the whole script rather than one field.
+     */
+    private fun drawCount(script: CardScript): Int? {
         val effect = script.spellEffect as? DrawCardsEffect ?: return null
         if (script.copy(spellEffect = null, targetRequirements = emptyList()) != CardScript.EMPTY) return null
-        val drawer = if (requireTarget) Targets.isBound(effect.target) else effect.target == EffectTarget.Controller
-        if (!drawer) return null
         return (effect.count as? DynamicAmount.Fixed)?.amount
     }
 }

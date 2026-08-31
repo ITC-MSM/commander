@@ -174,6 +174,46 @@
     ]
 }
 
+// Ancient Craving
+{
+    "name": "Ancient Craving",
+    "manaCost": "{3}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "You draw three cards and you lose 3 life.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": "Controller"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "62",
+        "rarity": "RARE",
+        "artist": "Rob Alexander",
+        "flavorText": "\"Knowledge demands sacrifice.\"\n—Tojira, swamp queen",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/7/37ee59a7-0f41-4d5d-b049-71ca1ba335b1.jpg?1783946481"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Angel of Fury
 {
     "name": "Angel of Fury",
@@ -417,6 +457,55 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Bargain
+{
+    "name": "Bargain",
+    "manaCost": "{2}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Target opponent draws a card.\nYou gain 7 life.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 7
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetOpponent",
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "14",
+        "rarity": "UNCOMMON",
+        "artist": "Phil Foglio",
+        "flavorText": "Bargaining with a goblin is like trading with a child; both believe they already own everything.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/e/de7f3064-a378-4ca4-99f5-b46518ddc43d.jpg?1783946493"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -809,6 +898,88 @@
     ]
 }
 
+// Denizen of the Deep
+{
+    "name": "Denizen of the Deep",
+    "manaCost": "{6}{U}{U}",
+    "typeLine": "Creature — Serpent",
+    "oracleText": "When this creature enters, return each other creature you control to its owner's hand.",
+    "creatureStats": {
+        "power": 11,
+        "toughness": 11
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": "creature ctrl:you",
+                                "excludeSelf": true
+                            },
+                            "storeAs": "returnAllToHand_gathered"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "returnAllToHand_gathered",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "35",
+        "rarity": "RARE",
+        "artist": "Anson Maddocks",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/2/620478b8-47b7-48c5-ac22-1ba4d234c794.jpg?1783946487"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Extinguish
+{
+    "name": "Extinguish",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target sorcery spell.",
+    "script": {
+        "spellEffect": "Counter",
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "sorcery",
+                    "zone": "Stack"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "38",
+        "artist": "Douglas Shuler",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/4/641f4e66-b46b-4da3-a053-f3763400d4f5.jpg?1783946486"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // False Summoning
 {
     "name": "False Summoning",
@@ -1055,6 +1226,89 @@
         "artist": "Pete Venters",
         "flavorText": "The goblins call the gliders \"death from above.\" Everyone else calls them \"clods in the clouds.\"",
         "imageUri": "https://cards.scryfall.io/normal/front/9/c/9c29491b-dec1-429d-9950-062582f8164f.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Goblin Matron
+{
+    "name": "Goblin Matron",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Goblin",
+    "oracleText": "When this creature enters, you may search your library for a Goblin card, reveal that card, put it into your hand, then shuffle.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "Goblin"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "100",
+        "rarity": "UNCOMMON",
+        "artist": "Daniel Gelon",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/9/f99dc21c-8600-49bf-b0a3-c981f7ec7ac3.jpg?1783946465",
+        "rulings": [
+            {
+                "date": "2019-06-14",
+                "text": "If an effect refers to a “[subtype] spell” or “[subtype] card,” it refers only to a spell or card that has that subtype. For example, Goblin War Party is a card that references and creates Goblins, but it isn't a Goblin card."
+            },
+            {
+                "date": "2004-10-04",
+                "text": "Because the “search” requires you to find a card with certain characteristics, you don't have to find the card if you don't want to."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "RED"
@@ -1736,6 +1990,54 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Predatory Nightstalker
+{
+    "name": "Predatory Nightstalker",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Creature — Nightstalker",
+    "oracleText": "When this creature enters, you may have target opponent sacrifice a creature of their choice.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "ForceSacrifice",
+                        "filter": "creature",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "rarity": "UNCOMMON",
+        "artist": "D. Alexander Gregory",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7fd4c782-bd7f-495e-8a4d-ea7c9ac1f58b.jpg?1783946472"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

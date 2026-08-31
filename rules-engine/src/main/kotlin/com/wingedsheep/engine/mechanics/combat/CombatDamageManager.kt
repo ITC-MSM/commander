@@ -944,8 +944,13 @@ internal class CombatDamageManager(
             // The printed sibling (Unbreathing Horde). Batch-scoped for the same CR 510.2 reason as
             // the shield-counter rule above: one counter per damage *event*, so a creature blocking
             // two attackers spends one counter and prevents all of it.
+            // CR 510.2: all combat damage in a step is dealt simultaneously, so a creature
+            // blocking two attackers is dealt *one* damage event whose amount is the total. That
+            // total is what "remove that many counters" reads — not each blocker's share.
+            val totalDamage = assignments.filter { it.targetId == targetId }.sumOf { it.amount }
             val counterShield = applyPreventByRemovingCounterToDamage(
-                newState, targetId, isCombatDamage = true, cantBePrevented = cantBePrevented
+                newState, targetId, isCombatDamage = true, cantBePrevented = cantBePrevented,
+                damageAmount = totalDamage
             ) ?: continue
             newState = counterShield.state
             counterShield.event?.let { events.add(it) }

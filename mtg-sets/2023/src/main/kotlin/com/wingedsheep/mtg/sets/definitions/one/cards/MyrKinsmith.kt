@@ -26,7 +26,7 @@ val MyrKinsmith = card("Myr Kinsmith") {
         trigger = Triggers.EntersBattlefield
         optional = true
         effect = Patterns.Library.searchLibrary(
-            filter = GameObjectFilter.Permanent.withSubtype("Myr"),
+            filter = GameObjectFilter.Any.withSubtype("Myr"),
             destination = SearchDestination.HAND,
             reveal = true
         )

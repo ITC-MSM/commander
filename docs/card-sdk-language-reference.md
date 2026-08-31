@@ -1112,6 +1112,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   `DynamicAmounts.colorsOfManaSpent()`).
 - `EachOpponentDiscards(count)` — each opponent discards N.
 - `EachPlayerDiscards(count)` — each player, *including you*, discards N, each choosing from their own hand — Rankle's Prank. Symmetric twin of `EachOpponentDiscards`: same `ForEachPlayer` → Gather → Select → Move pipeline, but iterated over `Player.ActivePlayerFirst` so the choices happen in APNAP order (CR 101.4). Known deviation: iterations run one after another, so a later player chooses after an earlier player's cards have already hit the graveyard, where the rules would have every player choose face down (CR 101.4a) and discard simultaneously.
+- `EachPlayerPutsCardsOnTopOfLibrary(count = 1)` — each player, *including you*, puts N cards from their own hand on top of their own library, each choosing their own — Sadistic Augermage. `EachPlayerDiscards` with the destination swapped for `ZonePlacement.Top` of the iterated player's library, so it is a tuck rather than a discard (`MoveType.Default`, feeding no discard trigger). Same APNAP iteration and same sequential-iteration deviation.
 - `EachOpponentExilesFromHand(count)` — each opponent exiles N cards from their own hand (each chooses their own). Same `ForEachPlayer(EachOpponent)` → Gather → Select → Move pipeline as `EachOpponentDiscards`, but the destination is exile — Mindleech Ghoul.
 - `EachPlayerReturnPermanentToHand()` — each player bounces a permanent.
 - `EachPlayerDrawsForDamageDealtToSource()` — each player draws equal to damage source took this turn.
@@ -2009,6 +2010,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 ### Ability granting
 
 - `GrantTriggeredAbilityEffect(ability, target, duration = Duration.EndOfTurn)` — grant a triggered ability to a battlefield permanent for a duration; `Duration.Permanent` for "gains … " with no end (Carnage, Crimson Chaos). **Target-general — not creature-only.** Nothing in the rules restricts "gains '<triggered ability>'" to creatures, and the printed wording routinely names a noncreature permanent: Down in the Valley's chapter II is "*This Saga* gains 'Landfall — Whenever a land you control enters, create a 1/1 green Elf creature token'", authored as `GrantTriggeredAbilityEffect(ability, EffectTarget.Self, Duration.Permanent)`. Whether a noncreature is a *legal* pick is the `TargetRequirement`'s job; the executor only requires the target to be on the battlefield. Recorded in `GameState.grantedTriggeredAbilities` and merged into the entity's abilities by `TriggerAbilityResolver`, so a granted trigger is detected exactly like a printed one and dies with the permanent.
+- `GrantStateTriggeredAbilityEffect(ability, target, duration = Duration.Permanent)` — grant a **state**-triggered ability (CR 603.8) to a battlefield permanent. The sibling of `GrantTriggeredAbilityEffect` for the abilities the `StateTriggerPoller` owns rather than the `TriggerIndex`: use it when the printed rider fires because a condition *becomes true*, with no event to match. **Olivia, Crimson Bride**: the reanimated creature gains `"When you don't control a legendary Vampire, exile this creature."` — nothing *happens* when the last legendary Vampire leaves, so a `GrantTriggeredAbilityEffect` has no event to hang off. Recorded in `GameState.grantedStateTriggeredAbilities`, folded into the per-permanent ability list by `StateTriggerPoller` beside the printed ones, latched per `(entityId, AbilityId)` exactly like a printed state trigger, dropped on battlefield re-entry (CR 400.7) and expired by `CleanupPhaseManager` for `Duration.EndOfTurn`. The default duration is `Permanent`, not `EndOfTurn` — a granted state trigger is a durable rider, where a granted event trigger is usually a one-turn pump. Like `GrantTriggeredAbilityEffect` it is **target-general, not creature-only**; legality is the `TargetRequirement`'s job.
 - `CreateGlobalTriggeredAbility(ability, duration = Duration.Permanent, descriptionOverride? = null)` — engine-wide triggered ability with no source permanent. `duration` is a plain parameter, so the one method covers every lifetime: `Duration.EndOfTurn` (False Cure, Death Frenzy), `Duration.UntilYourNextTurn` (Season of the Bold), `Duration.EndOfCombat`, `Duration.Permanent` (Dimensional Breach, planeswalker emblems), etc. `descriptionOverride` sets emblem display text. This is the right shape for a *floating* "until end of turn, whenever …" payoff that must outlive its own source — Mistway Spy's turned-face-up "whenever a creature you control deals combat damage to a player, investigate" keeps triggering even if the Spy is killed in response, which a `GrantTriggeredAbilityEffect` on the Spy would not. Because a global ability is attached to no permanent it lives outside every battlefield trigger index, so each specialized detector has to walk `GameState.globalGrantedTriggeredAbilities` itself; the ANY-bound `DealsDamageEvent` observers do (`DamageTriggerDetector.detectDamageObserverTriggers`), and a new detector that doesn't will silently never fire for a global ability.
 - `GrantSpellKeywordEffect` — grant a keyword to a spell on the stack.
 - `GrantSpellsCantBeCountered(target, filter, duration)` — target's matching spells become uncounterable (Domri shape).
@@ -3114,6 +3116,7 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   the cards that actually reached graveyards and the controller draws that many times the multiplier
   in one draw instruction (Syphon Mind); this covers every opponent and naturally counts fewer cards
   when an opponent's hand is short.
+- `eachPlayerPutsCardsOnTopOfLibrary(count = 1)` — each player *including you* puts N cards from their own hand on top of their own library (facade `Effects.EachPlayerPutsCardsOnTopOfLibrary(count)`). Sadistic Augermage's dies trigger. Identical `ForEachPlayer(Player.ActivePlayerFirst)` → Gather → Select → Move shape as `eachPlayerDiscards`, with `CardDestination.ToZone(Zone.LIBRARY, Player.You, ZonePlacement.Top)` and the default `MoveType` — a tuck is not a discard, so nothing here feeds a discard trigger or a madness cast. Same sequential-iteration deviation from CR 101.4a.
 - `eachPlayerDiscards(count)` — each player *including you* discards N, each from their own hand (facade `Effects.EachPlayerDiscards(count)`). Rankle's Prank's first mode, Lore Broker's second half. One `ForEachPlayer(Player.ActivePlayerFirst)` iteration per player so the choices happen in APNAP order (CR 101.4); iterations run sequentially, so a later player chooses after an earlier player's cards have already hit the graveyard, where the rules would have every player choose face down (CR 101.4a) and discard simultaneously. The mtgish emitter renders `EachPlayerAction(AnyPlayer, Discard…)` to this pattern when the discard is the player's sole action.
 - `eachPlayerDiscardsDraws(controllerBonusDraw?)` — Windfall / Wheel of Fortune.
 - `eachPlayerDrawsX(includeController?, includeOpponents?)` — Howling Mine shape.
@@ -11670,7 +11673,7 @@ The priority groups are (CR 616.1a–f):
   `restrictions: List<Condition>` (default empty) gates the prevention on extra conditions evaluated
   against the source's controller — the same pattern as `ModifyLifeLoss.restrictions`. Use it for
   "as long as …, prevent …" statics (Spirit of Resistance: a five-distinct-colors `Compare` gate).
-- `ReplacementEffect.PreventDamageByRemovingCounter(counterType = PlusOnePlusOne, appliesTo = DamageEvent(recipient = Self))`
+- `ReplacementEffect.PreventDamageByRemovingCounter(counterType = PlusOnePlusOne, removalAmount = CounterRemovalAmount.One, requiresCounter = false, appliesTo = DamageEvent(recipient = Self))`
   — "If this creature would be dealt damage, prevent that damage and remove a +1/+1 counter from it"
   (Unbreathing Horde). The printed twin of the shield counter's prevention half (CR 122.1c), wired at
   the same two chokepoints (`DamageUtils.dealDamageToTarget` and
@@ -11684,6 +11687,21 @@ The priority groups are (CR 616.1a–f):
   arithmetic. Only self-recipient patterns are honoured; a card shielding *other* permanents this way
   would need a battlefield-wide scan. A permanent carrying both this and a shield counter spends only
   the shield counter (once the shield prevents the damage there is nothing left to replace).
+  Both printed rules above are **defaults**, and `removalAmount` / `requiresCounter` are the axes that
+  invert them for **Magma Pummeler** ("If damage would be dealt to this creature *while it has a +1/+1
+  counter on it*, prevent that damage and remove *that many* +1/+1 counters from it"):
+  `CounterRemovalAmount.EqualToDamage` spends as many counters as the damage would have dealt, bounded
+  by the counters present — damage above the count is still prevented in full, it simply has nothing
+  left to remove — and `requiresCounter = true` makes the ability not apply at all with no counter, so
+  the damage is dealt normally. In combat the amount read is the **per-target total** of that step's
+  assignments, because CR 510.2 makes all combat damage one event: a creature double-blocked for 2 and
+  3 loses five counters, not two then three.
+  The removal emits its `CountersRemovedEvent` with `byDamagePrevention = true`, which is the "**this
+  way**" scope `Triggers.countersRemovedFrom(byDamagePrevention = true)` matches — the Pummeler's
+  reflexive "When one or more counters are removed from this creature this way, it deals that much
+  damage to any target" must not fire for a counter paid as a cost or removed by an opponent. The
+  payoff amount is `ContextPropertyKey.TRIGGER_COUNTERS_REMOVED_AMOUNT` (the removal mirror of
+  `TRIGGER_COUNTERS_PLACED_AMOUNT`), i.e. the counters **removed** — not the damage that was prevented.
 - `CapDamage(maxAmount, appliesTo)` — clamp matching damage to `maxAmount` (a *replacement* distinct
   from prevent/modify; applied after all amplification). Divine Presence: `CapDamage(3, DamageEvent(recipient = Any))`.
 - `SetMinimumDamage(minAmount = 0, dynamicMinimum?, appliesTo)` — the **floor** mirror of `CapDamage`:

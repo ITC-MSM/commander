@@ -138,6 +138,48 @@ object HandPatterns {
         )
 
     /**
+     * "Each player puts a card from their hand on top of their library" — Sadistic Augermage's dies
+     * trigger. The same [ForEachPlayerEffect] shape as [eachPlayerDiscards] in **APNAP order**
+     * (CR 101.4), with the destination swapped from the graveyard to the top of the iterated
+     * player's own library: `Player.You` rebinds per iteration, so each player gathers *their own*
+     * hand, chooses their own card, and it lands on top of *their own* library.
+     *
+     * [MoveType.Default], not [MoveType.Discard] — a card put on top of a library is not discarded,
+     * so nothing here should feed a discard trigger or a madness cast.
+     *
+     * The same APNAP deviation [eachPlayerDiscards] documents applies: iterations run one after
+     * another rather than choosing face-down and moving simultaneously. It is visible here only in
+     * that a later player picks knowing an earlier player has already moved a card — the cards
+     * themselves are hidden either way.
+     *
+     * @param count how many cards each player puts on top of their library.
+     */
+    fun eachPlayerPutsCardsOnTopOfLibrary(count: Int = 1): Effect =
+        ForEachPlayerEffect(
+            players = Player.ActivePlayerFirst,
+            effects = listOf(
+                GatherCardsEffect(
+                    source = CardSource.FromZone(Zone.HAND, Player.You),
+                    storeAs = "hand"
+                ),
+                SelectFromCollectionEffect(
+                    from = "hand",
+                    selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(count)),
+                    storeSelected = "toLibrary",
+                    prompt = "Choose ${if (count == 1) "a card" else "$count cards"} to put on top of your library"
+                ),
+                MoveCollectionEffect(
+                    from = "toLibrary",
+                    destination = CardDestination.ToZone(
+                        zone = Zone.LIBRARY,
+                        player = Player.You,
+                        placement = ZonePlacement.Top
+                    )
+                )
+            )
+        )
+
+    /**
      * "Each opponent exiles a card from their hand" — Mindleech Ghoul's exploit payoff. Mirrors
      * [eachOpponentDiscards]'s [ForEachPlayerEffect] shape: one iteration per opponent with
      * `Player.You` rebound to the iterated opponent, so each opponent gathers *their own* hand,

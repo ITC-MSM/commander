@@ -2195,6 +2195,13 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         val counterType: String,
         val filter: GameObjectFilter = GameObjectFilter.Any,
         val lastRemoved: Boolean = false,
+        /**
+         * When true, match only removals a `PreventDamageByRemovingCounter` replacement performed —
+         * the "**this way**" of Magma Pummeler's "When one or more counters are removed from this
+         * creature this way, it deals that much damage to any target". Without it the trigger would
+         * also fire for a counter paid as a cost or removed by an opponent.
+         */
+        val byDamagePrevention: Boolean = false,
     ) : EventPattern {
         override val description: String = buildString {
             val typeLabel = if (counterType == com.wingedsheep.sdk.core.Counters.ANY) "" else "$counterType "
@@ -2204,6 +2211,7 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
                 append("one or more ${typeLabel}counters are removed from ")
             }
             append(describeObjectForEvent(filter))
+            if (byDamagePrevention) append(" this way")
         }
     }
 

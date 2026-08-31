@@ -7,6 +7,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.EventPattern
+import com.wingedsheep.sdk.scripting.CounterRemovalAmount
 import com.wingedsheep.sdk.scripting.PreventDamageByRemovingCounter
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.events.DamageType
@@ -142,6 +143,7 @@ fun applyPreventByRemovingCounterToDamage(
     entityId: EntityId,
     isCombatDamage: Boolean,
     cantBePrevented: Boolean,
+    damageAmount: Int,
 ): CounterSpendingShield? {
     val container = state.getEntity(entityId) ?: return null
     val effects = container.get<ReplacementEffectSourceComponent>()?.replacementEffects ?: return null
@@ -158,19 +160,35 @@ fun applyPreventByRemovingCounterToDamage(
 
     val counterType = counterTypeOf(effect.counterType) ?: return null
     val counters = container.get<CountersComponent>()
-    val hasCounter = (counters?.getCount(counterType) ?: 0) > 0
-    if (!hasCounter) {
-        // Nothing to remove, but the damage is still prevented (the printed ruling).
+    val present = counters?.getCount(counterType) ?: 0
+    if (present <= 0) {
+        // "…while it has a +1/+1 counter on it" (Magma Pummeler): with no counter the ability does
+        // not apply at all, so the caller falls through and the damage is dealt normally. Without
+        // the gate it is the printed Unbreathing Horde ruling — still prevented, nothing to remove.
+        if (effect.requiresCounter) return null
         return CounterSpendingShield(state, event = null, damagePrevented = !cantBePrevented)
     }
+
+    // "Remove that many counters" is bounded by the counters actually there; the damage above the
+    // count is still prevented in full, it just has nothing left to remove (the printed ruling).
+    val removed = when (effect.removalAmount) {
+        CounterRemovalAmount.One -> 1
+        CounterRemovalAmount.EqualToDamage -> minOf(maxOf(damageAmount, 0), present)
+    }
+    if (removed <= 0) {
+        return CounterSpendingShield(state, event = null, damagePrevented = !cantBePrevented)
+    }
+
     val newState = state.updateEntity(entityId) { c ->
-        c.with(counters!!.withRemoved(counterType, 1))
+        c.with(counters!!.withRemoved(counterType, removed))
     }
     val event = CountersRemovedEvent(
         entityId,
         counterType.name,
-        1,
-        container.get<CardComponent>()?.name ?: "Permanent"
+        removed,
+        container.get<CardComponent>()?.name ?: "Permanent",
+        remainingCount = present - removed,
+        byDamagePrevention = true
     )
     return CounterSpendingShield(newState, event, damagePrevented = !cantBePrevented)
 }

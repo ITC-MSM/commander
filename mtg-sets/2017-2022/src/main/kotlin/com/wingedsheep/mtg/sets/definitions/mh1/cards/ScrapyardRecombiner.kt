@@ -84,7 +84,7 @@ val ScrapyardRecombiner = card("Scrapyard Recombiner") {
     activatedAbility {
         cost = Costs.Composite(Costs.Tap, Costs.Sacrifice(GameObjectFilter.Artifact))
         effect = Patterns.Library.searchLibrary(
-            filter = GameObjectFilter.Permanent.withSubtype(Subtype.CONSTRUCT),
+            filter = GameObjectFilter.Any.withSubtype(Subtype.CONSTRUCT),
             destination = SearchDestination.HAND,
             shuffleAfter = true,
             reveal = true

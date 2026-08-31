@@ -220,11 +220,19 @@ data class TargetFilter(
         val CreatureInYourGraveyard = TargetFilter(GameObjectFilter.Companion.Creature.ownedByYou(), zone = Zone.GRAVEYARD)
 
         /**
-         * Target permanent card in your graveyard — what a **bare** tribal noun names.
+         * Target permanent card in your graveyard — for wordings that print the word "permanent".
          *
-         * "Return target **Zombie card** from your graveyard" names any permanent card with the
-         * subtype, not only a creature card with it; [CreatureInYourGraveyard] is the counterpart
-         * for the adjectival "target Zombie creature card".
+         * **Not what a bare tribal noun names.** "Return target **Zombie card** from your graveyard"
+         * names any card with the subtype, and a card with a creature type need not be a permanent
+         * card: Kindred (formerly Tribal) carries creature types onto instants and sorceries, so
+         * Tarfire and Boggart Birth Rite are Goblin cards, Murderous Rider is a Zombie card, and the
+         * corpus holds 31 non-permanent Dragon cards, 12 Elf and 10 Cleric. An earlier version of
+         * this KDoc asserted the opposite and nine hand-written cards were built on it; the
+         * differential caught them once Argentum Assay learned to read card position correctly.
+         *
+         * For a bare tribal noun use `CardInGraveyard.withSubtype(…).ownedByYou()`.
+         * [CreatureInYourGraveyard] is the counterpart for the adjectival "target Zombie creature
+         * card", which *does* narrow to creature cards.
          */
         val PermanentInYourGraveyard = TargetFilter(GameObjectFilter.Companion.Permanent.ownedByYou(), zone = Zone.GRAVEYARD)
 

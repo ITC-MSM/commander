@@ -34,7 +34,7 @@ val StrongarmThug = card("Strongarm Thug") {
             "target",
             TargetObject(
                 filter = TargetFilter(
-                    baseFilter = GameObjectFilter.Permanent.withSubtype("Mercenary").ownedByYou(),
+                    baseFilter = GameObjectFilter.Any.withSubtype("Mercenary").ownedByYou(),
                     zone = Zone.GRAVEYARD
                 )
             )
