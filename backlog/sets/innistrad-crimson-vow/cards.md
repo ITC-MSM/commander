@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 271 / 273
+**Implemented:** 272 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -190,7 +190,7 @@
 - [x] Plains
 - [x] Pointed Discussion
 - [x] Pyre Spawn
-- [ ] Radiant Grace
+- [x] Radiant Grace
 - [x] Ragged Recluse
 - [x] Reckless Impulse
 - [x] Reclusive Taxidermist
