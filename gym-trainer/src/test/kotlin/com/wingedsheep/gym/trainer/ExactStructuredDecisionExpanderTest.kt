@@ -24,66 +24,117 @@ class ExactStructuredDecisionExpanderTest : FunSpec({
     val third = EntityId.of("third")
     val state = GameState(turnOrder = listOf(playerId))
 
-    test("single-target expansion is complete") {
-        val decision = ChooseTargetsDecision(
-            id = "targets",
-            playerId = playerId,
-            prompt = "Choose targets",
-            context = DecisionContext(),
-            targetRequirements = listOf(
-                TargetRequirementInfo(0, "one target", minTargets = 1, maxTargets = 1)
-            ),
-            legalTargets = mapOf(0 to listOf(first, second)),
-            canCancel = true
-        )
+    fun targetDecision(
+        id: String,
+        legalTargets: List<EntityId>,
+        minTargets: Int = 1,
+        maxTargets: Int = 1,
+        canCancel: Boolean = false
+    ) = ChooseTargetsDecision(
+        id = id,
+        playerId = playerId,
+        prompt = "Choose targets",
+        context = DecisionContext(),
+        targetRequirements = listOf(
+            TargetRequirementInfo(0, "target", minTargets = minTargets, maxTargets = maxTargets)
+        ),
+        legalTargets = mapOf(0 to legalTargets),
+        canCancel = canCancel
+    )
+
+    test("required single-target expansion is complete") {
+        val decision = targetDecision("targets", listOf(first, second))
 
         val expansion = ExactStructuredDecisionExpander.expand(state, decision)
             .shouldBeInstanceOf<StructuredDecisionExpansion.Complete>()
-        val responses = expansion.responses.toList()
 
-        responses.shouldContainExactly(
-            CancelDecisionResponse("targets"),
+        expansion.responses.shouldContainExactly(
             TargetsResponse("targets", mapOf(0 to listOf(first))),
             TargetsResponse("targets", mapOf(0 to listOf(second)))
         )
-        responses.forEach { response ->
+        expansion.responses.forEach { response ->
             response.asClue {
                 DecisionValidators.validate(decision, response, state) shouldBe null
             }
         }
     }
 
+    // "Up to one target" is as finite as "exactly one target" — the extra alternative is declining,
+    // which is an empty selection for the requirement, not a cancellation of the whole decision.
+    test("optional single-target expansion offers the empty selection") {
+        val decision = targetDecision("optional", listOf(first, second), minTargets = 0)
+
+        val expansion = ExactStructuredDecisionExpander.expand(state, decision)
+            .shouldBeInstanceOf<StructuredDecisionExpansion.Complete>()
+
+        expansion.responses.shouldContainExactly(
+            TargetsResponse("optional", mapOf(0 to emptyList())),
+            TargetsResponse("optional", mapOf(0 to listOf(first))),
+            TargetsResponse("optional", mapOf(0 to listOf(second)))
+        )
+        expansion.responses.forEach { response ->
+            response.asClue {
+                DecisionValidators.validate(decision, response, state) shouldBe null
+            }
+        }
+    }
+
+    // Cancelling a cast-time decision rewinds to the priority state that offered the cast, so a
+    // cancel edge would be a transposition back onto the search node's own ancestor rather than an
+    // alternative within the decision.
+    test("cancellation is never offered as a response") {
+        val decision = targetDecision("cancellable", listOf(first, second), canCancel = true)
+
+        val expansion = ExactStructuredDecisionExpander.expand(state, decision)
+            .shouldBeInstanceOf<StructuredDecisionExpansion.Complete>()
+
+        expansion.responses.none { it is CancelDecisionResponse } shouldBe true
+        expansion.responses.size shouldBe 2
+    }
+
+    test("duplicate legal targets collapse to one response each") {
+        val decision = targetDecision("duplicates", listOf(first, second, first))
+
+        val expansion = ExactStructuredDecisionExpander.expand(state, decision)
+            .shouldBeInstanceOf<StructuredDecisionExpansion.Complete>()
+
+        expansion.responses.shouldContainExactly(
+            TargetsResponse("duplicates", mapOf(0 to listOf(first))),
+            TargetsResponse("duplicates", mapOf(0 to listOf(second)))
+        )
+    }
+
     test("variable-cardinality target expansion is explicitly unsupported") {
+        val decision = targetDecision("many-targets", listOf(first, second, third), minTargets = 0, maxTargets = 2)
+
+        ExactStructuredDecisionExpander.expand(state, decision) shouldBe
+            StructuredDecisionExpansion.Unsupported
+    }
+
+    test("multi-requirement target expansion is explicitly unsupported") {
         val decision = ChooseTargetsDecision(
-            id = "many-targets",
+            id = "two-requirements",
             playerId = playerId,
             prompt = "Choose targets",
             context = DecisionContext(),
             targetRequirements = listOf(
-                TargetRequirementInfo(0, "up to two", minTargets = 0, maxTargets = 2)
+                TargetRequirementInfo(0, "first target"),
+                TargetRequirementInfo(1, "second target")
             ),
-            legalTargets = mapOf(0 to listOf(first, second, third))
+            legalTargets = mapOf(0 to listOf(first), 1 to listOf(second))
         )
 
         ExactStructuredDecisionExpander.expand(state, decision) shouldBe
             StructuredDecisionExpansion.Unsupported
     }
 
-    test("supported family with no legal response is a complete empty expansion") {
-        val decision = ChooseTargetsDecision(
-            id = "no-targets",
-            playerId = playerId,
-            prompt = "Choose a target",
-            context = DecisionContext(),
-            targetRequirements = listOf(
-                TargetRequirementInfo(0, "one target", minTargets = 1, maxTargets = 1)
-            ),
-            legalTargets = mapOf(0 to emptyList())
-        )
+    // An empty Complete is unsearchable, so a supported family with nothing legal to say hands the
+    // decision back to the caller's resolver instead of claiming an exhaustive empty response set.
+    test("supported family with no legal response reports unsupported") {
+        val decision = targetDecision("no-targets", emptyList())
 
-        val expansion = ExactStructuredDecisionExpander.expand(state, decision)
-            .shouldBeInstanceOf<StructuredDecisionExpansion.Complete>()
-        expansion.responses.toList() shouldBe emptyList()
+        ExactStructuredDecisionExpander.expand(state, decision) shouldBe
+            StructuredDecisionExpansion.Unsupported
     }
 
     test("unsupported family returns unsupported") {

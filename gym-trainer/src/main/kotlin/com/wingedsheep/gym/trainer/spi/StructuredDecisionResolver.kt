@@ -17,6 +17,11 @@ import com.wingedsheep.engine.state.GameState
  * resolver-selected edge is not claimed to be the complete legal response set.
  * Supplying a custom [ActionFeaturizer] cannot expose responses that were
  * already collapsed here; enumeration belongs in [StructuredDecisionExpander].
+ *
+ * The chosen response is checked against the engine's authoritative decision validator before it
+ * becomes a search edge, so a resolver is free to be strategically bad but not illegal: an
+ * unsatisfiable answer fails loudly rather than being submitted and silently rejected, which would
+ * leave the search a child node identical to its parent.
  */
 fun interface StructuredDecisionResolver {
     fun resolve(state: GameState, decision: PendingDecision): DecisionResponse

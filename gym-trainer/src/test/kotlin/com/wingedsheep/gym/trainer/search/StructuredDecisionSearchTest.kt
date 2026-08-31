@@ -205,7 +205,7 @@ class StructuredDecisionSearchTest : FunSpec({
                 evaluator = uniformEvaluator,
                 structuredExpander = StructuredDecisionExpander { _, _ ->
                     StructuredDecisionExpansion.Complete(
-                        sequenceOf(CardsSelectedResponse("wrong-decision", selected))
+                        listOf(CardsSelectedResponse("wrong-decision", selected))
                     )
                 },
                 dirichletAlpha = null
@@ -222,7 +222,7 @@ class StructuredDecisionSearchTest : FunSpec({
                 evaluator = uniformEvaluator,
                 structuredExpander = StructuredDecisionExpander { _, _ ->
                     StructuredDecisionExpansion.Complete(
-                        sequenceOf(CardsSelectedResponse(pending.id, emptyList()))
+                        listOf(CardsSelectedResponse(pending.id, emptyList()))
                     )
                 },
                 dirichletAlpha = null
@@ -242,13 +242,33 @@ class StructuredDecisionSearchTest : FunSpec({
                     CardsSelectedResponse(pending.id, selected)
                 },
                 structuredExpander = StructuredDecisionExpander { _, _ ->
-                    StructuredDecisionExpansion.Complete(emptySequence())
+                    StructuredDecisionExpansion.Complete(emptyList())
                 },
                 dirichletAlpha = null
             ).run(simulations = 1)
         }
         emptyError.message.orEmpty() shouldContain "Complete response expansion"
         emptyResolverCalls shouldBe 0
+
+        val duplicateError = shouldThrow<IllegalStateException> {
+            AlphaZeroSearch(
+                env = environment(driver),
+                featurizer = stateFeaturizer,
+                actionFeaturizer = sharedSlotFeaturizer,
+                evaluator = uniformEvaluator,
+                structuredExpander = StructuredDecisionExpander { _, _ ->
+                    StructuredDecisionExpansion.Complete(
+                        listOf(
+                            CardsSelectedResponse(pending.id, selected),
+                            CardsSelectedResponse(pending.id, selected)
+                        )
+                    )
+                },
+                dirichletAlpha = null
+            ).run(simulations = 1)
+        }
+        duplicateError.message.orEmpty() shouldContain
+            "Structured expander returned duplicate CardsSelectedResponse"
 
         var resolverCalls = 0
         val result = AlphaZeroSearch(

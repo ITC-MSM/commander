@@ -81,9 +81,11 @@ fun interface StructuredDecisionResolver {
 }
 ```
 
-An expander reports either an exact `Complete` response sequence or `Unsupported`.
+An expander reports either an exact `Complete` response list or `Unsupported`.
 Unsupported decisions retain the configured resolver's single policy-selected
-fallback; no partial expansion, search cap, or sampling policy is implied.
+fallback; no partial expansion, search cap, or sampling policy is implied. A
+supported family with nothing legal to say reports `Unsupported` too — an empty
+`Complete` is unsearchable, so the resolver owns that degenerate case.
 
 ## Design choices worth knowing about
 
@@ -126,11 +128,18 @@ MCTS edges are ordinary `GameAction`s. At a priority state, edges are
 friends), edges are `SubmitDecision(response)` — exactly the set of
 folded responses `:gym`'s `ActionRegistry` produces. At a complex
 pending decision (targets, distribute, order, search, etc.) the
-`StructuredDecisionExpander` may return a complete response sequence. The
-built-in exact expander covers one required target from an explicit finite legal
-target list; each validator-approved response becomes its own edge. Other
-structured decisions retain one `StructuredDecisionResolver` fallback edge,
-which is policy-selected rather than exhaustive.
+`StructuredDecisionExpander` may return a complete response list. The built-in
+exact expander covers one target slot — required or optional — drawn from an
+explicit finite legal target list; each validator-approved response becomes its
+own edge, and declining an optional slot is the empty selection. Other structured
+decisions retain one `StructuredDecisionResolver` fallback edge, which is
+policy-selected rather than exhaustive.
+
+Cancellation is not among the expanded responses. A `CancelDecisionResponse`
+rewinds a cast-time decision to the priority state that offered the cast, so a
+cancel edge is a transposition back onto the node's own ancestor — the "don't
+cast" branch already exists where the cast was chosen, and duplicating it there
+would let search spend its budget on cast/cancel cycles.
 
 ### Outcome-labelled self-play rows
 
@@ -157,8 +166,8 @@ bloat everyone's classpath.
 | `StructuralStateFeaturizer` | Simple `Map<String, Float>` from life, zone sizes, projected P/T totals, mana. Replace for real training. |
 | `DynamicSlotActionFeaturizer` | Single-head, hash-keyed slot assignment. Replace for serious training to avoid collisions. |
 | `JsonlSelfPlaySink` | One JSON line per step, outcome label included. Easy Python ingest. |
-| `ExactStructuredDecisionExpander` | Complete lazy required-single-target response source. |
-| `RandomStructuredResolver` | Random minimum-cardinality fallback for supported target/card/mode decisions. |
+| `ExactStructuredDecisionExpander` | Complete single-target-slot response source, required or optional. |
+| `RandomStructuredResolver` | Random minimum-cardinality fallback for supported target/card/mode decisions; redraws until the engine's validator accepts. |
 
 Defaults exist so a training loop runs in 30 lines. Every one is intended
 to be replaced when a project gets serious.
@@ -241,4 +250,5 @@ The test set covers:
 - Root noise doesn't break the search
 - Exact structured expansion, validator agreement, and unsupported fallback
 - Independent target-response branches through ordinary Gym execution
+- Resolver draws that violate a state-dependent restriction are redrawn
 - End-to-end self-play producing outcome-labelled JSONL (`SelfPlayLoopTest`)

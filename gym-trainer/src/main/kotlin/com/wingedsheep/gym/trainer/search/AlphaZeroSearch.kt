@@ -275,7 +275,7 @@ class AlphaZeroSearch<T>(
     private fun completeStructuredEdges(
         state: GameState,
         decision: PendingDecision,
-        responses: Sequence<DecisionResponse>,
+        responses: List<DecisionResponse>,
         ctx: TrainerContext
     ): List<MctsEdge> {
         val seen = mutableSetOf<DecisionResponse>()
@@ -290,7 +290,7 @@ class AlphaZeroSearch<T>(
                 ctx = ctx,
                 source = "Structured decision expander"
             )
-        }.toList()
+        }
     }
 
     private fun validatedResponseEdge(
@@ -476,35 +476,66 @@ class MctsSearchResult(
  * response for the target, card-selection, and mode families it supports.
  * This is a fallback policy, not uniform enumeration of the legal response
  * space. Replace it with a domain policy when unsupported decisions can occur.
+ *
+ * Minimum cardinality on its own does not satisfy the state-dependent restrictions the engine's
+ * validator enforces — "with different names", "one per card type", a total-mana-value cap. Rather
+ * than re-implement constraint solving here, the resolver draws up to [attempts] random candidates
+ * and returns the first the engine accepts. When none is accepted it returns the last draw, so the
+ * caller fails loudly against the authoritative validator instead of quietly submitting an illegal
+ * response.
+ *
+ * @param attempts how many candidates to draw before giving up; each draw beyond the first costs one
+ *        [DecisionValidators] call
  */
-class RandomStructuredResolver(private val rng: Random = Random.Default) : StructuredDecisionResolver {
+class RandomStructuredResolver(
+    private val rng: Random = Random.Default,
+    private val attempts: Int = 16
+) : StructuredDecisionResolver {
+
+    init {
+        require(attempts >= 1) { "attempts must be positive" }
+    }
+
     override fun resolve(state: GameState, decision: PendingDecision): DecisionResponse {
-        // Minimal coverage — handles the common structured decisions. Unknown
-        // decisions fall through to an exception the caller can see.
-        return when (decision) {
-            is ChooseTargetsDecision -> {
-                val picked = decision.targetRequirements.associate { req ->
-                    val legal = decision.legalTargets[req.index].orEmpty()
-                    val count = req.minTargets.coerceIn(0, legal.size)
-                    req.index to legal.shuffled(rng).take(count)
-                }
-                com.wingedsheep.engine.core.TargetsResponse(decision.id, picked)
-            }
-            is SelectCardsDecision -> {
-                val n = decision.minSelections.coerceAtLeast(1).coerceAtMost(decision.options.size)
-                val picked = decision.options.shuffled(rng).take(n)
-                CardsSelectedResponse(decision.id, picked)
-            }
-            is ChooseModeDecision -> {
-                val available = decision.modes.filter { it.available }
-                val n = decision.minModes.coerceAtLeast(1).coerceAtMost(available.size)
-                val picked = available.shuffled(rng).take(n).map { it.index }
-                ModesChosenResponse(decision.id, picked)
-            }
-            else -> throw UnsupportedOperationException(
-                "RandomStructuredResolver does not yet handle ${decision::class.simpleName}; " +
-                    "provide a custom StructuredDecisionResolver"
-            )
+        var candidate = draw(decision)
+        repeat(attempts - 1) {
+            if (DecisionValidators.validate(decision, candidate, state) == null) return candidate
+            candidate = draw(decision)
         }
+        return candidate
+    }
+
+    /**
+     * One unvalidated minimum-cardinality candidate. Minimal coverage — handles the common
+     * structured decisions. Unknown decisions fall through to an exception the caller can see.
+     */
+    private fun draw(decision: PendingDecision): DecisionResponse = when (decision) {
+        is ChooseTargetsDecision -> {
+            val picked = decision.targetRequirements.associate { req ->
+                val legal = decision.legalTargets[req.index].orEmpty()
+                // `take` clamps on its own; a requirement asking for more targets than are legal is
+                // unsatisfiable, and an under-count that fails validation says so louder than a
+                // silently shrunk selection would.
+                req.index to legal.shuffled(rng).take(req.minTargets)
+            }
+            com.wingedsheep.engine.core.TargetsResponse(decision.id, picked)
+        }
+        is SelectCardsDecision -> {
+            val n = decision.minSelections.coerceAtLeast(1)
+                .coerceAtMost(minOf(decision.maxSelections, decision.options.size))
+            val picked = decision.options.shuffled(rng).take(n)
+            CardsSelectedResponse(decision.id, picked)
+        }
+        is ChooseModeDecision -> {
+            val available = decision.modes.filter { it.available }
+            val n = decision.minModes.coerceAtLeast(1)
+                .coerceAtMost(minOf(decision.maxModes, available.size))
+            val picked = available.shuffled(rng).take(n).map { it.index }
+            ModesChosenResponse(decision.id, picked)
+        }
+        else -> throw UnsupportedOperationException(
+            "RandomStructuredResolver does not yet handle ${decision::class.simpleName}; " +
+                "provide a custom StructuredDecisionResolver"
+        )
     }
 }
