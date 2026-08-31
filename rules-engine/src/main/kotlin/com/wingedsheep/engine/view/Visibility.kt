@@ -12,6 +12,7 @@ import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.ForetoldComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
+import com.wingedsheep.engine.state.components.identity.MayLookAtInExileComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.state.permissions.hasMayPlayFor
@@ -152,16 +153,23 @@ class Visibility(
      * - **May-play grants** — Gonti's "you may look at that card for as long as it remains
      *   exiled", and the filter-defined grants [hasMayPlayFor] derives. Keyed on the same check
      *   that drives castability, so a card the viewer may cast is never one they cannot see.
+     * - **A bare look grant** — [MayLookAtInExileComponent], stamped by an effect whose text
+     *   grants the look and nothing else (Jacob Hauken, Inspector: "exile a card from your hand
+     *   face down. You may look at that card for as long as it remains exiled", with no permission
+     *   to play it until the card transforms). Kept separate from the may-play check above
+     *   precisely because seeing and playing are different grants.
      *
-     * A card exiled face down by a plain rider grants neither, and stays hidden from everyone.
+     * A card exiled face down by a plain rider grants none of the three, and stays hidden from
+     * everyone.
      */
     private fun grantsFaceDownExileAccessTo(
         state: GameState,
         entityId: EntityId,
         viewingPlayerId: EntityId,
     ): Boolean {
-        val foretoldBy = state.getEntity(entityId)?.get<ForetoldComponent>()?.controllerId
-        if (foretoldBy == viewingPlayerId) return true
+        val container = state.getEntity(entityId)
+        if (container?.get<ForetoldComponent>()?.controllerId == viewingPlayerId) return true
+        if (container?.get<MayLookAtInExileComponent>()?.mayLook(viewingPlayerId) == true) return true
         return state.hasMayPlayFor(entityId, viewingPlayerId, conditionEvaluator, cardRegistry)
     }
 

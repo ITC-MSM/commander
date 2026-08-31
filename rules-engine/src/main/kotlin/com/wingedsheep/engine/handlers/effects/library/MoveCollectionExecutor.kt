@@ -15,6 +15,8 @@ import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
+import com.wingedsheep.engine.state.components.identity.FaceDownComponent
+import com.wingedsheep.engine.state.components.identity.MayLookAtInExileComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.player.SacrificedFoodThisTurnComponent
 import com.wingedsheep.sdk.core.Keyword
@@ -111,6 +113,9 @@ class MoveCollectionExecutor(
             }
             result = EffectResult.success(newState, result.events).copy(updatedCollections = result.updatedCollections)
         }
+        if (effect.lookableInExile && result.isSuccess) {
+            result = grantLookAtInExile(result, context, cards)
+        }
         val marksBattlefieldEntries = when (destination) {
             is CardDestination.ToZone -> destination.zone == Zone.BATTLEFIELD
             // Per-card destination: markEnteredViaSourceAbility already skips cards that didn't
@@ -121,6 +126,37 @@ class MoveCollectionExecutor(
             result = markEnteredViaSourceAbility(result, context, cards)
         }
         return result
+    }
+
+    /**
+     * Stamp the "you may look at that card for as long as it remains exiled" grant
+     * ([MoveCollectionEffect.lookableInExile]) on every card this move actually landed face down
+     * in exile.
+     *
+     * Both halves of that guard matter. A card that never reached exile — a move that was
+     * replaced, or a collection holding a card already gone — must not carry a grant keyed to a
+     * zone it isn't in. And a card that reached exile *face up* needs no grant: it is public
+     * information already, so stamping one would only make the component lie about why the card
+     * is visible.
+     */
+    private fun grantLookAtInExile(
+        result: EffectResult,
+        context: EffectContext,
+        cards: List<EntityId>,
+    ): EffectResult {
+        val viewerId = context.controllerId
+        var newState = result.state
+        for (cardId in cards) {
+            val container = newState.getEntity(cardId) ?: continue
+            if (!container.has<FaceDownComponent>()) continue
+            val inExile = newState.turnOrder.any { pid -> cardId in newState.getZone(ZoneKey(pid, Zone.EXILE)) }
+            if (!inExile) continue
+            newState = newState.updateEntity(cardId) { c ->
+                val existing = c.get<MayLookAtInExileComponent>()
+                c.with(existing?.withPlayer(viewerId) ?: MayLookAtInExileComponent.to(viewerId))
+            }
+        }
+        return EffectResult.success(newState, result.events).copy(updatedCollections = result.updatedCollections)
     }
 
     /**

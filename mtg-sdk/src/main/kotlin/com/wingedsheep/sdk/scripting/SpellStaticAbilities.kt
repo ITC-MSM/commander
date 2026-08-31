@@ -206,6 +206,12 @@ data class GrantMayCastFromLinkedExile(
      * When true, this permission may be used at most once per turn. A successful
      * cast marks the granter with [com.wingedsheep.engine.state.components.battlefield.MayCastFromLinkedExileUsedThisTurnComponent]
      * (cleared at end of turn).
+     *
+     * The allowance belongs to the *permanent*, not to a kind of play: when [filter] admits land
+     * cards, playing a land from the pile spends the same marker a cast would. That is what
+     * Hauken's Insight's "Once during each of your turns, you may play a land **or** cast a spell
+     * from among the cards exiled with this permanent" asks for — one play per turn, the
+     * controller's choice which.
      */
     val oncePerTurn: Boolean = false,
     /**
@@ -240,9 +246,17 @@ data class GrantMayCastFromLinkedExile(
             append(". If you cast a spell this way, pay life equal to its mana value rather than pay its mana cost.")
             return@buildString
         }
+        // An unrestricted filter admits lands, which are *played*, not cast (CR 305.1) — the
+        // Valgavoth / Hauken's Insight wording. Any type predicate at all excludes them.
+        val admitsLands = filter.cardPredicates.isEmpty() && filter.anyOf.isEmpty()
+        val verb = if (admitsLands) "play" else "cast"
+        // `GameObjectFilter.Any.description` is already the noun ("card"), so naming the filter and
+        // then appending "card"/"cards" would read "a card card exiled with this permanent".
+        val noun = if (admitsLands) "" else "${filter.description} "
         if (duringYourTurnOnly) append("During your turn, y") else append("Y")
-        if (oncePerTurn) append("ou may cast a ${filter.description} ")
-        else append("ou may cast ${filter.description} ")
+        append("ou may $verb ")
+        if (oncePerTurn) append("a ")
+        append(noun)
         if (maxManaValue != null) append("with mana value less than or equal to ${maxManaValue.description} ")
         if (ownedByYou) append("cards you own ")
         else if (oncePerTurn) append("card ")

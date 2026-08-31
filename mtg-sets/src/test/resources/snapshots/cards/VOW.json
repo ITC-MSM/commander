@@ -11385,6 +11385,177 @@
     "colorIdentityOverride": []
 }
 
+// Jacob Hauken, Inspector
+{
+    "name": "Jacob Hauken, Inspector",
+    "manaCost": "{1}{U}",
+    "typeLine": "Legendary Creature — Human Advisor",
+    "oracleText": "{T}: Draw a card, then exile a card from your hand face down. You may look at that card for as long as it remains exiled. You may pay {4}{U}{U}. If you do, transform Jacob Hauken.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "haukenHand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "haukenHand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "haukenExiled",
+                            "prompt": "Choose a card to exile face down"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "haukenExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true,
+                            "faceDown": "HIDDEN",
+                            "lookableInExile": true
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.MayPay",
+                                "cost": {
+                                    "type": "PayManaCost",
+                                    "cost": "{4}{U}{U}"
+                                }
+                            },
+                            "then": "Transform"
+                        }
+                    ]
+                },
+                "descriptionOverride": "{T}: Draw a card, then exile a card from your hand face down. You may look at that card for as long as it remains exiled. You may pay {4}{U}{U}. If you do, transform Jacob Hauken."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Hauken's Insight",
+        "manaCost": "",
+        "typeLine": "Legendary Enchantment",
+        "oracleText": "At the beginning of your upkeep, exile the top card of your library face down. You may look at that card for as long as it remains exiled.\nOnce during each of your turns, you may play a land or cast a spell from among the cards exiled with this permanent without paying its mana cost.",
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "UPKEEP"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeAs": "haukensInsightExiled"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "haukensInsightExiled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                },
+                                "linkToSource": true,
+                                "faceDown": "HIDDEN",
+                                "lookableInExile": true
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "At the beginning of your upkeep, exile the top card of your library face down. You may look at that card for as long as it remains exiled."
+                }
+            ],
+            "staticAbilities": [
+                {
+                    "type": "GrantMayCastFromLinkedExile",
+                    "filter": {},
+                    "duringYourTurnOnly": true,
+                    "withoutPayingManaCost": true,
+                    "oncePerTurn": true
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "65",
+            "rarity": "MYTHIC",
+            "artist": "Aurore Folny",
+            "imageUri": "https://cards.scryfall.io/normal/back/6/b/6b4529c3-8edb-4909-b910-806450a39d2e.jpg?1783924901",
+            "rulings": [
+                {
+                    "date": "2021-11-19",
+                    "text": "Paying {4}{U}{U} and transforming Jacob Hauken, Inspector is part of the resolution of the activated ability. You draw a card and exile a card before choosing whether to pay."
+                },
+                {
+                    "date": "2021-11-19",
+                    "text": "Playing a card using the last ability of Hauken's Insight follows all the normal timing rules for that card. For example, if you play a land this way, you may do so only during your main phase while the stack is empty and only if you haven't yet played a land (unless another effect allows you to play additional lands)."
+                },
+                {
+                    "date": "2021-11-19",
+                    "text": "You may play cards this way that were exiled with Jacob Hauken, Inspector before it transformed into Hauken's Insight."
+                },
+                {
+                    "date": "2021-11-19",
+                    "text": "Once Hauken's Insight leaves the battlefield, the player that controlled it may no longer play the exiled cards. If it's destroyed and somehow returns to the battlefield, it's a new object with no memory of the previously exiled cards."
+                }
+            ]
+        },
+        "colorIdentityOverride": [
+            "BLUE"
+        ],
+        "colorIndicator": [
+            "BLUE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "65",
+        "rarity": "MYTHIC",
+        "artist": "Aurore Folny",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/b/6b4529c3-8edb-4909-b910-806450a39d2e.jpg?1783924901"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Katilda, Dawnhart Martyr
 {
     "name": "Katilda, Dawnhart Martyr",
