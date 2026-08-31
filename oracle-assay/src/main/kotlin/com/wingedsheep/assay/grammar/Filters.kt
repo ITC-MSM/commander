@@ -310,28 +310,33 @@ object Filters {
         )
 
     /**
-     * The two rules that exist only in **spell position** — the adjective in front of the word
-     * "spells", where the sentence supplies the head noun.
+     * A bare subtype in either of the two positions whose object is **not on the battlefield** —
+     * the adjective in front of "spells", and the type phrase under the head noun "card".
      *
-     * That position is genuinely a different one, not a spelling of the permanent noun phrase, and
-     * both differences follow from one fact: **a spell on the stack is not a permanent.**
+     * Those positions are genuinely different ones, not spellings of the permanent noun phrase, and
+     * the difference follows from one fact: **neither a spell on the stack nor a card in a library
+     * is a permanent.**
      *
-     * - A bare subtype means `Any.withSubtype`, not [bareSubtype]'s `Permanent.withSubtype`. On the
-     *   battlefield "Zombies" names Zombie *permanents* — the reading the differential took 104
-     *   cards to settle; on the stack "Zombie spells" names cards, and a `IsPermanent` predicate
-     *   there would be a narrower filter than the card says. So this is **canonical** where
-     *   [bareSubtype] is an `alternate`: it is the only spelling of its value in this position,
-     *   rather than the second spelling of a value the adjective form already prints.
-     * - A bare colour has no noun to attach to. [colour] is a layer *around* a type phrase, and
-     *   "Red spells you cast cost {1} less to cast." has no type phrase in it at all.
+     * A bare subtype there means `Any.withSubtype`, not [bareSubtype]'s `Permanent.withSubtype`. On
+     * the battlefield "Zombies" names Zombie *permanents* — the reading the differential took 104
+     * cards to settle; on the stack "Zombie spells" and in a library "a Goblin card" name cards, and
+     * an `IsPermanent` predicate there would be a narrower filter than the card says. So this is
+     * **canonical** where [bareSubtype] is an `alternate`: it is the only spelling of its value in
+     * these positions, rather than the second spelling of a value the adjective form already prints.
+     *
+     * Card position had been reading [bareSubtype] instead, which is why Goblin Matron and the rest
+     * of the subtype tutors printed back as "a Goblin **permanent** card" — the head noun rule
+     * spelling out the extra predicate, honestly, because the filter really did carry it. Every
+     * hand-written tutor in the corpus (Wirewood Herald, Boggart Harbinger, Aphetto Vulture) uses
+     * `Any.withSubtype`, so the divergence was the parser's, not the cards'.
      *
      * Instantiating the cascade for the position is the same move [SelfSteps.retargetable] makes for
      * the anaphors, and for the same reason: the distinction exists in the sentence and nowhere in
-     * the model, so no remap on the finished filter could recover it. Registering either rule in the
+     * the model, so no remap on the finished filter could recover it. Registering the rule in the
      * shared cascade instead would give one value two printed forms in permanent position.
      */
-    private fun spellSubtype(suffix: String): Phrase<GameObjectFilter> =
-        phrase("{subtype}", name = "a spell's subtype$suffix") {
+    private fun nonPermanentSubtype(suffix: String): Phrase<GameObjectFilter> =
+        phrase("{subtype}", name = "a non-permanent subtype$suffix") {
             slot("subtype", Primitives.subtype)
             build { GameObjectFilter.Any.withSubtype(it.value<Subtype>("subtype")) }
             match { filter ->
@@ -342,7 +347,7 @@ object Filters {
             }
         }
 
-    /** "Red spells you cast …" — see [spellSubtype]; a colour with no noun under it. */
+    /** "Red spells you cast …" — see [nonPermanentSubtype]; a colour with no noun under it. */
     private fun spellColour(suffix: String): Phrase<GameObjectFilter> =
         phrase("{colour}", name = "a spell's colour$suffix") {
             slot("colour", Primitives.color)
@@ -625,8 +630,12 @@ object Filters {
                 subtyped(named, "a permanent of a subtype$suffix"),
                 notSubtyped(named, "a permanent of another subtype$suffix"),
                 anySubtype(named, "a permanent of either subtype$suffix"),
-                if (spellPosition) {
-                    spellSubtype(suffix)
+                // Card position takes the same rule as spell position, and for the same reason: a
+                // card in a library or a graveyard is not a permanent, so "a Goblin card" is
+                // `Any.withSubtype` and an `IsPermanent` predicate there would be narrower than the
+                // card says. See [nonPermanentSubtype].
+                if (spellPosition || card) {
+                    nonPermanentSubtype(suffix)
                 } else {
                     bareSubtype(plural && !card, "a subtype standing alone$suffix")
                 },
@@ -749,7 +758,7 @@ object Filters {
 
     /**
      * …and in **spell position** — the adjective in "Zombie spells you cast", "Red spells",
-     * "Noncreature spells". See [spellSubtype] for why this is an instantiation of the cascade
+     * "Noncreature spells". See [nonPermanentSubtype] for why this is an instantiation of the cascade
      * rather than a rule inside it.
      */
     val spellQuality: Phrase<GameObjectFilter> = nounPhrase(plural = false, spellPosition = true)

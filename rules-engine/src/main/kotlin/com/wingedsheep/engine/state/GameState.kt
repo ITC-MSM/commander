@@ -7,6 +7,7 @@ import com.wingedsheep.engine.event.GrantedActivatedAbility
 import com.wingedsheep.engine.event.GrantedKeywordAbility
 import com.wingedsheep.engine.event.GrantedReplacementEffect
 import com.wingedsheep.engine.event.GrantedStaticAbility
+import com.wingedsheep.engine.event.GrantedStateTriggeredAbility
 import com.wingedsheep.engine.event.GrantedTriggeredAbility
 import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
 import com.wingedsheep.sdk.core.Color
@@ -96,6 +97,9 @@ data class GameState(
 
     /** Triggered abilities granted to entities temporarily (e.g., Commando Raid) */
     val grantedTriggeredAbilities: List<GrantedTriggeredAbility> = emptyList(),
+
+    /** State-triggered abilities (CR 603.8) granted to entities (e.g., Olivia, Crimson Bride) */
+    val grantedStateTriggeredAbilities: List<GrantedStateTriggeredAbility> = emptyList(),
 
     /** Activated abilities granted to entities temporarily (e.g., Run Wild) */
     val grantedActivatedAbilities: List<GrantedActivatedAbility> = emptyList(),

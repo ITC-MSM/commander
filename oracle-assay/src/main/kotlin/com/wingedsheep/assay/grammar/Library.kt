@@ -444,6 +444,16 @@ object Library {
             destination = SearchDestination.HAND,
             reveal = true,
         ),
+        // Oracle spells the anaphor in the reveal clause both ways — "reveal it" and "reveal that
+        // card" — for one model, so the minority is an `alternate` on this rule's shape rather than
+        // a rule of its own. Goblin Matron, Wirewood Herald and the Harbinger cycle print it.
+        search(
+            "search your library for {filter}, reveal that card, put it into your hand, then shuffle",
+            "search your library for a card, revealed, to your hand (that card)",
+            canonicalForm = false,
+            destination = SearchDestination.HAND,
+            reveal = true,
+        ),
         searchForTwoCardsToHand,
         searchZonesForNamedCard,
     )

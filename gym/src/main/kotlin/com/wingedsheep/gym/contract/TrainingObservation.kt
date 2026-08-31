@@ -72,8 +72,9 @@ data class TrainingObservation(
 
     /**
      * Per-zone entity views. A `(ownerId, zoneType)` pair appears at most once.
-     * Hidden zones (opponent hand, libraries) expose [ZoneView.hidden] = true
-     * and [ZoneView.cards] is empty (only [ZoneView.size] is populated).
+     * [ZoneView.hidden] means the zone is not wholly public to this perspective. [ZoneView.cards]
+     * contains only the identities this perspective may know, so an individually revealed card can
+     * appear while the zone remains hidden and [ZoneView.size] still reports its true size.
      */
     val zones: List<ZoneView>,
 
@@ -131,11 +132,14 @@ data class ManaPoolView(
 /**
  * A zone's contents from [TrainingObservation.perspectivePlayerId]'s point of view.
  *
- * [hidden] says some identities in the zone are concealed from the perspective player
- * (an opponent's hand, any library); [size] is then the true count while [cards] carries
- * only the entries this perspective knows. That subset is usually empty, but a hand-peek
- * effect leaves the cards it showed visible to the player who saw them, so a two-card
- * hidden hand can legitimately list one card. This mirrors real-MTG information hiding.
+ * [hidden] reports the structural fact that the zone is not wholly public to this perspective (an
+ * opponent's hand, any library) — a stable feature, so an agent's input distribution does not shift
+ * as reveals come and go. It is deliberately not "something here is unknown": [size] is the true
+ * count while [cards] carries only the entries this perspective knows, and that subset can be the
+ * whole zone. A hand-peek effect leaves the cards it showed visible to the player who saw them, so
+ * a two-card hidden hand can legitimately list one card — or, for a one-card library under a public
+ * top-card reveal, all of it. Hidden-zone slot IDs and the positions of known cards among unknown
+ * ones are intentionally not part of this schema.
  */
 @Serializable
 data class ZoneView(
@@ -159,7 +163,14 @@ data class ZoneView(
 @Serializable
 data class EntityFeatures(
     val entityId: EntityId,
+    /** Null for a face-down object the perspective player may not look at. */
     val cardDefinitionId: String?,
+    /**
+     * The projected name — what Layer 3 renamed the object to (Witness Protection), else the
+     * printed one. `"Face-down creature"` / `"Face-down card"` for a face-down object the
+     * perspective player may not look at, whose [oracleText], [manaCost] and [manaValue] are
+     * blanked to match.
+     */
     val name: String,
     val zone: Zone,
     val ownerId: EntityId?,
@@ -197,6 +208,12 @@ data class EntityFeatures(
     val toughness: Int?,
 
     val tapped: Boolean = false,
+    /**
+     * The restriction actually in force: the object entered under this controller too recently,
+     * it is currently a creature, and it has no haste. Not the raw engine marker — a creature
+     * with projected haste reports `false` even though the marker is still on it, and reverts to
+     * `true` if the haste goes away while the marker stands.
+     */
     val summoningSick: Boolean = false,
     val faceDown: Boolean = false,
     val damageMarked: Int = 0,
@@ -211,10 +228,12 @@ data class EntityFeatures(
 @Serializable
 data class StackItemView(
     val entityId: EntityId,
+    /** The caster of a spell, or the controller of an ability. */
     val controllerId: EntityId?,
+    /** The spell's card name, or the source name of an ability. */
     val name: String,
     val kind: StackItemKind,
-    /** Printed oracle text of the card backing this stack item — empty for stackless triggers. */
+    /** Printed oracle text of the card, or an ability's description. */
     val oracleText: String = "",
     /**
      * The chosen targets, in the order they were chosen, flattened to entity ids. A player

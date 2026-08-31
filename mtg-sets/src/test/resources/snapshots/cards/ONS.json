@@ -10160,7 +10160,7 @@
                         {
                             "type": "TargetObject",
                             "filter": {
-                                "baseFilter": "permanent Cleric own:you",
+                                "baseFilter": "Cleric own:you",
                                 "zone": "Graveyard"
                             },
                             "id": "target"

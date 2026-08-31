@@ -106,8 +106,13 @@ multi-mode `ChooseModeDecision`, `BudgetModalDecision`) flag
 
 ### Information hiding by default
 
-`ObservationBuilder` hides opponent hand and every library when building
-a `TrainingObservation`. Only zone sizes are reported for hidden zones.
+`ObservationBuilder` delegates identity knowledge to the rules engine's `Visibility` authority.
+For a fully hidden opponent hand or library, only the zone size is reported. If one card is
+individually revealed or the top card is legitimately visible, that known card appears while the
+zone stays marked hidden — `hidden` reports the structural fact that the zone is not wholly public,
+not "something here is unknown", so it stays a stable feature as reveals come and go. Public
+face-down objects expose their public projected characteristics but not the underlying card
+identity.
 A `revealAll = true` flag is available for debug tooling and must not be
 enabled in real self-play (the agent would be training on leaked
 information).

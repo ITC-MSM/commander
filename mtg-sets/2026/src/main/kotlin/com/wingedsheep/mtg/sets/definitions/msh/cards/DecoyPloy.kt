@@ -39,14 +39,14 @@ val DecoyPloy = card("Decoy Ploy") {
             mode("Return target Villain card from your graveyard to your hand") {
                 val villain = target(
                     "target Villain card in your graveyard",
-                    TargetObject(filter = TargetFilter.PermanentInYourGraveyard.withSubtype(Subtype.VILLAIN))
+                    TargetObject(filter = TargetFilter.CardInGraveyard.withSubtype(Subtype.VILLAIN).ownedByYou())
                 )
                 effect = Effects.ReturnToHand(villain)
             }
             mode("Return target Hero card from your graveyard to your hand") {
                 val hero = target(
                     "target Hero card in your graveyard",
-                    TargetObject(filter = TargetFilter.PermanentInYourGraveyard.withSubtype(Subtype.HERO))
+                    TargetObject(filter = TargetFilter.CardInGraveyard.withSubtype(Subtype.HERO).ownedByYou())
                 )
                 effect = Effects.ReturnToHand(hero)
             }

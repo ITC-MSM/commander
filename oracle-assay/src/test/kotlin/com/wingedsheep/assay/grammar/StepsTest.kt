@@ -6,6 +6,10 @@ import com.wingedsheep.assay.syntax.printLine
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Patterns
+import com.wingedsheep.sdk.scripting.effects.MayEffect
+import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
+import com.wingedsheep.sdk.scripting.targets.TargetSpell
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.CreateDelayedTriggerEffect
@@ -613,5 +617,87 @@ class StepsTest : StringSpec({
             )
         roundTrips("Defending player loses 1 life.")
         roundTrips("Whenever ~ attacks, defending player loses 2 life.")
+    }
+
+    // "You draw three cards" is the same model as "Draw three cards", so the subject cannot be
+    // canonical — it is an `alsoSpelled` on the same row, which is what makes Ancient Craving and
+    // Ambition's Cost VARIANTs rather than declines.
+    "the printed subject on a draw parses and never prints" {
+        fragment("You draw three cards.") shouldBe fragment("Draw three cards.")
+        fragment("You draw a card.") shouldBe fragment("Draw a card.")
+        Grammar.abilityLine.printLine(fragment("You draw three cards.")) shouldBe "Draw three cards."
+        Grammar.abilityLine.printLine(fragment("You draw a card.")) shouldBe "Draw a card."
+    }
+
+    // `TargetOpponent` is a different requirement from `TargetPlayer`, not a narrowing of it, so the
+    // two subjects are rows rather than a slot and neither can print the other.
+    "target opponent is a draw subject beside target player" {
+        fragment("Target opponent draws a card.") shouldBe CardFragment(
+            script = CardScript(
+                spellEffect = Effects.DrawCards(1, Targets.bound()),
+                targetRequirements = listOf(Targets.opponent()),
+            )
+        )
+        fragment("Target opponent draws a card.") shouldNotBe fragment("Target player draws a card.")
+        roundTrips("Target opponent draws a card.")
+        roundTrips("Target opponent draws two cards.")
+    }
+
+    // Ancient Craving, whole: the subject alternate plus the " and " join, both non-canonical, over
+    // two clauses that already had rules.
+    "a subject-marked draw joins a life loss the way the corpus prints it" {
+        fragment("You draw three cards and you lose 3 life.") shouldBe
+            fragment("Draw three cards. You lose 3 life.")
+        Grammar.abilityLine.printLine(fragment("You draw three cards and you lose 3 life.")) shouldBe
+            "Draw three cards. You lose 3 life."
+    }
+
+    // The spell nouns are rows in [Stack] rather than a [Filters] slot, because the noun ends in
+    // "spell" and the zone is part of the requirement. A form nobody wrote down declines.
+    "the counter target rows cover each spell type the SDK names" {
+        fragment("Counter target sorcery spell.") shouldBe CardFragment(
+            script = CardScript(
+                spellEffect = Effects.CounterSpell(),
+                targetRequirements = listOf(
+                    TargetSpell(filter = TargetFilter.SorcerySpellOnStack, id = Targets.SLOT),
+                ),
+            )
+        )
+        roundTrips("Counter target sorcery spell.")
+        roundTrips("Counter target instant or sorcery spell.")
+        roundTrips("Counter target noncreature spell.")
+        // The two-type noun shares its first word with the one-type row; alternation order is what
+        // keeps "instant spell" from swallowing "instant or sorcery spell".
+        fragment("Counter target instant or sorcery spell.") shouldNotBe
+            fragment("Counter target instant spell.")
+    }
+
+    // A bounce sweep is the gather-then-move pipeline, not a `ForEachInGroup`, because the gather
+    // reads the battlefield through projected state — the same argument `destroyAll` records.
+    "each other is the excludeSelf group, over the singular noun" {
+        fragment("Return each other creature you control to its owner's hand.") shouldBe CardFragment(
+            script = CardScript(
+                spellEffect = Patterns.Group.returnAllToHand(
+                    GroupFilter(GameObjectFilter.Creature.youControl(), excludeSelf = true),
+                ),
+            )
+        )
+        roundTrips("Return each other creature you control to its owner's hand.")
+    }
+
+    // The causative moves the subject inside "have" and drops the verb's agreement, and the model
+    // gains a `MayEffect` — which is why it is a parameter on the row and not an `alsoSpelled`.
+    "the causative sacrifice prints its own sentence rather than the composed may" {
+        fragment("You may have target opponent sacrifice a creature of their choice.") shouldBe
+            CardFragment(
+                script = CardScript(
+                    spellEffect = MayEffect(
+                        Effects.Sacrifice(GameObjectFilter.Creature, 1, Targets.bound()),
+                    ),
+                    targetRequirements = listOf(Targets.opponent()),
+                )
+            )
+        roundTrips("You may have target opponent sacrifice a creature of their choice.")
+        roundTrips("Target opponent sacrifices a creature of their choice.")
     }
 })

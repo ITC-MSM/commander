@@ -5110,7 +5110,7 @@
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
-                        "baseFilter": "permanent Mercenary own:you",
+                        "baseFilter": "Mercenary own:you",
                         "zone": "Graveyard"
                     },
                     "id": "target"

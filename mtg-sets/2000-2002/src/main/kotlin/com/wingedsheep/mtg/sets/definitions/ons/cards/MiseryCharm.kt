@@ -42,7 +42,7 @@ val MiseryCharm = card("Misery Charm") {
             }
             mode("Return target Cleric card from your graveyard to your hand") {
                 val t = target("target", TargetObject(
-                    filter = TargetFilter.PermanentInYourGraveyard.withSubtype("Cleric")
+                    filter = TargetFilter.CardInGraveyard.withSubtype("Cleric").ownedByYou()
                 ))
                 effect = Effects.Move(
                     target = t,

@@ -970,6 +970,15 @@ class CleanupPhaseManager(
             newState = newState.copy(grantedTriggeredAbilities = remainingGrants)
         }
 
+        // 6a. Expire granted state-triggered abilities with EndOfTurn duration. Most are granted
+        // with Duration.Permanent (Olivia, Crimson Bride), but the axis exists, so honour it.
+        if (newState.grantedStateTriggeredAbilities.isNotEmpty()) {
+            val remainingGrants = newState.grantedStateTriggeredAbilities.filter { grant ->
+                grant.duration !is Duration.EndOfTurn
+            }
+            newState = newState.copy(grantedStateTriggeredAbilities = remainingGrants)
+        }
+
         // 7. Expire granted activated abilities with EndOfTurn duration
         if (newState.grantedActivatedAbilities.isNotEmpty()) {
             val remainingGrants = newState.grantedActivatedAbilities.filter { grant ->

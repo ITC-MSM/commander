@@ -1387,7 +1387,17 @@ data class CountersRemovedEvent(
     val counterType: String,
     val amount: Int,
     val entityName: String = "",
-    val remainingCount: Int? = null
+    val remainingCount: Int? = null,
+    /**
+     * True when a `PreventDamageByRemovingCounter` replacement did this removal — the "**this
+     * way**" in Magma Pummeler's "When one or more counters are removed from this creature this
+     * way, it deals that much damage to any target."
+     *
+     * Without it that trigger would also fire for a counter leaving as a cost, or removed by an
+     * opponent's effect, which the printed wording excludes. It is a property of the removal, not
+     * of the permanent, so it rides the event rather than living in state.
+     */
+    val byDamagePrevention: Boolean = false
 ) : GameEvent
 
 /**

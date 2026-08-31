@@ -35,7 +35,12 @@ object Stack {
         constant("spell", TargetFilter.SpellOnStack),
         constant("creature or sorcery spell", TargetFilter.CreatureOrSorcerySpellOnStack),
         constant("creature spell", TargetFilter(com.wingedsheep.sdk.scripting.GameObjectFilter.Creature, zone = Zone.STACK)),
+        // The two-type nouns come before their one-type prefixes: "instant or sorcery spell" starts
+        // with the same word as "instant spell", and `oneOf` commits to the first row that reads.
+        constant("instant or sorcery spell", TargetFilter.InstantOrSorcerySpellOnStack),
         constant("instant spell", TargetFilter.InstantSpellOnStack),
+        constant("sorcery spell", TargetFilter.SorcerySpellOnStack),
+        constant("noncreature spell", TargetFilter.NoncreatureSpellOnStack),
     )
 
     /** "Counter target creature or sorcery spell." — Mystic Denial. */
