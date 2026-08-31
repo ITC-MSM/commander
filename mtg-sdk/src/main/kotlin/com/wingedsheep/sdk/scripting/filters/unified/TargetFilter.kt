@@ -386,6 +386,9 @@ data class TargetFilter(
     /** Add subtype by string */
     fun withSubtype(subtype: String) = copy(baseFilter = baseFilter.withSubtype(subtype))
 
+    /** Exclude subtype ("target non-Faerie spell", "target non-Elf creature"). */
+    fun notSubtype(subtype: Subtype) = copy(baseFilter = baseFilter.notSubtype(subtype))
+
     /** Add keyword requirement */
     fun withKeyword(keyword: Keyword) = copy(baseFilter = baseFilter.withKeyword(keyword))
 

@@ -1542,9 +1542,16 @@ object Effects {
     /**
      * Return this card from its current zone to the battlefield attached to the target.
      * Used by the Dragon aura cycle (Dragon Shadow, Dragon Breath, etc.).
+     *
+     * [target] may name a **player** as well as a permanent — "attached to target opponent" for a
+     * Curse — and [transformed] returns the card back face up (Radiant Grace's
+     * "return this card to the battlefield transformed under your control attached to target
+     * opponent").
      */
-    fun ReturnSelfToBattlefieldAttached(target: EffectTarget = EffectTarget.TriggeringEntity): Effect =
-        ReturnSelfToBattlefieldAttachedEffect(target)
+    fun ReturnSelfToBattlefieldAttached(
+        target: EffectTarget = EffectTarget.TriggeringEntity,
+        transformed: Boolean = false,
+    ): Effect = ReturnSelfToBattlefieldAttachedEffect(target, transformed)
 
     /**
      * Take the top card from the source's linked exile pile and put it into your hand.
