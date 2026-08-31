@@ -1238,7 +1238,15 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   battlefield attached to a permanent the controller chooses at resolution (default host filter: a creature
   you control). Works for both Auras and Equipment; the host is chosen, not targeted. If no legal host exists,
   an Equipment enters unattached while an Aura can't enter (Rule 303.4g). (One Last Job.)
-- `ReturnSelfToBattlefieldAttached(target)` — return source attached to target (Aura recursion).
+- `ReturnSelfToBattlefieldAttached(target, transformed = false)` — return source attached to target
+  (Aura recursion). [target] may resolve to a **player** as well as a permanent, and the two cases
+  differ in who controls the returned Aura: a *permanent* host hands control to that permanent's
+  controller (the Dragon-aura cycle's "attached to that creature"), a *player* host leaves it under
+  the **ability's** controller — the only reading "under your control attached to target opponent"
+  allows. `transformed = true` returns it back face up (CR 712.8); the face swap happens while the
+  card is still in its old zone, so the entry registers the back face's statics and replacements.
+  A single-faced card told to enter transformed doesn't move at all (standing ruling), so it is a
+  quiet no-op. Radiant Grace: `ReturnSelfToBattlefieldAttached(target = cursed, transformed = true)`.
 - `ReturnSelfFromExileTransformed` — Craft resolution (CR 702.167a). Returns the source from exile to the
   battlefield as its back face, under its owner's control, and re-attaches the source's
   `CraftedFromExiledComponent` recording the exiled materials. Pair with `AbilityCost.Craft`; see the `Craft`
@@ -4084,7 +4092,20 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   controls" (the upkeep player is the active player — Temporal Distortion).
 - `.targetPlayerControls(target)` — controlled by a referenced player. Resolves `EffectTarget`
   bindings/context targets, plus `EffectTarget.ControllerOfTriggeringEntity` (controller of the
-  entity that fired the trigger — e.g. Tectonic Instability "tap all lands its controller controls").
+  entity that fired the trigger — e.g. Tectonic Instability "tap all lands its controller controls"),
+  `PlayerRef(Player.DefendingPlayer)` ("target creature defending player controls" — Necrite) and
+  `PlayerRef(Player.EnchantedPlayer)` (below). The predicate's own description follows the target,
+  so these read as "defending player controls" / "enchanted player controls" rather than the fixed
+  "target player controls" — neither is targeting anyone.
+- `.controlledByEnchantedPlayer()` — controlled by the player the filtering ability's **source Aura
+  is attached to** (CR 303 enchant player): "Creatures enchanted player controls enter tapped"
+  (Radiant Restraints). A named recipe over `.targetPlayerControls(PlayerRef(Player.EnchantedPlayer))`,
+  and the controller-axis sibling of `attackingEnchantedPlayer()` below — every other controller
+  scope here resolves against the *ability's* controller, which for a Curse is the wrong player.
+  Fails closed when the source isn't an Aura attached to a player. Any read site that evaluates a
+  filter on behalf of a granting permanent must pass **that permanent** as the predicate context's
+  `sourceId`, not the object being filtered — that is what `EnterTappedReplacements` /
+  `EnterUntappedReplacements` thread through.
 - `.ownedByYou()` / `.ownedByOpponent()` — owner predicates (for graveyard/exile cards without a
   controller, and "you own" battlefield wordings).
 - `.ownedByTargetPlayer()` (`ControllerPredicate.OwnedByTargetPlayer`, FQL `own:target-player`) —

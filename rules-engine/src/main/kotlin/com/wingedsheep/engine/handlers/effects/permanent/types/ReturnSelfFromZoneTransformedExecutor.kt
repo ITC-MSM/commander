@@ -39,7 +39,7 @@ class ReturnSelfFromZoneTransformedExecutor(
     ): EffectResult {
         val sourceId = context.sourceId
             ?: return EffectResult.error(state, "ReturnSelfFromZoneTransformed has no source")
-        val container = state.getEntity(sourceId)
+        state.getEntity(sourceId)
             ?: return EffectResult.success(state)
 
         // Fizzle quietly if the card already left the expected zone.
@@ -53,24 +53,8 @@ class ReturnSelfFromZoneTransformedExecutor(
         // card definition, not the component: DoubleFacedComponent is only stamped when a DFC
         // spell resolves onto the battlefield, so a card that was discarded or milled straight
         // into the graveyard doesn't carry one yet.
-        val cardComponent = container.get<com.wingedsheep.engine.state.components.identity.CardComponent>()
+        val workingState = ensureDoubleFacedComponent(state, cardRegistry, sourceId)
             ?: return EffectResult.success(state)
-        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
-        val backFace = cardDef?.backFace
-            ?: return EffectResult.success(state)
-
-        var workingState = state
-        if (container.get<DoubleFacedComponent>() == null) {
-            workingState = state.updateEntity(sourceId) { c ->
-                c.with(
-                    DoubleFacedComponent(
-                        frontCardDefinitionId = cardDef.name,
-                        backCardDefinitionId = backFace.name,
-                        currentFace = DoubleFacedComponent.Face.FRONT
-                    )
-                )
-            }
-        }
 
         val transition = returnDfcFace(
             workingState, cardRegistry, sourceId, DoubleFacedComponent.Face.BACK, tapped = effect.tapped

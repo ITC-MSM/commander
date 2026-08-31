@@ -15288,6 +15288,110 @@
     ]
 }
 
+// Radiant Grace
+{
+    "name": "Radiant Grace",
+    "manaCost": "{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature gets +1/+0 and has vigilance.\nWhen enchanted creature dies, return this card to the battlefield transformed under your control attached to target opponent.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ATTACHED",
+                "effect": {
+                    "type": "ReturnSelfToBattlefieldAttached",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target opponent"
+                    },
+                    "transformed": true
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "When enchanted creature dies, return this card to the battlefield transformed under your control attached to target opponent."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 0
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "VIGILANCE"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "backFace": {
+        "name": "Radiant Restraints",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura Curse",
+        "oracleText": "Enchant player\nCreatures enchanted player controls enter tapped.",
+        "script": {
+            "replacementEffects": [
+                {
+                    "type": "PermanentsEnterTapped",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "filter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ],
+                            "controllerPredicate": {
+                                "type": "ControlledByReferencedPlayer",
+                                "target": {
+                                    "type": "PlayerRef",
+                                    "player": "EnchantedPlayer"
+                                }
+                            }
+                        },
+                        "to": "Battlefield"
+                    }
+                }
+            ],
+            "auraTarget": "TargetPlayer"
+        },
+        "metadata": {
+            "collectorNumber": "31",
+            "rarity": "UNCOMMON",
+            "artist": "Campbell White",
+            "flavorText": "\"Even in times of brutal darkness, never mistake beauty and delicacy for weakness.\"\n—Thalia, Guardian of Thraben",
+            "imageUri": "https://cards.scryfall.io/normal/back/4/a/4a708243-42a1-4fa7-8b0b-9d5163da84bb.jpg?1783924919"
+        },
+        "colorIdentityOverride": [
+            "WHITE"
+        ],
+        "colorIndicator": [
+            "WHITE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "31",
+        "rarity": "UNCOMMON",
+        "artist": "Campbell White",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/a/4a708243-42a1-4fa7-8b0b-9d5163da84bb.jpg?1783924919"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Ragged Recluse
 {
     "name": "Ragged Recluse",

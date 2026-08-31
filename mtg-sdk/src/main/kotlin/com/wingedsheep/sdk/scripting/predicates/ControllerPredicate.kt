@@ -89,11 +89,17 @@ sealed interface ControllerPredicate {
      * picked earlier in the same spell or ability — e.g., modal Commands where one
      * mode says "creatures target player controls". Keeps the target→filter wiring
      * explicit instead of relying on implicit "first player target" inference.
+     *
+     * It is also the general escape hatch for a player scope that is neither "you" nor a chosen
+     * target: `PlayerRef(Player.DefendingPlayer)` for "defending player controls" (Necrite),
+     * `PlayerRef(Player.EnchantedPlayer)` for "enchanted player controls" (Radiant Restraints).
+     * The description follows [target] rather than being fixed at "target player" — those two
+     * readings are not targeting anyone, and a filter that says so is the one shown to players.
      */
     @SerialName("ControlledByReferencedPlayer")
     @Serializable
     data class ControlledByReferencedPlayer(val target: EffectTarget) : ControllerPredicate {
-        override val description: String = "target player controls"
+        override val description: String = "${target.description} controls"
     }
 
     // =============================================================================

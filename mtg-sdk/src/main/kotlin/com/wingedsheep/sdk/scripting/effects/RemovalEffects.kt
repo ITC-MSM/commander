@@ -435,14 +435,29 @@ data class ExileAndGrantOwnerPlayPermissionEffect(
  * which return from the graveyard when a creature with high mana value enters the battlefield.
  *
  * The [target] specifies what the aura attaches to (typically [EffectTarget.TriggeringEntity]).
+ * It may resolve to a **player** as well as a permanent — "attached to target opponent" for a
+ * Curse (Radiant Grace). The two cases differ in who ends up controlling the returned Aura: a
+ * permanent host hands control to *that permanent's* controller (the Dragon cycle's "attached to
+ * that creature" reads as an ordinary Aura following its host), while a player host leaves it
+ * under the **ability's** controller, which is the only reading "under your control attached to
+ * target opponent" allows.
+ *
+ * @property transformed Return the card **transformed** — back face up (CR 712.8). A card in a
+ *   non-battlefield zone is always front-face-up, so "transformed" can only mean the back face.
+ *   Per the standing ruling a single-faced card told to enter transformed doesn't move at all, so
+ *   this is a no-op rather than an error on a card with no back face.
  */
 @SerialName("ReturnSelfToBattlefieldAttached")
 @Serializable
 data class ReturnSelfToBattlefieldAttachedEffect(
-    val target: EffectTarget = EffectTarget.TriggeringEntity
+    val target: EffectTarget = EffectTarget.TriggeringEntity,
+    val transformed: Boolean = false,
 ) : Effect {
-    override val description: String =
-        "Return this card from your graveyard to the battlefield attached to ${target.description}"
+    override val description: String = buildString {
+        append("Return this card from your graveyard to the battlefield")
+        if (transformed) append(" transformed")
+        append(" attached to ${target.description}")
+    }
 }
 
 /**

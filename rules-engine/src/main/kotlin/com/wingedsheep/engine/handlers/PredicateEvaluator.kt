@@ -1226,6 +1226,16 @@ class PredicateEvaluator {
             // creature's — so the turn-order guard lives here.
             Player.TriggeringPlayer ->
                 context.triggeringEntityId?.takeIf { it in state.turnOrder }
+            // "creatures enchanted player controls" (Radiant Restraints) — the controller scope a
+            // Curse needs, and the only one that reads the *source's* attachment rather than the
+            // ability's controller. Same resolution as StatePredicate.IsAttackingEnchantedPlayer:
+            // the `in state.turnOrder` guard is what keeps a permanent host out, so an Aura on a
+            // creature can never make this match anything.
+            Player.EnchantedPlayer -> context.sourceId
+                ?.let { state.getEntity(it) }
+                ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
+                ?.targetId
+                ?.takeIf { it in state.turnOrder }
             else -> null
         }
         else -> null
