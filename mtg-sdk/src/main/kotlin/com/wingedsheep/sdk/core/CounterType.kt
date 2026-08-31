@@ -173,7 +173,10 @@ enum class CounterType {
     CUBE,
 
     /** Tide counter (FEM — Homarid, Tidal Influence). See [Counters.TIDE]. */
-    TIDE;
+    TIDE,
+
+    /** Judgment counter (VOW — Faithbound Judge // Sinner's Judgment). See [Counters.JUDGMENT]. */
+    JUDGMENT;
 
     companion object {
         /**
@@ -683,6 +686,18 @@ object Counters {
      * NOT a keyword counter, so it is intentionally absent from `StateProjector.KEYWORD_COUNTER_MAP`.
      */
     const val UNLOCK = "unlock"
+
+    /**
+     * Judgment counter (VOW — Faithbound Judge // Sinner's Judgment). A passive
+     * accumulate-then-threshold counter with no inherent rule of its own, the same shape as
+     * [PLAN] and [UNLOCK]: each face's own upkeep trigger adds one, and a second ability gated on
+     * `Conditions.SourceCounterCountAtLeast(Counters.JUDGMENT, 3)` reads the tally back — the
+     * creature face to shed its defender restriction, the Aura face to make the enchanted player
+     * lose the game. The two faces do *not* share a tally: they are different objects (CR 400.7),
+     * so a disturbed Sinner's Judgment starts at zero.
+     * NOT a keyword counter, so it is intentionally absent from `StateProjector.KEYWORD_COUNTER_MAP`.
+     */
+    const val JUDGMENT = "judgment"
 
     /**
      * Wildcard sentinel for triggers/events that fire on counters of *any* type, e.g.
