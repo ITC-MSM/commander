@@ -16,7 +16,6 @@ object InnistradCrimsonVowSet : MtgSet {
     override val code = "VOW"
     override val displayName = "Innistrad: Crimson Vow"
     override val releaseDate = "2021-11-19"
-    override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)
