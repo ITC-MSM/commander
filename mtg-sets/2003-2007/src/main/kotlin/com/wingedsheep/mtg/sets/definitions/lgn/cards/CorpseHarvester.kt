@@ -31,7 +31,11 @@ val CorpseHarvester = card("Corpse Harvester") {
             Costs.Sacrifice(GameObjectFilter.Creature)
         )
         effect = Patterns.Library.searchLibrary(
-            filter = GameObjectFilter.Permanent.withSubtype(Subtype("Zombie")),
+            // A card in a library is not a permanent, so the tutor's filter is `Any.withSubtype`
+            // — the shape every other subtype tutor in the corpus uses (Wirewood Herald, Boggart
+            // Harbinger, Aphetto Vulture). `Permanent.withSubtype` here said "a Zombie permanent
+            // card", which is narrower than the printed line. Found by the Assay differential.
+            filter = GameObjectFilter.Any.withSubtype(Subtype("Zombie")),
             reveal = true,
             shuffleAfter = false
         ) then Patterns.Library.searchLibrary(

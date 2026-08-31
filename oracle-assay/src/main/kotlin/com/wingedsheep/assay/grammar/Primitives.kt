@@ -548,6 +548,34 @@ object Primitives {
         write = { it.value.takeIf { v -> v in CREATURE_SUBTYPES } },
     )
 
+    /**
+     * The same word where it stands alone in a position whose object is **not a permanent** — the
+     * type phrase under "card", and the adjective in front of "spells" — with the five basic land
+     * types held out. See `Filters.nonPermanentSubtype`, which is its only caller.
+     *
+     * The asymmetry with [creatureSubtype] is which list it is measured against, and why. That leaf
+     * is *ranked in* — a bare noun standing where a permanent goes has to imply "creature", so only
+     * a word the SDK names as a creature type may be read. This one is **filtered out**, because the
+     * position implies no card type at all: "a Goblin card", "an Equipment card" and "a Gate card"
+     * are all `Any.withSubtype`, so the word is taken whatever it is — that ungatedness is the whole
+     * reason the rule exists.
+     *
+     * The five basic land types are the exception, and the only one, because they are the five words
+     * where the card type *is* recoverable: CR 205.3i makes Plains, Island, Swamp, Mountain and
+     * Forest land types, so a card with one is a land by definition. `Filters.BASIC_LAND_TYPES`
+     * therefore spells them as a type noun carrying `IsLand` in every position, and the corpus
+     * agrees — Molten Man and Call the Mountain Chocobo both write `Land.withSubtype` for "a
+     * Mountain card". Reading them here as well would give "a Forest card" two readings with two
+     * different models, which is exactly the hard ambiguity [CREATURE_SUBTYPES] was introduced to
+     * stop one position earlier, arriving in the position that leaf does not gate.
+     */
+    val nonBasicLandSubtype: Phrase<Subtype> = token(
+        name = "a subtype that is not a land type",
+        pattern = Regex("""[A-Za-z][A-Za-z-]*"""),
+        read = { readSubtype(it)?.takeIf { s -> s.value !in Subtype.ALL_BASIC_LAND_TYPES } },
+        write = { it.value.takeIf { v -> v !in Subtype.ALL_BASIC_LAND_TYPES } },
+    )
+
     /** …and its plural, which is [pluralSubtype] with the same list applied as a gate. */
     val pluralCreatureSubtype: Phrase<Subtype> = token(
         name = "a creature type",

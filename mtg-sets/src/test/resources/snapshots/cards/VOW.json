@@ -227,6 +227,173 @@
     ]
 }
 
+// Alluring Suitor
+{
+    "name": "Alluring Suitor",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Vampire",
+    "oracleText": "When you attack with exactly two creatures, transform this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "YouAttackEvent",
+                    "minAttackers": 2
+                },
+                "binding": "ANY",
+                "effect": "Transform",
+                "triggerRestriction": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "creature attacking"
+                    },
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "When you attack with exactly two creatures, transform this creature."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Deadly Dancer",
+        "manaCost": "",
+        "typeLine": "Creature — Vampire",
+        "oracleText": "Trample\nWhen this creature transforms into Deadly Dancer, add {R}{R}. Until end of turn, you don't lose this mana as steps and phases end.\n{R}{R}: This creature and another target creature each get +1/+0 until end of turn.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 3
+        },
+        "keywords": [
+            "TRAMPLE"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "TransformEvent",
+                        "intoBackFace": true
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "AddMana",
+                                "color": "RED",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            {
+                                "type": "RetainUnspentMana",
+                                "colors": [
+                                    "RED"
+                                ]
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "When this creature transforms into Deadly Dancer, add {R}{R}. Until end of turn, you don't lose this mana as steps and phases end."
+                }
+            ],
+            "activatedAbilities": [
+                {
+                    "id": "ability_3",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{R}{R}"
+                        }
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 0
+                                },
+                                "target": "Self"
+                            },
+                            {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 0
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "another target creature"
+                                }
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature",
+                                "excludeSelf": true
+                            },
+                            "id": "another target creature"
+                        }
+                    ],
+                    "descriptionOverride": "This creature and another target creature each get +1/+0 until end of turn."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "141",
+            "rarity": "UNCOMMON",
+            "artist": "Justine Cruz",
+            "imageUri": "https://cards.scryfall.io/normal/back/3/9/397ffd01-c090-4233-9f5a-5f765886d498.jpg?1783924853"
+        },
+        "colorIdentityOverride": [
+            "RED"
+        ],
+        "colorIndicator": [
+            "RED"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "141",
+        "rarity": "UNCOMMON",
+        "artist": "Justine Cruz",
+        "flavorText": "\"May I have this dance?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/9/397ffd01-c090-4233-9f5a-5f765886d498.jpg?1783924853",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "A creature put onto the battlefield attacking didn't \"attack\" and won't be counted to determine whether Alluring Suitor's ability should trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Ancestral Anger
 {
     "name": "Ancestral Anger",
@@ -7157,6 +7324,195 @@
         "artist": "Wayne Reynolds",
         "flavorText": "The door to her home survived the fires of the Malignus. Now it's her greatest weapon.",
         "imageUri": "https://cards.scryfall.io/normal/front/6/1/61c7d889-8cc0-4e80-b6d5-d41961820224.jpg?1782703190"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Faithbound Judge
+{
+    "name": "Faithbound Judge",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Creature — Spirit Soldier",
+    "oracleText": "Defender, flying, vigilance\nAt the beginning of your upkeep, if this creature has two or fewer judgment counters on it, put a judgment counter on it.\nAs long as this creature has three or more judgment counters on it, it can attack as though it didn't have defender.\nDisturb {5}{W}{W} (You may cast this card from your graveyard transformed for its disturb cost.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "DEFENDER",
+        "FLYING",
+        "VIGILANCE",
+        "DISTURB"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disturb",
+            "cost": "{5}{W}{W}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "judgment",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "interveningIf": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "judgment"
+                            }
+                        }
+                    },
+                    "operator": "LTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "At the beginning of your upkeep, if this creature has two or fewer judgment counters on it, put a judgment counter on it."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CanAttackDespiteDefender",
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "judgment"
+                            }
+                        }
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                }
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Sinner's Judgment",
+        "manaCost": "",
+        "typeLine": "Enchantment — Aura Curse",
+        "oracleText": "Enchant player\nAt the beginning of your upkeep, put a judgment counter on this Aura. Then if there are three or more judgment counters on it, enchanted player loses the game.\nIf Sinner's Judgment would be put into a graveyard from anywhere, exile it instead.",
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "UPKEEP"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "AddCounters",
+                                "counterType": "judgment",
+                                "count": 1,
+                                "target": "Self"
+                            },
+                            {
+                                "type": "Gated",
+                                "gate": {
+                                    "type": "Gate.WhenCondition",
+                                    "condition": {
+                                        "type": "Compare",
+                                        "left": {
+                                            "type": "EntityProperty",
+                                            "entity": "Source",
+                                            "numericProperty": {
+                                                "type": "CounterCount",
+                                                "counterType": {
+                                                    "type": "Named",
+                                                    "name": "judgment"
+                                                }
+                                            }
+                                        },
+                                        "operator": "GTE",
+                                        "right": {
+                                            "type": "Fixed",
+                                            "amount": 3
+                                        }
+                                    }
+                                },
+                                "then": {
+                                    "type": "LoseGame",
+                                    "target": {
+                                        "type": "PlayerRef",
+                                        "player": "EnchantedPlayer"
+                                    },
+                                    "message": "Sinner's Judgment"
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "At the beginning of your upkeep, put a judgment counter on this Aura. Then if there are three or more judgment counters on it, enchanted player loses the game."
+                }
+            ],
+            "replacementEffects": [
+                {
+                    "type": "RedirectZoneChange",
+                    "newDestination": "Exile",
+                    "appliesTo": {
+                        "type": "ZoneChangeEvent",
+                        "to": "Graveyard"
+                    },
+                    "selfOnly": true
+                }
+            ],
+            "auraTarget": "TargetPlayer"
+        },
+        "metadata": {
+            "collectorNumber": "12",
+            "rarity": "MYTHIC",
+            "artist": "Svetlin Velinov",
+            "imageUri": "https://cards.scryfall.io/normal/back/d/b/db791fb6-b0ff-4ded-bd3d-9447cf398312.jpg?1783951787"
+        },
+        "colorIdentityOverride": [
+            "WHITE"
+        ],
+        "colorIndicator": [
+            "WHITE"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "12",
+        "rarity": "MYTHIC",
+        "artist": "Svetlin Velinov",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/b/db791fb6-b0ff-4ded-bd3d-9447cf398312.jpg?1783951787",
+        "rulings": [
+            {
+                "date": "2021-11-19",
+                "text": "Removing judgment counters from Faithbound Judge after it has attacked won't remove it from combat."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "WHITE"
@@ -15527,6 +15883,211 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Runo Stromkirk
+{
+    "name": "Runo Stromkirk",
+    "manaCost": "{1}{U}{B}",
+    "typeLine": "Legendary Creature — Vampire Cleric",
+    "oracleText": "Flying\nWhen Runo enters, put up to one target creature card from your graveyard on top of your library.\nAt the beginning of your upkeep, look at the top card of your library. You may reveal that card. If a creature card with mana value 6 or greater is revealed this way, transform Runo.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature card from your graveyard"
+                    },
+                    "destination": "Library",
+                    "placement": "Top"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "creature card from your graveyard"
+                },
+                "descriptionOverride": "When Runo enters, put up to one target creature card from your graveyard on top of your library."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "runoLooked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "runoLooked",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "runoRevealed",
+                            "prompt": "You may reveal the top card of your library",
+                            "selectedLabel": "Reveal",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "RevealCollection",
+                            "from": "runoRevealed",
+                            "revealToSelf": false
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "CollectionContainsMatch",
+                                    "collection": "runoRevealed",
+                                    "filter": "creature mv>=6"
+                                }
+                            },
+                            "then": "Transform"
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of your upkeep, look at the top card of your library. You may reveal that card. If a creature card with mana value 6 or greater is revealed this way, transform Runo."
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Krothuss, Lord of the Deep",
+        "manaCost": "",
+        "typeLine": "Legendary Creature — Kraken Horror",
+        "oracleText": "Flying\nWhenever Krothuss attacks, create a tapped and attacking token that's a copy of another target attacking creature. If that creature is a Kraken, Leviathan, Octopus, or Serpent, create two of those tokens instead.",
+        "creatureStats": {
+            "power": 3,
+            "toughness": 5
+        },
+        "keywords": [
+            "FLYING"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_3",
+                    "trigger": "AttackEvent",
+                    "effect": {
+                        "type": "CreateTokenCopyOfTarget",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "another attacking creature"
+                        },
+                        "count": {
+                            "type": "Conditional",
+                            "condition": {
+                                "type": "EntityMatches",
+                                "entity": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "filter": "creature Kraken|Leviathan|Octopus|Serpent"
+                            },
+                            "ifTrue": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "ifFalse": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        "tapped": true,
+                        "attacking": true
+                    },
+                    "targetRequirement": {
+                        "type": "TargetOther",
+                        "baseRequirement": {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature attacking"
+                            }
+                        },
+                        "id": "another attacking creature"
+                    },
+                    "descriptionOverride": "Whenever Krothuss attacks, create a tapped and attacking token that's a copy of another target attacking creature. If that creature is a Kraken, Leviathan, Octopus, or Serpent, create two of those tokens instead."
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "246",
+            "rarity": "RARE",
+            "artist": "Matt Stewart",
+            "imageUri": "https://cards.scryfall.io/normal/back/f/6/f6c0fca5-b759-4543-95e2-8d712aae5281.jpg?1783924792",
+            "rulings": [
+                {
+                    "date": "2021-11-19",
+                    "text": "You choose which opponent or opposing planeswalker the token is attacking as you put it onto the battlefield. It doesn't have to be the same player or planeswalker Krothuss, Lord of the Deep is attacking."
+                },
+                {
+                    "date": "2021-11-19",
+                    "text": "Although the token is attacking, it was never declared as an attacking creature (for purposes of abilities that trigger whenever a creature attacks, for example, like training)."
+                },
+                {
+                    "date": "2021-11-19",
+                    "text": "The token copies exactly what was printed on the original creature and nothing else (unless that permanent is copying something else or is a token). It doesn't copy whether that creature has any counters on it or Auras and/or Equipment attached to it, or any non-copy effects that changed its power, toughness, types, color, and so on."
+                },
+                {
+                    "date": "2021-11-19",
+                    "text": "Any enters-the-battlefield abilities of the copied creature will trigger when the token enters the battlefield."
+                }
+            ]
+        },
+        "colorIdentityOverride": [
+            "BLUE",
+            "BLACK"
+        ],
+        "colorIndicator": [
+            "BLUE",
+            "BLACK"
+        ],
+        "hasNoManaCost": true
+    },
+    "metadata": {
+        "collectorNumber": "246",
+        "rarity": "RARE",
+        "artist": "Matt Stewart",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/6/f6c0fca5-b759-4543-95e2-8d712aae5281.jpg?1783924792"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
     ]
 }
 

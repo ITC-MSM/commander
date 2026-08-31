@@ -26,7 +26,7 @@ interface SelfPlaySink<T> : AutoCloseable {
      * @param ctx           the decision context at which this step was made
      * @param actingPlayer  the player who made the move (== `ctx.playerId`)
      * @param headUsed      the policy head active for this decision
-     * @param legalSlots    slot encodings of every legal action at this state
+     * @param legalSlots    slot encodings of the search edges exposed at this state
      * @param visits        MCTS visit counts, parallel to `legalSlots`
      * @param mctsValue     MCTS-estimated value in `[-1, +1]` from
      *                      `actingPlayer`'s perspective; the terminal outcome

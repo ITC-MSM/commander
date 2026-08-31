@@ -1580,6 +1580,8 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   three flip it into Shadows' Lair), `Counters.BORE` (Brass's Tunnel-Grinder — three flip it into Tecutlan),
   `Counters.REVIVAL` (Nine-Lives Familiar — a "lives left" counter: it enters with eight if you cast it and its
   dies trigger reads the last-known count to come back with one fewer),
+  `Counters.JUDGMENT` (Faithbound Judge // Sinner's Judgment — both faces count to three, the
+  creature face to shed defender and the Aura face to make the enchanted player lose the game),
   `Counters.NET`, `Counters.FIRE`, `Counters.CONQUEROR`, `Counters.POINT` (Contested Game Ball — its
   `{2}, {T}` ability adds one per activation and, when five or more are present, sacrifices the artifact and
   creates a Treasure), `Counters.WISH` (Wishclaw Talisman — see below), `Counters.INGENUITY` (Lady Octopus,
@@ -9798,6 +9800,15 @@ answer it and would silently return `false`.
   covers the whole oracle clause; compose `All(WasCast, NoManaSpentToCast)` for the narrower
   "cast, but for free" sense that excludes uncast permanents. Pairs naturally with the conditional
   `EntersWithCounters(..., condition = Conditions.NoManaSpentToCast)`. Resolution-only.
+- `ManaSpentToCastIncludes(requiredWhite, requiredBlue, requiredBlack, requiredRed, requiredGreen)` —
+  "if {U} was spent to cast this spell" / "if {R}{R} was spent to cast it": each pip named must have
+  been among the mana actually paid. A *payment* question, not a colour requirement — casting a
+  mono-black **Ribbons of Night** off a Dimir land turns its blue rider on. Reads through
+  `ManaSpentReader`, so it answers for a **spell still on the stack** (the Ravnica "if {X} was spent"
+  riders, where the spell's own resolution asks the question) as well as for a permanent that has
+  already resolved (the Lorwyn Incarnation cycle's ETB `interveningIf`). A copy of a spell was never
+  cast and so had no mana spent for it — it always reads false, which is the printed ruling.
+  Resolution-only.
 - `NoManaSpentToCastEntered` — the batch-enters variant of `NoManaSpentToCast`: "if none of them were
   cast or no mana was spent to cast them." Evaluated at resolution over the permanents a batch-enters
   trigger captured (the `Triggers.OneOrMorePermanentsEnter` batch, exposed as the `trigger.captured`

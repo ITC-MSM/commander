@@ -108,6 +108,26 @@ class SubtypesTest : StringSpec({
             .shouldBeInstanceOf<ParseOutcome.Accepted<CardFragment>>()
     }
 
+    // …and the same collision arrives one position over, where the gate above does not reach. Card
+    // position takes the *ungated* bare-subtype rule, because "an Equipment card" and "a Gate card"
+    // have to stay readable and the position implies no card type. The five basic land types are the
+    // exception: the type-noun row already spells them with `IsLand` on them, so an ungated reading
+    // gave "a Forest card" `Land.withSubtype` *and* `Any.withSubtype` — ten hard ambiguities, every
+    // tutor for a basic land type by name.
+    "a basic land type in card position is the land type noun, and only that" {
+        val line = "Search your library for a Forest card, put that card onto the battlefield, then shuffle."
+        Grammar.abilityLine.parseLine(line).shouldBeInstanceOf<ParseOutcome.Accepted<CardFragment>>()
+        roundTrips(line)
+        roundTrips("Search your library for a Plains card, reveal it, put it into your hand, then shuffle.")
+    }
+
+    // The gate is the five words and nothing else: a subtype the SDK publishes no type for keeps the
+    // ungated reading that is its only rule.
+    "a non-land subtype in card position still reads ungated" {
+        roundTrips("Search your library for a Zombie card, reveal it, put it into your hand, then shuffle.")
+        roundTrips("Search your library for an Equipment card, reveal it, put it into your hand, then shuffle.")
+    }
+
     "the negated subtype is its own layer, hyphenated the way Oracle writes it" {
         roundTrips("Destroy target non-Zombie creature.")
     }

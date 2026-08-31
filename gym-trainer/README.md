@@ -69,6 +69,24 @@ and the engine's `PendingDecision` (non-null when mid-decision). Every SPI
 call receives it so implementations can branch on decision kind (priority
 vs target selection vs yes/no vs …).
 
+Structured decisions have two separate search seams:
+
+```kotlin
+fun interface StructuredDecisionExpander {
+    fun expand(state: GameState, decision: PendingDecision): StructuredDecisionExpansion
+}
+
+fun interface StructuredDecisionResolver {
+    fun resolve(state: GameState, decision: PendingDecision): DecisionResponse
+}
+```
+
+An expander reports either an exact `Complete` response list or `Unsupported`.
+Unsupported decisions retain the configured resolver's single policy-selected
+fallback; no partial expansion, search cap, or sampling policy is implied. A
+supported family with nothing legal to say reports `Unsupported` too — an empty
+`Complete` is unsearchable, so the resolver owns that degenerate case.
+
 ## Design choices worth knowing about
 
 ### Multi-head policy is first-class
@@ -85,6 +103,11 @@ priority-opponent / target / binary). Forcing every project through a
 single flat head would have made them fork, which was the whole problem
 we were trying to solve. The cost for simple users is a one-element
 `listOf(PolicyHead("actions", 128))`.
+
+Concrete actions are tree-edge identity, while `(head, slot)` is neural-policy
+identity. Colliding structured responses remain independent MCTS edges but
+receive the same learned prior; use a discriminating `ActionFeaturizer` when
+response-specific learned priors or training targets are required.
 
 ### Engine-side MCTS, not Python-side
 
@@ -105,9 +128,18 @@ MCTS edges are ordinary `GameAction`s. At a priority state, edges are
 friends), edges are `SubmitDecision(response)` — exactly the set of
 folded responses `:gym`'s `ActionRegistry` produces. At a complex
 pending decision (targets, distribute, order, search, etc.) the
-`StructuredDecisionResolver` returns a single forced edge. The built-in
-resolver samples uniformly; a production project can supply a heuristic
-or learned one.
+`StructuredDecisionExpander` may return a complete response list. The built-in
+exact expander covers one target slot — required or optional — drawn from an
+explicit finite legal target list; each validator-approved response becomes its
+own edge, and declining an optional slot is the empty selection. Other structured
+decisions retain one `StructuredDecisionResolver` fallback edge, which is
+policy-selected rather than exhaustive.
+
+Cancellation is not among the expanded responses. A `CancelDecisionResponse`
+rewinds a cast-time decision to the priority state that offered the cast, so a
+cancel edge is a transposition back onto the node's own ancestor — the "don't
+cast" branch already exists where the cast was chosen, and duplicating it there
+would let search spend its budget on cast/cancel cycles.
 
 ### Outcome-labelled self-play rows
 
@@ -134,7 +166,8 @@ bloat everyone's classpath.
 | `StructuralStateFeaturizer` | Simple `Map<String, Float>` from life, zone sizes, projected P/T totals, mana. Replace for real training. |
 | `DynamicSlotActionFeaturizer` | Single-head, hash-keyed slot assignment. Replace for serious training to avoid collisions. |
 | `JsonlSelfPlaySink` | One JSON line per step, outcome label included. Easy Python ingest. |
-| `RandomStructuredResolver` | Uniform-random response for structured decisions (targets, etc.). |
+| `ExactStructuredDecisionExpander` | Complete single-target-slot response source, required or optional. |
+| `RandomStructuredResolver` | Random minimum-cardinality fallback for supported target/card/mode decisions; redraws until the engine's validator accepts. |
 
 Defaults exist so a training loop runs in 30 lines. Every one is intended
 to be replaced when a project gets serious.
@@ -215,4 +248,7 @@ just test-gym-trainer              # this module only
 The test set covers:
 - PUCT visit accounting (`AlphaZeroSearchTest`)
 - Root noise doesn't break the search
+- Exact structured expansion, validator agreement, and unsupported fallback
+- Independent target-response branches through ordinary Gym execution
+- Resolver draws that violate a state-dependent restriction are redrawn
 - End-to-end self-play producing outcome-labelled JSONL (`SelfPlayLoopTest`)

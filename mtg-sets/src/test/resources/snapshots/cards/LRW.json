@@ -166,6 +166,141 @@
     ]
 }
 
+// Austere Command
+{
+    "name": "Austere Command",
+    "manaCost": "{4}{W}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose two —\n• Destroy all artifacts.\n• Destroy all enchantments.\n• Destroy all creatures with mana value 3 or less.\n• Destroy all creatures with mana value 4 or greater.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "BattlefieldMatching",
+                                    "filter": "artifact"
+                                },
+                                "storeAs": "destroyAll_gathered"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "destroyAll_gathered",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Destroy"
+                            }
+                        ]
+                    },
+                    "description": "Destroy all artifacts"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "BattlefieldMatching",
+                                    "filter": "enchantment"
+                                },
+                                "storeAs": "destroyAll_gathered"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "destroyAll_gathered",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Destroy"
+                            }
+                        ]
+                    },
+                    "description": "Destroy all enchantments"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "BattlefieldMatching",
+                                    "filter": "creature mv<=3"
+                                },
+                                "storeAs": "destroyAll_gathered"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "destroyAll_gathered",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Destroy"
+                            }
+                        ]
+                    },
+                    "description": "Destroy all creatures with mana value 3 or less"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "BattlefieldMatching",
+                                    "filter": "creature mv>=4"
+                                },
+                                "storeAs": "destroyAll_gathered"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "destroyAll_gathered",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Destroy"
+                            }
+                        ]
+                    },
+                    "description": "Destroy all creatures with mana value 4 or greater"
+                }
+            ],
+            "chooseCount": 2
+        }
+    },
+    "metadata": {
+        "collectorNumber": "3",
+        "rarity": "RARE",
+        "artist": "Wayne England",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/e/8ee73fe8-d52b-43bb-ab91-5545192be676.jpg?1783942918",
+        "rulings": [
+            {
+                "date": "2020-11-10",
+                "text": "Each of the chosen modes happens sequentially. If a permanent has an ability that triggers whenever it or another permanent is destroyed, it will see permanents destroyed at the same time as it or before it, but not permanents destroyed by later modes."
+            },
+            {
+                "date": "2020-11-10",
+                "text": "If the first and last modes are chosen, an artifact creature with mana value 4 or greater will have to be regenerated twice to survive. This is because the modes happen sequentially, and the regeneration \"shield\" is used up by the first one. The same is true with any other combination of modes that covers one permanent twice."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Avian Changeling
 {
     "name": "Avian Changeling",
@@ -3891,6 +4026,104 @@
     ]
 }
 
+// Hunter of Eyeblights
+{
+    "name": "Hunter of Eyeblights",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Creature — Elf Assassin",
+    "oracleText": "When this creature enters, put a +1/+1 counter on target creature you don't control.\n{2}{B}, {T}: Destroy target creature with a counter on it.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you don't control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "creature you don't control"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{B}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature with a counter on it"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    "HasAnyCounter"
+                                ]
+                            }
+                        },
+                        "id": "creature with a counter on it"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "119",
+        "rarity": "UNCOMMON",
+        "artist": "Jesper Ejsing",
+        "flavorText": "Snokk ran as fast as he could, but the sound of hooves grew ever louder in his ears.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/b/bbd5b8db-4a56-45bd-9704-a1316016ec5b.jpg?1783942889",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "The activated ability can target a creature with any kind of counter on it, not just a +1/+1 counter."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Hurly-Burly
 {
     "name": "Hurly-Burly",
@@ -4912,6 +5145,88 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Lys Alana Scarblade
+{
+    "name": "Lys Alana Scarblade",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Elf Assassin",
+    "oracleText": "{T}, Discard an Elf card: Target creature gets -X/-X until end of turn, where X is the number of Elves you control.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomDiscard",
+                                "filter": "Elf"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Multiply",
+                        "amount": {
+                            "type": "AggregateBattlefield",
+                            "player": "You",
+                            "filter": "permanent Elf"
+                        },
+                        "multiplier": -1
+                    },
+                    "toughnessModifier": {
+                        "type": "Multiply",
+                        "amount": {
+                            "type": "AggregateBattlefield",
+                            "player": "You",
+                            "filter": "permanent Elf"
+                        },
+                        "multiplier": -1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "122",
+        "rarity": "UNCOMMON",
+        "artist": "Christopher Moeller",
+        "flavorText": "In beauty-obsessed Lys Alana, one cut of her blade means the difference between a high society feast and raking through the dungheap for scraps.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/6/7614e3e7-708f-4717-b798-97f0c391a673.jpg?1783942889",
+        "rulings": [
+            {
+                "date": "2016-06-08",
+                "text": "The number of Elves you control is counted only as Lys Alana Scarblade's ability resolves. If Lys Alana Scarblade is still on the battlefield, it'll count itself."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -5941,6 +6256,85 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Oblivion Ring
+{
+    "name": "Oblivion Ring",
+    "manaCost": "{2}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, exile another target nonland permanent.\nWhen this enchantment leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ExileUntilLeaves",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "another target nonland permanent"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "nonland permanent",
+                        "excludeSelf": true
+                    },
+                    "id": "another target nonland permanent"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "34",
+        "artist": "Wayne England",
+        "flavorText": "A circle of sugar and a word of forbiddance.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/c/1c7fffe8-709c-4cb4-bbad-e4a0c35b616a.jpg?1783942910",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "If Oblivion Ring leaves the battlefield before its first ability has resolved, its second ability will trigger and do nothing. Then its first ability will resolve and exile the targeted nonland permanent forever."
+            },
+            {
+                "date": "2012-07-01",
+                "text": "Auras attached to the exiled permanent will be put into their owners' graveyards. Equipment attached to the exiled permanent will become unattached and remain on the battlefield. Any counters on the exiled permanent will cease to exist."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -7264,6 +7658,69 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Summon the School
+{
+    "name": "Summon the School",
+    "manaCost": "{3}{W}",
+    "typeLine": "Kindred Sorcery — Merfolk",
+    "oracleText": "Create two 1/1 blue Merfolk Wizard creature tokens.\nTap four untapped Merfolk you control: Return this card from your graveyard to your hand.",
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "power": 1,
+            "toughness": 1,
+            "colors": [
+                "BLUE"
+            ],
+            "creatureTypes": [
+                "Merfolk",
+                "Wizard"
+            ],
+            "imageUri": "https://cards.scryfall.io/normal/front/5/2/526da544-23dd-42b8-8c00-c3609eea4489.jpg?1783942838"
+        },
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "count": 4,
+                        "filter": "permanent Merfolk"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand",
+                    "fromZone": "Graveyard"
+                },
+                "activateFromZone": "Graveyard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "42",
+        "rarity": "UNCOMMON",
+        "artist": "Dave Dorman",
+        "flavorText": "\"When merrows talk, listeners grow fins.\"\n—Kithkin saying",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/13a4c124-216b-44b1-b49a-3db3f033e4cd.jpg?1783942909",
+        "rulings": [
+            {
+                "date": "2024-06-07",
+                "text": "This cards was originally printed with the \"tribal\" card type. That card type has been replaced with \"kindred\". This change does not affect the gameplay function of this card."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
