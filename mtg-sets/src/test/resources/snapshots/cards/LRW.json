@@ -1565,6 +1565,70 @@
     ]
 }
 
+// Crush Underfoot
+{
+    "name": "Crush Underfoot",
+    "manaCost": "{1}{R}",
+    "typeLine": "Kindred Instant — Giant",
+    "oracleText": "Choose a Giant creature you control. It deals damage equal to its power to target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "SelectTarget",
+                    "requirement": {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature Giant ctrl:you"
+                        },
+                        "id": "a Giant creature you control"
+                    },
+                    "storeAs": "crushGiant"
+                },
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": {
+                            "type": "FromCostStorage",
+                            "collectionName": "crushGiant"
+                        },
+                        "numericProperty": "Power"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "damageSource": {
+                        "type": "PipelineTarget",
+                        "collectionName": "crushGiant"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "162",
+        "rarity": "UNCOMMON",
+        "artist": "Steven Belledin",
+        "flavorText": "Five-toed grave\n—Kithkin phrase meaning \"a giant's footprint\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e0386925-53bc-4902-ac30-cbdcb099936d.jpg?1783942877"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Dauntless Dourbark
 {
     "name": "Dauntless Dourbark",
@@ -3247,6 +3311,63 @@
     ]
 }
 
+// Footbottom Feast
+{
+    "name": "Footbottom Feast",
+    "manaCost": "{2}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Put any number of target creature cards from your graveyard on top of your library.\nDraw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": "ChosenTargets",
+                    "storeAs": "feast_cards"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "feast_cards",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Library",
+                        "placement": "Top"
+                    },
+                    "order": "ControllerChooses"
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "unlimited": true,
+                "filter": {
+                    "baseFilter": "creature own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "any number of target creature cards from your graveyard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "115",
+        "artist": "Jim Nelson",
+        "flavorText": "The scent of rot and vinegar fills the marsh, inviting boggarts from every warren to reunite and feast.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/c/fc04f820-9505-4ccd-98e7-1bb861161af5.jpg?1783942890"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Forced Fruition
 {
     "name": "Forced Fruition",
@@ -3745,6 +3866,76 @@
     ]
 }
 
+// Goatnapper
+{
+    "name": "Goatnapper",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Goblin Rogue",
+    "oracleText": "When this creature enters, untap target Goat and gain control of it until end of turn. It gains haste until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target Goat"
+                            },
+                            "tap": false
+                        },
+                        {
+                            "type": "GainControl",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target Goat"
+                            },
+                            "duration": "EndOfTurn"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "HASTE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target Goat"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature Goat"
+                    },
+                    "id": "target Goat"
+                },
+                "descriptionOverride": "untap target Goat and gain control of it until end of turn. It gains haste until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "172",
+        "rarity": "UNCOMMON",
+        "artist": "Ron Spencer",
+        "flavorText": "Kith goats are just for practice. The real prize, of course, is a giant's cloudgoat.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/8/78f32852-2a18-453d-910a-829c3a2b5b1b.jpg?1783942876"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Goldmeadow Dodger
 {
     "name": "Goldmeadow Dodger",
@@ -4181,6 +4372,46 @@
         "artist": "Zoltan Boros & Gabor Szikszai",
         "flavorText": "The flamekin are mere kindling for his warmth.",
         "imageUri": "https://cards.scryfall.io/normal/front/f/b/fb0d4d3f-d3ad-4c70-b9af-9bfcdd9efd1f.jpg?1783942874"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Heat Shimmer
+{
+    "name": "Heat Shimmer",
+    "manaCost": "{2}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create a token that's a copy of target creature, except it has haste and \"At the beginning of the end step, exile this token.\"",
+    "script": {
+        "spellEffect": {
+            "type": "CreateTokenCopyOfTarget",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            },
+            "addedKeywords": [
+                "HASTE"
+            ],
+            "exileAtStep": "END"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "175",
+        "rarity": "RARE",
+        "artist": "Franz Vohwinkel",
+        "flavorText": "\"Better to flare out than to gutter.\"\n—Flamekin expression",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a432470c-7f68-4429-970a-3da8eabcf0b8.jpg?1783942875"
     },
     "colorIdentityOverride": [
         "RED"
@@ -8018,6 +8249,61 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Sower of Temptation
+{
+    "name": "Sower of Temptation",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flying\nWhen this creature enters, gain control of target creature for as long as this creature remains on the battlefield.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainControl",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "duration": {
+                        "type": "WhileSourceOnBattlefield",
+                        "sourceDescription": "Sower of Temptation"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                },
+                "descriptionOverride": "gain control of target creature for as long as this creature remains on the battlefield."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "88",
+        "rarity": "RARE",
+        "artist": "Christopher Moeller",
+        "flavorText": "One glamer leads him far from home. The next washes away his memory that home was ever anywhere but at her side.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/f/2f5320da-7214-4348-84d8-74bf951c9f2f.jpg?1783942897"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
