@@ -198,7 +198,14 @@ class GatherCardsExecutor : EffectExecutor<GatherCardsEffect> {
                 // Intersect the host's live attachments with the projected filter matches so
                 // type/control-changing effects are respected (e.g. "Equipment attached to that
                 // creature"). Empty when the host left play or has no matching attachments.
-                val hostId = context.resolveTarget(source.host)
+                //
+                // State-aware resolution: the host is often a *relational* reference — "enchanted
+                // creature" (Mark of Eviction's "all Auras attached to that creature") is read off
+                // the source's own attachment link, which only the `state` overload knows how to
+                // follow. The stateless overload returns null for those and the gather silently
+                // yields nothing; it is a strict subset of this one, so every other host shape
+                // resolves exactly as before.
+                val hostId = context.resolveTarget(source.host, state)
                 val attachedIds = hostId
                     ?.let { state.getEntity(it)?.get<AttachmentsComponent>()?.attachedIds }
                     ?: emptyList()
