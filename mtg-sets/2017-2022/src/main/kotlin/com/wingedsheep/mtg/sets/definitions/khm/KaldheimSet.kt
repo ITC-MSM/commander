@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.khm
 
-import com.wingedsheep.mtg.sets.definitions.por.PortalSet
 import com.wingedsheep.mtg.sets.discovery.CardDiscovery
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.MtgSet
@@ -22,11 +21,14 @@ object KaldheimSet : MtgSet {
     override val displayName = "Kaldheim"
     override val releaseDate = "2021-02-05"
     override val block = "Kaldheim"
-    override val basicLandsFallback = PortalSet
     override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)
+    }
+
+    override val basicLands: List<CardDefinition> by lazy {
+        CardDiscovery.findBasicLandsIn(CARDS_PACKAGE, code)
     }
 
     override val printings: List<Printing> by lazy {
