@@ -6612,6 +6612,71 @@
     ]
 }
 
+// Pariah's Shield
+{
+    "name": "Pariah's Shield",
+    "manaCost": "{5}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "All damage that would be dealt to you is dealt to equipped creature instead.\nEquip {3}",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "RedirectDamage",
+                "redirectTo": "EquippedCreature",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "You"
+                }
+            }
+        ]
+    },
+    "equipCost": "{3}",
+    "metadata": {
+        "collectorNumber": "267",
+        "rarity": "RARE",
+        "artist": "Doug Chaffee",
+        "flavorText": "To bear the shield of the pariah is the highest honor a Boros can receive—and the last.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cc316f1e-84ce-4013-a150-d537f964a604.jpg?1783943596",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "If Pariah's Shield isn't attached to a creature, all damage that would be dealt to you is dealt to you normally."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Peel from Reality
 {
     "name": "Peel from Reality",
