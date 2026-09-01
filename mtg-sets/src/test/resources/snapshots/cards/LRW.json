@@ -587,6 +587,85 @@
     ]
 }
 
+// Benthicore
+{
+    "name": "Benthicore",
+    "manaCost": "{6}{U}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "When this creature enters, create two 1/1 blue Merfolk Wizard creature tokens.\nTap two untapped Merfolk you control: Untap this creature. It gains shroud until end of turn.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLUE"
+                    ],
+                    "creatureTypes": [
+                        "Merfolk",
+                        "Wizard"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/5/2/526da544-23dd-42b8-8c00-c3609eea4489.jpg?1783942838"
+                },
+                "descriptionOverride": "create two 1/1 blue Merfolk Wizard creature tokens."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "count": 2,
+                        "filter": "permanent Merfolk"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": "Self",
+                            "tap": false
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "SHROUD",
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Untap this creature. It gains shroud until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "53",
+        "rarity": "UNCOMMON",
+        "artist": "Jim Nelson",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/2/f240d225-9fbf-438a-93c3-5fef325035e8.jpg?1783942905"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Black Poplar Shaman
 {
     "name": "Black Poplar Shaman",
@@ -1314,6 +1393,71 @@
         "artist": "Steven Belledin",
         "flavorText": "\"As far as I can tell, that frog dangling from the stick serves absolutely no purpose whatsoever.\"\n—Gaddock Teeg",
         "imageUri": "https://cards.scryfall.io/normal/front/e/e/ee8337bf-9fe8-45a0-974c-8911306b19ea.jpg?1783942880"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Ceaseless Searblades
+{
+    "name": "Ceaseless Searblades",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Elemental Warrior",
+    "oracleText": "Whenever you activate an ability of an Elemental, this creature gets +1/+0 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AbilityActivatedEvent",
+                    "sourceFilter": {
+                        "cardPredicates": [
+                            "IsPermanent",
+                            {
+                                "type": "HasSubtype",
+                                "subtype": "Elemental"
+                            }
+                        ],
+                        "statePredicates": [
+                            "IsOnBattlefield"
+                        ]
+                    },
+                    "includeManaAbilities": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you activate an ability of an Elemental, this creature gets +1/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "158",
+        "rarity": "UNCOMMON",
+        "artist": "Jim Murray",
+        "flavorText": "Flamekins' fires burn cool until they decide otherwise.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/7/a7e103a3-555c-4b68-9768-42637bfd2478.jpg?1783942878",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "This triggers whenever you activate an activated ability of an Elemental permanent, but not when you activate an activated ability of an Elemental source that's not on the battlefield."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "RED"
@@ -4839,6 +4983,97 @@
     ]
 }
 
+// Hoofprints of the Stag
+{
+    "name": "Hoofprints of the Stag",
+    "manaCost": "{1}{W}",
+    "typeLine": "Kindred Enchantment — Elemental",
+    "oracleText": "Whenever you draw a card, you may put a hoofprint counter on this enchantment.\n{2}{W}, Remove four hoofprint counters from this enchantment: Create a 4/4 white Elemental creature token with flying. Activate only during your turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DrawEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "AddCounters",
+                        "counterType": "hoofprint",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Whenever you draw a card, you may put a hoofprint counter on this enchantment."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{W}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomRemoveCounters",
+                                "counterType": "hoofprint",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                },
+                                "self": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 4,
+                    "toughness": 4,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Elemental"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/1/c/1c791044-be86-47d8-8c1b-299f6ab254e6.jpg?1783942839"
+                },
+                "restrictions": [
+                    "OnlyDuringYourTurn"
+                ],
+                "descriptionOverride": "Create a 4/4 white Elemental creature token with flying."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "21",
+        "rarity": "RARE",
+        "artist": "Anthony S. Waters",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d11187c6-f213-45db-9de3-314df1f43589.jpg?1783942914",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "If a spell or ability has you draw multiple cards, Hoofprints of the Stag's ability triggers that many times."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Hornet Harasser
 {
     "name": "Hornet Harasser",
@@ -5365,6 +5600,122 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Incandescent Soulstoke
+{
+    "name": "Incandescent Soulstoke",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Elemental Shaman",
+    "oracleText": "Other Elemental creatures you control get +1/+1.\n{1}{R}, {T}: You may put an Elemental creature card from your hand onto the battlefield. That creature gains haste until end of turn. Sacrifice it at the beginning of the next end step.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{R}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "filter": "creature Elemental"
+                            },
+                            "storeAs": "put_candidates"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "put_candidates",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "putting",
+                            "prompt": "Put an Elemental creature card onto the battlefield"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "putting",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            }
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "putting",
+                            "ifNotEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GrantKeyword",
+                                        "keyword": "HASTE",
+                                        "target": {
+                                            "type": "PipelineTarget",
+                                            "collectionName": "putting"
+                                        }
+                                    },
+                                    {
+                                        "type": "CreateDelayedTrigger",
+                                        "step": "END",
+                                        "effect": {
+                                            "type": "SacrificeTarget",
+                                            "target": {
+                                                "type": "PipelineTarget",
+                                                "collectionName": "putting"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Put an Elemental creature card from your hand onto the battlefield. It gains haste until end of turn. Sacrifice it at the beginning of the next end step."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature Elemental ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "178",
+        "rarity": "RARE",
+        "artist": "Todd Lockwood",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/8/c8829b3c-5267-44c6-b709-c2dfc683b0a8.jpg?1783942873"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -6488,6 +6839,84 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Lowland Oaf
+{
+    "name": "Lowland Oaf",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Giant Warrior",
+    "oracleText": "{T}: Target Goblin creature you control gets +1/+0 and gains flying until end of turn. Sacrifice that creature at the beginning of the next end step.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target Goblin creature you control"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FLYING",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target Goblin creature you control"
+                            }
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "step": "END",
+                            "effect": {
+                                "type": "SacrificeTarget",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target Goblin creature you control"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature Goblin ctrl:you"
+                        },
+                        "id": "target Goblin creature you control"
+                    }
+                ],
+                "descriptionOverride": "Target Goblin creature you control gets +1/+0 and gains flying until end of turn. Sacrifice that creature at the beginning of the next end step."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "184",
+        "artist": "Jeff Easley",
+        "flavorText": "\"I don't know why the little one was so mad. He said to put him down, and I put him down.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/d/cdaa7f6a-9639-4bee-aa12-20054d7975d5.jpg?1783942871"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
