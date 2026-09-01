@@ -61,7 +61,9 @@ class PlayLandEnumerator : ActionEnumerator {
             }
         }
 
-        // Lands exiled with a permanent granting "you may play cards exiled with this" (Valgavoth).
+        // Lands exiled with a permanent granting "you may play cards exiled with this" (Valgavoth,
+        // Hauken's Insight). Each candidate goes back through `landGranterFor` so the offer and the
+        // handler's authorization answer the same question — filter included.
         val seenLinkedLands = mutableSetOf<com.wingedsheep.sdk.model.EntityId>()
         for (granter in com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExilePlayUtils
             .landGranters(state, playerId, context.cardRegistry)) {
@@ -69,9 +71,9 @@ class PlayLandEnumerator : ActionEnumerator {
                 if (!seenLinkedLands.add(exiledId)) continue
                 val cardComponent = state.getEntity(exiledId)?.get<CardComponent>() ?: continue
                 if (!cardComponent.typeLine.isLand) continue
-                if (granter.ability.ownedByYou && cardComponent.ownerId != playerId) continue
-                val inExile = state.turnOrder.any { pid -> exiledId in state.getZone(ZoneKey(pid, Zone.EXILE)) }
-                if (!inExile) continue
+                if (!com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExilePlayUtils
+                        .canPlayLand(state, playerId, exiledId, context.cardRegistry)
+                ) continue
                 result.addAll(landPlays(context, exiledId, cardComponent, sourceZone = "EXILE"))
             }
         }
