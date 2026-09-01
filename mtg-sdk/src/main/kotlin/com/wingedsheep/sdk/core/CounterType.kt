@@ -91,6 +91,7 @@ enum class CounterType {
     PAGE,
     REV,
     BLOODSTAIN,
+    BLOOD,
     SOUL,
     DIVINITY,
     DOOM,
@@ -405,6 +406,14 @@ object Counters {
      * inherent rule.
      */
     const val BLOODSTAIN = "bloodstain"
+
+    /**
+     * Blood counter (RAV — Bloodletter Quill). Passive storage counter with no inherent rule; the
+     * artifact's draw ability puts one on as part of its activation cost and the same ability reads
+     * the running count to size the life lost, while a second ability spends {U}{B} to take one
+     * back off. No inherent rule.
+     */
+    const val BLOOD = "blood"
 
     /**
      * Soul counter (FDN — Ravenous Amulet). Passive storage counter with no inherent rule; the
