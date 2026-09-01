@@ -1,3 +1,53 @@
+// Akki Avalanchers
+{
+    "name": "Akki Avalanchers",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Goblin Warrior",
+    "oracleText": "Sacrifice a land: This creature gets +2/+0 until end of turn. Activate only once each turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "land"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "restrictions": [
+                    "OncePerTurn"
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "151",
+        "artist": "Matt Thompson",
+        "flavorText": "Among Godo's hordes, \"beware of falling rocks\" came to mean \"akki live nearby.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/f/bfef6acb-a11c-4a3f-9cfb-9394dece2675.jpg?1783944307"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Akki Coalflinger
 {
     "name": "Akki Coalflinger",
@@ -483,6 +533,50 @@
     ]
 }
 
+// Consuming Vortex
+{
+    "name": "Consuming Vortex",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant — Arcane",
+    "oracleText": "Return target creature to its owner's hand.\nSplice onto Arcane {3}{U} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)",
+    "keywords": [
+        "SPLICE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Splice",
+            "cost": "{3}{U}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            },
+            "destination": "Hand"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "54",
+        "artist": "Pete Venters",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/9/493ee99c-74ca-4d78-ade2-c6a93b0bd4fd.jpg?1783944329"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Counsel of the Soratami
 {
     "name": "Counsel of the Soratami",
@@ -555,6 +649,167 @@
     ]
 }
 
+// Cursed Ronin
+{
+    "name": "Cursed Ronin",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Human Samurai",
+    "oracleText": "Bushido 1 (Whenever this creature blocks or becomes blocked, it gets +1/+1 until end of turn.)\n{B}: This creature gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "BUSHIDO"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "BUSHIDO",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "BlockEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 1"
+            },
+            {
+                "id": "ability_2",
+                "trigger": "BecomesBlockedEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 1"
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{B}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{B}: This creature gets +1/+1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "107",
+        "artist": "Carl Critchlow",
+        "flavorText": "\"You are fortunate, my enemy. You have paid the price but once. I never stop paying.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/8/b8f24fe9-22c4-4e53-9d7a-3cbf5533ac9b.jpg?1783944316"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Dampen Thought
+{
+    "name": "Dampen Thought",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant — Arcane",
+    "oracleText": "Target player mills four cards.\nSplice onto Arcane {1}{U} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)",
+    "keywords": [
+        "SPLICE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Splice",
+            "cost": "{1}{U}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 4
+                        },
+                        "player": {
+                            "type": "ContextPlayer",
+                            "index": 0
+                        },
+                        "isMill": true
+                    },
+                    "storeAs": "milled"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "milled",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard",
+                        "player": {
+                            "type": "ContextPlayer",
+                            "index": 0
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "57",
+        "rarity": "UNCOMMON",
+        "artist": "Arnie Swekel",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a4806218-ff27-4df3-922d-5a085ffa44a6.jpg?1783944329"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Dance of Shadows
 {
     "name": "Dance of Shadows",
@@ -603,6 +858,242 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Desperate Ritual
+{
+    "name": "Desperate Ritual",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant — Arcane",
+    "oracleText": "Add {R}{R}{R}.\nSplice onto Arcane {1}{R} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)",
+    "keywords": [
+        "SPLICE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Splice",
+            "cost": "{1}{R}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "AddMana",
+            "color": "RED",
+            "amount": {
+                "type": "Fixed",
+                "amount": 3
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "163",
+        "artist": "Darrell Riche",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/8/c8bdb92a-7bdb-434b-8cc0-873969faf566.jpg?1783944301"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Devoted Retainer
+{
+    "name": "Devoted Retainer",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human Samurai",
+    "oracleText": "Bushido 1 (Whenever this creature blocks or becomes blocked, it gets +1/+1 until end of turn.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "BUSHIDO"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "BUSHIDO",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "BlockEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 1"
+            },
+            {
+                "id": "ability_2",
+                "trigger": "BecomesBlockedEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 1"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "7",
+        "artist": "Greg Hildebrandt",
+        "flavorText": "Deep within Eiganjo Castle lay the Palace of Infinite Halls, a seemingly endless network of corridors once guarded by a seemingly endless legion of samurai.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/c/fc41d6d6-d7e5-4874-b6e2-fa4c72454f15.jpg?1783944342"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Earthshaker
+{
+    "name": "Earthshaker",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Whenever you cast a Spirit or Arcane spell, this creature deals 2 damage to each creature without flying.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Spirit"
+                                    },
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Arcane"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    {
+                                        "type": "NotKeyword",
+                                        "keyword": "FLYING"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": "Self"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "165",
+        "rarity": "UNCOMMON",
+        "artist": "Ron Spencer",
+        "flavorText": "It scaled the Sokenzan Mountains in search of Kumano's secret. The mountain shook for two days, and the kami never returned.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/8/283b47a9-c21e-4c0a-9c70-38b8ebbffab3.jpg?1783944301"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Eerie Procession
+{
+    "name": "Eerie Procession",
+    "manaCost": "{2}{U}",
+    "typeLine": "Sorcery — Arcane",
+    "oracleText": "Search your library for an Arcane card, reveal that card, put it into your hand, then shuffle.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Library",
+                        "filter": "Arcane"
+                    },
+                    "storeAs": "searchable"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "searchable",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "found"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "found",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    },
+                    "revealed": true
+                },
+                "ShuffleLibrary",
+                "EmitLibrarySearchedEvent"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "58",
+        "rarity": "UNCOMMON",
+        "artist": "Jim Murray",
+        "flavorText": "\"Though in years past speculation was not encouraged about the strange ways of kami, now we must understand their motivations, if such is even possible to the mortal mind.\"\n—Lady Azami",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/a/3af326c1-fcc8-45c3-b75e-ae4dbbd59ced.jpg?1783944329"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -679,6 +1170,35 @@
     ]
 }
 
+// Ethereal Haze
+{
+    "name": "Ethereal Haze",
+    "manaCost": "{W}",
+    "typeLine": "Instant — Arcane",
+    "oracleText": "Prevent all damage that would be dealt by creatures this turn.",
+    "script": {
+        "spellEffect": {
+            "type": "PreventDamageShield",
+            "direction": "FromTarget",
+            "sourceFilter": {
+                "type": "FromGroup",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "9",
+        "artist": "Chris Appelhans",
+        "flavorText": "\"Imagine a dove flying through smoke. Does the dove injure the smoke? Does the smoke impede the dove?\"\n—Teachings of Eight-and-a-Half-Tails",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7f1996af-5f15-447f-9b1d-98a7e97df53a.jpg?1783944341"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Eye of Nowhere
 {
     "name": "Eye of Nowhere",
@@ -709,6 +1229,66 @@
         "artist": "Alan Pollack",
         "flavorText": "\"Once we prayed to the kaijin for safe voyage. Now we only pray that we can escape their gaze.\"\n—Hayato, master sailor",
         "imageUri": "https://cards.scryfall.io/normal/front/b/3/b307af89-1890-4fac-a12e-f8a678f1101f.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Field of Reality
+{
+    "name": "Field of Reality",
+    "manaCost": "{2}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature can't be blocked by Spirits.\n{1}{U}: Return this Aura to its owner's hand.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CantBeBlockedBy",
+                "blockerFilter": {
+                    "cardPredicates": [
+                        "IsPermanent",
+                        {
+                            "type": "HasSubtype",
+                            "subtype": "Spirit"
+                        }
+                    ]
+                },
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "AttachedTo"
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "60",
+        "artist": "Christopher Rush",
+        "flavorText": "\"The scholars of the Minamo School understood the veil between their world and that of the kami. Moreover, they knew how to exploit it.\"\n—*Observations of the Kami War*",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/f/2ff7c6fc-324b-4cff-9109-6d817767865f.jpg?1783944328"
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -752,6 +1332,386 @@
     ]
 }
 
+// Ghostly Prison
+{
+    "name": "Ghostly Prison",
+    "manaCost": "{2}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking you.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "AttackTax",
+                "amountPerAttacker": {
+                    "type": "Fixed",
+                    "amount": 2
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "10",
+        "rarity": "UNCOMMON",
+        "artist": "Lars Grant-West",
+        "flavorText": "Destroyed in one of the first battles of the Kami War, the town of Reito still grieved.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/2/82d7de2b-c909-48dc-9ab7-c4a8328e37bb.jpg?1783944341"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Glacial Ray
+{
+    "name": "Glacial Ray",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant — Arcane",
+    "oracleText": "Glacial Ray deals 2 damage to any target.\nSplice onto Arcane {1}{R} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)",
+    "keywords": [
+        "SPLICE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Splice",
+            "cost": "{1}{R}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "AnyTarget",
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "168",
+        "artist": "Jim Murray",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/5637a3b0-6204-4893-878e-c34babeab2e6.jpg?1783944301"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Guardian of Solitude
+{
+    "name": "Guardian of Solitude",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Whenever you cast a Spirit or Arcane spell, target creature gains flying until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Spirit"
+                                    },
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Arcane"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "64",
+        "rarity": "UNCOMMON",
+        "artist": "Stephen Tappin",
+        "flavorText": "\"It seemed an easy thing, to step into the nothingness, to fall, to die. But then, for an instant, I saw it, eyes filled with endless sorrow, and I turned back to face my pain.\"\n—Snow-Fur, kitsune poet",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/5/85d16011-956b-40ac-afb6-6c7ad774802f.jpg?1783944327"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Hair-Strung Koto
+{
+    "name": "Hair-Strung Koto",
+    "manaCost": "{6}",
+    "typeLine": "Artifact",
+    "oracleText": "Tap an untapped creature you control: Target player mills a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "filter": "creature"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "252",
+        "rarity": "RARE",
+        "artist": "Rebecca Guay",
+        "flavorText": "\"The Kami War drove many members of Konda's court insane. As their spiritual world turned against them, so too did their minds turn from reality.\"\n—*The History of Kamigawa*",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/5/c5354475-6a0b-4b1f-b94c-7c103d99e88b.jpg?1783944281"
+    },
+    "colorIdentityOverride": []
+}
+
+// Hana Kami
+{
+    "name": "Hana Kami",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "{1}{G}, Sacrifice this creature: Return target Arcane card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{G}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "Arcane own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "211",
+        "rarity": "UNCOMMON",
+        "artist": "Rebecca Guay",
+        "flavorText": "It grew in lands lit by pride and watered by tears.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a8304b24-4db8-4082-bdb7-7010bf35e416.jpg?1783944290"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Hearth Kami
+{
+    "name": "Hearth Kami",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "{X}, Sacrifice this creature: Destroy target artifact with mana value X.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{X}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsArtifact",
+                                    "ManaValueEqualsX"
+                                ]
+                            }
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "171",
+        "artist": "Luca Zontini",
+        "flavorText": "\"Every treachery, great or small, begets a spirit that rages at the injustice. Given the opportunity, each will return that treachery to its owner tenfold.\"\n—Sensei Hisoka",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/7/d7361289-5111-49c2-a786-b7181384596b.jpg?1783944300"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Hideous Laughter
+{
+    "name": "Hideous Laughter",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Instant — Arcane",
+    "oracleText": "All creatures get -2/-2 until end of turn.\nSplice onto Arcane {3}{B}{B} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)",
+    "keywords": [
+        "SPLICE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Splice",
+            "cost": "{3}{B}{B}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            },
+            "body": {
+                "type": "ModifyStats",
+                "powerModifier": {
+                    "type": "Fixed",
+                    "amount": -2
+                },
+                "toughnessModifier": {
+                    "type": "Fixed",
+                    "amount": -2
+                },
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "115",
+        "rarity": "UNCOMMON",
+        "artist": "Greg Staples",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/4/941fd135-1c5a-4650-8faf-dfa2c93ec8c9.jpg?1783944315"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Hold the Line
 {
     "name": "Hold the Line",
@@ -787,6 +1747,70 @@
         "artist": "Ron Spears",
         "flavorText": "\"Forgive me, Master Kami, but in the interest of my people I must halt your advance.\"",
         "imageUri": "https://cards.scryfall.io/normal/front/d/e/de34d107-8a28-4e88-919e-c7ccf984bcda.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Horizon Seed
+{
+    "name": "Horizon Seed",
+    "manaCost": "{4}{W}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Whenever you cast a Spirit or Arcane spell, regenerate target creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Spirit"
+                                    },
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Arcane"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Regenerate",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "15",
+        "rarity": "UNCOMMON",
+        "artist": "Matt Cavotta",
+        "flavorText": "In peaceful times, these beings escorted the honored kami to their new shrines. In the Kami War, they became the medics of an unstoppable army.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/e/7e6317b9-a426-453b-a82a-e63905a77019.jpg?1783944339"
     },
     "colorIdentityOverride": [
         "WHITE"
@@ -852,6 +1876,95 @@
     ]
 }
 
+// Innocence Kami
+{
+    "name": "Innocence Kami",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "{W}, {T}: Tap target creature.\nWhenever you cast a Spirit or Arcane spell, untap this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Spirit"
+                                    },
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Arcane"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "TapUntap",
+                    "target": "Self",
+                    "tap": false
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{W}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "18",
+        "rarity": "UNCOMMON",
+        "artist": "Mark Zug",
+        "flavorText": "Her voice was light, her substance music.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/f/df62efbb-2313-4667-82e6-3b474d998ef5.jpg?1783944338"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Isamaru, Hound of Konda
 {
     "name": "Isamaru, Hound of Konda",
@@ -871,6 +1984,67 @@
     "colorIdentityOverride": [
         "WHITE"
     ]
+}
+
+// Jade Idol
+{
+    "name": "Jade Idol",
+    "manaCost": "{4}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever you cast a Spirit or Arcane spell, this artifact becomes a 4/4 Spirit artifact creature until end of turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Spirit"
+                                    },
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Arcane"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "BecomeCreature",
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "creatureTypes": [
+                        "Spirit"
+                    ],
+                    "addTypes": [
+                        "ARTIFACT"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "256",
+        "rarity": "UNCOMMON",
+        "artist": "Ben Thompson",
+        "flavorText": "Before the Kami War, the shishi were symbolic guardians, protecting the shrines where they stood. But after the kami turned on the material world, shishi began pouncing from their perches to attack would-be supplicants.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/5/a58f63c5-cdc5-4079-a727-cff45668d546.jpg?1783944278"
+    },
+    "colorIdentityOverride": []
 }
 
 // Journeyer's Kite
@@ -1100,6 +2274,69 @@
     ]
 }
 
+// Kami of Fire's Roar
+{
+    "name": "Kami of Fire's Roar",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Whenever you cast a Spirit or Arcane spell, target creature can't block this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Spirit"
+                                    },
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Arcane"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CantBlockTargetCreatures",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "174",
+        "artist": "Dave Dorman",
+        "flavorText": "\"I can hear the shamans chanting in the hills. They say their magic will protect us from the kami, that our gold has bought our safety. But no one sleeps soundly tonight.\"\n—Scroll fragment from the ruins of Reito",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/3/4380118d-f209-446d-829b-3564796e0219.jpg?1783944299"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Kami of Old Stone
 {
     "name": "Kami of Old Stone",
@@ -1164,6 +2401,205 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Kami of the Hunt
+{
+    "name": "Kami of the Hunt",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Whenever you cast a Spirit or Arcane spell, this creature gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Spirit"
+                                    },
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Arcane"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "219",
+        "artist": "Alex Horley-Orlandelli",
+        "flavorText": "\"Don't worry, Jiro. The kami would never attack us this close to home . . . . Jiro?\"\n—Hoto, temple guardian, last words",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/a/5ace3c4e-3287-4975-b4d0-91f009c0cf5b.jpg?1783944287"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Kami of the Waning Moon
+{
+    "name": "Kami of the Waning Moon",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Flying\nWhenever you cast a Spirit or Arcane spell, target creature gains fear until end of turn. (It can't be blocked except by artifact creatures and/or black creatures.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Spirit"
+                                    },
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Arcane"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "FEAR",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target"
+                },
+                "descriptionOverride": "Whenever you cast a Spirit or Arcane spell, target creature gains fear until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "120",
+        "artist": "Matt Thompson",
+        "flavorText": "\"For a moment, Reito's defenders regrouped. Then wailing kami reappeared to send them scattering like flocks of frightened birds.\"\n—*Great Battles of Kamigawa*",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/3/23a395a6-b1f5-4b7f-87cc-c77b4d497e9a.jpg?1783944313"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Kitsune Blademaster
+{
+    "name": "Kitsune Blademaster",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Fox Samurai",
+    "oracleText": "First strike\nBushido 1 (Whenever this creature blocks or becomes blocked, it gets +1/+1 until end of turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FIRST_STRIKE",
+        "BUSHIDO"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "BUSHIDO",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "BlockEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 1"
+            },
+            {
+                "id": "ability_2",
+                "trigger": "BecomesBlockedEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 1"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "25",
+        "artist": "Keith Garletts",
+        "flavorText": "Those kitsune trained in the blade preferred to fight with a blade-catching jitte in the off hand, buying them just enough time to deliver the first deadly cut.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fb9d108d-ee19-4b1d-9d4b-b4c4d9b8ad0d.jpg?1783944336"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -1238,6 +2674,57 @@
     ]
 }
 
+// Kodama's Might
+{
+    "name": "Kodama's Might",
+    "manaCost": "{G}",
+    "typeLine": "Instant — Arcane",
+    "oracleText": "Target creature gets +2/+2 until end of turn.\nSplice onto Arcane {G} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)",
+    "keywords": [
+        "SPLICE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Splice",
+            "cost": "{G}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "224",
+        "artist": "Terese Nielsen",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/0/d0ef91bb-ec25-463f-9fc9-f0f9c0652cf5.jpg?1783944286"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Kodama's Reach
 {
     "name": "Kodama's Reach",
@@ -1291,6 +2778,77 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Konda, Lord of Eiganjo
+{
+    "name": "Konda, Lord of Eiganjo",
+    "manaCost": "{5}{W}{W}",
+    "typeLine": "Legendary Creature — Human Samurai",
+    "oracleText": "Vigilance, indestructible\nBushido 5 (Whenever this creature blocks or becomes blocked, it gets +5/+5 until end of turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "VIGILANCE",
+        "INDESTRUCTIBLE",
+        "BUSHIDO"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "BUSHIDO",
+            "n": 5
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "BlockEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 5"
+            },
+            {
+                "id": "ability_2",
+                "trigger": "BecomesBlockedEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 5"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "30",
+        "rarity": "RARE",
+        "artist": "John Bolton",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/e/5edab171-94b9-4e5e-ab61-bd8c6c8cfc38.jpg?1783944335"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -1434,6 +2992,50 @@
     ]
 }
 
+// Lifted by Clouds
+{
+    "name": "Lifted by Clouds",
+    "manaCost": "{2}{U}",
+    "typeLine": "Instant — Arcane",
+    "oracleText": "Target creature gains flying until end of turn.\nSplice onto Arcane {1}{U} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)",
+    "keywords": [
+        "SPLICE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Splice",
+            "cost": "{1}{U}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "GrantKeyword",
+            "keyword": "FLYING",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "73",
+        "artist": "Darrell Riche",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/5/a5f08f3d-82ef-4c3f-af2d-a3c834e22b99.jpg?1783944325"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Marrow-Gnawer
 {
     "name": "Marrow-Gnawer",
@@ -1495,6 +3097,123 @@
         "artist": "Wayne Reynolds",
         "flavorText": "Marrow-Gnawer united three nezumi gangs when he slew their leaders in a single night. Now they call him their first lord.",
         "imageUri": "https://cards.scryfall.io/normal/front/7/2/72e4548b-c171-4f10-b896-af37543dcf0f.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Meloku the Clouded Mirror
+{
+    "name": "Meloku the Clouded Mirror",
+    "manaCost": "{4}{U}",
+    "typeLine": "Legendary Creature — Moonfolk Wizard",
+    "oracleText": "Flying\n{1}, Return a land you control to its owner's hand: Create a 1/1 blue Illusion creature token with flying.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomReturnToHand",
+                                "filter": "land"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLUE"
+                    ],
+                    "creatureTypes": [
+                        "Illusion"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "74",
+        "rarity": "RARE",
+        "artist": "Scott M. Fischer",
+        "flavorText": "He loved his cities in the clouds. When he traveled to the lands below, he brought many reminders of his home.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/c/1caaa733-6d4c-4e18-a64e-f95851c7063b.jpg?1783944325"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Midnight Covenant
+{
+    "name": "Midnight Covenant",
+    "manaCost": "{1}{B}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature has \"{B}: This creature gets +1/+1 until end of turn.\"",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": {
+                        "type": "CostAtomWrapper",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{B}"
+                        }
+                    },
+                    "effect": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": "Self"
+                    }
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "125",
+        "artist": "Pete Venters",
+        "flavorText": "\"Not all mortals fought the kami. The ogres revered the oni, while some humans made pacts based upon empty promises.\"\n—*The History of Kamigawa*",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/d/5d797e91-3fc7-4f62-8cd8-dbd5f445e69c.jpg?1783944312"
     },
     "colorIdentityOverride": [
         "BLACK"
@@ -1592,6 +3311,76 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Mothrider Samurai
+{
+    "name": "Mothrider Samurai",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Human Samurai",
+    "oracleText": "Flying\nBushido 1 (Whenever this creature blocks or becomes blocked, it gets +1/+1 until end of turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "BUSHIDO"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "BUSHIDO",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "BlockEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 1"
+            },
+            {
+                "id": "ability_2",
+                "trigger": "BecomesBlockedEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 1"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "34",
+        "artist": "Mark Zug",
+        "flavorText": "When the night blossoms open, the wings of Eiganjo take flight.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/35a236f7-f008-4eb8-91d9-31ea8589cf0c.jpg?1783944334"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -1715,6 +3504,101 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Nagao, Bound by Honor
+{
+    "name": "Nagao, Bound by Honor",
+    "manaCost": "{3}{W}",
+    "typeLine": "Legendary Creature — Human Samurai",
+    "oracleText": "Bushido 1 (Whenever this creature blocks or becomes blocked, it gets +1/+1 until end of turn.)\nWhenever Nagao attacks, Samurai creatures you control get +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "BUSHIDO"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "BUSHIDO",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "BlockEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 1"
+            },
+            {
+                "id": "ability_2",
+                "trigger": "BecomesBlockedEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 1"
+            },
+            {
+                "id": "ability_3",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature Samurai ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Whenever Nagao attacks, Samurai creatures you control get +1/+1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "36",
+        "rarity": "UNCOMMON",
+        "artist": "Dave Dorman",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a45258f4-c36d-46cc-80e8-cc458351e003.jpg?1783944334"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -1846,6 +3730,75 @@
     ]
 }
 
+// Nezumi Ronin
+{
+    "name": "Nezumi Ronin",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Rat Samurai",
+    "oracleText": "Bushido 1 (Whenever this creature blocks or becomes blocked, it gets +1/+1 until end of turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "BUSHIDO"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "BUSHIDO",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "BlockEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 1"
+            },
+            {
+                "id": "ability_2",
+                "trigger": "BecomesBlockedEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 1"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "130",
+        "artist": "Scott M. Fischer",
+        "flavorText": "\"Some nezumi became as skilled in the samurai arts as the humans and kitsune. Yet no lord would have them, so they sold their swords to the highest bidder.\"\n—*The History of Kamigawa*",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/c/0c3b8d6f-c60a-4107-b931-31b10f497237.jpg?1783944311"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Night of Souls' Betrayal
 {
     "name": "Night of Souls' Betrayal",
@@ -1936,6 +3889,105 @@
     "colorIdentityOverride": []
 }
 
+// Numai Outcast
+{
+    "name": "Numai Outcast",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Human Samurai",
+    "oracleText": "Bushido 2 (Whenever this creature blocks or becomes blocked, it gets +2/+2 until end of turn.)\n{B}, Pay 5 life: Regenerate this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "BUSHIDO"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "BUSHIDO",
+            "n": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "BlockEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 2"
+            },
+            {
+                "id": "ability_2",
+                "trigger": "BecomesBlockedEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 2"
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{B}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomPayLife",
+                                "amount": 5
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                },
+                "descriptionOverride": "{B}, Pay 5 life: Regenerate this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "134",
+        "rarity": "UNCOMMON",
+        "artist": "Adam Rex",
+        "flavorText": "\"Beware the blade of dishonor. It kills more silently than war, more quickly than age.\"\n—Sensei Golden-Tail",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/8/b878d1c2-34ce-4cb4-9ea3-8d7cd2028484.jpg?1783944310"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Okina, Temple to the Grandfathers
 {
     "name": "Okina, Temple to the Grandfathers",
@@ -2013,6 +4065,64 @@
     ]
 }
 
+// Orbweaver Kumo
+{
+    "name": "Orbweaver Kumo",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Reach (This creature can block creatures with flying.)\nWhenever you cast a Spirit or Arcane spell, this creature gains forestwalk until end of turn. (It can't be blocked as long as defending player controls a Forest.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Spirit"
+                                    },
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Arcane"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "FORESTWALK",
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you cast a Spirit or Arcane spell, this creature gains forestwalk until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "231",
+        "rarity": "UNCOMMON",
+        "artist": "Dan Murayama Scott",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/d/3d8f0459-a839-4820-8f99-58da5851ff36.jpg?1783944285"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Order of the Sacred Bell
 {
     "name": "Order of the Sacred Bell",
@@ -2030,6 +4140,86 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Ore Gorger
+{
+    "name": "Ore Gorger",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Whenever you cast a Spirit or Arcane spell, you may destroy target nonbasic land.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Spirit"
+                                    },
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Arcane"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "descriptionOverride": "Whenever you cast a Spirit or Arcane spell, you may destroy target nonbasic land."
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsLand",
+                                {
+                                    "type": "Not",
+                                    "predicate": "IsBasicLand"
+                                }
+                            ]
+                        }
+                    },
+                    "id": "target"
+                },
+                "descriptionOverride": "Whenever you cast a Spirit or Arcane spell, you may destroy target nonbasic land."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "182",
+        "rarity": "UNCOMMON",
+        "artist": "rk post",
+        "flavorText": "\"We've stumbled upon a network of caves not on our maps. We can only hope it is safe to spend the night.\"\n—Lost Battalion, message to General Takeno",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/ecc8bbb9-d6a1-474b-8f34-594b5a9d4178.jpg?1783944296"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -2103,6 +4293,71 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Psychic Puppetry
+{
+    "name": "Psychic Puppetry",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant — Arcane",
+    "oracleText": "You may tap or untap target permanent.\nSplice onto Arcane {U} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)",
+    "keywords": [
+        "SPLICE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Splice",
+            "cost": "{U}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Gated",
+            "gate": "Gate.MayDecide",
+            "then": {
+                "type": "Modal",
+                "modes": [
+                    {
+                        "effect": {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            }
+                        }
+                    },
+                    {
+                        "effect": {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            },
+                            "tap": false
+                        }
+                    }
+                ],
+                "countsAsModalSpell": false
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "permanent"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "80",
+        "artist": "Joel Thomas",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/e/9e341d6b-f4b0-4347-8055-f5fab756334c.jpg?1783944323"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -2314,6 +4569,76 @@
     ]
 }
 
+// Ronin Houndmaster
+{
+    "name": "Ronin Houndmaster",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Human Samurai",
+    "oracleText": "Haste\nBushido 1 (Whenever this creature blocks or becomes blocked, it gets +1/+1 until end of turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "HASTE",
+        "BUSHIDO"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "BUSHIDO",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "BlockEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 1"
+            },
+            {
+                "id": "ability_2",
+                "trigger": "BecomesBlockedEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 1"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "184",
+        "artist": "Edward P. Beard, Jr.",
+        "flavorText": "Some samurai fell so far out of grace that only dogs would keep them company.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/1/614ead7b-1975-4a99-bdc2-f8afc6cf92d7.jpg?1783944297"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Ryusei, the Falling Star
 {
     "name": "Ryusei, the Falling Star",
@@ -2497,6 +4822,76 @@
     ]
 }
 
+// Samurai Enforcers
+{
+    "name": "Samurai Enforcers",
+    "manaCost": "{4}{W}{W}",
+    "typeLine": "Creature — Human Samurai",
+    "oracleText": "Bushido 2 (Whenever this creature blocks or becomes blocked, it gets +2/+2 until end of turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "BUSHIDO"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "BUSHIDO",
+            "n": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "BlockEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 2"
+            },
+            {
+                "id": "ability_2",
+                "trigger": "BecomesBlockedEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Bushido 2"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "42",
+        "rarity": "UNCOMMON",
+        "artist": "Mitch Cotie",
+        "flavorText": "From the moment they swore their oaths, they belonged to their lord, sword and soul.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/b/8b2be3fe-87a2-47b2-8af1-b99a48622c7b.jpg?1783944332"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Sensei's Divining Top
 {
     "name": "Sensei's Divining Top",
@@ -2572,6 +4967,66 @@
         "imageUri": "https://cards.scryfall.io/normal/front/4/a/4a08ca06-58db-4ce6-b490-be4bea8956a1.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Seshiro the Anointed
+{
+    "name": "Seshiro the Anointed",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Legendary Creature — Snake Monk",
+    "oracleText": "Other Snake creatures you control get +2/+2.\nWhenever a Snake you control deals combat damage to a player, you may draw a card.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2,
+                "filter": {
+                    "baseFilter": "creature Snake ctrl:you",
+                    "excludeSelf": true
+                }
+            },
+            {
+                "type": "GrantTriggeredAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "trigger": {
+                        "type": "DealsDamageEvent",
+                        "damageType": "DamageCombat",
+                        "recipient": "AnyPlayer"
+                    },
+                    "effect": {
+                        "type": "Gated",
+                        "gate": "Gate.MayDecide",
+                        "then": {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    }
+                },
+                "filter": {
+                    "baseFilter": "permanent Snake ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "241",
+        "rarity": "RARE",
+        "artist": "Daren Bader",
+        "flavorText": "His family was the first to reach out to the human monks. He soon knew as many koans as he did blade strikes.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/8/3823e561-5a0a-4020-9322-a2b481499807.jpg?1783944282"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
 }
 
 // Shinka, the Bloodsoaked Keep
@@ -2714,6 +5169,72 @@
     ]
 }
 
+// Sire of the Storm
+{
+    "name": "Sire of the Storm",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Flying\nWhenever you cast a Spirit or Arcane spell, you may draw a card.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Spirit"
+                                    },
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Arcane"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "descriptionOverride": "Whenever you cast a Spirit or Arcane spell, you may draw a card."
+                },
+                "descriptionOverride": "Whenever you cast a Spirit or Arcane spell, you may draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "85",
+        "rarity": "UNCOMMON",
+        "artist": "Arnie Swekel",
+        "flavorText": "This storm blows gales through the dreams of men.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/e/2e76d003-2d15-43d7-9cbb-e00564d0cabf.jpg?1783944322"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Sokenzan Bruiser
 {
     "name": "Sokenzan Bruiser",
@@ -2735,6 +5256,406 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Soratami Cloudskater
+{
+    "name": "Soratami Cloudskater",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Moonfolk Rogue",
+    "oracleText": "Flying\n{2}, Return a land you control to its owner's hand: Draw a card, then discard a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomReturnToHand",
+                                "filter": "land"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "86",
+        "artist": "Michael Sutfin",
+        "flavorText": "\"You hide your actions from eyes on the ground, but nothing escapes the clouds.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/e/5e3d3024-bef2-4b50-ab84-8ae2a23cdf27.jpg?1783944321"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Soratami Mirror-Guard
+{
+    "name": "Soratami Mirror-Guard",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Moonfolk Wizard",
+    "oracleText": "Flying\n{2}, Return a land you control to its owner's hand: Target creature with power 2 or less can't be blocked this turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomReturnToHand",
+                                "filter": "land"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "CANT_BE_BLOCKED",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature pow<=2"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "87",
+        "artist": "Wayne England",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/f/3ff8968b-cd96-4f44-85f8-2af20d61d7cb.jpg?1783944321"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Soratami Rainshaper
+{
+    "name": "Soratami Rainshaper",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Moonfolk Wizard",
+    "oracleText": "Flying\n{3}, Return a land you control to its owner's hand: Target creature you control gains shroud until end of turn. (It can't be the target of spells or abilities.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomReturnToHand",
+                                "filter": "land"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "SHROUD",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "89",
+        "artist": "Ittoku",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/9/b942ee46-c78b-414a-9de7-4376370532fa.jpg?1783944320"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Sosuke, Son of Seshiro
+{
+    "name": "Sosuke, Son of Seshiro",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Legendary Creature — Snake Warrior",
+    "oracleText": "Other Snake creatures you control get +1/+0.\nWhenever a Warrior you control deals combat damage to a creature, destroy that creature at end of combat.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 0,
+                "filter": {
+                    "baseFilter": "creature Snake ctrl:you",
+                    "excludeSelf": true
+                }
+            },
+            {
+                "type": "GrantTriggeredAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "trigger": {
+                        "type": "DealsDamageEvent",
+                        "damageType": "DamageCombat",
+                        "recipient": "AnyCreature"
+                    },
+                    "effect": {
+                        "type": "CreateDelayedTrigger",
+                        "step": "END_COMBAT",
+                        "effect": {
+                            "type": "MoveToZone",
+                            "target": "TriggeringEntity",
+                            "destination": "Graveyard",
+                            "byDestruction": true
+                        }
+                    }
+                },
+                "filter": {
+                    "baseFilter": "permanent Warrior ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "244",
+        "rarity": "UNCOMMON",
+        "artist": "Carl Critchlow",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d1aa2451-e4f0-423b-826e-ae1f93b99e07.jpg?1783944282"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Soul of Magma
+{
+    "name": "Soul of Magma",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Whenever you cast a Spirit or Arcane spell, this creature deals 1 damage to target creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Spirit"
+                                    },
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Arcane"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target"
+                },
+                "descriptionOverride": "Whenever you cast a Spirit or Arcane spell, this creature deals 1 damage to target creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "189",
+        "artist": "Darrell Riche",
+        "flavorText": "\"In every other mind, the battle was lost. General Takeno alone was not touched by despair. Drawing his blade, he was attack and rallying cry in one.\"\n—*Battle of Akagi River: A Survivor's Tale*",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/0/40b20126-da96-4d79-8d3f-8d7da8e94f4a.jpg?1783944295"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Soulless Revival
+{
+    "name": "Soulless Revival",
+    "manaCost": "{1}{B}",
+    "typeLine": "Instant — Arcane",
+    "oracleText": "Return target creature card from your graveyard to your hand.\nSplice onto Arcane {1}{B} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)",
+    "keywords": [
+        "SPLICE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Splice",
+            "cost": "{1}{B}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            },
+            "destination": "Hand"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "144",
+        "artist": "Ron Spencer",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/b/6b36712c-1ccb-4efe-8db8-823b9b80a99f.jpg?1783944306"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -2830,6 +5751,96 @@
     ]
 }
 
+// Teller of Tales
+{
+    "name": "Teller of Tales",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Flying\nWhenever you cast a Spirit or Arcane spell, you may tap or untap target creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Spirit"
+                                    },
+                                    {
+                                        "type": "HasSubtype",
+                                        "subtype": "Arcane"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Modal",
+                        "modes": [
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target"
+                                    }
+                                }
+                            },
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target"
+                                    },
+                                    "tap": false
+                                }
+                            }
+                        ],
+                        "countsAsModalSpell": false
+                    },
+                    "descriptionOverride": "Whenever you cast a Spirit or Arcane spell, you may tap or untap target creature."
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target"
+                },
+                "descriptionOverride": "Whenever you cast a Spirit or Arcane spell, you may tap or untap target creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "95",
+        "artist": "Jim Murray",
+        "flavorText": "Words never uttered by mortals flowed incessantly from its many mouths.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/9/c914db7d-c907-4d25-a180-f68b274a5cb7.jpg?1783944319"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Terashi's Cry
 {
     "name": "Terashi's Cry",
@@ -2868,6 +5879,66 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// The Unspeakable
+{
+    "name": "The Unspeakable",
+    "manaCost": "{6}{U}{U}{U}",
+    "typeLine": "Legendary Creature — Spirit",
+    "oracleText": "Flying, trample\nWhenever The Unspeakable deals combat damage to a player, you may return target Arcane card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 7
+    },
+    "keywords": [
+        "FLYING",
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Hand"
+                    },
+                    "descriptionOverride": "Whenever The Unspeakable deals combat damage to a player, you may return target Arcane card from your graveyard to your hand."
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "Arcane own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target"
+                },
+                "descriptionOverride": "Whenever The Unspeakable deals combat damage to a player, you may return target Arcane card from your graveyard to your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "98",
+        "rarity": "RARE",
+        "artist": "Khang Le",
+        "flavorText": "It is madness that drives men to seek forbidden knowledge, and madness has given it form.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/2/5212bd3e-e8d8-483e-871b-29fd378f817e.jpg?1783944319"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -3110,6 +6181,46 @@
     ]
 }
 
+// Unearthly Blizzard
+{
+    "name": "Unearthly Blizzard",
+    "manaCost": "{2}{R}",
+    "typeLine": "Sorcery — Arcane",
+    "oracleText": "Up to three target creatures can't block this turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": "IterationSpace.Targets",
+            "body": {
+                "type": "CantBlockTargetCreatures",
+                "target": {
+                    "type": "ContextTarget",
+                    "index": 0
+                }
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "count": 3,
+                "optional": true,
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "196",
+        "artist": "Joel Thomas",
+        "flavorText": "\"We are trapped. The mountains and blinding kami storms have made us hopelessly lost. We are starving. In the name of all things sacred, please, send help . . . .\"\n—Lost Battalion, final message to General Takeno",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/0/d034ad87-fd28-4c23-b897-1d6343ce8282.jpg?1783944294"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Unnatural Speed
 {
     "name": "Unnatural Speed",
@@ -3144,6 +6255,55 @@
     "colorIdentityOverride": [
         "RED"
     ]
+}
+
+// Untaidake, the Cloud Keeper
+{
+    "name": "Untaidake, the Cloud Keeper",
+    "manaCost": "",
+    "typeLine": "Legendary Land",
+    "oracleText": "Untaidake enters tapped.\n{T}, Pay 2 life: Add {C}{C}. Spend this mana only to cast legendary spells.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomPayLife",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "restriction": "LegendarySpellsOnly"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "285",
+        "rarity": "RARE",
+        "artist": "John Avon",
+        "flavorText": "Untaidake is the needle that weaves the fabric of creation.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/c/3c571f66-7a00-4cb0-9da9-8271083f49d3.jpg?1783944272"
+    },
+    "colorIdentityOverride": []
 }
 
 // Vigilance
@@ -3263,5 +6423,50 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Wear Away
+{
+    "name": "Wear Away",
+    "manaCost": "{G}{G}",
+    "typeLine": "Instant — Arcane",
+    "oracleText": "Destroy target artifact or enchantment.\nSplice onto Arcane {3}{G} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)",
+    "keywords": [
+        "SPLICE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Splice",
+            "cost": "{3}{G}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "artifact|enchantment"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "250",
+        "artist": "Greg Hildebrandt",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/e/3e809799-ce47-4eaf-b2c2-2c8807182532.jpg?1783944280"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
