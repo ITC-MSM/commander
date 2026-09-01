@@ -3356,6 +3356,68 @@
     ]
 }
 
+// Flame Fusillade
+{
+    "name": "Flame Fusillade",
+    "manaCost": "{3}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Until end of turn, permanents you control gain \"{T}: This permanent deals 1 damage to any target.\"",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "permanent ctrl:you"
+                }
+            },
+            "body": {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": "CostTap",
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "damageSource": "Self"
+                    },
+                    "targetRequirements": [
+                        "AnyTarget"
+                    ]
+                },
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "123",
+        "rarity": "RARE",
+        "artist": "Dany Orizio",
+        "flavorText": "\"A single item acting as lantern and lance? Now *that's* military efficiency.\"\n—Brev Grezar, Boros lieutenant",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7fcad5f0-53c4-4b72-ac05-ef9ca5b55611.jpg?1783943654",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "\"Summoning sickness\" applies only to creatures, not to other permanents. You may tap a noncreature permanent to pay for an ability with {T} in its cost even if the permanent entered that turn."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Tapping an Aura or Equipment doesn't tap the creature it's attached to and vice versa. Tapped enchantments work normally. Tapped artifacts work normally unless they say otherwise."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Flame-Kin Zealot
 {
     "name": "Flame-Kin Zealot",
