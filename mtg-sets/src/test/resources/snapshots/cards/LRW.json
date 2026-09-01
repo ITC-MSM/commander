@@ -1211,6 +1211,83 @@
     ]
 }
 
+// Brigid, Hero of Kinsbaile
+{
+    "name": "Brigid, Hero of Kinsbaile",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Legendary Creature — Kithkin Archer",
+    "oracleText": "First strike\n{T}: Brigid deals 2 damage to each attacking or blocking creature target player controls.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FIRST_STRIKE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    {
+                                        "type": "StateOr",
+                                        "predicates": [
+                                            "IsAttacking",
+                                            "IsBlocking"
+                                        ]
+                                    }
+                                ],
+                                "controllerPredicate": {
+                                    "type": "ControlledByReferencedPlayer",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target player"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": "Self"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "descriptionOverride": "Brigid deals 2 damage to each attacking or blocking creature target player controls."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "6",
+        "rarity": "RARE",
+        "artist": "Steve Prescott",
+        "flavorText": "Thanks to one champion archer, the true borders of Kinsbaile extend an arrow's flight beyond the buildings.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/a/da70a20f-213e-4d79-a46f-1ef1fc3f4a51.jpg?1783942917"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Caterwauling Boggart
 {
     "name": "Caterwauling Boggart",
@@ -1873,6 +1950,37 @@
     "colorIdentityOverride": [
         "BLUE"
     ]
+}
+
+// Dolmen Gate
+{
+    "name": "Dolmen Gate",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Prevent all combat damage that would be dealt to attacking creatures you control.",
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "PreventDamage",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": {
+                        "type": "RecipientMatching",
+                        "filter": "creature attacking ctrl:you"
+                    },
+                    "damageType": "DamageCombat"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "256",
+        "rarity": "RARE",
+        "artist": "Richard Sardinha",
+        "flavorText": "Lorwyn's stones resonate with the place from which they were hewed. Though taken far, still they call to their home when silence is upon the land.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fdcbf10e-32f2-41c5-a7a2-5f24662892d2.jpg?1783942851"
+    },
+    "colorIdentityOverride": []
 }
 
 // Doran, the Siege Tower
@@ -3472,6 +3580,86 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Galepowder Mage
+{
+    "name": "Galepowder Mage",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Kithkin Wizard",
+    "oracleText": "Flying\nWhenever this creature attacks, exile another target creature. Return that card to the battlefield under its owner's control at the beginning of the next end step.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "another target creature"
+                            },
+                            "destination": "Exile"
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "step": "END",
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "another target creature"
+                                },
+                                "destination": "Battlefield"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature",
+                        "excludeSelf": true
+                    },
+                    "id": "another target creature"
+                },
+                "descriptionOverride": "exile another target creature. Return that card to the battlefield under its owner's control at the beginning of the next end step."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "15",
+        "rarity": "RARE",
+        "artist": "Jeremy Jarvis",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/1/8152999d-5e65-4ea6-b1e7-94b41808faa0.jpg?1783942915",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "Galepowder Mage's ability can target a creature controlled by any player. It's not optional."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "The exiled card will be returned to the battlefield at the beginning of the end step even if Galepowder Mage is no longer on the battlefield at that time."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If Galepowder Mage is the only creature on the battlefield when it attacks, its ability has no effect."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -6700,6 +6888,86 @@
     ]
 }
 
+// Mirror Entity
+{
+    "name": "Mirror Entity",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\n{X}: Until end of turn, creatures you control have base power and toughness X/X and gain all creature types.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "CHANGELING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{X}"
+                    }
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SetBaseStats",
+                                "target": "Self",
+                                "power": "XValue",
+                                "toughness": "XValue",
+                                "duration": "EndOfTurn"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "CHANGELING",
+                                "target": "Self"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "Until end of turn, creatures you control have base power and toughness X/X and gain all creature types."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "31",
+        "rarity": "RARE",
+        "artist": "Zoltan Boros & Gabor Szikszai",
+        "flavorText": "Unaware of Lorwyn's diversity, it sees only itself, reflected a thousand times over.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/d/adfff880-cbf6-4085-bc05-c72658b75f25.jpg?1783942911",
+        "rulings": [
+            {
+                "date": "2021-03-19",
+                "text": "Changeling applies in all zones, not just the battlefield."
+            },
+            {
+                "date": "2021-03-19",
+                "text": "Mirror Entity's ability overwrites any effects that previously set a creature's base power and/or toughness. Any existing effects or counters that raise or lower a creature's power and/or toughness continue to apply to the creature's newly-set power and toughness."
+            },
+            {
+                "date": "2021-03-19",
+                "text": "Activating the ability with X = 0 will cause all creatures you control to become 0/0 and be put into the graveyard."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Moonglove Extract
 {
     "name": "Moonglove Extract",
@@ -8221,6 +8489,76 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Shields of Velis Vel
+{
+    "name": "Shields of Velis Vel",
+    "manaCost": "{W}",
+    "typeLine": "Kindred Instant — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\nCreatures target player controls get +0/+1 and gain all creature types until end of turn.",
+    "keywords": [
+        "CHANGELING"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "controllerPredicate": {
+                            "type": "ControlledByReferencedPlayer",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target player"
+                            }
+                        }
+                    }
+                }
+            },
+            "body": {
+                "type": "Composite",
+                "effects": [
+                    {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": "Self"
+                    },
+                    {
+                        "type": "GrantKeyword",
+                        "keyword": "CHANGELING",
+                        "target": "Self"
+                    }
+                ]
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "target player"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "39",
+        "artist": "Ralph Horsley",
+        "flavorText": "Changelings can alter shape based on what the beings around them desire most.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/5/f550f44f-8b8f-4c1d-a583-9fd986d3061c.jpg?1783942908"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
