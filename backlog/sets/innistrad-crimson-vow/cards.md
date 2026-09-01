@@ -2,7 +2,7 @@
 
 **Set Size:** 272 booster cards (excluding basic lands and tokens)
 **Release Date:** November 19, 2021
-**Implemented:** 272 / 273
+**Implemented:** 273 / 273
 - [x] Abrade
 - [x] Adamant Will
 - [x] Aim for the Head
@@ -140,7 +140,7 @@
 - [x] Into the Night
 - [x] Investigator's Journal
 - [x] Island
-- [ ] Jacob Hauken, Inspector
+- [x] Jacob Hauken, Inspector
 - [x] Katilda, Dawnhart Martyr
 - [x] Kaya, Geist Hunter
 - [x] Kessig Flamebreather

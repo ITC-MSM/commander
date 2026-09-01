@@ -393,6 +393,7 @@ val engineSerializersModule = SerializersModule {
         subclass(CreatedByComponent::class)
         subclass(FaceDownComponent::class)
         subclass(RevealedToComponent::class)
+        subclass(com.wingedsheep.engine.state.components.identity.MayLookAtInExileComponent::class)
         subclass(MorphDataComponent::class)
         subclass(FaceDownModeComponent::class)
         subclass(TextReplacementComponent::class)
