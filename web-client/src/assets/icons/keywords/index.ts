@@ -147,6 +147,7 @@ export const counterManaClass: Record<string, string> = {
   WIND: 'counter-vortex',
   NEST: 'counter-fungus',
   PAGE: 'counter-lore',
+  HOOFPRINT: 'counter-arrow',
   REV: 'counter-bolt',
   BLOODSTAIN: 'counter-skull',
   BLOOD: 'counter-blood',

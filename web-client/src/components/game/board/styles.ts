@@ -2294,6 +2294,7 @@ const passiveCounterPalette: Record<string, CounterBadgePalette> = {
   WIND: { bg: 'rgba(20, 60, 55, 0.95)', border: 'rgba(120, 220, 200, 0.6)', color: '#9ce0d0' },
   NEST: { bg: 'rgba(25, 55, 25, 0.95)', border: 'rgba(120, 200, 110, 0.65)', color: '#a8e090', glow: 'rgba(120, 200, 110, 0.55)' },
   PAGE: { bg: 'rgba(35, 30, 55, 0.95)', border: 'rgba(160, 150, 220, 0.65)', color: '#bcb4e8', glow: 'rgba(160, 150, 220, 0.5)' },
+  HOOFPRINT: { bg: 'rgba(46, 38, 26, 0.95)', border: 'rgba(210, 180, 120, 0.65)', color: '#e2c894', glow: 'rgba(210, 180, 120, 0.5)' },
   REV: { bg: 'rgba(60, 30, 15, 0.95)', border: 'rgba(230, 140, 70, 0.7)', color: '#f0b070', glow: 'rgba(230, 140, 70, 0.55)' },
   BLOODSTAIN: { bg: 'rgba(56, 14, 18, 0.95)', border: 'rgba(212, 78, 82, 0.72)', color: '#f0a0a2', glow: 'rgba(212, 78, 82, 0.55)' },
   BLOOD: { bg: 'rgba(70, 10, 14, 0.95)', border: 'rgba(224, 60, 64, 0.75)', color: '#f2908f', glow: 'rgba(224, 60, 64, 0.55)' },

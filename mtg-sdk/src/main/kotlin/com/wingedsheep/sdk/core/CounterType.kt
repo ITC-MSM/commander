@@ -89,6 +89,7 @@ enum class CounterType {
     WIND,
     NEST,
     PAGE,
+    HOOFPRINT,
     REV,
     BLOODSTAIN,
     BLOOD,
@@ -384,6 +385,13 @@ object Counters {
      * count to reduce an activated ability's cost. No inherent rule.
      */
     const val PAGE = "page"
+
+    /**
+     * Hoofprint counter (LRW — Hoofprints of the Stag). Passive storage counter with no inherent
+     * rule; the enchantment's draw trigger accumulates one and its activated ability spends four
+     * to make a 4/4 flying Elemental. No inherent rule.
+     */
+    const val HOOFPRINT = "hoofprint"
 
     /**
      * Bait counter (FDN — Fishing Pole). Passive storage counter with no inherent rule; the
