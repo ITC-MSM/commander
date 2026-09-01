@@ -752,6 +752,105 @@
     ]
 }
 
+// Bottled Cloister
+{
+    "name": "Bottled Cloister",
+    "manaCost": "{4}",
+    "typeLine": "Artifact",
+    "oracleText": "At the beginning of each opponent's upkeep, exile all cards from your hand face down.\nAt the beginning of your upkeep, return all cards you own exiled with this artifact to your hand, then draw a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "cloisterHand"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "cloisterHand",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true,
+                            "faceDown": "HIDDEN"
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "cloisterExiled"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "cloisterExiled",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "own:you"
+                            },
+                            "storeMatching": "cloisterMine"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "cloisterMine",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "256",
+        "rarity": "RARE",
+        "artist": "Luca Zontini",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/b/5bf42acc-d2d3-4165-b257-6885df2d1ba4.jpg?1783943601",
+        "rulings": [
+            {
+                "date": "2006-02-01",
+                "text": "Errata'd to make it clear that only the cards you own go into your hand, so if you somehow gain control of the Cloister, your opponent's cards won't go to your hand."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Bramble Elemental
 {
     "name": "Bramble Elemental",
