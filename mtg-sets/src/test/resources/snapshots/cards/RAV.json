@@ -752,6 +752,105 @@
     ]
 }
 
+// Bottled Cloister
+{
+    "name": "Bottled Cloister",
+    "manaCost": "{4}",
+    "typeLine": "Artifact",
+    "oracleText": "At the beginning of each opponent's upkeep, exile all cards from your hand face down.\nAt the beginning of your upkeep, return all cards you own exiled with this artifact to your hand, then draw a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "cloisterHand"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "cloisterHand",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true,
+                            "faceDown": "HIDDEN"
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "cloisterExiled"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "cloisterExiled",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "own:you"
+                            },
+                            "storeMatching": "cloisterMine"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "cloisterMine",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "256",
+        "rarity": "RARE",
+        "artist": "Luca Zontini",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/b/5bf42acc-d2d3-4165-b257-6885df2d1ba4.jpg?1783943601",
+        "rulings": [
+            {
+                "date": "2006-02-01",
+                "text": "Errata'd to make it clear that only the cards you own go into your hand, so if you somehow gain control of the Cloister, your opponent's cards won't go to your hand."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Bramble Elemental
 {
     "name": "Bramble Elemental",
@@ -1278,6 +1377,81 @@
     "colorIdentityOverride": [
         "BLACK"
     ]
+}
+
+// Cloudstone Curio
+{
+    "name": "Cloudstone Curio",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever a nonartifact permanent you control enters, you may return another permanent you control that shares a permanent type with it to its owner's hand.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "permanent nonartifact ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsPermanent",
+                                        {
+                                            "type": "SharesCardTypeWith",
+                                            "entity": "Triggering"
+                                        }
+                                    ]
+                                },
+                                "player": "You",
+                                "excludeTriggering": true
+                            },
+                            "storeAs": "candidates"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "candidates",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "returned",
+                            "prompt": "You may return another permanent you control that shares a permanent type with the one that entered to its owner's hand",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "returned",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever a nonartifact permanent you control enters, you may return another permanent you control that shares a permanent type with it to its owner's hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "257",
+        "rarity": "RARE",
+        "artist": "Heather Hudson",
+        "flavorText": "It *wants* to remain a mystery, banishing the curious in favor of less inquisitive company.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/7/47cbda17-d368-4dc3-b41c-95b146468b44.jpg?1783943601"
+    },
+    "colorIdentityOverride": []
 }
 
 // Coalhauler Swine
@@ -3356,6 +3530,68 @@
     ]
 }
 
+// Flame Fusillade
+{
+    "name": "Flame Fusillade",
+    "manaCost": "{3}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Until end of turn, permanents you control gain \"{T}: This permanent deals 1 damage to any target.\"",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "permanent ctrl:you"
+                }
+            },
+            "body": {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": "CostTap",
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "damageSource": "Self"
+                    },
+                    "targetRequirements": [
+                        "AnyTarget"
+                    ]
+                },
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "123",
+        "rarity": "RARE",
+        "artist": "Dany Orizio",
+        "flavorText": "\"A single item acting as lantern and lance? Now *that's* military efficiency.\"\n—Brev Grezar, Boros lieutenant",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7fcad5f0-53c4-4b72-ac05-ef9ca5b55611.jpg?1783943654",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "\"Summoning sickness\" applies only to creatures, not to other permanents. You may tap a noncreature permanent to pay for an ability with {T} in its cost even if the permanent entered that turn."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Tapping an Aura or Equipment doesn't tap the creature it's attached to and vice versa. Tapped enchantments work normally. Tapped artifacts work normally unless they say otherwise."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Flame-Kin Zealot
 {
     "name": "Flame-Kin Zealot",
@@ -3810,6 +4046,79 @@
         "imageUri": "https://cards.scryfall.io/normal/front/1/b/1b87dc27-3cea-4101-aec5-ca0b96978476.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Gleancrawler
+{
+    "name": "Gleancrawler",
+    "manaCost": "{3}{B/G}{B/G}{B/G}",
+    "typeLine": "Creature — Insect Horror",
+    "oracleText": "({B/G} can be paid with either {B} or {G}.)\nTrample\nAt the beginning of your end step, return to your hand all creature cards in your graveyard that were put there from the battlefield this turn.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsCreature"
+                                    ],
+                                    "statePredicates": [
+                                        "PutIntoGraveyardFromBattlefieldThisTurn"
+                                    ]
+                                }
+                            },
+                            "storeAs": "fallen"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "fallen",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of your end step, return to your hand all creature cards in your graveyard that were put there from the battlefield this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "247",
+        "rarity": "RARE",
+        "artist": "Dave Allsop",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/9/69ebb44b-bf3e-4b9e-b568-c20970bb969d.jpg?1783943604",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "When this ability resolves, it returns all creature cards currently in your graveyard that were put there directly from the battlefield sometime during the turn. This includes cards that were put into your graveyard before Gleancrawler entered the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
 }
 
 // Glimpse the Unthinkable
@@ -6053,6 +6362,72 @@
     ]
 }
 
+// Moonlight Bargain
+{
+    "name": "Moonlight Bargain",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Look at the top five cards of your library. For each card, put that card into your graveyard unless you pay 2 life. Then put the rest into your hand.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 5
+                        }
+                    },
+                    "storeAs": "looked"
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Collection",
+                        "collection": "looked"
+                    },
+                    "body": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.MayPay",
+                            "cost": {
+                                "type": "PayLife",
+                                "amount": 2
+                            }
+                        },
+                        "then": {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Hand",
+                            "fromZone": "Library"
+                        },
+                        "otherwise": {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Graveyard",
+                            "fromZone": "Library"
+                        },
+                        "descriptionOverride": "Pay 2 life to put this card into your hand? If you don't, it goes to your graveyard."
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "95",
+        "rarity": "RARE",
+        "artist": "Nick Percival",
+        "flavorText": "At every fifth full moon, the Moon Market convenes to peddle Ravnica's most forbidden wares.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/9/7957c37f-96da-4b7e-9581-afdf73a85edd.jpg?1783943667"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Moroii
 {
     "name": "Moroii",
@@ -6281,6 +6656,74 @@
     ]
 }
 
+// Nullstone Gargoyle
+{
+    "name": "Nullstone Gargoyle",
+    "manaCost": "{9}",
+    "typeLine": "Artifact Creature — Gargoyle",
+    "oracleText": "Flying\nWhenever the first noncreature spell of a turn is cast, counter that spell.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    },
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Counter",
+                    "targetSource": "CounterTargetSource.TriggeringEntity"
+                },
+                "triggerRestriction": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "SpellsCastThisTurn",
+                        "player": "Each",
+                        "filter": "noncreature"
+                    },
+                    "operator": "EQ",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever the first noncreature spell of a turn is cast, counter that spell."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "266",
+        "rarity": "RARE",
+        "artist": "Glenn Fabry",
+        "flavorText": "Nullstone absorbs and dampens most forms of magical energy, as well as light, sound, and heat.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/d/1dc3aa88-2555-4862-a771-e9d5b9eab3ad.jpg?1783943597",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "Nullstone Gargoyle cares about the first noncreature spell cast during a turn, not the first one it \"sees.\" If a noncreature spell was cast before Nullstone Gargoyle entered the battlefield, it won't counter the next one."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If another spell is cast in response to the first spell, Nullstone Gargoyle doesn't affect that second spell."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Oathsworn Giant
 {
     "name": "Oathsworn Giant",
@@ -6449,6 +6892,71 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Pariah's Shield
+{
+    "name": "Pariah's Shield",
+    "manaCost": "{5}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "All damage that would be dealt to you is dealt to equipped creature instead.\nEquip {3}",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "RedirectDamage",
+                "redirectTo": "EquippedCreature",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "You"
+                }
+            }
+        ]
+    },
+    "equipCost": "{3}",
+    "metadata": {
+        "collectorNumber": "267",
+        "rarity": "RARE",
+        "artist": "Doug Chaffee",
+        "flavorText": "To bear the shield of the pariah is the highest honor a Boros can receive—and the last.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cc316f1e-84ce-4013-a150-d537f964a604.jpg?1783943596",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "If Pariah's Shield isn't attached to a creature, all damage that would be dealt to you is dealt to you normally."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Peel from Reality
@@ -7267,6 +7775,59 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Reroute
+{
+    "name": "Reroute",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Change the target of target activated ability with a single target. (Mana abilities can't be targeted.)\nDraw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                "ChangeTarget",
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsActivatedAbility"
+                        ]
+                    },
+                    "zone": "Stack"
+                },
+                "id": "activated ability with a single target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "139",
+        "rarity": "UNCOMMON",
+        "artist": "Christopher Rush",
+        "flavorText": "Three hundred years of practice thwarted by an instant of mischief.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/42794e10-ddcd-4d2d-ab0c-a6b99b6d4662.jpg?1783943648",
+        "rulings": [
+            {
+                "date": "2016-06-08",
+                "text": "Activated abilities contain a colon. They're generally written \"[Cost]: [Effect].\" Some keywords are activated abilities and will have colons in their reminder text."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -9635,6 +10196,67 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Three Dreams
+{
+    "name": "Three Dreams",
+    "manaCost": "{4}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Search your library for up to three Aura cards with different names, reveal them, put them into your hand, then shuffle.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Library",
+                        "filter": "enchantment Aura"
+                    },
+                    "storeAs": "searchable"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "searchable",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 3
+                        }
+                    },
+                    "storeSelected": "found",
+                    "prompt": "Search for up to three Aura cards with different names",
+                    "restrictions": [
+                        "OnePerCardName"
+                    ]
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "found",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    },
+                    "revealed": true
+                },
+                "ShuffleLibrary",
+                "EmitLibrarySearchedEvent"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "32",
+        "rarity": "RARE",
+        "artist": "Shishizaru",
+        "flavorText": "\"Choose one to heal, one to harm, and one to grant you the prudence to use them.\"\n—Miotri, auratouched mage",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/f/1fb144b8-f2ee-4d35-814d-ceb728b2ab75.jpg?1783943695"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
