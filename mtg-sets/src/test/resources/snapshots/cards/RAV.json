@@ -752,6 +752,105 @@
     ]
 }
 
+// Bottled Cloister
+{
+    "name": "Bottled Cloister",
+    "manaCost": "{4}",
+    "typeLine": "Artifact",
+    "oracleText": "At the beginning of each opponent's upkeep, exile all cards from your hand face down.\nAt the beginning of your upkeep, return all cards you own exiled with this artifact to your hand, then draw a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "cloisterHand"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "cloisterHand",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true,
+                            "faceDown": "HIDDEN"
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "cloisterExiled"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "cloisterExiled",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "own:you"
+                            },
+                            "storeMatching": "cloisterMine"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "cloisterMine",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "256",
+        "rarity": "RARE",
+        "artist": "Luca Zontini",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/b/5bf42acc-d2d3-4165-b257-6885df2d1ba4.jpg?1783943601",
+        "rulings": [
+            {
+                "date": "2006-02-01",
+                "text": "Errata'd to make it clear that only the cards you own go into your hand, so if you somehow gain control of the Cloister, your opponent's cards won't go to your hand."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Bramble Elemental
 {
     "name": "Bramble Elemental",
@@ -3353,6 +3452,68 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Flame Fusillade
+{
+    "name": "Flame Fusillade",
+    "manaCost": "{3}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Until end of turn, permanents you control gain \"{T}: This permanent deals 1 damage to any target.\"",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "permanent ctrl:you"
+                }
+            },
+            "body": {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": "CostTap",
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "damageSource": "Self"
+                    },
+                    "targetRequirements": [
+                        "AnyTarget"
+                    ]
+                },
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "123",
+        "rarity": "RARE",
+        "artist": "Dany Orizio",
+        "flavorText": "\"A single item acting as lantern and lance? Now *that's* military efficiency.\"\n—Brev Grezar, Boros lieutenant",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7fcad5f0-53c4-4b72-ac05-ef9ca5b55611.jpg?1783943654",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "\"Summoning sickness\" applies only to creatures, not to other permanents. You may tap a noncreature permanent to pay for an ability with {T} in its cost even if the permanent entered that turn."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Tapping an Aura or Equipment doesn't tap the creature it's attached to and vice versa. Tapped enchantments work normally. Tapped artifacts work normally unless they say otherwise."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -6449,6 +6610,71 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Pariah's Shield
+{
+    "name": "Pariah's Shield",
+    "manaCost": "{5}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "All damage that would be dealt to you is dealt to equipped creature instead.\nEquip {3}",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "RedirectDamage",
+                "redirectTo": "EquippedCreature",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "You"
+                }
+            }
+        ]
+    },
+    "equipCost": "{3}",
+    "metadata": {
+        "collectorNumber": "267",
+        "rarity": "RARE",
+        "artist": "Doug Chaffee",
+        "flavorText": "To bear the shield of the pariah is the highest honor a Boros can receive—and the last.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cc316f1e-84ce-4013-a150-d537f964a604.jpg?1783943596",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "If Pariah's Shield isn't attached to a creature, all damage that would be dealt to you is dealt to you normally."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Peel from Reality
@@ -9635,6 +9861,67 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Three Dreams
+{
+    "name": "Three Dreams",
+    "manaCost": "{4}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Search your library for up to three Aura cards with different names, reveal them, put them into your hand, then shuffle.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Library",
+                        "filter": "enchantment Aura"
+                    },
+                    "storeAs": "searchable"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "searchable",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 3
+                        }
+                    },
+                    "storeSelected": "found",
+                    "prompt": "Search for up to three Aura cards with different names",
+                    "restrictions": [
+                        "OnePerCardName"
+                    ]
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "found",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    },
+                    "revealed": true
+                },
+                "ShuffleLibrary",
+                "EmitLibrarySearchedEvent"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "32",
+        "rarity": "RARE",
+        "artist": "Shishizaru",
+        "flavorText": "\"Choose one to heal, one to harm, and one to grant you the prudence to use them.\"\n—Miotri, auratouched mage",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/f/1fb144b8-f2ee-4d35-814d-ceb728b2ab75.jpg?1783943695"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
