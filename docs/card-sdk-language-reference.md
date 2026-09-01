@@ -12294,6 +12294,11 @@ substitution.
   deliberately lives inside the trigger rather than in a state trigger/SBA: per the card's ruling, a fifth counter
   arriving by any other route (proliferate, a doubler) does *not* sacrifice it — another pure passive counter with no
   inherent rule.
+  `blood` (`Counters.BLOOD`): RAV — Bloodletter Quill, whose `{2},{T}, put a blood counter on this artifact: draw a
+  card` ability accrues one per activation as part of the *cost* (`Costs.PutCounterOnSelf`, always payable) and then
+  reads the running count on resolution via `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.BLOOD))`
+  to size the life lost, while a second `{U}{B}` ability removes one as its *effect*. Note it is a counter, entirely
+  unrelated to the MID Blood *token* — another pure passive counter with no inherent rule.
   `soul` (`Counters.SOUL`): FDN — Ravenous Amulet, whose `{1},{T}, sacrifice a creature: draw` ability accumulates
   one per activation and whose `{4},{T}, sacrifice this: each opponent loses life` ability reads the count via
   `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.SOUL))` — another pure passive counter with no

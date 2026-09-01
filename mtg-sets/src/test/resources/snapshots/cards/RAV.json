@@ -329,6 +329,99 @@
     ]
 }
 
+// Bloodletter Quill
+{
+    "name": "Bloodletter Quill",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "{2}, {T}, Put a blood counter on this artifact: Draw a card, then you lose 1 life for each blood counter on this artifact.\n{U}{B}: Remove a blood counter from this artifact.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomPutCountersOnSelf",
+                                "counterType": "blood"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "EntityProperty",
+                                "entity": "Source",
+                                "numericProperty": {
+                                    "type": "CounterCount",
+                                    "counterType": {
+                                        "type": "Named",
+                                        "name": "blood"
+                                    }
+                                }
+                            },
+                            "target": "Controller"
+                        }
+                    ]
+                },
+                "descriptionOverride": "{2}, {T}, Put a blood counter on this artifact: Draw a card, then you lose 1 life for each blood counter on this artifact."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{U}{B}"
+                    }
+                },
+                "effect": {
+                    "type": "RemoveCounters",
+                    "counterType": "blood",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "{U}{B}: Remove a blood counter from this artifact."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "254",
+        "rarity": "RARE",
+        "artist": "Dan Murayama Scott",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/8/b8fbdf87-2424-4fc2-904e-b1e5fef2a335.jpg?1783943602",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "You may activate the second ability in response to activating the first one. If you do, you'll remove the blood counter that was just added before you lose the life."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Boros Fury-Shield
 {
     "name": "Boros Fury-Shield",
@@ -6246,6 +6339,148 @@
     ]
 }
 
+// Plague Boiler
+{
+    "name": "Plague Boiler",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "At the beginning of your upkeep, put a plague counter on this artifact.\n{1}{B}{G}: Put a plague counter on this artifact or remove a plague counter from it.\nWhen this artifact has three or more plague counters on it, sacrifice it. If you do, destroy all nonland permanents.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "plague",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "At the beginning of your upkeep, put a plague counter on this artifact."
+            }
+        ],
+        "stateTriggeredAbilities": [
+            {
+                "id": "ability_2",
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "plague"
+                            }
+                        }
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "SacrificeTarget",
+                            "target": "Self"
+                        },
+                        "successCriterion": "SuccessCriterion.PermanentsSacrificed"
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "BattlefieldMatching",
+                                    "filter": "nonland permanent"
+                                },
+                                "storeAs": "destroyAll_gathered"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "destroyAll_gathered",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Destroy"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "When this artifact has three or more plague counters on it, sacrifice it. If you do, destroy all nonland permanents"
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{B}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "AddCounters",
+                                "counterType": "plague",
+                                "count": 1,
+                                "target": "Self"
+                            },
+                            "description": "Put a plague counter on this artifact"
+                        },
+                        {
+                            "effect": {
+                                "type": "RemoveCounters",
+                                "counterType": "plague",
+                                "count": 1,
+                                "target": "Self"
+                            },
+                            "description": "Remove a plague counter from this artifact"
+                        }
+                    ]
+                },
+                "descriptionOverride": "{1}{B}{G}: Put a plague counter on this artifact or remove a plague counter from it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "269",
+        "rarity": "RARE",
+        "artist": "Mark Tedin",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/8/889bab2c-d383-4a04-9f93-d507ba1973d9.jpg?1783943595",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "You choose whether to add or remove a counter when the second ability resolves. You can't choose to remove a counter if there isn't one there."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If the third ability triggers, removing a counter in response won't stop the effect. However, somehow removing Plague Boiler from the battlefield in response would stop the effect because then you wouldn't be able to sacrifice Plague Boiler."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "The sacrifice is done on resolution of the triggered ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Primordial Sage
 {
     "name": "Primordial Sage",
@@ -8858,6 +9093,109 @@
     ]
 }
 
+// Twilight Drover
+{
+    "name": "Twilight Drover",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Whenever a creature token leaves the battlefield, put a +1/+1 counter on this creature.\n{2}{W}, Remove a +1/+1 counter from this creature: Create two 1/1 white Spirit creature tokens with flying.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature token",
+                    "from": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever a creature token leaves the battlefield, put a +1/+1 counter on this creature."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{W}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomRemoveCounters",
+                                "counterType": "+1/+1",
+                                "self": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Spirit"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ]
+                },
+                "descriptionOverride": "{2}{W}, Remove a +1/+1 counter from this creature: Create two 1/1 white Spirit creature tokens with flying."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "33",
+        "rarity": "RARE",
+        "artist": "Dave Allsop",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/b/bbc33bb6-d71c-45f9-9030-bdef3d40a08a.jpg?1783943693",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The first ability only cares that creature tokens leave the battlefield. It doesn't matter where they went."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If a player leaves a multiplayer game, all creature tokens that player owns also leave the game. Twilight Drover's ability will trigger once per token."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If Spirit tokens created by Twilight Drover leave the battlefield, they will trigger its first ability."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Note that Twilight Drover doesn't have any way to sacrifice tokens or otherwise cause them to leave the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Twisted Justice
 {
     "name": "Twisted Justice",
@@ -9601,6 +9939,62 @@
             }
         ]
     }
+}
+
+// Vulturous Zombie
+{
+    "name": "Vulturous Zombie",
+    "manaCost": "{3}{B}{G}",
+    "typeLine": "Creature — Plant Zombie",
+    "oracleText": "Flying\nWhenever a card is put into an opponent's graveyard from anywhere, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "nontoken own:opponent",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever a card is put into an opponent's graveyard from anywhere, put a +1/+1 counter on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "238",
+        "rarity": "RARE",
+        "artist": "Greg Staples",
+        "flavorText": "\"When something dies, all things benefit. Well okay, just our things.\"\n—Ezoc, Golgari rot farmer",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/b/7b0fb8e7-14aa-4f2d-aa05-c98b2c9c463c.jpg?1783943609",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The ability doesn't care why a card goes to your opponent's graveyard — only that it does. The ability triggers when a card is put into your opponent's graveyard from the stack (a spell resolves, fails to resolve, or is countered), from the battlefield (a permanent is destroyed or sacrificed), from the player's hand (a card is discarded), from the player's library (from a Millstone-like effect), or from any other zone."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "This ability triggers only on cards, so it won't trigger when a token is put into your opponent's graveyard."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
 }
 
 // War-Torch Goblin
