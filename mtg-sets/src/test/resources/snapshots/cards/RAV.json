@@ -9638,6 +9638,67 @@
     ]
 }
 
+// Three Dreams
+{
+    "name": "Three Dreams",
+    "manaCost": "{4}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Search your library for up to three Aura cards with different names, reveal them, put them into your hand, then shuffle.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Library",
+                        "filter": "enchantment Aura"
+                    },
+                    "storeAs": "searchable"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "searchable",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 3
+                        }
+                    },
+                    "storeSelected": "found",
+                    "prompt": "Search for up to three Aura cards with different names",
+                    "restrictions": [
+                        "OnePerCardName"
+                    ]
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "found",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    },
+                    "revealed": true
+                },
+                "ShuffleLibrary",
+                "EmitLibrarySearchedEvent"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "32",
+        "rarity": "RARE",
+        "artist": "Shishizaru",
+        "flavorText": "\"Choose one to heal, one to harm, and one to grant you the prudence to use them.\"\n—Miotri, auratouched mage",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/f/1fb144b8-f2ee-4d35-814d-ceb728b2ab75.jpg?1783943695"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Thundersong Trumpeter
 {
     "name": "Thundersong Trumpeter",
