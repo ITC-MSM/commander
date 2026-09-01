@@ -54,6 +54,116 @@
     ]
 }
 
+// Ajani Goldmane
+{
+    "name": "Ajani Goldmane",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Legendary Planeswalker — Ajani",
+    "oracleText": "+1: You gain 2 life.\n−1: Put a +1/+1 counter on each creature you control. Those creatures gain vigilance until end of turn.\n−6: Create a white Avatar creature token. It has \"This token's power and toughness are each equal to your life total.\"",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -1
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": "Self"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "VIGILANCE",
+                                "target": "Self"
+                            }
+                        ]
+                    }
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -6
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 0,
+                    "toughness": 0,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Avatar"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/f/6/f669cb99-be79-413b-8266-1dfd6a15cb41.jpg?1783942843",
+                    "staticAbilities": [
+                        {
+                            "type": "SetBasePowerToughnessDynamicStatic",
+                            "power": "YourLifeTotal",
+                            "toughness": "YourLifeTotal"
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "1",
+        "rarity": "RARE",
+        "artist": "Aleksi Briclot",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/a/2a1470a6-d09d-4a2a-84a6-d56e32ed237a.jpg?1783942919",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "The vigilance granted to a creature by the second ability remains until the end of the turn even if the +1/+1 counter is removed."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "The power and toughness of the Avatar created by the third ability will change as your life total changes."
+            }
+        ]
+    },
+    "startingLoyalty": 4,
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Amoeboid Changeling
 {
     "name": "Amoeboid Changeling",
@@ -584,6 +694,85 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Benthicore
+{
+    "name": "Benthicore",
+    "manaCost": "{6}{U}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "When this creature enters, create two 1/1 blue Merfolk Wizard creature tokens.\nTap two untapped Merfolk you control: Untap this creature. It gains shroud until end of turn.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLUE"
+                    ],
+                    "creatureTypes": [
+                        "Merfolk",
+                        "Wizard"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/5/2/526da544-23dd-42b8-8c00-c3609eea4489.jpg?1783942838"
+                },
+                "descriptionOverride": "create two 1/1 blue Merfolk Wizard creature tokens."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "count": 2,
+                        "filter": "permanent Merfolk"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": "Self",
+                            "tap": false
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "SHROUD",
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Untap this creature. It gains shroud until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "53",
+        "rarity": "UNCOMMON",
+        "artist": "Jim Nelson",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/2/f240d225-9fbf-438a-93c3-5fef325035e8.jpg?1783942905"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -1314,6 +1503,71 @@
         "artist": "Steven Belledin",
         "flavorText": "\"As far as I can tell, that frog dangling from the stick serves absolutely no purpose whatsoever.\"\n—Gaddock Teeg",
         "imageUri": "https://cards.scryfall.io/normal/front/e/e/ee8337bf-9fe8-45a0-974c-8911306b19ea.jpg?1783942880"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Ceaseless Searblades
+{
+    "name": "Ceaseless Searblades",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Elemental Warrior",
+    "oracleText": "Whenever you activate an ability of an Elemental, this creature gets +1/+0 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AbilityActivatedEvent",
+                    "sourceFilter": {
+                        "cardPredicates": [
+                            "IsPermanent",
+                            {
+                                "type": "HasSubtype",
+                                "subtype": "Elemental"
+                            }
+                        ],
+                        "statePredicates": [
+                            "IsOnBattlefield"
+                        ]
+                    },
+                    "includeManaAbilities": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you activate an ability of an Elemental, this creature gets +1/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "158",
+        "rarity": "UNCOMMON",
+        "artist": "Jim Murray",
+        "flavorText": "Flamekins' fires burn cool until they decide otherwise.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/7/a7e103a3-555c-4b68-9768-42637bfd2478.jpg?1783942878",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "This triggers whenever you activate an activated ability of an Elemental permanent, but not when you activate an activated ability of an Elemental source that's not on the battlefield."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "RED"
@@ -3755,6 +4009,130 @@
     ]
 }
 
+// Garruk Wildspeaker
+{
+    "name": "Garruk Wildspeaker",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Legendary Planeswalker — Garruk",
+    "oracleText": "+1: Untap two target lands.\n−1: Create a 3/3 green Beast creature token.\n−4: Creatures you control get +3/+3 and gain trample until end of turn.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "TapUntap",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "tap": false
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "count": 2,
+                        "filter": {
+                            "baseFilter": "land"
+                        },
+                        "id": "two target lands"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -1
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 3,
+                    "toughness": 3,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Beast"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/c/3/c3cbd01b-dbf5-424a-855d-f9a9d7e7e414.jpg?1783942838"
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -4
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                },
+                                "target": "Self"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "TRAMPLE",
+                                "target": "Self"
+                            }
+                        ]
+                    }
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "213",
+        "rarity": "RARE",
+        "artist": "Aleksi Briclot",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/a/ca6f13a2-9243-4ce9-9f71-bed74355b781.jpg?1783942863",
+        "rulings": [
+            {
+                "date": "2009-10-01",
+                "text": "The third ability affects only creatures you control at the time it resolves. It won't affect creatures that come under your control later in the turn."
+            },
+            {
+                "date": "2009-10-01",
+                "text": "The first ability can target any two lands. They don't have to be tapped."
+            }
+        ]
+    },
+    "startingLoyalty": 3,
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Ghostly Changeling
 {
     "name": "Ghostly Changeling",
@@ -4839,6 +5217,97 @@
     ]
 }
 
+// Hoofprints of the Stag
+{
+    "name": "Hoofprints of the Stag",
+    "manaCost": "{1}{W}",
+    "typeLine": "Kindred Enchantment — Elemental",
+    "oracleText": "Whenever you draw a card, you may put a hoofprint counter on this enchantment.\n{2}{W}, Remove four hoofprint counters from this enchantment: Create a 4/4 white Elemental creature token with flying. Activate only during your turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DrawEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "AddCounters",
+                        "counterType": "hoofprint",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Whenever you draw a card, you may put a hoofprint counter on this enchantment."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{W}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomRemoveCounters",
+                                "counterType": "hoofprint",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                },
+                                "self": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 4,
+                    "toughness": 4,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Elemental"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/1/c/1c791044-be86-47d8-8c1b-299f6ab254e6.jpg?1783942839"
+                },
+                "restrictions": [
+                    "OnlyDuringYourTurn"
+                ],
+                "descriptionOverride": "Create a 4/4 white Elemental creature token with flying."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "21",
+        "rarity": "RARE",
+        "artist": "Anthony S. Waters",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d11187c6-f213-45db-9de3-314df1f43589.jpg?1783942914",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "If a spell or ability has you draw multiple cards, Hoofprints of the Stag's ability triggers that many times."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Hornet Harasser
 {
     "name": "Hornet Harasser",
@@ -5368,6 +5837,122 @@
     ]
 }
 
+// Incandescent Soulstoke
+{
+    "name": "Incandescent Soulstoke",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Elemental Shaman",
+    "oracleText": "Other Elemental creatures you control get +1/+1.\n{1}{R}, {T}: You may put an Elemental creature card from your hand onto the battlefield. That creature gains haste until end of turn. Sacrifice it at the beginning of the next end step.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{R}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "filter": "creature Elemental"
+                            },
+                            "storeAs": "put_candidates"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "put_candidates",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "putting",
+                            "prompt": "Put an Elemental creature card onto the battlefield"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "putting",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            }
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "putting",
+                            "ifNotEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GrantKeyword",
+                                        "keyword": "HASTE",
+                                        "target": {
+                                            "type": "PipelineTarget",
+                                            "collectionName": "putting"
+                                        }
+                                    },
+                                    {
+                                        "type": "CreateDelayedTrigger",
+                                        "step": "END",
+                                        "effect": {
+                                            "type": "SacrificeTarget",
+                                            "target": {
+                                                "type": "PipelineTarget",
+                                                "collectionName": "putting"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Put an Elemental creature card from your hand onto the battlefield. It gains haste until end of turn. Sacrifice it at the beginning of the next end step."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature Elemental ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "178",
+        "rarity": "RARE",
+        "artist": "Todd Lockwood",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/8/c8829b3c-5267-44c6-b709-c2dfc683b0a8.jpg?1783942873"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Incendiary Command
 {
     "name": "Incendiary Command",
@@ -5773,6 +6358,128 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Jace Beleren
+{
+    "name": "Jace Beleren",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Legendary Planeswalker — Jace",
+    "oracleText": "+2: Each player draws a card.\n−1: Target player draws a card.\n−10: Target player mills twenty cards.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 2
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "Each"
+                    }
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -1
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target player"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -10
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 20
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "71",
+        "rarity": "RARE",
+        "artist": "Aleksi Briclot",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/d/cdffb058-1af0-41bb-956a-ae10e092c389.jpg?1783942901",
+        "rulings": [
+            {
+                "date": "2009-10-01",
+                "text": "If there are fewer than twenty cards in the targeted player's library, that player puts all the cards from their library into their graveyard."
+            }
+        ]
+    },
+    "startingLoyalty": 3,
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -6488,6 +7195,248 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Liliana Vess
+{
+    "name": "Liliana Vess",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Legendary Planeswalker — Liliana",
+    "oracleText": "+1: Target player discards a card.\n−2: Search your library for a card, then shuffle and put that card on top.\n−8: Put all creature cards from all graveyards onto the battlefield under your control.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "chooser": "TargetPlayer",
+                            "storeSelected": "discarded",
+                            "prompt": "Choose 1 card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "moveType": "Discard"
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -2
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        "ShuffleLibrary",
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Top"
+                            }
+                        },
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -8
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "player": "Each",
+                                "filter": "creature"
+                            },
+                            "storeAs": "creatureCardsInAllGraveyards"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "creatureCardsInAllGraveyards",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            }
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "121",
+        "rarity": "RARE",
+        "artist": "Aleksi Briclot",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/6/1662fcb1-f142-43ff-b682-6827dea2ff7e.jpg?1783942888",
+        "rulings": [
+            {
+                "date": "2009-10-01",
+                "text": "A \"creature card\" is any card with the type creature, even if it has other types such as artifact, enchantment, or land. Older cards of type summon are also creature cards."
+            }
+        ]
+    },
+    "startingLoyalty": 5,
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Lowland Oaf
+{
+    "name": "Lowland Oaf",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Giant Warrior",
+    "oracleText": "{T}: Target Goblin creature you control gets +1/+0 and gains flying until end of turn. Sacrifice that creature at the beginning of the next end step.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target Goblin creature you control"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FLYING",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target Goblin creature you control"
+                            }
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "step": "END",
+                            "effect": {
+                                "type": "SacrificeTarget",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target Goblin creature you control"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature Goblin ctrl:you"
+                        },
+                        "id": "target Goblin creature you control"
+                    }
+                ],
+                "descriptionOverride": "Target Goblin creature you control gets +1/+0 and gains flying until end of turn. Sacrifice that creature at the beginning of the next end step."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "184",
+        "artist": "Jeff Easley",
+        "flavorText": "\"I don't know why the little one was so mad. He said to put him down, and I put him down.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/d/cdaa7f6a-9639-4bee-aa12-20054d7975d5.jpg?1783942871"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
