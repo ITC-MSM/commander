@@ -3202,6 +3202,105 @@
     ]
 }
 
+// Firemane Angel
+{
+    "name": "Firemane Angel",
+    "manaCost": "{3}{R}{W}{W}",
+    "typeLine": "Creature — Angel",
+    "oracleText": "Flying, first strike\nAt the beginning of your upkeep, if Firemane Angel is in your graveyard or on the battlefield, you may gain 1 life.\n{6}{R}{R}{W}{W}: Return this card from your graveyard to the battlefield. Activate only during your upkeep.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "FIRST_STRIKE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                },
+                "activeZones": [
+                    "Battlefield",
+                    "Graveyard"
+                ],
+                "interveningIf": {
+                    "type": "SourceInZone",
+                    "zones": [
+                        "Battlefield",
+                        "Graveyard"
+                    ]
+                },
+                "descriptionOverride": "At the beginning of your upkeep, if Firemane Angel is in your graveyard or on the battlefield, you may gain 1 life."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{6}{R}{R}{W}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Battlefield",
+                    "fromZone": "Graveyard"
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationAll",
+                        "restrictions": [
+                            "OnlyDuringYourTurn",
+                            {
+                                "type": "DuringStep",
+                                "step": "UPKEEP"
+                            }
+                        ]
+                    }
+                ],
+                "activateFromZone": "Graveyard",
+                "descriptionOverride": "Return this card from your graveyard to the battlefield. Activate only during your upkeep."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "205",
+        "rarity": "RARE",
+        "artist": "Matt Cavotta",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/9/493730ab-c30d-4830-a188-0462426fc5bf.jpg?1783943621",
+        "rulings": [
+            {
+                "date": "2017-11-17",
+                "text": "If Firemane Angel is put into your graveyard from the battlefield or returned from your graveyard to the battlefield during your upkeep before its triggered ability resolves, you won't gain 1 life."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Fists of Ironwood
 {
     "name": "Fists of Ironwood",
@@ -7055,6 +7154,84 @@
     ]
 }
 
+// Razia's Purification
+{
+    "name": "Razia's Purification",
+    "manaCost": "{4}{R}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Each player chooses three permanents they control, then sacrifices the rest.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Players",
+                "players": "Each"
+            },
+            "body": {
+                "type": "Composite",
+                "effects": [
+                    {
+                        "type": "GatherCards",
+                        "source": {
+                            "type": "ControlledPermanents",
+                            "filter": "permanent"
+                        },
+                        "storeAs": "permanents"
+                    },
+                    {
+                        "type": "SelectFromCollection",
+                        "from": "permanents",
+                        "selection": {
+                            "type": "ChooseExactly",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 3
+                            }
+                        },
+                        "storeSelected": "kept",
+                        "storeRemainder": "sacrificed",
+                        "prompt": "Choose three permanents you control to keep; the rest are sacrificed.",
+                        "selectedLabel": "Keep",
+                        "remainderLabel": "Sacrifice",
+                        "useTargetingUI": true,
+                        "alwaysPrompt": true
+                    },
+                    {
+                        "type": "MoveCollection",
+                        "from": "sacrificed",
+                        "destination": {
+                            "type": "ToZone",
+                            "zone": "Graveyard"
+                        },
+                        "moveType": "Sacrifice"
+                    }
+                ]
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "224",
+        "rarity": "RARE",
+        "artist": "Shishizaru",
+        "flavorText": "Only the chosen ones are spared.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/3/73bfefd3-bddd-47bb-92f3-9356a7bca637.jpg?1783943615",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "If a player doesn't control three permanents, that player chooses all the permanents they do control and doesn't sacrifice anything."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Players choose permanents in turn order around the table, then simultaneously sacrifice all permanents not chosen."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Recollect
 {
     "name": "Recollect",
@@ -8455,6 +8632,59 @@
     ]
 }
 
+// Stasis Cell
+{
+    "name": "Stasis Cell",
+    "manaCost": "{4}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature doesn't untap during its controller's untap step.\n{3}{U}: Attach this Aura to target creature.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{U}"
+                    }
+                },
+                "effect": "AttachEquipment",
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        }
+                    }
+                ],
+                "descriptionOverride": "{3}{U}: Attach this Aura to target creature."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "DOESNT_UNTAP"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "artist": "Mark A. Nelson",
+        "flavorText": "The Simic created the cells to preserve their experiments. The Azorius put the cells to use on the guilty.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/7/e75611d2-6e87-4032-a71c-b46806798a29.jpg?1783943680"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Stone-Seeder Hierophant
 {
     "name": "Stone-Seeder Hierophant",
@@ -8883,6 +9113,97 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Svogthos, the Restless Tomb
+{
+    "name": "Svogthos, the Restless Tomb",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{3}{B}{G}: Until end of turn, this land becomes a black and green Plant Zombie creature with \"This creature's power and toughness are each equal to the number of creature cards in your graveyard.\" It's still a land.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{B}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "BecomeCreature",
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "creatureTypes": [
+                        "Plant",
+                        "Zombie"
+                    ],
+                    "colors": [
+                        "BLACK",
+                        "GREEN"
+                    ],
+                    "dynamicPower": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "filter": "creature"
+                    },
+                    "dynamicToughness": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "filter": "creature"
+                    }
+                },
+                "descriptionOverride": "{3}{B}{G}: Until end of turn, this land becomes a black and green Plant Zombie creature with \"This creature's power and toughness are each equal to the number of creature cards in your graveyard.\" It's still a land."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "283",
+        "rarity": "UNCOMMON",
+        "artist": "Martina Pilcerova",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5cf3ba87-93a0-44db-83d9-92e23a677a62.jpg?1783943589",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "While animated, Svogthos's power and toughness changes each time a creature card enters or leaves its controller's graveyard."
+            },
+            {
+                "date": "2008-08-01",
+                "text": "A noncreature permanent that turns into a creature can attack, and its {T} abilities can be activated, only if its controller has continuously controlled that permanent since the beginning of their most recent turn. It doesn't matter how long the permanent has been a creature."
+            },
+            {
+                "date": "2009-10-01",
+                "text": "Activating the ability that turns it into a creature while it's already a creature will override any effects that set its power and/or toughness to a specific number. However, any effect that raises or lowers power and/or toughness (such as the effect created by Giant Growth, Glorious Anthem, or a +1/+1 counter) will continue to apply."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
     ]
 }
 
@@ -10716,6 +11037,93 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Woodwraith Corrupter
+{
+    "name": "Woodwraith Corrupter",
+    "manaCost": "{3}{B}{B}{G}",
+    "typeLine": "Creature — Elemental Horror",
+    "oracleText": "{1}{B}{G}, {T}: Target Forest becomes a 4/4 black and green Elemental Horror creature. It's still a land.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 6
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{B}{G}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "BecomeCreature",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target Forest"
+                    },
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "creatureTypes": [
+                        "Elemental",
+                        "Horror"
+                    ],
+                    "colors": [
+                        "BLACK",
+                        "GREEN"
+                    ],
+                    "duration": "Permanent"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "land Forest"
+                        },
+                        "id": "target Forest"
+                    }
+                ],
+                "descriptionOverride": "{1}{B}{G}, {T}: Target Forest becomes a 4/4 black and green Elemental Horror creature. It's still a land."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "240",
+        "rarity": "RARE",
+        "artist": "Greg Staples",
+        "flavorText": "\"Its darkened sap penetrates natural fibers and spreads its own genes. Emulation experiments are underway.\"\n—Simic research notes",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d1ee1ceb-61dd-4c98-bc48-a0763315a14f.jpg?1783943608",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The effect has no stated duration, so a land turned into a creature this way continues being a creature as long as the land is on the battlefield."
+            },
+            {
+                "date": "2008-08-01",
+                "text": "A noncreature permanent that turns into a creature can attack, and its {T} abilities can be activated, only if its controller has continuously controlled that permanent since the beginning of their most recent turn. It doesn't matter how long the permanent has been a creature."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
     ]
 }
 
