@@ -1,3 +1,80 @@
+// Alpine Meadow
+{
+    "name": "Alpine Meadow",
+    "manaCost": "",
+    "typeLine": "Snow Land — Mountain Plains",
+    "oracleText": "({T}: Add {R} or {W}.)\nThis land enters tapped.",
+    "script": {
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "248",
+        "artist": "Piotr Dura",
+        "flavorText": "\"Here perished Rognar the Reckless after his hundred-day battle with the Ironmaw Dragon. We raised these stones to mark his resting place.\"\n—Iskene, Kannah storyteller",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/7/8702d6b9-bb01-4841-a76d-4a576066c772.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
+// Arctic Treeline
+{
+    "name": "Arctic Treeline",
+    "manaCost": "",
+    "typeLine": "Snow Land — Forest Plains",
+    "oracleText": "({T}: Add {G} or {W}.)\nThis land enters tapped.",
+    "script": {
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "249",
+        "artist": "Alayna Danner",
+        "flavorText": "\"When the Light of Starnheim shines here, every frost-edged needle glitters with the reflected glory of the Cosmos.\"\n—Iskene, Kannah storyteller",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/2/b20e3117-f1e4-4449-ae9d-0b66abfc717d.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
+// Augury Raven
+{
+    "name": "Augury Raven",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Bird",
+    "oracleText": "Flying\nForetell {1}{U} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{1}{U}"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "44",
+        "artist": "Jesper Ejsing",
+        "flavorText": "Some ravens collect shiny baubles; others hoard omens and secrets.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/9/a9947cfd-91d6-479e-a7f6-2a2050f020f3.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Axgard Cavalry
 {
     "name": "Axgard Cavalry",
@@ -105,6 +182,120 @@
     "layout": "MODAL_DFC"
 }
 
+// Battlefield Raptor
+{
+    "name": "Battlefield Raptor",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Bird",
+    "oracleText": "Flying, first strike",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "FIRST_STRIKE"
+    ],
+    "metadata": {
+        "collectorNumber": "3",
+        "artist": "Mike Bierek",
+        "flavorText": "It wheeled upward, away from the shrieks and thunder. It reached the point where sky met smoke, and, with but a glance at the horizon, aimed itself and dove.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/8/389f0045-218d-41cd-bdca-8a9a0ab1b31b.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Behold the Multiverse
+{
+    "name": "Behold the Multiverse",
+    "manaCost": "{3}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Scry 2, then draw two cards.\nForetell {1}{U} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "keywords": [
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{1}{U}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Scry",
+                    "count": 2
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "46",
+        "artist": "Magali Villeneuve",
+        "flavorText": "Countless worlds unfolded before Niko, every one in need of heroes.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/7/27855a38-a682-4f97-ad22-ac625e86faec.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Beskir Shieldmate
+{
+    "name": "Beskir Shieldmate",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Warrior",
+    "oracleText": "When this creature dies, create a 1/1 white Human Warrior creature token.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Human",
+                        "Warrior"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "4",
+        "artist": "Manuel Castañón",
+        "flavorText": "\"If we fall today, let us fall with honor, defending our realm from the horrors that would defile it. Forward, shieldmates! To Starnheim!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/f/dfc1df84-9c47-444b-9d58-d9c7bed51c66.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Blightstep Pathway
 {
     "name": "Blightstep Pathway",
@@ -164,6 +355,187 @@
         "BLACK"
     ],
     "layout": "MODAL_DFC"
+}
+
+// Breakneck Berserker
+{
+    "name": "Breakneck Berserker",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Dwarf Berserker",
+    "oracleText": "Haste",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "metadata": {
+        "collectorNumber": "124",
+        "artist": "Scott Murphy",
+        "flavorText": "\"Go for the knees! The last giant who tried to get past us got rolled back down the mountain in a dozen pieces.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d6eb23c9-6061-4ad1-a8f3-2c791c49f352.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Brinebarrow Intruder
+{
+    "name": "Brinebarrow Intruder",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Human Rogue",
+    "oracleText": "Flash\nWhen this creature enters, target creature an opponent controls gets -2/-0 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature an opponent controls"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target creature an opponent controls"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "49",
+        "artist": "Scott Murphy",
+        "flavorText": "Locked in the ice of Karfell, the treasures of ancient nobles await in ruins guarded by the dead.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/9/89960a74-9e17-4e30-874a-4286dd4c917d.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Canopy Tactician
+{
+    "name": "Canopy Tactician",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Elf Warrior",
+    "oracleText": "Other Elves you control get +1/+1.\n{T}: Add {G}{G}{G}.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "permanent Elf ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "378",
+        "rarity": "RARE",
+        "artist": "Ekaterina Burmak",
+        "flavorText": "\"Death and life are two ends of the same spear.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/e/3eaf48c9-09bc-4d81-a3a5-432219a71754.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Clarion Spirit
+{
+    "name": "Clarion Spirit",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Whenever you cast your second spell each turn, create a 1/1 white Spirit creature token with flying.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthSpellCastEvent",
+                    "nthSpell": 2,
+                    "player": "You"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Spirit"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "6",
+        "rarity": "UNCOMMON",
+        "artist": "Anastasia Ovchinnikova",
+        "flavorText": "To the living, the horn sounds faint and mournful, but to the spirits of Istfell, it is a thunderous call that must be obeyed.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/6/86a4c348-1012-4339-960a-c7bc7fd84fbb.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }
 
 // Darkbore Pathway
@@ -272,6 +644,564 @@
     ]
 }
 
+// Depart the Realm
+{
+    "name": "Depart the Realm",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Return target nonland permanent to its owner's hand.\nForetell {U} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "keywords": [
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{U}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target nonland permanent"
+            },
+            "destination": "Hand"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "nonland permanent"
+                },
+                "id": "target nonland permanent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "53",
+        "artist": "Denman Rooke",
+        "flavorText": "\"My home calls to me, I must go.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/c/2ce0403d-76ed-4eb0-abdd-74ed28f96137.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Dogged Pursuit
+{
+    "name": "Dogged Pursuit",
+    "manaCost": "{3}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "At the beginning of your end step, each opponent loses 1 life and you gain 1 life.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "EachOpponent"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "85",
+        "artist": "Jason Rainville",
+        "flavorText": "Kaya had stalked countless horrific foes, but never one that killed with such callous precision and twisted creativity.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/0/60f6a159-b969-4767-802e-409f8bf286fe.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Doomskar
+{
+    "name": "Doomskar",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy all creatures.\nForetell {1}{W}{W} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "keywords": [
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{1}{W}{W}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "BattlefieldMatching",
+                        "filter": "creature"
+                    },
+                    "storeAs": "destroyAll_gathered"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "destroyAll_gathered",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    },
+                    "moveType": "Destroy"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "9",
+        "rarity": "RARE",
+        "artist": "Piotr Dura",
+        "flavorText": "The realms crashed together, with Bretagard at the center of the calamity.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/130ee895-1e5e-4f82-bb66-e1275bac75dd.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Doomskar Oracle
+{
+    "name": "Doomskar Oracle",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "Whenever you cast your second spell each turn, you gain 2 life.\nForetell {W} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{W}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthSpellCastEvent",
+                    "nthSpell": 2,
+                    "player": "You"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "10",
+        "artist": "Taylor Ingvarsson",
+        "flavorText": "\"Giants and monsters loom on the horizon, and the elves plan to murder our gods!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/d/6dae01c8-15bb-44ad-a2c6-9bcf7a9e8c17.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Doomskar Titan
+{
+    "name": "Doomskar Titan",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Creature — Giant Berserker",
+    "oracleText": "When this creature enters, creatures you control get +1/+0 and gain haste until end of turn.\nForetell {4}{R} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{4}{R}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 0
+                                },
+                                "target": "Self"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "HASTE",
+                                "target": "Self"
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "130",
+        "rarity": "UNCOMMON",
+        "artist": "Johann Bodin",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a4e125e4-103f-4a68-b85f-1382646da71e.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Dwarven Reinforcements
+{
+    "name": "Dwarven Reinforcements",
+    "manaCost": "{3}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create two 2/1 red Dwarf Berserker creature tokens.\nForetell {1}{R} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "keywords": [
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{1}{R}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "power": 2,
+            "toughness": 1,
+            "colors": [
+                "RED"
+            ],
+            "creatureTypes": [
+                "Dwarf",
+                "Berserker"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "134",
+        "artist": "Andrey Kuzinskiy",
+        "flavorText": "\"Orders? We don't wait for orders!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/0/40bcc7cb-65dd-4bc6-8606-a162fa6c65f7.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Elderfang Disciple
+{
+    "name": "Elderfang Disciple",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Elf Cleric",
+    "oracleText": "When this creature enters, each opponent discards a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "EachOpponent"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "discarded"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "93",
+        "artist": "Miranda Meeks",
+        "flavorText": "\"One day, the great serpent will rejoin us on Skemfar, and those who've wronged us will taste of our venom.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7f3a6148-d005-49c1-a7fc-867c4e8251cd.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Elderleaf Mentor
+{
+    "name": "Elderleaf Mentor",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Elf Warrior",
+    "oracleText": "When this creature enters, create a 1/1 green Elf Warrior creature token.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Elf",
+                        "Warrior"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "165",
+        "artist": "Zoltan Boros",
+        "flavorText": "\"Our ancestors grew complacent in their divinity, allowing their lessers to topple them. Never again.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/e/5e8bded3-46c3-474f-9d09-978df8705ad1.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Elven Ambush
+{
+    "name": "Elven Ambush",
+    "manaCost": "{3}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Create a 1/1 green Elf Warrior creature token for each Elf you control.",
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "permanent Elf"
+            },
+            "power": 1,
+            "toughness": 1,
+            "colors": [
+                "GREEN"
+            ],
+            "creatureTypes": [
+                "Elf",
+                "Warrior"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "391",
+        "rarity": "UNCOMMON",
+        "artist": "Chris Seaman",
+        "flavorText": "\"No elf can match a Tuskeri in combat. Why not charge?\"\n—Knorjolvin, Tuskeri raider",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/0/70479c44-da7c-48c7-8c6a-47210dc03277.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Elvish Warmaster
+{
+    "name": "Elvish Warmaster",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elf Warrior",
+    "oracleText": "Whenever one or more other Elves you control enter, create a 1/1 green Elf Warrior creature token. This ability triggers only once each turn.\n{5}{G}{G}: Elves you control get +2/+2 and gain deathtouch until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "PermanentsEnteredEvent",
+                    "filter": "permanent Elf ctrl:you",
+                    "excludeSource": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Elf",
+                        "Warrior"
+                    ]
+                },
+                "oncePerTurn": true
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}{G}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "permanent Elf ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "target": "Self"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "DEATHTOUCH",
+                                "target": "Self"
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "167",
+        "rarity": "RARE",
+        "artist": "Alexander Mokhov",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/8/58da074a-a776-4e3f-be04-9e7f18320ae1.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Esika's Chariot
 {
     "name": "Esika's Chariot",
@@ -348,6 +1278,156 @@
     ]
 }
 
+// Feed the Serpent
+{
+    "name": "Feed the Serpent",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Exile target creature or planeswalker.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature or planeswalker"
+            },
+            "destination": "Exile"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetCreatureOrPlaneswalker",
+                "id": "target creature or planeswalker"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "95",
+        "artist": "Nicholas Gregory",
+        "flavorText": "He spent the final moments of his existence tumbling down the length of the serpent's jaws, driven mad by the magnitude of the Cosmos.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/9/99a1a75b-20cf-4db9-a244-cc54411446c4.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Firja, Judge of Valor
+{
+    "name": "Firja, Judge of Valor",
+    "manaCost": "{2}{W}{B}{B}",
+    "typeLine": "Legendary Creature — Angel Cleric",
+    "oracleText": "Flying, lifelink\nWhenever you cast your second spell each turn, look at the top three cards of your library. Put one of them into your hand and the rest into your graveyard.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "LIFELINK"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthSpellCastEvent",
+                    "nthSpell": 2,
+                    "player": "You"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                }
+                            },
+                            "storeAs": "looked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "looked",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "kept",
+                            "storeRemainder": "rest",
+                            "selectedLabel": "Put in hand",
+                            "remainderLabel": "Put in graveyard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "kept",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "rest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "209",
+        "rarity": "UNCOMMON",
+        "artist": "Livia Prima",
+        "flavorText": "She is both shepherd and reaper, and her judgment is final.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/f/df87077c-85d8-499e-bce0-27697caada5a.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "WHITE"
+    ]
+}
+
+// Funeral Longboat
+{
+    "name": "Funeral Longboat",
+    "manaCost": "{2}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Vigilance\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "VIGILANCE",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 1
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "238",
+        "artist": "Donato Giancola",
+        "flavorText": "\"Cast onto the windless water, he drifted until the sea turned to sky.\"\n—*Saga of the Lost King*",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/5/45c48042-178f-432e-9eee-10bfa1e0795f.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
 // Fynn, the Fangbearer
 {
     "name": "Fynn, the Fangbearer",
@@ -399,6 +1479,245 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Gates of Istfell
+{
+    "name": "Gates of Istfell",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {W}.\n{2}{W}{U}{U}, {T}, Sacrifice this land: You gain 2 life and draw two cards.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{W}{U}{U}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "256",
+        "rarity": "UNCOMMON",
+        "artist": "Anastasia Ovchinnikova",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/6/2627acb7-57d9-4429-9bc5-e7dd444d8d48.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "WHITE"
+    ]
+}
+
+// Glacial Floodplain
+{
+    "name": "Glacial Floodplain",
+    "manaCost": "",
+    "typeLine": "Snow Land — Plains Island",
+    "oracleText": "({T}: Add {W} or {U}.)\nThis land enters tapped.",
+    "script": {
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "257",
+        "artist": "Sarah Finnigan",
+        "flavorText": "\"A cliff once rose from the surf here—until Bjora Dawn-Greeter declared that it was blocking her view and pulled it down bare-handed.\"\n—Iskene, Kannah storyteller",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/d/9de5fadd-4559-479f-b45d-abe792f0f6e5.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "WHITE"
+    ]
+}
+
+// Gnottvold Recluse
+{
+    "name": "Gnottvold Recluse",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Spider",
+    "oracleText": "Reach",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "metadata": {
+        "collectorNumber": "172",
+        "artist": "Nicholas Gregory",
+        "flavorText": "Fed up with webs impeding travelers in other realms, Kolvori banished the giant spiders to Gnottvold, where their webs snare only the occasional rampaging troll.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/f/af46c8c8-5dfa-4ebb-b0b9-cd25d01dd432.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Gnottvold Slumbermound
+{
+    "name": "Gnottvold Slumbermound",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {R}.\n{3}{R}{G}{G}, {T}, Sacrifice this land: Destroy target land. Create a 4/4 green Troll Warrior creature token with trample.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}{R}{G}{G}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target land"
+                            },
+                            "destination": "Graveyard",
+                            "byDestruction": true
+                        },
+                        {
+                            "type": "CreateToken",
+                            "power": 4,
+                            "toughness": 4,
+                            "colors": [
+                                "GREEN"
+                            ],
+                            "creatureTypes": [
+                                "Troll",
+                                "Warrior"
+                            ],
+                            "keywords": [
+                                "TRAMPLE"
+                            ]
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "land"
+                        },
+                        "id": "target land"
+                    }
+                ]
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "258",
+        "rarity": "UNCOMMON",
+        "artist": "Simon Dominic",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/3/735470df-65d8-43e9-837e-4869c8e4f052.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "RED"
+    ]
+}
+
+// Gods' Hall Guardian
+{
+    "name": "Gods' Hall Guardian",
+    "manaCost": "{5}{W}",
+    "typeLine": "Creature — Cat",
+    "oracleText": "Vigilance\nForetell {3}{W} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 6
+    },
+    "keywords": [
+        "VIGILANCE",
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{3}{W}"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "13",
+        "artist": "Sidharth Chaturvedi",
+        "flavorText": "Not a single rat has been seen in Istfell since the gods moved in.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/8/e8e645c8-90ac-4865-b441-e64251d6c9a8.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -491,6 +1810,57 @@
     ]
 }
 
+// Guardian Gladewalker
+{
+    "name": "Guardian Gladewalker",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\nWhen this creature enters, put a +1/+1 counter on target creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "CHANGELING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "174",
+        "artist": "Mila Pesic",
+        "flavorText": "The raiders' only warning was a whisper floating through the mist: \"Trespassers.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/8/587eed42-5111-4161-9af5-bf76556c542a.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Hengegate Pathway
 {
     "name": "Hengegate Pathway",
@@ -572,6 +1942,29 @@
     "colorIdentityOverride": [
         "GREEN",
         "RED"
+    ]
+}
+
+// Ice Tunnel
+{
+    "name": "Ice Tunnel",
+    "manaCost": "",
+    "typeLine": "Snow Land — Island Swamp",
+    "oracleText": "({T}: Add {U} or {B}.)\nThis land enters tapped.",
+    "script": {
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "262",
+        "artist": "Johannes Voss",
+        "flavorText": "\"The ice cracked underfoot; strange shapes swam beneath the surface. Who else has walked this blighted path?\"\n—Iskene, Kannah storyteller",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/c/8cff3ef0-4dfb-472e-aa1e-77613dd0f6d8.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "BLUE"
     ]
 }
 
@@ -663,6 +2056,423 @@
     ]
 }
 
+// Iron Verdict
+{
+    "name": "Iron Verdict",
+    "manaCost": "{2}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Iron Verdict deals 5 damage to target tapped creature.\nForetell {W} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "keywords": [
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{W}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 5
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target tapped creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature tapped"
+                },
+                "id": "target tapped creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "17",
+        "artist": "Bryan Sola",
+        "flavorText": "\"You'll raid nothing but mist in Istfell.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/f/2fb38f5b-a2c2-4b06-8c9c-9615475a43e7.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Jaspera Sentinel
+{
+    "name": "Jaspera Sentinel",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Elf Rogue",
+    "oracleText": "Reach\n{T}, Tap an untapped creature you control: Add one mana of any color.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomTapPermanents",
+                                "filter": "creature ctrl:you",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "178",
+        "artist": "Raoul Vitale",
+        "flavorText": "The arrows of the elvish elite strike as true and deadly as the fangs of the Cosmos Serpent they revere.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/a/1a68615d-9808-479d-aa80-50651246954e.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Karfell Kennel-Master
+{
+    "name": "Karfell Kennel-Master",
+    "manaCost": "{4}{B}",
+    "typeLine": "Creature — Zombie Berserker",
+    "oracleText": "When this creature enters, up to two target creatures each get +1/+0 and gain indestructible until end of turn. (Damage and effects that say \"destroy\" don't destroy them.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 0
+                                },
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "INDESTRUCTIBLE",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            }
+                        ]
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "count": 2,
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "101",
+        "artist": "Izzy",
+        "flavorText": "Trapped in a realm of dead flesh and scarce hunting, the ravenous wolves of Karfell follow the Dread Marn to warm game.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/6/f670c380-6faa-42ec-ab41-6be8137169b2.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Kaya's Onslaught
+{
+    "name": "Kaya's Onslaught",
+    "manaCost": "{2}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +1/+1 and gains double strike until end of turn.\nForetell {W} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "keywords": [
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{W}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "DOUBLE_STRIKE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "18",
+        "rarity": "UNCOMMON",
+        "artist": "Daarken",
+        "flavorText": "\"Your trail ends here.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/2/f28e151f-b61b-486f-b7f8-7abde207c442.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Littjara Glade-Warden
+{
+    "name": "Littjara Glade-Warden",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\n{2}{G}, {T}, Exile a creature card from your graveyard: Put two +1/+1 counters on target creature. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "CHANGELING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{G}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomExileFrom",
+                                "zone": "Graveyard",
+                                "filter": "creature"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 2,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "timing": "SorcerySpeed"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "182",
+        "rarity": "UNCOMMON",
+        "artist": "Deruchenko Alexander",
+        "flavorText": "In every tree, a restless spirit.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/9/a92dde51-310e-4f28-bd3b-d43b639785ec.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Maja, Bretagard Protector
+{
+    "name": "Maja, Bretagard Protector",
+    "manaCost": "{2}{G}{W}{W}",
+    "typeLine": "Legendary Creature — Human Warrior",
+    "oracleText": "Other creatures you control get +1/+1.\nLandfall — Whenever a land you control enters, create a 1/1 white Human Warrior creature token.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "land ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Human",
+                        "Warrior"
+                    ]
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "222",
+        "rarity": "UNCOMMON",
+        "artist": "Lie Setiawan",
+        "flavorText": "\"Our enemies have breached our realm. To survive, the clans must fight as one!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cc3707f1-ed9d-412e-a7be-b6d8b554bd6c.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
+// Mammoth Growth
+{
+    "name": "Mammoth Growth",
+    "manaCost": "{2}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +4/+4 until end of turn.\nForetell {G} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "keywords": [
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{G}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": 4
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": 4
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "183",
+        "artist": "Ilse Gort",
+        "flavorText": "Thus the longhall became a flathall.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/e/0e55041f-69a5-4bcf-899f-a4b44c208b4d.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Mistwalker
 {
     "name": "Mistwalker",
@@ -732,6 +2542,182 @@
     ]
 }
 
+// Ravenous Lindwurm
+{
+    "name": "Ravenous Lindwurm",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Creature — Wurm",
+    "oracleText": "When this creature enters, you gain 4 life.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "187",
+        "artist": "Filip Burburan",
+        "flavorText": "\"I'm no coward, but I'd sooner tangle with a rampaging Torga troll than a hungry lindwurm!\"\n—Yegar, Beskir warrior",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/9/9961e3fc-167e-4043-8510-cc5cf08d473e.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Rimewood Falls
+{
+    "name": "Rimewood Falls",
+    "manaCost": "",
+    "typeLine": "Snow Land — Forest Island",
+    "oracleText": "({T}: Add {G} or {U}.)\nThis land enters tapped.",
+    "script": {
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "266",
+        "artist": "Piotr Dura",
+        "flavorText": "\"For a fortnight, our warband lay still beneath the icy waters, breathing through reeds as we waited for the great bear to appear.\"\n—Iskene, Kannah storyteller",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/a/da1db084-f235-4e26-8867-5f0835a0d283.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ]
+}
+
+// Sarulf's Packmate
+{
+    "name": "Sarulf's Packmate",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Wolf",
+    "oracleText": "When this creature enters, draw a card.\nForetell {1}{G} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{1}{G}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "192",
+        "artist": "Ilse Gort",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/0/6061113e-7dd8-4739-b4dd-55bb7f9e39a2.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Saw It Coming
+{
+    "name": "Saw It Coming",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target spell.\nForetell {1}{U} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "keywords": [
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{1}{U}"
+        }
+    ],
+    "script": {
+        "spellEffect": "Counter",
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "76",
+        "rarity": "UNCOMMON",
+        "artist": "Randy Vargas",
+        "flavorText": "\"How predictable.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/7/877a1bb9-5eae-453a-bec0-a9de20ea6815.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Scorn Effigy
+{
+    "name": "Scorn Effigy",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Scarecrow",
+    "oracleText": "Foretell {0} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{0}"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "246",
+        "artist": "Wayne Reynolds",
+        "flavorText": "It remembers every wound it has seen or suffered—and nothing else.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/f/4fa13084-3e68-49f4-8cc9-6d02286fd150.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
 // Seize the Spoils
 {
     "name": "Seize the Spoils",
@@ -770,6 +2756,172 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Shepherd of the Cosmos
+{
+    "name": "Shepherd of the Cosmos",
+    "manaCost": "{4}{W}{W}",
+    "typeLine": "Creature — Angel Warrior",
+    "oracleText": "Flying\nWhen this creature enters, return target permanent card with mana value 2 or less from your graveyard to the battlefield.\nForetell {3}{W} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{3}{W}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Battlefield",
+                    "fromZone": "Graveyard"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent mv<=2 own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "28",
+        "rarity": "UNCOMMON",
+        "artist": "Johannes Voss",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/e/ce33c84e-008c-48d8-a8e8-77cd19cc4f1f.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Skemfar Elderhall
+{
+    "name": "Skemfar Elderhall",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {G}.\n{2}{B}{B}{G}, {T}, Sacrifice this land: Up to one target creature you don't control gets -2/-2 until end of turn. Create two 1/1 green Elf Warrior creature tokens. Activate only as a sorcery.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{B}{B}{G}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": -2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": -2
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            }
+                        },
+                        {
+                            "type": "CreateToken",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "power": 1,
+                            "toughness": 1,
+                            "colors": [
+                                "GREEN"
+                            ],
+                            "creatureTypes": [
+                                "Elf",
+                                "Warrior"
+                            ]
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "controllerPredicate": {
+                                    "type": "ControllerNot",
+                                    "predicate": "ControlledByYou"
+                                }
+                            }
+                        },
+                        "id": "target"
+                    }
+                ],
+                "timing": "SorcerySpeed"
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "268",
+        "rarity": "UNCOMMON",
+        "artist": "Johannes Voss",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/2/82c2a0f7-0f53-4627-8be8-227fde331a69.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
     ]
 }
 
@@ -846,6 +2998,61 @@
     ]
 }
 
+// Squash
+{
+    "name": "Squash",
+    "manaCost": "{4}{R}",
+    "typeLine": "Instant",
+    "oracleText": "This spell costs {3} less to cast if you control a Giant.\nSquash deals 6 damage to target creature or planeswalker.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 6
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature or planeswalker"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetCreatureOrPlaneswalker",
+                "id": "target creature or planeswalker"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 3
+                },
+                "gating": {
+                    "type": "OnlyIf",
+                    "condition": {
+                        "type": "Exists",
+                        "player": "You",
+                        "zone": "Battlefield",
+                        "filter": "permanent Giant"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "152",
+        "artist": "Caio Monteiro",
+        "flavorText": "The troll had recently crushed a human in much the same way. Sadly, he expired too quickly to appreciate the irony.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e0b99299-bf84-4654-a331-e4406768b33c.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Starnheim Aspirant
 {
     "name": "Starnheim Aspirant",
@@ -894,6 +3101,132 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Story Seeker
+{
+    "name": "Story Seeker",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Dwarf Cleric",
+    "oracleText": "Lifelink",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "metadata": {
+        "collectorNumber": "34",
+        "artist": "Svetlin Velinov",
+        "flavorText": "Dwarven skalds are the most renowned storytellers in all of Kaldheim. They travel across the realms, seeking out heroic deeds and chronicling them in epic sagas.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/3/e3dae817-3db1-4edf-86ba-c2c2b238fcf5.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Sulfurous Mire
+{
+    "name": "Sulfurous Mire",
+    "manaCost": "",
+    "typeLine": "Snow Land — Swamp Mountain",
+    "oracleText": "({T}: Add {B} or {R}.)\nThis land enters tapped.",
+    "script": {
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "270",
+        "artist": "Titus Lunter",
+        "flavorText": "\"In my youth, we used to best each other at hopping rabbit-fast between the lava spouts, the burning tar spattering our legs.\"\n—Iskene, Kannah storyteller",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/35ebe245-ebb5-493c-b9c1-56fbfda9bd66.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
+// Surtland Frostpyre
+{
+    "name": "Surtland Frostpyre",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {R}.\n{2}{U}{U}{R}, {T}, Sacrifice this land: Scry 2. This land deals 2 damage to each creature. Activate only as a sorcery.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{U}{U}{R}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Scry",
+                            "count": 2
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature"
+                                }
+                            },
+                            "body": {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed"
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "271",
+        "rarity": "UNCOMMON",
+        "artist": "Piotr Dura",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/b/0b02149a-4a8f-4be9-9944-3d216248b549.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "BLUE"
     ]
 }
 
@@ -982,6 +3315,252 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Vengeful Reaper
+{
+    "name": "Vengeful Reaper",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Angel Cleric",
+    "oracleText": "Flying, deathtouch, haste\nForetell {1}{B} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "DEATHTOUCH",
+        "HASTE",
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{1}{B}"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "116",
+        "rarity": "UNCOMMON",
+        "artist": "Billy Christian",
+        "flavorText": "\"Starnheim is closed to you, coward.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/5/854c99fd-71ba-40b7-98cf-b783f01a77b4.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Volatile Fjord
+{
+    "name": "Volatile Fjord",
+    "manaCost": "",
+    "typeLine": "Snow Land — Island Mountain",
+    "oracleText": "({T}: Add {U} or {R}.)\nThis land enters tapped.",
+    "script": {
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "273",
+        "artist": "Randy Vargas",
+        "flavorText": "\"I watched with my own eyes as Jari Eagle-Caller fell from these cliffs, only to be snatched from the air by a giant bird!\"\n—Iskene, Kannah storyteller",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/2/f2392fbb-d9c4-4688-b99c-4e7614c60c12.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "BLUE"
+    ]
+}
+
+// Warhorn Blast
+{
+    "name": "Warhorn Blast",
+    "manaCost": "{4}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Creatures you control get +2/+1 until end of turn.\nForetell {2}{W} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "keywords": [
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{2}{W}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            },
+            "body": {
+                "type": "ModifyStats",
+                "powerModifier": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "toughnessModifier": {
+                    "type": "Fixed",
+                    "amount": 1
+                },
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "38",
+        "artist": "Bryan Sola",
+        "flavorText": "\"Mead down! Swords up!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/f/3fc98aff-edc0-4f78-ae4f-e08735c9e512.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Weigh Down
+{
+    "name": "Weigh Down",
+    "manaCost": "{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "As an additional cost to cast this spell, exile a creature card from your graveyard.\nTarget creature gets -3/-3 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": -3
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": -3
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ],
+        "additionalCosts": [
+            {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomExileFrom",
+                    "zone": "Graveyard",
+                    "filter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "118",
+        "artist": "John Di Giovanni",
+        "flavorText": "The draugr often drown intruders. Years later, their corpses rise from the depths to join the ranks of the Dread Marn.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/f/6ffa795d-2211-49b0-a6df-812599758f7b.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Wings of the Cosmos
+{
+    "name": "Wings of the Cosmos",
+    "manaCost": "{W}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +1/+3 and gains flying until end of turn. Untap it.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "tap": false
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "39",
+        "artist": "Ilse Gort",
+        "flavorText": "The wolf's startled yelp changed quickly to a howl of elation as she soared over her envious packmates.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d6b26c95-f90d-43fb-8c99-2a3aa13ac2c6.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Woodland Chasm
+{
+    "name": "Woodland Chasm",
+    "manaCost": "",
+    "typeLine": "Snow Land — Swamp Forest",
+    "oracleText": "({T}: Add {B} or {G}.)\nThis land enters tapped.",
+    "script": {
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "274",
+        "artist": "Titus Lunter",
+        "flavorText": "\"Is this the grave of a god? A tunnel carved by the Cosmos Serpent? It matters not. It is no place for us.\"\n—Iskene, Kannah storyteller",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/2/b2dd0b71-5a60-418c-82fc-f13d1b5075d0.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
     ]
 }
 

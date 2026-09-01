@@ -1487,6 +1487,66 @@
     ]
 }
 
+// Conclave's Blessing
+{
+    "name": "Conclave's Blessing",
+    "manaCost": "{3}{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nEnchant creature\nEnchanted creature gets +0/+2 for each other creature you control.",
+    "keywords": [
+        "CONVOKE"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "AttachedTo"
+                },
+                "powerBonus": {
+                    "type": "Fixed",
+                    "amount": 0
+                },
+                "toughnessBonus": {
+                    "type": "Multiply",
+                    "amount": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "creature",
+                        "excludeSelf": true
+                    },
+                    "multiplier": 2
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "11",
+        "artist": "Shishizaru",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/6/86235d9f-ba69-417d-9203-812ab428b374.jpg?1783943702",
+        "rulings": [
+            {
+                "date": "2024-01-12",
+                "text": "When calculating a spell's total cost, include any alternative costs, additional costs, or anything else that increases or reduces the cost to cast the spell. Convoke applies after the total cost is calculated. Convoke doesn't change a spell's mana cost or mana value."
+            },
+            {
+                "date": "2024-01-12",
+                "text": "Tapping a multicolored creature using convoke will pay for {1} or one mana of your choice of any of that creature's colors."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Congregation at Dawn
 {
     "name": "Congregation at Dawn",
@@ -1674,6 +1734,36 @@
         "artist": "Dany Orizio",
         "flavorText": "The words came to the sorcerer's lips but refused to budge any further.",
         "imageUri": "https://cards.scryfall.io/normal/front/f/a/fac88052-96a3-4a4d-95a2-c5a652fcb275.jpg?1783943688"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Copy Enchantment
+{
+    "name": "Copy Enchantment",
+    "manaCost": "{2}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "You may have this enchantment enter as a copy of any enchantment on the battlefield.",
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersAsCopy",
+                "copyFilter": {
+                    "cardPredicates": [
+                        "IsEnchantment"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "42",
+        "rarity": "RARE",
+        "artist": "Joel Thomas",
+        "flavorText": "Simic mages create redundant backups of their experiments to reduce the consequences of catastrophe.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/c/ac22117d-bd58-439f-b199-da72bc7160b2.jpg"
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -3112,6 +3202,105 @@
     ]
 }
 
+// Firemane Angel
+{
+    "name": "Firemane Angel",
+    "manaCost": "{3}{R}{W}{W}",
+    "typeLine": "Creature — Angel",
+    "oracleText": "Flying, first strike\nAt the beginning of your upkeep, if Firemane Angel is in your graveyard or on the battlefield, you may gain 1 life.\n{6}{R}{R}{W}{W}: Return this card from your graveyard to the battlefield. Activate only during your upkeep.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "FIRST_STRIKE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                },
+                "activeZones": [
+                    "Battlefield",
+                    "Graveyard"
+                ],
+                "interveningIf": {
+                    "type": "SourceInZone",
+                    "zones": [
+                        "Battlefield",
+                        "Graveyard"
+                    ]
+                },
+                "descriptionOverride": "At the beginning of your upkeep, if Firemane Angel is in your graveyard or on the battlefield, you may gain 1 life."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{6}{R}{R}{W}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Battlefield",
+                    "fromZone": "Graveyard"
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationAll",
+                        "restrictions": [
+                            "OnlyDuringYourTurn",
+                            {
+                                "type": "DuringStep",
+                                "step": "UPKEEP"
+                            }
+                        ]
+                    }
+                ],
+                "activateFromZone": "Graveyard",
+                "descriptionOverride": "Return this card from your graveyard to the battlefield. Activate only during your upkeep."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "205",
+        "rarity": "RARE",
+        "artist": "Matt Cavotta",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/9/493730ab-c30d-4830-a188-0462426fc5bf.jpg?1783943621",
+        "rulings": [
+            {
+                "date": "2017-11-17",
+                "text": "If Firemane Angel is put into your graveyard from the battlefield or returned from your graveyard to the battlefield during your upkeep before its triggered ability resolves, you won't gain 1 life."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Fists of Ironwood
 {
     "name": "Fists of Ironwood",
@@ -3301,6 +3490,56 @@
         "artist": "Dan Murayama Scott",
         "flavorText": "\"A system to direct the flow of Ravnica's entire water supply? Thinking a bit small, aren't we?\"\n—Trivaz, Izzet mage",
         "imageUri": "https://cards.scryfall.io/normal/front/2/7/27203b79-b383-4698-8b81-b6198c51c2f6.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Followed Footsteps
+{
+    "name": "Followed Footsteps",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nAt the beginning of your upkeep, create a token that's a copy of enchanted creature.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateTokenCopyOfTarget",
+                    "target": "EnchantedCreature"
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "rarity": "RARE",
+        "artist": "Glen Angus",
+        "flavorText": "Æther can turn a footprint into a blueprint.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/0/d00e2fcc-0fa2-451e-8c69-7a24ba533e0b.jpg?1783943685",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "Any \"enters\" abilities of the copied creature trigger when the creature tokens enter the battlefield. The creature tokens also have any \"this enters with\" or \"as this enters\" abilities that the copied creature has."
+            },
+            {
+                "date": "2007-02-01",
+                "text": "If Followed Footsteps moves after it has triggered, you get a copy of the newly-enchanted creature."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -5643,6 +5882,128 @@
     ]
 }
 
+// Mark of Eviction
+{
+    "name": "Mark of Eviction",
+    "manaCost": "{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nAt the beginning of your upkeep, return enchanted creature and all Auras attached to that creature to their owners' hands.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "AttachedToTarget",
+                                "host": "EnchantedCreature",
+                                "filter": "permanent Aura"
+                            },
+                            "storeAs": "evictedAuras"
+                        },
+                        {
+                            "type": "MoveToZone",
+                            "target": "EnchantedCreature",
+                            "destination": "Hand"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "evictedAuras",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "58",
+        "rarity": "UNCOMMON",
+        "artist": "Tsutomu Kawade",
+        "flavorText": "Tharashk the Bold suddenly wasn't himself. Or anyone else, for that matter.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/e/ae826236-e591-4afb-817b-0017a11010ad.jpg?1783943682"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Mindmoil
+{
+    "name": "Mindmoil",
+    "manaCost": "{4}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever you cast a spell, put the cards in your hand on the bottom of your library in any order, then draw that many cards.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "SpellCastEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "hand"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "hand",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "ControllerChooses"
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "DistinctEntitiesInCollections",
+                                "collections": [
+                                    "hand"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "135",
+        "rarity": "RARE",
+        "artist": "Alex Horley-Orlandelli",
+        "flavorText": "\"My criticism of the Izzet is that their impulse for learning seems too much like impulse and too little like learning.\"\n—Trigori, Azorius senator",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/c/0ccc79f7-2f35-4daf-a0c2-775f5fa6c249.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Mnemonic Nexus
 {
     "name": "Mnemonic Nexus",
@@ -6481,6 +6842,64 @@
     "colorIdentityOverride": []
 }
 
+// Pollenbright Wings
+{
+    "name": "Pollenbright Wings",
+    "manaCost": "{4}{G}{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature has flying.\nWhenever enchanted creature deals combat damage to a player, create that many 1/1 green Saproling creature tokens.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "binding": "ATTACHED",
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_DAMAGE_AMOUNT"
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Saproling"
+                    ]
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "FLYING"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "219",
+        "rarity": "UNCOMMON",
+        "artist": "Terese Nielsen",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/c/3ca4f3b9-c952-4fd3-a586-3e063b62b23d.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
 // Primordial Sage
 {
     "name": "Primordial Sage",
@@ -6732,6 +7151,84 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Razia's Purification
+{
+    "name": "Razia's Purification",
+    "manaCost": "{4}{R}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Each player chooses three permanents they control, then sacrifices the rest.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Players",
+                "players": "Each"
+            },
+            "body": {
+                "type": "Composite",
+                "effects": [
+                    {
+                        "type": "GatherCards",
+                        "source": {
+                            "type": "ControlledPermanents",
+                            "filter": "permanent"
+                        },
+                        "storeAs": "permanents"
+                    },
+                    {
+                        "type": "SelectFromCollection",
+                        "from": "permanents",
+                        "selection": {
+                            "type": "ChooseExactly",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 3
+                            }
+                        },
+                        "storeSelected": "kept",
+                        "storeRemainder": "sacrificed",
+                        "prompt": "Choose three permanents you control to keep; the rest are sacrificed.",
+                        "selectedLabel": "Keep",
+                        "remainderLabel": "Sacrifice",
+                        "useTargetingUI": true,
+                        "alwaysPrompt": true
+                    },
+                    {
+                        "type": "MoveCollection",
+                        "from": "sacrificed",
+                        "destination": {
+                            "type": "ToZone",
+                            "zone": "Graveyard"
+                        },
+                        "moveType": "Sacrifice"
+                    }
+                ]
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "224",
+        "rarity": "RARE",
+        "artist": "Shishizaru",
+        "flavorText": "Only the chosen ones are spared.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/3/73bfefd3-bddd-47bb-92f3-9356a7bca637.jpg?1783943615",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "If a player doesn't control three permanents, that player chooses all the permanents they do control and doesn't sacrifice anything."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Players choose permanents in turn order around the table, then simultaneously sacrifice all permanents not chosen."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
     ]
 }
 
@@ -7222,6 +7719,80 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Savra, Queen of the Golgari
+{
+    "name": "Savra, Queen of the Golgari",
+    "manaCost": "{2}{B}{G}",
+    "typeLine": "Legendary Creature — Elf Shaman",
+    "oracleText": "Whenever you sacrifice a black creature, you may pay 2 life. If you do, each other player sacrifices a creature of their choice.\nWhenever you sacrifice a green creature, you may gain 2 life.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "PermanentsSacrificedEvent",
+                    "filter": "creature black",
+                    "perPermanent": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayLife",
+                            "amount": 2
+                        }
+                    },
+                    "then": {
+                        "type": "ForceSacrifice",
+                        "filter": "creature",
+                        "target": {
+                            "type": "PlayerRef",
+                            "player": "EachOpponent"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "PermanentsSacrificedEvent",
+                    "filter": "creature green",
+                    "perPermanent": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "225",
+        "rarity": "RARE",
+        "artist": "Scott M. Fischer",
+        "flavorText": "\"Nature's most raw beauty is the circle: perfect in its continuance, with no break between death and life.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/5/15accf35-a174-4ba5-a633-cc46da848dbe.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
     ]
 }
 
@@ -8061,6 +8632,59 @@
     ]
 }
 
+// Stasis Cell
+{
+    "name": "Stasis Cell",
+    "manaCost": "{4}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature doesn't untap during its controller's untap step.\n{3}{U}: Attach this Aura to target creature.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{U}"
+                    }
+                },
+                "effect": "AttachEquipment",
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        }
+                    }
+                ],
+                "descriptionOverride": "{3}{U}: Attach this Aura to target creature."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "DOESNT_UNTAP"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "artist": "Mark A. Nelson",
+        "flavorText": "The Simic created the cells to preserve their experiments. The Azorius put the cells to use on the guilty.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/7/e75611d2-6e87-4032-a71c-b46806798a29.jpg?1783943680"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Stone-Seeder Hierophant
 {
     "name": "Stone-Seeder Hierophant",
@@ -8492,6 +9116,97 @@
     ]
 }
 
+// Svogthos, the Restless Tomb
+{
+    "name": "Svogthos, the Restless Tomb",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{3}{B}{G}: Until end of turn, this land becomes a black and green Plant Zombie creature with \"This creature's power and toughness are each equal to the number of creature cards in your graveyard.\" It's still a land.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{B}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "BecomeCreature",
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "creatureTypes": [
+                        "Plant",
+                        "Zombie"
+                    ],
+                    "colors": [
+                        "BLACK",
+                        "GREEN"
+                    ],
+                    "dynamicPower": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "filter": "creature"
+                    },
+                    "dynamicToughness": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "filter": "creature"
+                    }
+                },
+                "descriptionOverride": "{3}{B}{G}: Until end of turn, this land becomes a black and green Plant Zombie creature with \"This creature's power and toughness are each equal to the number of creature cards in your graveyard.\" It's still a land."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "283",
+        "rarity": "UNCOMMON",
+        "artist": "Martina Pilcerova",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5cf3ba87-93a0-44db-83d9-92e23a677a62.jpg?1783943589",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "While animated, Svogthos's power and toughness changes each time a creature card enters or leaves its controller's graveyard."
+            },
+            {
+                "date": "2008-08-01",
+                "text": "A noncreature permanent that turns into a creature can attack, and its {T} abilities can be activated, only if its controller has continuously controlled that permanent since the beginning of their most recent turn. It doesn't matter how long the permanent has been a creature."
+            },
+            {
+                "date": "2009-10-01",
+                "text": "Activating the ability that turns it into a creature while it's already a creature will override any effects that set its power and/or toughness to a specific number. However, any effect that raises or lowers power and/or toughness (such as the effect created by Giant Growth, Glorious Anthem, or a +1/+1 counter) will continue to apply."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Tattered Drake
 {
     "name": "Tattered Drake",
@@ -8660,6 +9375,66 @@
     "colorIdentityOverride": [
         "GREEN",
         "WHITE"
+    ]
+}
+
+// Terraformer
+{
+    "name": "Terraformer",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "{1}: Choose a basic land type. Each land you control becomes that type until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ChooseOption",
+                            "optionType": "BASIC_LAND_TYPE",
+                            "storeAs": "chosenLandType"
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "land ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "SetLandType",
+                                "target": "Self",
+                                "fromChosenValueKey": "chosenLandType"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "{1}: Choose a basic land type. Each land you control becomes that type until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "70",
+        "artist": "Luca Zontini",
+        "flavorText": "\"This feels a little more like home.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/0/a0b9d4f3-4570-4fe0-857f-97f5bd6ead44.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -8981,6 +9756,85 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Tolsimir Wolfblood
+{
+    "name": "Tolsimir Wolfblood",
+    "manaCost": "{4}{G}{W}",
+    "typeLine": "Legendary Creature — Elf Warrior",
+    "oracleText": "Other green creatures you control get +1/+1.\nOther white creatures you control get +1/+1.\n{T}: Create Voja, a legendary 2/2 green and white Wolf creature token.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "GREEN",
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Wolf"
+                    ],
+                    "name": "Voja",
+                    "imageUri": "https://cards.scryfall.io/normal/front/a/f/af8ba142-4f39-45e4-8872-b6e348fd760c.jpg?1783913148",
+                    "legendary": true
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature green ctrl:you",
+                    "excludeSelf": true
+                }
+            },
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature white ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "236",
+        "rarity": "RARE",
+        "artist": "Donato Giancola",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/6/069ac859-e0ef-4685-bad3-5c741102b5b9.jpg?1783943608",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "Other creatures you control that are both green and white, including Voja, get +2/+2."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "The token is named \"Voja\" and has creature type \"Wolf.\" This is different from most creature tokens, where the name and creature type are the same."
+            },
+            {
+                "date": "2013-07-01",
+                "text": "The \"legend rule\" means that creating a second Voja while one is already under your control will result in one of them being put into its owner's graveyard (where it promptly ceases to exist). You choose which of the two remains on the battlefield and which is put into the graveyard."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "GREEN"
     ]
 }
 
@@ -10113,6 +10967,163 @@
     "colorIdentityOverride": [
         "BLUE",
         "BLACK"
+    ]
+}
+
+// Woebringer Demon
+{
+    "name": "Woebringer Demon",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Creature — Demon",
+    "oracleText": "Flying\nAt the beginning of each player's upkeep, that player sacrifices a creature of their choice. If the player can't, sacrifice this creature.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ForceSacrifice",
+                            "filter": "creature",
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "TriggeringPlayer"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": "PermanentsSacrificedThisWay",
+                                    "operator": "EQ",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 0
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "SacrificeTarget",
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "113",
+        "rarity": "RARE",
+        "artist": "Daren Bader",
+        "flavorText": "Each soul he devours adds its hunger to his own.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/0/f0c758c9-3138-49b2-bebf-cdab5dc68a3d.jpg?1783943660"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Woodwraith Corrupter
+{
+    "name": "Woodwraith Corrupter",
+    "manaCost": "{3}{B}{B}{G}",
+    "typeLine": "Creature — Elemental Horror",
+    "oracleText": "{1}{B}{G}, {T}: Target Forest becomes a 4/4 black and green Elemental Horror creature. It's still a land.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 6
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{B}{G}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "BecomeCreature",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target Forest"
+                    },
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "creatureTypes": [
+                        "Elemental",
+                        "Horror"
+                    ],
+                    "colors": [
+                        "BLACK",
+                        "GREEN"
+                    ],
+                    "duration": "Permanent"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "land Forest"
+                        },
+                        "id": "target Forest"
+                    }
+                ],
+                "descriptionOverride": "{1}{B}{G}, {T}: Target Forest becomes a 4/4 black and green Elemental Horror creature. It's still a land."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "240",
+        "rarity": "RARE",
+        "artist": "Greg Staples",
+        "flavorText": "\"Its darkened sap penetrates natural fibers and spreads its own genes. Emulation experiments are underway.\"\n—Simic research notes",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d1ee1ceb-61dd-4c98-bc48-a0763315a14f.jpg?1783943608",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The effect has no stated duration, so a land turned into a creature this way continues being a creature as long as the land is on the battlefield."
+            },
+            {
+                "date": "2008-08-01",
+                "text": "A noncreature permanent that turns into a creature can attack, and its {T} abilities can be activated, only if its controller has continuously controlled that permanent since the beginning of their most recent turn. It doesn't matter how long the permanent has been a creature."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
     ]
 }
 

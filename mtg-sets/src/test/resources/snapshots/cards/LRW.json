@@ -180,6 +180,71 @@
     ]
 }
 
+// Arbiter of Knollridge
+{
+    "name": "Arbiter of Knollridge",
+    "manaCost": "{6}{W}",
+    "typeLine": "Creature — Giant Wizard",
+    "oracleText": "Vigilance\nWhen this creature enters, each player's life total becomes the highest life total among all players.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "SetLifeTotal",
+                    "amount": {
+                        "type": "GreatestAmongPlayers",
+                        "inner": {
+                            "type": "LifeTotal",
+                            "player": "You"
+                        }
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "Each"
+                    }
+                },
+                "descriptionOverride": "each player's life total becomes the highest life total among all players."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "2",
+        "rarity": "RARE",
+        "artist": "Brandon Dorman",
+        "flavorText": "Though giants are mortal, they live so long and on such a grand scale that many small folk don't believe they ever truly die.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/b/6b598cf2-c327-422b-9527-1b28645ba70c.jpg?1783942919",
+        "rulings": [
+            {
+                "date": "2010-06-15",
+                "text": "In a Two-Headed Giant game, each team chooses one person on that team to gain the appropriate amount of life. This basically means that the triggered ability will set the life total of each team to that of the team with the highest life total."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "Abilities that trigger when a player gains life may trigger as a result of this ability."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "In other multiplayer formats, each player's life total is set to the highest life total within their range of influence. These changes happen at the same time. For example, if each player has a range of influence of one, and the players in the game are Alice (4 life), Barry (8 life), Carrie (11 life), and Doug (7 life), in that order, then Alice's life total will become 8 and Barry and Doug's life totals will each become 11."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Auntie's Hovel
 {
     "name": "Auntie's Hovel",
@@ -1146,6 +1211,83 @@
     ]
 }
 
+// Brigid, Hero of Kinsbaile
+{
+    "name": "Brigid, Hero of Kinsbaile",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Legendary Creature — Kithkin Archer",
+    "oracleText": "First strike\n{T}: Brigid deals 2 damage to each attacking or blocking creature target player controls.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FIRST_STRIKE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    {
+                                        "type": "StateOr",
+                                        "predicates": [
+                                            "IsAttacking",
+                                            "IsBlocking"
+                                        ]
+                                    }
+                                ],
+                                "controllerPredicate": {
+                                    "type": "ControlledByReferencedPlayer",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target player"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": "Self"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "descriptionOverride": "Brigid deals 2 damage to each attacking or blocking creature target player controls."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "6",
+        "rarity": "RARE",
+        "artist": "Steve Prescott",
+        "flavorText": "Thanks to one champion archer, the true borders of Kinsbaile extend an arrow's flight beyond the buildings.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/a/da70a20f-213e-4d79-a46f-1ef1fc3f4a51.jpg?1783942917"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Caterwauling Boggart
 {
     "name": "Caterwauling Boggart",
@@ -1629,6 +1771,98 @@
     ]
 }
 
+// Cryptic Command
+{
+    "name": "Cryptic Command",
+    "manaCost": "{1}{U}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Choose two —\n• Counter target spell.\n• Return target permanent to its owner's hand.\n• Tap all creatures your opponents control.\n• Draw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": "Counter",
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": {},
+                                "zone": "Stack"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "permanent to bounce"
+                        },
+                        "destination": "Hand"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "permanent"
+                            },
+                            "id": "permanent to bounce"
+                        }
+                    ],
+                    "description": "Return target permanent to its owner's hand"
+                },
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature ctrl:opponent"
+                            }
+                        },
+                        "body": {
+                            "type": "TapUntap",
+                            "target": "Self"
+                        }
+                    },
+                    "description": "Tap all creatures your opponents control"
+                },
+                {
+                    "effect": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            ],
+            "chooseCount": 2
+        }
+    },
+    "metadata": {
+        "collectorNumber": "56",
+        "rarity": "RARE",
+        "artist": "Wayne England",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/2/829e3d6e-5d7c-4cc4-a7a6-7cbf5a7442ba.jpg?1783942904",
+        "rulings": [
+            {
+                "date": "2017-11-17",
+                "text": "You choose both modes as you cast Cryptic Command. You must choose two different modes."
+            },
+            {
+                "date": "2017-11-17",
+                "text": "Look at both chosen modes to determine how many targets Cryptic Command has, if any. If it has at least one target, and all its targets are illegal when it tries to resolve, then it won't resolve and none of its effects will happen. For example, if you choose the second and fourth modes, and the permanent is an illegal target when Cryptic Command tries to resolve, you won't draw a card."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Dauntless Dourbark
 {
     "name": "Dauntless Dourbark",
@@ -1808,6 +2042,37 @@
     "colorIdentityOverride": [
         "BLUE"
     ]
+}
+
+// Dolmen Gate
+{
+    "name": "Dolmen Gate",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Prevent all combat damage that would be dealt to attacking creatures you control.",
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "PreventDamage",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": {
+                        "type": "RecipientMatching",
+                        "filter": "creature attacking ctrl:you"
+                    },
+                    "damageType": "DamageCombat"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "256",
+        "rarity": "RARE",
+        "artist": "Richard Sardinha",
+        "flavorText": "Lorwyn's stones resonate with the place from which they were hewed. Though taken far, still they call to their home when silence is upon the land.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fdcbf10e-32f2-41c5-a7a2-5f24662892d2.jpg?1783942851"
+    },
+    "colorIdentityOverride": []
 }
 
 // Doran, the Siege Tower
@@ -3410,6 +3675,86 @@
     ]
 }
 
+// Galepowder Mage
+{
+    "name": "Galepowder Mage",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Kithkin Wizard",
+    "oracleText": "Flying\nWhenever this creature attacks, exile another target creature. Return that card to the battlefield under its owner's control at the beginning of the next end step.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "another target creature"
+                            },
+                            "destination": "Exile"
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "step": "END",
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "another target creature"
+                                },
+                                "destination": "Battlefield"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature",
+                        "excludeSelf": true
+                    },
+                    "id": "another target creature"
+                },
+                "descriptionOverride": "exile another target creature. Return that card to the battlefield under its owner's control at the beginning of the next end step."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "15",
+        "rarity": "RARE",
+        "artist": "Jeremy Jarvis",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/1/8152999d-5e65-4ea6-b1e7-94b41808faa0.jpg?1783942915",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "Galepowder Mage's ability can target a creature controlled by any player. It's not optional."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "The exiled card will be returned to the battlefield at the beginning of the end step even if Galepowder Mage is no longer on the battlefield at that time."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If Galepowder Mage is the only creature on the battlefield when it attacks, its ability has no effect."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Ghostly Changeling
 {
     "name": "Ghostly Changeling",
@@ -4550,6 +4895,181 @@
     ]
 }
 
+// Howltooth Hollow
+{
+    "name": "Howltooth Hollow",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "Hideaway 4 (When this land enters, look at the top four cards of your library, exile one face down, then put the rest on the bottom in a random order.)\nThis land enters tapped.\n{T}: Add {B}.\n{B}, {T}: You may play the exiled card without paying its mana cost if each player has no cards in hand.",
+    "keywords": [
+        "HIDEAWAY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "HIDEAWAY",
+            "n": 4
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                }
+                            },
+                            "storeAs": "hideawayTop"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hideawayTop",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "hideawayPicked",
+                            "storeRemainder": "hideawayRest",
+                            "prompt": "Choose a card to exile face down",
+                            "selectedLabel": "Exile face down",
+                            "remainderLabel": "Put on bottom of library"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "hideawayPicked",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true,
+                            "faceDown": "HIDDEN"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "hideawayRest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{B}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "hideawayLinked"
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "hideawayLinked"
+                        },
+                        {
+                            "type": "GrantPlayWithoutPayingCost",
+                            "from": "hideawayLinked"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "Count",
+                                "player": "Each",
+                                "zone": "Hand"
+                            },
+                            "operator": "EQ",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 0
+                            }
+                        }
+                    }
+                ]
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "269",
+        "rarity": "RARE",
+        "artist": "John Franklin Howe",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5c678643-6640-49e1-a5b0-2954123bcabc.jpg?1783942847",
+        "rulings": [
+            {
+                "date": "2022-04-29",
+                "text": "\"Hideaway N\" means \"When this permanent enters the battlefield, look at the top N cards of your library. Exile one of them face down and put the rest on the bottom of your library in a random order. The exiled card gains 'The player who controls the permanent that exiled this card may look at this card in the exile zone.'\""
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Any player who has controlled a permanent with a hideaway ability since a card was exiled with it may look at that card."
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Previously, permanents with hideaway entered the battlefield tapped. This ability has been removed from the definition of hideaway. Older cards have received errata to have an additional paragraph that reads \"[This permanent] enters the battlefield tapped,\" and they now have hideaway 4."
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Hideaway now causes you to put the rest of the cards on the bottom of your library in a random order instead of any order."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Hunter of Eyeblights
 {
     "name": "Hunter of Eyeblights",
@@ -4845,6 +5365,144 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Incendiary Command
+{
+    "name": "Incendiary Command",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose two —\n• Incendiary Command deals 4 damage to target player or planeswalker.\n• Incendiary Command deals 2 damage to each creature.\n• Destroy target nonbasic land.\n• Each player discards all the cards in their hand, then draws that many cards.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 4
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "damage player or planeswalker"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetPlayerOrPlaneswalker",
+                            "id": "damage player or planeswalker"
+                        }
+                    ],
+                    "description": "Incendiary Command deals 4 damage to target player or planeswalker"
+                },
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature"
+                            }
+                        },
+                        "body": {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": "Self"
+                        }
+                    },
+                    "description": "Incendiary Command deals 2 damage to each creature"
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "nonbasic land to destroy"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": {
+                                    "cardPredicates": [
+                                        "IsLand",
+                                        {
+                                            "type": "Not",
+                                            "predicate": "IsBasicLand"
+                                        }
+                                    ]
+                                }
+                            },
+                            "id": "nonbasic land to destroy"
+                        }
+                    ],
+                    "description": "Destroy target nonbasic land"
+                },
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Players",
+                            "players": "Each"
+                        },
+                        "body": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "GatherCards",
+                                            "source": {
+                                                "type": "FromZone",
+                                                "zone": "Hand"
+                                            },
+                                            "storeAs": "discardedHand"
+                                        },
+                                        {
+                                            "type": "MoveCollection",
+                                            "from": "discardedHand",
+                                            "destination": {
+                                                "type": "ToZone",
+                                                "zone": "Graveyard"
+                                            },
+                                            "moveType": "Discard"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "DrawCards",
+                                    "count": {
+                                        "type": "VariableReference",
+                                        "variableName": "discardedHand_count"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "description": "Each player discards all the cards in their hand, then draws that many cards"
+                }
+            ],
+            "chooseCount": 2
+        }
+    },
+    "metadata": {
+        "collectorNumber": "179",
+        "rarity": "RARE",
+        "artist": "Wayne England",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/1/512367a2-f8f6-4c28-9eb3-8e04d2694e4b.jpg?1783942873"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -6460,6 +7118,86 @@
     ]
 }
 
+// Mirror Entity
+{
+    "name": "Mirror Entity",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\n{X}: Until end of turn, creatures you control have base power and toughness X/X and gain all creature types.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "CHANGELING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{X}"
+                    }
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SetBaseStats",
+                                "target": "Self",
+                                "power": "XValue",
+                                "toughness": "XValue",
+                                "duration": "EndOfTurn"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "CHANGELING",
+                                "target": "Self"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "Until end of turn, creatures you control have base power and toughness X/X and gain all creature types."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "31",
+        "rarity": "RARE",
+        "artist": "Zoltan Boros & Gabor Szikszai",
+        "flavorText": "Unaware of Lorwyn's diversity, it sees only itself, reflected a thousand times over.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/d/adfff880-cbf6-4085-bc05-c72658b75f25.jpg?1783942911",
+        "rulings": [
+            {
+                "date": "2021-03-19",
+                "text": "Changeling applies in all zones, not just the battlefield."
+            },
+            {
+                "date": "2021-03-19",
+                "text": "Mirror Entity's ability overwrites any effects that previously set a creature's base power and/or toughness. Any existing effects or counters that raise or lower a creature's power and/or toughness continue to apply to the creature's newly-set power and toughness."
+            },
+            {
+                "date": "2021-03-19",
+                "text": "Activating the ability with X = 0 will cause all creatures you control to become 0/0 and be put into the graveyard."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Moonglove Extract
 {
     "name": "Moonglove Extract",
@@ -7451,6 +8189,292 @@
     ]
 }
 
+// Primal Command
+{
+    "name": "Primal Command",
+    "manaCost": "{3}{G}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose two —\n• Target player gains 7 life.\n• Put target noncreature permanent on top of its owner's library.\n• Target player shuffles their graveyard into their library.\n• Search your library for a creature card, reveal it, put it into your hand, then shuffle.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 7
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "player to gain life"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetPlayer",
+                            "id": "player to gain life"
+                        }
+                    ],
+                    "description": "Target player gains 7 life"
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "noncreature permanent to tuck"
+                        },
+                        "destination": "Library",
+                        "placement": "Top"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "noncreature permanent"
+                            },
+                            "id": "noncreature permanent to tuck"
+                        }
+                    ],
+                    "description": "Put target noncreature permanent on top of its owner's library"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Graveyard",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "storeAs": "graveyardCards"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "graveyardCards",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Library",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    },
+                                    "placement": "Shuffled"
+                                }
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetPlayer",
+                            "id": "player to shuffle their graveyard"
+                        }
+                    ],
+                    "description": "Target player shuffles their graveyard into their library"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "creature"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    },
+                    "description": "Search your library for a creature card, reveal it, put it into your hand, then shuffle"
+                }
+            ],
+            "chooseCount": 2
+        }
+    },
+    "metadata": {
+        "collectorNumber": "233",
+        "rarity": "RARE",
+        "artist": "Wayne England",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/0/40d2c5b9-cef9-4763-8e65-e3b1418c0ad3.jpg?1783942858",
+        "rulings": [
+            {
+                "date": "2017-03-14",
+                "text": "Primal Command won't be put into your graveyard until after it's finished resolving, which means it won't be shuffled into your library as part of its own effect if you target yourself with its third mode."
+            },
+            {
+                "date": "2017-03-14",
+                "text": "Primal Command's modes are performed in the order listed. If you put a noncreature permanent on top of its owner's library and have that player shuffle their graveyard into their library, that card is shuffled away."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Profane Command
+{
+    "name": "Profane Command",
+    "manaCost": "{X}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose two —\n• Target player loses X life.\n• Return target creature card with mana value X or less from your graveyard to the battlefield.\n• Target creature gets -X/-X until end of turn.\n• Up to X target creatures gain fear until end of turn. (They can't be blocked except by artifact creatures and/or black creatures.)",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "LoseLife",
+                        "amount": "XValue",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "player to lose life"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetPlayer",
+                            "id": "player to lose life"
+                        }
+                    ],
+                    "description": "Target player loses X life"
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "creature card with mana value X or less in your graveyard"
+                        },
+                        "destination": "Battlefield",
+                        "fromZone": "Graveyard"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": {
+                                    "cardPredicates": [
+                                        "IsCreature",
+                                        "ManaValueAtMostX"
+                                    ],
+                                    "controllerPredicate": "OwnedByYou"
+                                },
+                                "zone": "Graveyard"
+                            },
+                            "id": "creature card with mana value X or less in your graveyard"
+                        }
+                    ],
+                    "description": "Return target creature card with mana value X or less from your graveyard to the battlefield"
+                },
+                {
+                    "effect": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Multiply",
+                            "amount": "XValue",
+                            "multiplier": -1
+                        },
+                        "toughnessModifier": {
+                            "type": "Multiply",
+                            "amount": "XValue",
+                            "multiplier": -1
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "creature to weaken"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "creature to weaken"
+                        }
+                    ],
+                    "description": "Target creature gets -X/-X until end of turn"
+                },
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": "IterationSpace.Targets",
+                        "body": {
+                            "type": "GrantKeyword",
+                            "keyword": "FEAR",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "optional": true,
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "creatures to gain fear",
+                            "dynamicMaxCount": "XValue"
+                        }
+                    ],
+                    "description": "Up to X target creatures gain fear until end of turn"
+                }
+            ],
+            "chooseCount": 2
+        }
+    },
+    "metadata": {
+        "collectorNumber": "135",
+        "rarity": "RARE",
+        "artist": "Wayne England",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/5/752bf7fd-c49e-42fa-bbdd-8ca5d4c89b2b.jpg?1783942885",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "The value chosen for X applies to each X in the spell's effect. You pay {X} only once."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Protective Bubble
 {
     "name": "Protective Bubble",
@@ -7984,6 +9008,76 @@
     ]
 }
 
+// Shields of Velis Vel
+{
+    "name": "Shields of Velis Vel",
+    "manaCost": "{W}",
+    "typeLine": "Kindred Instant — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\nCreatures target player controls get +0/+1 and gain all creature types until end of turn.",
+    "keywords": [
+        "CHANGELING"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "controllerPredicate": {
+                            "type": "ControlledByReferencedPlayer",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target player"
+                            }
+                        }
+                    }
+                }
+            },
+            "body": {
+                "type": "Composite",
+                "effects": [
+                    {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": "Self"
+                    },
+                    {
+                        "type": "GrantKeyword",
+                        "keyword": "CHANGELING",
+                        "target": "Self"
+                    }
+                ]
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "target player"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "39",
+        "artist": "Ralph Horsley",
+        "flavorText": "Changelings can alter shape based on what the beings around them desire most.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/5/f550f44f-8b8f-4c1d-a583-9fd986d3061c.jpg?1783942908"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Shimmering Grotto
 {
     "name": "Shimmering Grotto",
@@ -8352,6 +9446,197 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Spinerock Knoll
+{
+    "name": "Spinerock Knoll",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "Hideaway 4 (When this land enters, look at the top four cards of your library, exile one face down, then put the rest on the bottom in a random order.)\nThis land enters tapped.\n{T}: Add {R}.\n{R}, {T}: You may play the exiled card without paying its mana cost if an opponent was dealt 7 or more damage this turn.",
+    "keywords": [
+        "HIDEAWAY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "HIDEAWAY",
+            "n": 4
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                }
+                            },
+                            "storeAs": "hideawayTop"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hideawayTop",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "hideawayPicked",
+                            "storeRemainder": "hideawayRest",
+                            "prompt": "Choose a card to exile face down",
+                            "selectedLabel": "Exile face down",
+                            "remainderLabel": "Put on bottom of library"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "hideawayPicked",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true,
+                            "faceDown": "HIDDEN"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "hideawayRest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{R}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "hideawayLinked"
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "hideawayLinked"
+                        },
+                        {
+                            "type": "GrantPlayWithoutPayingCost",
+                            "from": "hideawayLinked"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "GreatestAmongPlayers",
+                                "players": "EachOpponent",
+                                "inner": {
+                                    "type": "TurnTracking",
+                                    "player": "You",
+                                    "tracker": "DAMAGE_RECEIVED"
+                                }
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 7
+                            }
+                        }
+                    }
+                ]
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "274",
+        "rarity": "RARE",
+        "artist": "Steve Prescott",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/e/dec6abed-8fbb-4d3e-8f89-64ea1b3913db.jpg?1783942847",
+        "rulings": [
+            {
+                "date": "2022-04-29",
+                "text": "\"Hideaway N\" means \"When this permanent enters the battlefield, look at the top N cards of your library. Exile one of them face down and put the rest on the bottom of your library in a random order. The exiled card gains 'The player who controls the permanent that exiled this card may look at this card in the exile zone.'\""
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Any player who has controlled a permanent with a hideaway ability since a card was exiled with it may look at that card."
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Previously, permanents with hideaway entered the battlefield tapped. This ability has been removed from the definition of hideaway. Older cards have received errata to have an additional paragraph that reads \"[This permanent] enters the battlefield tapped,\" and they now have hideaway 4."
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Hideaway now causes you to put the rest of the cards on the bottom of your library in a random order instead of any order."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "It doesn't matter how the opponent was dealt damage or by whom, as long as the total damage is 7 or more. You don't specify an opponent when you activate the ability."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "You'll get to play the card even if Spinerock Knoll wasn't on the battlefield at the time some or all of the 7 damage was dealt."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "At the time the last ability resolves, you'll get to play the card if a player who is currently your opponent, or a player who was your opponent at the time they left the game, has been dealt 7 damage over the course of the turn."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -10169,6 +11454,177 @@
         "artist": "Brandon Dorman",
         "flavorText": "\"You've discovered that boggarts bite, I see. And will the militia be chasing this lot? . . . Ah, you're staying in town to avoid Nath's hunt. Wise. Now this poultice . . .\"",
         "imageUri": "https://cards.scryfall.io/normal/front/1/2/129933ba-60a0-4764-a705-28fa7bb10bd3.jpg?1783942907"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Windbrisk Heights
+{
+    "name": "Windbrisk Heights",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "Hideaway 4 (When this land enters, look at the top four cards of your library, exile one face down, then put the rest on the bottom in a random order.)\nThis land enters tapped.\n{T}: Add {W}.\n{W}, {T}: You may play the exiled card without paying its mana cost if you attacked with three or more creatures this turn.",
+    "keywords": [
+        "HIDEAWAY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "HIDEAWAY",
+            "n": 4
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                }
+                            },
+                            "storeAs": "hideawayTop"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hideawayTop",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "hideawayPicked",
+                            "storeRemainder": "hideawayRest",
+                            "prompt": "Choose a card to exile face down",
+                            "selectedLabel": "Exile face down",
+                            "remainderLabel": "Put on bottom of library"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "hideawayPicked",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true,
+                            "faceDown": "HIDDEN"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "hideawayRest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{W}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "hideawayLinked"
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "hideawayLinked"
+                        },
+                        {
+                            "type": "GrantPlayWithoutPayingCost",
+                            "from": "hideawayLinked"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "PlayerAttackedWithCreaturesThisTurn",
+                            "filter": "creature",
+                            "atLeast": 3
+                        }
+                    }
+                ]
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "281",
+        "rarity": "RARE",
+        "artist": "Omar Rayyan",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/d/9df6a31a-5c49-4506-b8f8-84c9ab4a2ece.jpg?1783942846",
+        "rulings": [
+            {
+                "date": "2022-04-29",
+                "text": "\"Hideaway N\" means \"When this permanent enters the battlefield, look at the top N cards of your library. Exile one of them face down and put the rest on the bottom of your library in a random order. The exiled card gains 'The player who controls the permanent that exiled this card may look at this card in the exile zone.'\""
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Any player who has controlled a permanent with a hideaway ability since a card was exiled with it may look at that card."
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Previously, permanents with hideaway entered the battlefield tapped. This ability has been removed from the definition of hideaway. Older cards have received errata to have an additional paragraph that reads \"[This permanent] enters the battlefield tapped,\" and they now have hideaway 4."
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Hideaway now causes you to put the rest of the cards on the bottom of your library in a random order instead of any order."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "At the time the ability resolves, you'll get to play the card if you declared three different creatures as attackers at any point in the turn. A creature declared as an attacker in two different attack phases counts only once. A creature that entered attacking (such as a token created by Militia's Pride) doesn't count because you never attacked with it."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "WHITE"
