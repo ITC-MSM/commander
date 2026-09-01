@@ -1740,6 +1740,36 @@
     ]
 }
 
+// Copy Enchantment
+{
+    "name": "Copy Enchantment",
+    "manaCost": "{2}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "You may have this enchantment enter as a copy of any enchantment on the battlefield.",
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersAsCopy",
+                "copyFilter": {
+                    "cardPredicates": [
+                        "IsEnchantment"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "42",
+        "rarity": "RARE",
+        "artist": "Joel Thomas",
+        "flavorText": "Simic mages create redundant backups of their experiments to reduce the consequences of catastrophe.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/c/ac22117d-bd58-439f-b199-da72bc7160b2.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Courier Hawk
 {
     "name": "Courier Hawk",
@@ -5816,6 +5846,65 @@
     ]
 }
 
+// Mindmoil
+{
+    "name": "Mindmoil",
+    "manaCost": "{4}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever you cast a spell, put the cards in your hand on the bottom of your library in any order, then draw that many cards.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "SpellCastEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "hand"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "hand",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "ControllerChooses"
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "DistinctEntitiesInCollections",
+                                "collections": [
+                                    "hand"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "135",
+        "rarity": "RARE",
+        "artist": "Alex Horley-Orlandelli",
+        "flavorText": "\"My criticism of the Izzet is that their impulse for learning seems too much like impulse and too little like learning.\"\n—Trigori, Azorius senator",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/c/0ccc79f7-2f35-4daf-a0c2-775f5fa6c249.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Mnemonic Nexus
 {
     "name": "Mnemonic Nexus",
@@ -6654,6 +6743,64 @@
     "colorIdentityOverride": []
 }
 
+// Pollenbright Wings
+{
+    "name": "Pollenbright Wings",
+    "manaCost": "{4}{G}{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature has flying.\nWhenever enchanted creature deals combat damage to a player, create that many 1/1 green Saproling creature tokens.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "binding": "ATTACHED",
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_DAMAGE_AMOUNT"
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Saproling"
+                    ]
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "FLYING"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "219",
+        "rarity": "UNCOMMON",
+        "artist": "Terese Nielsen",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/c/3ca4f3b9-c952-4fd3-a586-3e063b62b23d.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
 // Primordial Sage
 {
     "name": "Primordial Sage",
@@ -7395,6 +7542,80 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Savra, Queen of the Golgari
+{
+    "name": "Savra, Queen of the Golgari",
+    "manaCost": "{2}{B}{G}",
+    "typeLine": "Legendary Creature — Elf Shaman",
+    "oracleText": "Whenever you sacrifice a black creature, you may pay 2 life. If you do, each other player sacrifices a creature of their choice.\nWhenever you sacrifice a green creature, you may gain 2 life.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "PermanentsSacrificedEvent",
+                    "filter": "creature black",
+                    "perPermanent": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayLife",
+                            "amount": 2
+                        }
+                    },
+                    "then": {
+                        "type": "ForceSacrifice",
+                        "filter": "creature",
+                        "target": {
+                            "type": "PlayerRef",
+                            "player": "EachOpponent"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "PermanentsSacrificedEvent",
+                    "filter": "creature green",
+                    "perPermanent": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "225",
+        "rarity": "RARE",
+        "artist": "Scott M. Fischer",
+        "flavorText": "\"Nature's most raw beauty is the circle: perfect in its continuance, with no break between death and life.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/5/15accf35-a174-4ba5-a633-cc46da848dbe.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
     ]
 }
 
@@ -8833,6 +9054,66 @@
     "colorIdentityOverride": [
         "GREEN",
         "WHITE"
+    ]
+}
+
+// Terraformer
+{
+    "name": "Terraformer",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "{1}: Choose a basic land type. Each land you control becomes that type until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ChooseOption",
+                            "optionType": "BASIC_LAND_TYPE",
+                            "storeAs": "chosenLandType"
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "land ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "SetLandType",
+                                "target": "Self",
+                                "fromChosenValueKey": "chosenLandType"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "{1}: Choose a basic land type. Each land you control becomes that type until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "70",
+        "artist": "Luca Zontini",
+        "flavorText": "\"This feels a little more like home.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/0/a0b9d4f3-4570-4fe0-857f-97f5bd6ead44.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
