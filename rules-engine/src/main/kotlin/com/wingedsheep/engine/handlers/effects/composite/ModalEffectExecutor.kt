@@ -315,6 +315,12 @@ internal fun processPreTargetedEffectQueue(
             sourceColors = sourceColors,
             sourceSubtypes = sourceSubtypes,
             sourceId = ctx.sourceId,
+            // The chosen X, threaded exactly as the cast and activation paths do. Without it an
+            // X-clamped mode ("up to X target creatures", Profane Command) re-validates against
+            // the *static* placeholder count of 1, so every legal cast declaring two or more
+            // targets fails this re-check — and because a failed re-check silently skips the
+            // mode rather than erroring, the mode simply did nothing.
+            xValue = ctx.xValue,
             // This path re-validates a mode whose targets were already chosen and already checked
             // at cast/activation time, and the effect context does not record whether the modal
             // came from a spell or an ability — so it declares ANY rather than guessing. A
