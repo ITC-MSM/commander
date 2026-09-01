@@ -180,6 +180,71 @@
     ]
 }
 
+// Arbiter of Knollridge
+{
+    "name": "Arbiter of Knollridge",
+    "manaCost": "{6}{W}",
+    "typeLine": "Creature — Giant Wizard",
+    "oracleText": "Vigilance\nWhen this creature enters, each player's life total becomes the highest life total among all players.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "SetLifeTotal",
+                    "amount": {
+                        "type": "GreatestAmongPlayers",
+                        "inner": {
+                            "type": "LifeTotal",
+                            "player": "You"
+                        }
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "Each"
+                    }
+                },
+                "descriptionOverride": "each player's life total becomes the highest life total among all players."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "2",
+        "rarity": "RARE",
+        "artist": "Brandon Dorman",
+        "flavorText": "Though giants are mortal, they live so long and on such a grand scale that many small folk don't believe they ever truly die.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/b/6b598cf2-c327-422b-9527-1b28645ba70c.jpg?1783942919",
+        "rulings": [
+            {
+                "date": "2010-06-15",
+                "text": "In a Two-Headed Giant game, each team chooses one person on that team to gain the appropriate amount of life. This basically means that the triggered ability will set the life total of each team to that of the team with the highest life total."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "Abilities that trigger when a player gains life may trigger as a result of this ability."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "In other multiplayer formats, each player's life total is set to the highest life total within their range of influence. These changes happen at the same time. For example, if each player has a range of influence of one, and the players in the game are Alice (4 life), Barry (8 life), Carrie (11 life), and Doug (7 life), in that order, then Alice's life total will become 8 and Barry and Doug's life totals will each become 11."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Auntie's Hovel
 {
     "name": "Auntie's Hovel",
@@ -4550,6 +4615,181 @@
     ]
 }
 
+// Howltooth Hollow
+{
+    "name": "Howltooth Hollow",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "Hideaway 4 (When this land enters, look at the top four cards of your library, exile one face down, then put the rest on the bottom in a random order.)\nThis land enters tapped.\n{T}: Add {B}.\n{B}, {T}: You may play the exiled card without paying its mana cost if each player has no cards in hand.",
+    "keywords": [
+        "HIDEAWAY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "HIDEAWAY",
+            "n": 4
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                }
+                            },
+                            "storeAs": "hideawayTop"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hideawayTop",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "hideawayPicked",
+                            "storeRemainder": "hideawayRest",
+                            "prompt": "Choose a card to exile face down",
+                            "selectedLabel": "Exile face down",
+                            "remainderLabel": "Put on bottom of library"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "hideawayPicked",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true,
+                            "faceDown": "HIDDEN"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "hideawayRest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{B}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "hideawayLinked"
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "hideawayLinked"
+                        },
+                        {
+                            "type": "GrantPlayWithoutPayingCost",
+                            "from": "hideawayLinked"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "Count",
+                                "player": "Each",
+                                "zone": "Hand"
+                            },
+                            "operator": "EQ",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 0
+                            }
+                        }
+                    }
+                ]
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "269",
+        "rarity": "RARE",
+        "artist": "John Franklin Howe",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5c678643-6640-49e1-a5b0-2954123bcabc.jpg?1783942847",
+        "rulings": [
+            {
+                "date": "2022-04-29",
+                "text": "\"Hideaway N\" means \"When this permanent enters the battlefield, look at the top N cards of your library. Exile one of them face down and put the rest on the bottom of your library in a random order. The exiled card gains 'The player who controls the permanent that exiled this card may look at this card in the exile zone.'\""
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Any player who has controlled a permanent with a hideaway ability since a card was exiled with it may look at that card."
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Previously, permanents with hideaway entered the battlefield tapped. This ability has been removed from the definition of hideaway. Older cards have received errata to have an additional paragraph that reads \"[This permanent] enters the battlefield tapped,\" and they now have hideaway 4."
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Hideaway now causes you to put the rest of the cards on the bottom of your library in a random order instead of any order."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Hunter of Eyeblights
 {
     "name": "Hunter of Eyeblights",
@@ -8355,6 +8595,197 @@
     ]
 }
 
+// Spinerock Knoll
+{
+    "name": "Spinerock Knoll",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "Hideaway 4 (When this land enters, look at the top four cards of your library, exile one face down, then put the rest on the bottom in a random order.)\nThis land enters tapped.\n{T}: Add {R}.\n{R}, {T}: You may play the exiled card without paying its mana cost if an opponent was dealt 7 or more damage this turn.",
+    "keywords": [
+        "HIDEAWAY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "HIDEAWAY",
+            "n": 4
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                }
+                            },
+                            "storeAs": "hideawayTop"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hideawayTop",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "hideawayPicked",
+                            "storeRemainder": "hideawayRest",
+                            "prompt": "Choose a card to exile face down",
+                            "selectedLabel": "Exile face down",
+                            "remainderLabel": "Put on bottom of library"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "hideawayPicked",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true,
+                            "faceDown": "HIDDEN"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "hideawayRest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{R}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "hideawayLinked"
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "hideawayLinked"
+                        },
+                        {
+                            "type": "GrantPlayWithoutPayingCost",
+                            "from": "hideawayLinked"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "GreatestAmongPlayers",
+                                "players": "EachOpponent",
+                                "inner": {
+                                    "type": "TurnTracking",
+                                    "player": "You",
+                                    "tracker": "DAMAGE_RECEIVED"
+                                }
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 7
+                            }
+                        }
+                    }
+                ]
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "274",
+        "rarity": "RARE",
+        "artist": "Steve Prescott",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/e/dec6abed-8fbb-4d3e-8f89-64ea1b3913db.jpg?1783942847",
+        "rulings": [
+            {
+                "date": "2022-04-29",
+                "text": "\"Hideaway N\" means \"When this permanent enters the battlefield, look at the top N cards of your library. Exile one of them face down and put the rest on the bottom of your library in a random order. The exiled card gains 'The player who controls the permanent that exiled this card may look at this card in the exile zone.'\""
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Any player who has controlled a permanent with a hideaway ability since a card was exiled with it may look at that card."
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Previously, permanents with hideaway entered the battlefield tapped. This ability has been removed from the definition of hideaway. Older cards have received errata to have an additional paragraph that reads \"[This permanent] enters the battlefield tapped,\" and they now have hideaway 4."
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Hideaway now causes you to put the rest of the cards on the bottom of your library in a random order instead of any order."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "It doesn't matter how the opponent was dealt damage or by whom, as long as the total damage is 7 or more. You don't specify an opponent when you activate the ability."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "You'll get to play the card even if Spinerock Knoll wasn't on the battlefield at the time some or all of the 7 damage was dealt."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "At the time the last ability resolves, you'll get to play the card if a player who is currently your opponent, or a player who was your opponent at the time they left the game, has been dealt 7 damage over the course of the turn."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Springleaf Drum
 {
     "name": "Springleaf Drum",
@@ -10169,6 +10600,177 @@
         "artist": "Brandon Dorman",
         "flavorText": "\"You've discovered that boggarts bite, I see. And will the militia be chasing this lot? . . . Ah, you're staying in town to avoid Nath's hunt. Wise. Now this poultice . . .\"",
         "imageUri": "https://cards.scryfall.io/normal/front/1/2/129933ba-60a0-4764-a705-28fa7bb10bd3.jpg?1783942907"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Windbrisk Heights
+{
+    "name": "Windbrisk Heights",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "Hideaway 4 (When this land enters, look at the top four cards of your library, exile one face down, then put the rest on the bottom in a random order.)\nThis land enters tapped.\n{T}: Add {W}.\n{W}, {T}: You may play the exiled card without paying its mana cost if you attacked with three or more creatures this turn.",
+    "keywords": [
+        "HIDEAWAY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "HIDEAWAY",
+            "n": 4
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                }
+                            },
+                            "storeAs": "hideawayTop"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hideawayTop",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "hideawayPicked",
+                            "storeRemainder": "hideawayRest",
+                            "prompt": "Choose a card to exile face down",
+                            "selectedLabel": "Exile face down",
+                            "remainderLabel": "Put on bottom of library"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "hideawayPicked",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true,
+                            "faceDown": "HIDDEN"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "hideawayRest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{W}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "hideawayLinked"
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "hideawayLinked"
+                        },
+                        {
+                            "type": "GrantPlayWithoutPayingCost",
+                            "from": "hideawayLinked"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "PlayerAttackedWithCreaturesThisTurn",
+                            "filter": "creature",
+                            "atLeast": 3
+                        }
+                    }
+                ]
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "281",
+        "rarity": "RARE",
+        "artist": "Omar Rayyan",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/d/9df6a31a-5c49-4506-b8f8-84c9ab4a2ece.jpg?1783942846",
+        "rulings": [
+            {
+                "date": "2022-04-29",
+                "text": "\"Hideaway N\" means \"When this permanent enters the battlefield, look at the top N cards of your library. Exile one of them face down and put the rest on the bottom of your library in a random order. The exiled card gains 'The player who controls the permanent that exiled this card may look at this card in the exile zone.'\""
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Any player who has controlled a permanent with a hideaway ability since a card was exiled with it may look at that card."
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Previously, permanents with hideaway entered the battlefield tapped. This ability has been removed from the definition of hideaway. Older cards have received errata to have an additional paragraph that reads \"[This permanent] enters the battlefield tapped,\" and they now have hideaway 4."
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Hideaway now causes you to put the rest of the cards on the bottom of your library in a random order instead of any order."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "At the time the ability resolves, you'll get to play the card if you declared three different creatures as attackers at any point in the turn. A creature declared as an attacker in two different attack phases counts only once. A creature that entered attacking (such as a token created by Militia's Pride) doesn't count because you never attacked with it."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "WHITE"
