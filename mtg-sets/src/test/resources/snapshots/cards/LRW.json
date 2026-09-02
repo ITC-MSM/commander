@@ -1477,6 +1477,68 @@
     ]
 }
 
+// Burrenton Forge-Tender
+{
+    "name": "Burrenton Forge-Tender",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Kithkin Wizard",
+    "oracleText": "Protection from red\nSacrifice this creature: Prevent all damage a red source of your choice would deal this turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywordAbilities": [
+        {
+            "type": "Protection",
+            "scope": {
+                "type": "ProtectionScope.Color",
+                "color": "RED"
+            }
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "PreventDamageShield",
+                    "direction": "FromTarget",
+                    "sourceFilter": {
+                        "type": "ChosenSourceMatching",
+                        "filter": "red"
+                    }
+                },
+                "descriptionOverride": "Sacrifice this creature: Prevent all damage a red source of your choice would deal this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "7",
+        "rarity": "UNCOMMON",
+        "artist": "Chuck Lukacs",
+        "flavorText": "\"We are a clachan of smiths. The forge is as comfortable to us as a small fire during a cool winter's evening.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/0/c000c3e4-d71a-43c8-8ded-f3da54bc088d.jpg?1783942917",
+        "rulings": [
+            {
+                "date": "2017-11-17",
+                "text": "If the red source you chose changes colors before it deals damage, the damage-prevention effect doesn't apply."
+            },
+            {
+                "date": "2017-11-17",
+                "text": "The last ability of Burrenton Forge-Tender doesn't target anything. You choose a source of damage as the ability resolves, if able. You can activate it even if there is no source to choose."
+            },
+            {
+                "date": "2017-11-17",
+                "text": "If a permanent spell is chosen as the source of damage, Burrenton Forge-Tender's prevention effect continues to apply for the rest of the turn to the permanent that spell becomes once it has entered the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Caterwauling Boggart
 {
     "name": "Caterwauling Boggart",
