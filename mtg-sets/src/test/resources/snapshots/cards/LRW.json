@@ -3465,6 +3465,79 @@
     ]
 }
 
+// Fathom Trawl
+{
+    "name": "Fathom Trawl",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Reveal cards from the top of your library until you reveal three nonland cards. Put the nonland cards revealed this way into your hand, then put the rest of the revealed cards on the bottom of your library in any order.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherUntilMatch",
+                    "filter": "nonland",
+                    "storeMatch": "ignored",
+                    "storeRevealed": "revealed",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                {
+                    "type": "RevealCollection",
+                    "from": "revealed"
+                },
+                {
+                    "type": "FilterCollection",
+                    "from": "revealed",
+                    "filter": {
+                        "type": "MatchesFilter",
+                        "filter": "nonland"
+                    },
+                    "storeMatching": "matchedToHand",
+                    "storeNonMatching": "rest"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "matchedToHand",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    },
+                    "revealed": true
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "rest",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Library",
+                        "placement": "Bottom"
+                    },
+                    "order": "ControllerChooses"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "65",
+        "rarity": "RARE",
+        "artist": "Paul Chadwick",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/d/cd9c0bd7-f8a9-4d13-9a06-acc8bfb3d68b.jpg?1783942903",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "If there are fewer than three nonland cards in your library, you will reveal your entire library, put all nonland cards into your hand, and put the rest back in any order."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Faultgrinder
 {
     "name": "Faultgrinder",

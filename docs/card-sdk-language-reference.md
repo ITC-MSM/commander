@@ -3102,11 +3102,13 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
 **Reveal patterns**
 
 - `revealUntilNonlandDealDamage(target)` — Bonecrusher Giant shape.
-- `revealUntilMatchToHand(filter, restDestination?, restOrder?)` — Spinner of Souls / Wirewood Herald
-  shape: reveal from the top of your library until you reveal a card matching `filter`; that card goes to
-  hand and the cards revealed before it go to `restDestination` (default: bottom of library) in `restOrder`
-  (default: random). If the library empties before a match, nothing goes to hand and every revealed card
-  goes to the rest destination.
+- `revealUntilMatchToHand(filter, restDestination?, restOrder?, count?)` — Spinner of Souls / Wirewood
+  Herald shape: reveal from the top of your library until you reveal `count` cards matching `filter`
+  (default 1); those cards go to hand and the cards revealed alongside them go to `restDestination`
+  (default: bottom of library) in `restOrder` (default: random). If the library empties before `count`
+  matches, every match found so far still goes to hand and the rest go to the rest destination.
+  **Fathom Trawl** is the `count = 3` case, with `restOrder = CardOrder.ControllerChooses` for its
+  "in any order".
 - `wheelEffect(players)` — each player shuffles hand into library, draws that many.
 - `factOrFiction(count = 5, keepZone, otherZone, ...)` — reveal/look at the top `count`, an
   opponent splits them into two piles, then you choose which pile goes to `keepZone` (hand) and
