@@ -9589,7 +9589,7 @@
                             "filter": {
                                 "baseFilter": "creature"
                             },
-                            "id": "creatures to gain fear",
+                            "id": "X target creatures",
                             "dynamicMaxCount": "XValue"
                         }
                     ],

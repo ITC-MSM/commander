@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.CastSpell
+import com.wingedsheep.engine.core.ChooseTargetsDecision
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
@@ -185,6 +186,64 @@ class ProfaneCommandScenarioTest : FunSpec({
         val projected = projector.project(driver.state)
         projected.hasKeyword(bears, Keyword.FEAR) shouldBe true
         projected.hasKeyword(lions, Keyword.FEAR) shouldBe true
+    }
+
+    // The web client's choose-N modal panel submits the modes (and the announced X) and lets the
+    // server drive per-mode targeting on the battlefield — no flat `targets`, no
+    // `modeTargetsOrdered`. That path prices its own target prompts, so the X announced with the
+    // modes has to reach them too, or the same three spellings that the direct-cast tests above
+    // cover go back to reading an unbound X.
+    fun GameTestDriver.castCommandClientShaped(
+        caster: EntityId,
+        x: Int,
+        modes: List<Int>,
+    ): ExecutionResult {
+        giveMana(caster, Color.BLACK, x + 2)
+        val spell = putCardInHand(caster, "Profane Command")
+        return submit(CastSpell(playerId = caster, cardId = spell, chosenModes = modes, xValue = x))
+    }
+
+    test("server-driven mode targeting offers X creatures for the fear mode, not one") {
+        val driver = newDriver()
+        val me = driver.activePlayer!!
+        val opp = driver.getOpponent(me)
+
+        val bears = driver.putCreatureOnBattlefield(me, "Grizzly Bears")
+        val lions = driver.putCreatureOnBattlefield(me, "Savannah Lions")
+
+        driver.castCommandClientShaped(me, x = 2, modes = listOf(grantFear, loseLife))
+            .error shouldBe null
+
+        val fearDecision = driver.pendingDecision as ChooseTargetsDecision
+        // "Up to X target creatures" — the static count on the requirement is the placeholder 1.
+        fearDecision.targetRequirements.single().maxTargets shouldBe 2
+        driver.submitTargetSelection(me, listOf(bears, lions))
+
+        val playerDecision = driver.pendingDecision as ChooseTargetsDecision
+        driver.submitTargetSelection(me, listOf(opp))
+        playerDecision.targetRequirements.single().maxTargets shouldBe 1
+
+        driver.bothPass()
+
+        val projected = projector.project(driver.state)
+        projected.hasKeyword(bears, Keyword.FEAR) shouldBe true
+        projected.hasKeyword(lions, Keyword.FEAR) shouldBe true
+        driver.getLifeTotal(opp) shouldBe 18
+    }
+
+    test("server-driven mode targeting hides a graveyard creature above the announced X") {
+        val driver = newDriver()
+        val me = driver.activePlayer!!
+
+        val courser = driver.putCardInGraveyard(me, "Centaur Courser") // mana value 3
+        val bears = driver.putCardInGraveyard(me, "Grizzly Bears") // mana value 2
+
+        driver.castCommandClientShaped(me, x = 2, modes = listOf(reanimate, loseLife))
+            .error shouldBe null
+
+        val reanimateDecision = driver.pendingDecision as ChooseTargetsDecision
+        reanimateDecision.legalTargets[0] shouldBe listOf(bears)
+        reanimateDecision.legalTargets[0]!!.contains(courser) shouldBe false
     }
 
     test("'up to X target creatures' refuses X + 1 of them") {
