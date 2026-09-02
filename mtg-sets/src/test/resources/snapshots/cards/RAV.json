@@ -1415,6 +1415,95 @@
     ]
 }
 
+// Cleansing Beam
+{
+    "name": "Cleansing Beam",
+    "manaCost": "{4}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Radiance — Cleansing Beam deals 2 damage to target creature and each other creature that shares a color with it.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    {
+                                        "type": "SharesColorWith",
+                                        "entity": "Target"
+                                    }
+                                ]
+                            },
+                            "excludeTarget": true
+                        }
+                    },
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": "Self"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "118",
+        "rarity": "UNCOMMON",
+        "artist": "Pat Lee",
+        "flavorText": "\"Justice is toothless without punishment. Righteousness cannot succeed without the suffering of the guilty.\"\n—Razia",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/3/63cbaab6-db0d-40bb-bdf4-aee6543d9f27.jpg?1783943657",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "All creatures that share a color are affected, even your own."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If it targets a colorless creature, it doesn't affect any other creatures. A colorless creature shares a color with nothing, not even other colorless creatures."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "You check which creatures share a color with the target when the spell resolves."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Only one creature is targeted. If that creature leaves the battlefield or otherwise becomes an illegal target, the entire spell doesn't resolve. No other creatures are affected."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Clinging Darkness
 {
     "name": "Clinging Darkness",
@@ -5851,6 +5940,72 @@
     ]
 }
 
+// Leave No Trace
+{
+    "name": "Leave No Trace",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Radiance — Destroy target enchantment and each other enchantment that shares a color with it.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target enchantment"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsEnchantment",
+                                    {
+                                        "type": "SharesColorWith",
+                                        "entity": "Target"
+                                    }
+                                ]
+                            },
+                            "excludeTarget": true
+                        }
+                    },
+                    "body": {
+                        "type": "MoveToZone",
+                        "target": "Self",
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "enchantment"
+                },
+                "id": "target enchantment"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "23",
+        "artist": "Pat Lee",
+        "flavorText": "The magic of the Boros patrols the streets even when their soldiers do not.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/8/58466d46-7225-42ff-8471-6d489be32cf3.jpg?1783943698"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Light of Sanction
 {
     "name": "Light of Sanction",
@@ -7727,6 +7882,103 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Rally the Righteous
+{
+    "name": "Rally the Righteous",
+    "manaCost": "{1}{R}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Radiance — Untap target creature and each other creature that shares a color with it. Those creatures get +2/+0 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "tap": false
+                },
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    {
+                                        "type": "SharesColorWith",
+                                        "entity": "Target"
+                                    }
+                                ]
+                            },
+                            "excludeTarget": true
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "TapUntap",
+                                "target": "Self",
+                                "tap": false
+                            },
+                            {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 0
+                                },
+                                "target": "Self"
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "222",
+        "artist": "Dan Murayama Scott",
+        "flavorText": "Yuri took up the ragged Boros banner, and his brethren, inspired by the act, followed him back into the fight.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/d/9da51b6c-2e27-4b41-8fb0-bd9f6ad47b19.jpg?1783943614"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
     ]
 }
 
@@ -9916,6 +10168,70 @@
     ]
 }
 
+// Surge of Zeal
+{
+    "name": "Surge of Zeal",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Radiance — Target creature and each other creature that shares a color with it gain haste until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    {
+                                        "type": "SharesColorWith",
+                                        "entity": "Target"
+                                    }
+                                ]
+                            },
+                            "excludeTarget": true
+                        }
+                    },
+                    "body": {
+                        "type": "GrantKeyword",
+                        "keyword": "HASTE",
+                        "target": "Self"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "146",
+        "artist": "Justin Sweet",
+        "flavorText": "\"If only my poxes were as infectious as their zealotry.\"\n—Savra",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b6c07fa6-b575-46f9-ab39-fb777d4b8acd.jpg?1783943646"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Surveilling Sprite
 {
     "name": "Surveilling Sprite",
@@ -11945,6 +12261,84 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Wojek Siren
+{
+    "name": "Wojek Siren",
+    "manaCost": "{W}",
+    "typeLine": "Instant",
+    "oracleText": "Radiance — Target creature and each other creature that shares a color with it get +1/+1 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    {
+                                        "type": "SharesColorWith",
+                                        "entity": "Target"
+                                    }
+                                ]
+                            },
+                            "excludeTarget": true
+                        }
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": "Self"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "37",
+        "artist": "Zoltan Boros & Gabor Szikszai",
+        "flavorText": "It is the call to arms, the call to fury, the call to blood.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/5/a55c0d7d-2325-4d7e-b449-c8fdcf988ec0.jpg?1783943692"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
