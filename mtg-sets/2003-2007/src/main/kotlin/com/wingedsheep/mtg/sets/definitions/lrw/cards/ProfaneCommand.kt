@@ -68,7 +68,10 @@ val ProfaneCommand = card("Profane Command") {
             }
             mode("Up to X target creatures gain fear until end of turn") {
                 target(
-                    "creatures to gain fear",
+                    // The id is the whole phrase after the "up to " the optional flag prints, so
+                    // the server-driven per-mode prompt reads "up to X target creatures" rather
+                    // than "up to creatures".
+                    "X target creatures",
                     TargetCreature(optional = true, dynamicMaxCount = DynamicAmount.XValue)
                 )
                 effect = ForEachTargetEffect(
