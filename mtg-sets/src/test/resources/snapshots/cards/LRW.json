@@ -10485,6 +10485,66 @@
     ]
 }
 
+// Spellstutter Sprite
+{
+    "name": "Spellstutter Sprite",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flash\nFlying\nWhen this creature enters, counter target spell with mana value X or less, where X is the number of Faeries you control.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": "Counter",
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "ManaValueAtMostDynamic",
+                                    "amount": {
+                                        "type": "AggregateBattlefield",
+                                        "player": "You",
+                                        "filter": "permanent Faerie"
+                                    }
+                                }
+                            ]
+                        },
+                        "zone": "Stack"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "89",
+        "artist": "Rebecca Guay",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/e/4e5ba4a9-a282-4d4b-b25a-179e05e458f4.jpg?1783942897",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "The value of X needs to be determined both when the ability triggers (so you can choose a target) and again when the ability resolves (to check if that target is still legal). If the number of Faeries you control has decreased enough in that time to make the target illegal, Spellstutter Sprite's ability won't resolve (and the targeted spell will resolve as normal)."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Spiderwig Boggart
 {
     "name": "Spiderwig Boggart",

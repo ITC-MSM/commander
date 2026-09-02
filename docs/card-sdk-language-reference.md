@@ -4379,7 +4379,12 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   `.manaValueAtMostDynamic(DynamicAmount.TurnTracking(Player.You, TurnTracker.LIFE_GAINED))`. The cap
   fails closed (matches nothing) when there is no controller context to resolve a player-scoped amount,
   and is `false` in the layer-projection / cost-calculation / cast-record paths (no resolution context),
-  matching the other entity-relative caps.
+  matching the other entity-relative caps. Available on `TargetFilter` too (mirroring
+  `.manaValueAtMostX()`), which is how a *targeting* restriction carries the cap rather than a
+  resolution-time check — **Spellstutter Sprite**'s "counter target spell with mana value X or less,
+  where X is the number of Faeries you control" is
+  `TargetFilter.SpellOnStack.manaValueAtMostDynamic(AggregateBattlefield(You, Permanent.withSubtype(FAERIE)))`,
+  so the CR 608.2b re-check on resolution gets the ruling's "determine X again" for free.
 - `.manaValueEqualsDynamic(amount)` — the fluent builder for `ManaValueEqualsDynamic` below, and
   `.manaValueAtMostDynamic`'s equality sibling. Oracle marks the difference by where it puts the
   comparison relative to the clause: "mana value **equal to** the number of harmony counters on this
