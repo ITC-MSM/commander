@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.text.TextReplaceable
 import com.wingedsheep.sdk.scripting.text.TextReplacer
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import kotlinx.serialization.Serializable
 
 /**
@@ -403,6 +404,15 @@ data class TargetFilter(
 
     /** Mana value at most the X chosen for the source spell/ability */
     fun manaValueAtMostX() = copy(baseFilter = baseFilter.manaValueAtMostX())
+
+    /**
+     * Mana value at most a resolved [DynamicAmount] — "target spell with mana value X or less,
+     * where X is the number of Faeries you control" (Spellstutter Sprite). The pass-through of
+     * [ObjectFilter.manaValueAtMostDynamic] onto the *target* side, where the cap is re-read both
+     * when targets are chosen and again on resolution (CR 608.2b).
+     */
+    fun manaValueAtMostDynamic(amount: DynamicAmount) =
+        copy(baseFilter = baseFilter.manaValueAtMostDynamic(amount))
 
     /** Mana value exactly equal to the X chosen for the source spell/ability (Repeal, Spell Blast). */
     fun manaValueEqualsX() = copy(baseFilter = baseFilter.manaValueEqualsX())

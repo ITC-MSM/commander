@@ -1555,6 +1555,68 @@
     ]
 }
 
+// Burrenton Forge-Tender
+{
+    "name": "Burrenton Forge-Tender",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Kithkin Wizard",
+    "oracleText": "Protection from red\nSacrifice this creature: Prevent all damage a red source of your choice would deal this turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywordAbilities": [
+        {
+            "type": "Protection",
+            "scope": {
+                "type": "ProtectionScope.Color",
+                "color": "RED"
+            }
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "PreventDamageShield",
+                    "direction": "FromTarget",
+                    "sourceFilter": {
+                        "type": "ChosenSourceMatching",
+                        "filter": "red"
+                    }
+                },
+                "descriptionOverride": "Sacrifice this creature: Prevent all damage a red source of your choice would deal this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "7",
+        "rarity": "UNCOMMON",
+        "artist": "Chuck Lukacs",
+        "flavorText": "\"We are a clachan of smiths. The forge is as comfortable to us as a small fire during a cool winter's evening.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/0/c000c3e4-d71a-43c8-8ded-f3da54bc088d.jpg?1783942917",
+        "rulings": [
+            {
+                "date": "2017-11-17",
+                "text": "If the red source you chose changes colors before it deals damage, the damage-prevention effect doesn't apply."
+            },
+            {
+                "date": "2017-11-17",
+                "text": "The last ability of Burrenton Forge-Tender doesn't target anything. You choose a source of damage as the ability resolves, if able. You can activate it even if there is no source to choose."
+            },
+            {
+                "date": "2017-11-17",
+                "text": "If a permanent spell is chosen as the source of damage, Burrenton Forge-Tender's prevention effect continues to apply for the rest of the turn to the permanent that spell becomes once it has entered the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Caterwauling Boggart
 {
     "name": "Caterwauling Boggart",
@@ -3475,6 +3537,79 @@
         "artist": "Eric Fortune",
         "flavorText": "Because of their capricious nature, faeries can serve as living lenses for disruptive magic.",
         "imageUri": "https://cards.scryfall.io/normal/front/5/5/55b9be91-f3a1-49ce-8a3e-2ecd30e2e692.jpg?1783942904"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Fathom Trawl
+{
+    "name": "Fathom Trawl",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Reveal cards from the top of your library until you reveal three nonland cards. Put the nonland cards revealed this way into your hand, then put the rest of the revealed cards on the bottom of your library in any order.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherUntilMatch",
+                    "filter": "nonland",
+                    "storeMatch": "ignored",
+                    "storeRevealed": "revealed",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                {
+                    "type": "RevealCollection",
+                    "from": "revealed"
+                },
+                {
+                    "type": "FilterCollection",
+                    "from": "revealed",
+                    "filter": {
+                        "type": "MatchesFilter",
+                        "filter": "nonland"
+                    },
+                    "storeMatching": "matchedToHand",
+                    "storeNonMatching": "rest"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "matchedToHand",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    },
+                    "revealed": true
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "rest",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Library",
+                        "placement": "Bottom"
+                    },
+                    "order": "ControllerChooses"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "65",
+        "rarity": "RARE",
+        "artist": "Paul Chadwick",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/d/cd9c0bd7-f8a9-4d13-9a06-acc8bfb3d68b.jpg?1783942903",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "If there are fewer than three nonland cards in your library, you will reveal your entire library, put all nonland cards into your hand, and put the rest back in any order."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -10610,6 +10745,66 @@
         "artist": "Christopher Moeller",
         "flavorText": "One glamer leads him far from home. The next washes away his memory that home was ever anywhere but at her side.",
         "imageUri": "https://cards.scryfall.io/normal/front/2/f/2f5320da-7214-4348-84d8-74bf951c9f2f.jpg?1783942897"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Spellstutter Sprite
+{
+    "name": "Spellstutter Sprite",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flash\nFlying\nWhen this creature enters, counter target spell with mana value X or less, where X is the number of Faeries you control.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": "Counter",
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "ManaValueAtMostDynamic",
+                                    "amount": {
+                                        "type": "AggregateBattlefield",
+                                        "player": "You",
+                                        "filter": "permanent Faerie"
+                                    }
+                                }
+                            ]
+                        },
+                        "zone": "Stack"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "89",
+        "artist": "Rebecca Guay",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/e/4e5ba4a9-a282-4d4b-b25a-179e05e458f4.jpg?1783942897",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "The value of X needs to be determined both when the ability triggers (so you can choose a target) and again when the ability resolves (to check if that target is still legal). If the number of Faeries you control has decreased enough in that time to make the target illegal, Spellstutter Sprite's ability won't resolve (and the targeted spell will resolve as normal)."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "BLUE"
