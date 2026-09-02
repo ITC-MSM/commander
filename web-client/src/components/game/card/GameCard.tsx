@@ -54,7 +54,7 @@ import {
   getCounterCount,
   PASSIVE_COUNTER_TYPES,
 } from '../board/shared'
-import { CARD_RESIZE_TRANSITION, prefersReducedMotion } from '../board/battlefieldLayout'
+import { CARD_COUNTER_ROTATE_TRANSITION, CARD_REDUCED_MOTION_TRANSITION, CARD_RESIZE_TRANSITION, prefersReducedMotion } from '../board/battlefieldLayout'
 import { styles, bandColorFor, passiveCounterBadgeStyle, UNTAP_FROST_RIM, UNTAP_FROST_FILL } from '../board/styles'
 import {
   TARGET_COLOR, TARGET_COLOR_BRIGHT, TARGET_GLOW, TARGET_GLOW_BRIGHT, TARGET_GLOW_OUTER, TARGET_SHADOW,
@@ -395,6 +395,9 @@ function GameCardImpl({
   // portrait back face stops being rotated.
   const isLandscapePrint = !faceDown && !!battlefield && card.isLandscapeFace === true
   const totalRotateDeg = (isLandscapePrint ? 90 : 0) + (isTapped ? 90 : 0)
+  // Applied wherever a chip counter-rotates by `-totalRotateDeg`: it has to ease alongside the
+  // card's own turn instead of snapping to its final angle the instant the permanent taps.
+  const counterRotateTransition = battlefield && !prefersReducedMotion() ? CARD_COUNTER_ROTATE_TRANSITION : undefined
   const needsLandscapeContainer = Math.abs(totalRotateDeg) % 180 === 90
   const isInTargetingMode = targetingState !== null
   const isValidTarget = targetingState?.validTargets.includes(card.id) ?? false
@@ -1319,8 +1322,9 @@ function GameCardImpl({
         height,
         // Battlefield cards resize as the board fills up or empties out (see
         // battlefieldLayout.ts); ease the size change so a card entering play
-        // reads as the board settling rather than everything jumping.
-        ...(battlefield && !prefersReducedMotion() ? { transition: CARD_RESIZE_TRANSITION } : {}),
+        // reads as the board settling rather than everything jumping. The same
+        // `transform` leg animates the 90deg turn when the permanent taps or untaps.
+        ...(battlefield ? { transition: prefersReducedMotion() ? CARD_REDUCED_MOTION_TRANSITION : CARD_RESIZE_TRANSITION } : {}),
         borderRadius: responsive.isMobile ? 4 : 8,
         cursor,
         border: isBeheldPulsing ? '3px solid #eab308' : borderStyle,
@@ -1459,6 +1463,7 @@ function GameCardImpl({
             padding: '0 4px',
             borderRadius: 3,
             transform: totalRotateDeg ? `rotate(${-totalRotateDeg}deg)` : undefined,
+            transition: counterRotateTransition,
             transformOrigin: 'top left',
             background: 'rgba(0, 0, 0, 0.78)',
             border: '1px solid rgba(255, 255, 255, 0.55)',
@@ -1506,6 +1511,7 @@ function GameCardImpl({
             justifyContent: 'center',
             borderRadius: '50%',
             transform: totalRotateDeg ? `rotate(${-totalRotateDeg}deg)` : undefined,
+            transition: counterRotateTransition,
             background: 'radial-gradient(circle at 35% 30%, #123246 0%, #06121c 80%)',
             // A permanent lock gets the full frost ring; the one-shot exert marker is muted so the
             // two are distinguishable at a glance without reading the tooltip.
@@ -1727,6 +1733,7 @@ function GameCardImpl({
             // Badges rotate with the card, so a tapped candidate's chip needs the same
             // counter-rotation the other in-card labels use to stay upright and readable.
             transform: `translateX(-50%)${totalRotateDeg ? ` rotate(${-totalRotateDeg}deg)` : ''}`,
+            transition: counterRotateTransition,
             display: 'flex',
             alignItems: 'center',
             gap: 2,
@@ -2456,6 +2463,7 @@ function GameCardImpl({
               }}>
                 <div style={{
                   transform: totalRotateDeg ? `rotate(${-totalRotateDeg}deg)` : undefined,
+                  transition: counterRotateTransition,
                   backgroundColor: 'rgba(40, 20, 20, 0.92)',
                   color: '#e89b9b',
                   fontSize: responsive.badges.manaCostFontSize,
@@ -3038,9 +3046,15 @@ function GameCardImpl({
     />
   ) : null
 
-  // Wrap in container for sideways battlefield cards (tapped permanents and Rooms) to
-  // prevent overlap with neighbours.
-  if (needsLandscapeContainer && battlefield) {
+  // Every battlefield card gets this container, not just the sideways ones (tapped permanents
+  // and Rooms), which are the only ones that need its extra width to avoid overlapping their
+  // neighbours. Wrapping unconditionally is what makes tapping *animate*: if the wrapper
+  // appeared only once a card turned sideways, React would reconcile the untapped card's own
+  // <div> into the new wrapper and mount a fresh node for the card underneath it — a fresh node
+  // paints already rotated, so the `transform` transition below has nothing to animate from and
+  // the card snaps. With the wrapper always present the card's DOM node survives the tap and
+  // eases through the 90deg turn; the wrapper's own width transition slides the neighbours over.
+  if (battlefield) {
     return (
       <RenderProfiler id={profilerId}>
       <div style={{

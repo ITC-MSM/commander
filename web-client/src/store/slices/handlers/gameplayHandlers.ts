@@ -182,6 +182,21 @@ interface StateUpdateEnvelope {
 }
 
 /**
+ * The transient animation queues, emptied together. Every one of these layers sits far above the
+ * result overlay in the stacking order (they're meant to clear modals), so once the game is over
+ * they keep floating numbers and reveals on top of the Victory/Defeat card — narrating an exchange
+ * whose outcome the player has already been told. Cleared rather than merely hidden: a layer that
+ * stops rendering never runs its own completion callback, so the entries would outlive the game.
+ */
+const CLEARED_ANIMATIONS = {
+  drawAnimations: [],
+  damageAnimations: [],
+  revealAnimations: [],
+  coinFlipAnimations: [],
+  targetReselectedAnimations: [],
+} as const
+
+/**
  * Process a state update — shared between full StateUpdate and StateDeltaUpdate.
  * Takes the resolved (full) ClientGameState and the envelope fields.
  */
@@ -220,7 +235,11 @@ function processStateUpdate(
   set: SetState,
   get: GetState
 ): void {
-  const { playerId, addBeholdPulse, reconcileBeholdPulses } = get()
+  const { playerId, addBeholdPulse, reconcileBeholdPulses, gameOverState } = get()
+  // A final state update can land after the GameOver message. Queueing its animations would put
+  // them straight back on top of the overlay CLEARED_ANIMATIONS just emptied. An eliminated player
+  // who chooses to keep watching clears gameOverState, and their animations resume with it.
+  const suppressAnimations = gameOverState !== null
 
   // Two-Headed Giant (CR 810) / Team vs. Team (CR 808): re-derive the seat → team map from the
   // state itself. The game-start roster also carries it, but that message is a one-shot — a
@@ -401,6 +420,48 @@ function processStateUpdate(
     }
   })
 
+  // Damage dealt to a permanent — creature, planeswalker, battle. The player half of `damageDealt`
+  // is deliberately skipped: `lifeChanged` above already covers it, and it covers it more
+  // truthfully, since damage can be prevented or redirected on its way to becoming life loss.
+  // Without this a blocked creature's only feedback is its toughness quietly recolouring, so a
+  // trade in a crowded combat is easy to miss entirely.
+  const permanentDamageEvents = msg.events.filter(
+    (e) => e.type === 'damageDealt' &&
+      !(e as { targetIsPlayer: boolean }).targetIsPlayer &&
+      (e as { amount: number }).amount > 0
+  ) as {
+    type: 'damageDealt'
+    targetId: EntityId
+    amount: number
+  }[]
+
+  // One permanent can be dealt damage several times in a single update — an attacker blocked by
+  // two creatures takes one event per blocker. Sum them into a single number: "-5" reads as the
+  // trade it is, where three floaters stacked on one card just read as noise.
+  const permanentDamage = new Map<EntityId, number>()
+  permanentDamageEvents.forEach((event) => {
+    permanentDamage.set(event.targetId, (permanentDamage.get(event.targetId) ?? 0) + event.amount)
+  })
+
+  permanentDamage.forEach((amount, targetId) => {
+    // Only permanents that survived the damage get a number, and it's not a compromise for the
+    // sake of anchoring it: a creature that died already announced itself by leaving the board,
+    // which is a far louder signal than any floater. The number is for the case with no other
+    // feedback — damage marked on something that's still standing. Skipping the dead ones also
+    // means no floater can outlive the card it belongs to and end up labelling a stranger.
+    if (!battlefieldCardIds.has(targetId)) return
+    newDamageAnimations.push({
+      id: `damage-${targetId}-${Date.now()}`,
+      targetId,
+      targetIsPlayer: false,
+      amount,
+      isLifeGain: false,
+      // Combat damage is dealt simultaneously (CR 510.2), so these don't stagger the way the
+      // per-player life floaters do — the whole exchange lands on one beat.
+      startTime: Date.now(),
+    })
+  })
+
   // Process morph face-up events for reveal animations
   const turnedFaceUpEvents = msg.events.filter((e) => e.type === 'turnedFaceUp') as {
     type: 'turnedFaceUp'
@@ -493,11 +554,11 @@ function processStateUpdate(
     // long game paid steadily more per click. Map only the new tail and keep the prefix's
     // existing entries, which also keeps their identity stable for the log list.
     eventLog: appendGameLogTail(state.eventLog, resolvedState.gameLog),
-    ...(newDrawAnimations.length > 0 ? { drawAnimations: [...state.drawAnimations, ...newDrawAnimations] } : {}),
-    ...(newDamageAnimations.length > 0 ? { damageAnimations: [...state.damageAnimations, ...newDamageAnimations] } : {}),
-    ...(newRevealAnimations.length > 0 ? { revealAnimations: [...state.revealAnimations, ...newRevealAnimations] } : {}),
-    ...(newCoinFlipAnimations.length > 0 ? { coinFlipAnimations: [...state.coinFlipAnimations, ...newCoinFlipAnimations] } : {}),
-    ...(newTargetReselectedAnimations.length > 0
+    ...(newDrawAnimations.length > 0 && !suppressAnimations ? { drawAnimations: [...state.drawAnimations, ...newDrawAnimations] } : {}),
+    ...(newDamageAnimations.length > 0 && !suppressAnimations ? { damageAnimations: [...state.damageAnimations, ...newDamageAnimations] } : {}),
+    ...(newRevealAnimations.length > 0 && !suppressAnimations ? { revealAnimations: [...state.revealAnimations, ...newRevealAnimations] } : {}),
+    ...(newCoinFlipAnimations.length > 0 && !suppressAnimations ? { coinFlipAnimations: [...state.coinFlipAnimations, ...newCoinFlipAnimations] } : {}),
+    ...(newTargetReselectedAnimations.length > 0 && !suppressAnimations
       ? { targetReselectedAnimations: [...state.targetReselectedAnimations, ...newTargetReselectedAnimations] }
       : {}),
     waitingForOpponentMulligan: false,
@@ -770,6 +831,7 @@ export function createGameplayHandlers(set: SetState, get: GetState): Pick<Messa
           message: msg.message,
           gameId: msg.gameId,
         },
+        ...CLEARED_ANIMATIONS,
       })
     },
 
@@ -788,6 +850,7 @@ export function createGameplayHandlers(set: SetState, get: GetState): Pick<Messa
           gameId: msg.gameId,
           eliminated: true,
         },
+        ...CLEARED_ANIMATIONS,
       })
     },
 

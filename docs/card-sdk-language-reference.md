@@ -2168,7 +2168,9 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   `BlockPhaseManager.validateProjectedMustBlockRequirements` enforces it with no extra wiring and
   the generic end-of-turn cleanup expires it. Distinct from
   `Effects.ForceBlock(target, attacker = EffectTarget.Self)`, which pins the creature to blocking one
-  *named* attacker and requires that attacker to be attacking — this one is satisfied by blocking
+  *named* attacker and is only read while that creature is actually attacking (it may be created
+  before attackers are declared — Sisters of Stone Death's "{G}: Target creature blocks ~ this turn
+  if able" — and binds once the creature attacks) — this one is satisfied by blocking
   anything. `attacker` defaults to the ability's own source ("blocks **it**", Avalanche Tusker); pass
   `EffectTarget.TriggeringEntity` when an ANY-bound trigger pins the blocker to the creature that
   attacked instead (Tolsimir, Midnight's Light: "blocks **that Wolf** this combat if able"). A requirement, not a guarantee (CR 509.1c): a tapped creature, one
@@ -3100,11 +3102,13 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
 **Reveal patterns**
 
 - `revealUntilNonlandDealDamage(target)` — Bonecrusher Giant shape.
-- `revealUntilMatchToHand(filter, restDestination?, restOrder?)` — Spinner of Souls / Wirewood Herald
-  shape: reveal from the top of your library until you reveal a card matching `filter`; that card goes to
-  hand and the cards revealed before it go to `restDestination` (default: bottom of library) in `restOrder`
-  (default: random). If the library empties before a match, nothing goes to hand and every revealed card
-  goes to the rest destination.
+- `revealUntilMatchToHand(filter, restDestination?, restOrder?, count?)` — Spinner of Souls / Wirewood
+  Herald shape: reveal from the top of your library until you reveal `count` cards matching `filter`
+  (default 1); those cards go to hand and the cards revealed alongside them go to `restDestination`
+  (default: bottom of library) in `restOrder` (default: random). If the library empties before `count`
+  matches, every match found so far still goes to hand and the rest go to the rest destination.
+  **Fathom Trawl** is the `count = 3` case, with `restOrder = CardOrder.ControllerChooses` for its
+  "in any order".
 - `wheelEffect(players)` — each player shuffles hand into library, draws that many.
 - `factOrFiction(count = 5, keepZone, otherZone, ...)` — reveal/look at the top `count`, an
   opponent splits them into two piles, then you choose which pile goes to `keepZone` (hand) and
@@ -4375,7 +4379,12 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   `.manaValueAtMostDynamic(DynamicAmount.TurnTracking(Player.You, TurnTracker.LIFE_GAINED))`. The cap
   fails closed (matches nothing) when there is no controller context to resolve a player-scoped amount,
   and is `false` in the layer-projection / cost-calculation / cast-record paths (no resolution context),
-  matching the other entity-relative caps.
+  matching the other entity-relative caps. Available on `TargetFilter` too (mirroring
+  `.manaValueAtMostX()`), which is how a *targeting* restriction carries the cap rather than a
+  resolution-time check — **Spellstutter Sprite**'s "counter target spell with mana value X or less,
+  where X is the number of Faeries you control" is
+  `TargetFilter.SpellOnStack.manaValueAtMostDynamic(AggregateBattlefield(You, Permanent.withSubtype(FAERIE)))`,
+  so the CR 608.2b re-check on resolution gets the ruling's "determine X again" for free.
 - `.manaValueEqualsDynamic(amount)` — the fluent builder for `ManaValueEqualsDynamic` below, and
   `.manaValueAtMostDynamic`'s equality sibling. Oracle marks the difference by where it puts the
   comparison relative to the clause: "mana value **equal to** the number of harmony counters on this
@@ -10963,6 +10972,14 @@ Army just amassed by a sibling/action effect, or any cost-chosen entity. The plu
   by `PredicateContext.fromEffectContext`). `PredicateEvaluator.resolveEntityReference` resolves
   `EntityReference.AmassedArmy` / `FromCostStorage` from it (mirroring
   `TargetResolutionUtils.resolveEntityReference`), instead of returning null.
+- `PredicateContext` also carries the spell/ability's chosen `targets`, and
+  `resolveEntityReference` resolves `EntityReference.Target(i)` from them — so a **resolution-time
+  group filter** can be relative to a cast-time target. This is the Radiance shape: `Effects.X(target)
+  then Patterns.Group.xAll(GroupFilter(Creature.sharingColorWith(EntityReference.Target(0))).otherThanTarget())`
+  (Cleansing Beam, Surge of Zeal, Wojek Siren, Rally the Righteous, Leave No Trace). The target is
+  acted on directly rather than folded into the group because a colorless target shares a color with
+  nothing, not even itself. During target *enumeration* nothing has been chosen yet, so a target
+  filter that names `Target(i)` still sees null there.
 - `TargetFinder.findLegalTargets(..., pipelineContext = …)` accepts the resolving effect's
   `PredicateContext` and folds it into the per-candidate context, so **target enumeration** sees
   the pipeline. `ReflexiveTriggerEffectExecutor` passes it for deferred ("when you do, … target …")

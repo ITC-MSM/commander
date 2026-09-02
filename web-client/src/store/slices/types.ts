@@ -797,7 +797,9 @@ export interface TargetReselectedAnimation {
 }
 
 /**
- * A life change animation (damage or life gain).
+ * A floating number for damage or life gain. `targetIsPlayer` picks which of the two it is:
+ * a player's life total, anchored to their life display, or a permanent that was dealt damage,
+ * anchored to the card itself — which it tracks, since the board reflows underneath it.
  */
 export interface DamageAnimation {
   id: string
