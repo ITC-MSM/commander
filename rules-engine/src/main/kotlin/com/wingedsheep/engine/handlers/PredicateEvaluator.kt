@@ -1289,7 +1289,17 @@ class PredicateEvaluator {
                 com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExileLookup
                     .exiledCard(state, context?.sourceId, ref.index)
             is EntityReference.Triggering -> context?.triggeringEntityId
-            is EntityReference.Target -> null // Not available in predicate context
+            // The spell/ability's cast-time targets are threaded into [PredicateContext.targets]
+            // by `fromEffectContext`, so a resolution-time group filter can be relative to a
+            // chosen target — "each other creature that shares a color with it" (Radiance).
+            // Empty during target *enumeration* (nothing chosen yet), where this yields null.
+            is EntityReference.Target -> when (val chosen = context?.targets?.getOrNull(ref.index)) {
+                is ChosenTarget.Permanent -> chosen.entityId
+                is ChosenTarget.Card -> chosen.cardId
+                is ChosenTarget.Spell -> chosen.spellEntityId
+                is ChosenTarget.Player -> chosen.playerId
+                null -> null
+            }
             is EntityReference.Sacrificed -> null
             is EntityReference.TappedAsCost -> null
             is EntityReference.AffectedEntity -> context?.affectedEntityId

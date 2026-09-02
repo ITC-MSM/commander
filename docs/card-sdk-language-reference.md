@@ -10965,6 +10965,14 @@ Army just amassed by a sibling/action effect, or any cost-chosen entity. The plu
   by `PredicateContext.fromEffectContext`). `PredicateEvaluator.resolveEntityReference` resolves
   `EntityReference.AmassedArmy` / `FromCostStorage` from it (mirroring
   `TargetResolutionUtils.resolveEntityReference`), instead of returning null.
+- `PredicateContext` also carries the spell/ability's chosen `targets`, and
+  `resolveEntityReference` resolves `EntityReference.Target(i)` from them — so a **resolution-time
+  group filter** can be relative to a cast-time target. This is the Radiance shape: `Effects.X(target)
+  then Patterns.Group.xAll(GroupFilter(Creature.sharingColorWith(EntityReference.Target(0))).otherThanTarget())`
+  (Cleansing Beam, Surge of Zeal, Wojek Siren, Rally the Righteous, Leave No Trace). The target is
+  acted on directly rather than folded into the group because a colorless target shares a color with
+  nothing, not even itself. During target *enumeration* nothing has been chosen yet, so a target
+  filter that names `Target(i)` still sees null there.
 - `TargetFinder.findLegalTargets(..., pipelineContext = …)` accepts the resolving effect's
   `PredicateContext` and folds it into the per-candidate context, so **target enumeration** sees
   the pipeline. `ReflexiveTriggerEffectExecutor` passes it for deferred ("when you do, … target …")
