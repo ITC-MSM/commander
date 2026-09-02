@@ -10,6 +10,7 @@ import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.PlayerComponent
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.Effect
 import java.util.UUID
@@ -100,16 +101,25 @@ object OptionalDamageRedirect {
      * arrived after the shield was created is covered, an animated land counts while it is one, and a
      * player never is. Any other shield protects the entities it was created with (an empty list
      * meaning "anything").
+     *
+     * A shield whose **recipient** has since left the battlefield covers nothing: there is no
+     * object left for the damage to be dealt to "instead", so the original recipient takes it
+     * (CR 614.9; Razia, Boros Archangel's ruling "if either target creature leaves the battlefield
+     * before damage is dealt, that damage won't be redirected"). A player recipient never leaves.
      */
     fun redirectShieldCovers(
         state: GameState,
         floating: ActiveFloatingEffect,
         mod: SerializableModification.RedirectNextDamage,
         targetId: EntityId
-    ): Boolean = if (mod.creaturesOnly) {
-        state.projectedState.isCreature(targetId)
-    } else {
-        floating.effect.affectedEntities.isEmpty() || targetId in floating.effect.affectedEntities
+    ): Boolean {
+        val recipient = state.getEntity(mod.redirectToId) ?: return false
+        if (!recipient.has<PlayerComponent>() && mod.redirectToId !in state.getBattlefield()) return false
+        return if (mod.creaturesOnly) {
+            state.projectedState.isCreature(targetId)
+        } else {
+            floating.effect.affectedEntities.isEmpty() || targetId in floating.effect.affectedEntities
+        }
     }
 
     /**

@@ -366,8 +366,10 @@ data class GrantCantBeBlockedByChosenColorEffect(
  * pins the blocker to that one instead passes [EffectTarget.TriggeringEntity]: Tolsimir, Midnight's
  * Light says "whenever a Wolf you control attacks … target creature an opponent controls blocks
  * **that Wolf** this combat if able", where the Wolf is the triggering entity and Tolsimir is the
- * source. Any attacking creature the effect context can name works; the executor requires only that
- * the resolved attacker is actually attacking.
+ * source. Any creature the effect context can name works. The named creature need not be attacking
+ * yet: an activated "blocks this creature this turn if able" (Sisters of Stone Death) may resolve
+ * before attackers are declared, and the requirement is then read once it attacks — the
+ * block-declaration validator ignores it while the named creature isn't attacking (CR 509.1c).
  *
  * @property target The creature forced to block
  * @property attacker The attacking creature that must be blocked

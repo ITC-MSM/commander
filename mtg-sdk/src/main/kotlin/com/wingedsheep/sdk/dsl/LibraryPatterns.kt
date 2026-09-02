@@ -670,27 +670,30 @@ object LibraryPatterns {
     )
 
     /**
-     * "Reveal cards from the top of your library until you reveal a card matching [filter].
-     * Put that card into your hand and the rest [restDestination] (defaults to the bottom of
-     * your library) [restOrder] (defaults to a random order)." — Spinner of Souls / Wirewood
-     * Herald shape.
+     * "Reveal cards from the top of your library until you reveal [count] card(s) matching
+     * [filter]. Put those cards into your hand and the rest [restDestination] (defaults to the
+     * bottom of your library) [restOrder] (defaults to a random order)." — Spinner of Souls /
+     * Wirewood Herald at the default `count = 1`, Fathom Trawl at three.
      *
-     * The [filter] partition is reused twice: [GatherUntilMatchEffect] stops the reveal at the
-     * first match, then a [FilterCollectionEffect] over every revealed card splits the single
-     * match (→ hand) from the cards revealed before it (→ [restDestination]). If the library
-     * empties before a match is found, nothing goes to hand and every revealed card goes to the
-     * rest destination.
+     * The [filter] partition is reused twice: [GatherUntilMatchEffect] stops the reveal once
+     * [count] matches have been revealed, then a [FilterCollectionEffect] over every revealed
+     * card splits the matches (→ hand) from the cards revealed alongside them
+     * (→ [restDestination]). If the library empties before [count] matches are found, every
+     * match found so far still goes to hand and the rest go to the rest destination — Fathom
+     * Trawl's 2007-10-01 ruling.
      */
     fun revealUntilMatchToHand(
         filter: GameObjectFilter,
         restDestination: CardDestination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Bottom),
-        restOrder: CardOrder = CardOrder.Random
+        restOrder: CardOrder = CardOrder.Random,
+        count: DynamicAmount = DynamicAmount.Fixed(1)
     ): CompositeEffect = CompositeEffect(
         listOf(
             GatherUntilMatchEffect(
                 filter = filter,
                 storeMatch = "ignored",
-                storeRevealed = "revealed"
+                storeRevealed = "revealed",
+                count = count
             ),
             RevealCollectionEffect(from = "revealed"),
             FilterCollectionEffect(
