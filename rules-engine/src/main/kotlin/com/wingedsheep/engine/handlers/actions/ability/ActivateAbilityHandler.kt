@@ -1359,7 +1359,26 @@ class ActivateAbilityHandler(
         // Snapshot projected subtypes and P/T of sacrifice targets before zone change
         // (Rule 113.7a / 608.2h — "as it last existed on the battlefield"). Covers both the
         // fixed-count sacrifice cost and a variable-count one, which moves permanents just the same.
-        val sacrificeTargetIds = (action.costPayment?.sacrificedPermanents ?: emptyList()) +
+        //
+        // A *forced* sacrifice (candidates <= count) never pauses for a choice, so the action
+        // arrives with no chosen permanents and CostHandler auto-picks them during payment. Snapshot
+        // that same set here, or "deals damage equal to the sacrificed creature's power" (Brion
+        // Stoutarm with exactly one other creature) resolves EntityReference.Sacrificed to nothing
+        // and deals 0.
+        val chosenSacrifices = action.costPayment?.sacrificedPermanents ?: emptyList()
+        val forcedSacrifices = if (chosenSacrifices.isEmpty() && sacrificeCost != null) {
+            costHandler
+                .findMatchingCardsUnified(
+                    currentState, currentState.getBattlefield(action.playerId), sacrificeCost.filter,
+                    action.playerId, sourceId = action.sourceId,
+                )
+                .let { if (sacrificeCost.excludeSelf) it.filter { id -> id != action.sourceId } else it }
+                .takeIf { it.size <= sacrificeCost.count && !sacrificeCost.distinctNames }
+                .orEmpty()
+        } else {
+            emptyList()
+        }
+        val sacrificeTargetIds = chosenSacrifices + forcedSacrifices +
             (action.costPayment?.variableCostPermanents ?: emptyList())
         val sacrificedSnapshots = captureEntitySnapshots(sacrificeTargetIds, currentState.projectedState)
 
