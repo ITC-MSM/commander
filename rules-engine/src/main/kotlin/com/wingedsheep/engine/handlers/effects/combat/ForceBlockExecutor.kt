@@ -7,7 +7,6 @@ import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.addFloatingEffect
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.effects.ForceBlockEffect
@@ -49,12 +48,13 @@ class ForceBlockExecutor : EffectExecutor<ForceBlockEffect> {
         val attackerId = context.resolveTarget(effect.attacker)
             ?: return EffectResult.error(state, "No valid attacker for force block effect")
 
-        // Verify the attacker is actually attacking — CR 509.1c can only be satisfied against a
-        // declared attacker, and the block-declaration validator reads the requirement per combat.
-        val attackerContainer = state.getEntity(attackerId)
-            ?: return EffectResult.error(state, "Attacking creature no longer exists")
-        if (!attackerContainer.has<AttackingComponent>()) {
-            return EffectResult.error(state, "Named creature is not attacking")
+        // The named creature need not be attacking *yet*: an activated "blocks this creature this
+        // turn if able" (Sisters of Stone Death) can resolve in the precombat main phase, and the
+        // requirement then applies once the creature attacks. The block-declaration validator
+        // reads the requirement per combat and ignores it while the named creature isn't
+        // attacking (CR 509.1c), so a requirement created early is simply dormant, not wrong.
+        if (state.getEntity(attackerId) == null) {
+            return EffectResult.error(state, "Named creature no longer exists")
         }
 
         // Create a floating effect forcing the target to block that attacker
