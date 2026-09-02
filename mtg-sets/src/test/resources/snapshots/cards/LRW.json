@@ -1477,6 +1477,84 @@
     ]
 }
 
+// Brion Stoutarm
+{
+    "name": "Brion Stoutarm",
+    "manaCost": "{2}{R}{W}",
+    "typeLine": "Legendary Creature — Giant Warrior",
+    "oracleText": "Lifelink\n{R}, {T}, Sacrifice another creature: Brion Stoutarm deals damage equal to the sacrificed creature's power to target player or planeswalker.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{R}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Sacrificed",
+                        "numericProperty": "Power"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target player or planeswalker"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayerOrPlaneswalker",
+                        "id": "target player or planeswalker"
+                    }
+                ],
+                "descriptionOverride": "Brion Stoutarm deals damage equal to the sacrificed creature's power to target player or planeswalker."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "246",
+        "rarity": "RARE",
+        "artist": "Zoltan Boros & Gabor Szikszai",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/a/aa21cfc2-9671-4bf3-b922-2f436f284cb1.jpg?1783942854",
+        "rulings": [
+            {
+                "date": "2018-03-16",
+                "text": "If Brion Stoutarm leaves the battlefield after its ability has been activated but before it resolves, the game uses its last known information to determine that it had lifelink and you'll gain life for the damage it deals."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Caterwauling Boggart
 {
     "name": "Caterwauling Boggart",
@@ -8633,6 +8711,120 @@
     ]
 }
 
+// Nath of the Gilt-Leaf
+{
+    "name": "Nath of the Gilt-Leaf",
+    "manaCost": "{3}{B}{G}",
+    "typeLine": "Legendary Creature — Elf Warrior",
+    "oracleText": "At the beginning of your upkeep, you may have target opponent discard a card at random.\nWhenever an opponent discards a card, you may create a 1/1 green Elf Warrior creature token.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "storeAs": "hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "Random",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "discarded"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "you may have target opponent discard a card at random."
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "you may have target opponent discard a card at random."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "DiscardEvent",
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "CreateToken",
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "GREEN"
+                        ],
+                        "creatureTypes": [
+                            "Elf",
+                            "Warrior"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/2/7/27b171ac-b2ef-4a80-92d1-6d9e71f3e3ca.jpg?1783942838"
+                    },
+                    "descriptionOverride": "you may create a 1/1 green Elf Warrior creature token."
+                },
+                "descriptionOverride": "you may create a 1/1 green Elf Warrior creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "250",
+        "rarity": "RARE",
+        "artist": "Kev Walker",
+        "flavorText": "A savage hunter with a prince's bearing.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/c/0c6c69bd-a8bf-4085-85fa-364b8e92b88a.jpg?1783942852"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Nath's Buffoon
 {
     "name": "Nath's Buffoon",
@@ -10078,6 +10270,80 @@
     "colorIdentityOverride": []
 }
 
+// Shriekmaw
+{
+    "name": "Shriekmaw",
+    "manaCost": "{4}{B}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "Fear (This creature can't be blocked except by artifact creatures and/or black creatures.)\nWhen this creature enters, destroy target nonartifact, nonblack creature.\nEvoke {1}{B} (You may cast this spell for its evoke cost. If you do, it's sacrificed when it enters.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FEAR",
+        "EVOKE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Evoke",
+            "cost": "{1}{B}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target nonartifact, nonblack creature"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsCreature",
+                                "IsNonartifact",
+                                {
+                                    "type": "NotColor",
+                                    "color": "BLACK"
+                                }
+                            ]
+                        }
+                    },
+                    "id": "target nonartifact, nonblack creature"
+                },
+                "descriptionOverride": "destroy target nonartifact, nonblack creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "139",
+        "rarity": "UNCOMMON",
+        "artist": "Steve Prescott",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/a/ea19eb5e-0d70-42e6-bda2-b13757e08ca6.jpg?1783942884",
+        "rulings": [
+            {
+                "date": "2021-03-19",
+                "text": "If you pay the evoke cost, you can have Shriekmaw's own triggered ability resolve before the evoke triggered ability. You can cast spells after that ability resolves but before you have to sacrifice Shriekmaw."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Silvergill Douser
 {
     "name": "Silvergill Douser",
@@ -11070,6 +11336,66 @@
     ]
 }
 
+// Sygg, River Guide
+{
+    "name": "Sygg, River Guide",
+    "manaCost": "{W}{U}",
+    "typeLine": "Legendary Creature — Merfolk Wizard",
+    "oracleText": "Islandwalk (This creature can't be blocked as long as defending player controls an Island.)\n{1}{W}: Target Merfolk you control gains protection from the color of your choice until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "ISLANDWALK"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "ChooseColorThen",
+                    "then": {
+                        "type": "GrantProtectionFromChosenColor",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target Merfolk you control"
+                        }
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature Merfolk ctrl:you"
+                        },
+                        "id": "target Merfolk you control"
+                    }
+                ],
+                "descriptionOverride": "Target Merfolk you control gains protection from the color of your choice until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "251",
+        "rarity": "RARE",
+        "artist": "Larry MacDougall",
+        "flavorText": "\"If there's a place worth going, the Merrow Lanes already do. And if there's a route worth taking, yours truly already has.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fb1aefaf-1b96-4c08-a73e-98e401655965.jpg?1783942852"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Tar Pitcher
 {
     "name": "Tar Pitcher",
@@ -11456,6 +11782,75 @@
     "colorIdentityOverride": [
         "BLACK"
     ]
+}
+
+// Thousand-Year Elixir
+{
+    "name": "Thousand-Year Elixir",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "You may activate abilities of creatures you control as though those creatures had haste.\n{1}, {T}: Untap target creature.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "tap": false
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "Untap target creature."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "MAY_ACTIVATE_ABILITIES_AS_THOUGH_HASTY",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "263",
+        "rarity": "RARE",
+        "artist": "Richard Sardinha",
+        "flavorText": "Paradoxically, to tilt the massive jug for a sip, you'd need the energy of the giant's tonic.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/8/18743fd4-2a15-40a2-ac90-e3f0fef07e37.jpg?1783942851",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "Thousand-Year Elixir doesn't actually grant haste to creatures you control, nor does it let you attack with them as though they had haste."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Thundercloud Shaman
