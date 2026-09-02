@@ -329,6 +329,74 @@
     ]
 }
 
+// Bloodbond March
+{
+    "name": "Bloodbond March",
+    "manaCost": "{2}{B}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever a player casts a creature spell, each player returns all cards with the same name as that spell from their graveyard to the battlefield.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ]
+                    },
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "player": "Each",
+                                "filter": {
+                                    "cardPredicates": [
+                                        {
+                                            "type": "SharesNameWith",
+                                            "entity": "Triggering"
+                                        }
+                                    ]
+                                }
+                            },
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "gathered0",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever a player casts a creature spell, each player returns all cards with the same name as that spell from their graveyard to the battlefield."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "192",
+        "rarity": "RARE",
+        "artist": "Jim Nelson",
+        "flavorText": "The Golgari support a vast army because death never ends its soldiers' service.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fb977f5b-2202-43c1-a8c0-7fba8c093fa2.jpg?1783943627"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Bloodletter Quill
 {
     "name": "Bloodletter Quill",
@@ -7458,6 +7526,86 @@
     ]
 }
 
+// Razia, Boros Archangel
+{
+    "name": "Razia, Boros Archangel",
+    "manaCost": "{4}{R}{R}{W}{W}",
+    "typeLine": "Legendary Creature — Angel",
+    "oracleText": "Flying, vigilance, haste\n{T}: The next 3 damage that would be dealt to target creature you control this turn is dealt to another target creature instead.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE",
+        "HASTE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "RedirectNextDamage",
+                    "protectedTargets": [
+                        {
+                            "type": "BoundVariable",
+                            "name": "target creature you control"
+                        }
+                    ],
+                    "redirectTo": {
+                        "type": "BoundVariable",
+                        "name": "another target creature"
+                    },
+                    "amount": 3
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "target creature you control"
+                    },
+                    {
+                        "type": "TargetOther",
+                        "baseRequirement": {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            }
+                        },
+                        "id": "another target creature"
+                    }
+                ],
+                "descriptionOverride": "The next 3 damage that would be dealt to target creature you control this turn is dealt to another target creature instead."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "223",
+        "rarity": "RARE",
+        "artist": "Donato Giancola",
+        "flavorText": "Her sword burns with such brightness that foes avert their eyes and arrows divert their paths.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/4/c4580cc4-ee26-41d9-a81c-91505c9e2a99.jpg?1783943615",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The 3 damage doesn't have to be from the same source, and it doesn't have to be all dealt at once. If only 2 damage is redirected, the next 1 damage will also be redirected."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If either target creature leaves the battlefield before damage is dealt, that damage won't be redirected. It doesn't matter if Razia leaves the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Recollect
 {
     "name": "Recollect",
@@ -8781,6 +8929,144 @@
         "imageUri": "https://cards.scryfall.io/normal/front/a/e/ae199825-563e-4837-a6d2-7b009b93cd4d.jpg"
     },
     "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Sisters of Stone Death
+{
+    "name": "Sisters of Stone Death",
+    "manaCost": "{4}{B}{B}{G}{G}",
+    "typeLine": "Legendary Creature — Gorgon",
+    "oracleText": "{G}: Target creature blocks Sisters of Stone Death this turn if able.\n{B}{G}: Exile target creature blocking or blocked by Sisters of Stone Death.\n{2}{B}: Put a creature card exiled with Sisters of Stone Death onto the battlefield under your control.",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 5
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{G}"
+                    }
+                },
+                "effect": {
+                    "type": "ForceBlock",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "Target creature blocks Sisters of Stone Death this turn if able."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{B}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature blocking or blocked by Sisters of Stone Death"
+                    },
+                    "destination": "Exile",
+                    "linkToSource": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    "IsCombatPairedWithSource"
+                                ]
+                            }
+                        },
+                        "id": "target creature blocking or blocked by Sisters of Stone Death"
+                    }
+                ],
+                "descriptionOverride": "Exile target creature blocking or blocked by Sisters of Stone Death."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{B}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered0",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "creature",
+                            "storeSelected": "selected1",
+                            "prompt": "Choose a creature card exiled with Sisters of Stone Death to put onto the battlefield"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected1",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Put a creature card exiled with Sisters of Stone Death onto the battlefield under your control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "231",
+        "rarity": "RARE",
+        "artist": "Donato Giancola",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/2/d214d25b-96c3-4479-88f0-3996805d6e6f.jpg?1783943612",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The third ability can get back any creature card exiled by the second ability, no matter when it was exiled. If a card that's not a creature card (such as Svogthos, the Restless Tomb) was exiled, the third ability can't return it."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
         "GREEN"
     ]
 }
