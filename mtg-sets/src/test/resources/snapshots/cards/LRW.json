@@ -10707,6 +10707,108 @@
     ]
 }
 
+// Shapesharer
+{
+    "name": "Shapesharer",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\n{2}{U}: Target Shapeshifter becomes a copy of target creature until your next turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "CHANGELING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "EachPermanentBecomesCopyOfTarget",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 1
+                    },
+                    "duration": "UntilYourNextTurn",
+                    "affected": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "permanent Shapeshifter"
+                        },
+                        "id": "target Shapeshifter"
+                    },
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "Target Shapeshifter becomes a copy of target creature until your next turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "85",
+        "rarity": "RARE",
+        "artist": "Alan Pollack",
+        "flavorText": "One good mimic deserves another.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/1/e148481d-a969-40d9-9335-d0e06ad8245b.jpg?1783942897",
+        "rulings": [
+            {
+                "date": "2017-09-29",
+                "text": "If either target becomes an illegal target, the ability will resolve but have no effect."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If the targeted Shapeshifter copies a creature that's copying a creature, it will become whatever the chosen creature is copying."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "The copy effect doesn't wear off until just before your next untap step (even if an effect will cause that untap step to be skipped)."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If Shapesharer itself becomes a copy of another creature, it loses both changeling and its activated ability (unless it's copying another creature with changeling and/or another Shapesharer, of course)."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "The targeted Shapeshifter copies the printed values of the targeted creature, plus any copy effects that have been applied to it. It won't copy counters on that creature. It won't copy effects that have changed the creature's power, toughness, types, color, and so on."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If the targeted Shapeshifter becomes a copy of a face-down creature, it will become a 2/2 creature with no name, creature type, abilities, mana cost, or color. It will not become face down and thus can't be turned face up."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "Effects that have already applied to the targeted Shapeshifter will continue to apply to it. For example, if Giant Growth had given it +3/+3 earlier in the turn, then this ability makes it a copy of Grizzly Bears, it will be a 5/5 Grizzly Bears."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "This ability can cause a creature to become a copy of itself. This will usually have no visible effect."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Shields of Velis Vel
 {
     "name": "Shields of Velis Vel",
