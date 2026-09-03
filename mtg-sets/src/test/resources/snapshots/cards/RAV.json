@@ -162,6 +162,94 @@
     ]
 }
 
+// Bathe in Light
+{
+    "name": "Bathe in Light",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Radiance — Choose a color. Target creature and each other creature that shares a color with it gain protection from the chosen color until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ChooseColorThen",
+            "then": {
+                "type": "Composite",
+                "effects": [
+                    {
+                        "type": "GrantProtectionFromChosenColor",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    },
+                    {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": {
+                                    "cardPredicates": [
+                                        "IsCreature",
+                                        {
+                                            "type": "SharesColorWith",
+                                            "entity": "Target"
+                                        }
+                                    ]
+                                },
+                                "excludeTarget": true
+                            }
+                        },
+                        "body": {
+                            "type": "GrantProtectionFromChosenColor",
+                            "target": "Self"
+                        }
+                    }
+                ]
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "2",
+        "rarity": "UNCOMMON",
+        "artist": "Alex Horley-Orlandelli",
+        "flavorText": "\"Truth shines even in darkness. Those who march on the side of truth walk always in righteous light.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/7/a7bd976e-56c7-482e-8d2f-073b0b589274.jpg?1783943708",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The color you choose as the spell resolves has nothing to do with the color or colors shared by the affected creatures."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "All creatures that share a color are affected, even your own."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If it targets a colorless creature, it doesn't affect any other creatures. A colorless creature shares a color with nothing, not even other colorless creatures."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "You check which creatures share a color with the target when the spell resolves."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Only one creature is targeted. If that creature leaves the battlefield or otherwise becomes an illegal target, the entire spell doesn't resolve. No other creatures are affected."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Benevolent Ancestor
 {
     "name": "Benevolent Ancestor",
@@ -3306,6 +3394,61 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Excruciator
+{
+    "name": "Excruciator",
+    "manaCost": "{6}{R}{R}",
+    "typeLine": "Creature — Avatar",
+    "oracleText": "Damage that would be dealt by this creature can't be prevented.",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 7
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "DamageCantBePrevented",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "source": "SourceSelf"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "121",
+        "rarity": "RARE",
+        "artist": "Paolo Parente",
+        "flavorText": "\"Though used as a piercing weapon, the tusk is more akin to a stinger, spreading pain instantly throughout the body of its victim. This specimen deserves further study.\"\n—Simic research notes",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/3/a3c98460-e8b8-45d6-9bf0-7600b234964b.jpg?1783943655",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "An effect may redirect Excruciator's damage."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Excruciator can deal damage to creatures with protection from red. (It can't block creatures with protection from red, though.)"
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Damage prevention shields that would prevent this damage aren't used up and they stick around for the next time something would deal damage."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "A creature dealt lethal damage by Excruciator can be regenerated."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Replacement effects that don't use the word \"prevent\" can replace Excruciator's damage with something else. See Phytohydra and Szadek, Lord of Secrets, for example."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -12370,6 +12513,50 @@
     "colorIdentityOverride": [
         "BLUE",
         "BLACK"
+    ]
+}
+
+// Wizened Snitches
+{
+    "name": "Wizened Snitches",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Faerie Rogue",
+    "oracleText": "Flying\nPlayers play with the top card of their libraries revealed.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "staticAbilities": [
+            "PlayersRevealTopOfLibrary"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "75",
+        "rarity": "UNCOMMON",
+        "artist": "Greg Staples",
+        "flavorText": "\"Be careful what information you ask them to find, for it will likely be the subject of tale time at the alehouse.\"\n—Sirislav, Dimir spy",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/f/bf35807a-a003-4a99-a883-03b8e097f1b2.jpg?1783943675",
+        "rulings": [
+            {
+                "date": "2013-04-15",
+                "text": "The top card of your library isn't in your hand, so you can't suspend it, cycle it, discard it, or activate any of its activated abilities."
+            },
+            {
+                "date": "2013-04-15",
+                "text": "If the top card of your library changes while you're casting a spell, playing a land, or activating an ability, the new top card won't be revealed until you finish doing so."
+            },
+            {
+                "date": "2013-04-15",
+                "text": "When playing with the top card of your library revealed, if an effect tells you to draw several cards, reveal each one before you draw it."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

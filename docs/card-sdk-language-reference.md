@@ -1012,6 +1012,17 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   prevention clause are ignored (CR 615.6). The static, permanent-hosted equivalent is the
   `DamageCantBePrevented` replacement effect (Sunspine Lynx); use this effect when a spell/ability needs
   the shutoff without a permanent on the battlefield (Fear, Fire, Foes!).
+- `DamageCantBePrevented(appliesTo = EventPattern.DamageEvent(...))` — the static, permanent-hosted
+  replacement, **scoped by its `appliesTo` pattern**. Left at the default (`source` and `recipient` both
+  `Any`) it is the printed global "Damage can't be prevented" (Sunspine Lynx, Leyline of Punishment).
+  Narrow the pattern for a card that names one end of the damage instance: **Excruciator**'s "damage that
+  would be dealt by this creature can't be prevented" is
+  `DamageCantBePrevented(EventPattern.DamageEvent(source = SourceFilter.Self))`, which leaves every other
+  source's damage preventable. `DamageUtils.isDamagePreventionDisabled(state, recipientId, sourceId)`
+  matches the pattern against the concrete damage instance through the same `damageSourceMatches` /
+  `damageRecipientMatches` pair every other damage replacement uses, so a filter supported by one is
+  supported by all. Callers that don't know both ends of the instance get the *unscoped* answer only —
+  a scoped effect never blanks a shield it might not cover.
 - `DamageToTargetCantBePreventedThisTurnEffect(target)` — the **per-recipient** form: "Damage that
   would be dealt to that creature this turn can't be prevented **or dealt instead to another
   permanent or player**" (Whippoorwill). Stamps a turn-scoped marker on the recipient, cleared at
@@ -8024,6 +8035,10 @@ concerns — the `ClientStateTransformer` reveals the top card for `PlayFromTopO
 
 - `RevealTopOfLibrary` — *public reveal only*, no play permission: the controller's top card is
   shown to all players, but can only be played once drawn. (**Goblin Spy**)
+- `PlayersRevealTopOfLibrary` — the **symmetric** form: *every* player plays with the top card of their
+  library revealed to everyone, no matter who controls the permanent. Same visibility-only contract as
+  `RevealTopOfLibrary` (no play permission); the difference is which libraries are opened, which is why
+  it can't be spelled as the self-scoped variant. (**Wizened Snitches**)
 - `PlayFromTopOfLibrary` — public reveal **and** "play lands and cast spells from the top of your
   library" (all card types). (Future Sight)
 - `PlayFromTopWithAlternativeCost(withoutPayingManaCost = false, additionalCost = null, filter = null)`
@@ -8990,8 +9005,9 @@ composite abilities).
   next instance (a granted permanent has none of the printed replacement/static abilities to fall back on).
   `GrantCantBeCountered` gained an `includesAbilities` flag (default false) so "spells **and abilities** can't be
   countered" (Spider-Punk) also makes matching abilities uncounterable (e.g. Stifle fizzles); `DamageCantBePrevented`
-  is a global replacement — while one is on the battlefield (or the "damage can't be prevented this turn" one-shot is
-  active) `DamageUtils.applyDamagePreventionShields` applies no prevention shields (CR 615.12).
+  is a battlefield replacement scoped by its own `appliesTo` pattern — while one is on the battlefield (or the "damage
+  can't be prevented this turn" one-shot is active) `DamageUtils.applyDamagePreventionShields` applies no prevention
+  shields to the damage instances that pattern names (CR 615.12).
 - `Exploit` — "Exploit (When this creature enters, you may sacrifice a creature.)" (CR 702.110, Dragons of Tarkir;
   reprinted MH1/MH2/VOW/PIP/MH3). Display-only keyword; wire the behavior with the `card { exploit(onExploit, onExploitTargets) }`
   builder helper. It adds the keyword plus one `EntersBattlefield` triggered ability whose effect is a

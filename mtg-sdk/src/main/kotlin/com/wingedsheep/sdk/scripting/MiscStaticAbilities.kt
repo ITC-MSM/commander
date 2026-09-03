@@ -558,6 +558,23 @@ data object RevealTopOfLibrary : StaticAbility {
 }
 
 /**
+ * **Every** player plays with the top card of their library revealed (to all players), without
+ * granting anyone permission to play it from there. Used for Wizened Snitches.
+ *
+ * The all-players sibling of [RevealTopOfLibrary]. The distinction is which libraries are opened,
+ * not who may look: both reveal publicly, but [RevealTopOfLibrary] opens only the ability's own
+ * controller's library, so it can't spell a symmetric "players play with …" — that wording is one
+ * effect covering every player's library regardless of who controls the permanent. Like its
+ * sibling it is visibility-only, and grants no play-from-top permission.
+ */
+@SerialName("PlayersRevealTopOfLibrary")
+@Serializable
+data object PlayersRevealTopOfLibrary : StaticAbility {
+    override val description: String =
+        "Players play with the top card of their libraries revealed."
+}
+
+/**
  * You may play lands and cast spells matching a filter from the top of your library.
  * Unlike PlayFromTopOfLibrary, this restricts which spells can be cast (but always allows lands).
  * Used for Glarb, Calamity's Augur (mana value 4 or greater).

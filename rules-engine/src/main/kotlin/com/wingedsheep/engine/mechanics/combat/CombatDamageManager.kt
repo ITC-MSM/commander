@@ -928,8 +928,16 @@ internal class CombatDamageManager(
             val isPlayer = container.get<LifeTotalComponent>() != null && container.get<CardComponent>() == null
             if (isPlayer) continue
             // Per-recipient, so it is read inside the loop: a creature marked unpreventable
-            // (Whippoorwill) takes damage in full while its neighbours keep their shields.
-            val cantBePrevented = DamageUtils.isDamagePreventionDisabled(state, targetId)
+            // (Whippoorwill) takes damage in full while its neighbours keep their shields. The
+            // shutoff can also be scoped to the damage's *source* (Excruciator), and a shield
+            // counter covers the whole CR 510.2 batch — so it is enough that any one of the
+            // sources assigned to this creature is unpreventable.
+            val cantBePrevented = assignments
+                .filter { it.targetId == targetId }
+                .let { hits ->
+                    hits.isEmpty() && DamageUtils.isDamagePreventionDisabled(state, targetId) ||
+                        hits.any { DamageUtils.isDamagePreventionDisabled(state, targetId, it.sourceId) }
+                }
             val shielded = applyShieldCounterToDamage(newState, targetId, cantBePrevented)
             if (shielded != null) {
                 newState = shielded.state
@@ -1595,7 +1603,8 @@ internal class CombatDamageManager(
                         incomingDamage.getOrPut(targetId) { mutableMapOf() }
                             .merge(attackerId, amplified) { a, b -> a + b }
                     } else {
-                        val damageCantBePrevented = DamageUtils.isDamagePreventionDisabled(state, targetId)
+                        val damageCantBePrevented =
+                            DamageUtils.isDamagePreventionDisabled(state, targetId, attackerId)
                         val attackerColors = projected.getColors(attackerId)
                         val attackerSubtypes = projected.getSubtypes(attackerId)
                         val attackerTypes = projected.getTypes(attackerId)
