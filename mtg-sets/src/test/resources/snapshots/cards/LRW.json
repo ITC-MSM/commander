@@ -355,6 +355,139 @@
     ]
 }
 
+// Ashling the Pilgrim
+{
+    "name": "Ashling the Pilgrim",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — Elemental Shaman",
+    "oracleText": "{1}{R}: Put a +1/+1 counter on Ashling. If this is the third time this ability has resolved this turn, remove all +1/+1 counters from Ashling, and it deals that much damage to each creature and each player.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        "IncrementAbilityResolutionCount",
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "SourceAbilityResolvedNTimesThisTurn",
+                                    "count": 3
+                                }
+                            },
+                            "then": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "StoreNumber",
+                                        "name": "ashlingRemovedCounters",
+                                        "amount": {
+                                            "type": "EntityProperty",
+                                            "entity": "Source",
+                                            "numericProperty": {
+                                                "type": "CounterCount",
+                                                "counterType": {
+                                                    "type": "Named",
+                                                    "name": "+1/+1"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "RemoveAllCountersOfType",
+                                        "counterType": "+1/+1",
+                                        "target": "Self"
+                                    },
+                                    {
+                                        "type": "ForEach",
+                                        "space": {
+                                            "type": "IterationSpace.Group",
+                                            "filter": {
+                                                "baseFilter": "creature"
+                                            }
+                                        },
+                                        "body": {
+                                            "type": "DealDamage",
+                                            "amount": {
+                                                "type": "VariableReference",
+                                                "variableName": "ashlingRemovedCounters"
+                                            },
+                                            "target": "Self"
+                                        }
+                                    },
+                                    {
+                                        "type": "ForEach",
+                                        "space": {
+                                            "type": "IterationSpace.Players",
+                                            "players": "Each"
+                                        },
+                                        "body": {
+                                            "type": "DealDamage",
+                                            "amount": {
+                                                "type": "VariableReference",
+                                                "variableName": "ashlingRemovedCounters"
+                                            },
+                                            "target": "Controller"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Put a +1/+1 counter on Ashling. If this is the third time this ability has resolved this turn, remove all +1/+1 counters from Ashling, and it deals that much damage to each creature and each player."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "149",
+        "rarity": "RARE",
+        "artist": "Wayne Reynolds",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/3/63056eb9-4257-4530-8ff4-6909a2cedf47.jpg?1783942881",
+        "rulings": [
+            {
+                "date": "2023-07-28",
+                "text": "\"That much damage\" refers to the number of +1/+1 counters removed from Ashling the Pilgrim. Since the counters are removed, it's likely that the damage will kill Ashling."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "Ashling the Pilgrim's ability counts resolutions, not activations. Any such abilities that are still on the stack won't count toward the total."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "When the ability resolves, it counts the number of times that same ability from that this creature has already resolved that turn. It doesn't matter who controlled the creature or the previous abilities when they resolved. A copy of this ability (created by Rings of Brighthearth, for example) will count toward the total. Abilities from other creatures with the same name don't count towards the total. Neither does an ability that's been countered."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "You get the bonus only the third time the ability resolves. You won't get the bonus the fourth, fifth, sixth, or any subsequent times."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Auntie's Hovel
 {
     "name": "Auntie's Hovel",
@@ -7544,6 +7677,108 @@
     ]
 }
 
+// Lammastide Weave
+{
+    "name": "Lammastide Weave",
+    "manaCost": "{1}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Choose a card name, then target player mills a card. If a card with the chosen name was milled this way, you gain life equal to its mana value.\nDraw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ChooseOption",
+                    "optionType": "CARD_NAME",
+                    "storeAs": "weaveChosenName",
+                    "prompt": "Choose a card name"
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "CollectionContainsMatch",
+                            "collection": "milled",
+                            "filter": {
+                                "cardPredicates": [
+                                    {
+                                        "type": "NameEqualsChosen",
+                                        "variableName": "weaveChosenName"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "ManaValueSumOfCollection",
+                            "collectionName": "milled"
+                        }
+                    }
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "target player"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "226",
+        "rarity": "UNCOMMON",
+        "artist": "Howard Lyon",
+        "flavorText": "\"A ribbon torn will ward away dark dreams.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/667fd7ab-de75-48e7-8d4b-a96130ae4666.jpg?1783942861"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Leaf Gilder
 {
     "name": "Leaf Gilder",
@@ -10568,6 +10803,108 @@
         "artist": "Howard Lyon",
         "flavorText": "Some say the valley of Glen Elendra is mythical, and that rumors of its existence are nothing but a faerie prank. Others say it is the fae's most fiercely guarded secret.",
         "imageUri": "https://cards.scryfall.io/normal/front/f/4/f48daf7e-2f8e-4179-a145-a6b36dd11d44.jpg?1783942897"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Shapesharer
+{
+    "name": "Shapesharer",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\n{2}{U}: Target Shapeshifter becomes a copy of target creature until your next turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "CHANGELING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "EachPermanentBecomesCopyOfTarget",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 1
+                    },
+                    "duration": "UntilYourNextTurn",
+                    "affected": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "permanent Shapeshifter"
+                        },
+                        "id": "target Shapeshifter"
+                    },
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "Target Shapeshifter becomes a copy of target creature until your next turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "85",
+        "rarity": "RARE",
+        "artist": "Alan Pollack",
+        "flavorText": "One good mimic deserves another.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/1/e148481d-a969-40d9-9335-d0e06ad8245b.jpg?1783942897",
+        "rulings": [
+            {
+                "date": "2017-09-29",
+                "text": "If either target becomes an illegal target, the ability will resolve but have no effect."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If the targeted Shapeshifter copies a creature that's copying a creature, it will become whatever the chosen creature is copying."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "The copy effect doesn't wear off until just before your next untap step (even if an effect will cause that untap step to be skipped)."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If Shapesharer itself becomes a copy of another creature, it loses both changeling and its activated ability (unless it's copying another creature with changeling and/or another Shapesharer, of course)."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "The targeted Shapeshifter copies the printed values of the targeted creature, plus any copy effects that have been applied to it. It won't copy counters on that creature. It won't copy effects that have changed the creature's power, toughness, types, color, and so on."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If the targeted Shapeshifter becomes a copy of a face-down creature, it will become a 2/2 creature with no name, creature type, abilities, mana cost, or color. It will not become face down and thus can't be turned face up."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "Effects that have already applied to the targeted Shapeshifter will continue to apply to it. For example, if Giant Growth had given it +3/+3 earlier in the turn, then this ability makes it a copy of Grizzly Bears, it will be a 5/5 Grizzly Bears."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "This ability can cause a creature to become a copy of itself. This will usually have no visible effect."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "BLUE"
