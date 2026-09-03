@@ -1068,6 +1068,110 @@
     ]
 }
 
+// Breath of Fury
+{
+    "name": "Breath of Fury",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature you control\nWhen enchanted creature deals combat damage to a player, sacrifice it and attach this Aura to a creature you control. If you do, untap all creatures you control and after this phase, there is an additional combat phase.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "binding": "ATTACHED",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "SacrificeTarget",
+                            "target": "EnchantedCreature"
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "ControlledPermanents",
+                                "filter": "creature"
+                            },
+                            "storeAs": "gathered1"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered1",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "selected2",
+                            "prompt": "Choose a creature to attach Breath of Fury to",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "selected2",
+                            "ifNotEmpty": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "AttachEquipment",
+                                        "target": {
+                                            "type": "PipelineTarget",
+                                            "collectionName": "selected2"
+                                        }
+                                    },
+                                    {
+                                        "type": "ForEach",
+                                        "space": {
+                                            "type": "IterationSpace.Group",
+                                            "filter": {
+                                                "baseFilter": "creature ctrl:you"
+                                            }
+                                        },
+                                        "body": {
+                                            "type": "TapUntap",
+                                            "target": "Self",
+                                            "tap": false
+                                        }
+                                    },
+                                    "AddCombatPhase"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature ctrl:you"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "116",
+        "rarity": "RARE",
+        "artist": "Kev Walker",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/b/dbef6f4a-f9a0-4a4c-b8a2-6c3a8fb7e14a.jpg?1783943657",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "If there isn't a legal creature to attach Breath of Fury to after the enchanted creature is sacrificed, you don't untap your creatures or get an additional combat phase, and Breath of Fury is put into its owner's graveyard as a state-based action."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Caregiver
 {
     "name": "Caregiver",
