@@ -38,5 +38,6 @@ val DesperateLunge = card("Desperate Lunge") {
         artist = "Deruchenko Alexander"
         flavorText = "Ravnica held its breath as the hero of the resistance—their last hope—flew through the sky, his dark sword ready to strike a god."
         imageUri = "https://cards.scryfall.io/normal/front/6/9/69ce134a-25ef-4f8d-a385-7c29fc5707dc.jpg"
+        inBooster = false
     }
 }
