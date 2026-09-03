@@ -12443,6 +12443,87 @@
     ]
 }
 
+// Wojek Apothecary
+{
+    "name": "Wojek Apothecary",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "Radiance — {T}: Prevent the next 1 damage that would be dealt to target creature and each other creature that shares a color with it this turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "PreventDamageShield",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            },
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": {
+                                        "cardPredicates": [
+                                            "IsCreature",
+                                            {
+                                                "type": "SharesColorWith",
+                                                "entity": "Target"
+                                            }
+                                        ]
+                                    },
+                                    "excludeTarget": true
+                                }
+                            },
+                            "body": {
+                                "type": "PreventDamageShield",
+                                "target": "Self",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "36",
+        "rarity": "UNCOMMON",
+        "artist": "Keith Garletts",
+        "flavorText": "\"A few arrows aren't enough to pierce your faith, soldier. You'll be back on the battlefield by sun's dawn.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/f/ef74fea5-2345-4ffd-8951-f420e17259e6.jpg?1783943692"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Wojek Siren
 {
     "name": "Wojek Siren",
