@@ -355,6 +355,139 @@
     ]
 }
 
+// Ashling the Pilgrim
+{
+    "name": "Ashling the Pilgrim",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — Elemental Shaman",
+    "oracleText": "{1}{R}: Put a +1/+1 counter on Ashling. If this is the third time this ability has resolved this turn, remove all +1/+1 counters from Ashling, and it deals that much damage to each creature and each player.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        "IncrementAbilityResolutionCount",
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "SourceAbilityResolvedNTimesThisTurn",
+                                    "count": 3
+                                }
+                            },
+                            "then": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "StoreNumber",
+                                        "name": "ashlingRemovedCounters",
+                                        "amount": {
+                                            "type": "EntityProperty",
+                                            "entity": "Source",
+                                            "numericProperty": {
+                                                "type": "CounterCount",
+                                                "counterType": {
+                                                    "type": "Named",
+                                                    "name": "+1/+1"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "RemoveAllCountersOfType",
+                                        "counterType": "+1/+1",
+                                        "target": "Self"
+                                    },
+                                    {
+                                        "type": "ForEach",
+                                        "space": {
+                                            "type": "IterationSpace.Group",
+                                            "filter": {
+                                                "baseFilter": "creature"
+                                            }
+                                        },
+                                        "body": {
+                                            "type": "DealDamage",
+                                            "amount": {
+                                                "type": "VariableReference",
+                                                "variableName": "ashlingRemovedCounters"
+                                            },
+                                            "target": "Self"
+                                        }
+                                    },
+                                    {
+                                        "type": "ForEach",
+                                        "space": {
+                                            "type": "IterationSpace.Players",
+                                            "players": "Each"
+                                        },
+                                        "body": {
+                                            "type": "DealDamage",
+                                            "amount": {
+                                                "type": "VariableReference",
+                                                "variableName": "ashlingRemovedCounters"
+                                            },
+                                            "target": "Controller"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Put a +1/+1 counter on Ashling. If this is the third time this ability has resolved this turn, remove all +1/+1 counters from Ashling, and it deals that much damage to each creature and each player."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "149",
+        "rarity": "RARE",
+        "artist": "Wayne Reynolds",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/3/63056eb9-4257-4530-8ff4-6909a2cedf47.jpg?1783942881",
+        "rulings": [
+            {
+                "date": "2023-07-28",
+                "text": "\"That much damage\" refers to the number of +1/+1 counters removed from Ashling the Pilgrim. Since the counters are removed, it's likely that the damage will kill Ashling."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "Ashling the Pilgrim's ability counts resolutions, not activations. Any such abilities that are still on the stack won't count toward the total."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "When the ability resolves, it counts the number of times that same ability from that this creature has already resolved that turn. It doesn't matter who controlled the creature or the previous abilities when they resolved. A copy of this ability (created by Rings of Brighthearth, for example) will count toward the total. Abilities from other creatures with the same name don't count towards the total. Neither does an ability that's been countered."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "You get the bonus only the third time the ability resolves. You won't get the bonus the fourth, fifth, sixth, or any subsequent times."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Auntie's Hovel
 {
     "name": "Auntie's Hovel",
