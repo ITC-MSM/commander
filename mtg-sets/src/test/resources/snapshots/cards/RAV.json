@@ -12524,6 +12524,87 @@
     ]
 }
 
+// Wojek Embermage
+{
+    "name": "Wojek Embermage",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "Radiance — {T}: This creature deals 1 damage to target creature and each other creature that shares a color with it.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            }
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": {
+                                        "cardPredicates": [
+                                            "IsCreature",
+                                            {
+                                                "type": "SharesColorWith",
+                                                "entity": "Target"
+                                            }
+                                        ]
+                                    },
+                                    "excludeTarget": true
+                                }
+                            },
+                            "body": {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "152",
+        "rarity": "UNCOMMON",
+        "artist": "Luca Zontini",
+        "flavorText": "\"Your brother's crimes are your crimes. You stood by and lent support, so you too must face judgment.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/1/e1614866-fb0b-47bd-ab26-5c20ff175d10.jpg?1783943643"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Wojek Siren
 {
     "name": "Wojek Siren",
