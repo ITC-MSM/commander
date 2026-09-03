@@ -5601,6 +5601,90 @@
     ]
 }
 
+// Incite Hysteria
+{
+    "name": "Incite Hysteria",
+    "manaCost": "{2}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Radiance — Until end of turn, target creature and each other creature that shares a color with it gain \"This creature can't block.\"",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "CantBlockTargetCreatures",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    {
+                                        "type": "SharesColorWith",
+                                        "entity": "Target"
+                                    }
+                                ]
+                            },
+                            "excludeTarget": true
+                        }
+                    },
+                    "body": {
+                        "type": "CantBlockTargetCreatures",
+                        "target": "Self"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "132",
+        "artist": "Paolo Parente",
+        "flavorText": "\"The Boros say they want to bring order to Ravnica. Funny then, how well they use chaos.\"\n—Trigori, Azorius senator",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/3/a31f5060-df9e-4665-bf60-a8e33da55c84.jpg?1783943651",
+        "rulings": [
+            {
+                "date": "2005-11-01",
+                "text": "The targeted creature and the creatures that share a color with it at the time Incite Hysteria resolves gain an ability that says they can't block this turn. It doesn't matter if those creatures change colors before blockers are declared."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "All creatures that share a color are affected, even your own."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If it targets a colorless creature, it doesn't affect any other creatures. A colorless creature shares a color with nothing, not even other colorless creatures."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "You check which creatures share a color with the target when the spell resolves."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Only one creature is targeted. If that creature leaves the battlefield or otherwise becomes an illegal target, the entire spell doesn't resolve. No other creatures are affected."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Indentured Oaf
 {
     "name": "Indentured Oaf",
