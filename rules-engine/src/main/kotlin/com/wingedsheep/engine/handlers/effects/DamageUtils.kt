@@ -207,7 +207,7 @@ object DamageUtils {
 
         // Check for global "damage can't be prevented" effects (Sunspine Lynx, Leyline of Punishment)
         @Suppress("NAME_SHADOWING")
-        val cantBePrevented = cantBePrevented || isDamagePreventionDisabled(state, targetId)
+        val cantBePrevented = cantBePrevented || isDamagePreventionDisabled(state, targetId, sourceId)
 
         // Check for damage redirection (Glarecaster, Zealous Inquisitor). Whippoorwill's clause
         // shuts this half off too — "…or dealt instead to another permanent or player" — so a
@@ -1221,10 +1221,33 @@ object DamageUtils {
     }
 
     /**
-     * Check if damage prevention is globally disabled by any DamageCantBePrevented replacement effect
-     * on the battlefield (e.g., Sunspine Lynx, Leyline of Punishment).
+     * Whether damage prevention is switched off for the damage instance ([sourceId] → [recipientId]).
+     *
+     * Three shutoffs feed this, narrowest last:
+     *  - the turn-scoped one-shot (Fear, Fire, Foes!),
+     *  - the per-recipient marker (Whippoorwill),
+     *  - a [DamageCantBePrevented] replacement on the battlefield.
+     *
+     * The last one is **scoped by its own `appliesTo` pattern**, not global. An unscoped pattern
+     * (`DamageEvent()`, source and recipient both `Any` — Leyline of Punishment, Sunspine Lynx)
+     * still shuts prevention off for everyone; a scoped one only covers the damage instances its
+     * pattern names, so Excruciator's "damage that would be dealt by **this creature** can't be
+     * prevented" (`SourceFilter.Self`) leaves every other source's damage preventable. Reading
+     * `appliesTo` here is what keeps that promise — the scan used to answer `true` for any
+     * `DamageCantBePrevented` on the battlefield at all.
+     *
+     * A scoped effect needs the concrete damage instance to judge, so a caller that passes neither
+     * end gets the unscoped answer only. That is deliberately the safe direction: an unknown
+     * instance never blanks a prevention shield or a protection keyword it might not cover.
+     *
+     * @param recipientId the entity being damaged, when the caller knows it
+     * @param sourceId the source dealing the damage, when the caller knows it
      */
-    fun isDamagePreventionDisabled(state: GameState, recipientId: EntityId? = null): Boolean {
+    fun isDamagePreventionDisabled(
+        state: GameState,
+        recipientId: EntityId? = null,
+        sourceId: EntityId? = null
+    ): Boolean {
         // Turn-scoped "Damage can't be prevented this turn" (Fear, Fire, Foes!).
         if (state.damageCantBePreventedThisTurn) return true
         // Per-recipient: "damage that would be dealt to that creature this turn can't be prevented"
@@ -1235,12 +1258,37 @@ object DamageUtils {
         ) {
             return true
         }
+        val projected = state.projectedState
         for (entityId in state.getBattlefield()) {
             val container = state.getEntity(entityId) ?: continue
             val replacementComponent = container.get<ReplacementEffectSourceComponent>() ?: continue
 
             for (effect in replacementComponent.replacementEffects) {
-                if (effect is DamageCantBePrevented) return true
+                if (effect !is DamageCantBePrevented) continue
+                val pattern = effect.appliesTo as? EventPattern.DamageEvent ?: continue
+                // Unscoped: the printed "damage can't be prevented" with no source or recipient
+                // clause. Answers for every instance, including the ones this call knows nothing about.
+                if (pattern.source is SourceFilter.Any && pattern.recipient is RecipientFilter.Any) {
+                    return true
+                }
+                val recipient = recipientId ?: continue
+                if (pattern.source !is SourceFilter.Any && sourceId == null) continue
+                val hostControllerId = replacementHostController(state, entityId) ?: continue
+                if (!damageSourceMatches(
+                        state, projected, pattern.source, sourceId,
+                        hostId = entityId, hostControllerId = hostControllerId, recipientId = recipient,
+                    )
+                ) {
+                    continue
+                }
+                if (!damageRecipientMatches(
+                        state, projected, pattern.recipient, recipient,
+                        hostId = entityId, hostControllerId = hostControllerId,
+                    )
+                ) {
+                    continue
+                }
+                return true
             }
         }
         return false
@@ -1267,7 +1315,7 @@ object DamageUtils {
         // CR 615.12 — when damage can't be prevented, prevention shields aren't reduced and prevent
         // nothing. When any battlefield "damage can't be prevented" (Spider-Punk) or the "this turn"
         // one-shot (Fear, Fire, Foes!) is active, no shield applies and the damage passes through in full.
-        if (isDamagePreventionDisabled(state, targetId)) return state to amount
+        if (isDamagePreventionDisabled(state, targetId, sourceId)) return state to amount
 
         var remainingDamage = amount
         val updatedEffects = state.floatingEffects.toMutableList()

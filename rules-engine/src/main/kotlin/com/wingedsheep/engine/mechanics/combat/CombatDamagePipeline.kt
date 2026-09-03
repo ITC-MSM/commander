@@ -100,7 +100,9 @@ internal class ProtectionModifier : CombatDamageModifier {
         // per-recipient (Whippoorwill) as well as global (Sunspine Lynx): one marked creature must
         // take its damage in full without blanking protection for everyone else in the combat.
         return assignments.filter { assignment ->
-            if (DamageUtils.isDamagePreventionDisabled(state, assignment.targetId)) return@filter true
+            if (DamageUtils.isDamagePreventionDisabled(state, assignment.targetId, assignment.sourceId)) {
+                return@filter true
+            }
             val sourceColors = projected.getColors(assignment.sourceId)
             val sourceSubtypes = projected.getSubtypes(assignment.sourceId)
             val sourceSupertypes = projected.getSupertypes(assignment.sourceId)
@@ -137,10 +139,13 @@ internal class ProtectionModifier : CombatDamageModifier {
  */
 internal class PlayerProtectionModifier : CombatDamageModifier {
     override fun modify(state: GameState, projected: ProjectedState, assignments: List<CombatDamageAssignment>): List<CombatDamageAssignment> {
-        // Left as a global early-out on purpose: every target here is a player, and the
-        // per-recipient shutoff (Whippoorwill) only ever marks a creature.
-        if (DamageUtils.isDamagePreventionDisabled(state)) return assignments
+        // Per assignment, not a global early-out: the shutoff can be scoped to the damage's
+        // *source* (Excruciator), so one attacker's damage may ignore player protection while
+        // another attacker's in the same combat does not.
         return assignments.filter { assignment ->
+            if (DamageUtils.isDamagePreventionDisabled(state, assignment.targetId, assignment.sourceId)) {
+                return@filter true
+            }
             !PlayerProtectionRules.isProtectedFromSource(
                 state,
                 playerId = assignment.targetId,

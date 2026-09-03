@@ -5,6 +5,7 @@ import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
+import com.wingedsheep.engine.mechanics.durations.GrantDurationGate
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.sba.SbaOrder
 import com.wingedsheep.engine.mechanics.sba.StateBasedActionCheck
@@ -221,14 +222,20 @@ class EndedDurationExpiryCheck : StateBasedActionCheck {
      *    effects revert through the per-effect loop in [check], but the granted ability has no
      *    floating-effect representation, so without this it would outlive Kitesail.
      *
-     * Covers [GameState.grantedActivatedAbilities] and [GameState.grantedStaticAbilities] — the two
-     * grant stores a "for as long as …" duration can reach today. [GameState.grantedTriggeredAbilities],
+     * Covers [GameState.grantedActivatedAbilities], [GameState.grantedStaticAbilities] and
+     * [GameState.grantedTriggeredAbilities] — the three grant stores a "for as long as …" duration
+     * can reach today. The triggered store joined when Makeshift Mannequin arrived: "for as long as
+     * that creature has a mannequin counter on it, it has 'When this creature becomes the target of
+     * a spell or ability, sacrifice it'" is a [Duration.WhileAffectedHasCounter] grant into it, and
+     * without this pass removing the counter left the drawback behind — the trigger lookup in
+     * `TriggerAbilityResolver` reads the store directly and has no duration gate of its own.
+     *
      * [GameState.grantedStateTriggeredAbilities], [GameState.grantedReplacementEffects] and
-     * [GameState.globalGrantedTriggeredAbilities] are
+     * [GameState.globalGrantedTriggeredAbilities] are still
      * deliberately *not* pruned here: no card grants into them with a conditional duration, so they
      * only ever need the `EndOfTurn` / `UntilYourNextTurn` filters in `CleanupPhaseManager`. Their
-     * executors do accept any [Duration] though, so the first card that grants a trigger, state
-     * trigger, or replacement effect "for as long as …" has to be added here (and carry a `sourceId` for a
+     * executors do accept any [Duration] though, so the first card that grants a state trigger or
+     * replacement effect "for as long as …" has to be added here (and carry a `sourceId` for a
      * source-keyed gate) or it will leak exactly the way the activated-ability grant did.
      *
      * The latch is one-way by nature: a pruned grant is never re-added. Returns the same
@@ -246,6 +253,13 @@ class EndedDurationExpiryCheck : StateBasedActionCheck {
         if (state.grantedStaticAbilities.any { grantConditionFails(state, it.entityId, it.sourceId, it.duration) }) {
             result = result.copy(
                 grantedStaticAbilities = state.grantedStaticAbilities.filterNot {
+                    grantConditionFails(state, it.entityId, it.sourceId, it.duration)
+                }
+            )
+        }
+        if (state.grantedTriggeredAbilities.any { grantConditionFails(state, it.entityId, it.sourceId, it.duration) }) {
+            result = result.copy(
+                grantedTriggeredAbilities = state.grantedTriggeredAbilities.filterNot {
                     grantConditionFails(state, it.entityId, it.sourceId, it.duration)
                 }
             )
@@ -317,68 +331,22 @@ class EndedDurationExpiryCheck : StateBasedActionCheck {
         entityId: EntityId,
         sourceId: EntityId?,
         duration: Duration
-    ): Boolean =
-        !sourceGateHolds(state, duration, sourceId, entityId) ||
-            affectedGrantConditionFails(state, entityId, duration)
+    ): Boolean = !GrantDurationGate.holds(state, entityId, sourceId, duration)
 
     /**
-     * Whether a *source-keyed* "for as long as …" gate still holds for the grant/effect made by
-     * [sourceId] on [affectedId]. Returns `true` for every other duration, so callers can apply it
-     * unconditionally.
-     *
-     * Depends only on the source's zone, tapped state, and attachment — no projection — which is
-     * what lets the granted-ability path (which has no [ProjectedState] at hand) share it with
-     * [activeAffectedEntities]. A missing [sourceId] means there is no source on the battlefield,
-     * so the gate is closed.
+     * Whether a *source-keyed* "for as long as …" gate still holds. Shared with the per-read gate
+     * the trigger lookup applies to `grantedTriggeredAbilities` — see [GrantDurationGate], which
+     * owns the logic so the latch here and that gate can never disagree.
      */
     private fun sourceGateHolds(
         state: GameState,
         duration: Duration,
         sourceId: EntityId?,
         affectedId: EntityId
-    ): Boolean = when (duration) {
-        // "for as long as this permanent remains on the battlefield" (Kitesail Larcenist).
-        is Duration.WhileSourceOnBattlefield ->
-            sourceId != null && state.getBattlefield().contains(sourceId)
-
-        // "for as long as this creature remains tapped" (Old Man of the Sea).
-        is Duration.WhileSourceTapped -> sourceTapped(state, sourceId)
-
-        // "for as long as [the source Aura/Equipment] remains attached to it" — the source leaving
-        // the battlefield, becoming unattached, or moving to a different host all end it.
-        Duration.WhileSourceAttachedToAffected ->
-            sourceId != null && state.getBattlefield().contains(sourceId) &&
-                state.getEntity(sourceId)?.get<AttachedToComponent>()?.targetId == affectedId
-
-        else -> true
-    }
-
-    /**
-     * True when [duration] is an affected-object-keyed "for as long as …" duration whose
-     * condition no longer holds for [entityId]. False for every other duration.
-     */
-    private fun affectedGrantConditionFails(
-        state: GameState,
-        entityId: EntityId,
-        duration: Duration
-    ): Boolean = when (duration) {
-        is Duration.WhileAffectedHasCounter -> {
-            if (!state.getBattlefield().contains(entityId)) true
-            else {
-                val counterType = CounterType.fromName(duration.counterType)
-                counterType == null ||
-                    (state.getEntity(entityId)?.get<CountersComponent>()?.getCount(counterType) ?: 0) <= 0
-            }
-        }
-        Duration.WhileAffectedTapped ->
-            !state.getBattlefield().contains(entityId) ||
-                state.getEntity(entityId)?.has<TappedComponent>() != true
-        else -> false
-    }
+    ): Boolean = GrantDurationGate.sourceGateHolds(state, duration, sourceId, affectedId)
 
     private fun sourceTapped(state: GameState, sourceId: EntityId?): Boolean =
-        sourceId != null && state.getBattlefield().contains(sourceId) &&
-            state.getEntity(sourceId)?.has<TappedComponent>() == true
+        GrantDurationGate.sourceTapped(state, sourceId)
 
     /**
      * Emit a [ControlChangedEvent] for each dropped entity of a control effect, reverting from the

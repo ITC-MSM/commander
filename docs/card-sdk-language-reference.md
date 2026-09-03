@@ -1012,6 +1012,17 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   prevention clause are ignored (CR 615.6). The static, permanent-hosted equivalent is the
   `DamageCantBePrevented` replacement effect (Sunspine Lynx); use this effect when a spell/ability needs
   the shutoff without a permanent on the battlefield (Fear, Fire, Foes!).
+- `DamageCantBePrevented(appliesTo = EventPattern.DamageEvent(...))` — the static, permanent-hosted
+  replacement, **scoped by its `appliesTo` pattern**. Left at the default (`source` and `recipient` both
+  `Any`) it is the printed global "Damage can't be prevented" (Sunspine Lynx, Leyline of Punishment).
+  Narrow the pattern for a card that names one end of the damage instance: **Excruciator**'s "damage that
+  would be dealt by this creature can't be prevented" is
+  `DamageCantBePrevented(EventPattern.DamageEvent(source = SourceFilter.Self))`, which leaves every other
+  source's damage preventable. `DamageUtils.isDamagePreventionDisabled(state, recipientId, sourceId)`
+  matches the pattern against the concrete damage instance through the same `damageSourceMatches` /
+  `damageRecipientMatches` pair every other damage replacement uses, so a filter supported by one is
+  supported by all. Callers that don't know both ends of the instance get the *unscoped* answer only —
+  a scoped effect never blanks a shield it might not cover.
 - `DamageToTargetCantBePreventedThisTurnEffect(target)` — the **per-recipient** form: "Damage that
   would be dealt to that creature this turn can't be prevented **or dealt instead to another
   permanent or player**" (Whippoorwill). Stamps a turn-scoped marker on the recipient, cleared at
@@ -2019,7 +2030,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Ability granting
 
-- `GrantTriggeredAbilityEffect(ability, target, duration = Duration.EndOfTurn)` — grant a triggered ability to a battlefield permanent for a duration; `Duration.Permanent` for "gains … " with no end (Carnage, Crimson Chaos). **Target-general — not creature-only.** Nothing in the rules restricts "gains '<triggered ability>'" to creatures, and the printed wording routinely names a noncreature permanent: Down in the Valley's chapter II is "*This Saga* gains 'Landfall — Whenever a land you control enters, create a 1/1 green Elf creature token'", authored as `GrantTriggeredAbilityEffect(ability, EffectTarget.Self, Duration.Permanent)`. Whether a noncreature is a *legal* pick is the `TargetRequirement`'s job; the executor only requires the target to be on the battlefield. Recorded in `GameState.grantedTriggeredAbilities` and merged into the entity's abilities by `TriggerAbilityResolver`, so a granted trigger is detected exactly like a printed one and dies with the permanent.
+- `GrantTriggeredAbilityEffect(ability, target, duration = Duration.EndOfTurn)` — grant a triggered ability to a battlefield permanent for a duration; `Duration.Permanent` for "gains … " with no end (Carnage, Crimson Chaos). **Target-general — not creature-only.** Nothing in the rules restricts "gains '<triggered ability>'" to creatures, and the printed wording routinely names a noncreature permanent: Down in the Valley's chapter II is "*This Saga* gains 'Landfall — Whenever a land you control enters, create a 1/1 green Elf creature token'", authored as `GrantTriggeredAbilityEffect(ability, EffectTarget.Self, Duration.Permanent)`. Whether a noncreature is a *legal* pick is the `TargetRequirement`'s job; the executor only requires the target to be on the battlefield. Recorded in `GameState.grantedTriggeredAbilities` and merged into the entity's abilities by `TriggerAbilityResolver`, so a granted trigger is detected exactly like a printed one and dies with the permanent. **The conditional "for as long as …" durations work here too**, in the same two halves every such duration gets: `TriggerAbilityResolver` gates the grant per read (so it goes dark the instant the condition fails, even mid-resolution) and `EndedDurationExpiryCheck` physically removes it, one-way per CR 611.2b, so the condition becoming true again does not bring the ability back. Both halves ask the same `GrantDurationGate`. Makeshift Mannequin is the shape: `PutOntoBattlefieldFromGraveyard(target)` + `AddCountersEffect(Counters.MANNEQUIN, 1, target)` + `GrantTriggeredAbilityEffect(sacrificeOnBecomingTarget, target, Duration.WhileAffectedHasCounter(Counters.MANNEQUIN))` — remove the counter (Hex Parasite, Vampire Hexmage) and the drawback really is gone. Wiring that sentence as `Duration.Permanent` reads identically on the card and is wrong in exactly that case.
 - `GrantStateTriggeredAbilityEffect(ability, target, duration = Duration.Permanent)` — grant a **state**-triggered ability (CR 603.8) to a battlefield permanent. The sibling of `GrantTriggeredAbilityEffect` for the abilities the `StateTriggerPoller` owns rather than the `TriggerIndex`: use it when the printed rider fires because a condition *becomes true*, with no event to match. **Olivia, Crimson Bride**: the reanimated creature gains `"When you don't control a legendary Vampire, exile this creature."` — nothing *happens* when the last legendary Vampire leaves, so a `GrantTriggeredAbilityEffect` has no event to hang off. Recorded in `GameState.grantedStateTriggeredAbilities`, folded into the per-permanent ability list by `StateTriggerPoller` beside the printed ones, latched per `(entityId, AbilityId)` exactly like a printed state trigger, dropped on battlefield re-entry (CR 400.7) and expired by `CleanupPhaseManager` for `Duration.EndOfTurn`. The default duration is `Permanent`, not `EndOfTurn` — a granted state trigger is a durable rider, where a granted event trigger is usually a one-turn pump. Like `GrantTriggeredAbilityEffect` it is **target-general, not creature-only**; legality is the `TargetRequirement`'s job.
 - `CreateGlobalTriggeredAbility(ability, duration = Duration.Permanent, descriptionOverride? = null)` — engine-wide triggered ability with no source permanent. `duration` is a plain parameter, so the one method covers every lifetime: `Duration.EndOfTurn` (False Cure, Death Frenzy), `Duration.UntilYourNextTurn` (Season of the Bold), `Duration.EndOfCombat`, `Duration.Permanent` (Dimensional Breach, planeswalker emblems), etc. `descriptionOverride` sets emblem display text. This is the right shape for a *floating* "until end of turn, whenever …" payoff that must outlive its own source — Mistway Spy's turned-face-up "whenever a creature you control deals combat damage to a player, investigate" keeps triggering even if the Spy is killed in response, which a `GrantTriggeredAbilityEffect` on the Spy would not. Because a global ability is attached to no permanent it lives outside every battlefield trigger index, so each specialized detector has to walk `GameState.globalGrantedTriggeredAbilities` itself; the ANY-bound `DealsDamageEvent` observers do (`DamageTriggerDetector.detectDamageObserverTriggers`), and a new detector that doesn't will silently never fire for a global ability.
 - `GrantSpellKeywordEffect` — grant a keyword to a spell on the stack.
@@ -8024,6 +8035,10 @@ concerns — the `ClientStateTransformer` reveals the top card for `PlayFromTopO
 
 - `RevealTopOfLibrary` — *public reveal only*, no play permission: the controller's top card is
   shown to all players, but can only be played once drawn. (**Goblin Spy**)
+- `PlayersRevealTopOfLibrary` — the **symmetric** form: *every* player plays with the top card of their
+  library revealed to everyone, no matter who controls the permanent. Same visibility-only contract as
+  `RevealTopOfLibrary` (no play permission); the difference is which libraries are opened, which is why
+  it can't be spelled as the self-scoped variant. (**Wizened Snitches**)
 - `PlayFromTopOfLibrary` — public reveal **and** "play lands and cast spells from the top of your
   library" (all card types). (Future Sight)
 - `PlayFromTopWithAlternativeCost(withoutPayingManaCost = false, additionalCost = null, filter = null)`
@@ -8990,8 +9005,9 @@ composite abilities).
   next instance (a granted permanent has none of the printed replacement/static abilities to fall back on).
   `GrantCantBeCountered` gained an `includesAbilities` flag (default false) so "spells **and abilities** can't be
   countered" (Spider-Punk) also makes matching abilities uncounterable (e.g. Stifle fizzles); `DamageCantBePrevented`
-  is a global replacement — while one is on the battlefield (or the "damage can't be prevented this turn" one-shot is
-  active) `DamageUtils.applyDamagePreventionShields` applies no prevention shields (CR 615.12).
+  is a battlefield replacement scoped by its own `appliesTo` pattern — while one is on the battlefield (or the "damage
+  can't be prevented this turn" one-shot is active) `DamageUtils.applyDamagePreventionShields` applies no prevention
+  shields to the damage instances that pattern names (CR 615.12).
 - `Exploit` — "Exploit (When this creature enters, you may sacrifice a creature.)" (CR 702.110, Dragons of Tarkir;
   reprinted MH1/MH2/VOW/PIP/MH3). Display-only keyword; wire the behavior with the `card { exploit(onExploit, onExploitTargets) }`
   builder helper. It adds the keyword plus one `EntersBattlefield` triggered ability whose effect is a
@@ -12294,6 +12310,9 @@ substitution.
   `hoofprint` (`Counters.HOOFPRINT`): LRW — Hoofprints of the Stag, whose "whenever you draw a card, you **may**"
   trigger accumulates one and whose `{2}{W}, Remove four hoofprint counters` ability
   (`Costs.RemoveCounterFromSelf(Counters.HOOFPRINT, 4)`) spends them for a 4/4 flying Elemental.
+  `mannequin` (`Counters.MANNEQUIN`): LRW — Makeshift Mannequin, a pure marker that exists only so the reanimated
+  creature's granted "when this becomes the target of a spell or ability, sacrifice it" ability has something to be
+  keyed to (`Duration.WhileAffectedHasCounter(Counters.MANNEQUIN)`); remove the counter and the drawback goes too.
   `doom`: ATQ — Armageddon Clock (accrued one-per-upkeep, scales the damage dealt to each player in the draw step;
   a {4} ability removes one). `omen` (`Counters.OMEN`): VOW — Soulcipher Board, a *countdown* counter — the artifact
   enters with three and a per-card "whenever a creature card is put into your graveyard from anywhere" trigger removes
