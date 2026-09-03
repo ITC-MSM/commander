@@ -1062,6 +1062,7 @@ class StaticAbilityHandler(
             is OpponentsPlayWithHandsRevealed,
             is RevealFirstDrawEachTurn,
             is RevealTopOfLibrary,
+            is com.wingedsheep.sdk.scripting.PlayersRevealTopOfLibrary,
 
             // Coin-flip replacements, queried by CoinFlipService via CoinFlipModifiers — the
             // result-dictating one (CR 705.3) and the flip-more-coins one (CR 614). Neither is a

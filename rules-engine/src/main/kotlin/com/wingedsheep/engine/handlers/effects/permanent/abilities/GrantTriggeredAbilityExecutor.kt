@@ -48,7 +48,11 @@ class GrantTriggeredAbilityExecutor : EffectExecutor<GrantTriggeredAbilityEffect
         val grant = GrantedTriggeredAbility(
             entityId = targetId,
             ability = effect.ability,
-            duration = effect.duration
+            duration = effect.duration,
+            // Carried so a source-keyed "for as long as …" duration can be ended by
+            // EndedDurationExpiryCheck. Unused by the affected-object-keyed durations
+            // (WhileAffectedHasCounter — Makeshift Mannequin) and by EndOfTurn/Permanent.
+            sourceId = context.sourceId
         )
 
         val newState = state.copy(

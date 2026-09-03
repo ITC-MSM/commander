@@ -2,6 +2,7 @@ package com.wingedsheep.engine.event
 
 import com.wingedsheep.engine.mechanics.SoulbondPairing
 import com.wingedsheep.engine.mechanics.battle.Battles
+import com.wingedsheep.engine.mechanics.durations.GrantDurationGate
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
@@ -71,9 +72,13 @@ class TriggerAbilityResolver(
             topLevel + getRoomFaceTriggeredAbilities(entityId, cardDef, state)
         }
 
-        // Merge in any temporarily granted triggered abilities (e.g., from Commando Raid)
+        // Merge in any temporarily granted triggered abilities (e.g., from Commando Raid).
+        // [GrantDurationGate] is the per-read half of a "for as long as …" grant: Makeshift
+        // Mannequin's sacrifice rider lasts only while the mannequin counter is there, and the
+        // counter can leave between two state-based-action passes. The one-way latch that stops a
+        // re-added counter resurrecting the grant lives in EndedDurationExpiryCheck.
         val grantedAbilities = state.grantedTriggeredAbilities
-            .filter { it.entityId == entityId }
+            .filter { it.entityId == entityId && GrantDurationGate.holds(state, it.entityId, it.sourceId, it.duration) }
             .map { it.ability }
 
         // Merge in triggered abilities granted by static abilities on other permanents
@@ -272,8 +277,9 @@ class TriggerAbilityResolver(
             }
         }
 
+        // Same per-read "for as long as …" gate as the other lookup path above.
         val grantedAbilities = state.grantedTriggeredAbilities
-            .filter { it.entityId == entityId }
+            .filter { it.entityId == entityId && GrantDurationGate.holds(state, it.entityId, it.sourceId, it.duration) }
             .map { it.ability }
 
         val staticGrantedAbilities = if (grantProviders.isNotEmpty()) {

@@ -90,6 +90,7 @@ enum class CounterType {
     NEST,
     PAGE,
     HOOFPRINT,
+    MANNEQUIN,
     REV,
     BLOODSTAIN,
     BLOOD,
@@ -392,6 +393,15 @@ object Counters {
      * to make a 4/4 flying Elemental. No inherent rule.
      */
     const val HOOFPRINT = "hoofprint"
+
+    /**
+     * Mannequin counter (LRW — Makeshift Mannequin). A pure marker with no inherent rule: it is
+     * the thing the reanimated creature's granted "when this becomes the target of a spell or
+     * ability, sacrifice it" ability is keyed to, via
+     * [com.wingedsheep.sdk.scripting.Duration.WhileAffectedHasCounter]. Remove the counter and the
+     * drawback goes with it.
+     */
+    const val MANNEQUIN = "mannequin"
 
     /**
      * Bait counter (FDN — Fishing Pole). Passive storage counter with no inherent rule; the
