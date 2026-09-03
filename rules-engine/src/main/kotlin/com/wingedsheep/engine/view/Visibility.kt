@@ -23,6 +23,7 @@ import com.wingedsheep.sdk.scripting.LookAtFaceDownCreatures
 import com.wingedsheep.sdk.scripting.LookAtTopOfLibrary
 import com.wingedsheep.sdk.scripting.OpponentsPlayWithHandsRevealed
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
+import com.wingedsheep.sdk.scripting.PlayersRevealTopOfLibrary
 import com.wingedsheep.sdk.scripting.RevealTopOfLibrary
 import com.wingedsheep.sdk.scripting.StaticAbility
 
@@ -209,10 +210,20 @@ class Visibility(
     private fun hasLookAtFaceDownCreatures(state: GameState, playerId: EntityId): Boolean =
         hasActiveStaticAbility(state, playerId) { it is LookAtFaceDownCreatures }
 
+    /**
+     * Whether the top card of [playerId]'s library is face up to everyone. Two shapes reach this:
+     * a self-scoped static that [playerId] themselves controls — [PlayFromTopOfLibrary] (Future
+     * Sight) or [RevealTopOfLibrary] (Goblin Spy) — or a symmetric
+     * [PlayersRevealTopOfLibrary] (Wizened Snitches) controlled by *any* player, which opens every
+     * library including the libraries of players who control nothing.
+     */
     private fun revealsTopOfLibraryPublicly(state: GameState, playerId: EntityId): Boolean =
         hasActiveStaticAbility(state, playerId) {
             it is PlayFromTopOfLibrary || it is RevealTopOfLibrary
-        }
+        } ||
+            state.turnOrder.any { controllerId ->
+                hasActiveStaticAbility(state, controllerId) { it is PlayersRevealTopOfLibrary }
+            }
 
     private fun hasLookAtTopOfLibrary(state: GameState, playerId: EntityId): Boolean =
         hasActiveStaticAbility(state, playerId) { it is LookAtTopOfLibrary }
