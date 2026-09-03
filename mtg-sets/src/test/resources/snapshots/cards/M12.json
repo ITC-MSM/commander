@@ -721,6 +721,57 @@
     ]
 }
 
+// Sorin's Thirst
+{
+    "name": "Sorin's Thirst",
+    "manaCost": "{B}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Sorin's Thirst deals 2 damage to target creature and you gain 2 life.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "110",
+        "artist": "Karl Kopinski",
+        "flavorText": "\"All your steel won't protect you if your will is weak.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/f/1f14a435-811d-4057-93a9-ce74aa852a09.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Stingerfling Spider
 {
     "name": "Stingerfling Spider",
