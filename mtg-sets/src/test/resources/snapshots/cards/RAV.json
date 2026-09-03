@@ -3814,6 +3814,101 @@
     ]
 }
 
+// Flash Conscription
+{
+    "name": "Flash Conscription",
+    "manaCost": "{5}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Untap target creature and gain control of it until end of turn. That creature gains haste until end of turn. If {W} was spent to cast this spell, the creature gains \"Whenever this creature deals combat damage, you gain that much life\" until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "tap": false
+                },
+                {
+                    "type": "GainControl",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "duration": "EndOfTurn"
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "ManaSpentToCastIncludes",
+                            "requiredWhite": 1
+                        }
+                    },
+                    "then": {
+                        "type": "GrantTriggeredAbility",
+                        "ability": {
+                            "id": "ability_1",
+                            "trigger": {
+                                "type": "DealsDamageEvent",
+                                "damageType": "DamageCombat"
+                            },
+                            "effect": {
+                                "type": "GainLife",
+                                "amount": {
+                                    "type": "ContextProperty",
+                                    "key": "TRIGGER_DAMAGE_AMOUNT"
+                                }
+                            },
+                            "descriptionOverride": "Whenever this creature deals combat damage, you gain that much life."
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "124",
+        "rarity": "UNCOMMON",
+        "artist": "Stephen Tappin",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/2/52361237-a653-4470-9ed5-c531c040c686.jpg?1783943654",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "If white mana was paid, the player who controls the creature when it deals combat damage will be the one who gains life."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Flight of Fancy
 {
     "name": "Flight of Fancy",
