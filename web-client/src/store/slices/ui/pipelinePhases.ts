@@ -105,6 +105,14 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
     if (modalCostType === 'Blight' || modalCostType === 'TapForTotalPower') {
       modalPhases.push({ type: 'costPayment' })
     }
+    //    An {X} in the cost still has to be announced, and the early return above would drop the
+    //    prompt entirely — Profane Command ({X}{B}{B}, "choose two") then cast at X = 0 with every
+    //    chosen mode reading that 0, so the card silently did nothing. X comes *after* the modes,
+    //    per CR 601.2b's announcement order (mode choice, then the value of each variable), and
+    //    before the server-driven per-mode targeting that prices its "up to X targets" against it.
+    if (actionInfo.hasXCost) {
+      modalPhases.push({ type: 'xSelection' })
+    }
     return modalPhases
   }
 

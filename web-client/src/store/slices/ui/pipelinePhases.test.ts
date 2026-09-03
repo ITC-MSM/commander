@@ -48,6 +48,23 @@ describe('computePhases — choose-N modal', () => {
     })
     expect(computePhases(info)).toEqual([{ type: 'modalModes' }, { type: 'costPayment' }])
   })
+
+  it('a choose-N modal with an {X} cost (Profane Command) still announces X', () => {
+    // CR 601.2b announces the modes first and the value of X second. Dropping the xSelection
+    // phase cast the spell at X = 0 — every chosen mode read that 0 and did nothing.
+    const info = castAction({
+      manaCostString: '{X}{B}{B}',
+      hasXCost: true,
+      maxAffordableX: 4,
+      modalEnumeration: {
+        chooseCount: 2,
+        minChooseCount: 2,
+        allowRepeat: false,
+        modes: [],
+      },
+    })
+    expect(computePhases(info)).toEqual([{ type: 'modalModes' }, { type: 'xSelection' }])
+  })
 })
 
 describe('computePhases — emerge sacrifice', () => {
