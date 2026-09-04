@@ -1,5 +1,7 @@
 package com.wingedsheep.engine.handlers.effects
 
+import com.wingedsheep.engine.handlers.ConditionEvaluator
+import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.state.GameState
@@ -28,11 +30,13 @@ import com.wingedsheep.sdk.scripting.PermanentsEnterTapped
 object EnterTappedReplacements {
 
     private val predicateEvaluator = PredicateEvaluator()
+    private val conditionEvaluator = ConditionEvaluator()
 
     /**
      * True if any battlefield permanent grants a [PermanentsEnterTapped] replacement whose
-     * `appliesTo` filter matches [enteringEntityId] (controlled by [enteringControllerId]). The
-     * entering entity must already carry its [ControllerComponent] /
+     * `appliesTo` filter matches [enteringEntityId] (controlled by [enteringControllerId]) and
+     * whose optional `condition` gate holds. The entering entity must already carry its
+     * [ControllerComponent] /
      * [com.wingedsheep.engine.state.components.identity.CardComponent] so the filter
      * (type/subtype/"you control") resolves correctly.
      */
@@ -48,9 +52,16 @@ object EnterTappedReplacements {
             val sourceControllerId = container.get<ControllerComponent>()?.playerId ?: continue
             for (effect in replacementComponent.replacementEffects) {
                 if (effect !is PermanentsEnterTapped) continue
-                if (matchesEnterFilter(effect.appliesTo, enteringEntityId, sourceId, sourceControllerId, state)) {
-                    return true
+                if (!matchesEnterFilter(effect.appliesTo, enteringEntityId, sourceId, sourceControllerId, state)) continue
+                // Optional gate evaluated against the replacement *source*, mirroring
+                // RedirectDamage.condition — e.g. Ashling's Prerogative's tap clause applies only
+                // while the mode it chose as it entered is the one this effect was written for.
+                val gate = effect.condition
+                if (gate != null) {
+                    val gateContext = EffectContext(sourceId = sourceId, controllerId = sourceControllerId)
+                    if (!conditionEvaluator.evaluate(state, gate, gateContext)) continue
                 }
+                return true
             }
         }
         return false
