@@ -24,7 +24,7 @@ class InFlightEntityReferencesTest : FunSpec({
         )
 
         InFlightEntityReferences.project(stackObject)
-            .shouldBeInstanceOf<InFlightEntityReferences.Projection.Complete>()
+            .shouldBeInstanceOf<TypedEntityReferences.Projection.Complete>()
             .entityIds shouldBe setOf(casterId, handCardId)
     }
 
@@ -42,7 +42,7 @@ class InFlightEntityReferencesTest : FunSpec({
         )
 
         InFlightEntityReferences.project(stackObject)
-            .shouldBeInstanceOf<InFlightEntityReferences.Projection.Complete>()
+            .shouldBeInstanceOf<TypedEntityReferences.Projection.Complete>()
             .entityIds shouldBe setOf(ownerId)
     }
 
@@ -78,13 +78,13 @@ class InFlightEntityReferencesTest : FunSpec({
         )
 
         InFlightEntityReferences.project(decision)
-            .shouldBeInstanceOf<InFlightEntityReferences.Projection.Complete>()
+            .shouldBeInstanceOf<TypedEntityReferences.Projection.Complete>()
             .entityIds shouldBe setOf(playerId, nullableId, nestedId, mapKeyId)
         InFlightEntityReferences.project(continuation)
-            .shouldBeInstanceOf<InFlightEntityReferences.Projection.Complete>()
+            .shouldBeInstanceOf<TypedEntityReferences.Projection.Complete>()
             .entityIds shouldBe setOf(playerId, nullableId, nestedId)
         InFlightEntityReferences.project(continuation.copy(sourceId = null))
-            .shouldBeInstanceOf<InFlightEntityReferences.Projection.Complete>()
+            .shouldBeInstanceOf<TypedEntityReferences.Projection.Complete>()
             .entityIds shouldBe setOf(playerId, nestedId)
     }
 })

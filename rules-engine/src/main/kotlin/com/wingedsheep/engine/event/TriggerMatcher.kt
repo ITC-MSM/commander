@@ -608,6 +608,15 @@ class TriggerMatcher(
                     matchesPlayer(state, trigger.player, event.playerId, controllerId) &&
                     (!trigger.requireBearerChosen || event.bearerId != null)
             }
+            is EventPattern.ClashedEvent -> {
+                // Both participants clash, so the event names the player it is *about* rather
+                // than the clash's initiator (Entangling Trap's ruling). `requireWin` is the
+                // "and win" half of Sylvan Echoes' wording, checked here on the trigger rather
+                // than gated inside its effect.
+                event is com.wingedsheep.engine.core.ClashedEvent &&
+                    matchesPlayer(state, trigger.player, event.playerId, controllerId) &&
+                    (!trigger.requireWin || event.won)
+            }
             is EventPattern.ScriedEvent -> {
                 event is com.wingedsheep.engine.core.ScriedEvent &&
                     matchesPlayer(state, trigger.player, event.playerId, controllerId)

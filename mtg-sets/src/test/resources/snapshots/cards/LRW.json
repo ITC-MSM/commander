@@ -1,3 +1,62 @@
+// Adder-Staff Boggart
+{
+    "name": "Adder-Staff Boggart",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Goblin Warrior",
+    "oracleText": "When this creature enters, clash with an opponent. If you win, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ChooseOpponentForSource",
+                                    "prompt": "Choose an opponent to clash with"
+                                },
+                                "Clash"
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "clashWon"
+                        }
+                    },
+                    "then": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": "Self"
+                    },
+                    "descriptionOverride": "Clash with an opponent. If you win, put 1 +1/+1 counter on this creature"
+                },
+                "descriptionOverride": "clash with an opponent. If you win, put a +1/+1 counter on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "148",
+        "artist": "Jeff Miracola",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d116839f-6a3a-4a2e-a3ab-ea177c012746.jpg?1783942880"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Aethersnipe
 {
     "name": "Aethersnipe",
@@ -8316,6 +8375,78 @@
     ]
 }
 
+// Lash Out
+{
+    "name": "Lash Out",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Lash Out deals 3 damage to target creature. Clash with an opponent. If you win, Lash Out deals 3 damage to that creature's controller.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ChooseOpponentForSource",
+                                    "prompt": "Choose an opponent to clash with"
+                                },
+                                "Clash"
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "clashWon"
+                        }
+                    },
+                    "then": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "target": "TargetController"
+                    },
+                    "descriptionOverride": "Clash with an opponent. If you win, deal 3 damage to its controller"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "183",
+        "artist": "Scott Hampton",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/e/de2c0c8b-5442-44fb-9686-d3dff5742501.jpg?1783942872"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Leaf Gilder
 {
     "name": "Leaf Gilder",
@@ -10165,6 +10296,94 @@
     ]
 }
 
+// Nettlevine Blight
+{
+    "name": "Nettlevine Blight",
+    "manaCost": "{4}{B}{B}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature or land\nEnchanted permanent has \"At the beginning of your end step, sacrifice this permanent and attach Nettlevine Blight to a creature or land you control.\"",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantTriggeredAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "END"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SacrificeTarget",
+                                "target": "Self"
+                            },
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "ControlledPermanents",
+                                    "filter": "creature|land"
+                                },
+                                "storeAs": "newHosts"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "newHosts",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "selected2",
+                                "prompt": "Choose a creature or land to attach Nettlevine Blight to",
+                                "useTargetingUI": true
+                            },
+                            {
+                                "type": "ConditionalOnCollection",
+                                "collection": "selected2",
+                                "ifNotEmpty": {
+                                    "type": "AttachTargetEquipmentToCreature",
+                                    "equipmentTarget": "GrantingSource",
+                                    "creatureTarget": {
+                                        "type": "PipelineTarget",
+                                        "collectionName": "selected2"
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "At the beginning of your end step, sacrifice this permanent and attach Nettlevine Blight to a creature or land you control."
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature|land"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "131",
+        "rarity": "RARE",
+        "artist": "Michael Sutfin",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/d/dd6b1240-0bc3-401a-9cc3-3acaea871a3d.jpg?1783942885",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "Nettlevine Blight grants the triggered ability to the enchanted permanent, so \"you\" refers to that permanent's controller. The ability will trigger at the end of that player's turn, and that player chooses the new creature or land to attach Nettlevine Blight to. The player must choose a creature or land they control."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Nightshade Stinger
 {
     "name": "Nightshade Stinger",
@@ -10191,6 +10410,65 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Oaken Brawler
+{
+    "name": "Oaken Brawler",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Treefolk Warrior",
+    "oracleText": "When this creature enters, clash with an opponent. If you win, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ChooseOpponentForSource",
+                                    "prompt": "Choose an opponent to clash with"
+                                },
+                                "Clash"
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "clashWon"
+                        }
+                    },
+                    "then": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": "Self"
+                    },
+                    "descriptionOverride": "Clash with an opponent. If you win, put 1 +1/+1 counter on this creature"
+                },
+                "descriptionOverride": "clash with an opponent. If you win, put a +1/+1 counter on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "33",
+        "artist": "Jim Murray",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/9/e9fdb060-8f4d-453a-9516-92c390fbc85a.jpg?1783942911"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -10295,6 +10573,65 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Paperfin Rascal
+{
+    "name": "Paperfin Rascal",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Merfolk Rogue",
+    "oracleText": "When this creature enters, clash with an opponent. If you win, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ChooseOpponentForSource",
+                                    "prompt": "Choose an opponent to clash with"
+                                },
+                                "Clash"
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "clashWon"
+                        }
+                    },
+                    "then": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": "Self"
+                    },
+                    "descriptionOverride": "Clash with an opponent. If you win, put 1 +1/+1 counter on this creature"
+                },
+                "descriptionOverride": "clash with an opponent. If you win, put a +1/+1 counter on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "77",
+        "artist": "Zoltan Boros & Gabor Szikszai",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a439c0ca-0cb2-4293-825e-1a72159953b9.jpg?1783942899"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -10962,6 +11299,72 @@
     "colorIdentityOverride": [
         "BLACK"
     ]
+}
+
+// Rings of Brighthearth
+{
+    "name": "Rings of Brighthearth",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever you activate an ability, if it isn't a mana ability, you may pay {2}. If you do, copy that ability. You may choose new targets for the copy.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AbilityActivatedEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}"
+                        }
+                    },
+                    "then": {
+                        "type": "CopyTargetSpellOrAbility",
+                        "target": "TriggeringEntity"
+                    },
+                    "descriptionOverride": "Pay {2}? If you do, copy that ability. You may choose new targets for the copy."
+                },
+                "descriptionOverride": "Whenever you activate an ability, if it isn't a mana ability, you may pay {2}. If you do, copy that ability. You may choose new targets for the copy."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "259",
+        "rarity": "RARE",
+        "artist": "Howard Lyon",
+        "flavorText": "\"Without flame, there would be no iron tools, no cooked meals, no purge of old growth to make room for new.\"\n—Brighthearth creed",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fbfd3898-cb06-4bb9-9d52-b319e1fa2217.jpg?1783942851",
+        "rulings": [
+            {
+                "date": "2020-11-10",
+                "text": "An activated mana ability is one that produces mana as it resolves, not one that costs mana to activate."
+            },
+            {
+                "date": "2020-11-10",
+                "text": "You can't pay {2} more than once for each time the triggered ability of Rings of Brighthearth resolves."
+            },
+            {
+                "date": "2020-11-10",
+                "text": "If the ability has {X} in its cost, the copy uses the same value of X."
+            },
+            {
+                "date": "2020-11-10",
+                "text": "The triggered ability of Rings of Brighthearth and the copy it creates both resolve before the ability that caused it to trigger. They resolve even if that ability is countered."
+            },
+            {
+                "date": "2020-11-10",
+                "text": "The copy will have the same targets as the ability it's copying unless you choose new ones. You may change any number of the targets, including all of them or none of them. If, for one of the targets, you can't choose a new legal target, then it remains unchanged (even if the current target is illegal)."
+            },
+            {
+                "date": "2020-11-10",
+                "text": "If paying the activation cost of the ability includes sacrificing Rings of Brighthearth, the ability won't be copied. At the time the ability is considered activated (after all costs are paid), Rings of Brighthearth is no longer on the battlefield."
+            }
+        ]
+    }
 }
 
 // Rootgrapple
@@ -13047,6 +13450,49 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLUE"
+    ]
+}
+
+// Sylvan Echoes
+{
+    "name": "Sylvan Echoes",
+    "manaCost": "{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever you clash and win, you may draw a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ClashedEvent",
+                    "requireWin": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "descriptionOverride": "you may draw a card."
+                },
+                "descriptionOverride": "you may draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "237",
+        "rarity": "UNCOMMON",
+        "artist": "Rebecca Guay",
+        "flavorText": "It takes a huntmaster's eye to discern the contours of mythical prey.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/5/f5b55fa6-4c94-4ab4-bc30-4fb8b1d3e38f.jpg?1783942856"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

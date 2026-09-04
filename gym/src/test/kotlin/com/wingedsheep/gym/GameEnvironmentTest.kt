@@ -15,6 +15,7 @@ import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 
 class GameEnvironmentTest : FunSpec({
 
@@ -41,6 +42,14 @@ class GameEnvironmentTest : FunSpec({
         val env = GameEnvironment.create(createRegistry())
         env.playerIds shouldBe emptyList()
         env.isTerminal.shouldBeFalse()
+    }
+
+    test("the environment and its forks expose the registry they were created with") {
+        val registry = createRegistry()
+        val env = GameEnvironment.create(registry)
+
+        env.cardRegistry shouldBeSameInstanceAs registry
+        env.fork().cardRegistry shouldBeSameInstanceAs registry
     }
 
     test("reset initializes a game with two players") {

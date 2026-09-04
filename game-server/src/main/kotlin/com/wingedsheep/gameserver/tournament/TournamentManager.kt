@@ -74,7 +74,13 @@ data class TournamentMatch(
     var isDraw: Boolean = false,
     var isComplete: Boolean = false,
     var player1GameWins: Int = 0,
-    var player2GameWins: Int = 0
+    var player2GameWins: Int = 0,
+    /**
+     * True when this result came from [AiMatchSimulator] rather than a played game. Such a match never
+     * had a [gameSessionId], so it has no replay and never appeared as an active match to spectate;
+     * the flag is what lets the standings say so instead of passing it off as a played result.
+     */
+    var isSimulated: Boolean = false
 ) {
     val isBye: Boolean get() = player2Id == null
 
@@ -242,7 +248,30 @@ class TournamentManager(
             .find { m -> m.gameSessionId == gameSessionId }
             ?: return
 
-        if (match.isComplete) return
+        if (!applyResult(match, winnerId, winnerLifeRemaining)) return
+        logger.info("Match result reported for game $gameSessionId: winner=${winnerId?.value ?: "draw"}, life=$winnerLifeRemaining")
+    }
+
+    /**
+     * Record a match decided by [AiMatchSimulator] instead of played out — see
+     * [TournamentMatch.isSimulated]. Takes the match itself because a simulated match has no game
+     * session to look it up by, and reports no life total: no game was played, so there is none to
+     * report. The standings tiebreakers (match points, OMW%, GW%, OGW%) don't read life; only the
+     * displayed life differential does, and inventing a number for it would be inventing data.
+     */
+    fun reportSimulatedResult(match: TournamentMatch, winnerId: EntityId) {
+        if (!applyResult(match, winnerId, winnerLifeRemaining = 0)) return
+        match.isSimulated = true
+        logger.info("Simulated match result in lobby $lobbyId: winner=${winnerId.value}")
+    }
+
+    /**
+     * Apply a decided [match] to the standings. Shared by the played and the simulated path so both
+     * move wins/losses/draws, game wins and the life differential the same way. Returns false when the
+     * match was already decided, so neither caller announces a result it didn't record.
+     */
+    private fun applyResult(match: TournamentMatch, winnerId: EntityId?, winnerLifeRemaining: Int): Boolean {
+        if (match.isComplete) return false
 
         match.isComplete = true
 
@@ -275,8 +304,7 @@ class TournamentManager(
                 standings[p2]?.draws = (standings[p2]?.draws ?: 0) + 1
             }
         }
-
-        logger.info("Match result reported for game $gameSessionId: winner=${winnerId?.value ?: "draw"}, life=$winnerLifeRemaining")
+        return true
     }
 
     /**
@@ -532,7 +560,8 @@ class TournamentManager(
                 player2Id = match.player2Id?.value,
                 winnerId = match.winnerId?.value,
                 isDraw = match.isDraw,
-                isBye = match.isBye
+                isBye = match.isBye,
+                isSimulated = match.isSimulated
             )
         }
     }
@@ -688,7 +717,8 @@ class TournamentManager(
                 player2Id = match.player2Id?.value,
                 winnerId = match.winnerId?.value,
                 isDraw = match.isDraw,
-                isBye = match.isBye
+                isBye = match.isBye,
+                isSimulated = match.isSimulated
             )
         }
     }

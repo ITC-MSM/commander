@@ -3,6 +3,7 @@ package com.wingedsheep.engine.hidden
 import com.wingedsheep.engine.core.CardEntityFactory
 import com.wingedsheep.engine.core.InFlightEntityReferences
 import com.wingedsheep.engine.core.InFlightReferenceProjector
+import com.wingedsheep.engine.core.TypedEntityReferences
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -70,8 +71,8 @@ object HiddenSlotRewrite {
                     "could not traverse stack[$index] $stackId: missing entity",
                 )
             when (val projection = inFlightReferenceProjector.project(stackObject)) {
-                is InFlightEntityReferences.Projection.Complete -> referenced += projection.entityIds
-                is InFlightEntityReferences.Projection.Incomplete -> {
+                is TypedEntityReferences.Projection.Complete -> referenced += projection.entityIds
+                is TypedEntityReferences.Projection.Incomplete -> {
                     return IdentitySensitiveInFlightPins.Incomplete(
                         "could not traverse stack[$index] ${projection.rootType}: ${projection.failure}",
                     )
@@ -80,8 +81,8 @@ object HiddenSlotRewrite {
         }
         state.pendingDecision?.let { decision ->
             when (val projection = inFlightReferenceProjector.project(decision)) {
-                is InFlightEntityReferences.Projection.Complete -> referenced += projection.entityIds
-                is InFlightEntityReferences.Projection.Incomplete -> {
+                is TypedEntityReferences.Projection.Complete -> referenced += projection.entityIds
+                is TypedEntityReferences.Projection.Incomplete -> {
                     return IdentitySensitiveInFlightPins.Incomplete(
                         "could not traverse pending decision ${projection.rootType}: ${projection.failure}",
                     )
@@ -90,8 +91,8 @@ object HiddenSlotRewrite {
         }
         state.continuationStack.forEachIndexed { index, frame ->
             when (val projection = inFlightReferenceProjector.project(frame)) {
-                is InFlightEntityReferences.Projection.Complete -> referenced += projection.entityIds
-                is InFlightEntityReferences.Projection.Incomplete -> {
+                is TypedEntityReferences.Projection.Complete -> referenced += projection.entityIds
+                is TypedEntityReferences.Projection.Incomplete -> {
                     return IdentitySensitiveInFlightPins.Incomplete(
                         "could not traverse continuation[$index] ${projection.rootType}: ${projection.failure}",
                     )

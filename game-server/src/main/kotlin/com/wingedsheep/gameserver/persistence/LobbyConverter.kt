@@ -297,7 +297,8 @@ fun TournamentManager.toPersistent(lobbyId: String): PersistentTournament {
                         isDraw = match.isDraw,
                         isComplete = match.isComplete,
                         player1GameWins = match.player1GameWins,
-                        player2GameWins = match.player2GameWins
+                        player2GameWins = match.player2GameWins,
+                        isSimulated = match.isSimulated
                     )
                 }
             )
@@ -342,7 +343,8 @@ fun restoreTournamentManager(persistent: PersistentTournament): TournamentManage
                     isDraw = persistentMatch.isDraw,
                     isComplete = persistentMatch.isComplete,
                     player1GameWins = persistentMatch.player1GameWins,
-                    player2GameWins = persistentMatch.player2GameWins
+                    player2GameWins = persistentMatch.player2GameWins,
+                    isSimulated = persistentMatch.isSimulated
                 )
             }
         )

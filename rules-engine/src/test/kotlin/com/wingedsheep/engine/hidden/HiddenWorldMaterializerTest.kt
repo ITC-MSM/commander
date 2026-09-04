@@ -5,7 +5,7 @@ import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.ChooseOptionDecision
 import com.wingedsheep.engine.core.ContinuationFrame
 import com.wingedsheep.engine.core.DecisionContext
-import com.wingedsheep.engine.core.InFlightEntityReferences
+import com.wingedsheep.engine.core.TypedEntityReferences
 import com.wingedsheep.engine.core.InFlightReferenceProjector
 import com.wingedsheep.engine.core.OptionChosenResponse
 import com.wingedsheep.engine.core.PendingDecision
@@ -501,13 +501,13 @@ class HiddenWorldMaterializerTest : ScenarioTestBase() {
                 cardRegistry,
                 object : InFlightReferenceProjector {
                     override fun project(stackObject: ComponentContainer) =
-                        InFlightEntityReferences.Projection.Complete(emptySet())
+                        TypedEntityReferences.Projection.Complete(emptyList())
 
                     override fun project(decision: PendingDecision) =
-                        InFlightEntityReferences.Projection.Incomplete("test", "forced")
+                        TypedEntityReferences.Projection.Incomplete("test", "forced")
 
                     override fun project(frame: ContinuationFrame) =
-                        InFlightEntityReferences.Projection.Complete(emptySet())
+                        TypedEntityReferences.Projection.Complete(emptyList())
                 },
             )
 

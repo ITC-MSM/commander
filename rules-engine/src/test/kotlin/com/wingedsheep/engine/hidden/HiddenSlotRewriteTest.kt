@@ -2,7 +2,7 @@ package com.wingedsheep.engine.hidden
 
 import com.wingedsheep.engine.core.ContinuationFrame
 import com.wingedsheep.engine.core.DecisionContext
-import com.wingedsheep.engine.core.InFlightEntityReferences
+import com.wingedsheep.engine.core.TypedEntityReferences
 import com.wingedsheep.engine.core.InFlightReferenceProjector
 import com.wingedsheep.engine.core.PendingDecision
 import com.wingedsheep.engine.core.SelectCardsDecision
@@ -120,10 +120,10 @@ class HiddenSlotRewriteTest : ScenarioTestBase() {
         override fun project(stackObject: ComponentContainer) = projection(Root.STACK)
         override fun project(decision: PendingDecision) = projection(Root.DECISION)
         override fun project(frame: ContinuationFrame) =
-            InFlightEntityReferences.Projection.Complete(emptySet())
+            TypedEntityReferences.Projection.Complete(emptyList())
 
         private fun projection(root: Root) =
-            if (root == failing) InFlightEntityReferences.Projection.Incomplete("test", "forced")
-            else InFlightEntityReferences.Projection.Complete(emptySet())
+            if (root == failing) TypedEntityReferences.Projection.Incomplete("test", "forced")
+            else TypedEntityReferences.Projection.Complete(emptyList())
     }
 }
