@@ -4,6 +4,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 
 /**
@@ -183,15 +184,25 @@ class TournamentProgressionTest : FunSpec({
         // Only three of the four round-1 matches can start: the ghost is never in the ready set,
         // because it is no longer a lobby seat that could be readied.
         manager.startableMatches(seated).size shouldBe 3
-        manager.startableMatches(seated).forEach { (_, match) -> match.gameSessionId = "r1-${match.player1Id.value}" }
-        round1.matches
-            .filter { it.gameSessionId != null }
-            .forEach { manager.reportMatchResult(it.gameSessionId!!, it.player1Id) }
 
-        // Round 1 can never close, and the stranded seat can never play again, in any round.
+        // Drive the bracket to exhaustion — start and resolve everything that ever becomes startable.
+        // The stall is progressive, not immediate, which is what made it hard to spot in production:
+        // the bracket keeps launching the pairs the ghost hasn't reached yet and gives out a player at
+        // a time, as each round arrives at it.
+        var sweeps = 0
+        while (true) {
+            val startable = manager.startableMatches(seated)
+            if (startable.isEmpty()) break
+            startable.forEach { (round, match) -> match.gameSessionId = "r${round.roundNumber}-${match.player1Id.value}" }
+            startable.forEach { (_, match) -> manager.reportMatchResult(match.gameSessionId!!, match.player1Id) }
+            check(sweeps++ < 20) { "the sweep never settled" }
+        }
+
+        // It runs out of work with the bracket unfinished and round 1 still open — nothing will ever
+        // start again, and the stranded seat never got to play at all.
+        manager.isComplete shouldBe false
         manager.isRoundComplete() shouldBe false
         manager.hasIncompleteMatchBefore(stranded, 2) shouldBe true
-        manager.startableMatches(seated).shouldBeEmpty()
 
         // Naming the ghost is what breaks the deadlock; forfeiting it uses the same path a disconnect
         // does, and the bracket moves again.
@@ -200,8 +211,7 @@ class TournamentProgressionTest : FunSpec({
 
         manager.isRoundComplete() shouldBe true
         manager.hasIncompleteMatchBefore(stranded, 2) shouldBe false
-        manager.startNextRound()!!.roundNumber shouldBe 2
-        manager.startableMatches(seated).map { it.first.roundNumber }.toSet() shouldBe setOf(2)
+        manager.startableMatches(seated).shouldNotBeEmpty()
     }
 
     test("the ghost sweep names nobody when the roster is intact, and nobody twice") {
