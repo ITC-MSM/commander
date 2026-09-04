@@ -2205,6 +2205,88 @@
     ]
 }
 
+// Colfenor's Plans
+{
+    "name": "Colfenor's Plans",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, exile the top seven cards of your library face down.\nYou may look at the cards exiled with this enchantment, and you may play lands and cast spells from among those cards.\nSkip your draw step.\nYou can't cast more than one spell each turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 7
+                                }
+                            },
+                            "storeAs": "colfenorsPlansExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "colfenorsPlansExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true,
+                            "faceDown": "HIDDEN",
+                            "lookableInExile": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this enchantment enters, exile the top seven cards of your library face down."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantMayCastFromLinkedExile",
+                "filter": {}
+            },
+            "SkipDrawStep",
+            "RestrictSpellsCastPerTurn"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "106",
+        "rarity": "RARE",
+        "artist": "Darrell Riche",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f8d06368-d226-4089-84d4-950a3ebdfb15.jpg?1783942893",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "The turn you cast Colfenor's Plans, you have cast (at least) one spell that turn. After it enters and its last ability goes into effect, you can't cast any more spells that turn."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "Playing a card exiled with Colfenor's Plans follows all the normal rules for playing that card. You must pay its costs, and you must follow all timing restrictions, for example."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If an exiled card has morph, you may cast it face down."
+            },
+            {
+                "date": "2013-04-15",
+                "text": "If Colfenor's Plans leaves the battlefield, you can continue to look at cards exiled by it, but you can no longer play them."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Colfenor's Urn
 {
     "name": "Colfenor's Urn",
