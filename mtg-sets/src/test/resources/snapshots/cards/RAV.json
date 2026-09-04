@@ -4478,6 +4478,62 @@
     ]
 }
 
+// Ghosts of the Innocent
+{
+    "name": "Ghosts of the Innocent",
+    "manaCost": "{5}{W}{W}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "If a source would deal damage to a permanent or player, it deals half that damage, rounded down, to that permanent or player instead.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "HalveDamage",
+                "appliesTo": "DamageEvent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "20",
+        "rarity": "RARE",
+        "artist": "Kev Walker",
+        "flavorText": "\"Ma said we should offer up blini-cakes and salt to the good ones, but I get that chill up my spine and just shut the door.\"\n—Otak, Tin Street shopkeep",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/5/c5b10c5f-261f-4301-b675-d1f52b859360.jpg?1783943699",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "If a damage prevention effect and Ghosts of the Innocent's effect would apply to the same damage, the player or the controller of the creature being dealt damage may apply the effects in either order (most likely applying the halving effect first)."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Half of 1 rounded down is 0. A source that would deal 1 damage won't deal damage at all."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Multiple Ghosts of the Innocent effects are cumulative, and each will halve the damage, rounded down. For example, with three on the battlefield, 14 damage becomes 7, then 3, then finally 1, and only 1 damage would actually be dealt."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "This isn't a damage prevention effect. If Excruciator (\"Damage that would be dealt by Excruciator can't be prevented\") would deal 7 damage to a permanent or player, it deals 3 damage instead."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If damage is redirected, it's only halved once."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If both Ghosts of the Innocent and Furnace of Rath (which doubles damage) are on the battlefield, the controller of the permanent being dealt damage or the player being dealt damage can apply the effects in either order. This can matter if the original amount of damage is odd."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Glare of Subdual
 {
     "name": "Glare of Subdual",

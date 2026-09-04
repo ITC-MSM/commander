@@ -11810,6 +11810,15 @@ The priority groups are (CR 616.1a–f):
   `RecipientFilter` the prevention and `ModifyDamageAmount` paths understand works here too —
   including `RecipientFilter.OpponentOrPermanentTheyControl` (Twinflame Tyrant). Each hosting
   permanent is its own replacement and applies once (CR 616.1): two Twinflame Tyrants quadruple.
+- `HalveDamage(restrictions?, appliesTo)` — the dividing mirror of `DoubleDamage`: matching damage is
+  halved, **rounded down**. Ghosts of the Innocent: `HalveDamage(appliesTo = DamageEvent(recipient =
+  RecipientFilter.Any))` — "a permanent or player" is the unscoped recipient, so combat and burn,
+  creatures and players, the host's own controller included, are all halved. Its own type rather than
+  a negative `ModifyDamageAmount` because the reduction is *multiplicative* and no `DynamicAmount` can
+  read the incoming amount. Half of 1 rounded down is 0, so a 1-damage source deals nothing; each
+  hosting permanent applies once (CR 616.1), so three copies take 14 to 7, 3, then 1. It runs after
+  the `DoubleDamage` pass and shares its `restrictions` / `damageType` / source / recipient handling.
+  It is **not** a prevention effect, so `DamageCantBePrevented` (Excruciator) does not switch it off.
   A player who is a legal recipient sees a "Damage Doubled" badge on their life orb — **except** when
   the source filter is attachment-scoped (`SourceFilter.EquippedCreature` / `EnchantedCreature`), which
   badges the attached creature's card instead, and only while it is attached. That case is a property

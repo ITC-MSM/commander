@@ -1152,6 +1152,7 @@ class StaticAbilityHandler(
             is PreventDamage,
             is com.wingedsheep.sdk.scripting.PreventDamageByRemovingCounter,
             is DoubleDamage,
+            is com.wingedsheep.sdk.scripting.HalveDamage,
             is ModifyDamageAmount,
             is com.wingedsheep.sdk.scripting.CapDamage,
             is com.wingedsheep.sdk.scripting.SetMinimumDamage,

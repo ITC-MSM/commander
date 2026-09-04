@@ -840,6 +840,54 @@ data class DoubleDamage(
 }
 
 /**
+ * Halve damage dealt, **rounded down** — the dividing mirror of [DoubleDamage].
+ *
+ * Ghosts of the Innocent: *"If a source would deal damage to a permanent or player, it deals half
+ * that damage, rounded down, to that permanent or player instead."* →
+ * `HalveDamage(appliesTo = EventPattern.DamageEvent(recipient = RecipientFilter.AnyPermanentOrPlayer))`.
+ *
+ * Modelled as its own type rather than a [ModifyDamageAmount] with a negative modifier because the
+ * reduction is *multiplicative*: it scales with the incoming amount, which no `DynamicAmount` can
+ * read. Its rulings follow from that:
+ *
+ * - Half of 1 rounded down is 0, so a 1-damage source deals no damage at all.
+ * - Each applicable `HalveDamage` applies once (CR 616.1) and they compound: three of them turn
+ *   14 into 7, then 3, then 1.
+ * - It is **not** a prevention effect, so [DamageCantBePrevented] (Excruciator) does not switch it
+ *   off, and prevention shields are not consumed by it.
+ *
+ * [restrictions] gates the halving on further conditions, mirroring [PreventDamage.restrictions] /
+ * [DoubleDamage.restrictions]; each entry is evaluated against the **replacement source's
+ * controller**, as everywhere else in the damage family.
+ */
+@SerialName("HalveDamage")
+@Serializable
+data class HalveDamage(
+    override val restrictions: List<Condition> = emptyList(),
+    override val appliesTo: EventPattern
+) : ReplacementEffect {
+    override val description: String = buildString {
+        val restrictionDesc = restrictions.joinToString(" and ") { it.description.removePrefix("if ") }
+        if (restrictionDesc.isNotEmpty()) {
+            append(restrictionDesc.replaceFirstChar { it.uppercase() })
+            append(", if ")
+        } else {
+            append("If ")
+        }
+        append(appliesTo.description)
+        append(", it deals half that damage, rounded down, instead")
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
+        val newAppliesTo = appliesTo.applyTextReplacement(replacer)
+        val newRestrictions = restrictions.map { it.applyTextReplacement(replacer) }
+        val anyChanged = newAppliesTo !== appliesTo ||
+            newRestrictions.zip(restrictions).any { (n, o) -> n !== o }
+        return if (anyChanged) copy(appliesTo = newAppliesTo, restrictions = newRestrictions) else this
+    }
+}
+
+/**
  * Modify damage dealt by an additive amount — either a fixed [modifier] or, when
  * [dynamicModifier] is supplied, an amount computed at damage time against the
  * replacement's *source* permanent.
