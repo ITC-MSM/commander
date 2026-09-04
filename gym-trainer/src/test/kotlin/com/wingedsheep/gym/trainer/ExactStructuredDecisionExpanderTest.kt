@@ -14,6 +14,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.gym.trainer.spi.StructuredDecisionExpansion
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.asClue
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
@@ -21,6 +22,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 
 class ExactStructuredDecisionExpanderTest : FunSpec({
 
+    val expander = ExactStructuredDecisionExpander.Default
     val playerId = EntityId.of("player")
     val first = EntityId.of("first")
     val second = EntityId.of("second")
@@ -50,7 +52,7 @@ class ExactStructuredDecisionExpanderTest : FunSpec({
     test("required single-target expansion is complete") {
         val decision = targetDecision("targets", listOf(first, second))
 
-        val expansion = ExactStructuredDecisionExpander.expand(state, decision)
+        val expansion = expander.expand(state, decision)
             .shouldBeInstanceOf<StructuredDecisionExpansion.Complete>()
 
         expansion.responses.shouldContainExactly(
@@ -69,7 +71,7 @@ class ExactStructuredDecisionExpanderTest : FunSpec({
     test("optional single-target expansion offers the empty selection") {
         val decision = targetDecision("optional", listOf(first, second), minTargets = 0)
 
-        val expansion = ExactStructuredDecisionExpander.expand(state, decision)
+        val expansion = expander.expand(state, decision)
             .shouldBeInstanceOf<StructuredDecisionExpansion.Complete>()
 
         expansion.responses.shouldContainExactly(
@@ -90,7 +92,7 @@ class ExactStructuredDecisionExpanderTest : FunSpec({
     test("cancellation is never offered as a response") {
         val decision = targetDecision("cancellable", listOf(first, second), canCancel = true)
 
-        val expansion = ExactStructuredDecisionExpander.expand(state, decision)
+        val expansion = expander.expand(state, decision)
             .shouldBeInstanceOf<StructuredDecisionExpansion.Complete>()
 
         expansion.responses.none { it is CancelDecisionResponse } shouldBe true
@@ -100,7 +102,7 @@ class ExactStructuredDecisionExpanderTest : FunSpec({
     test("duplicate legal targets collapse to one response each") {
         val decision = targetDecision("duplicates", listOf(first, second, first))
 
-        val expansion = ExactStructuredDecisionExpander.expand(state, decision)
+        val expansion = expander.expand(state, decision)
             .shouldBeInstanceOf<StructuredDecisionExpansion.Complete>()
 
         expansion.responses.shouldContainExactly(
@@ -112,7 +114,7 @@ class ExactStructuredDecisionExpanderTest : FunSpec({
     test("variable-cardinality target expansion is explicitly unsupported") {
         val decision = targetDecision("many-targets", listOf(first, second, third), minTargets = 0, maxTargets = 2)
 
-        ExactStructuredDecisionExpander.expand(state, decision) shouldBe
+        expander.expand(state, decision) shouldBe
             StructuredDecisionExpansion.Unsupported
     }
 
@@ -129,7 +131,7 @@ class ExactStructuredDecisionExpanderTest : FunSpec({
             legalTargets = mapOf(0 to listOf(first), 1 to listOf(second))
         )
 
-        ExactStructuredDecisionExpander.expand(state, decision) shouldBe
+        expander.expand(state, decision) shouldBe
             StructuredDecisionExpansion.Unsupported
     }
 
@@ -138,7 +140,7 @@ class ExactStructuredDecisionExpanderTest : FunSpec({
     test("supported family with no legal response reports unsupported") {
         val decision = targetDecision("no-targets", emptyList())
 
-        ExactStructuredDecisionExpander.expand(state, decision) shouldBe
+        expander.expand(state, decision) shouldBe
             StructuredDecisionExpansion.Unsupported
     }
 
@@ -151,7 +153,7 @@ class ExactStructuredDecisionExpanderTest : FunSpec({
             objects = listOf(first, second, third)
         )
 
-        val expansion = ExactStructuredDecisionExpander.expand(state, decision)
+        val expansion = expander.expand(state, decision)
             .shouldBeInstanceOf<StructuredDecisionExpansion.Complete>()
 
         expansion.responses.shouldContainExactly(
@@ -179,7 +181,7 @@ class ExactStructuredDecisionExpanderTest : FunSpec({
             cardInfo = emptyMap()
         )
 
-        val expansion = ExactStructuredDecisionExpander.expand(state, decision)
+        val expansion = expander.expand(state, decision)
             .shouldBeInstanceOf<StructuredDecisionExpansion.Complete>()
 
         expansion.responses.shouldContainExactly(
@@ -210,14 +212,14 @@ class ExactStructuredDecisionExpanderTest : FunSpec({
             cardInfo = emptyMap()
         )
 
-        val expansion = ExactStructuredDecisionExpander.expand(state, atCeiling)
+        val expansion = expander.expand(state, atCeiling)
             .shouldBeInstanceOf<StructuredDecisionExpansion.Complete>()
         expansion.responses.size shouldBe 24
         expansion.responses.toSet().size shouldBe 24
         expansion.responses.forEach { response ->
             DecisionValidators.validate(atCeiling, response, state) shouldBe null
         }
-        ExactStructuredDecisionExpander.expand(state, overCeiling) shouldBe
+        expander.expand(state, overCeiling) shouldBe
             StructuredDecisionExpansion.Unsupported
     }
 
@@ -238,9 +240,9 @@ class ExactStructuredDecisionExpanderTest : FunSpec({
             cardInfo = emptyMap()
         )
 
-        ExactStructuredDecisionExpander.expand(state, duplicateObjects) shouldBe
+        expander.expand(state, duplicateObjects) shouldBe
             StructuredDecisionExpansion.Unsupported
-        ExactStructuredDecisionExpander.expand(state, duplicateCards) shouldBe
+        expander.expand(state, duplicateCards) shouldBe
             StructuredDecisionExpansion.Unsupported
     }
 
@@ -261,10 +263,32 @@ class ExactStructuredDecisionExpanderTest : FunSpec({
             cardInfo = emptyMap()
         )
 
-        ExactStructuredDecisionExpander.expand(state, emptyObjects) shouldBe
+        expander.expand(state, emptyObjects) shouldBe
             StructuredDecisionExpansion.Complete(listOf(OrderedResponse("empty-order", emptyList())))
-        ExactStructuredDecisionExpander.expand(state, oneCard) shouldBe
+        expander.expand(state, oneCard) shouldBe
             StructuredDecisionExpansion.Complete(listOf(OrderedResponse("one-card", listOf(first))))
+    }
+
+    // The ceiling is the caller's search budget, not a legality rule, so a caller that wants
+    // narrower ordering fan-out must be able to say so without a second expander implementation.
+    test("a caller-supplied ceiling narrows ordering fan-out without touching legality") {
+        val threeObjects = OrderObjectsDecision(
+            id = "three-objects",
+            playerId = playerId,
+            prompt = "Order objects",
+            context = DecisionContext(),
+            objects = listOf(first, second, third)
+        )
+
+        ExactStructuredDecisionExpander(maxOrderingResponses = 2)
+            .expand(state, threeObjects) shouldBe StructuredDecisionExpansion.Unsupported
+
+        val narrowed = ExactStructuredDecisionExpander(maxOrderingResponses = 6)
+            .expand(state, threeObjects)
+            .shouldBeInstanceOf<StructuredDecisionExpansion.Complete>()
+        narrowed.responses.size shouldBe 6
+
+        shouldThrow<IllegalArgumentException> { ExactStructuredDecisionExpander(maxOrderingResponses = 0) }
     }
 
     test("unrelated structured family remains unsupported") {
@@ -277,7 +301,7 @@ class ExactStructuredDecisionExpanderTest : FunSpec({
             numberOfPiles = 2
         )
 
-        ExactStructuredDecisionExpander.expand(state, decision) shouldBe
+        expander.expand(state, decision) shouldBe
             StructuredDecisionExpansion.Unsupported
     }
 })

@@ -93,8 +93,11 @@ import java.util.Random as JavaRandom
  * @param rng seed for noise sampling
  * @param structuredExpander policy-free source of complete structured
  *        response sets; defaults to exact required/optional single targets and unique orderings
- *        or library reorders through four objects (24 responses). This is a capability ceiling,
- *        not an engine legality rule: larger or duplicate shapes are Unsupported, never partial.
+ *        or library reorders through four objects (24 responses). That width is a search-budget
+ *        ceiling, not an engine legality rule — pass
+ *        `ExactStructuredDecisionExpander(maxOrderingResponses = n)` to trade ordering breadth
+ *        against the per-move simulation count. Larger or duplicate shapes are Unsupported,
+ *        never partial.
  */
 class AlphaZeroSearch<T>(
     private val env: GameEnvironment,
@@ -106,7 +109,7 @@ class AlphaZeroSearch<T>(
     private val dirichletAlpha: Double? = null,
     private val dirichletWeight: Double = 0.25,
     private val rng: Random = Random.Default,
-    private val structuredExpander: StructuredDecisionExpander = ExactStructuredDecisionExpander
+    private val structuredExpander: StructuredDecisionExpander = ExactStructuredDecisionExpander.Default
 ) {
     private val workingEnv: GameEnvironment = env.fork()
     private val javaRng: JavaRandom = JavaRandom(rng.nextLong())
