@@ -2885,6 +2885,101 @@
     ]
 }
 
+// Dimir Infiltrator
+{
+    "name": "Dimir Infiltrator",
+    "manaCost": "{U}{B}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "This creature can't be blocked.\nTransmute {1}{U}{B} ({1}{U}{B}, Discard this card: Search your library for a card with the same mana value as this card, reveal it, put it into your hand, then shuffle. Transmute only as a sorcery.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{U}{B}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": {
+                                    "cardPredicates": [
+                                        {
+                                            "type": "ManaValueEqualsDynamic",
+                                            "amount": {
+                                                "type": "EntityProperty",
+                                                "entity": "Source",
+                                                "numericProperty": "ManaValue"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "activateFromZone": "Hand",
+                "descriptionOverride": "Transmute {1}{U}{B} — Discard this card to search for a card with the same mana value."
+            }
+        ],
+        "staticAbilities": [
+            "CantBeBlocked"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "203",
+        "artist": "Jim Nelson",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/d/3db9204c-dde8-4241-aac2-1f090566f604.jpg?1783943621"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "BLUE"
+    ]
+}
+
 // Dimir Signet
 {
     "name": "Dimir Signet",
@@ -3225,6 +3320,101 @@
                 "text": "The ability lets you return any enchantment on the battlefield, including an opponent's enchantment. The ability isn't targeted, so you can return an untargetable enchantment. If there are no enchantments on the battlefield, or you choose not to return one, you must sacrifice Drake Familiar."
             }
         ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Drift of Phantasms
+{
+    "name": "Drift of Phantasms",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Defender (This creature can't attack.)\nFlying\nTransmute {1}{U}{U} ({1}{U}{U}, Discard this card: Search your library for a card with the same mana value as this card, reveal it, put it into your hand, then shuffle. Transmute only as a sorcery.)",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 5
+    },
+    "keywords": [
+        "DEFENDER",
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{U}{U}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": {
+                                    "cardPredicates": [
+                                        {
+                                            "type": "ManaValueEqualsDynamic",
+                                            "amount": {
+                                                "type": "EntityProperty",
+                                                "entity": "Source",
+                                                "numericProperty": "ManaValue"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "activateFromZone": "Hand",
+                "descriptionOverride": "Transmute {1}{U}{U} — Discard this card to search for a card with the same mana value."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "46",
+        "artist": "Michael Phillippi",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c1096ce5-f776-4028-b231-e6eaee35014b.jpg?1783943687"
     },
     "colorIdentityOverride": [
         "BLUE"

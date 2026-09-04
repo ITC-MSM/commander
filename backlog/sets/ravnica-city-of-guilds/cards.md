@@ -2,16 +2,15 @@
 
 **Set Size:** 291 cards
 **Release Date:** October 7, 2005
-**Implemented:** 239 / 291
-
+**Implemented:** 241 / 291
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 37    | 33   |
-| Blue       | 39    | 29   |
+| Blue       | 39    | 30   |
 | Black      | 37    | 24   |
 | Red        | 39    | 37   |
 | Green      | 37    | 32   |
-| Multicolor | 64    | 51   |
+| Multicolor | 64    | 52   |
 | Artifact   | 21    | 16   |
 | Land       | 17    | 17   |
 
@@ -67,7 +66,7 @@
 - [ ] Dizzy Spell
 - [x] Drake Familiar
 - [ ] Dream Leash
-- [ ] Drift of Phantasms
+- [x] Drift of Phantasms
 - [ ] Ethereal Usher
 - [ ] Eye of the Storm
 - [x] Flight of Fancy
@@ -236,7 +235,7 @@
 - [x] Dimir Cutpurse
 - [x] Dimir Doppelganger
 - [x] Dimir Guildmage
-- [ ] Dimir Infiltrator
+- [x] Dimir Infiltrator
 - [x] Drooling Groodion
 - [x] Firemane Angel
 - [x] Flame-Kin Zealot
