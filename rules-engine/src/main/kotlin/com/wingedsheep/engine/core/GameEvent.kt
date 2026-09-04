@@ -13,7 +13,11 @@ import kotlinx.serialization.Serializable
 
 /**
  * Sealed hierarchy of all game events.
- * Events are emitted by the engine to describe what happened.
+ *
+ * These are trusted engine events, not player-safe transport objects. Events may retain private
+ * rules facts needed by trigger processing and later audience-aware projection. A player-facing
+ * integration must project them through [com.wingedsheep.engine.view.ClientEventTransformer] (or
+ * its own perspective-safe equivalent) rather than serialize them directly.
  */
 @Serializable
 sealed interface GameEvent
@@ -612,10 +616,24 @@ data class CreatureTypeChangedEvent(
 @SerialName("SpellCastEvent")
 data class SpellCastEvent(
     val spellEntityId: EntityId,
+    /**
+     * The name safe to show every audience at the moment of the cast. This remains the historical
+     * serialized contract: an ordinary face-up cast stores its real name, while a face-down cast
+     * stores [com.wingedsheep.engine.state.FACE_DOWN_DISPLAY_NAME].
+     */
     val cardName: String,
     val casterId: EntityId,
     val targetNames: List<String> = emptyList(),
     val xValue: Int? = null,
+    /**
+     * Trusted semantic identity and viewer entitlement snapshot captured from event-time
+     * [com.wingedsheep.engine.view.Visibility]. Rules and knowledge consumers use
+     * [semanticCardName]; client projection selects one safe name through this snapshot.
+     *
+     * `null` represents serialized events produced before this field existed. Their [cardName]
+     * remains a safe presentation fallback and the best semantic name that historical event kept.
+     */
+    val cardPresentation: EventCardPresentation? = null,
     /**
      * Which optional-additional-cost mechanic this cast declared, or null when none — the fact
      * "whenever you cast a kicked spell" filters on (`SpellCastPredicate.WasKicked` matches
@@ -683,7 +701,10 @@ data class SpellCastEvent(
      * [com.wingedsheep.engine.view.CastProvenance.logPhrase].
      */
     val sacrificedAsCostNames: List<String> = emptyList()
-) : GameEvent
+) : GameEvent {
+    /** Exact cast identity when current event-time capture retained it; legacy events kept only [cardName]. */
+    val semanticCardName: String get() = cardPresentation?.semanticName ?: cardName
+}
 
 /**
  * An ability was activated.

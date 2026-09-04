@@ -108,15 +108,15 @@ object RevealedInHandTracker {
     }
 
     private fun onSpellCast(state: GameState, event: SpellCastEvent): GameState {
-        // The cast card is public on the stack regardless; dropping its hand-knowledge also
-        // stops a bounced-then-cast-face-down card from leaking its real identity.
+        // The card has left its hand. Dropping that hand-knowledge also stops a
+        // bounced-then-cast-face-down card from leaking its real identity.
         var newState = LibraryRevealUtils.clearReveals(state, listOf(event.spellEntityId))
         val castFromZone = state.getEntity(event.spellEntityId)
             ?.get<SpellOnStackComponent>()?.castFromZone
         // Only a card played *from hand* makes the known copies of its name ambiguous;
         // casting the same name from the graveyard/exile leaves the hand copy identifiable.
         if (castFromZone == Zone.HAND) {
-            newState = forgetSameNamedInHand(newState, event.casterId, event.cardName)
+            newState = forgetSameNamedInHand(newState, event.casterId, event.semanticCardName)
         }
         return newState
     }
