@@ -2939,6 +2939,7 @@ class StackResolver(
             controllerId = abilityComponent.controllerId,
             granterId = abilityComponent.granterId,
             abilityIdentity = abilityComponent.abilityIdentity,
+            activatedAbilityId = abilityComponent.activatedAbilityId,
             sourceFaceChanges = abilityComponent.sourceFaceChanges,
             targets = activatedTargets,
             alignedTargets = alignedActivatedTargets,

@@ -1,9 +1,16 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
+import com.wingedsheep.engine.core.ChooseManaColorContinuation
 import com.wingedsheep.engine.core.DecisionPhase
 import com.wingedsheep.engine.core.YesNoDecision
+import com.wingedsheep.engine.event.GrantedActivatedAbility
+import com.wingedsheep.engine.event.GrantedStaticAbility
 import com.wingedsheep.engine.handlers.DecisionHandler
+import com.wingedsheep.engine.handlers.effects.stack.CopyTargetSpellOrAbilityExecutor
+import com.wingedsheep.engine.mechanics.stack.StackResolver
+import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent
 import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
@@ -22,9 +29,15 @@ import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.AbilityIdentity
 import com.wingedsheep.sdk.scripting.ActivatedAbility
+import com.wingedsheep.sdk.scripting.Duration
+import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.GrantActivatedAbility
+import com.wingedsheep.sdk.scripting.TimingRule
+import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
  * Tests for the shared [AbilityIdentity] key (backlog/stack-collapse-and-batch-decisions.md §C.2).
@@ -32,7 +45,9 @@ import io.kotest.matchers.shouldBe
  * The key is the definition-scoped pair `(cardDefinitionId, abilityId)`. Its load-bearing property
  * — the one batch decisions and persistent yields both rely on — is that two permanents printed
  * from the same card produce the *same* identity for the same ability. These tests pin:
- *  - an activated ability on the stack carries its identity, and two copies of the card share it;
+ *  - a printed activated ability carries semantic identity plus its concrete routing id;
+ *  - runtime- and static-granted abilities retain only their concrete routing id;
+ *  - an activated stack copy preserves both identity fields;
  *  - a triggered ability on the stack carries its identity, and two copies share it;
  *  - the may-question decision raised for an ability carries the identity in its context;
  *  - the resolver returns null (rather than throwing) for a source with no card definition.
@@ -66,6 +81,24 @@ class AbilityIdentityTest : FunSpec({
         toughness = 2
     )
 
+    val printedManaAbilityId = AbilityId("test_printed_identity_mana")
+    val printedManaSource = CardDefinition.creature(
+        name = "Identity Mana Source",
+        manaCost = ManaCost.parse("{1}"),
+        subtypes = emptySet(),
+        power = 1,
+        toughness = 1,
+        script = CardScript.permanent(
+            ActivatedAbility(
+                id = printedManaAbilityId,
+                cost = AbilityCost.Free,
+                effect = Effects.AddAnyColorMana(1),
+                isManaAbility = true,
+                timing = TimingRule.ManaAbility,
+            )
+        ),
+    )
+
     test("an activated ability on the stack carries its AbilityIdentity, shared by two copies") {
         val driver = GameTestDriver()
         driver.registerCards(TestCards.all + listOf(identityPinger))
@@ -89,9 +122,172 @@ class AbilityIdentityTest : FunSpec({
         activatedOnStack.size shouldBe 2
 
         val expected = AbilityIdentity("Identity Pinger", pingerAbilityId)
-        activatedOnStack.forEach { it.abilityIdentity shouldBe expected }
+        activatedOnStack.forEach {
+            it.abilityIdentity shouldBe expected
+            it.activatedAbilityId shouldBe pingerAbilityId
+        }
         // The two copies share one identity — the property batch/yield grouping depends on.
         activatedOnStack[0].abilityIdentity shouldBe activatedOnStack[1].abilityIdentity
+    }
+
+    test("a runtime-granted activated ability keeps its concrete id without definition identity") {
+        val driver = GameTestDriver()
+        driver.registerCards(TestCards.all + listOf(identityBear))
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 40))
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val player = driver.activePlayer!!
+        val receiver = driver.putCreatureOnBattlefield(player, "Identity Bear")
+        val grantedId = AbilityId("runtime_granted_identity_test")
+        val grantedAbility = ActivatedAbility(
+            id = grantedId,
+            cost = AbilityCost.Free,
+            effect = Effects.GainLife(1),
+        )
+        driver.replaceState(
+            driver.state.copy(
+                grantedActivatedAbilities = driver.state.grantedActivatedAbilities +
+                    GrantedActivatedAbility(receiver, grantedAbility, Duration.Permanent),
+            )
+        )
+
+        driver.submit(
+            ActivateAbility(playerId = player, sourceId = receiver, abilityId = grantedId)
+        ).isSuccess shouldBe true
+
+        val onStack = driver.state.getEntity(driver.state.stack.last())
+            ?.get<ActivatedAbilityOnStackComponent>()
+            .shouldNotBeNull()
+        onStack.abilityIdentity shouldBe null
+        onStack.activatedAbilityId shouldBe grantedId
+    }
+
+    test("a flattened static-granted ability keeps its concrete id without definition identity") {
+        val driver = GameTestDriver()
+        driver.registerCards(TestCards.all + listOf(identityBear))
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 40))
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val player = driver.activePlayer!!
+        val granter = driver.putCreatureOnBattlefield(player, "Identity Bear")
+        val receiver = driver.putCreatureOnBattlefield(player, "Identity Bear")
+        val grantedId = AbilityId("flattened_static_granted_identity_test")
+        val grantedAbility = ActivatedAbility(
+            id = grantedId,
+            cost = AbilityCost.Free,
+            effect = Effects.GainLife(1),
+        )
+        driver.replaceState(
+            driver.state.copy(
+                // Model the flattened GrantStaticAbilityEffect store used after a runtime effect
+                // grants an ability-granting static to a permanent.
+                grantedStaticAbilities = driver.state.grantedStaticAbilities + GrantedStaticAbility(
+                    entityId = granter,
+                    ability = GrantActivatedAbility(
+                        ability = grantedAbility,
+                        filter = GroupFilter(GameObjectFilter.Creature.youControl()),
+                    ),
+                    duration = Duration.Permanent,
+                ),
+            )
+        )
+
+        driver.submit(
+            ActivateAbility(playerId = player, sourceId = receiver, abilityId = grantedId)
+        ).isSuccess shouldBe true
+
+        val onStack = driver.state.getEntity(driver.state.stack.last())
+            ?.get<ActivatedAbilityOnStackComponent>()
+            .shouldNotBeNull()
+        onStack.abilityIdentity shouldBe null
+        onStack.activatedAbilityId shouldBe grantedId
+    }
+
+    test("a copied activated stack object preserves semantic identity and concrete id") {
+        val stackEntityId = EntityId.of("original-activated-ability")
+        val originalController = EntityId.of("original-controller")
+        val copyController = EntityId.of("copy-controller")
+        val identity = AbilityIdentity("Identity Pinger", pingerAbilityId)
+        val component = ActivatedAbilityOnStackComponent(
+            sourceId = EntityId.of("ability-source"),
+            sourceName = "Identity Pinger",
+            controllerId = originalController,
+            effect = Effects.GainLife(1),
+            abilityIdentity = identity,
+            activatedAbilityId = pingerAbilityId,
+        )
+        val state = GameState(
+            rng = GameRng.seeded(2L),
+            entities = mapOf(stackEntityId to ComponentContainer.of(component)),
+            stack = listOf(stackEntityId),
+        )
+
+        val result = CopyTargetSpellOrAbilityExecutor.cloneAndPush(
+            state = state,
+            stackResolver = StackResolver(CardRegistry()),
+            abilityEntityId = stackEntityId,
+            controllerId = copyController,
+        )
+
+        result.isSuccess shouldBe true
+        val copied = result.newState.getEntity(result.newState.stack.last())
+            ?.get<ActivatedAbilityOnStackComponent>()
+            .shouldNotBeNull()
+        copied.controllerId shouldBe copyController
+        copied.abilityIdentity shouldBe identity
+        copied.activatedAbilityId shouldBe pingerAbilityId
+    }
+
+    test("a printed mana ability carries proven identity through off-stack resolution") {
+        val driver = GameTestDriver()
+        driver.registerCards(TestCards.all + printedManaSource)
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 40))
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val player = driver.activePlayer!!
+        val source = driver.putCreatureOnBattlefield(player, "Identity Mana Source")
+        driver.submit(
+            ActivateAbility(playerId = player, sourceId = source, abilityId = printedManaAbilityId)
+        ).error shouldBe null
+
+        val continuation = driver.state.peekContinuation()
+            .shouldBeInstanceOf<ChooseManaColorContinuation>()
+        continuation.baseContext.abilityIdentity shouldBe
+            AbilityIdentity("Identity Mana Source", printedManaAbilityId)
+        continuation.baseContext.activatedAbilityId shouldBe printedManaAbilityId
+    }
+
+    test("a runtime-granted mana ability carries routing id without fabricated identity") {
+        val driver = GameTestDriver()
+        driver.registerCards(TestCards.all + identityBear)
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 40))
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val player = driver.activePlayer!!
+        val receiver = driver.putCreatureOnBattlefield(player, "Identity Bear")
+        val grantedId = AbilityId("runtime_granted_identity_mana")
+        val grantedAbility = ActivatedAbility(
+            id = grantedId,
+            cost = AbilityCost.Free,
+            effect = Effects.AddAnyColorMana(1),
+            isManaAbility = true,
+            timing = TimingRule.ManaAbility,
+        )
+        driver.replaceState(
+            driver.state.copy(
+                grantedActivatedAbilities = driver.state.grantedActivatedAbilities +
+                    GrantedActivatedAbility(receiver, grantedAbility, Duration.Permanent),
+            )
+        )
+
+        driver.submit(
+            ActivateAbility(playerId = player, sourceId = receiver, abilityId = grantedId)
+        ).error shouldBe null
+
+        val continuation = driver.state.peekContinuation()
+            .shouldBeInstanceOf<ChooseManaColorContinuation>()
+        continuation.baseContext.abilityIdentity shouldBe null
+        continuation.baseContext.activatedAbilityId shouldBe grantedId
     }
 
     test("triggered abilities from two copies of the same card share one AbilityIdentity") {

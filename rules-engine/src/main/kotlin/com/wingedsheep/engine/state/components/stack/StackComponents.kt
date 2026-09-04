@@ -379,10 +379,19 @@ data class ActivatedAbilityOnStackComponent(
     /**
      * Definition-scoped identity of the activated ability, shared by every copy of the same card
      * and every future instance of it. Drives batch decisions and persistent yields (see
-     * [com.wingedsheep.sdk.scripting.AbilityIdentity]). Null for synthesized abilities with no
-     * stable [com.wingedsheep.sdk.scripting.AbilityId] behind them (e.g. crew/saddle).
+     * [com.wingedsheep.sdk.scripting.AbilityIdentity]). Null unless activation lookup proved that
+     * the concrete ability belongs to the source's current card definition; runtime/static grants,
+     * intrinsic mana abilities, and synthesized crew/saddle actions therefore carry no identity.
      */
     val abilityIdentity: com.wingedsheep.sdk.scripting.AbilityIdentity? = null,
+    /**
+     * Concrete activated-ability id used for resolution-time routing and ability-local
+     * bookkeeping. Unlike [abilityIdentity], this need not be definition-scoped: runtime/static
+     * grants retain their id here without claiming that it belongs to the receiver's definition.
+     * Stack copies inherit it with the rest of this component. Null for specialized synthesized
+     * actions such as crew and saddle, which have no [com.wingedsheep.sdk.scripting.ActivatedAbility].
+     */
+    val activatedAbilityId: AbilityId? = null,
     /**
      * The permanent whose static ability granted this activated ability (the Equipment/Aura/permanent
      * bearing the `GrantActivatedAbility` static), captured at activation. Read at resolution into

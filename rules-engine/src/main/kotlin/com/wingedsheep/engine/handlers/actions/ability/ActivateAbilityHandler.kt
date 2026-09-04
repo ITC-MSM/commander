@@ -59,6 +59,7 @@ import com.wingedsheep.sdk.scripting.costs.PermanentCostAction
 import com.wingedsheep.sdk.scripting.costs.VariableCostMeasure
 import com.wingedsheep.sdk.scripting.costs.manaCostOrNull
 import com.wingedsheep.sdk.scripting.AbilityId
+import com.wingedsheep.sdk.scripting.AbilityIdentity
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.ExtraLoyaltyActivation
@@ -86,6 +87,47 @@ import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.Zone
 import kotlin.reflect.KClass
+
+/**
+ * Result of resolving an activated-ability id on an object.
+ *
+ * The concrete [ability] is not enough to infer semantic identity: runtime, static, and intrinsic
+ * abilities all have ids, but those ids do not belong to the receiving object's card definition.
+ * Keeping the lookup provenance in the result makes the definition-owned cases explicit and keeps
+ * a static granter attached only to the branch that actually supplied the ability.
+ */
+private sealed interface ActivatedAbilityLookup {
+    val ability: ActivatedAbility
+
+    data class DirectDefinition(
+        override val ability: ActivatedAbility,
+        val identity: AbilityIdentity,
+    ) : ActivatedAbilityLookup
+
+    data class DefinitionDerivedClass(
+        override val ability: ActivatedAbility,
+        val identity: AbilityIdentity,
+    ) : ActivatedAbilityLookup
+
+    data class RuntimeGranted(override val ability: ActivatedAbility) : ActivatedAbilityLookup
+
+    data class StaticGranted(
+        override val ability: ActivatedAbility,
+        val granterId: EntityId,
+    ) : ActivatedAbilityLookup
+
+    data class Intrinsic(override val ability: ActivatedAbility) : ActivatedAbilityLookup
+
+    val staticGranterId: EntityId?
+        get() = (this as? StaticGranted)?.granterId
+
+    val definitionIdentity: AbilityIdentity?
+        get() = when (this) {
+            is DirectDefinition -> identity
+            is DefinitionDerivedClass -> identity
+            is RuntimeGranted, is StaticGranted, is Intrinsic -> null
+        }
+}
 
 /**
  * Handler for the ActivateAbility action.
@@ -182,18 +224,14 @@ class ActivateAbilityHandler(
         // bail out when the lookup fails — fall through to those sources instead.
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
 
-        // Look up ability from card definition (including class-level abilities), granted abilities, or static grants
+        // Keep lookup provenance: only definition-owned results can later form AbilityIdentity.
         val classLevel = container.get<ClassLevelComponent>()?.currentLevel
-        val staticGrants = getStaticGrantedAbilitiesWithGranter(action.sourceId, state)
-        val ability = cardDef?.script?.effectiveActivatedAbilities(classLevel)?.find { it.id == action.abilityId }
-            ?: cardDef?.let { findClassLevelUpAbility(it, container, action.abilityId) }
-            ?: state.grantedActivatedAbilities
-                .filter { it.entityId == action.sourceId }
-                .map { it.ability }
-                .find { it.id == action.abilityId }
-            ?: staticGrants.firstOrNull { it.first.id == action.abilityId }?.first
-            ?: resolveIntrinsicManaAbility(state, action.sourceId, action.abilityId)
+        val abilityLookup = lookupActivatedAbility(
+            state, action.sourceId, action.abilityId, container,
+            cardComponent.cardDefinitionId, cardDef
+        )
             ?: return "Ability not found on this card"
+        val ability = abilityLookup.ability
 
         // The mana-payment window (CR 605.3a) opens the door for mana abilities only — everything
         // else still needs priority.
@@ -472,7 +510,7 @@ class ActivateAbilityHandler(
 
         // The granter of a statically-granted ability, so AbilityCost.TapGrantingPermanent can be
         // checked against the *Equipment's* tap state rather than the host creature's.
-        val validationGranterId = staticGrants.firstOrNull { it.first.id == action.abilityId }?.second
+        val validationGranterId = abilityLookup.staticGranterId
 
         if (action.paymentStrategy !is PaymentStrategy.Explicit && !canPayAbilityCostWithSources(state, costAfterConvokeReduction, action.sourceId, action.playerId, abilityPaymentContext, validationGranterId)) {
             return when (effectiveCost) {
@@ -654,20 +692,17 @@ class ActivateAbilityHandler(
         // fall through with a null cardDef and let the granted-ability lookup succeed.
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
 
-        // Look up ability from card definition (including class-level abilities), granted abilities, or static grants
-        val classLevel = container.get<ClassLevelComponent>()?.currentLevel
-        val staticGrants = getStaticGrantedAbilitiesWithGranter(action.sourceId, state)
-        val staticGrantMatch = staticGrants.firstOrNull { it.first.id == action.abilityId }
-        val ability = cardDef?.script?.effectiveActivatedAbilities(classLevel)?.find { it.id == action.abilityId }
-            ?: cardDef?.let { findClassLevelUpAbility(it, container, action.abilityId) }
-            ?: state.grantedActivatedAbilities
-                .filter { it.entityId == action.sourceId }
-                .map { it.ability }
-                .find { it.id == action.abilityId }
-            ?: staticGrantMatch?.first
-            ?: resolveIntrinsicManaAbility(state, action.sourceId, action.abilityId)
+        // Retain which lookup branch supplied the concrete ability. A CardComponent on the
+        // receiving permanent proves only that the object is a card; it does not make a runtime,
+        // static, or intrinsic ability part of that card's definition.
+        val abilityLookup = lookupActivatedAbility(
+            state, action.sourceId, action.abilityId, container,
+            cardComponent.cardDefinitionId, cardDef
+        )
             ?: return ExecutionResult.error(state, "Ability not found")
-        val staticGranterId = staticGrantMatch?.second
+        val ability = abilityLookup.ability
+        val staticGranterId = abilityLookup.staticGranterId
+        val abilityIdentity = abilityLookup.definitionIdentity
 
         // "X can't be 0" abilities (Gogo, Master of Mimicry): reject an engine-direct activation that
         // pre-fills an X below the ability's minimum. The legal-actions submission path enforces the
@@ -1722,9 +1757,11 @@ class ActivateAbilityHandler(
                 // amount resolves to 0 and the ability produces nothing.
                 sacrificedPermanents = sacrificedSnapshots,
                 manaColorChoice = action.manaColorChoice,
-                // The tally above was already incremented for this activation, so a burnout clause
-                // reading "four or more times this turn" sees the fourth activation as the fourth.
-                activatedAbilityId = if (ability.trackActivations) ability.id else null,
+                // Mana abilities resolve without a stack component, so their activation-time
+                // provenance must enter the effect context here. The concrete id remains useful
+                // even when this lookup branch could not prove a definition-scoped identity.
+                abilityIdentity = abilityIdentity,
+                activatedAbilityId = ability.id,
             )
 
             val effectResult = effectExecutorRegistry.execute(currentState, finalEffect, context).toExecutionResult()
@@ -1944,9 +1981,8 @@ class ActivateAbilityHandler(
             lastKnownSourceAttachments = lastKnownSourceAttachments,
             revealedNotedCreatureType = revealedNotedCreatureType,
             descriptionOverride = ability.descriptionOverride,
-            abilityIdentity = com.wingedsheep.sdk.scripting.AbilityIdentity(
-                cardComponent.cardDefinitionId, ability.id
-            ),
+            abilityIdentity = abilityIdentity,
+            activatedAbilityId = ability.id,
             granterId = staticGranterId,
             // CR 701.28f — freeze the source's face-change clock as the ability goes on the stack;
             // an instruction inside it to transform that same permanent is ignored if the permanent
@@ -2053,9 +2089,8 @@ class ActivateAbilityHandler(
                     tappedPermanents = repeatTapSlice,
                     tappedEntitySnapshots = repeatTapSnapshots,
                     descriptionOverride = ability.descriptionOverride,
-                    abilityIdentity = com.wingedsheep.sdk.scripting.AbilityIdentity(
-                        cardComponent.cardDefinitionId, ability.id
-                    ),
+                    abilityIdentity = abilityIdentity,
+                    activatedAbilityId = ability.id,
                     granterId = staticGranterId
                 )
                 val repeatStackResult = stackResolver.putActivatedAbility(
@@ -2793,6 +2828,56 @@ class ActivateAbilityHandler(
         val subtypes = state.projectedState.getSubtypes(sourceId)
         if (expectedSubtype !in subtypes) return null
         return ability
+    }
+
+    /**
+     * Resolve [abilityId] without discarding how the concrete ability was found.
+     *
+     * The order matches legal-action enumeration and the historical handler lookup. In
+     * particular, an id directly declared by the current definition wins over an equal id from a
+     * grant. Only the first two branches prove definition ownership; every other branch retains a
+     * concrete id for execution while remaining semantically identityless.
+     */
+    private fun lookupActivatedAbility(
+        state: GameState,
+        sourceId: EntityId,
+        abilityId: AbilityId,
+        container: com.wingedsheep.engine.state.ComponentContainer,
+        cardDefinitionId: String,
+        cardDef: com.wingedsheep.sdk.model.CardDefinition?,
+    ): ActivatedAbilityLookup? {
+        val classLevel = container.get<ClassLevelComponent>()?.currentLevel
+
+        cardDef?.script?.effectiveActivatedAbilities(classLevel)
+            ?.firstOrNull { it.id == abilityId }
+            ?.let {
+                return ActivatedAbilityLookup.DirectDefinition(
+                    it,
+                    AbilityIdentity(cardDefinitionId, it.id),
+                )
+            }
+
+        cardDef?.let { findClassLevelUpAbility(it, container, abilityId) }
+            ?.let {
+                return ActivatedAbilityLookup.DefinitionDerivedClass(
+                    it,
+                    AbilityIdentity(cardDefinitionId, it.id),
+                )
+            }
+
+        state.grantedActivatedAbilities
+            .firstOrNull { it.entityId == sourceId && it.ability.id == abilityId }
+            ?.ability
+            ?.let { return ActivatedAbilityLookup.RuntimeGranted(it) }
+
+        getStaticGrantedAbilitiesWithGranter(sourceId, state)
+            .firstOrNull { it.first.id == abilityId }
+            ?.let { (ability, granterId) ->
+                return ActivatedAbilityLookup.StaticGranted(ability, granterId)
+            }
+
+        return resolveIntrinsicManaAbility(state, sourceId, abilityId)
+            ?.let { ActivatedAbilityLookup.Intrinsic(it) }
     }
 
     /**

@@ -49,16 +49,17 @@ data class EffectContext(
      * Definition-scoped identity of the triggered/activated ability currently resolving, copied
      * from its stack component (see [com.wingedsheep.sdk.scripting.AbilityIdentity]). Lets a
      * resolution-time may-question consult the controller's persistent auto-answer yields without
-     * re-deriving the key. Null for spell resolution and synthesized sources with no card
-     * definition (backlog §C).
+     * re-deriving the key. Null for spell resolution, sources with no card definition, and
+     * activated abilities whose lookup did not prove definition ownership (backlog §C).
      */
     val abilityIdentity: com.wingedsheep.sdk.scripting.AbilityIdentity? = null,
     /**
-     * The id of the *activated* ability currently resolving, as recorded in the source's
-     * `AbilityActivatedThisTurnComponent`. Lets an effect read back how many times its own ability
-     * has been activated this turn (`ThisAbilityActivatedThisTurnAtLeast` — Farrelite Priest).
-     * Null for spells, triggered abilities and any activation whose ability opted out of
-     * bookkeeping.
+     * Concrete id of the *activated* ability currently resolving. Modern activated stack objects
+     * always carry it even when [abilityIdentity] is null, which lets a runtime-granted ability
+     * route "this ability" without inventing a semantic card-definition pair (Likeness Looter).
+     * Off-stack mana abilities carry it through their direct resolution context as well. Null for
+     * spells, triggered abilities, and specialized synthesized activations with no concrete
+     * ability.
      */
     val activatedAbilityId: com.wingedsheep.sdk.scripting.AbilityId? = null,
     /**

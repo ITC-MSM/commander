@@ -1642,9 +1642,10 @@ class ConditionEvaluator(
     /**
      * Farrelite Priest's "if this ability has been activated four or more times this turn". The
      * tally lives on the source permanent, keyed by ability id, and the handler increments it
-     * before the effect runs — so the fourth activation reads four. Reads false when the ability
-     * did not opt into bookkeeping (`activatedAbilityId` null), which is the correct answer for
-     * every ability that never asks.
+     * before the effect runs — so the fourth activation reads four. A modern stack object carries
+     * its concrete id whether or not it tracks activations; an untracked ability still reads false
+     * because its source has no tally for that id. Contexts with no concrete activated ability id
+     * also read false.
      */
     private fun evaluateThisAbilityActivatedThisTurnAtLeast(
         state: GameState,

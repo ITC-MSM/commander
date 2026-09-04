@@ -145,21 +145,23 @@ class EachPermanentBecomesCopyOfTargetExecutor(
                 updated
             }
 
-            // "…and this ability": re-grant the activated ability that produced this copy. The
-            // resolving ability's identity carries the *permanent's* card definition id, which has
-            // already drifted to whatever it last copied — so read the granted record first (that's
-            // where the ability lives after the first copy) and fall back to the printed definition
-            // for the very first activation.
+            // "…and this ability": re-grant the concrete activated ability that produced this
+            // copy. After the first copy it lives in the runtime-grant store and intentionally has
+            // no definition-scoped AbilityIdentity, so routing must use activatedAbilityId. Read the
+            // grant first, then use a proven definition identity to recover the first activation's
+            // ability even if the source's characteristics changed before this resolved.
             if (effect.retainActivatingAbility) {
-                val identity = context.abilityIdentity
-                if (identity != null && newState.grantedActivatedAbilities
-                        .none { it.entityId == entityId && it.ability.id == identity.abilityId }
+                val activatedAbilityId = context.activatedAbilityId
+                if (activatedAbilityId != null && newState.grantedActivatedAbilities
+                        .none { it.entityId == entityId && it.ability.id == activatedAbilityId }
                 ) {
                     val ability = state.grantedActivatedAbilities
-                        .firstOrNull { it.entityId == entityId && it.ability.id == identity.abilityId }
+                        .firstOrNull { it.entityId == entityId && it.ability.id == activatedAbilityId }
                         ?.ability
-                        ?: cardRegistry.getCard(identity.cardDefinitionId)
-                            ?.activatedAbilities?.firstOrNull { it.id == identity.abilityId }
+                        ?: context.abilityIdentity
+                            ?.takeIf { it.abilityId == activatedAbilityId }
+                            ?.let { cardRegistry.getCard(it.cardDefinitionId) }
+                            ?.activatedAbilities?.firstOrNull { it.id == activatedAbilityId }
                     if (ability != null) {
                         newState = newState.copy(
                             grantedActivatedAbilities = newState.grantedActivatedAbilities +
