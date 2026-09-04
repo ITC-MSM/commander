@@ -41,11 +41,11 @@ Untapped creatures help pay generic or matching colored spell costs.
 
 Cards: Autochthon Wurm, Chant of Vitu-Ghazi, Chord of Calling, Conclave Equenaut, Conclave Phalanx, Conclave's Blessing, Devouring Light, Gather Courage, Guardian of Vitu-Ghazi, Hour of Reckoning, Overwhelm, Root-Kin Ally, Scatter the Seeds, Siege Wurm, Sundering Vitae
 
-### - [ ] Transmute (13 cards)
+### - [x] Transmute (13 cards)
 
 Pay mana and discard this card from hand, at sorcery timing, to search for and reveal a card of the same mana value, put it in hand, and shuffle.
 
-**Engine support:** A new `transmute(cost)` helper is under scenario verification. It composes hand activation, discard-self, sorcery timing, and library search.
+**Engine support:** `transmute(cost)` composes hand activation, discard-self, sorcery timing, and library search. Seven authored cards and a reanimation/copy response regression verify the composition.
 
 Cards: Brainspoil, Clutch of the Undercity, Dimir House Guard, Dimir Infiltrator, Dimir Machinations, Dizzy Spell, Drift of Phantasms, Ethereal Usher, Grozoth, Muddle the Mixture, Netherborn Phalanx, Perplex, Shred Memory
 

@@ -13229,5 +13229,12 @@ for hard cases see [`managing-complex-and-rare-abilities.md`](managing-complex-a
 discard the source as a cost, and search for one card with the same mana value.
 The chosen card is revealed and put into hand, then the library is shuffled; the
 search may find nothing. Activation is restricted to sorcery timing. It uses
-`Costs.DiscardSelf`, `DynamicAmounts.sourceManaValue()`, and the existing library
-search pipeline. Callers: Drift of Phantasms and Dimir Infiltrator.
+`Costs.DiscardSelf` and the existing library search pipeline. Declare `manaCost`
+before `transmute`: the helper compiles the card's hand-zone mana value into the
+search filter, so reanimating and copying the discarded card in response does not
+change the search. Mana paid and later characteristics of a new incarnation are
+irrelevant. Callers: Drift of Phantasms and Dimir Infiltrator.
+
+`Effects.Regenerate(target)` creates the existing regeneration shield through the
+DSL facade. Dimir House Guard composes it with a creature sacrifice cost. The
+default target is `ContextTarget(0)`; self-regeneration passes `EffectTarget.Self`.

@@ -2,12 +2,12 @@
 
 **Set Size:** 291 cards
 **Release Date:** October 7, 2005
-**Implemented:** 241 / 291
+**Implemented:** 246 / 291
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 37    | 33   |
-| Blue       | 39    | 30   |
-| Black      | 37    | 24   |
+| Blue       | 39    | 33   |
+| Black      | 37    | 26   |
 | Red        | 39    | 37   |
 | Green      | 37    | 32   |
 | Multicolor | 64    | 52   |
@@ -63,11 +63,11 @@
 - [x] Compulsive Research
 - [x] Convolute
 - [x] Copy Enchantment
-- [ ] Dizzy Spell
+- [x] Dizzy Spell
 - [x] Drake Familiar
 - [ ] Dream Leash
 - [x] Drift of Phantasms
-- [ ] Ethereal Usher
+- [x] Ethereal Usher
 - [ ] Eye of the Storm
 - [x] Flight of Fancy
 - [x] Flow of Ideas
@@ -80,7 +80,7 @@
 - [x] Lore Broker
 - [x] Mark of Eviction
 - [x] Mnemonic Nexus
-- [ ] Muddle the Mixture
+- [x] Muddle the Mixture
 - [x] Peel from Reality
 - [ ] Quickchange
 - [x] Remand
@@ -100,12 +100,12 @@
 
 ### Black
 - [ ] Blood Funnel
-- [ ] Brainspoil
+- [x] Brainspoil
 - [x] Carrion Howler
 - [x] Clinging Darkness
 - [x] Dark Confidant
 - [ ] Darkblast
-- [ ] Dimir House Guard
+- [x] Dimir House Guard
 - [ ] Dimir Machinations
 - [x] Disembowel
 - [x] Empty the Catacombs
