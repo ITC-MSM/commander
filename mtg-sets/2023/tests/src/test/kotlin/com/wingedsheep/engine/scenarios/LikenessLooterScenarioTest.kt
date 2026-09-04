@@ -3,6 +3,7 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.mtg.sets.definitions.woe.cards.LikenessLooter
@@ -110,6 +111,15 @@ class LikenessLooterScenarioTest : ScenarioTestBase() {
                 val again = game.copyFromGraveyard(looter, x = 4, cardName = "Hill Giant")
                 withClue("second activation should succeed: ${again.error}") { again.error shouldBe null }
                 if (game.getPendingDecision() is SelectManaSourcesDecision) game.submitManaSourcesAutoPay()
+
+                // This activation came from the runtime grant retained by the first copy. Its
+                // concrete id still routes "this ability", but pairing it with Grizzly Bears'
+                // definition would fabricate semantic identity.
+                val secondStackAbility = game.state.getEntity(game.state.stack.last())
+                    ?.get<ActivatedAbilityOnStackComponent>()
+                secondStackAbility?.abilityIdentity shouldBe null
+                secondStackAbility?.activatedAbilityId shouldBe copyAbilityId
+
                 game.resolveStack()
 
                 val card = game.state.getEntity(looter)!!.get<CardComponent>()!!

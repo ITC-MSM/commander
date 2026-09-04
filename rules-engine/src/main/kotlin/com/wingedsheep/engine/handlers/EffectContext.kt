@@ -49,18 +49,16 @@ data class EffectContext(
      * Definition-scoped identity of the triggered/activated ability currently resolving, copied
      * from its stack component (see [com.wingedsheep.sdk.scripting.AbilityIdentity]). Lets a
      * resolution-time may-question consult the controller's persistent auto-answer yields without
-     * re-deriving the key. Null for spell resolution and synthesized sources with no card
-     * definition (backlog §C).
+     * re-deriving the key. Null for spell resolution, sources with no card definition, and
+     * activated abilities whose lookup did not prove definition ownership (backlog §C).
      */
     val abilityIdentity: com.wingedsheep.sdk.scripting.AbilityIdentity? = null,
     /**
-     * The id of the *activated* ability currently resolving, as recorded in the source's
-     * `AbilityActivatedThisTurnComponent`. Lets an effect read back how many times its own ability
-     * has been activated this turn (`ThisAbilityActivatedThisTurnAtLeast` — Farrelite Priest).
-     * Null for spells, triggered abilities and any activation whose ability opted out of
-     * bookkeeping.
+     * The concrete ability captured at activation. Resolution must not rediscover it from a
+     * source or grant that can change before resolving (including "retain this ability" copies).
+     * Null for spells, triggers, and synthesized activations without an ActivatedAbility.
      */
-    val activatedAbilityId: com.wingedsheep.sdk.scripting.AbilityId? = null,
+    val activatedAbility: com.wingedsheep.sdk.scripting.ActivatedAbility? = null,
     /**
      * The player currently under consideration as a target, bound while evaluating a
      * `TargetPlayer.restriction` / `TargetOpponent.restriction` (CR 115). Resolves
@@ -410,6 +408,9 @@ data class EffectContext(
      */
     val resolutionDepth: Int = 0
 ) {
+    val activatedAbilityId: com.wingedsheep.sdk.scripting.AbilityId?
+        get() = activatedAbility?.id
+
     /**
      * Resolve a symbolic effect target to a concrete entity id using just the context.
      *

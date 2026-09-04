@@ -13,9 +13,6 @@ import com.wingedsheep.engine.state.components.battlefield.*
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.TextReplacementComponent
-import com.wingedsheep.engine.state.components.identity.ControllerComponent
-import com.wingedsheep.engine.state.components.identity.EmblemActivatedAbilityComponent
-import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Zone
@@ -86,24 +83,14 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 .map { it.ability }
             val staticGrants = context.castPermissionUtils.getStaticGrantedAbilitiesWithGranter(entityId, state)
             val staticAbilities = staticGrants.map { it.ability }
-            val emblemAbilities = state.entities.mapNotNull { (emblemId, emblemContainer) ->
-                val grant = emblemContainer.get<EmblemActivatedAbilityComponent>() ?: return@mapNotNull null
-                val controllerId = emblemContainer.get<ControllerComponent>()?.playerId ?: return@mapNotNull null
-                val matches = context.predicateEvaluator.matches(
-                    state,
-                    projected,
-                    entityId,
-                    grant.filter.baseFilter,
-                    PredicateContext(controllerId = controllerId, sourceId = emblemId),
-                ) && (!grant.filter.excludeSelf || entityId != emblemId)
-                grant.takeIf { matches }?.abilities
-            }.flatten()
+            val emblemAbilities =
+                context.castPermissionUtils.getEmblemGrantedActivatedAbilities(entityId, state)
             // Which permanent granted each statically-granted ability, so a cost that names the
             // granter (AbilityCost.TapGrantingPermanent) can be gated on *its* state, not the host's.
             val granterByAbilityId = staticGrants.associate { it.ability.id to it.granterId }
             val allAbilities = grantedAbilities + staticAbilities + emblemAbilities
 
-            // If no card definition (e.g., tokens) and no granted/static abilities, skip
+            // If no card definition (e.g., tokens) and no granted abilities, skip
             if (cardDef == null && allAbilities.isEmpty()) continue
 
             // Get class level for Class enchantments (null for non-Class cards)

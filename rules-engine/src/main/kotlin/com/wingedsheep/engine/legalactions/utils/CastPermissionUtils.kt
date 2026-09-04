@@ -15,6 +15,7 @@ import com.wingedsheep.engine.state.components.battlefield.GraveyardPlayPermissi
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
+import com.wingedsheep.engine.state.components.identity.EmblemActivatedAbilityComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.player.CantCastSpellsComponent
 import com.wingedsheep.engine.state.components.player.EquipActivationsThisTurnComponent
@@ -1643,6 +1644,32 @@ class CastPermissionUtils(
         state: GameState
     ): List<com.wingedsheep.sdk.scripting.ActivatedAbility> =
         getStaticGrantedAbilitiesWithGranter(entityId, state).map { it.ability }
+
+    /**
+     * Get activated abilities granted to [entityId] by permanent emblems.
+     *
+     * Emblems live as synthetic, non-zoned entities, so they are not part of the battlefield
+     * static-ability scan above. This method is the shared authority used by legal-action
+     * enumeration and activation lookup: an ability offered from an emblem must be found with the
+     * same controller-relative filter when the submitted action is validated and executed.
+     */
+    fun getEmblemGrantedActivatedAbilities(
+        entityId: EntityId,
+        state: GameState,
+    ): List<ActivatedAbility> = state.entities.flatMap { (emblemId, emblemContainer) ->
+        val grant = emblemContainer.get<EmblemActivatedAbilityComponent>()
+            ?: return@flatMap emptyList()
+        val controllerId = emblemContainer.get<ControllerComponent>()?.playerId
+            ?: return@flatMap emptyList()
+        val matches = predicateEvaluator.matches(
+            state,
+            state.projectedState,
+            entityId,
+            grant.filter.baseFilter,
+            PredicateContext(controllerId = controllerId, sourceId = emblemId),
+        ) && (!grant.filter.excludeSelf || entityId != emblemId)
+        if (matches) grant.abilities else emptyList()
+    }
 }
 
 /**

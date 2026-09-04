@@ -298,6 +298,10 @@ per-player-maskable.
 
 ## 4. Open questions
 
+- **Triggered-ability provenance:** `TriggerAbilityResolver` can return definition-owned, granted, and synthesized triggers,
+  but `TriggerProcessor` currently derives an identity from the source's current `CardComponent` for all of them. Carry typed
+  provenance from trigger detection/resolution before treating that pair as authoritative. A null `granterId` is not proof of
+  printed ownership: synthesized and non-attached grant paths can also have no granter.
 - **Grouping scope for A:** contiguous-only (safe, proposed) vs all-identical-anywhere (prettier,
   risks implying a false order). Recommend contiguous-only first.
 - **Batch peel-off semantics (B):** is "Yes to this one, ask me about the rest" worth the extra
