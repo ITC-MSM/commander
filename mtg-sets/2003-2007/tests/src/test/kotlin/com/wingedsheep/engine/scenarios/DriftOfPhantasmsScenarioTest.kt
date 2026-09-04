@@ -1,6 +1,8 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
+import com.wingedsheep.engine.core.CastSpell
+import com.wingedsheep.engine.handlers.continuations.entityIdToChosenTarget
 import com.wingedsheep.engine.core.CardsRevealedEvent
 import com.wingedsheep.engine.core.LibraryShuffledEvent
 import com.wingedsheep.engine.core.SelectCardsDecision
@@ -127,6 +129,37 @@ class DriftOfPhantasmsScenarioTest : ScenarioTestBase() {
             game.state.pendingDecision shouldBe null
             game.isInGraveyard(1, "Drift of Phantasms") shouldBe true
             game.findCardsInLibrary(1, "Island").size shouldBe 1
+        }
+
+        test("transmute remembers the discarded card after reanimation and a copy effect") {
+            val game = scenario().withPlayers("P1", "P2")
+                .withCardInHand(1, "Drift of Phantasms")
+                .withCardInHand(1, "Makeshift Mannequin")
+                .withCardInHand(1, "Mirrorform")
+                .withCardOnBattlefield(2, "Grizzly Bears")
+                .withCardInLibrary(1, "Divination")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withLandsOnBattlefield(1, "Island", 12)
+                .withLandsOnBattlefield(1, "Swamp", 4)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN).build()
+            val source = game.findCardsInHand(1, "Drift of Phantasms").single()
+            val ability = cardRegistry.getCard("Drift of Phantasms")!!.activatedAbilities.single()
+            game.execute(ActivateAbility(game.player1Id, source, ability.id)).error shouldBe null
+            val mannequin = game.findCardsInHand(1, "Makeshift Mannequin").single()
+            game.execute(CastSpell(game.player1Id, mannequin,
+                listOf(entityIdToChosenTarget(game.state, source)))).error shouldBe null
+            game.passPriority().error shouldBe null
+            game.passPriority().error shouldBe null
+            game.state.stack.size shouldBe 1
+            game.isOnBattlefield("Drift of Phantasms") shouldBe true
+            game.castSpell(1, "Mirrorform", game.findPermanent("Grizzly Bears")!!).error shouldBe null
+            game.passPriority().error shouldBe null
+            game.passPriority().error shouldBe null
+            game.state.stack.size shouldBe 1
+            game.resolveStack()
+            val decision = game.state.pendingDecision as SelectCardsDecision
+            decision.options shouldBe game.findCardsInLibrary(1, "Divination")
         }
     }
 }
