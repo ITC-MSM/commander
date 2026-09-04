@@ -1441,6 +1441,18 @@ holds a later-round match back while either seat still owes an earlier-round gam
 blocked to launchable when a *third* pair's game finishes, with no change to the ready set at all.
 Every result therefore re-runs the sweep; looking only at ready *transitions* stalls the bracket.
 
+The same guard is why the bracket and the lobby roster must not drift apart. The schedule is built
+once, from the seats the lobby had then, and nothing rebuilds it — so a seat that leaves afterwards
+stays scheduled while no longer being something the server can put in a game. Its matches never
+complete, and `hasIncompleteMatchBefore` then blocks every later match of every opponent it was
+paired against, idling the whole bracket a player per round. Every path that drops a player from
+`lobby.players` therefore forfeits what the bracket still has them down for
+(`LobbyHandler.forfeitBracketMatchesIfSeatGone`, through the same `handleAbandon` a disconnect uses),
+and the sweep re-checks the roster on the way in
+(`TournamentManager.unseatedPlayersWithMatchesLeft`) as a backstop that also repairs a bracket which
+already drifted. Only a seat that is *gone* may be forfeited: `removePlayer` deliberately keeps a
+disconnected player's state during a tournament so they can rejoin.
+
 BYE handling (odd player counts), reconnection across matches, and spectating between rounds are
 all managed at this layer. The tournament system reuses the same `GameSession` and `ActionProcessor`
 for each match — it's purely orchestration, with no game logic of its own.
