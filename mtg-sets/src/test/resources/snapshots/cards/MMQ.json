@@ -5614,6 +5614,72 @@
     ]
 }
 
+// Vendetta
+{
+    "name": "Vendetta",
+    "manaCost": "{B}",
+    "typeLine": "Instant",
+    "oracleText": "Destroy target nonblack creature. It can't be regenerated. You lose life equal to that creature's toughness.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "CantBeRegenerated",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target nonblack creature"
+                    }
+                },
+                {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Target",
+                        "numericProperty": "Toughness"
+                    },
+                    "target": "Controller"
+                },
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target nonblack creature"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "NotColor",
+                                "color": "BLACK"
+                            }
+                        ]
+                    }
+                },
+                "id": "target nonblack creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "170",
+        "artist": "Dan Frazier",
+        "flavorText": "Starke knew the voice was Takara's, but the venom was Volrath's.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/67ced38e-0f33-4bda-8e18-09f6ac03a3d7.jpg?1783945943"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Vine Trellis
 {
     "name": "Vine Trellis",

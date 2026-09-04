@@ -1048,6 +1048,26 @@ data class LegendRuleDoesNotApplyTo(
 }
 
 /**
+ * The controller skips their draw step — "Skip your draw step." (Colfenor's Plans, Necropotence).
+ *
+ * Like [NoMaximumHandSize] this is a turn-based read rather than a continuous-projection effect:
+ * [com.wingedsheep.engine.core.DrawPhaseManager] scans the battlefield for it as the draw step
+ * begins and, when the drawing player controls a permanent that has it, takes no draw. It is the
+ * standing counterpart of
+ * [com.wingedsheep.sdk.scripting.effects.SkipStepOrPhaseThisTurnEffect] / the one-shot
+ * "skip your next draw step" marker, which are consumed by the step they skip.
+ *
+ * The draw-step read matches the ability by type and does **not** unwrap a
+ * [ConditionalStaticAbility], so an "as long as …" wording needs that unwrapping added to
+ * `DrawPhaseManager.skipsDrawStep` first — every printed use of this line so far is unconditional.
+ */
+@SerialName("SkipDrawStep")
+@Serializable
+data object SkipDrawStep : StaticAbility {
+    override val description: String = "Skip your draw step"
+}
+
+/**
  * Removes the maximum hand size limit for the controller.
  * Used for cards like Thought Vessel and Reliquary Tower: "You have no maximum hand size."
  *
