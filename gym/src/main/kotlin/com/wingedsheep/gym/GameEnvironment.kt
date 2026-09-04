@@ -101,7 +101,7 @@ class GameEnvironment private constructor(
     var events: List<GameEvent> = emptyList()
         private set
 
-    /** Events from the most recent [step] call. */
+    /** Events from the most recent [step] or [stepExactlyOne] call. */
     var lastStepEvents: List<GameEvent> = emptyList()
         private set
 
@@ -110,13 +110,17 @@ class GameEnvironment private constructor(
         private set
 
     /**
-     * Why the engine rejected the most recent [step], or `null` when it was accepted.
+     * Why the engine rejected the most recent submission, or `null` when it was accepted.
      *
      * An illegal action leaves the state untouched, which on its own is indistinguishable from an
      * action that legitimately changed nothing (declaring no attackers, passing priority). Callers
      * that must not swallow a rejection read this: the HTTP transport turns it into a 400, and MCTS
      * asserts on it, since a rejected decision edge would otherwise become a child node identical to
      * its parent and be searched as if it were progress.
+     *
+     * [step] is the only way to learn of its own rejection. [stepExactlyOne] also writes this field,
+     * but its typed [ExactlyOneSubmissionResult.Rejected] is the better read: it carries the
+     * offending action alongside the reason, and it cannot be forgotten the way a field can.
      */
     var lastRejection: String? = null
         private set
@@ -195,6 +199,36 @@ class GameEnvironment private constructor(
         stepCount++
 
         return buildStepResult(simResult.events)
+    }
+
+    /**
+     * Submit exactly one [action] through [ActionProcessor] and install its direct result.
+     *
+     * Unlike [step], this does not run simulator-driven automatic resolution: it never
+     * synthesizes an additional [GameAction], decision response, or priority pass. The submitted
+     * action may itself legitimately resolve the stack or advance the game (for example,
+     * [PassPriority]). [ActionProcessor] remains the authoritative action boundary: it performs
+     * the submitted action atomically and any resulting [PendingDecision] remains for the caller.
+     * A rejected action is returned as [ExactlyOneSubmissionResult.Rejected], rather than being
+     * represented as a game reward or outcome.
+     */
+    fun stepExactlyOne(action: GameAction): ExactlyOneSubmissionResult {
+        check(playerIds.isNotEmpty()) { "Call reset() before stepExactlyOne()" }
+
+        val result = processor.process(state, action).result
+        stepCount++
+        val rejection = result.error
+        if (rejection != null) {
+            lastStepEvents = result.events
+            lastRejection = rejection
+            return ExactlyOneSubmissionResult.Rejected(action, rejection)
+        }
+
+        state = result.state
+        events = events + result.events
+        lastStepEvents = result.events
+        lastRejection = null
+        return ExactlyOneSubmissionResult.Applied(buildStepResult(result.events))
     }
 
     /**
