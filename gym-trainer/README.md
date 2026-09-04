@@ -130,10 +130,16 @@ folded responses `:gym`'s `ActionRegistry` produces. At a complex
 pending decision (targets, distribute, order, search, etc.) the
 `StructuredDecisionExpander` may return a complete response list. The built-in
 exact expander covers one target slot — required or optional — drawn from an
-explicit finite legal target list; each validator-approved response becomes its
-own edge, and declining an optional slot is the empty selection. Other structured
-decisions retain one `StructuredDecisionResolver` fallback edge, which is
-policy-selected rather than exhaustive.
+explicit finite legal target list, plus unique ordering/reordering through four
+objects. Each validator-approved response becomes its own edge, declining an
+optional target slot is the empty selection, and ordering shapes beyond the
+response ceiling remain unsupported rather than partially expanded. That
+ceiling is a search-budget knob the caller owns
+(`ExactStructuredDecisionExpander(maxOrderingResponses = n)`), not an engine
+legality rule: at 24 responses one ordering costs a quarter of `SelfPlayLoop`'s
+default 100 simulations per move just to visit each child once. Other
+structured decisions retain one `StructuredDecisionResolver` fallback edge,
+which is policy-selected rather than exhaustive.
 
 Cancellation is not among the expanded responses. A `CancelDecisionResponse`
 rewinds a cast-time decision to the priority state that offered the cast, so a
@@ -166,7 +172,7 @@ bloat everyone's classpath.
 | `StructuralStateFeaturizer` | Simple `Map<String, Float>` from life, zone sizes, projected P/T totals, mana. Replace for real training. |
 | `DynamicSlotActionFeaturizer` | Single-head, hash-keyed slot assignment. Replace for serious training to avoid collisions. |
 | `JsonlSelfPlaySink` | One JSON line per step, outcome label included. Easy Python ingest. |
-| `ExactStructuredDecisionExpander` | Complete single-target-slot response source, required or optional. |
+| `ExactStructuredDecisionExpander` | Complete exact required/optional single-target responses, and unique orderings through a caller-set ceiling (24 by default). Larger or duplicate shapes are Unsupported, never partial. |
 | `RandomStructuredResolver` | Random minimum-cardinality fallback for supported target/card/mode decisions; redraws until the engine's validator accepts. |
 
 Defaults exist so a training loop runs in 30 lines. Every one is intended
