@@ -7691,6 +7691,12 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   taxed by {2} becomes `{2}, {T}:` — and there is no `manaFloor`, since costs only grow. Skyseer's
   Chariot: "Activated abilities of sources with the chosen name cost {2} more to activate" →
   `IncreaseActivatedAbilityCost(GroupFilter(GameObjectFilter.Any.namedFromChosenComponent()), DynamicAmount.Fixed(2))`.
+  `excludeManaAbilities = true` leaves mana abilities (CR 605) untaxed — the flag reads the ability's
+  own `isManaAbility`, the mirror of `PreventActivatedAbilities(nonManaAbilitiesOnly = true)`. It is
+  what makes a *board-wide* tax playable at all: Suppression Field, "Activated abilities cost {2}
+  more to activate unless they're mana abilities" →
+  `IncreaseActivatedAbilityCost(GroupFilter(GameObjectFilter.Any), DynamicAmount.Fixed(2), excludeManaAbilities = true)`.
+  Without it, every land's `{T}: Add …` would be taxed too.
 - `MayCastFromGraveyard(filter, lifeCost = 0, duringYourTurnOnly = false, entersWithCounter = null, addedSubtypeOnEntry = null, oncePerTurn = false, exileInsteadOfGraveyard = false)`
   — cast spells matching `filter` from your graveyard following normal timing, optionally paying
   `lifeCost` life. Free for Yawgmoth's Agenda (`MayCastFromGraveyard(Nonland)`); `lifeCost = 1,

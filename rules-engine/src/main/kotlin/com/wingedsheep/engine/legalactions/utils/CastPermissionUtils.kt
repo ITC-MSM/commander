@@ -807,13 +807,14 @@ class CastPermissionUtils(
         state: GameState,
         sourceId: EntityId?,
         isExhaustAbility: Boolean = false,
-        isPowerUpAbility: Boolean = false
+        isPowerUpAbility: Boolean = false,
+        isManaAbility: Boolean = false
     ): AbilityCost {
         if (sourceId == null) return cost
         val reduced =
             if (isPowerUpAbility) applyPowerUpSelfReduction(cost, state, sourceId) else cost
         val (net, manaFloor) =
-            sumActivatedAbilityCostModifications(state, sourceId, isExhaustAbility, isPowerUpAbility)
+            sumActivatedAbilityCostModifications(state, sourceId, isExhaustAbility, isPowerUpAbility, isManaAbility)
         if (net == 0) return reduced
         // net > 0 reduces (floored), net < 0 taxes. A reduction can only shrink mana that is
         // already there; a tax applies to *every* activated ability, so a cost with no mana part
@@ -905,13 +906,15 @@ class CastPermissionUtils(
      * projected state.
      *
      * An `exhaustOnly` reduction contributes nothing unless [isExhaustAbility] is set, and likewise
-     * a `powerUpOnly` one unless [isPowerUpAbility] is set.
+     * a `powerUpOnly` one unless [isPowerUpAbility] is set. An `excludeManaAbilities` *increase*
+     * contributes nothing when [isManaAbility] is set (Suppression Field).
      */
     private fun sumActivatedAbilityCostModifications(
         state: GameState,
         sourceId: EntityId,
         isExhaustAbility: Boolean,
-        isPowerUpAbility: Boolean
+        isPowerUpAbility: Boolean,
+        isManaAbility: Boolean
     ): Pair<Int, Int> {
         var net = 0
         var floor = 0
@@ -935,6 +938,10 @@ class CastPermissionUtils(
                         floor = maxOf(floor, ability.manaFloor)
                     }
                     is com.wingedsheep.sdk.scripting.IncreaseActivatedAbilityCost -> {
+                        // Suppression Field taxes "activated abilities … unless they're mana
+                        // abilities" (CR 605): a board-wide tax that skipped this would price every
+                        // land's `{T}: Add …` at {2} more.
+                        if (ability.excludeManaAbilities && isManaAbility) continue
                         if (!activatedAbilityReductionApplies(state, entityId, ability.filter, sourceId)) continue
                         val owner = controllerId ?: continue
                         net -= evaluator.evaluate(
