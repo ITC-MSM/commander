@@ -380,8 +380,9 @@ data class ActivatedAbilityOnStackComponent(
      * Definition-scoped identity of the activated ability, shared by every copy of the same card
      * and every future instance of it. Drives batch decisions and persistent yields (see
      * [com.wingedsheep.sdk.scripting.AbilityIdentity]). Null unless activation lookup proved that
-     * the concrete ability belongs to the source's current card definition; runtime/static grants,
-     * intrinsic mana abilities, and synthesized crew/saddle actions therefore carry no identity.
+     * the concrete ability belongs to the source's current card definition; runtime, static, and
+     * emblem grants, intrinsic mana abilities, and synthesized crew/saddle actions therefore carry
+     * no identity.
      */
     val abilityIdentity: com.wingedsheep.sdk.scripting.AbilityIdentity? = null,
     /**
@@ -397,7 +398,8 @@ data class ActivatedAbilityOnStackComponent(
      * bearing the `GrantActivatedAbility` static), captured at activation. Read at resolution into
      * [com.wingedsheep.engine.handlers.EffectContext.granterId] so the granted ability can name its
      * granter via [com.wingedsheep.sdk.scripting.targets.EffectTarget.GrantingSource] — e.g. Trusty
-     * Boomerang's "Return [this Equipment] to its owner's hand". Null for non-granted abilities.
+     * Boomerang's "Return [this Equipment] to its owner's hand". Null for abilities not granted by
+     * a permanent's static ability.
      */
     val granterId: EntityId? = null,
     /**
