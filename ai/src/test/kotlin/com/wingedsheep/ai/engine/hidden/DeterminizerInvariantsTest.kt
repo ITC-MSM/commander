@@ -255,11 +255,8 @@ class DeterminizerInvariantsTest : ScenarioTestBase() {
             val candidateIdentities = candidateIds.associateWith {
                 source.getEntity(it)!!.require<CardComponent>()
             }
-            val determinizer = Determinizer.withInFlightPinAnalysis(
-                cardRegistry,
-                Visibility(cardRegistry),
-            ) {
-                HiddenSlotRewrite.IdentitySensitiveInFlightPins.Incomplete(listOf("forced for test"))
+            val determinizer = Determinizer(cardRegistry, Visibility(cardRegistry)) {
+                HiddenSlotRewrite.IdentitySensitiveInFlightPins.Incomplete("forced for test")
             }
 
             val sampled = determinizer.sample(

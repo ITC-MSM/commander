@@ -24,20 +24,35 @@ import com.wingedsheep.sdk.model.EntityId
 object HiddenSlotRewrite {
 
     /**
-     * The complete state-level answer to which hidden slots cannot have their identities replaced
-     * while execution is in flight.
+     * The one answer to which hidden slots cannot have their identities replaced while execution
+     * is *in flight* — that is, while [GameState.stack], [GameState.pendingDecision], or
+     * [GameState.continuationStack] holds work the engine has started and not finished.
      *
-     * Live stack objects, pending decisions, and continuation frames contribute every typed
-     * [EntityId] their serializable graphs contain. That is a conservative superset, because not
-     * every typed occurrence intrinsically depends on a card's current identity. Callers that apply
-     * different policies (rejecting an explicit assignment or silently pinning a sampled slot) must
-     * consume this one answer rather than independently approximating only part of the state.
+     * Those three carriers contribute every typed [EntityId] their serializable graphs contain.
+     * That is a conservative superset *of them*, because not every typed occurrence intrinsically
+     * depends on a card's current identity. Callers that apply different policies (rejecting an
+     * explicit assignment or silently pinning a sampled slot) must consume this one answer rather
+     * than independently approximating only part of in-flight execution.
+     *
+     * It is deliberately not a whole-[GameState] answer. `GameState` also carries lists that name
+     * hand or library entities outside any in-flight execution — `grantedKeywordAbilities` (a cast
+     * keyword granted to a card in hand), `mayPlayPermissions`, `lastCardDrawnThisTurnByPlayer` —
+     * and none of those is read here or visible to [runtimeBlockers], which only inspects the
+     * entity's own container. Rewriting such a slot leaves the grant pointing at a different card.
+     * That gap predates this projection; closing it means extending this analysis, not assuming it
+     * already covers them. Transient bookkeeping like `pendingSacrificeIds` and
+     * `pendingDiscardCauseControllers` is correctly out of scope: both live and die inside a single
+     * zone move, so no pause can observe them.
      */
     sealed interface IdentitySensitiveInFlightPins {
         data class Complete(val entityIds: Set<EntityId>) : IdentitySensitiveInFlightPins
 
-        /** The graph is incomplete; no candidate may be rewritten, so callers reject or pin by policy. */
-        data class Incomplete(val details: List<String>) : IdentitySensitiveInFlightPins
+        /**
+         * The graph is incomplete; no candidate may be rewritten, so callers reject or pin by
+         * policy. There is exactly one [reason] because the analysis returns on its first failure:
+         * an incomplete traversal is already fatal, so enumerating the rest buys nothing.
+         */
+        data class Incomplete(val reason: String) : IdentitySensitiveInFlightPins
     }
 
     fun identitySensitiveInFlightPins(state: GameState): IdentitySensitiveInFlightPins =
@@ -52,13 +67,13 @@ object HiddenSlotRewrite {
         state.stack.forEachIndexed { index, stackId ->
             val stackObject = state.getEntity(stackId)
                 ?: return IdentitySensitiveInFlightPins.Incomplete(
-                    listOf("could not traverse stack[$index] $stackId: missing entity"),
+                    "could not traverse stack[$index] $stackId: missing entity",
                 )
             when (val projection = inFlightReferenceProjector.project(stackObject)) {
                 is InFlightEntityReferences.Projection.Complete -> referenced += projection.entityIds
                 is InFlightEntityReferences.Projection.Incomplete -> {
                     return IdentitySensitiveInFlightPins.Incomplete(
-                        listOf("could not traverse stack[$index] ${projection.rootType}: ${projection.failure}"),
+                        "could not traverse stack[$index] ${projection.rootType}: ${projection.failure}",
                     )
                 }
             }
@@ -68,7 +83,7 @@ object HiddenSlotRewrite {
                 is InFlightEntityReferences.Projection.Complete -> referenced += projection.entityIds
                 is InFlightEntityReferences.Projection.Incomplete -> {
                     return IdentitySensitiveInFlightPins.Incomplete(
-                        listOf("could not traverse pending decision ${projection.rootType}: ${projection.failure}"),
+                        "could not traverse pending decision ${projection.rootType}: ${projection.failure}",
                     )
                 }
             }
@@ -78,7 +93,7 @@ object HiddenSlotRewrite {
                 is InFlightEntityReferences.Projection.Complete -> referenced += projection.entityIds
                 is InFlightEntityReferences.Projection.Incomplete -> {
                     return IdentitySensitiveInFlightPins.Incomplete(
-                        listOf("could not traverse continuation[$index] ${projection.rootType}: ${projection.failure}"),
+                        "could not traverse continuation[$index] ${projection.rootType}: ${projection.failure}",
                     )
                 }
             }

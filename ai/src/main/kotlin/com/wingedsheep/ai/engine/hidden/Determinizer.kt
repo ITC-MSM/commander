@@ -19,10 +19,19 @@ import com.wingedsheep.sdk.model.GameRng
  * ordering are sampled, which keeps continuations, targets and pending decisions structurally
  * valid. Cards carrying runtime components are pinned because changing their definition could make
  * those components nonsensical.
+ *
+ * Pinning is a coherence guarantee, not an information one, and the two pull in opposite
+ * directions: a slot pinned because in-flight execution references it keeps its **real** identity
+ * in the sampled world even when that identity is hidden from [viewerId]. That is accepted because
+ * the alternative is a world whose paused decision or continuation points at a card that was never
+ * there. It stays sound for search because the Strategist determinizes at roots where the AI holds
+ * priority, so a paused root is one the AI itself must answer — the referenced slots are its own.
+ * A caller that determinizes at someone else's pause would be handing its search the truth.
  */
-class Determinizer private constructor(
+class Determinizer internal constructor(
     private val cardRegistry: CardRegistry,
     private val visibility: Visibility,
+    /** Test-only seam: inject the shared final analysis, never reference traversal rules. */
     private val inFlightPinAnalysis: (GameState) -> HiddenSlotRewrite.IdentitySensitiveInFlightPins,
 ) {
     constructor(
@@ -163,14 +172,5 @@ class Determinizer private constructor(
         if (pool.size < hidden.size) return emptyList<CardDefinition>() to rng
         val (shuffled, next) = rng.shuffle(pool)
         return shuffled.take(hidden.size) to next
-    }
-
-    companion object {
-        /** Test-only seam: inject the shared final analysis, never reference traversal rules. */
-        internal fun withInFlightPinAnalysis(
-            cardRegistry: CardRegistry,
-            visibility: Visibility,
-            inFlightPinAnalysis: (GameState) -> HiddenSlotRewrite.IdentitySensitiveInFlightPins,
-        ): Determinizer = Determinizer(cardRegistry, visibility, inFlightPinAnalysis)
     }
 }

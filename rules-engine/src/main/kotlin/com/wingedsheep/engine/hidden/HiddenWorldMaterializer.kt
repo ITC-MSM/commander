@@ -85,23 +85,12 @@ sealed interface HiddenWorldMaterializationResult {
  * pause consume the caller's future stream. If the typed in-flight graph cannot be traversed
  * completely, the whole request is refused before either identities or randomness change.
  */
-class HiddenWorldMaterializer {
-    private val cardRegistry: CardRegistry
-    private val inFlightReferenceProjector: InFlightReferenceProjector
-
-    constructor(cardRegistry: CardRegistry) {
-        this.cardRegistry = cardRegistry
-        inFlightReferenceProjector = InFlightEntityReferences
-    }
-
+class HiddenWorldMaterializer internal constructor(
+    private val cardRegistry: CardRegistry,
     /** Test-only seam for proving that an incomplete paused-state projection fails closed. */
-    internal constructor(
-        cardRegistry: CardRegistry,
-        inFlightReferenceProjector: InFlightReferenceProjector,
-    ) {
-        this.cardRegistry = cardRegistry
-        this.inFlightReferenceProjector = inFlightReferenceProjector
-    }
+    private val inFlightReferenceProjector: InFlightReferenceProjector,
+) {
+    constructor(cardRegistry: CardRegistry) : this(cardRegistry, InFlightEntityReferences)
 
     /**
      * A request is answered as a whole: either every named slot is installed, or nothing is and the
@@ -120,7 +109,7 @@ class HiddenWorldMaterializer {
             is HiddenSlotRewrite.IdentitySensitiveInFlightPins.Incomplete -> {
                 return unsupported(
                     UnsupportedHiddenWorldKind.IN_FLIGHT_REFERENCES,
-                    details = pins.details,
+                    details = listOf(pins.reason),
                 )
             }
         }

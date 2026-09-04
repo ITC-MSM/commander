@@ -3,9 +3,12 @@ package com.wingedsheep.engine.hidden
 import com.wingedsheep.engine.core.CardsSelectedResponse
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.ChooseOptionDecision
+import com.wingedsheep.engine.core.ContinuationFrame
+import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.InFlightEntityReferences
 import com.wingedsheep.engine.core.InFlightReferenceProjector
 import com.wingedsheep.engine.core.OptionChosenResponse
+import com.wingedsheep.engine.core.PendingDecision
 import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.core.SubmitDecision
 import com.wingedsheep.engine.core.PlayLand
@@ -487,7 +490,7 @@ class HiddenWorldMaterializerTest : ScenarioTestBase() {
                 id = "untraversable",
                 playerId = game.player1Id,
                 prompt = "choose",
-                context = com.wingedsheep.engine.core.DecisionContext(),
+                context = DecisionContext(),
                 options = emptyList(),
                 minSelections = 0,
                 maxSelections = 0,
@@ -500,10 +503,10 @@ class HiddenWorldMaterializerTest : ScenarioTestBase() {
                     override fun project(stackObject: ComponentContainer) =
                         InFlightEntityReferences.Projection.Complete(emptySet())
 
-                    override fun project(decision: com.wingedsheep.engine.core.PendingDecision) =
+                    override fun project(decision: PendingDecision) =
                         InFlightEntityReferences.Projection.Incomplete("test", "forced")
 
-                    override fun project(frame: com.wingedsheep.engine.core.ContinuationFrame) =
+                    override fun project(frame: ContinuationFrame) =
                         InFlightEntityReferences.Projection.Complete(emptySet())
                 },
             )

@@ -179,9 +179,21 @@ budget.
 
 The mechanics of a swap — which slots are safe, which are pinned by the conservative typed-`EntityId`
 projection of every live stack object, pending decision, and continuation frame, how the rebuild is
-applied — live in `HiddenSlotRewrite` in `rules-engine`, not here. Its whole-state pin projection
+applied — live in `HiddenSlotRewrite` in `rules-engine`, not here. Its in-flight pin projection
 fails closed: an incomplete in-flight graph pins every candidate hidden slot. `Determinizer` keeps
-the policy: it decides *which* slots are hidden from the viewer and *what* to put in them. The other
+the policy: it decides *which* slots are hidden from the viewer and *what* to put in them.
+
+Pinning buys coherence at the cost of information separation, and it is worth being explicit about
+which way that trades. A slot pinned because in-flight execution references it keeps its **real**
+identity in the sampled world even when the viewer is not allowed to know it — the alternative is a
+world whose paused decision points at a card that was never there. That stays sound because the
+Strategist determinizes at roots where the AI holds priority, so a paused root is one the AI itself
+must answer and the referenced slots are its own. It is still strictly less leaky than pinning every
+candidate whenever a continuation frame exists, which is what the projection replaced. A future
+caller that determinizes at *another* seat's pause would be handing its search the truth, and needs
+a policy of its own rather than this default.
+
+The other
 caller of that primitive is `HiddenWorldMaterializer`, for callers that already own an assignment:
 it takes an explicit `EntityId → CardDefinition` map plus a caller-selected RNG for future simulated
 events, and refuses the whole request rather than pinning what it cannot install. Neither accepts a
