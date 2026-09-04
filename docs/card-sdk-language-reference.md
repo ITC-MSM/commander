@@ -2097,7 +2097,13 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   prompt is raised.
 - `GiftGivenEffect(target)` — "gift" temporary control.
 - `CantAttackEffect(target, unless?)` — target can't attack.
-- `CantBlockEffect(target, unless?)` — target can't block.
+- `CantBlockEffect(target, duration = EndOfTurn, attacker = null)` — target can't block. With
+  `attacker` set the restriction is **pairwise** — "target creature can't block *this creature* this
+  turn" (Screeching Griffin: `Effects.CantBlock(attacker = EffectTarget.Self)`), leaving the target
+  free to block everything else. The blanket form projects `SetCantBlock`; the pairwise form stores
+  `CantBlockSpecificAttacker(attackerId)` (the restriction mirror of provoke's
+  `MustBlockSpecificAttacker`) and is enforced by `CantBlockSpecificAttackerRule` at block
+  declaration, because a per-blocker projected flag can't express a pair.
 - `CantAttackGroupEffect(filter, condition?)` — group-scoped can't-attack.
 - `CantBlockGroupEffect(filter, condition?)` — group-scoped can't-block.
 - `Effects.Suspect(target, duration = Permanent)` (`SuspectEffect`) — target becomes suspected (MKM,

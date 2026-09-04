@@ -2828,6 +2828,24 @@ class ClientStateTransformer(
                         )
                     )
                 }
+                // The restriction mirror. Same reason to badge it: the defender otherwise discovers
+                // the pairwise ban only when the block declaration bounces back.
+                is SerializableModification.CantBlockSpecificAttacker -> {
+                    val attackerName = state.getEntity(modification.attackerId)
+                        ?.get<CardComponent>()?.name
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "cant_block_${modification.attackerId}",
+                            name = "Can't Block",
+                            description = if (attackerName != null) {
+                                "This creature can't block $attackerName this turn"
+                            } else {
+                                "This creature can't block a specific attacker this turn"
+                            },
+                            icon = "cant-block"
+                        )
+                    )
+                }
                 // The unrestricted requirement (Culvert Ambusher). Badged for the same reason as
                 // "Must Attack": the defending player finds out about it when their declaration is
                 // rejected, which is far too late to be the first they hear of it.
