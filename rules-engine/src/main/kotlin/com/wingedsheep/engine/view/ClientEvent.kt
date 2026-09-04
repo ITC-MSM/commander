@@ -1415,6 +1415,11 @@ is PermanentsSacrificedEvent -> {
             is RingTemptedEvent,
             is ScriedEvent,
             is SurveiledEvent,
+            // Internal signal that fires "whenever you clash" watcher triggers (Sylvan Echoes,
+            // Entangling Trap). The public reveal of both top cards and any bottom-of-library
+            // move are already surfaced by their own reveal / zone-change events, so no separate
+            // client event.
+            is ClashedEvent,
             // Internal signal that fires "whenever you discover" watcher triggers (Curator of
             // Sun's Creation); the reveal/exile/cast moves are surfaced by their own events, so no
             // separate client event.

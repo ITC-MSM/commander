@@ -32,6 +32,12 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // to SCAFFOLD rather than silently dropping the restriction.
     supported("WhenACounterOfTypeIsRemovedFromAPermanent", "trigger: a counter of a type removed from this permanent (CountersRemovedEvent, SELF)")
     supported("WhenAPlayerRemovesTheLastCounterOfTypeFromAPermanent", "trigger: the last counter of a type removed from this permanent (CountersRemovedEvent, lastRemoved)")
+    // Clash (CR 701.30) — "Whenever you clash" / "Whenever you clash and win"
+    // (Triggers.WheneverYouClash / WheneverYouClashAndWin over EventPattern.ClashedEvent). The engine
+    // emits one ClashedEvent per *participant*, so both tags resolve for a clash an opponent started,
+    // which is what the Entangling Trap / Sylvan Echoes rulings require.
+    supported("WhenAPlayerClashes", "trigger: a player clashes (Triggers.WheneverYouClash)")
+    supported("WhenAPlayerClashesAndWins", "trigger: a player clashes and wins (Triggers.WheneverYouClashAndWin)")
     supported("WhenACreatureAttacks", "trigger: attacks")
     // "Whenever this creature attacks a player, …" — the attacks-a-player trigger, gated on the declared
     // defender being a player (not a planeswalker or battle; CR 508.1 + Kaalia of the Vast's 2024-06-07
