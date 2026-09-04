@@ -144,7 +144,7 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
                                         }
                                     }
                                     is CostAtom.ReturnToHand -> {
-                                        val targets = context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter)
+                                        val targets = context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter, atom.youControl)
                                         if (targets.size < atom.count) {
                                             costCanBePaid = false; break
                                         }

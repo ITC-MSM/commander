@@ -4467,7 +4467,7 @@ class CastSpellHandler(
                 is CostAtom.ReturnToHand -> Triple(
                     AdditionalCostSelectionKind.RETURN_TO_HAND,
                     atom.count,
-                    costEnumerationUtils.findAbilityBounceTargets(state, action.playerId, atom.filter)
+                    costEnumerationUtils.findAbilityBounceTargets(state, action.playerId, atom.filter, atom.youControl)
                         .filter { id -> id != action.cardId }
                 )
                 else -> continue

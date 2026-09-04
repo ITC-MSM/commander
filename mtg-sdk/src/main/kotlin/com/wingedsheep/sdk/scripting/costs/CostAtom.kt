@@ -303,18 +303,28 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
         }
     }
 
-    /** Return [count] permanents matching [filter] you control to their owner's hand. */
+    /**
+     * Return [count] permanents matching [filter] to their owner's hand.
+     *
+     * [youControl] scopes the pool. The default is the common case — "return a creature you
+     * control" — but the axis is real: Drake Familiar's "sacrifice it unless you return an
+     * enchantment to its owner's hand" has a 2005-10-01 ruling saying *any* enchantment on the
+     * battlefield qualifies, an opponent's included. The pool is the payer's choice either way;
+     * the cost never targets, so an untargetable permanent is still a legal payment.
+     */
     @SerialName("AtomReturnToHand")
     @Serializable
     data class ReturnToHand(
         val filter: GameObjectFilter = GameObjectFilter.Any,
-        val count: Int = 1
+        val count: Int = 1,
+        val youControl: Boolean = true
     ) : CostAtom {
         override val selectionCount: Int get() = count
         override val description: String get() = buildString {
             append("return ")
             append(quantify(count, filter.description))
-            append(" you control to its owner's hand")
+            if (youControl) append(" you control")
+            append(" to its owner's hand")
         }
 
         override fun applyTextReplacement(replacer: TextReplacer): CostAtom {

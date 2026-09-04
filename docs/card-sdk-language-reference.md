@@ -454,8 +454,9 @@ exist in the cost and charges the life through the shared life-payment service.
   `Costs.ExileSelf`: deterministic, so there is no player selection and no `additionalCostInfo` is
   surfaced to the client — the engine pays it during activation, before the ability goes on the
   stack (CR 601.2h), and the ability still resolves with its source gone. Contrast
-  `Costs.ReturnToHand(filter, count)`, the choose-a-permanent-you-control bounce cost, which
-  deliberately excludes the source. Like the other self-removing costs it snapshots the source's
+  `Costs.ReturnToHand(filter, count, youControl = true)`, the choose-a-permanent bounce cost, which
+  deliberately excludes the source and is scoped to permanents you control unless `youControl` is
+  turned off. Like the other self-removing costs it snapshots the source's
   counters first, so the resolving effect can still read them via
   `DynamicAmounts.lastKnownSourceCounters(...)`.
 - `Costs.ExileFromGraveyard(count, filter)` — exile N matching cards from your graveyard.
@@ -727,7 +728,7 @@ exist in the cost and charges the life through the shared life-payment service.
 **`Costs.additional.*`** (wraps `AdditionalCost`) — extra costs paid alongside the mana cost. Card
 definitions construct these through the facade, e.g. `Costs.additional.SacrificePermanent(Filters.Creature)`.
 
-- `Costs.additional.ReturnToHand(filter = Filters.Any, count = 1)` — "as an additional cost to cast
+- `Costs.additional.ReturnToHand(filter = Filters.Any, count = 1, youControl = true)` — "as an additional cost to cast
   this spell, return [count] permanent(s) you control to its owner's hand" (Fear of Isolation). Paid
   as the spell is cast (CR 601.2f) via `additionalCostPayment.bouncedPermanents`; the enumerator
   surfaces the returnable permanents (a `costType = "ReturnToHand"` cost) and the client picks them
@@ -922,8 +923,13 @@ blanket exclusion: a self-inclusive cost stays payable on a board holding only t
 self-exclusive one is never offered the source in the first place.
 - `Costs.pay.Choice(options)` — present several `PayCost`s; player picks one (or the suffer effect).
   Unaffordable options are hidden. "...unless they sacrifice a nonland permanent or discard a card."
-- `Costs.pay.ReturnToHand(filter, count = 1)` — return permanents you control to their owner's hand.
-  Currently only consumed by `morphCost`; not yet wired into `PayOrSufferEffect`.
+- `Costs.pay.ReturnToHand(filter, count = 1, youControl = true)` — return permanents to their
+  owner's hand. Wired into `PayOrSufferEffect` (Drake Familiar: "sacrifice it unless you return an
+  enchantment to its owner's hand") as well as `morphCost`. Set `youControl = false` for the cards
+  whose ruling is control-agnostic — Drake Familiar's says *any* enchantment on the battlefield
+  qualifies, an opponent's included, and that an untargetable one does too because the ability never
+  targets. Selecting nothing is a decline, so the suffer half runs; with no legal permanent at all
+  there is no prompt. The source is always out of the pool.
 - `Costs.pay.RevealCard(filter, count = 1)` — reveal a card from hand matching `filter`. Currently
   only consumed by `morphCost`; not yet wired into `PayOrSufferEffect`.
 - `Costs.pay.RemoveCounters(count, counterType = null, filter = Any)` — remove `count` counters

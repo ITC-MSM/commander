@@ -304,7 +304,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         }
                         is CostAtom.ReturnToHand -> {
                             bounceCost = atom
-                            bounceTargets = context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter)
+                            bounceTargets = context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter, atom.youControl)
                             if (bounceTargets.size < atom.count) continue
                         }
                         is CostAtom.TapPermanents -> {
@@ -516,7 +516,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                     }
                                     is CostAtom.ReturnToHand -> {
                                         bounceCost = atom
-                                        bounceTargets = context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter)
+                                        bounceTargets = context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter, atom.youControl)
                                         if (bounceTargets.size < atom.count) {
                                             costCanBePaid = false
                                             break

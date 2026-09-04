@@ -70,7 +70,7 @@ object SelectionCostPresentation {
                 is CostAtom.TapPermanents -> costUtils.findAbilityTapTargets(
                     state, playerId, atom.filter, if (atom.excludeSelf) castCardId else null
                 )
-                is CostAtom.ReturnToHand -> costUtils.findAbilityBounceTargets(state, playerId, atom.filter)
+                is CostAtom.ReturnToHand -> costUtils.findAbilityBounceTargets(state, playerId, atom.filter, atom.youControl)
                 // The sum-gated graveyard costs: the pool is the whole (filtered) graveyard and the
                 // binding constraint is a summed measure, not a count — so [selectionCount] can't
                 // express it and [canPay] consults the resolver instead of counting candidates.

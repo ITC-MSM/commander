@@ -3096,6 +3096,59 @@
     ]
 }
 
+// Drake Familiar
+{
+    "name": "Drake Familiar",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Drake",
+    "oracleText": "Flying\nWhen this creature enters, sacrifice it unless you return an enchantment to its owner's hand.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "PayOrSuffer",
+                    "cost": {
+                        "type": "PayAtom",
+                        "atom": {
+                            "type": "AtomReturnToHand",
+                            "filter": "enchantment",
+                            "youControl": false
+                        }
+                    },
+                    "suffer": "SacrificeSelf"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "44",
+        "artist": "Darrell Riche",
+        "flavorText": "\"Falconry? A fine sport I suppose, if you're attracted to the frailty of birds.\"\n—Trivaz, Izzet mage",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/4/b4583623-e367-48cc-8e86-e6c5e35f1a9c.jpg?1783943688",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The ability lets you return any enchantment on the battlefield, including an opponent's enchantment. The ability isn't targeted, so you can return an untargetable enchantment. If there are no enchantments on the battlefield, or you choose not to return one, you must sacrifice Drake Familiar."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Dromad Purebred
 {
     "name": "Dromad Purebred",
