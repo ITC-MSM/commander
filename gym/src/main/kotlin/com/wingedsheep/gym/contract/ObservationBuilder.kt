@@ -59,17 +59,6 @@ import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 
-/** Stable serialized order for the per-player zone views in [TrainingObservation]. */
-internal val TRAINING_OBSERVATION_ZONE_ORDER = listOf(
-    Zone.HAND,
-    Zone.LIBRARY,
-    Zone.GRAVEYARD,
-    Zone.EXILE,
-    Zone.BATTLEFIELD,
-    Zone.COMMAND,
-    Zone.SIDEBOARD,
-)
-
 /**
  * Converts `(GameState, perspectivePlayerId)` into a [TrainingObservation].
  *
@@ -205,9 +194,8 @@ class ObservationBuilder(
     ): List<ZoneView> {
         // Emit a view for every modeled (player, zone) in the contract's stable order so trainers
         // see a consistent shape regardless of whether a zone happens to be empty. The stack has
-        // its own ordered representation above. Keep this order explicit: changing enum declaration
-        // order must not silently reorder model-facing inputs, and adding a zone must force an
-        // intentional schema decision through the completeness regression.
+        // its own ordered representation above; see [TRAINING_OBSERVATION_ZONE_ORDER] for why the
+        // order is spelled out rather than taken from the enum.
         val views = mutableListOf<ZoneView>()
         for (playerId in state.turnOrder) {
             for (zone in TRAINING_OBSERVATION_ZONE_ORDER) {

@@ -162,7 +162,7 @@ class ObservationVisibilityTest : ScenarioTestBase() {
                 view.zones
                     .filter { it.ownerId == playerId }
                     .map { it.zoneType }
-                    .toSet() shouldBe Zone.entries.filterNot { it == Zone.STACK }.toSet()
+                    .shouldContainExactly(TRAINING_OBSERVATION_ZONE_ORDER)
             }
 
             zone(view, game.player2Id, Zone.COMMAND).let {
@@ -254,7 +254,7 @@ class ObservationVisibilityTest : ScenarioTestBase() {
                 ManaPoolComponent(),
             ),
         ).copy(turnOrder = state.turnOrder + playerId)
-        for (zone in listOf(Zone.HAND, Zone.LIBRARY, Zone.GRAVEYARD, Zone.EXILE, Zone.BATTLEFIELD)) {
+        for (zone in TRAINING_OBSERVATION_ZONE_ORDER) {
             result = result.copy(zones = result.zones + (ZoneKey(playerId, zone) to emptyList()))
         }
         return result

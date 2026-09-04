@@ -9,6 +9,33 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
+ * Stable serialized order for the per-player zone views in [TrainingObservation.zones].
+ *
+ * The order is written out rather than derived from [Zone.entries] because it is a schema
+ * guarantee: reordering the enum's declarations must not silently permute model-facing inputs.
+ * Together with [NON_PLAYER_KEYED_ZONES] this classifies every [Zone] the engine models, so a new
+ * engine zone cannot be added without deciding here whether an agent observes it per player.
+ *
+ * Known gap: emblems are zone-less entities (they carry `EmblemSourceComponent` and live in no
+ * zone at all), so no zone view reaches them. Surfacing them needs its own contract field.
+ */
+val TRAINING_OBSERVATION_ZONE_ORDER: List<Zone> = listOf(
+    Zone.HAND,
+    Zone.LIBRARY,
+    Zone.GRAVEYARD,
+    Zone.EXILE,
+    Zone.BATTLEFIELD,
+    Zone.COMMAND,
+    Zone.SIDEBOARD,
+)
+
+/**
+ * Zones deliberately absent from [TRAINING_OBSERVATION_ZONE_ORDER] because they are not keyed per
+ * player: [TrainingObservation.stack] carries the stack's own ordered representation.
+ */
+val NON_PLAYER_KEYED_ZONES: Set<Zone> = setOf(Zone.STACK)
+
+/**
  * The payload an agent receives from any gym environment after `observe` / `step`.
  *
  * A gym env is no longer only a game of Magic — deckbuilding is its own env type
@@ -71,7 +98,11 @@ data class TrainingObservation(
     val players: List<PlayerView>,
 
     /**
-     * Per-zone entity views. A `(ownerId, zoneType)` pair appears at most once.
+     * Per-zone entity views: every player in turn order crossed with
+     * [TRAINING_OBSERVATION_ZONE_ORDER], in that order, empty zones included. So a
+     * `(ownerId, zoneType)` pair appears exactly once and the list is a fixed-width, fixed-order
+     * input a consumer may index positionally.
+     *
      * [ZoneView.hidden] means the zone is not wholly public to this perspective. [ZoneView.cards]
      * contains only the identities this perspective may know, so an individually revealed card can
      * appear while the zone remains hidden and [ZoneView.size] still reports its true size.

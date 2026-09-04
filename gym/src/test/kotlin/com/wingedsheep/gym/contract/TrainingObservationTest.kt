@@ -24,6 +24,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.collections.shouldNotContainAnyOf
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -93,8 +94,11 @@ class TrainingObservationTest : FunSpec({
             Zone.COMMAND,
             Zone.SIDEBOARD,
         )
-        TRAINING_OBSERVATION_ZONE_ORDER.toSet() shouldBe
-            Zone.entries.filterNot { it == Zone.STACK }.toSet()
+        // Every engine zone is classified in the contract itself, so a new one cannot be absorbed
+        // by relaxing this test — it has to be named either per-player or explicitly not.
+        TRAINING_OBSERVATION_ZONE_ORDER.toSet() + NON_PLAYER_KEYED_ZONES shouldBe
+            Zone.entries.toSet()
+        TRAINING_OBSERVATION_ZONE_ORDER.toSet() shouldNotContainAnyOf NON_PLAYER_KEYED_ZONES
 
         val env = newEnv()
         val perspective = env.playerIds[0]
