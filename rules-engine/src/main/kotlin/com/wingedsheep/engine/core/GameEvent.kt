@@ -369,6 +369,31 @@ data class ScriedEvent(
 ) : GameEvent
 
 /**
+ * A player just finished clashing (CR 701.30), after both cards were revealed, both top-or-bottom
+ * decisions were made and both moves resolved. Drives "Whenever you clash" and "Whenever you clash
+ * and win" triggers; see [com.wingedsheep.sdk.scripting.EventPattern.ClashedEvent].
+ *
+ * **Emitted once per clashing player**, so a two-player clash produces two of these — the clash
+ * names both participants, and per the Entangling Trap ruling a clash caused by an opponent's spell
+ * still fires your own clash triggers, and you can win a clash you did not initiate.
+ *
+ * @property playerId The clashing player this event is about.
+ * @property opponentId The other player in the same clash.
+ * @property won Whether [playerId] won it — CR 701.30d, a strictly greater mana value than every
+ *   other card revealed. A tie means this is false for both players, and so does an empty library
+ *   (nothing revealed can't be the greatest).
+ * @property sourceName The card/ability that caused the clash (for display).
+ */
+@Serializable
+@SerialName("ClashedEvent")
+data class ClashedEvent(
+    val playerId: EntityId,
+    val opponentId: EntityId,
+    val won: Boolean,
+    val sourceName: String
+) : GameEvent
+
+/**
  * A player just finished a `surveil N` (CR 701.25). Fires once per surveil, after the
  * kept/graveyard moves have all resolved. Drives "Whenever you surveil" and "Whenever you
  * scry or surveil" triggers; see [com.wingedsheep.sdk.scripting.EventPattern.SurveiledEvent].

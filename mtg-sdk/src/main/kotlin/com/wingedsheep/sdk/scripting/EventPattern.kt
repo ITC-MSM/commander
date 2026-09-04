@@ -501,6 +501,36 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     }
 
     /**
+     * Whenever [player] clashes (CR 701.30) — "Whenever you clash, …" (Entangling Trap, Rebellion
+     * of the Flamekin) and, with [requireWin], "Whenever you clash **and win**, …" (Sylvan Echoes).
+     * Fires once per clashing player, after the clash has fully ended: both cards revealed, both
+     * top-or-bottom decisions made and both moves resolved (the printed reminder text says so
+     * outright — "this ability triggers after the clash ends").
+     *
+     * **Both participants clash, not just the initiator.** A clash names two players — the one
+     * whose spell or ability said "clash with an opponent" and the opponent they chose — and the
+     * ruling on Entangling Trap and Rebellion of the Flamekin is explicit that "if you clash
+     * because of a spell or ability an opponent controls, the ability will still trigger. Likewise,
+     * you can still win the clash even if you weren't the player to initiate it." So the engine
+     * emits one event per participant and [player] is matched against that participant, exactly as
+     * [ForagedEvent] matches the player who *paid* rather than the source's controller.
+     *
+     * @property requireWin When true the trigger fires only for a participant who **won** the
+     *   clash — the "and win" half of Sylvan Echoes' wording, which is a condition on the trigger
+     *   itself rather than a gate on its effect. Cards whose payoff differs between winning and
+     *   losing ("… If you won, …") leave this false and branch inside the effect instead.
+     */
+    @SerialName("ClashedEvent")
+    @Serializable
+    data class ClashedEvent(
+        val player: Player = Player.You,
+        val requireWin: Boolean = false
+    ) : EventPattern {
+        override val description: String =
+            "${player.description} clashes" + if (requireWin) " and wins" else ""
+    }
+
+    /**
      * Whenever [player] discovers (CR 701.57). Fires once per discover, after the whole discover
      * process is complete — including the "cast for free or put into hand" decision (CR 701.57b: a
      * player has "discovered" only after the process finishes, "even if some or all of those

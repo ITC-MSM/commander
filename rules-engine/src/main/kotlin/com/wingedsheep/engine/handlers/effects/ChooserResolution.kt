@@ -8,6 +8,7 @@ import com.wingedsheep.engine.core.DecisionRequestedEvent
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.battlefield.chosenOpponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.PlayerComponent
@@ -83,6 +84,16 @@ object ChooserResolution {
                 opponents.size == 1 -> Outcome.Resolved(opponents.single())
                 else -> Outcome.NeedsOpponentPick(opponents)
             }
+        }
+
+        // The durable pick a preceding ChooseOpponentForSourceEffect wrote onto the source, so the
+        // opponent who revealed a card is the same one who decides where it goes (CR 701.30b/c).
+        Chooser.ChosenOpponent -> {
+            val chosen = context.sourceId?.let {
+                state.getEntity(it)?.chosenOpponent()
+            }
+            chosen?.let { Outcome.Resolved(it) }
+                ?: Outcome.Unresolvable("No opponent has been chosen for this source")
         }
 
         Chooser.TargetPlayer -> {
