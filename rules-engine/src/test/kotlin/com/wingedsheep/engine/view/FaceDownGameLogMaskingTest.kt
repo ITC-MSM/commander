@@ -2,13 +2,20 @@ package com.wingedsheep.engine.view
 
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.PaymentStrategy
+import com.wingedsheep.engine.core.EventCardPresentation
+import com.wingedsheep.engine.core.GameEvent
+import com.wingedsheep.engine.core.SpellCastEvent
+import com.wingedsheep.engine.core.engineSerializersModule
 import com.wingedsheep.engine.handlers.effects.FaceDownTurnUp
 import com.wingedsheep.engine.core.ChooseTargetsDecision
 import com.wingedsheep.engine.state.components.battlefield.PhasedOutComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownModeComponent
+import com.wingedsheep.engine.state.FACE_DOWN_DISPLAY_NAME
 import com.wingedsheep.engine.state.nameVisibleToAll
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
+import com.wingedsheep.engine.state.permissions.MayPlayPermission
+import com.wingedsheep.engine.state.permissions.addMayPlayPermission
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.Color
@@ -20,6 +27,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.FaceDownMode
+import com.wingedsheep.sdk.scripting.OpponentsPlayWithHandsRevealed
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import io.kotest.assertions.withClue
@@ -28,12 +36,15 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 /**
  * The game log must never print the name of a card that is face down on the battlefield.
  *
- * CR 708.2a: a face-down permanent has no name. The cast line was masked from the start, but the
- * three lines that follow it were not, so a disguised creature announced itself the moment it
+ * CR 708.2a: a face-down permanent has no name. The public cast line is masked, but the three
+ * lines that follow it were not, so a disguised creature announced itself the moment it
  * resolved:
  *
  * ```
@@ -44,14 +55,14 @@ import io.kotest.matchers.types.shouldBeInstanceOf
  * Opponent's Aurelia's Vindicator triggered: ... unless ... pays {2} <- leak
  * ```
  *
- * [ClientEventTransformer] cannot fix this downstream — it maps engine events to log text with no
- * `GameState` in hand, so it cannot tell a face-down permanent from a face-up one. Every one of
- * these is therefore masked where the event is emitted, in `StackResolver`.
+ * [ClientEventTransformer] cannot reconstruct a past audience from a later `GameState`. The cast
+ * event therefore carries a viewer-aware presentation captured by `StackResolver`; the remaining
+ * audience-agnostic events are masked where they are emitted.
  *
- * The mask applies to *both* players' logs, as the cast line already did: the object genuinely has
- * no name, and a controller who wants to know what their own face-down permanent is looks at the
- * card (CR 708.5) — [ClientStateTransformer] keeps the real name in their card view, which is what
- * [FaceDownHelperCardVisibilityTest] covers.
+ * The later events mask every player's log: the object genuinely has no name after it resolves.
+ * The cast event is viewer-aware instead, so its controller may read the card identity while an
+ * opponent cannot. [ClientStateTransformer] likewise keeps the real name in the controller's card
+ * view, which [FaceDownHelperCardVisibilityTest] covers.
  */
 class FaceDownGameLogMaskingTest : FunSpec({
 
@@ -78,9 +89,15 @@ class FaceDownGameLogMaskingTest : FunSpec({
         }
     }
 
+    val openThoughts = card("Open Thoughts") {
+        manaCost = "{1}"
+        typeLine = "Artifact"
+        staticAbility { ability = OpponentsPlayWithHandsRevealed }
+    }
+
     fun driver(): GameTestDriver {
         val d = GameTestDriver()
-        d.registerCards(TestCards.all + listOf(disguisedAngel, tapper))
+        d.registerCards(TestCards.all + listOf(disguisedAngel, tapper, openThoughts))
         d.initMirrorMatch(deck = Deck.of("Swamp" to 40))
         d.passPriorityUntil(Step.PRECOMBAT_MAIN)
         return d
@@ -119,6 +136,13 @@ class FaceDownGameLogMaskingTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool,
             )
         )
+        val castEvent = d.events.filterIsInstance<SpellCastEvent>().single()
+        // Keep the historical public-name field safe while the trusted snapshot retains the
+        // underlying identity required by knowledge bookkeeping.
+        castEvent.cardName shouldBe FACE_DOWN_DISPLAY_NAME
+        castEvent.underlyingCardName shouldBe "Disguised Angel"
+        castEvent.cardPresentation?.nameFor(caster) shouldBe "Disguised Angel"
+        castEvent.cardPresentation?.nameFor(opponent) shouldBe FACE_DOWN_DISPLAY_NAME
         d.bothPass()
 
         val opponentLog = d.logAsSeenBy(opponent)
@@ -130,9 +154,73 @@ class FaceDownGameLogMaskingTest : FunSpec({
 
         val casterLog = d.logAsSeenBy(caster)
         withClue("caster's own log: $casterLog") {
-            casterLog.forEach { it shouldNotContain "Disguised Angel" }
+            casterLog.contains("You cast Disguised Angel") shouldBe true
             casterLog.contains("Your Face-down creature entered the battlefield") shouldBe true
         }
+
+        // The event-time snapshot is authoritative even after the stack object has changed zones.
+        ClientEventTransformer.transform(listOf(castEvent), opponent)
+            .single().description shouldBe "Opponent cast Face-down creature"
+    }
+
+    test("a face-down cast from face-up exile retains its public identity") {
+        val d = driver()
+        val caster = d.activePlayer!!
+        val opponent = d.getOpponent(caster)
+        val cardId = d.putCardInExile(caster, "Disguised Angel")
+        d.replaceState(
+            d.state.addMayPlayPermission(
+                MayPlayPermission(
+                    id = EntityId.of("cast-disguised-angel-from-exile"),
+                    cardIds = setOf(cardId),
+                    controllerId = caster,
+                    timestamp = d.state.timestamp,
+                )
+            )
+        )
+        d.giveColorlessMana(caster, 3)
+
+        val result = d.submitSuccess(
+            CastSpell(
+                playerId = caster,
+                cardId = cardId,
+                castFaceDown = true,
+                paymentStrategy = PaymentStrategy.FromPool,
+            )
+        )
+
+        val castEvent = result.events.filterIsInstance<SpellCastEvent>().single()
+        castEvent.cardName shouldBe FACE_DOWN_DISPLAY_NAME
+        castEvent.underlyingCardName shouldBe "Disguised Angel"
+        castEvent.cardPresentation?.nameFor(caster) shouldBe "Disguised Angel"
+        castEvent.cardPresentation?.nameFor(opponent) shouldBe "Disguised Angel"
+        castEvent.cardPresentation?.nameFor(EntityId.of("spectator"), isSpectator = true) shouldBe
+            "Disguised Angel"
+        d.logAsSeenBy(opponent).any { it.contains("cast Disguised Angel") } shouldBe true
+    }
+
+    test("continuous hand visibility survives a face-down cast") {
+        val d = driver()
+        val caster = d.activePlayer!!
+        val opponent = d.getOpponent(caster)
+        d.putPermanentOnBattlefield(opponent, openThoughts.name)
+        val cardId = d.putCardInHand(caster, "Disguised Angel")
+        d.giveColorlessMana(caster, 3)
+
+        val result = d.submitSuccess(
+            CastSpell(
+                playerId = caster,
+                cardId = cardId,
+                castFaceDown = true,
+                paymentStrategy = PaymentStrategy.FromPool,
+            )
+        )
+
+        val castEvent = result.events.filterIsInstance<SpellCastEvent>().single()
+        castEvent.cardPresentation?.nameFor(caster) shouldBe "Disguised Angel"
+        castEvent.cardPresentation?.nameFor(opponent) shouldBe "Disguised Angel"
+        castEvent.cardPresentation?.nameFor(EntityId.of("spectator"), isSpectator = true) shouldBe
+            FACE_DOWN_DISPLAY_NAME
     }
 
     test("the ward a disguised permanent triggers is not attributed to the hidden card") {
@@ -190,7 +278,10 @@ class FaceDownGameLogMaskingTest : FunSpec({
 
         val log = d.logAsSeenBy(caster)
         withClue("log: $log") {
-            log.forEach { it shouldNotContain "Disguised Angel" }
+            // The caster's own event-time cast line may name their spell; the counter's target
+            // description remains audience-agnostic and must not repeat that identity.
+            log.filterNot { it == "You cast Disguised Angel" }
+                .forEach { it shouldNotContain "Disguised Angel" }
             log.contains("Opponent cast Counterspell targeting Face-down creature") shouldBe true
         }
     }
@@ -317,5 +408,46 @@ class FaceDownGameLogMaskingTest : FunSpec({
             opponentLog.contains("Disguised Angel resolved") shouldBe true
             opponentLog.contains("Opponent's Disguised Angel entered the battlefield") shouldBe true
         }
+    }
+
+    test("spell-cast presentation round-trips and legacy events retain their safe stored names") {
+        val json = Json { serializersModule = engineSerializersModule }
+        val current: GameEvent = SpellCastEvent(
+            spellEntityId = EntityId.of("spell"),
+            cardName = FACE_DOWN_DISPLAY_NAME,
+            casterId = EntityId.of("caster"),
+            cardPresentation = EventCardPresentation(
+                semanticName = "Disguised Angel",
+                publicName = FACE_DOWN_DISPLAY_NAME,
+                identityViewers = setOf(EntityId.of("caster")),
+            ),
+        )
+        json.decodeFromString<GameEvent>(json.encodeToString(current)) shouldBe current
+
+        // The raw event is trusted multi-recipient data. The transport-facing event contains only
+        // the one projected label and cannot carry the underlying identity or its audience set.
+        val opponentEvent: ClientEvent = ClientEventTransformer.transform(
+            listOf(current), EntityId.of("opponent")
+        ).single()
+        val encodedOpponentEvent = json.encodeToString(opponentEvent)
+        encodedOpponentEvent shouldNotContain "Disguised Angel"
+        encodedOpponentEvent shouldNotContain "identityViewers"
+
+        // Before viewer-specific capture, cardName was already the event-time public name. Keep
+        // ordinary face-up history readable and preserve the generic name stored for face-down
+        // casts rather than treating both legacy shapes as hidden.
+        val legacyFaceUp = """{"type":"SpellCastEvent","spellEntityId":"face-up","cardName":"Disguised Angel","casterId":"caster"}"""
+        val decodedFaceUp = json.decodeFromString<GameEvent>(legacyFaceUp) as SpellCastEvent
+        decodedFaceUp.cardPresentation shouldBe null
+        ClientEventTransformer.transform(listOf(decodedFaceUp), EntityId.of("opponent"))
+            .filterIsInstance<ClientEvent.SpellCast>()
+            .single().spellName shouldBe "Disguised Angel"
+
+        val legacyFaceDown = """{"type":"SpellCastEvent","spellEntityId":"face-down","cardName":"Face-down creature","casterId":"caster"}"""
+        val decodedFaceDown = json.decodeFromString<GameEvent>(legacyFaceDown) as SpellCastEvent
+        decodedFaceDown.cardPresentation shouldBe null
+        ClientEventTransformer.transform(listOf(decodedFaceDown), EntityId.of("opponent"))
+            .filterIsInstance<ClientEvent.SpellCast>()
+            .single().spellName shouldBe FACE_DOWN_DISPLAY_NAME
     }
 })

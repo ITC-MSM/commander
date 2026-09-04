@@ -27,12 +27,13 @@ const val FACE_DOWN_CARD_DISPLAY_NAME: String = "Face-down card"
 /**
  * The name [entityId] may be shown under to *any* viewer, its controller included.
  *
- * Use this for flat strings with no audience attached — a game-log line, a decision summary. Those
- * reach both players, and [com.wingedsheep.engine.view.ClientEventTransformer] cannot redact them
- * downstream: it maps engine events to text with no `GameState` in hand, so it cannot tell a
- * face-down object from a face-up one. The decision has to be made where the event is emitted.
+ * Use this only for text whose contract genuinely has one public answer, such as an
+ * audience-agnostic decision summary. A typed event that will later be projected for one viewer
+ * must not collapse all viewers to that answer: capture an
+ * [com.wingedsheep.engine.core.EventCardPresentation] through
+ * [com.wingedsheep.engine.view.EventPresentationFactory] while the event-time state still exists.
  *
- * Where the text *does* have an audience, ask
+ * For other text that has an immediate audience, ask
  * [com.wingedsheep.engine.view.Visibility.isCardIdentityVisibleTo] instead and pick the label from
  * its answer. That query knows what this file cannot: explicit reveals, effect-granted access, and
  * the zones CR 708.5 does and does not let a controller look in.

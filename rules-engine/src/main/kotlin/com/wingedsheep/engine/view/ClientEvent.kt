@@ -1039,7 +1039,9 @@ object ClientEventTransformer {
 
             is SpellCastEvent -> ClientEvent.SpellCast(
                 spellId = event.spellEntityId,
-                spellName = event.cardName,
+                // Legacy events already stored an event-time public name. Current events select
+                // through the captured audience without consulting a later game state.
+                spellName = event.cardPresentation?.nameFor(viewingPlayerId) ?: event.cardName,
                 casterId = event.casterId,
                 isYours = event.casterId == viewingPlayerId,
                 targetNames = event.targetNames,

@@ -9,6 +9,7 @@ import com.wingedsheep.engine.state.components.identity.ForetoldComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.identity.PlayerComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
+import com.wingedsheep.engine.state.components.player.HotseatControlComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.state.permissions.MayPlayPermission
@@ -205,6 +206,60 @@ class CardIdentityVisibilityTest : ScenarioTestBase() {
             visibility.isCardIdentityVisibleTo(
                 game.state, Zone.STACK, game.spell, game.opponent,
             ) shouldBe false
+        }
+
+        test("event presentation captures each stack viewer's visibility at event time") {
+            val game = faceDownGame()
+            // An explicit reveal grants this opponent access, while a spectator remains outside
+            // that private audience. The factory delegates the answer to Visibility rather than
+            // recoding revealed-to or face-down rules locally.
+            val revealed = game.state.updateEntity(game.spell) {
+                it.with(RevealedToComponent.to(game.opponent))
+            }
+            val presentation = EventPresentationFactory(visibility).castSpellIdentity(
+                beforeCast = revealed,
+                onStack = revealed,
+                castFromZone = null,
+                entityId = game.spell,
+                semanticName = "Hill Giant",
+            )
+
+            presentation.nameFor(game.controller) shouldBe "Hill Giant"
+            presentation.nameFor(game.opponent) shouldBe "Hill Giant"
+            presentation.nameFor(EntityId.of("spectator"), isSpectator = true) shouldBe
+                "Face-down creature"
+
+            val laterState = revealed.updateEntity(game.spell) { it.without<RevealedToComponent>() }
+            visibility.isCardIdentityVisibleTo(
+                laterState, Zone.STACK, game.spell, game.opponent,
+            ) shouldBe false
+            // Event projection never reconsiders a later state in which that reveal disappeared.
+            presentation.nameFor(game.opponent) shouldBe "Hill Giant"
+        }
+
+        test("event presentation includes the input actor controlling a face-down spell's seat") {
+            val game = faceDownGame()
+            val controlled = game.state.updateEntity(game.controller) {
+                it.with(HotseatControlComponent(controllerId = game.opponent))
+            }
+
+            withClue("the controlling connection receives the same private identity as the seat") {
+                visibility.isCardIdentityVisibleTo(
+                    controlled, Zone.STACK, game.spell, game.opponent,
+                ) shouldBe true
+            }
+
+            val presentation = EventPresentationFactory(visibility).castSpellIdentity(
+                beforeCast = controlled,
+                onStack = controlled,
+                castFromZone = null,
+                entityId = game.spell,
+                semanticName = "Hill Giant",
+            )
+            presentation.nameFor(game.controller) shouldBe "Hill Giant"
+            presentation.nameFor(game.opponent) shouldBe "Hill Giant"
+            presentation.nameFor(game.opponent, isSpectator = true) shouldBe
+                "Face-down creature"
         }
 
         // CR 708.5: "At any time, you may look at a face-down spell you control on the stack or a
