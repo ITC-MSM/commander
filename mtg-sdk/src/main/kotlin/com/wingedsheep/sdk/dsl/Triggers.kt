@@ -455,17 +455,34 @@ object Triggers {
      * TriggerContext.triggeringEntityId is set to the blocked attacker. Only the
      * SELF binding honors [attackerFilter] (the detector's ANY branch ignores it),
      * so combining ANY + [attackerFilter] is rejected rather than silently misfiring.
+     *
+     * [minBlockedAttackers] is the "blocks two or more creatures" bar (Lairwatch Giant): the whole
+     * combat produces a single trigger once the source blocks that many attackers, so it takes no
+     * [attackerFilter] and is SELF-only. Both restrictions are enforced here rather than left to
+     * read wrong at the detector.
      */
     fun blocks(
         filter: GameObjectFilter? = null,
         binding: TriggerBinding = TriggerBinding.SELF,
         attackerFilter: GameObjectFilter? = null,
+        minBlockedAttackers: Int = 1,
     ): TriggerSpec {
         require(attackerFilter == null || binding == TriggerBinding.SELF) {
             "attackerFilter is only supported with TriggerBinding.SELF"
         }
+        require(minBlockedAttackers >= 1) { "minBlockedAttackers must be at least 1" }
+        require(minBlockedAttackers == 1 || binding == TriggerBinding.SELF) {
+            "minBlockedAttackers is only supported with TriggerBinding.SELF"
+        }
+        require(minBlockedAttackers == 1 || attackerFilter == null) {
+            "minBlockedAttackers counts every blocked attacker, so it can't be combined with attackerFilter"
+        }
         return TriggerSpec(
-            event = BlockEvent(filter = filter, attackerFilter = attackerFilter),
+            event = BlockEvent(
+                filter = filter,
+                attackerFilter = attackerFilter,
+                minBlockedAttackers = minBlockedAttackers,
+            ),
             binding = binding,
         )
     }

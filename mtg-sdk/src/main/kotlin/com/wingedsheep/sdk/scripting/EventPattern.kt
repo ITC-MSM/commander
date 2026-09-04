@@ -951,16 +951,28 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * [attackerFilter] restricts the blocked attacker (e.g. "blocks a creature with flying").
      * When set with SELF binding, fires once per blocked attacker matching the filter and
      * sets TriggerContext.triggeringEntityId to that attacker. Skystinger pattern.
+     *
+     * [minBlockedAttackers] raises the bar to "blocks *N or more* creatures" (Lairwatch Giant),
+     * the blocking-side mirror of [CreaturesAttackYourOpponentEvent.minAttackers]. It fires **once**
+     * for the whole combat rather than once per blocked attacker, because "blocks two or more
+     * creatures" is one event no matter how many are blocked. SELF binding only — the detector's
+     * ANY branch fans out per blocker and has no count to read — and [Triggers.blocks] rejects the
+     * other combinations rather than silently misfiring.
      */
     @SerialName("BlockEvent")
     @Serializable
     data class BlockEvent(
         val filter: GameObjectFilter? = null,
-        val attackerFilter: GameObjectFilter? = null
+        val attackerFilter: GameObjectFilter? = null,
+        val minBlockedAttackers: Int = 1
     ) : EventPattern {
         override val description: String = buildString {
             append(if (filter != null) "a ${filter.description} blocks" else "a creature blocks")
-            if (attackerFilter != null) append(" a ${attackerFilter.description}")
+            if (minBlockedAttackers > 1) {
+                append(" $minBlockedAttackers or more creatures")
+            } else if (attackerFilter != null) {
+                append(" a ${attackerFilter.description}")
+            }
         }
         override fun applyTextReplacement(replacer: TextReplacer): EventPattern {
             val newFilter = filter?.applyTextReplacement(replacer)
