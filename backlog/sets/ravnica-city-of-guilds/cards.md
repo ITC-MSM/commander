@@ -2,15 +2,15 @@
 
 **Set Size:** 291 cards
 **Release Date:** October 7, 2005
-**Implemented:** 246 / 291
+**Implemented:** 251 / 291
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 37    | 33   |
 | Blue       | 39    | 33   |
-| Black      | 37    | 26   |
+| Black      | 37    | 27   |
 | Red        | 39    | 37   |
-| Green      | 37    | 32   |
-| Multicolor | 64    | 52   |
+| Green      | 37    | 34   |
+| Multicolor | 64    | 54   |
 | Artifact   | 21    | 16   |
 | Land       | 17    | 17   |
 
@@ -104,7 +104,7 @@
 - [x] Carrion Howler
 - [x] Clinging Darkness
 - [x] Dark Confidant
-- [ ] Darkblast
+- [x] Darkblast
 - [x] Dimir House Guard
 - [ ] Dimir Machinations
 - [x] Disembowel
@@ -195,11 +195,11 @@
 - [ ] Golgari Brownscale
 - [ ] Golgari Grave-Troll
 - [x] Goliath Spider
-- [ ] Greater Mossdog
+- [x] Greater Mossdog
 - [x] Hunted Troll
 - [x] Ivy Dancer
 - [ ] Life from the Loam
-- [ ] Moldervine Cloak
+- [x] Moldervine Cloak
 - [x] Nullmage Shepherd
 - [x] Overwhelm
 - [x] Perilous Forays
@@ -246,7 +246,7 @@
 - [x] Golgari Germination
 - [x] Golgari Guildmage
 - [x] Golgari Rotwurm
-- [ ] Grave-Shell Scarab
+- [x] Grave-Shell Scarab
 - [x] Guardian of Vitu-Ghazi
 - [x] Lightning Helix
 - [x] Loxodon Hierarch
@@ -270,7 +270,7 @@
 - [x] Selesnya Guildmage
 - [x] Selesnya Sagittars
 - [ ] Shadow of Doubt
-- [ ] Shambling Shell
+- [x] Shambling Shell
 - [x] Sisters of Stone Death
 - [x] Skyknight Legionnaire
 - [x] Sunhome Enforcer

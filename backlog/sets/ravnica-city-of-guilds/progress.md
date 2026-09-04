@@ -3,7 +3,7 @@
 Branch: `worktree-rav-completion`. Baseline: `4f09fec7e2`. Draft PR: #2236.
 
 The goal is all 291 cards, their required engine functionality, and full set verification.
-The initial source inventory was 239/291; the current inventory is **246/291**, with 45 missing.
+The initial source inventory was 239/291; the current inventory is **251/291**, with 40 missing.
 The checklist is an inventory, not proof of rules correctness. Existing generated definitions
 also need field and behavior review before completion can be claimed.
 
@@ -18,26 +18,41 @@ also need field and behavior review before completion can be claimed.
 - `Effects.Regenerate(target)`, a facade over the existing regeneration effect.
 - A regression fixes transmute after the discarded card is reanimated and copied in response:
   the search retains the discarded card's mana value, not the new permanent's characteristics.
+- Dredge N uses the shared draw-replacement pipeline with intrinsic graveyard sources.
+  The source is offered only when its owner can mill the full number; milling and returning
+  compose existing effects. Numeric keyword serialization and the mtgish emitter are covered.
+- Darkblast, Greater Mossdog, Grave-Shell Scarab, Moldervine Cloak, and Shambling Shell,
+  each with a separate scenario file.
+- Optional draw continuations preserve remaining draws through nested decisions and retain
+  prior declines through pauses and saved-game reloads. A live client check exposed repeated
+  offers after multiple declines; the regression now covers three dredgers and the next draw.
 - Backlog bootstrap recognizes `basicLand(...)`, matching the authoritative card inventory.
 
 ## Current verification
 
-- `just build`: passed after all seven cards and the transmute correction (5m 37s).
-- Focused scenarios: 27 passing tests across seven separate card files, including the response regression.
-- Canonical-printing checks: passed for all seven cards; fresh Scryfall fields and HTTP 200 art verified.
-- Snapshots: five new entries plus two corrected transmute filters in the second unit; no unrelated cards changed.
-- `just assay-differential --set RAV`: no divergences among 103 compared cards. Assay declines
-  transmute and does not independently verify these new abilities; all seven mtgish probes are SCAFFOLD.
-- `scripts/check-card-counts.py --check`: headers in sync.
-- Known baseline issue: 78 pre-existing unchecked entries across four Bloomburrow Commander
-  backlog files. The user authorized continuing and disclosing this unrelated failure. Those files are untouched.
-- No manual playthrough, UX pass, or end-to-end test has run yet. Existing `ActivateAbility`
-  and `SelectCardsDecision` routes serve transmute; reveal events show the selected card to both players.
-  `manual-scenarios/mechanics/transmute.json` is ready for manual inspection.
+- `just test`: passed after dredge and both continuation regressions (7m 34s).
+  An earlier dashboard timeout passed on focused rerun and in this final full run.
+- Dredge: 14 engine scenarios, 10 scenarios across five separate card files, two SDK
+  serialization tests, and two emitter tests passed. The final singular prompt wording
+  was checked by rerunning the 14 engine scenarios and both browser regressions.
+- Transmute: 27 scenarios across seven separate card files passed in the preceding unit;
+  `just build` passed there and the full test gate above includes them again.
+- Canonical-printing checks, fresh Scryfall fields, and HTTP 200 art checks passed for all
+  twelve added cards. Snapshot changes contain only the intended additions/corrections.
+- `just assay-differential --set RAV`: no divergences among 103 compared cards. Assay
+  declines transmute and dredge, so it does not independently verify these abilities.
+- Client typecheck passed. Live client inspection and two headless Chrome regressions
+  cover accepting dredge after multiple declines and declining all sources to draw normally.
+  Manual scenarios are available for both transmute and dredge. Transmute has not had a
+  browser playthrough yet; full-set self-play and verification remain outstanding.
+- Backlog headers are in sync. Known baseline issue: 78 pre-existing unchecked entries
+  across four Bloomburrow Commander backlog files. The user authorized continuing and
+  disclosing this unrelated failure. Those files are untouched.
 
 ## Remaining work
 
-- Implement dredge using the existing per-card draw replacement pipeline and graveyard sources.
+- Finish the seven remaining dredge cards: Golgari Brownscale, Golgari Grave-Troll,
+  Golgari Thug, Life from the Loam, Necroplasm, Nightmare Void, and Stinkweed Imp.
 - Finish the six remaining transmute cards: Clutch of the Undercity, Dimir Machinations,
   Grozoth, Netherborn Phalanx, Perplex, Shred Memory.
 - Complete the other card-specific investigations in `mechanics.md` and all unchecked cards.

@@ -2563,6 +2563,58 @@
     ]
 }
 
+// Darkblast
+{
+    "name": "Darkblast",
+    "manaCost": "{B}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets -1/-1 until end of turn.\nDredge 3 (If you would draw a card, you may mill three cards instead. If you do, return this card from your graveyard to your hand.)",
+    "keywords": [
+        "DREDGE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Dredge",
+            "amount": 3
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": -1
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": -1
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "rarity": "UNCOMMON",
+        "artist": "Randy Gallegos",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0dcaba91-06d3-4492-9e07-36a1b858ca47.jpg?1783943673"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Devouring Light
 {
     "name": "Devouring Light",
@@ -5880,6 +5932,70 @@
     ]
 }
 
+// Grave-Shell Scarab
+{
+    "name": "Grave-Shell Scarab",
+    "manaCost": "{2}{B}{G}{G}",
+    "typeLine": "Creature — Insect",
+    "oracleText": "{1}, Sacrifice this creature: Draw a card.\nDredge 1 (If you would draw a card, you may mill a card instead. If you do, return this card from your graveyard to your hand.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "DREDGE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Dredge",
+            "amount": 1
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "211",
+        "rarity": "RARE",
+        "artist": "Pete Venters",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/3/23f7c7d0-a48b-4153-8386-a9ab71e01dbe.jpg?1783943619",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "You may sacrifice Grave-Shell Scarab to pay for its first ability, then replace that draw using the Scarab's dredge ability. The result is that the top card of your library is put into your graveyard and Grave-Shell Scarab returns to your hand (after a brief trip to the graveyard)."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Grayscaled Gharial
 {
     "name": "Grayscaled Gharial",
@@ -5949,6 +6065,36 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Greater Mossdog
+{
+    "name": "Greater Mossdog",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Plant Dog",
+    "oracleText": "Dredge 3 (If you would draw a card, you may mill three cards instead. If you do, return this card from your graveyard to your hand.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "DREDGE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Dredge",
+            "amount": 3
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "169",
+        "artist": "Chippy",
+        "flavorText": "Man's best fungus.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/1/e1f75b44-01a3-47f6-96c9-9ce327111e64.jpg?1783943635"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -7794,6 +7940,47 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Moldervine Cloak
+{
+    "name": "Moldervine Cloak",
+    "manaCost": "{2}{G}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature gets +3/+3.\nDredge 2 (If you would draw a card, you may mill two cards instead. If you do, return this card from your graveyard to your hand.)",
+    "keywords": [
+        "DREDGE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Dredge",
+            "amount": 2
+        }
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 3,
+                "toughnessBonus": 3
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "173",
+        "rarity": "UNCOMMON",
+        "artist": "Wayne England",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/7/871c3f80-aaa7-485f-b519-57363f5905dd.jpg?1783943634"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -10902,6 +11089,62 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Shambling Shell
+{
+    "name": "Shambling Shell",
+    "manaCost": "{1}{B}{G}",
+    "typeLine": "Creature — Plant Zombie",
+    "oracleText": "Sacrifice this creature: Put a +1/+1 counter on target creature.\nDredge 3 (If you would draw a card, you may mill three cards instead. If you do, return this card from your graveyard to your hand.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "DREDGE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Dredge",
+            "amount": 3
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "230",
+        "artist": "Joel Thomas",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/c/4c93baa2-a23e-4e18-b4cd-779c992d2042.jpg?1783943611"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
     ]
 }
 
