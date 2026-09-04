@@ -11749,6 +11749,90 @@
     ]
 }
 
+// Trophy Hunter
+{
+    "name": "Trophy Hunter",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Human Archer",
+    "oracleText": "{1}{G}: This creature deals 1 damage to target creature with flying.\nWhenever a creature with flying dealt damage by this creature this turn dies, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "CreatureDealtDamageBySourceDiesEvent",
+                    "dyingFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "HasKeyword",
+                                "keyword": "FLYING"
+                            }
+                        ]
+                    }
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature kw:flying"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "187",
+        "rarity": "UNCOMMON",
+        "artist": "rk post",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/1/f18d1047-9010-437c-94ab-7a8ad3a0250f.jpg?1783943629",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The second ability checks whether a creature being put into a graveyard (a) currently has flying and (b) was dealt damage earlier this turn by Trophy Hunter. It doesn't matter whether Trophy Hunter dealt the damage that caused the creature to be destroyed, whether the damage from Trophy Hunter was dealt in combat or via its activated ability, or who controlled the creature."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Twilight Drover
 {
     "name": "Twilight Drover",

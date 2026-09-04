@@ -1191,11 +1191,23 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     @SerialName("CreatureDealtDamageBySourceDiesEvent")
     @Serializable
     data class CreatureDealtDamageBySourceDiesEvent(
-        val sourceFilter: GameObjectFilter? = null
+        val sourceFilter: GameObjectFilter? = null,
+        /**
+         * Narrows the *dying* creature, orthogonally to [sourceFilter], which narrows the damaging
+         * source. Trophy Hunter: "whenever a creature **with flying** dealt damage by this creature
+         * this turn dies". Evaluated against the dying creature's last-known information (CR
+         * 608.2h) — its ruling is explicit that the check is whether it "currently has flying",
+         * i.e. as it left the battlefield, not what its printed card says.
+         */
+        val dyingFilter: GameObjectFilter? = null
     ) : EventPattern {
-        override val description: String =
-            if (sourceFilter == null) "whenever a creature dealt damage by this creature this turn dies"
-            else "whenever a creature dealt damage this turn by ${sourceFilter.description} dies"
+        override val description: String = buildString {
+            append("whenever a ")
+            append(dyingFilter?.description ?: "creature")
+            append(" dealt damage ")
+            if (sourceFilter == null) append("by this creature this turn dies")
+            else append("this turn by ${sourceFilter.description} dies")
+        }
     }
 
     /**
