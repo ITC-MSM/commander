@@ -4842,6 +4842,12 @@ work for abilities-on-stack (which carry no `CardComponent`).
 - `HasLeastManaValueAmong(candidates)` (filter builder `hasLeastManaValueAmong(candidates)`) — has the
   least mana value among battlefield permanents matching the supplied composable filter. Ties all
   qualify, and target legality is rechecked at resolution (Culling Scales).
+- `HasGreatestManaValueAmongAllCreatures` (filter builder `hasGreatestManaValueAmongAllCreatures()`) —
+  has the greatest mana value among **all** creatures on the battlefield, both players' (Favor of the
+  Mighty). Ties all qualify. Its candidate set is fixed rather than filter-supplied precisely so the
+  continuous-effect projection pass can evaluate it — `HasLeastManaValueAmong` above takes a filter and
+  is therefore a point-of-use (target / gather) predicate only, inert as a static's affected set. Mana
+  value is read off the printed cost, so X counts as 0 (CR 202.3b) and a face-down creature counts as 0.
 - `IsRingBearer` (filter builder `ringBearer()`) — the creature is its controller's Ring-bearer
   (CR 701.54: has `RingBearerComponent` and is controlled by its designating owner). Used for
   player-level Ring-bearer conditions via `Conditions.YouControl(Creature.ringBearer(), negate = …)`
@@ -7414,6 +7420,12 @@ staticAbility {
 - `LegendRuleDoesNotApplyTo(filter)` — "The 'legend rule' doesn't apply to [filter] you control"
   (Spider-Verse — Spiders). Scan-based: `LegendRuleCheck` excludes permanents you control matching
   `filter` from the same-name duplicate grouping, so you may keep multiple copies (CR 704.5j).
+- `SkipDrawStep` — "Skip your draw step." Controller-scoped and standing: `DrawPhaseManager` scans the
+  projected battlefield (via `RoomFaceStatics`) as the draw step begins and takes no draw for a player
+  who controls one, every turn, without consuming anything. The one-shot counterparts are the
+  `SkipDrawStepComponent` marker and `Effects.SkipStepOrPhaseThisTurn`, both of which are spent by the
+  step they skip. Not unwrapped from a `ConditionalStaticAbility` — add that to
+  `DrawPhaseManager.skipsDrawStep` if an "as long as …" wording ever needs it. (Colfenor's Plans)
 - `NoMaximumHandSize` — controller has no hand-size limit *while this permanent is on the
   battlefield*. (Thought Vessel, Reliquary Tower) For a one-shot resolution effect that confers a
   *permanent, player-scoped* "no maximum hand size for the rest of the game" (survives the source
