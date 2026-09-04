@@ -108,6 +108,13 @@ game:
     # production stays clean — the deploy passes no GAME_EASTER_EGGS_ENABLED, so a redeploy can't
     # switch them back on. Local dev opts in via .env.
     enabled: ${GAME_EASTER_EGGS_ENABLED:false}
+  tournament:
+    # Decide AI-vs-AI bracket matches by simulation instead of playing them out. A round-robin with
+    # one human and N AI seats spends most of its CPU on games nobody is in; simulating them keeps the
+    # standings moving for a fraction of the cost. Set to false to play every match (e.g. on a box
+    # where the AI games are being spectated). An all-AI bracket (the AI Sandbox) is never simulated
+    # whatever this says — it exists to be watched.
+    simulate-ai-matches: ${GAME_TOURNAMENT_SIMULATE_AI_MATCHES:true}
   admin:
     # Password for admin replay feature. Feature is disabled if not set.
     password: ${GAME_ADMIN_PASSWORD:}

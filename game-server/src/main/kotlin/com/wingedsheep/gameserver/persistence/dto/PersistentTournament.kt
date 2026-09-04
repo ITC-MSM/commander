@@ -52,5 +52,7 @@ data class PersistentMatch(
     val isDraw: Boolean,
     val isComplete: Boolean,
     val player1GameWins: Int = 0,
-    val player2GameWins: Int = 0
+    val player2GameWins: Int = 0,
+    /** Defaulted so a payload written before simulated matches existed still decodes. */
+    val isSimulated: Boolean = false
 )

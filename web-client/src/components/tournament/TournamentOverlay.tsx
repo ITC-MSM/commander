@@ -493,6 +493,14 @@ export function TournamentOverlay({
                   : result.isDraw
                     ? 'Draw'
                     : `Winner: ${result.winnerId === result.player1Id ? result.player1Name : result.player2Name}`}
+                {result.isSimulated && (
+                  <span
+                    className={styles.resultSimulated}
+                    title="Both seats were AI, so the server decided this match instead of playing it. There is no replay."
+                  >
+                    simulated
+                  </span>
+                )}
               </span>
               <span>{result.isBye ? '' : result.player2Name}</span>
             </div>
