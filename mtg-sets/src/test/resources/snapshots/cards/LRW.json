@@ -488,6 +488,127 @@
     ]
 }
 
+// Ashling's Prerogative
+{
+    "name": "Ashling's Prerogative",
+    "manaCost": "{1}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "As this enchantment enters, choose odd or even. (Zero is even.)\nEach creature with mana value of the chosen quality has haste.\nEach creature without mana value of the chosen quality enters tapped.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsCreature",
+                                "ManaValueIsOdd"
+                            ]
+                        }
+                    }
+                },
+                "condition": {
+                    "type": "SourceChosenModeIs",
+                    "modeId": "odd"
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsCreature",
+                                "ManaValueIsEven"
+                            ]
+                        }
+                    }
+                },
+                "condition": {
+                    "type": "SourceChosenModeIs",
+                    "modeId": "even"
+                }
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithChoice",
+                "choiceType": "MODE",
+                "modeOptions": [
+                    {
+                        "id": "odd",
+                        "label": "Odd",
+                        "description": "Odd-cost creatures have haste; even-cost creatures enter tapped."
+                    },
+                    {
+                        "id": "even",
+                        "label": "Even",
+                        "description": "Even-cost creatures have haste; odd-cost creatures enter tapped."
+                    }
+                ]
+            },
+            {
+                "type": "PermanentsEnterTapped",
+                "appliesTo": {
+                    "type": "ZoneChangeEvent",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            "ManaValueIsEven"
+                        ]
+                    },
+                    "to": "Battlefield"
+                },
+                "condition": {
+                    "type": "SourceChosenModeIs",
+                    "modeId": "odd"
+                }
+            },
+            {
+                "type": "PermanentsEnterTapped",
+                "appliesTo": {
+                    "type": "ZoneChangeEvent",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            "ManaValueIsOdd"
+                        ]
+                    },
+                    "to": "Battlefield"
+                },
+                "condition": {
+                    "type": "SourceChosenModeIs",
+                    "modeId": "even"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "150",
+        "rarity": "RARE",
+        "artist": "Warren Mahy",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/8/d850d95e-ba27-49cc-aa7a-42508852fe20.jpg?1783942880",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "The \"chosen value\" is either \"odd\" or \"even.\" So either creatures with odd mana values enter tapped and creatures with even mana values have haste, or vice versa."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If a creature has X in its mana cost, that X is treated as 0 for the purposes of these effects. It doesn't matter what the value of X was while the creature was on the stack."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Auntie's Hovel
 {
     "name": "Auntie's Hovel",
@@ -2082,6 +2203,114 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Colfenor's Urn
+{
+    "name": "Colfenor's Urn",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever a creature with toughness 4 or greater is put into your graveyard from the battlefield, you may exile it.\nAt the beginning of the end step, if three or more cards have been exiled with this artifact, sacrifice it. If you do, return those cards to the battlefield under their owner's control.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature tou>=4 own:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": "TriggeringEntity",
+                        "destination": "Exile",
+                        "fromZone": "Graveyard",
+                        "linkToSource": true
+                    },
+                    "descriptionOverride": "Whenever a creature with toughness 4 or greater is put into your graveyard from the battlefield, you may exile it."
+                },
+                "descriptionOverride": "Whenever a creature with toughness 4 or greater is put into your graveyard from the battlefield, you may exile it."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "SacrificeTarget",
+                            "target": "Self"
+                        },
+                        "successCriterion": "SuccessCriterion.PermanentsSacrificed"
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": "FromLinkedExile",
+                                "storeAs": "linked_return"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "linked_return",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield"
+                                },
+                                "underOwnersControl": true
+                            }
+                        ]
+                    }
+                },
+                "interveningIf": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "ContextProperty",
+                        "key": "LINKED_EXILE_CARD_COUNT"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "descriptionOverride": "At the beginning of the end step, if three or more cards have been exiled with this artifact, sacrifice it. If you do, return those cards to the battlefield under their owner's control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "254",
+        "rarity": "RARE",
+        "artist": "Jim Pavelec",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/1/419fea28-3813-4e65-8b90-6d335fdf0a0b.jpg?1783942851",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "The second ability checks how many creatures have been exiled with Colfenor's Urn over the course of the entire game."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "The second ability forces you to sacrifice Colfenor's Urn. If the ability triggers and the Urn isn't sacrificed (because it left the battlefield or changed controllers, for example), the exiled cards won't be returned to the battlefield."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "The first ability triggers when a token creature with toughness 4 or greater is put into your graveyard. However, that token will cease to exist before Colfenor's Urn can exile it."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Consuming Bonfire
@@ -10903,6 +11132,207 @@
             {
                 "date": "2007-10-01",
                 "text": "This ability can cause a creature to become a copy of itself. This will usually have no visible effect."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Shelldock Isle
+{
+    "name": "Shelldock Isle",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "Hideaway 4 (When this land enters, look at the top four cards of your library, exile one face down, then put the rest on the bottom in a random order.)\nThis land enters tapped.\n{T}: Add {U}.\n{U}, {T}: You may play the exiled card without paying its mana cost if a library has twenty or fewer cards in it.",
+    "keywords": [
+        "HIDEAWAY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "HIDEAWAY",
+            "n": 4
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                }
+                            },
+                            "storeAs": "hideawayTop"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hideawayTop",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "hideawayPicked",
+                            "storeRemainder": "hideawayRest",
+                            "prompt": "Choose a card to exile face down",
+                            "selectedLabel": "Exile face down",
+                            "remainderLabel": "Put on bottom of library"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "hideawayPicked",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true,
+                            "faceDown": "HIDDEN"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "hideawayRest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{U}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "hideawayLinked"
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "hideawayLinked"
+                        },
+                        {
+                            "type": "GrantPlayWithoutPayingCost",
+                            "from": "hideawayLinked"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "GreatestAmongPlayers",
+                                "inner": {
+                                    "type": "Conditional",
+                                    "condition": {
+                                        "type": "Compare",
+                                        "left": {
+                                            "type": "AggregateZone",
+                                            "player": "You",
+                                            "zone": "Library"
+                                        },
+                                        "operator": "LTE",
+                                        "right": {
+                                            "type": "Fixed",
+                                            "amount": 20
+                                        }
+                                    },
+                                    "ifTrue": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    },
+                                    "ifFalse": {
+                                        "type": "Fixed",
+                                        "amount": 0
+                                    }
+                                }
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    }
+                ]
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "272",
+        "rarity": "RARE",
+        "artist": "Mark Tedin",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/4216656e-90e8-45fc-a0f6-0d0d79d0a021.jpg?1783942847",
+        "rulings": [
+            {
+                "date": "2022-04-29",
+                "text": "\"Hideaway N\" means \"When this permanent enters the battlefield, look at the top N cards of your library. Exile one of them face down and put the rest on the bottom of your library in a random order. The exiled card gains 'The player who controls the permanent that exiled this card may look at this card in the exile zone.'\""
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Any player who has controlled a permanent with a hideaway ability since a card was exiled with it may look at that card."
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Previously, permanents with hideaway entered the battlefield tapped. This ability has been removed from the definition of hideaway. Older cards have received errata to have an additional paragraph that reads \"[This permanent] enters the battlefield tapped,\" and they now have hideaway 4."
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Hideaway now causes you to put the rest of the cards on the bottom of your library in a random order instead of any order."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "It doesn't matter which library has twenty or fewer cards in it, and you don't have to specify a library."
             }
         ]
     },

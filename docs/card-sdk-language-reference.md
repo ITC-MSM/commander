@@ -11948,7 +11948,7 @@ The priority groups are (CR 616.1a–f):
   untapped regardless). Edge not covered: a same-event simultaneous mass-entry where the source itself is
   among the entering permanents (the source isn't yet consulted), and a land tapped via a generic
   `OnEnterRunEffect` self-tap (e.g. Game Trail) is not overridden.
-- `PermanentsEnterTapped(appliesTo = ZoneChangeEvent(filter, to = Zone.BATTLEFIELD))` — the global/group
+- `PermanentsEnterTapped(appliesTo = ZoneChangeEvent(filter, to = Zone.BATTLEFIELD), condition = null)` — the global/group
   counterpart of the self-only `EntersTapped`: "[filter] enter the battlefield tapped" (Zhao, the Moon
   Slayer — "Nonbasic lands enter tapped", `filter = GameObjectFilter.NonbasicLand`; also expresses
   Imposing Sovereign / Authority of the Consuls "creatures your opponents control enter tapped"). Like
@@ -11960,7 +11960,13 @@ The priority groups are (CR 616.1a–f):
   `EnterUntappedReplacements`, so per CR 614 an applicable `EntersUntapped` still wins. Created tokens are
   covered too: e.g. Dauntless Dismantler's "Artifacts your opponents control enter tapped" taps an
   opponent's Map/Treasure/Clue token, and Authority of the Consuls taps opponents' creature tokens (a token
-  entering attacking keeps its tapped state and is not overridden).
+  entering attacking keeps its tapped state and is not overridden). The optional `condition` is a gate
+  evaluated against the replacement *source* when a permanent would enter — the same axis `RedirectDamage`
+  and `EntersWithCounters` carry — for a source whose tap clause depends on state it can't put in the
+  filter: Ashling's Prerogative gates its even-mana-value half on `SourceChosenModeIs("odd")` and its
+  odd-mana-value half on `SourceChosenModeIs("even")`. Reach for it whenever the clause would otherwise
+  want a `ConditionalStaticAbility` wrapper — a runtime replacement can't be wrapped in one, because it is
+  stamped into the replacement component rather than projected through the layer system.
 - `RedirectZoneChange(newDestination, appliesTo, linkToSource = false, selfOnly = false, shuffleIntoLibrary = false, reveal = false, requiredCause = ZoneChangeCause.Any)`
   — redirect a zone change to a different destination (Rest in Peace / Leyline of the Void: graveyard →
   exile). `appliesTo` is an `EventPattern.ZoneChangeEvent(filter, from?, to?)`; the `filter`'s
