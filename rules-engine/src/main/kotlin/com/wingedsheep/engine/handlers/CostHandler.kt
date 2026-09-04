@@ -654,7 +654,7 @@ class CostHandler {
             candidates.size >= atom.count
         }
         is CostAtom.ReturnToHand ->
-            findMatchingPermanentsUnified(state, controllerId, atom.filter).size >= atom.count
+            findBounceCandidatesUnified(state, controllerId, atom).size >= atom.count
         is CostAtom.RevealFromHand -> {
             val handZone = ZoneKey(controllerId, Zone.HAND)
             findMatchingCardsUnified(state, state.getZone(handZone), atom.filter, controllerId).size >= atom.count
@@ -1230,7 +1230,6 @@ class CostHandler {
         }
 
         val toBounceList = choices.bounceChoices.take(atom.count)
-        val context = PredicateContext(controllerId = controllerId)
         var newState = state
         val allEvents = mutableListOf<GameEvent>()
 
@@ -1238,8 +1237,10 @@ class CostHandler {
             newState.getEntity(toBounce)
                 ?: return CostPaymentResult.failure("Bounce target not found")
 
-            // Validate the chosen bounce target matches the required filter
-            if (!predicateEvaluator.matches(newState, newState.projectedState, toBounce, atom.filter, context)) {
+            // Validate against the same candidate set affordability and the prompt used, so an
+            // opponent's permanent is rejected for an ordinary "you control" bounce and accepted
+            // for a control-agnostic one (Drake Familiar).
+            if (toBounce !in findBounceCandidatesUnified(newState, controllerId, atom)) {
                 return CostPaymentResult.failure("Bounce target does not match the required filter")
             }
 
@@ -1674,6 +1675,25 @@ class CostHandler {
      * without a source, so supplying one narrows the pool. Null keeps the old source-blind
      * behaviour for callers that genuinely have no source permanent.
      */
+    /**
+     * The permanents a [CostAtom.ReturnToHand] may be paid with — the payer's own by default, the
+     * whole battlefield when the atom's `youControl` axis is off (Drake Familiar's ruling). One
+     * helper so affordability and payment validation can't drift apart.
+     */
+    private fun findBounceCandidatesUnified(
+        state: GameState,
+        controllerId: EntityId,
+        atom: CostAtom.ReturnToHand,
+        sourceId: EntityId? = null
+    ): List<EntityId> {
+        if (atom.youControl) return findMatchingPermanentsUnified(state, controllerId, atom.filter, sourceId)
+        val context = PredicateContext(controllerId = controllerId, sourceId = sourceId)
+        val projected = state.projectedState
+        return state.getBattlefield().filter { entityId ->
+            predicateEvaluator.matches(state, projected, entityId, atom.filter, context)
+        }
+    }
+
     private fun findMatchingPermanentsUnified(
         state: GameState,
         controllerId: EntityId,

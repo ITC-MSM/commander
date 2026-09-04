@@ -582,6 +582,7 @@ class BeginningPhaseManager(
         StatePredicate.HasAnyCounter,
         StatePredicate.HasGreatestPower,
         StatePredicate.HasLeastPowerAmongAllCreatures,
+        StatePredicate.HasGreatestManaValueAmongAllCreatures,
         StatePredicate.HasLeastPower,
         StatePredicate.IsEquipped,
         StatePredicate.IsEnchanted,

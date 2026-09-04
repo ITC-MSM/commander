@@ -239,6 +239,16 @@ sealed interface SerializableModification {
     data class MustBlockSpecificAttacker(val attackerId: EntityId) : SerializableModification
 
     /**
+     * Combat restriction: a specific creature can't block a specific attacker (Screeching Griffin's
+     * "target creature can't block this creature this turn"). The mirror of
+     * [MustBlockSpecificAttacker]: affectedEntities holds the blocker, [attackerId] the one attacker
+     * it may not block. Unlike [SetCantBlock] the blocker is otherwise free to block, so this is
+     * enforced pairwise by `CantBlockSpecificAttackerRule` rather than projected onto the blocker.
+     */
+    @Serializable
+    data class CantBlockSpecificAttacker(val attackerId: EntityId) : SerializableModification
+
+    /**
      * Damage prevention: prevent all combat damage that would be dealt to a player
      * by attacking creatures this turn.
      * Used by Deep Wood and similar effects.
@@ -757,6 +767,9 @@ fun SerializableModification.toModification(): Modification = when (this) {
     is SerializableModification.MustBeBlockedByAll -> Modification.NoOp
     is SerializableModification.MustBeBlockedIfAble -> Modification.NoOp
     is SerializableModification.MustBlockSpecificAttacker -> Modification.NoOp
+    // CantBlockSpecificAttacker is pairwise, so it can't be a per-blocker projected flag —
+    // CantBlockSpecificAttackerRule reads the floating effect directly at block declaration.
+    is SerializableModification.CantBlockSpecificAttacker -> Modification.NoOp
     // PreventDamageFromAttackingCreatures doesn't map to a layer modification - it's checked by CombatManager directly
     is SerializableModification.PreventDamageFromAttackingCreatures -> Modification.NoOp
     // CantBeBlockedExceptBy maps to the real Layer.ABILITY modification, so it flows through the

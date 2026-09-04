@@ -739,26 +739,36 @@ sealed interface RetargetChooser {
 }
 
 /**
- * The player named by [chooser] may change the target or targets of the triggering spell or
- * ability (`context.triggeringEntityId`). Resolve from a trigger that fires on the spell/ability
- * (e.g. [com.wingedsheep.sdk.scripting.EventPattern.TargetsChosenEvent]). The chooser may change all,
- * some, or none of the targets; new targets must be legal for the original spell/ability judged
- * from *its* controller's perspective (CR: same number, no illegal target, no target chosen twice).
+ * The player named by [chooser] may change the target or targets of [spell]. Defaults to the
+ * triggering spell or ability (`context.triggeringEntityId`) — resolve from a trigger that fires on
+ * it (e.g. [com.wingedsheep.sdk.scripting.EventPattern.TargetsChosenEvent]) — and takes an
+ * [EffectTarget.ContextTarget] for the spell-that-was-targeted wording ("you may choose new targets
+ * for target instant or sorcery spell", Wild Ricochet). The chooser may change all, some, or none of
+ * the targets; new targets must be legal for the original spell/ability judged from *its*
+ * controller's perspective (CR: same number, no illegal target, no target chosen twice).
+ *
+ * This is the *all*-targets retarget. [ChangeTargetEffect] is the narrow sibling that swaps a single
+ * target and no-ops on a spell with more than one, so a card that says "targets" plural wants this
+ * one even when it names its spell as a target rather than inheriting it from a trigger.
  *
  * The non-random, player-chosen counterpart of [ReselectTargetRandomlyEffect]. When [chooser] is a
- * [RetargetChooser.StoredPlayer] that resolves to no player, the effect does nothing.
+ * [RetargetChooser.OwnerOfStored] that resolves to no player, the effect does nothing.
  */
 @SerialName("ChangeTriggeringObjectTargets")
 @Serializable
 data class ChangeTriggeringObjectTargetsEffect(
-    val chooser: RetargetChooser = RetargetChooser.Controller
+    val chooser: RetargetChooser = RetargetChooser.Controller,
+    val spell: EffectTarget = EffectTarget.TriggeringEntity
 ) : Effect {
     override val description: String = "${
         when (chooser) {
             is RetargetChooser.Controller -> "You"
             is RetargetChooser.OwnerOfStored -> "The chosen player"
         }
-    } may change the target or targets of the triggering spell or ability"
+    } may change the target or targets of ${
+        if (spell == EffectTarget.TriggeringEntity) "the triggering spell or ability"
+        else spell.description
+    }"
 }
 
 /**

@@ -292,6 +292,28 @@ class DeathAndLeaveTriggerDetector(
                 }
                 if (!fires) continue
 
+                // "a creature **with flying** dealt damage by ~ this turn dies" (Trophy Hunter).
+                // Delegated to the zone-change matcher rather than re-evaluated here: the dying
+                // creature is already in the graveyard, so every characteristic must be read off
+                // the LKI snapshot (CR 608.2h), and that matcher is where the LKI-aware predicate
+                // paths — keywords, projected type line, tokens swept by 704.5d — already live.
+                // Trophy Hunter's ruling turns on exactly that: the check is whether the creature
+                // had flying as it left, not what its printed card says.
+                val dyingFilter = trigger.dyingFilter
+                if (dyingFilter != null && !matcher.matchesZoneChangeTrigger(
+                        EventPattern.ZoneChangeEvent(
+                            filter = dyingFilter,
+                            from = Zone.BATTLEFIELD,
+                            to = Zone.GRAVEYARD
+                        ),
+                        TriggerBinding.ANY,
+                        event,
+                        entry.entityId,
+                        entry.controllerId,
+                        state
+                    )
+                ) continue
+
                 triggers.add(
                     PendingTrigger(
                         ability = ability,

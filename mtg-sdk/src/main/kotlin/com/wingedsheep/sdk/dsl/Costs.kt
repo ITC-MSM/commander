@@ -471,10 +471,14 @@ object Costs {
     // =========================================================================
 
     /**
-     * Return a permanent you control matching the filter to its owner's hand.
+     * Return a permanent matching the filter to its owner's hand. [youControl] scopes the pool to
+     * the payer's own permanents; pass false for a cost whose ruling is control-agnostic.
      */
-    fun ReturnToHand(filter: GameObjectFilter = GameObjectFilter.Any, count: Int = 1): AbilityCost =
-        AbilityCost.Atom(CostAtom.ReturnToHand(filter, count))
+    fun ReturnToHand(
+        filter: GameObjectFilter = GameObjectFilter.Any,
+        count: Int = 1,
+        youControl: Boolean = true
+    ): AbilityCost = AbilityCost.Atom(CostAtom.ReturnToHand(filter, count, youControl))
 
     // =========================================================================
     // Counter Removal Costs
@@ -621,8 +625,11 @@ object Costs {
          * (Fear of Isolation — "As an additional cost to cast this spell, return a permanent
          * you control to its owner's hand").
          */
-        fun ReturnToHand(filter: GameObjectFilter = GameObjectFilter.Any, count: Int = 1): AdditionalCost =
-            AdditionalCost.Atom(CostAtom.ReturnToHand(filter, count))
+        fun ReturnToHand(
+            filter: GameObjectFilter = GameObjectFilter.Any,
+            count: Int = 1,
+            youControl: Boolean = true
+        ): AdditionalCost = AdditionalCost.Atom(CostAtom.ReturnToHand(filter, count, youControl))
 
         /** Discard [count] cards matching [filter] (Force of Will). */
         fun DiscardCards(count: Int = 1, filter: GameObjectFilter = GameObjectFilter.Any): AdditionalCost =
@@ -899,9 +906,18 @@ object Costs {
         /** Choose one of [options] to pay. */
         fun Choice(options: List<PayCost>): PayCost = PayCost.Choice(options)
 
-        /** Return [count] permanents matching [filter] you control to their owner's hand. */
-        fun ReturnToHand(filter: GameObjectFilter = GameObjectFilter.Any, count: Int = 1): PayCost =
-            PayCost.Atom(CostAtom.ReturnToHand(filter, count))
+        /**
+         * Return [count] permanents matching [filter] to their owner's hand.
+         *
+         * [youControl] scopes the pool to the payer's own permanents. Drake Familiar passes false:
+         * its ruling is explicit that any enchantment on the battlefield qualifies, an opponent's
+         * included, and that an untargetable one does too because the ability doesn't target.
+         */
+        fun ReturnToHand(
+            filter: GameObjectFilter = GameObjectFilter.Any,
+            count: Int = 1,
+            youControl: Boolean = true
+        ): PayCost = PayCost.Atom(CostAtom.ReturnToHand(filter, count, youControl))
 
         /**
          * Tap [count] untapped permanents matching [filter] you control. The source is a legal

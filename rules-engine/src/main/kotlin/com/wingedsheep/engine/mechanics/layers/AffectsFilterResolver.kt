@@ -696,6 +696,8 @@ internal class AffectsFilterResolver {
         // and gathering), where PredicateEvaluator has the full ability context. It is not a
         // continuous-effect applicability predicate.
         is StatePredicate.HasLeastManaValueAmong -> false
+        StatePredicate.HasGreatestManaValueAmongAllCreatures ->
+            hasGreatestManaValueAmongAllCreaturesInProjection(state, entityId, container, projectedValues)
         StatePredicate.HasLeastPower -> hasLeastPowerInProjection(state, entityId, container, projectedValues)
         StatePredicate.HasAnyCounter -> {
             val counters = container.get<CountersComponent>()
@@ -741,6 +743,36 @@ internal class AffectsFilterResolver {
             }
             ?: return false
         return entityPower >= maxPower
+    }
+
+    /**
+     * Global greatest mana value across every creature on the battlefield — the projection-pass
+     * reading of [StatePredicate.HasGreatestManaValueAmongAllCreatures] (Favor of the Mighty).
+     *
+     * Creature-ness is read from the projection (so a permanent that only *became* a creature this
+     * pass counts), while mana value is a printed characteristic no layer modifies and is read off
+     * [CardComponent]. A face-down creature has no mana cost, so it counts as 0. Ties match every
+     * maximum-mana-value creature, which is what the card's 2007-10-01 ruling asks for.
+     */
+    private fun hasGreatestManaValueAmongAllCreaturesInProjection(
+        state: GameState,
+        entityId: EntityId,
+        container: ComponentContainer,
+        projectedValues: Map<EntityId, MutableProjectedValues>
+    ): Boolean {
+        if (!isCreatureInProjection(state, entityId, projectedValues)) return false
+        val entityManaValue = if (projectedValues[entityId]?.isFaceDown == true) 0
+        else container.get<CardComponent>()?.manaValue ?: return false
+        val maxManaValue = state.getBattlefield()
+            .asSequence()
+            .filter { isCreatureInProjection(state, it, projectedValues) }
+            .mapNotNull { candidateId ->
+                if (projectedValues[candidateId]?.isFaceDown == true) 0
+                else state.getEntity(candidateId)?.get<CardComponent>()?.manaValue
+            }
+            .maxOrNull()
+            ?: return false
+        return entityManaValue >= maxManaValue
     }
 
     private fun hasLeastPowerAmongAllCreaturesInProjection(

@@ -130,14 +130,22 @@ class CostEnumerationUtils(
 
     // --- Bounce targets ---
 
+    /**
+     * The permanents a bounce cost may be paid with. [youControl] mirrors
+     * [com.wingedsheep.sdk.scripting.costs.CostAtom.ReturnToHand.youControl]: the payer's own
+     * permanents by default, every permanent on the battlefield when the cost's ruling is
+     * control-agnostic.
+     */
     fun findAbilityBounceTargets(
         state: GameState,
         playerId: EntityId,
-        filter: GameObjectFilter
+        filter: GameObjectFilter,
+        youControl: Boolean = true
     ): List<EntityId> {
         val predicateContext = PredicateContext(controllerId = playerId)
         val projected = state.projectedState
-        return projected.getBattlefieldControlledBy(playerId).filter { entityId ->
+        val pool = if (youControl) projected.getBattlefieldControlledBy(playerId) else state.getBattlefield()
+        return pool.filter { entityId ->
             val container = state.getEntity(entityId) ?: return@filter false
             container.get<CardComponent>() ?: return@filter false
             predicateEvaluator.matches(state, projected, entityId, filter, predicateContext)

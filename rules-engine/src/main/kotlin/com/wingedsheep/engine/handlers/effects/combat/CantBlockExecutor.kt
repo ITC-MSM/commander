@@ -15,7 +15,9 @@ import kotlin.reflect.KClass
 /**
  * Executor for CantBlockEffect.
  *
- * Creates a floating effect with SetCantBlock for the targeted creature.
+ * Creates a floating effect with SetCantBlock for the targeted creature, or — when the effect
+ * names an [CantBlockEffect.attacker] — the pairwise CantBlockSpecificAttacker, which leaves the
+ * blocker free to block everything else.
  * For multi-target spells, wrap in ForEachTargetEffect.
  */
 class CantBlockExecutor : EffectExecutor<CantBlockEffect> {
@@ -36,9 +38,20 @@ class CantBlockExecutor : EffectExecutor<CantBlockEffect> {
         container.get<CardComponent>()
             ?: return EffectResult.success(state)
 
+        val attacker = effect.attacker
+        val modification = if (attacker == null) {
+            SerializableModification.SetCantBlock
+        } else {
+            // "can't block this creature this turn" — if the named attacker is already gone the
+            // restriction has nothing to bite on, so the whole effect does nothing.
+            val attackerId = TargetResolutionUtils.resolveTarget(attacker, context, state)
+                ?: return EffectResult.success(state)
+            SerializableModification.CantBlockSpecificAttacker(attackerId)
+        }
+
         val newState = state.addFloatingEffect(
             layer = Layer.ABILITY,
-            modification = SerializableModification.SetCantBlock,
+            modification = modification,
             affectedEntities = setOf(entityId),
             duration = effect.duration,
             context = context

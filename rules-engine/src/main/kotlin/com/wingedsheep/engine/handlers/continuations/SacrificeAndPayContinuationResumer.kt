@@ -179,6 +179,7 @@ class SacrificeAndPayContinuationResumer(
             PayOrSufferCostType.MANA -> resumePayOrSufferMana(state, continuation, response, checkForMore)
             PayOrSufferCostType.EXILE -> resumePayOrSufferExile(state, continuation, response, checkForMore)
             PayOrSufferCostType.TAP -> resumePayOrSufferTap(state, continuation, response, checkForMore)
+            PayOrSufferCostType.RETURN_TO_HAND -> resumePayOrSufferReturnToHand(state, continuation, response, checkForMore)
             PayOrSufferCostType.PUT_COUNTERS -> resumePayOrSufferPutCounters(state, continuation, response, checkForMore)
             PayOrSufferCostType.REMOVE_COUNTERS, PayOrSufferCostType.CHOICE -> ExecutionResult.error(state, "Choice cost type should be handled by PayOrSufferChoiceContinuation, not PayOrSufferContinuation")
         }
@@ -340,6 +341,43 @@ class SacrificeAndPayContinuationResumer(
             val transitionResult = ZoneTransitionService.moveToZone(
                 newState, permanentId, Zone.GRAVEYARD
             )
+            newState = transitionResult.state
+            events.addAll(transitionResult.events)
+        }
+
+        return checkForMore(newState, events)
+    }
+
+    /**
+     * Handle the bounce payment for pay or suffer (Drake Familiar).
+     *
+     * Selecting nothing is a decline, as it is for the sacrifice and tap payments — which is the
+     * card's own ruling: "if you choose not to return one, you must sacrifice it". The move goes
+     * through [ZoneTransitionService] rather than a bare zone write so attachments, counters, and
+     * leaves-the-battlefield triggers are all handled; the permanent goes to its *owner's* hand,
+     * which is what that service already does for [Zone.HAND].
+     */
+    private fun resumePayOrSufferReturnToHand(
+        state: GameState,
+        continuation: PayOrSufferContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is CardsSelectedResponse) {
+            return ExecutionResult.error(state, "Expected card selection response for pay or suffer return to hand")
+        }
+
+        val selectedPermanents = response.selectedCards
+
+        if (selectedPermanents.size < continuation.requiredCount) {
+            return executePayOrSufferConsequence(state, continuation, checkForMore)
+        }
+
+        var newState = state
+        val events = mutableListOf<GameEvent>()
+
+        for (permanentId in selectedPermanents) {
+            val transitionResult = ZoneTransitionService.moveToZone(newState, permanentId, Zone.HAND)
             newState = transitionResult.state
             events.addAll(transitionResult.events)
         }

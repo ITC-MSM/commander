@@ -454,8 +454,9 @@ exist in the cost and charges the life through the shared life-payment service.
   `Costs.ExileSelf`: deterministic, so there is no player selection and no `additionalCostInfo` is
   surfaced to the client — the engine pays it during activation, before the ability goes on the
   stack (CR 601.2h), and the ability still resolves with its source gone. Contrast
-  `Costs.ReturnToHand(filter, count)`, the choose-a-permanent-you-control bounce cost, which
-  deliberately excludes the source. Like the other self-removing costs it snapshots the source's
+  `Costs.ReturnToHand(filter, count, youControl = true)`, the choose-a-permanent bounce cost, which
+  deliberately excludes the source and is scoped to permanents you control unless `youControl` is
+  turned off. Like the other self-removing costs it snapshots the source's
   counters first, so the resolving effect can still read them via
   `DynamicAmounts.lastKnownSourceCounters(...)`.
 - `Costs.ExileFromGraveyard(count, filter)` — exile N matching cards from your graveyard.
@@ -727,7 +728,7 @@ exist in the cost and charges the life through the shared life-payment service.
 **`Costs.additional.*`** (wraps `AdditionalCost`) — extra costs paid alongside the mana cost. Card
 definitions construct these through the facade, e.g. `Costs.additional.SacrificePermanent(Filters.Creature)`.
 
-- `Costs.additional.ReturnToHand(filter = Filters.Any, count = 1)` — "as an additional cost to cast
+- `Costs.additional.ReturnToHand(filter = Filters.Any, count = 1, youControl = true)` — "as an additional cost to cast
   this spell, return [count] permanent(s) you control to its owner's hand" (Fear of Isolation). Paid
   as the spell is cast (CR 601.2f) via `additionalCostPayment.bouncedPermanents`; the enumerator
   surfaces the returnable permanents (a `costType = "ReturnToHand"` cost) and the client picks them
@@ -922,8 +923,13 @@ blanket exclusion: a self-inclusive cost stays payable on a board holding only t
 self-exclusive one is never offered the source in the first place.
 - `Costs.pay.Choice(options)` — present several `PayCost`s; player picks one (or the suffer effect).
   Unaffordable options are hidden. "...unless they sacrifice a nonland permanent or discard a card."
-- `Costs.pay.ReturnToHand(filter, count = 1)` — return permanents you control to their owner's hand.
-  Currently only consumed by `morphCost`; not yet wired into `PayOrSufferEffect`.
+- `Costs.pay.ReturnToHand(filter, count = 1, youControl = true)` — return permanents to their
+  owner's hand. Wired into `PayOrSufferEffect` (Drake Familiar: "sacrifice it unless you return an
+  enchantment to its owner's hand") as well as `morphCost`. Set `youControl = false` for the cards
+  whose ruling is control-agnostic — Drake Familiar's says *any* enchantment on the battlefield
+  qualifies, an opponent's included, and that an untargetable one does too because the ability never
+  targets. Selecting nothing is a decline, so the suffer half runs; with no legal permanent at all
+  there is no prompt. The source is always out of the pool.
 - `Costs.pay.RevealCard(filter, count = 1)` — reveal a card from hand matching `filter`. Currently
   only consumed by `morphCost`; not yet wired into `PayOrSufferEffect`.
 - `Costs.pay.RemoveCounters(count, counterType = null, filter = Any)` — remove `count` counters
@@ -2091,7 +2097,13 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   prompt is raised.
 - `GiftGivenEffect(target)` — "gift" temporary control.
 - `CantAttackEffect(target, unless?)` — target can't attack.
-- `CantBlockEffect(target, unless?)` — target can't block.
+- `CantBlockEffect(target, duration = EndOfTurn, attacker = null)` — target can't block. With
+  `attacker` set the restriction is **pairwise** — "target creature can't block *this creature* this
+  turn" (Screeching Griffin: `Effects.CantBlock(attacker = EffectTarget.Self)`), leaving the target
+  free to block everything else. The blanket form projects `SetCantBlock`; the pairwise form stores
+  `CantBlockSpecificAttacker(attackerId)` (the restriction mirror of provoke's
+  `MustBlockSpecificAttacker`) and is enforced by `CantBlockSpecificAttackerRule` at block
+  declaration, because a per-blocker projected flag can't express a pair.
 - `CantAttackGroupEffect(filter, condition?)` — group-scoped can't-attack.
 - `CantBlockGroupEffect(filter, condition?)` — group-scoped can't-block.
 - `Effects.Suspect(target, duration = Permanent)` (`SuspectEffect`) — target becomes suspected (MKM,
@@ -2385,7 +2397,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `ChangeTargetEffect(spell, newTarget)` — change a spell's target.
 - `ChangeSpellTargetEffect(spell, filter)` — same, filtered.
 - `ReselectTargetRandomlyEffect(spell)` — re-choose targets at random.
-- `Effects.ChangeTriggeringObjectTargets(chooser = RetargetChooser.Controller)` — the player named by `chooser` may change the target or targets of the triggering spell/ability (`context.triggeringEntityId`); the player-chosen, multi-target counterpart of `ReselectTargetRandomly`. `RetargetChooser.Controller` = the effect's controller; `RetargetChooser.OwnerOfStored(name)` = the owner of the single card in pipeline collection `name` (≠1 card → no chooser → no-op). Reselection is offered slot-by-slot among the original object's legal targets (legality judged from *its* controller, current target kept as a "keep" option, no target chosen twice). **Psychic Battle** composes from atoms: `Composite(GatherCards(TopOfLibrary(1, Player.Each), revealed=true, storeAs="revealed"), FilterCollection("revealed", GreatestManaValue, storeMatching="w"), ChangeTriggeringObjectTargets(RetargetChooser.OwnerOfStored("w")))` — a tie keeps several greatest cards so `OwnerOfStored` finds no unique owner and the targets stay put.
+- `Effects.ChangeTriggeringObjectTargets(chooser = RetargetChooser.Controller, spell = EffectTarget.TriggeringEntity)` — the player named by `chooser` may change the target or targets of `spell`, defaulting to the triggering spell/ability (`context.triggeringEntityId`); the player-chosen, multi-target counterpart of `ReselectTargetRandomly`. Pass a `ContextTarget`/`BoundVariable` for "you may choose new targets for target instant or sorcery spell" (**Wild Ricochet**, `Composite(ChangeTriggeringObjectTargets(spell = spell), CopyTargetSpell(spell))` — retarget first so the copy inherits the new targets, and `CopyTargetSpell` carries the copy's own "you may choose new targets" prompt). This is the *all*-targets retarget; `ChangeTarget` swaps one target and no-ops on a spell with more than one, so a card whose text says "targets" wants this even when it names its spell as a target. `RetargetChooser.Controller` = the effect's controller; `RetargetChooser.OwnerOfStored(name)` = the owner of the single card in pipeline collection `name` (≠1 card → no chooser → no-op). Reselection is offered slot-by-slot among the original object's legal targets (legality judged from *its* controller, current target kept as a "keep" option, no target chosen twice). **Psychic Battle** composes from atoms: `Composite(GatherCards(TopOfLibrary(1, Player.Each), revealed=true, storeAs="revealed"), FilterCollection("revealed", GreatestManaValue, storeMatching="w"), ChangeTriggeringObjectTargets(RetargetChooser.OwnerOfStored("w")))` — a tie keeps several greatest cards so `OwnerOfStored` finds no unique owner and the targets stay put.
 - `ReturnSpellToOwnersHandEffect` / `Effects.ReturnSpellToOwnersHand()` — return the targeted spell (`ContextTarget`) from the stack to its owner's hand. Not a counter (CR 701.27 / 701.5b), so "can't be countered" doesn't block it. Pair with `Targets.Spell` (Reprieve, Hullbreaker Horror).
 - `Effects.ReturnSpellOrPermanentToOwnersHand(target = ContextTarget(0))` (`ReturnSpellOrPermanentToOwnersHandEffect`) — bounce one target to its owner's hand, dispatching on what it resolves to: a **spell on the stack** is removed from the stack to hand (does not resolve; not a counter), a **permanent** is bounced normally (delegates to the standard `MoveToZone(HAND)` path with its full leave-the-battlefield cleanup). The bounce counterpart of `PutOnLibraryPositionOfChoiceEffect`. Pair with `TargetSpellOrPermanent` for "return target spell or nonland permanent…" cards (Press the Enemy); that requirement filters its two halves independently via `permanentFilter` / `spellFilter` (see *Spell-or-permanent targets*). To cap a follow-up free-cast at the bounced object's mana value, capture it first with `Effects.StoreNumber("mv", DynamicAmount.EntityProperty(EntityReference.Target(0), EntityNumericProperty.ManaValue))` before bouncing, then read it via `DynamicAmount.VariableReference("mv")`.
 
@@ -4842,6 +4854,12 @@ work for abilities-on-stack (which carry no `CardComponent`).
 - `HasLeastManaValueAmong(candidates)` (filter builder `hasLeastManaValueAmong(candidates)`) — has the
   least mana value among battlefield permanents matching the supplied composable filter. Ties all
   qualify, and target legality is rechecked at resolution (Culling Scales).
+- `HasGreatestManaValueAmongAllCreatures` (filter builder `hasGreatestManaValueAmongAllCreatures()`) —
+  has the greatest mana value among **all** creatures on the battlefield, both players' (Favor of the
+  Mighty). Ties all qualify. Its candidate set is fixed rather than filter-supplied precisely so the
+  continuous-effect projection pass can evaluate it — `HasLeastManaValueAmong` above takes a filter and
+  is therefore a point-of-use (target / gather) predicate only, inert as a static's affected set. Mana
+  value is read off the printed cost, so X counts as 0 (CR 202.3b) and a face-down creature counts as 0.
 - `IsRingBearer` (filter builder `ringBearer()`) — the creature is its controller's Ring-bearer
   (CR 701.54: has `RingBearerComponent` and is controlled by its designating owner). Used for
   player-level Ring-bearer conditions via `Conditions.YouControl(Creature.ringBearer(), negate = …)`
@@ -5256,11 +5274,16 @@ sealed set for attack-time facts beyond the basics.
 
 - `Blocks` — SELF, no filter.
 - `BecomesBlocked` — SELF, no filter.
-- `blocks(filter?, binding?, attackerFilter?)` — factory. `filter` constrains the
-  blocker (ANY binding). `attackerFilter` constrains the blocked attacker — requires
+- `blocks(filter?, binding?, attackerFilter?, minBlockedAttackers = 1)` — factory. `filter`
+  constrains the blocker (ANY binding). `attackerFilter` constrains the blocked attacker — requires
   SELF binding for "whenever this creature blocks a [filter]" (Skystinger);
   combining it with ANY is rejected (the ANY detector branch ignores `attackerFilter`).
   `triggeringEntityId` is set to the blocked attacker in that case.
+  `minBlockedAttackers` is the "blocks *N or more* creatures" bar (Lairwatch Giant) — the blocking
+  mirror of `CreaturesAttackYourOpponentEvent(minAttackers)`. It fires **once** for the combat, not
+  once per blocked attacker, and is SELF-only and incompatible with `attackerFilter` (both rejected
+  at construction). Read off `BlockersDeclaredEvent`, so a block count raised mid-combat by a later
+  effect does not re-check it.
 - `becomesBlocked(filter?, binding?)` — factory. Replaces the old
   `CreatureYouControlBecomesBlocked` and `FilteredBecomesBlocked(filter)`.
 - `BlocksOrBecomesBlockedBy(filter, binding = SELF, oncePerCombat = false)` — either direction,
@@ -5388,6 +5411,7 @@ Named sugar for the common cases; reach for the factories for any other combinat
 - `damageDealtToYou(sourceFilter?, damageType?)` — the source-restricted factory behind `YouAreDealtDamage`: "whenever [a source matching the filter] deals damage to you". `GameObjectFilter.Creature` for Aurification's "whenever a creature deals damage to you"; `GameObjectFilter.Any.opponentControls()` for Farsight Mask's "a source an opponent controls". "You" is the controller of the permanent bearing the trigger, and the filter's controller-relative predicates resolve against that same player. **Always use one of these two for a player-recipient damage trigger** — `RecipientFilter.You` is unmatchable on the general observer path (`TriggerMatcher.matchesDealsDamageTrigger` returns false for it) and reaches its ability only through the dedicated damage-to-you index.
 - `CreatureDealtDamageByThisDies` — Etali / Sengir / Soul Collector shape (SELF binding): "whenever a creature dealt damage by *this* permanent this turn dies". Uses `CreatureDealtDamageBySourceDiesEvent(sourceFilter = null)`.
 - `CreatureDealtDamageByAttachedDies` — the same event and the same tracker read one object further out (ATTACHED binding): "whenever a creature dealt damage by **equipped** creature this turn dies" (Scythe of the Wretched). The only difference from `CreatureDealtDamageByThisDies` is where the damage tracker is read from — the attachment target rather than the permanent bearing the trigger. The attachment is resolved when the creature *dies*, not when the damage was dealt, so an Equipment that moved between the two moments still fires (its own ruling) and an unattached Equipment never fires. Use this for any Equipment or Aura whose text says "equipped creature" / "enchanted creature" in a dealt-damage-dies trigger; `creatureDealtDamageBySourceDies(filter)` is for the board-wide observer wording instead.
+- `creatureDealtDamageByThisDies(dyingFilter)` — `CreatureDealtDamageByThisDies` narrowed to a dying creature matching `dyingFilter` (Trophy Hunter: "whenever a creature **with flying** dealt damage by this creature this turn dies"). `dyingFilter` is orthogonal to `sourceFilter` — the latter narrows the damaging source, this one the creature that died — and is matched against the dying creature's last-known information as it left the battlefield (CR 608.2h), through the same LKI-aware predicate path as an ordinary dies trigger. Trophy Hunter's ruling turns on exactly that: the check is whether the creature *currently* has flying, so one that lost it before dying doesn't count and one that gained it does.
 - `creatureDealtDamageBySourceDies(sourceFilter)` — observer variant (ANY binding): "whenever another creature dealt damage this turn by [a source matching the filter] dies" (Shelob, Child of Ungoliant: `GameObjectFilter.Creature.youControl().withSubtype("Spider")`). The damaging source is matched against the filter using last-known info from when it dealt the damage (a `DamagedBySourcesThisTurnComponent` snapshot of the source's controller + subtypes), so a source that died in the same combat still qualifies (CR 608.2h). Only the filter's controller predicate, required subtype, and creature requirement are evaluated against the snapshot.
 
 **Factories** (axes: `damageType` × `recipient` × `sourceFilter` × `binding` for outgoing; `source` × `binding` for incoming):
@@ -7414,6 +7438,12 @@ staticAbility {
 - `LegendRuleDoesNotApplyTo(filter)` — "The 'legend rule' doesn't apply to [filter] you control"
   (Spider-Verse — Spiders). Scan-based: `LegendRuleCheck` excludes permanents you control matching
   `filter` from the same-name duplicate grouping, so you may keep multiple copies (CR 704.5j).
+- `SkipDrawStep` — "Skip your draw step." Controller-scoped and standing: `DrawPhaseManager` scans the
+  projected battlefield (via `RoomFaceStatics`) as the draw step begins and takes no draw for a player
+  who controls one, every turn, without consuming anything. The one-shot counterparts are the
+  `SkipDrawStepComponent` marker and `Effects.SkipStepOrPhaseThisTurn`, both of which are spent by the
+  step they skip. Not unwrapped from a `ConditionalStaticAbility` — add that to
+  `DrawPhaseManager.skipsDrawStep` if an "as long as …" wording ever needs it. (Colfenor's Plans)
 - `NoMaximumHandSize` — controller has no hand-size limit *while this permanent is on the
   battlefield*. (Thought Vessel, Reliquary Tower) For a one-shot resolution effect that confers a
   *permanent, player-scoped* "no maximum hand size for the rest of the game" (survives the source
@@ -7691,6 +7721,12 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   taxed by {2} becomes `{2}, {T}:` — and there is no `manaFloor`, since costs only grow. Skyseer's
   Chariot: "Activated abilities of sources with the chosen name cost {2} more to activate" →
   `IncreaseActivatedAbilityCost(GroupFilter(GameObjectFilter.Any.namedFromChosenComponent()), DynamicAmount.Fixed(2))`.
+  `excludeManaAbilities = true` leaves mana abilities (CR 605) untaxed — the flag reads the ability's
+  own `isManaAbility`, the mirror of `PreventActivatedAbilities(nonManaAbilitiesOnly = true)`. It is
+  what makes a *board-wide* tax playable at all: Suppression Field, "Activated abilities cost {2}
+  more to activate unless they're mana abilities" →
+  `IncreaseActivatedAbilityCost(GroupFilter(GameObjectFilter.Any), DynamicAmount.Fixed(2), excludeManaAbilities = true)`.
+  Without it, every land's `{T}: Add …` would be taxed too.
 - `MayCastFromGraveyard(filter, lifeCost = 0, duringYourTurnOnly = false, entersWithCounter = null, addedSubtypeOnEntry = null, oncePerTurn = false, exileInsteadOfGraveyard = false)`
   — cast spells matching `filter` from your graveyard following normal timing, optionally paying
   `lifeCost` life. Free for Yawgmoth's Agenda (`MayCastFromGraveyard(Nonland)`); `lifeCost = 1,
@@ -11810,6 +11846,15 @@ The priority groups are (CR 616.1a–f):
   `RecipientFilter` the prevention and `ModifyDamageAmount` paths understand works here too —
   including `RecipientFilter.OpponentOrPermanentTheyControl` (Twinflame Tyrant). Each hosting
   permanent is its own replacement and applies once (CR 616.1): two Twinflame Tyrants quadruple.
+- `HalveDamage(restrictions?, appliesTo)` — the dividing mirror of `DoubleDamage`: matching damage is
+  halved, **rounded down**. Ghosts of the Innocent: `HalveDamage(appliesTo = DamageEvent(recipient =
+  RecipientFilter.Any))` — "a permanent or player" is the unscoped recipient, so combat and burn,
+  creatures and players, the host's own controller included, are all halved. Its own type rather than
+  a negative `ModifyDamageAmount` because the reduction is *multiplicative* and no `DynamicAmount` can
+  read the incoming amount. Half of 1 rounded down is 0, so a 1-damage source deals nothing; each
+  hosting permanent applies once (CR 616.1), so three copies take 14 to 7, 3, then 1. It runs after
+  the `DoubleDamage` pass and shares its `restrictions` / `damageType` / source / recipient handling.
+  It is **not** a prevention effect, so `DamageCantBePrevented` (Excruciator) does not switch it off.
   A player who is a legal recipient sees a "Damage Doubled" badge on their life orb — **except** when
   the source filter is attachment-scoped (`SourceFilter.EquippedCreature` / `EnchantedCreature`), which
   badges the attached creature's card instead, and only while it is attached. That case is a property

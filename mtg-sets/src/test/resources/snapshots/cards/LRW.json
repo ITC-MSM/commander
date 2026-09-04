@@ -2205,6 +2205,88 @@
     ]
 }
 
+// Colfenor's Plans
+{
+    "name": "Colfenor's Plans",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, exile the top seven cards of your library face down.\nYou may look at the cards exiled with this enchantment, and you may play lands and cast spells from among those cards.\nSkip your draw step.\nYou can't cast more than one spell each turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 7
+                                }
+                            },
+                            "storeAs": "colfenorsPlansExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "colfenorsPlansExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true,
+                            "faceDown": "HIDDEN",
+                            "lookableInExile": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this enchantment enters, exile the top seven cards of your library face down."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantMayCastFromLinkedExile",
+                "filter": {}
+            },
+            "SkipDrawStep",
+            "RestrictSpellsCastPerTurn"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "106",
+        "rarity": "RARE",
+        "artist": "Darrell Riche",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f8d06368-d226-4089-84d4-950a3ebdfb15.jpg?1783942893",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "The turn you cast Colfenor's Plans, you have cast (at least) one spell that turn. After it enters and its last ability goes into effect, you can't cast any more spells that turn."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "Playing a card exiled with Colfenor's Plans follows all the normal rules for playing that card. You must pay its costs, and you must follow all timing restrictions, for example."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If an exiled card has morph, you may cast it face down."
+            },
+            {
+                "date": "2013-04-15",
+                "text": "If Colfenor's Plans leaves the battlefield, you can continue to look at cards exiled by it, but you can no longer play them."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Colfenor's Urn
 {
     "name": "Colfenor's Urn",
@@ -4155,6 +4237,116 @@
     ]
 }
 
+// Favor of the Mighty
+{
+    "name": "Favor of the Mighty",
+    "manaCost": "{1}{W}",
+    "typeLine": "Kindred Enchantment — Giant",
+    "oracleText": "Each creature with the greatest mana value has protection from each color.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantProtection",
+                "color": "WHITE",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "HasGreatestManaValueAmongAllCreatures"
+                        ]
+                    }
+                }
+            },
+            {
+                "type": "GrantProtection",
+                "color": "BLUE",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "HasGreatestManaValueAmongAllCreatures"
+                        ]
+                    }
+                }
+            },
+            {
+                "type": "GrantProtection",
+                "color": "BLACK",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "HasGreatestManaValueAmongAllCreatures"
+                        ]
+                    }
+                }
+            },
+            {
+                "type": "GrantProtection",
+                "color": "RED",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "HasGreatestManaValueAmongAllCreatures"
+                        ]
+                    }
+                }
+            },
+            {
+                "type": "GrantProtection",
+                "color": "GREEN",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "HasGreatestManaValueAmongAllCreatures"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "14",
+        "rarity": "RARE",
+        "artist": "Larry MacDougall",
+        "flavorText": "\"What does a mountain fear of a fly? Giants are barely aware of us, let alone afraid.\"\n—Gaddock Teeg",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/0/20d858be-4c03-4819-94e9-ca4ca3de9032.jpg?1783942915",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "If there's a tie for highest mana value, all of those creatures have protection from all colors."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "This effect is checked continuously. If a new creature enters with the highest mana value, it gains protection from all colors and the previous highest loses it."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If a creature has X in its mana cost, that X is treated as 0 for the purposes of this effect. It doesn't matter what the value of X was while the creature was on the stack."
+            },
+            {
+                "date": "2024-06-07",
+                "text": "This cards was originally printed with the \"tribal\" card type. That card type has been replaced with \"kindred\". This change does not affect the gameplay function of this card."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Final Revels
 {
     "name": "Final Revels",
@@ -5999,6 +6191,69 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Horde of Notions
+{
+    "name": "Horde of Notions",
+    "manaCost": "{W}{U}{B}{R}{G}",
+    "typeLine": "Legendary Creature — Elemental",
+    "oracleText": "Vigilance, trample, haste\n{W}{U}{B}{R}{G}: You may play target Elemental card from your graveyard without paying its mana cost.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "VIGILANCE",
+        "TRAMPLE",
+        "HASTE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{W}{U}{B}{R}{G}"
+                    }
+                },
+                "effect": "GrantFreeCastTargetFromExile",
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "Elemental own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "elemental"
+                    }
+                ],
+                "descriptionOverride": "You may play target Elemental card from your graveyard without paying its mana cost."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "249",
+        "rarity": "RARE",
+        "artist": "Adam Rex",
+        "flavorText": "Even the oldest treefolk was but an acorn when Lorwyn's first mysteries were born.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/0/80b9ea46-ae9b-4729-b206-0ba3ddc7660d.jpg?1783942856",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "This ability does not allow you to pay the evoke cost of the targeted Elemental card."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE",
+        "BLACK",
+        "RED",
+        "GREEN"
     ]
 }
 
@@ -7903,6 +8158,59 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Lairwatch Giant
+{
+    "name": "Lairwatch Giant",
+    "manaCost": "{5}{W}",
+    "typeLine": "Creature — Giant Warrior",
+    "oracleText": "This creature can block an additional creature each combat.\nWhenever this creature blocks two or more creatures, it gains first strike until end of turn.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "BlockEvent",
+                    "minBlockedAttackers": 2
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "FIRST_STRIKE",
+                    "target": "Self"
+                },
+                "descriptionOverride": "it gains first strike until end of turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CanBlockAdditionalForCreatureGroup",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "29",
+        "artist": "Warren Mahy",
+        "flavorText": "A giant can brood over a grudge for decades, and woe to those who interrupt him.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/6/c64ba1c8-b93a-4169-9ba0-d3fc5bf57676.jpg?1783942912",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "Lairwatch Giant's second ability triggers if it blocks at least two creatures when blockers are declared. It will also trigger if it blocks fewer than two creatures when blockers are declared and effects then cause it to block more creatures. However, if Lairwatch Giant is already blocking two or more creatures, and effects then cause it to block more creatures, the ability won't trigger again."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -14147,6 +14455,85 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Wild Ricochet
+{
+    "name": "Wild Ricochet",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Instant",
+    "oracleText": "You may choose new targets for target instant or sorcery spell. Then copy that spell. You may choose new targets for the copy.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ChangeTriggeringObjectTargets",
+                    "spell": {
+                        "type": "BoundVariable",
+                        "name": "target instant or sorcery spell"
+                    }
+                },
+                {
+                    "type": "CopyTargetSpell",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target instant or sorcery spell"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "instant|sorcery",
+                    "zone": "Stack"
+                },
+                "id": "target instant or sorcery spell"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "196",
+        "rarity": "RARE",
+        "artist": "Dan Murayama Scott",
+        "flavorText": "\"I knew that trick long before your great-grandmother's great-grandmother was born.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/7/d76f09bc-b49a-4ad2-be2d-2a191d41b86d.jpg?1783942868",
+        "rulings": [
+            {
+                "date": "2013-07-01",
+                "text": "Wild Ricochet can target (and copy) any instant or sorcery spell, not just one with targets. It doesn't matter who controls it."
+            },
+            {
+                "date": "2013-07-01",
+                "text": "When Wild Ricochet resolves, it creates a copy of a spell. You control the copy. The controller of the original spell retains control of that spell. The copy is created on the stack, so it's not \"cast.\" Abilities that trigger when a player casts a spell won't trigger. The copy will then resolve like a normal spell, after players get a chance to cast spells and activate abilities. The copy resolves before the original spell."
+            },
+            {
+                "date": "2013-07-01",
+                "text": "The copy will have the same targets as the spell it's copying unless you choose new ones. You may change any number of the targets, including all of them or none of them. If, for one of the targets, you can't choose a new legal target, then it remains unchanged (even if the current target is illegal)."
+            },
+            {
+                "date": "2013-07-01",
+                "text": "If the spell Wild Ricochet copies is modal (that is, it says \"Choose one —\" or the like), the copy will have the same mode. You can't choose a different one."
+            },
+            {
+                "date": "2013-07-01",
+                "text": "If the spell Wild Ricochet copies has an X whose value was determined as it was cast (like Volcanic Geyser does), the copy has the same value of X."
+            },
+            {
+                "date": "2013-07-01",
+                "text": "You can't choose to pay any additional costs for the copy. However, effects based on any additional costs that were paid for the original spell are copied as though those same costs were paid for the copy too. For example, if a player sacrifices a 3/3 creature to cast Fling, and you copy it with Wild Ricochet, the copy of Fling will also deal 3 damage to its target."
+            },
+            {
+                "date": "2013-07-01",
+                "text": "If the copy says that it affects \"you,\" it affects the controller of the copy, not the controller of the original spell. Similarly, if the copy says that it affects an \"opponent,\" it affects an opponent of the copy's controller, not an opponent of the original spell's controller."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

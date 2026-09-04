@@ -646,6 +646,28 @@ class TournamentManager(
     }
 
     /**
+     * Bracket seats that the lobby no longer holds and that still owe at least one match.
+     *
+     * The bracket is built once, from the roster the lobby had at the time, and nothing rebuilds it
+     * when a seat leaves afterwards. A departed seat can never be put in a game — the match handler
+     * needs its lobby state for the deck, the identity and the socket — so its unplayed matches would
+     * stay incomplete forever, and [hasIncompleteMatchBefore] would then block every later match of
+     * every opponent it was scheduled against. One stranded pair idles the whole bracket, a player at
+     * a time, as each round reaches it.
+     *
+     * Naming them is a pure query, like [startableMatches], so the caller can forfeit them through the
+     * same [recordAbandon] a disconnect uses. [seatedPlayerIds] is the lobby's roster right now.
+     */
+    fun unseatedPlayersWithMatchesLeft(seatedPlayerIds: Set<EntityId>): List<EntityId> =
+        playerIds.filter { playerId ->
+            playerId !in seatedPlayerIds && rounds.any { round ->
+                round.matches.any {
+                    !it.isComplete && (it.player1Id == playerId || it.player2Id == playerId)
+                }
+            }
+        }
+
+    /**
      * Get the round containing a specific match (by gameSessionId).
      */
     fun getRoundForMatch(gameSessionId: String): TournamentRound? {

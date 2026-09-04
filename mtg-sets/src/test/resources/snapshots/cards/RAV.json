@@ -3096,6 +3096,59 @@
     ]
 }
 
+// Drake Familiar
+{
+    "name": "Drake Familiar",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Drake",
+    "oracleText": "Flying\nWhen this creature enters, sacrifice it unless you return an enchantment to its owner's hand.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "PayOrSuffer",
+                    "cost": {
+                        "type": "PayAtom",
+                        "atom": {
+                            "type": "AtomReturnToHand",
+                            "filter": "enchantment",
+                            "youControl": false
+                        }
+                    },
+                    "suffer": "SacrificeSelf"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "44",
+        "artist": "Darrell Riche",
+        "flavorText": "\"Falconry? A fine sport I suppose, if you're attracted to the frailty of birds.\"\n—Trivaz, Izzet mage",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/4/b4583623-e367-48cc-8e86-e6c5e35f1a9c.jpg?1783943688",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The ability lets you return any enchantment on the battlefield, including an opponent's enchantment. The ability isn't targeted, so you can return an untargetable enchantment. If there are no enchantments on the battlefield, or you choose not to return one, you must sacrifice Drake Familiar."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Dromad Purebred
 {
     "name": "Dromad Purebred",
@@ -4475,6 +4528,62 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Ghosts of the Innocent
+{
+    "name": "Ghosts of the Innocent",
+    "manaCost": "{5}{W}{W}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "If a source would deal damage to a permanent or player, it deals half that damage, rounded down, to that permanent or player instead.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "HalveDamage",
+                "appliesTo": "DamageEvent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "20",
+        "rarity": "RARE",
+        "artist": "Kev Walker",
+        "flavorText": "\"Ma said we should offer up blini-cakes and salt to the good ones, but I get that chill up my spine and just shut the door.\"\n—Otak, Tin Street shopkeep",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/5/c5b10c5f-261f-4301-b675-d1f52b859360.jpg?1783943699",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "If a damage prevention effect and Ghosts of the Innocent's effect would apply to the same damage, the player or the controller of the creature being dealt damage may apply the effects in either order (most likely applying the halving effect first)."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Half of 1 rounded down is 0. A source that would deal 1 damage won't deal damage at all."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Multiple Ghosts of the Innocent effects are cumulative, and each will halve the damage, rounded down. For example, with three on the battlefield, 14 damage becomes 7, then 3, then finally 1, and only 1 damage would actually be dealt."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "This isn't a damage prevention effect. If Excruciator (\"Damage that would be dealt by Excruciator can't be prevented\") would deal 7 damage to a permanent or player, it deals 3 damage instead."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If damage is redirected, it's only halved once."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If both Ghosts of the Innocent and Furnace of Rath (which doubles damage) are on the battlefield, the controller of the permanent being dealt damage or the player being dealt damage can apply the effects in either order. This can matter if the original amount of damage is odd."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -9256,6 +9365,61 @@
     ]
 }
 
+// Screeching Griffin
+{
+    "name": "Screeching Griffin",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Griffin",
+    "oracleText": "Flying\n{R}: Target creature can't block this creature this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{R}"
+                    }
+                },
+                "effect": {
+                    "type": "CantBlockTargetCreatures",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "attacker": "Self"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "29",
+        "artist": "Greg Hildebrandt",
+        "flavorText": "They were master fishers, but their seas are now the streets and their catch, the goblins that run pell-mell from the screeching in the sky.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/e/5e2fa710-4615-42de-8716-41b009b56d32.jpg?1783943695"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Searing Meditation
 {
     "name": "Searing Meditation",
@@ -10594,6 +10758,49 @@
     ]
 }
 
+// Suppression Field
+{
+    "name": "Suppression Field",
+    "manaCost": "{1}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "Activated abilities cost {2} more to activate unless they're mana abilities.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "IncreaseActivatedAbilityCost",
+                "filter": {
+                    "baseFilter": {}
+                },
+                "amount": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "excludeManaAbilities": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "31",
+        "rarity": "UNCOMMON",
+        "artist": "John Avon",
+        "flavorText": "The most feared of Azorius punishments is to be freed—sent back out into the world, stripped of all magical defenses.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0df7883b-f744-4410-a682-7391bd697afb.jpg?1783943694",
+        "rulings": [
+            {
+                "date": "2016-06-08",
+                "text": "Activated abilities contain a colon. They're generally written \"[Cost]: [Effect].\" Some keywords are activated abilities and will have colons in their reminder text."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "Suppression Field's ability doesn't affect static abilities, triggered abilities, or mana abilities. (A \"mana ability\" is an ability that produces mana, not an ability that costs mana.)"
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Surge of Zeal
 {
     "name": "Surge of Zeal",
@@ -11589,6 +11796,90 @@
             {
                 "date": "2005-10-01",
                 "text": "If you use this ability during a turn's end phase, the chance to put \"at end of turn\"-triggered abilities on the stack has passed. You won't get the Spirit creature token until the beginning of the next end step."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Trophy Hunter
+{
+    "name": "Trophy Hunter",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Human Archer",
+    "oracleText": "{1}{G}: This creature deals 1 damage to target creature with flying.\nWhenever a creature with flying dealt damage by this creature this turn dies, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "CreatureDealtDamageBySourceDiesEvent",
+                    "dyingFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "HasKeyword",
+                                "keyword": "FLYING"
+                            }
+                        ]
+                    }
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature kw:flying"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "187",
+        "rarity": "UNCOMMON",
+        "artist": "rk post",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/1/f18d1047-9010-437c-94ab-7a8ad3a0250f.jpg?1783943629",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "The second ability checks whether a creature being put into a graveyard (a) currently has flying and (b) was dealt damage earlier this turn by Trophy Hunter. It doesn't matter whether Trophy Hunter dealt the damage that caused the creature to be destroyed, whether the damage from Trophy Hunter was dealt in combat or via its activated ability, or who controlled the creature."
             }
         ]
     },

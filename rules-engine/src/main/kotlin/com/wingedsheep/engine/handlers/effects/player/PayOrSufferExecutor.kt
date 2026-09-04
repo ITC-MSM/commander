@@ -103,7 +103,11 @@ class PayOrSufferExecutor(
                 is CostAtom.Mana -> handleManaCost(state, effect, context, atom, sourceId, sourceCard.name, payingPlayerId)
                 is CostAtom.ExileFrom -> handleExileCost(state, effect, context, atom, sourceId, sourceCard.name, payingPlayerId)
                 is CostAtom.TapPermanents -> handleTapCost(state, effect, context, atom, sourceId, sourceCard.name, payingPlayerId)
-                is CostAtom.ReturnToHand -> EffectResult.error(state, "ReturnToHand payment for PayOrSuffer not yet implemented")
+                // Drake Familiar — "sacrifice it unless you return an enchantment to its owner's
+                // hand". The atom's `youControl` axis decides whether the pool is the payer's own
+                // permanents or the whole battlefield.
+                is CostAtom.ReturnToHand ->
+                    handleReturnToHandCost(state, effect, context, atom, sourceId, sourceCard.name, payingPlayerId)
                 is CostAtom.RevealFromHand -> EffectResult.error(state, "RevealCard payment for PayOrSuffer not yet implemented")
                 is CostAtom.PutCountersOnSelf -> EffectResult.error(state, "PutCountersOnSelf is an activated-ability cost, not a PayOrSuffer cost")
                 // Tourach's Chant / Thelon's Chant — "unless they put a -1/-1 counter on a creature
@@ -473,6 +477,115 @@ class PayOrSufferExecutor(
             decisionResult.pendingDecision,
             decisionResult.events
         )
+    }
+
+    /**
+     * The bounce payment: "sacrifice it unless you return a [filter] to its owner's hand"
+     * (Drake Familiar).
+     *
+     * Structurally the tap payment with a different verb, with one axis of its own:
+     * [CostAtom.ReturnToHand.youControl]. Drake Familiar's ruling is explicit that *any*
+     * enchantment on the battlefield may be returned, an opponent's included, and that because the
+     * ability doesn't target, an untargetable one qualifies too — so the pool for the
+     * control-agnostic case is the whole battlefield and the selection deliberately isn't run
+     * through targeting legality.
+     *
+     * Selecting nothing is a decline, exactly as it is for the sacrifice and tap payments, which is
+     * the other half of that ruling: "if you choose not to return one, you must sacrifice it".
+     */
+    private fun handleReturnToHandCost(
+        state: GameState,
+        effect: PayOrSufferEffect,
+        context: EffectContext,
+        cost: CostAtom.ReturnToHand,
+        sourceId: EntityId,
+        sourceName: String,
+        controllerId: EntityId
+    ): EffectResult {
+        val validPermanents = findBounceCandidates(state, controllerId, cost, sourceId)
+
+        // Nothing legal to return — the suffer half happens with no prompt.
+        if (validPermanents.size < cost.count) {
+            return executeSufferEffect(state, effect.suffer, context)
+        }
+
+        val prompt = buildReturnToHandPrompt(cost, sourceName, effect)
+
+        val decisionResult = decisionHandler.createCardSelectionDecision(
+            state = state,
+            playerId = controllerId,
+            sourceId = sourceId,
+            sourceName = sourceName,
+            prompt = prompt,
+            options = validPermanents,
+            minSelections = 0,
+            maxSelections = cost.count,
+            ordered = false,
+            phase = DecisionPhase.RESOLUTION,
+            useTargetingUI = true  // Click the permanent in play to return it
+        )
+
+        val continuation = PayOrSufferContinuation(
+            decisionId = decisionResult.pendingDecision!!.id,
+            playerId = controllerId,
+            sourceId = sourceId,
+            sourceName = sourceName,
+            costType = PayOrSufferCostType.RETURN_TO_HAND,
+            sufferEffect = effect.suffer,
+            requiredCount = cost.count,
+            filter = cost.filter,
+            random = false,
+            targets = context.targets,
+            namedTargets = context.pipeline.namedTargets,
+            triggeringEntityId = context.triggeringEntityId,
+            triggeringPlayerId = context.triggeringPlayerId,
+            abilityControllerId = context.controllerId,
+            storedCollections = context.pipeline.storedCollections,
+            iterationEntityId = context.pipeline.iterationTarget
+        )
+
+        val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
+
+        return EffectResult.paused(
+            stateWithContinuation,
+            decisionResult.pendingDecision,
+            decisionResult.events
+        )
+    }
+
+    /**
+     * The permanents a [CostAtom.ReturnToHand] payment may choose from — the payer's own by
+     * default, the whole battlefield when the atom is control-agnostic. The source itself is
+     * excluded either way, matching [CostPaymentService]'s pool for the same atom: a card that
+     * bounces itself to avoid being sacrificed isn't a printed shape, and letting it would make
+     * "sacrifice it unless…" self-defeating.
+     */
+    private fun findBounceCandidates(
+        state: GameState,
+        playerId: EntityId,
+        cost: CostAtom.ReturnToHand,
+        sourceId: EntityId
+    ): List<EntityId> =
+        if (cost.youControl) {
+            findValidPermanentsOnBattlefield(state, playerId, cost.filter, sourceId, sourceId)
+        } else {
+            BattlefieldFilterUtils.findMatchingOnBattlefield(
+                state, cost.filter,
+                PredicateContext(controllerId = playerId, sourceId = sourceId),
+                excludeSelfId = sourceId
+            )
+        }
+
+    private fun buildReturnToHandPrompt(
+        cost: CostAtom.ReturnToHand,
+        sourceName: String,
+        effect: PayOrSufferEffect
+    ): String {
+        val desc = cost.filter.description
+        val article = if (desc.first().lowercaseChar() in "aeiou") "an" else "a"
+        val scope = if (cost.youControl) " you control" else ""
+        val typeText = if (cost.count == 1) "$article $desc$scope" else "${cost.count} ${desc}s$scope"
+        return "Return $typeText to its owner's hand or ${describeConsequence(effect, sourceName)}"
     }
 
     /**
@@ -900,7 +1013,8 @@ class PayOrSufferExecutor(
                 is CostAtom.TapPermanents -> findValidUntappedPermanentsOnBattlefield(
                     state, playerId, atom.filter, selfExclusion(atom.excludeSelf, sourceId), sourceId
                 ).size >= atom.count
-                is CostAtom.ReturnToHand -> false
+                is CostAtom.ReturnToHand ->
+                    findBounceCandidates(state, playerId, atom, sourceId).size >= atom.count
                 is CostAtom.RevealFromHand -> false
                 is CostAtom.PutCountersOnSelf -> false
                 // Unpayable with nothing to put the counter on — which is exactly the punisher

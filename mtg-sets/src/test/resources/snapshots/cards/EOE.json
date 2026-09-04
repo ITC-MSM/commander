@@ -1536,45 +1536,6 @@
     ]
 }
 
-// Bombard
-{
-    "name": "Bombard",
-    "manaCost": "{2}{R}",
-    "typeLine": "Instant",
-    "oracleText": "Bombard deals 4 damage to target creature.",
-    "script": {
-        "spellEffect": {
-            "type": "DealDamage",
-            "amount": {
-                "type": "Fixed",
-                "amount": 4
-            },
-            "target": {
-                "type": "BoundVariable",
-                "name": "target creature"
-            }
-        },
-        "targetRequirements": [
-            {
-                "type": "TargetObject",
-                "filter": {
-                    "baseFilter": "creature"
-                },
-                "id": "target creature"
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "129",
-        "artist": "Diego Gisbert",
-        "flavorText": "\"Go back to your little war, sun-stooge! This here is *our* operation!\"\n—Kunthaar, Kav mine operator",
-        "imageUri": "https://cards.scryfall.io/normal/front/2/9/29492df8-3077-4ded-a6e2-51d3bd4669b4.jpg?1752947077"
-    },
-    "colorIdentityOverride": [
-        "RED"
-    ]
-}
-
 // Brightspear Zealot
 {
     "name": "Brightspear Zealot",

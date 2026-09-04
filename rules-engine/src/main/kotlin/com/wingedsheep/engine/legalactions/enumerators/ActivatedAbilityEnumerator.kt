@@ -177,7 +177,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         context.castPermissionUtils.applyEquipCostReduction(
                             context.castPermissionUtils.applyActivatedAbilityCostReduction(
                                 AbilityCostReduction.apply(costWithDefinedX, ability, state, entityId, playerId, context.targetUtils),
-                                state, entityId, ability.isExhaust, ability.isPowerUp
+                                state, entityId, ability.isExhaust, ability.isPowerUp, ability.isManaAbility
                             ),
                             ability, state, playerId, abilitySourceId = entityId
                         ),
@@ -304,7 +304,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         }
                         is CostAtom.ReturnToHand -> {
                             bounceCost = atom
-                            bounceTargets = context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter)
+                            bounceTargets = context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter, atom.youControl)
                             if (bounceTargets.size < atom.count) continue
                         }
                         is CostAtom.TapPermanents -> {
@@ -516,7 +516,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                     }
                                     is CostAtom.ReturnToHand -> {
                                         bounceCost = atom
-                                        bounceTargets = context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter)
+                                        bounceTargets = context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter, atom.youControl)
                                         if (bounceTargets.size < atom.count) {
                                             costCanBePaid = false
                                             break
