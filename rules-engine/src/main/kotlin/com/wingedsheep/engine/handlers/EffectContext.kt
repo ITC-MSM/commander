@@ -76,6 +76,8 @@ data class EffectContext(
      * synthesized abilities that carry no such restriction.
      */
     val sourceFaceChanges: Int? = null,
+    /** Battlefield visit of the resolving ability's source. */
+    val sourceBattlefieldTimestamp: Long? = null,
     val targets: List<ChosenTarget> = emptyList(),
     /**
      * Positionally-aligned view of [targets]: the same length as the originally-chosen target
@@ -549,6 +551,7 @@ data class EffectContext(
             granterId = ability.granterId,
             abilityIdentity = ability.abilityIdentity,
             sourceFaceChanges = ability.sourceFaceChanges,
+            sourceBattlefieldTimestamp = ability.sourceBattlefieldTimestamp,
             targets = targets,
             triggerDamageAmount = ability.triggerDamageAmount,
             triggerCounterCount = ability.triggerCounterCount,

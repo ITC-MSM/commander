@@ -29,6 +29,14 @@ Assay now agrees for 108 / 111 compared canonical cards; three equivalent static
 
 The earlier full builds failed only on expected new-card snapshot additions. Regeneration passed and the final `just build` for this batch passed (3m 27s, 128 tasks). No manual playthrough or end-to-end UI test has run. Champion research and required edge cases are recorded in `champion.md`; the mechanic is not implemented yet.
 
+The linked-exile source-visit prerequisite is now implemented. An old leaves trigger reads its
+original source visit's pile after a blink or token cleanup; leaving exile invalidates previous
+links. Seven engine scenarios passed, including a full game-state serialization round trip.
+`just test-rules` passed (2m 19s, 61 tasks). This internal state change reuses existing events and
+selection UI; no client interaction was added. Champion itself remains unimplemented: distinct
+linked ability pairs, champion events, source-self semantics, and the complete matrix are tracked
+in `champion.md`.
+
 ## Existing repository drift
 
 The initial repository-wide backlog implementation check reported 78 implemented-but-unchecked entries in Bloomburrow Commander and its deck lists. Lorwyn had no such drift before this unit. These unrelated files are untouched. All 14 card-count headers passed the count check.

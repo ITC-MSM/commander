@@ -302,6 +302,8 @@ data class TriggeredAbilityOnStackComponent(
      * reflexive triggers) that carry no restriction.
      */
     val sourceFaceChanges: Int? = null,
+    /** Battlefield visit that created this trigger, retained across source zone changes. */
+    val sourceBattlefieldTimestamp: Long? = null,
     /**
      * The ability's intervening-"if" clause (CR 603.4), carried onto the stack object because the
      * ability itself is no longer reachable by the time this resolves — the trigger has been
@@ -399,6 +401,7 @@ data class ActivatedAbilityOnStackComponent(
      * reflexive triggers) that carry no restriction.
      */
     val sourceFaceChanges: Int? = null,
+    val sourceBattlefieldTimestamp: Long? = null,
     /**
      * Division chosen at activation for a `DividedDamageEffect` ability (target -> damage), locked
      * onto the stack object so responding removal can't make the controller re-divide (CR 601.2d).

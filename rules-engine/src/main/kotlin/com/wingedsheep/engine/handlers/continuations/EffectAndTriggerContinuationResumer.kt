@@ -108,6 +108,7 @@ class EffectAndTriggerContinuationResumer(
             val elseComponent = TriggeredAbilityOnStackComponent(
                 sourceId = continuation.sourceId,
                 sourceName = continuation.sourceName,
+                sourceBattlefieldTimestamp = continuation.sourceBattlefieldTimestamp,
                 controllerId = continuation.controllerId,
                 effect = continuation.elseEffect,
                 description = continuation.description,
@@ -166,6 +167,7 @@ class EffectAndTriggerContinuationResumer(
         val abilityComponent = TriggeredAbilityOnStackComponent(
             sourceId = continuation.sourceId,
             sourceName = continuation.sourceName,
+            sourceBattlefieldTimestamp = continuation.sourceBattlefieldTimestamp,
             controllerId = continuation.controllerId,
             effect = continuation.effect,
             description = continuation.description,
@@ -256,6 +258,7 @@ class EffectAndTriggerContinuationResumer(
             decisionId = decisionId,
             sourceId = continuation.sourceId,
             sourceName = continuation.sourceName,
+            sourceBattlefieldTimestamp = continuation.sourceBattlefieldTimestamp,
             controllerId = continuation.controllerId,
             effect = continuation.effect,
             description = continuation.description,
@@ -310,6 +313,7 @@ class EffectAndTriggerContinuationResumer(
         val abilityComponent = TriggeredAbilityOnStackComponent(
             sourceId = continuation.sourceId,
             sourceName = continuation.sourceName,
+            sourceBattlefieldTimestamp = continuation.sourceBattlefieldTimestamp,
             controllerId = continuation.controllerId,
             effect = continuation.effect,
             description = continuation.description,

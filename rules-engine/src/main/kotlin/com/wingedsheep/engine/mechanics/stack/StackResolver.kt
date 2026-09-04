@@ -1019,7 +1019,9 @@ class StackResolver(
                     null, // Was on stack
                     Zone.BATTLEFIELD,
                     cardComponent?.ownerId ?: spellComponent.casterId,
-                    xValue = spellComponent.xValue
+                    xValue = spellComponent.xValue,
+                    enteredBattlefieldTimestamp = newState.getEntity(spellId)
+                        ?.get<com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent>()?.timestamp
                 )
             )
         } else {
@@ -2940,6 +2942,7 @@ class StackResolver(
             granterId = abilityComponent.granterId,
             abilityIdentity = abilityComponent.abilityIdentity,
             sourceFaceChanges = abilityComponent.sourceFaceChanges,
+            sourceBattlefieldTimestamp = abilityComponent.sourceBattlefieldTimestamp,
             targets = activatedTargets,
             alignedTargets = alignedActivatedTargets,
             sacrificedPermanents = abilityComponent.sacrificedPermanents,

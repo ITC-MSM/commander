@@ -45,6 +45,8 @@ data class ZoneChangeEvent(
      * / `totalCounters` accessors for the former counter-count scalars.
      */
     val lastKnown: com.wingedsheep.engine.state.components.stack.EntitySnapshot? = null,
+    /** Battlefield visit created by this entry; distinct from the departed visit in lastKnown. */
+    val enteredBattlefieldTimestamp: Long? = null,
     /** The original card name when this permanent entered as a copy (e.g., "Clever Impersonator") */
     val copyOfOriginalName: String? = null,
     /**

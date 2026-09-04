@@ -27,6 +27,8 @@ import com.wingedsheep.sdk.model.EntityId
 @kotlinx.serialization.Serializable
 data class TriggerContext(
     val triggeringEntityId: EntityId? = null,
+    /** Battlefield visit of the entity whose entry or departure caused this trigger. */
+    val triggeringBattlefieldTimestamp: Long? = null,
     val triggeringPlayerId: EntityId? = null,
     val damageAmount: Int? = null,
     val step: Step? = null,
@@ -203,6 +205,8 @@ data class TriggerContext(
             return when (event) {
                 is ZoneChangeEvent -> TriggerContext(
                     triggeringEntityId = event.entityId,
+                    triggeringBattlefieldTimestamp = event.lastKnown?.battlefieldEntryTimestamp
+                        ?: event.enteredBattlefieldTimestamp,
                     // The player associated with a zone change is the object's controller as it
                     // changed zones — its last-known controller when leaving the battlefield (CR
                     // 603.10/608.2h last-known information; differs from the owner for stolen

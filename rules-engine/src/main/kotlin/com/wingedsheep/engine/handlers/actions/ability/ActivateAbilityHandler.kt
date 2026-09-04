@@ -1948,6 +1948,8 @@ class ActivateAbilityHandler(
                 cardComponent.cardDefinitionId, ability.id
             ),
             granterId = staticGranterId,
+            sourceBattlefieldTimestamp = state.getEntity(action.sourceId)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent>()?.timestamp,
             // CR 701.28f — freeze the source's face-change clock as the ability goes on the stack;
             // an instruction inside it to transform that same permanent is ignored if the permanent
             // turns over before this resolves.

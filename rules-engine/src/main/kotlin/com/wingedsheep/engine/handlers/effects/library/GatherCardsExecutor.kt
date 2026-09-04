@@ -23,7 +23,6 @@ import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import com.wingedsheep.engine.state.components.battlefield.CrewSaddleContributorsComponent
 import com.wingedsheep.engine.state.components.battlefield.CraftedFromExiledComponent
-import com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent
 import com.wingedsheep.engine.state.components.stack.entityIds
 import kotlin.reflect.KClass
 
@@ -233,18 +232,11 @@ class GatherCardsExecutor : EffectExecutor<GatherCardsEffect> {
             is CardSource.FromLinkedExile -> {
                 val sourceId = context.sourceId
                     ?: return EffectResult.error(state, "No source entity for FromLinkedExile")
-                val sourceContainer = state.getEntity(sourceId)
-                    ?: return EffectResult.error(state, "Source entity not found for FromLinkedExile")
-                val linked = sourceContainer.get<LinkedExileComponent>()
-                    ?: return EffectResult.success(state).copy(
-                        updatedCollections = mapOf(effect.storeAs to emptyList())
-                    )
-                // Filter to only entities currently in exile
-                val inExile = linked.exiledIds.filter { entityId ->
-                    val ownerId = state.getEntity(entityId)?.get<OwnerComponent>()?.playerId
-                        ?: context.controllerId
-                    entityId in state.getZone(ZoneKey(ownerId, Zone.EXILE))
+                if (state.getEntity(sourceId) == null && context.sourceBattlefieldTimestamp == null) {
+                    return EffectResult.error(state, "Source entity not found for FromLinkedExile")
                 }
+                val inExile = com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExileLookup
+                    .exiledCards(state, context)
                 // Apply count limit if specified (take first N from the ordered pile)
                 val count = source.count
                 if (count != null) inExile.take(count) else inExile

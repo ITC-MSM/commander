@@ -11,6 +11,8 @@ data class PendingTrigger(
     val ability: TriggeredAbility,
     val sourceId: EntityId,
     val sourceName: String,
+    /** Source battlefield visit captured at detection, before target or ordering decisions. */
+    val sourceBattlefieldTimestamp: Long? = null,
     val controllerId: EntityId,
     /**
      * The permanent whose `GrantTriggeredAbility` static granted this triggered ability, when it is

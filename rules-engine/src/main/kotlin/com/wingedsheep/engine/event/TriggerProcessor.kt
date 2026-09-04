@@ -822,6 +822,7 @@ class TriggerProcessor(
             decisionId = decisionResult.pendingDecision.id,
             sourceId = trigger.sourceId,
             sourceName = trigger.sourceName,
+            sourceBattlefieldTimestamp = trigger.sourceBattlefieldTimestamp,
             controllerId = trigger.controllerId,
             effect = ability.effect,
             description = ability.description,
@@ -887,6 +888,7 @@ class TriggerProcessor(
 
         val abilityComponent = TriggeredAbilityOnStackComponent(
             sourceId = trigger.sourceId,
+            sourceBattlefieldTimestamp = trigger.sourceBattlefieldTimestamp,
             sourceName = trigger.sourceName,
             controllerId = trigger.controllerId,
             effect = effectOverride ?: ability.effect,
