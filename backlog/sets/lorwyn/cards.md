@@ -2,10 +2,10 @@
 
 **Set Size:** 286 cards
 **Release Date:** October 12, 2007
-**Implemented:** 245 / 286
+**Implemented:** 247 / 286
 | Section    | Total | Done |
 |------------|-------|------|
-| White      | 49    | 41   |
+| White      | 49    | 43   |
 | Blue       | 49    | 38   |
 | Black      | 49    | 41   |
 | Red        | 49    | 42   |
@@ -56,10 +56,10 @@
 - [x] Plover Knights
 - [ ] Pollen Lullaby
 - [ ] Purity
-- [ ] Sentry Oak
+- [x] Sentry Oak
 - [x] Shields of Velis Vel
 - [x] Soaring Hope
-- [ ] Springjack Knight
+- [x] Springjack Knight
 - [x] Summon the School
 - [x] Surge of Thoughtweft
 - [ ] Thoughtweft Trio

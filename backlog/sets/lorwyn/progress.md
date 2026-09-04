@@ -21,11 +21,11 @@ This branch tracks completion of Lorwyn and the engine capabilities its cards re
 
 ## Work in progress
 
-Five new cards are implemented: Bog Hoodlums, Nath's Elite, Fistful of Force, Spring Cleaning, and Woodland Guidance. All compose existing primitives. Canonical-printing checks, fresh Scryfall fields, image HTTP 200 checks, and snapshot validation passed. Source completeness is now 245 / 286 (41 missing). Seven focused scenario tests for the three spells passed, covering clash win/loss, target preservation, temporary bonuses, destruction scope, graveyard targeting, untapping, and self-exile.
+Seven new cards are implemented: Bog Hoodlums, Nath's Elite, Fistful of Force, Spring Cleaning, Woodland Guidance, Sentry Oak, and Springjack Knight. All compose existing primitives. Canonical-printing checks, fresh Scryfall fields, image HTTP 200 checks, and snapshot validation passed. Source completeness is now 247 / 286 (39 missing). Seven focused scenario tests for the three spells passed, covering clash win/loss, target preservation, temporary bonuses, destruction scope, graveyard targeting, untapping, and self-exile.
 
-The differential audit also found and fixed seven existing Harbinger bugs: declining the optional search incorrectly forced a search and shuffle. All seven now gate the entire search. Their 21 per-card regression tests passed. Snapshots were compared field by field: only the five new cards and seven optional gates changed from the starting point.
+The differential audit also found and fixed seven existing Harbinger bugs: declining the optional search incorrectly forced a search and shuffle. All seven now gate the entire search. Their 21 per-card regression tests passed. At that stage, snapshots were compared field by field: only the five new cards and seven optional gates changed from the starting point.
 
-Assay now agrees for 108 / 111 compared canonical cards; three equivalent static-ability folds remain (see `assay-review.md`). It declines 126 cards, including all five new clash cards, and two more cards fail to fold. Those results do not verify behavior for the uncovered cards.
+The earlier five-card batch's Assay audit agrees for 108 / 111 compared canonical cards; three equivalent static-ability folds remain (see `assay-review.md`). It declines 126 cards, including all five new clash cards, and two more cards fail to fold. Those results do not verify behavior for the uncovered cards.
 
 The earlier full builds failed only on expected new-card snapshot additions. Regeneration passed and the final `just build` for this batch passed (3m 27s, 128 tasks). No manual playthrough or end-to-end UI test has run. Champion research and required edge cases are recorded in `champion.md`; the mechanic is not implemented yet.
 
@@ -34,8 +34,17 @@ original source visit's pile after a blink or token cleanup; leaving exile inval
 links. Seven engine scenarios passed, including a full game-state serialization round trip.
 `just test-rules` passed (2m 19s, 61 tasks). This internal state change reuses existing events and
 selection UI; no client interaction was added. Champion itself remains unimplemented: distinct
-linked ability pairs, champion events, source-self semantics, and the complete matrix are tracked
+linked ability pairs, champion events, and the remaining behavioral matrix are tracked
 in `champion.md`.
+
+The next source-reference prerequisite is verified: old abilities do not act on a source that has
+already returned, while effects can still return and then modify their own source. Source-relative
+filters distinguish battlefield visits too. Sentry Oak and Springjack Knight have eight individual
+card scenarios covering clash results, timing, decline, target loss, duration, and absent/returned
+sources. Their printing checks and fresh Scryfall/image rechecks passed. Snapshot comparison found
+only these two additions and no changes to existing entries. `just test` passed for the combined
+batch (4m 27s, 106 tasks), including engine, card, SDK, AI, gym and server suites. Both new cards'
+clash lines are declined by Assay; the generator supplies scaffolds rather than complete scripts.
 
 ## Existing repository drift
 

@@ -12007,6 +12007,91 @@
     ]
 }
 
+// Sentry Oak
+{
+    "name": "Sentry Oak",
+    "manaCost": "{4}{W}",
+    "typeLine": "Creature — Treefolk Warrior",
+    "oracleText": "Defender\nAt the beginning of combat on your turn, you may clash with an opponent. If you win, this creature gets +2/+0 and loses defender until end of turn. (Each clashing player reveals the top card of their library, then puts that card on their choice of the top or bottom. A player wins if their card had a greater mana value.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 5
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.DoAction",
+                            "action": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "ChooseOpponentForSource",
+                                        "prompt": "Choose an opponent to clash with"
+                                    },
+                                    "Clash"
+                                ]
+                            },
+                            "successCriterion": {
+                                "type": "SuccessCriterion.CollectionNonEmpty",
+                                "name": "clashWon"
+                            }
+                        },
+                        "then": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ModifyStats",
+                                    "powerModifier": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    },
+                                    "toughnessModifier": {
+                                        "type": "Fixed",
+                                        "amount": 0
+                                    },
+                                    "target": "Self"
+                                },
+                                {
+                                    "type": "RemoveKeyword",
+                                    "keyword": "DEFENDER",
+                                    "target": "Self"
+                                }
+                            ]
+                        },
+                        "descriptionOverride": "Clash with an opponent. If you win, this creature gets +2/+0 until end of turn. this creature loses defender until end of turn"
+                    },
+                    "descriptionOverride": "You may clash with an opponent. If you win, this creature gets +2/+0 and loses defender until end of turn."
+                },
+                "descriptionOverride": "You may clash with an opponent. If you win, this creature gets +2/+0 and loses defender until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "38",
+        "rarity": "UNCOMMON",
+        "artist": "Warren Mahy",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/b/ab09d6d7-e2f0-4e78-a9a3-ac37f02f4096.jpg?1783942909"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Shapesharer
 {
     "name": "Shapesharer",
@@ -13261,6 +13346,71 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Springjack Knight
+{
+    "name": "Springjack Knight",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Kithkin Knight",
+    "oracleText": "Whenever this creature attacks, clash with an opponent. If you win, target creature gains double strike until end of turn. (Each clashing player reveals the top card of their library, then puts that card on their choice of the top or bottom. A player wins if their card had a greater mana value.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ChooseOpponentForSource",
+                                    "prompt": "Choose an opponent to clash with"
+                                },
+                                "Clash"
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "clashWon"
+                        }
+                    },
+                    "then": {
+                        "type": "GrantKeyword",
+                        "keyword": "DOUBLE_STRIKE",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "creature"
+                        }
+                    },
+                    "descriptionOverride": "Clash with an opponent. If you win, target gains double strike until end of turn"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "creature"
+                },
+                "descriptionOverride": "Clash with an opponent. If you win, target creature gains double strike until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "41",
+        "artist": "Steven Belledin",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/5/75fa0c72-427b-4797-b5b1-15f07fc5fa07.jpg?1783942908"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

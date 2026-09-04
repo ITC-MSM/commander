@@ -21,3 +21,11 @@ The three equivalent folds were checked by expanding composite static abilities 
 
 
 After Fistful of Force, Spring Cleaning, and Woodland Guidance: 239 canonical cards, 111 compared, 108 agreed, the same three equivalent folds, 126 declined, and two failed to fold. All three newly added clash scripts are among the declines. Their seven focused scenario tests passed; snapshot comparison found exactly the three intended additions and no changed existing entries.
+
+
+## Sentry Oak and Springjack Knight
+
+Assay's installed CLI declines both clash lines (Sentry Oak's defender keyword round-trips).
+The draftability probe produces SCAFFOLD for both, naming Clash as unrecovered. Their authored
+compositions are verified by eight per-card scenarios and the passing full `just test` gate; the
+earlier aggregate differential counts above have not been recomputed for these two additions.
