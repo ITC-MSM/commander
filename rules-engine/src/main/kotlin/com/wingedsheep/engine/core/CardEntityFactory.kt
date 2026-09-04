@@ -136,6 +136,9 @@ object CardEntityFactory {
         (cardDef.keywordAbilities.firstOrNull { it is KeywordAbility.Madness } as? KeywordAbility.Madness)
             ?.let { result = result.with(MadnessComponent(it.cost)) }
 
+        val dredgeAmounts = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Dredge>().map { it.amount }
+        if (dredgeAmounts.isNotEmpty()) result = result.with(DredgeComponent(dredgeAmounts))
+
         val protections = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Protection>()
         val protectionColors = protections.flatMap { p ->
             when (val s = p.scope) {

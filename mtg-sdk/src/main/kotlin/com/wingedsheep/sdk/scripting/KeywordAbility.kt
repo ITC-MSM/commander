@@ -554,6 +554,15 @@ sealed interface KeywordAbility {
         override val description: String = "Disturb $cost"
     }
 
+    /** Optional draw replacement from the graveyard (Comprehensive Rules 702.52). */
+    @SerialName("Dredge")
+    @Serializable
+    data class Dredge(val amount: Int) : KeywordAbility {
+        init { require(amount >= 0) { "Dredge amount must be nonnegative" } }
+        override val keyword: Keyword = Keyword.DREDGE
+        override val description: String = "Dredge $amount"
+    }
+
     // =========================================================================
     // Madness
     // =========================================================================
@@ -1323,6 +1332,9 @@ sealed interface KeywordAbility {
          * Create Madness with mana cost from string (e.g., "Madness {R}").
          */
         fun madness(cost: String): KeywordAbility = Madness(ManaCost.parse(cost))
+
+        /** Replace a draw by milling [amount] and returning this graveyard card to hand. */
+        fun dredge(amount: Int): KeywordAbility = Dredge(amount)
 
         /**
          * Create Disturb with mana cost from string (e.g., "Disturb {1}{W}"). Belongs on the front

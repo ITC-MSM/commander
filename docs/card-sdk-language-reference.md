@@ -13238,3 +13238,19 @@ irrelevant. Callers: Drift of Phantasms and Dimir Infiltrator.
 `Effects.Regenerate(target)` creates the existing regeneration shield through the
 DSL facade. Dimir House Guard composes it with a creature sacrifice cost. The
 default target is `ContextTarget(0)`; self-regeneration passes `EffectTarget.Self`.
+
+### Dredge
+
+`keywordAbility(KeywordAbility.dredge(N))` declares dredge N. The optional replacement
+functions only in the card owner's graveyard and only when that player has at least
+N cards in their library. It replaces one draw with milling N cards and returning
+the source to hand. Each draw of a multi-card instruction rechecks the graveyard,
+so cards milled by the first replacement may be available for the next draw.
+
+The engine keeps the intrinsic amounts in `DredgeComponent` and supplies matching
+graveyard sources to the ordinary draw-replacement processor with `CardZoneIdentity`.
+The effect recipe composes library milling and return-to-hand; no new decision or
+resolution executor is introduced. The existing Yes/No decision belongs to the
+drawing player, and its source identifies the public graveyard card. The client
+keyword label is `DREDGE`. The mtgish emitter preserves the numeric argument through
+`KeywordAbility.dredge(N)`; unsupported numeric shapes remain scaffolded.

@@ -709,6 +709,11 @@ and registering them — no changes to `ActionProcessor` or `LegalActionEnumerat
 
 ### 2.7 Replacement Effects
 
+Intrinsic graveyard replacements also enter the shared processor. Dredge uses a
+card-zone identity and checks the affected player's current graveyard before each
+individual draw. The source's immutable effect recipe is prepared once by the
+card factory; non-draw events return before scanning a graveyard.
+
 **Principle:** Replacement effects modify game actions *before* they produce events, without using
 the stack.
 

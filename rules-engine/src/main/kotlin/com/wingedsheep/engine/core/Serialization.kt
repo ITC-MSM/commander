@@ -402,6 +402,7 @@ val engineSerializersModule = SerializersModule {
         subclass(HexproofFromComponent::class)
         subclass(SelfZoneRedirectComponent::class)
         subclass(MadnessComponent::class)
+        subclass(DredgeComponent::class)
         subclass(MadnessExiledComponent::class)
         subclass(ExiledFromZoneComponent::class)
         subclass(GrantsMadnessToOwnedCardsComponent::class)

@@ -21,7 +21,9 @@ data class GatheredReplacement(
     val identity: ReplacementEffectIdentity,
     val effect: ReplacementEffect,
     val sourceControllerId: EntityId,
-    val description: String
+    val description: String,
+    /** Optional player-facing wording for a composed replacement recipe. */
+    val optionalPrompt: String? = null
 )
 
 /**
@@ -32,6 +34,7 @@ data class GatheredReplacement(
 fun GatheredReplacement.sourceEntityId(state: GameState): EntityId? {
     return when (val id = identity) {
         is ReplacementEffectIdentity.BattlefieldIdentity -> id.sourceEntityId
+        is ReplacementEffectIdentity.CardZoneIdentity -> id.sourceEntityId
         is ReplacementEffectIdentity.FloatingIdentity -> {
             state.floatingEffects.firstOrNull { it.id == id.floatingId }
                 ?.effect?.modification

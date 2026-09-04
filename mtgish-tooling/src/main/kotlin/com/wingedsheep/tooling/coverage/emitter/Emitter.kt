@@ -290,6 +290,9 @@ object Emitter {
                 // declines -> SCAFFOLD rather than guess.
                 rname == "FlashForCasters" -> block = ctx.conditionalFlashLines(rule)
                 rname == "Flashback" -> block = manaKeywordCost(rule)?.let { listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.flashback", arg("\"$it\"")))))) }
+                rname == "Dredge" -> block = (findInteger(rule["args"]) as? Int)?.takeIf { it >= 0 }?.let {
+                    listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.dredge", arg("$it"))))))
+                }
                 rname == "Crew" -> block = rule["args"].asInt()?.let { listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.crew", arg("$it")))))) }
                 // "Crew N. Activate only once each turn." (Luxurious Locomotive) — CrewOnceEachTurn carries
                 // the crew power N. Renders `KeywordAbility.crew(N, onceEachTurn = true)`; the engine enforces
