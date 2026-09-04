@@ -10,10 +10,15 @@ import com.wingedsheep.sdk.model.EntityId
 /**
  * One lock-consistent view of the live inputs needed by a trusted server-side AI controller.
  *
- * [state] is always the authoritative live state. [replayHistory] says whether its compact inputs
- * reproduce that state or are only the prefix retained after replay recording reached its cap.
- * Keeping that distinction in the type prevents an external controller from treating a plausible
- * but incomplete action list as the history of the live position.
+ * [state] is the *unmasked* authoritative state — both players' hands and libraries — the same view
+ * [com.wingedsheep.ai.engine.EngineAiPlayerController] reads, and strictly more than the masked
+ * `ClientGameState` an [AiPlayerController] is handed at decision time. Only trusted in-process
+ * providers get one.
+ *
+ * [replayHistory] says whether compact inputs reproducing that state exist at all, and if so whether
+ * they are complete or only the prefix retained after replay recording reached its cap. Keeping that
+ * distinction in the type prevents an external controller from treating a plausible but incomplete
+ * action list as the history of the live position.
  */
 data class AiRuntimeSnapshot(
     val state: GameState,
@@ -27,16 +32,26 @@ data class AiRuntimeSnapshot(
  * setup plus actions alone does not necessarily reconstruct the position an AI is looking at.
  */
 sealed interface AiReplayHistory {
-    val setup: ReplaySetup
-    val actions: List<GameAction>
-    val yields: List<ReplayYieldEntry>
+    /**
+     * The session records no replay inputs at all, so the snapshot's state cannot be reached from
+     * any input stream. Injected sessions — dev scenarios, hotseat — are built this way. The live
+     * state is still authoritative and still worth reading; only its history is missing.
+     */
+    data object Unavailable : AiReplayHistory
+
+    /** Replay inputs that were recorded for this session. */
+    sealed interface Recorded : AiReplayHistory {
+        val setup: ReplaySetup
+        val actions: List<GameAction>
+        val yields: List<ReplayYieldEntry>
+    }
 
     /** These inputs reproduce the snapshot's live state. */
     data class Complete(
         override val setup: ReplaySetup,
         override val actions: List<GameAction>,
         override val yields: List<ReplayYieldEntry>,
-    ) : AiReplayHistory
+    ) : Recorded
 
     /**
      * Recording stopped before the snapshot's live state. These inputs remain an honest replay
@@ -46,7 +61,7 @@ sealed interface AiReplayHistory {
         override val setup: ReplaySetup,
         override val actions: List<GameAction>,
         override val yields: List<ReplayYieldEntry>,
-    ) : AiReplayHistory
+    ) : Recorded
 }
 
 /** Inputs supplied to an AI implementation hosted outside the game-server build. */
@@ -54,7 +69,7 @@ data class AiControllerContext(
     val playerId: EntityId,
     /** Null while a persisted or tournament AI identity is not yet attached to a game. */
     val gameSessionId: String?,
-    /** Null until the attached game has started and has reproducible replay inputs. */
+    /** Null until the attached game has started and has a live state. */
     val snapshot: () -> AiRuntimeSnapshot?,
 )
 

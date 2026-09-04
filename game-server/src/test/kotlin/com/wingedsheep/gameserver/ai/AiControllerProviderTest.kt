@@ -133,8 +133,13 @@ class AiControllerProviderTest : FunSpec({
         sessions.destroy()
     }
 
-    test("a restored model override cannot bypass the LLM credential gate") {
-        val provider = StubProvider("search-teacher")
+    // Recovery and match-wiring adopt an AI that already exists, so an override they cannot serve
+    // is dropped rather than thrown: rehydration runs in SessionRecoveryService's @PostConstruct
+    // (a throw fails bean init and the server never starts), and wiring runs after both seats have
+    // been told the match is starting (a throw leaves a live table whose AI never acts).
+
+    test("an uncredentialed restored model override is dropped instead of failing recovery") {
+        val provider = CapturingProvider("search-teacher")
         val sessions = SessionRegistry()
         val manager = manager(provider, sessions)
         val identity = PlayerIdentity(
@@ -145,14 +150,18 @@ class AiControllerProviderTest : FunSpec({
             aiModelOverride = "openai/test-model",
         )
 
-        shouldThrow<IllegalArgumentException> {
-            manager.rehydrateAiIdentity(identity)
-        }.message shouldBe "A per-player LLM model override requires an API key"
+        manager.rehydrateAiIdentity(identity)
+
+        // Falls back to the server-wide mode, which here is the external provider.
+        provider.contexts.size shouldBe 1
+        provider.contexts.single().playerId shouldBe EntityId.of("restored-ai")
+        // The override stays on the identity, so a restart with the key back honours it again.
+        identity.aiModelOverride shouldBe "openai/test-model"
         sessions.destroy()
     }
 
-    test("a model override cannot bypass the LLM credential gate when wiring a game") {
-        val provider = StubProvider("search-teacher")
+    test("an uncredentialed model override is dropped instead of failing match wiring") {
+        val provider = CapturingProvider("search-teacher")
         val sessions = SessionRegistry()
         val manager = manager(provider, sessions)
         val aiPlayerId = EntityId.of("match-ai")
@@ -169,17 +178,31 @@ class AiControllerProviderTest : FunSpec({
             every { sessionId } returns "game-credential-gate"
         }
 
-        shouldThrow<IllegalArgumentException> {
-            manager.wireAiForGame(
-                gameSession = game,
-                aiPlayerId = aiPlayerId,
-                deckList = null,
-                onActionReady = { _, _ -> },
-                onMulliganKeep = { _ -> },
-                onMulliganTake = { _ -> },
-                onBottomCards = { _, _ -> },
-            )
-        }.message shouldBe "A per-player LLM model override requires an API key"
+        manager.wireAiForGame(
+            gameSession = game,
+            aiPlayerId = aiPlayerId,
+            deckList = null,
+            onActionReady = { _, _ -> },
+            onMulliganKeep = { _ -> },
+            onMulliganTake = { _ -> },
+            onBottomCards = { _, _ -> },
+        )
+
+        provider.contexts.size shouldBe 1
+        provider.contexts.single().gameSessionId shouldBe "game-credential-gate"
+        sessions.destroy()
+    }
+
+    test("an unregistered mode fails at startup rather than silently disabling the AI") {
+        val sessions = SessionRegistry()
+        val manager = manager(
+            StubProvider("search-teacher"),
+            sessions,
+            aiProperties = AiProperties(enabled = true, mode = "typo-teacher"),
+        )
+
+        shouldThrow<IllegalArgumentException> { manager.logConfig() }
+            .message shouldBe "Unknown game.ai.mode 'typo-teacher'; expected engine, llm, search-teacher"
         sessions.destroy()
     }
 })

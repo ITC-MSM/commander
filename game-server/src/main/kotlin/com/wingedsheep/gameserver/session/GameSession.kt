@@ -1536,21 +1536,19 @@ class GameSession(
      *
      * External controllers use this instead of composing the public accessors independently; that
      * composition can observe different game instants. A recording that reached its cap is exposed
-     * as a typed prefix rather than being mistaken for inputs that reproduce the live state. Null
-     * means the session has not started with replay inputs (for example an injected development
-     * scenario).
+     * as a typed prefix rather than being mistaken for inputs that reproduce the live state, and a
+     * session that records nothing at all still hands back its live state — the history is what is
+     * missing there, not the position. Null only before [startGame].
      */
-    fun getAiRuntimeSnapshot(): AiRuntimeSnapshot? = synchronized(stateLock) {
-        val state = gameState ?: return null
-        val setup = replaySetup ?: return null
-        val actions = recordedActions.toList()
-        val yields = recordedYields.toList()
-        val history = if (replayTruncated) {
-            AiReplayHistory.TruncatedPrefix(setup, actions, yields)
-        } else {
-            AiReplayHistory.Complete(setup, actions, yields)
+    fun getAiRuntimeSnapshot(): AiRuntimeSnapshot? {
+        val sample = sampleUnderLock() ?: return null
+        val setup = sample.setup
+        val history = when {
+            setup == null -> AiReplayHistory.Unavailable
+            sample.truncated -> AiReplayHistory.TruncatedPrefix(setup, sample.actions, sample.yields)
+            else -> AiReplayHistory.Complete(setup, sample.actions, sample.yields)
         }
-        AiRuntimeSnapshot(state, history)
+        return AiRuntimeSnapshot(sample.state, history)
     }
 
     /** The persistent-yield mutations applied to this game, in order, for replay reconstruction. */
@@ -1592,22 +1590,56 @@ class GameSession(
      * fingerprint it stores describe the *same* position — see
      * [com.wingedsheep.gameserver.replay.ReplayRecordingSnapshot] for why sampling them separately
      * is unsound. Null for sessions that aren't being recorded, or aren't started yet.
+     *
+     * The fingerprint is computed outside the lock: [LockedSample.state] is an immutable snapshot,
+     * so hashing it later gives the same answer, and hashing a whole position is long enough that
+     * holding the game's lock for it would stall play.
      */
-    internal fun replayRecordingSnapshot(): com.wingedsheep.gameserver.replay.ReplayRecordingSnapshot? =
-        synchronized(stateLock) {
-            val setup = replaySetup ?: return null
-            val state = gameState ?: return null
-            com.wingedsheep.gameserver.replay.ReplayRecordingSnapshot(
-                setup = setup,
-                actions = recordedActions.toList(),
-                yields = recordedYields.toList(),
-                checkpoints = recordedCheckpoints.toList(),
-                fingerprint = com.wingedsheep.gameserver.replay.ReplayFingerprint.of(state),
-                startedAt = replayStartedAt,
-                gameOver = state.gameOver,
-                truncated = replayTruncated,
-            )
-        }
+    internal fun replayRecordingSnapshot(): com.wingedsheep.gameserver.replay.ReplayRecordingSnapshot? {
+        val sample = sampleUnderLock() ?: return null
+        val setup = sample.setup ?: return null
+        return com.wingedsheep.gameserver.replay.ReplayRecordingSnapshot(
+            setup = setup,
+            actions = sample.actions,
+            yields = sample.yields,
+            checkpoints = sample.checkpoints,
+            fingerprint = com.wingedsheep.gameserver.replay.ReplayFingerprint.of(sample.state),
+            startedAt = sample.startedAt,
+            gameOver = sample.state.gameOver,
+            truncated = sample.truncated,
+        )
+    }
+
+    /**
+     * Everything sampled under [stateLock] in one read: the live state plus the whole replay
+     * recording. [replayRecordingSnapshot] and [getAiRuntimeSnapshot] both derive from this rather
+     * than repeating the lock-and-copy, so a field added to the recording cannot reach one caller
+     * and silently miss the other. [setup] is null for injected sessions (dev scenarios, hotseat),
+     * which have a live state but no reproducible inputs.
+     */
+    private class LockedSample(
+        val state: GameState,
+        val setup: com.wingedsheep.gameserver.replay.ReplaySetup?,
+        val actions: List<GameAction>,
+        val yields: List<com.wingedsheep.gameserver.replay.ReplayYieldEntry>,
+        val checkpoints: List<com.wingedsheep.gameserver.replay.ReplayCheckpoint>,
+        val truncated: Boolean,
+        val startedAt: Instant?,
+    )
+
+    /** Null before [startGame]; see [LockedSample]. */
+    private fun sampleUnderLock(): LockedSample? = synchronized(stateLock) {
+        val state = gameState ?: return null
+        LockedSample(
+            state = state,
+            setup = replaySetup,
+            actions = recordedActions.toList(),
+            yields = recordedYields.toList(),
+            checkpoints = recordedCheckpoints.toList(),
+            truncated = replayTruncated,
+            startedAt = replayStartedAt,
+        )
+    }
 
     /**
      * Total number of replay frames: the initial state plus one per recorded action. Zero until the

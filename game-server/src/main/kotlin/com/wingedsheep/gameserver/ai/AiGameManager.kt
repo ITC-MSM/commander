@@ -124,7 +124,12 @@ class AiGameManager(
 
     /**
      * Create the appropriate AI controller based on configuration.
+     *
      * @param modelOverride If non-null, overrides the server's configured model for LLM mode.
+     *        An override needs an API key to mean anything, so the two bring-up paths that have a
+     *        caller to report to reject an uncredentialed one up front (see
+     *        [requireCredentialedOverride]); the paths that recover or re-wire an *existing* AI
+     *        drop the override instead — see [usableModelOverride].
      */
     private fun createController(
         aiPlayerId: EntityId,
@@ -132,9 +137,6 @@ class AiGameManager(
         modelOverride: String? = null
     ): AiPlayerController {
         val ai = gameProperties.ai
-        require(modelOverride == null || ai.effectiveApiKey.isNotBlank()) {
-            "A per-player LLM model override requires an API key"
-        }
         // A per-player model override explicitly requests the built-in LLM even when the
         // server-wide mode is external.
         if (modelOverride == null && !ai.isEngineMode && !ai.isLlmMode) {
@@ -182,6 +184,42 @@ class AiGameManager(
         requireNotNull(controllerProviders[mode]) {
             "Unknown game.ai.mode '$mode'; expected ${controllerProviders.supportedModes().sorted().joinToString()}"
         }
+
+    /**
+     * Reject a per-player LLM model override that no key can serve.
+     *
+     * Only for the paths that *mint* an AI ([createAiOpponent], [createAiIdentity]): there is a live
+     * caller to hand the error to, nothing exists yet to be left half-built, and silently seating a
+     * model-labelled AI that is really the engine fallback would make an LLM tournament a lie about
+     * what it compared.
+     */
+    private fun requireCredentialedOverride(modelOverride: String?) {
+        require(modelOverride == null || gameProperties.ai.effectiveApiKey.isNotBlank()) {
+            "A per-player LLM model override requires an API key"
+        }
+    }
+
+    /**
+     * The same check for the paths that adopt an AI that already exists — [rehydrateAiIdentity] on
+     * startup and [wireAiForGame] at match start — where throwing costs more than degrading.
+     *
+     * Rehydration runs inside [com.wingedsheep.gameserver.persistence.SessionRecoveryService]'s
+     * `@PostConstruct`, so an override persisted while a key was configured would fail bean
+     * initialisation and take the whole server down on the next restart after the key went away.
+     * Wiring runs after both seats have already been told the match is starting, so throwing leaves
+     * a live table whose AI never acts. Both drop the override and fall back to the server-wide
+     * mode, which is what the LLM controller's engine fallback did anyway — loudly, so the operator
+     * can see that a model-specific AI is no longer playing its model.
+     */
+    private fun usableModelOverride(modelOverride: String?, context: String): String? {
+        if (modelOverride == null || gameProperties.ai.effectiveApiKey.isNotBlank()) return modelOverride
+        logger.warn(
+            "Ignoring LLM model override '{}' while {}: no API key is configured. " +
+                "This AI falls back to game.ai.mode={}.",
+            modelOverride, context, gameProperties.ai.mode
+        )
+        return null
+    }
 
     private fun com.wingedsheep.gameserver.config.AiProperties.toAiConfig() = com.wingedsheep.ai.llm.AiConfig(
         enabled = enabled, mode = mode, baseUrl = baseUrl,
@@ -404,6 +442,7 @@ class AiGameManager(
      */
     fun createAiIdentity(modelOverride: String? = null): PlayerIdentity {
         require(isEnabled) { "AI is not enabled. Set game.ai.enabled=true." }
+        requireCredentialedOverride(modelOverride)
 
         val aiPlayerId = EntityId("ai-${UUID.randomUUID().toString().take(8)}")
         val aiProperties = gameProperties.ai
@@ -463,7 +502,11 @@ class AiGameManager(
         val aiPlayerId = identity.playerId
         val aiProperties = gameProperties.ai
 
-        val controller = createController(aiPlayerId, modelOverride = identity.aiModelOverride)
+        val modelOverride = usableModelOverride(
+            identity.aiModelOverride,
+            "rehydrating AI identity ${identity.playerName}"
+        )
+        val controller = createController(aiPlayerId, modelOverride = modelOverride)
         // Replaced when a match (or draft) wires this AI, so no callbacks and no step gate here.
         val aiSession = buildAiSession(aiPlayerId, controller, gameSession = null)
 
@@ -478,7 +521,7 @@ class AiGameManager(
         aiPlayerIds.add(aiPlayerId)
 
         logger.info("Rehydrated AI identity: {} ({}) [model={}]",
-            identity.playerName, aiPlayerId.value, identity.aiModelOverride ?: aiProperties.model)
+            identity.playerName, aiPlayerId.value, modelOverride ?: aiProperties.model)
     }
 
     /**
@@ -501,7 +544,10 @@ class AiGameManager(
         }
 
         val aiProperties = gameProperties.ai
-        val modelOverride = lookupModelOverride(aiPlayerId)
+        val modelOverride = usableModelOverride(
+            lookupModelOverride(aiPlayerId),
+            "wiring AI ${aiPlayerId.value} for game ${gameSession.sessionId}"
+        )
         val controller = createController(aiPlayerId, gameSession, modelOverride)
 
         // Give the AI knowledge of its deck composition
