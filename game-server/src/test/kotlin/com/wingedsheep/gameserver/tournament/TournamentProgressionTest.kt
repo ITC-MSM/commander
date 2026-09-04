@@ -4,6 +4,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 
 /**
@@ -17,6 +18,11 @@ import io.kotest.matchers.shouldBe
  * handler used to look for a startable match only on a false→true ready transition, so once every AI
  * was marked ready nothing ever re-asked and the round-2 slate sat idle — permanently, whenever the
  * round-complete fallback was skipped because the round had already been advanced.
+ *
+ * The same guard has a second way to fail, and it also reached production: the bracket is built once
+ * from the lobby's roster, so a seat that leaves afterwards stays scheduled. Nothing can seat it, its
+ * matches never complete, and `hasIncompleteMatchBefore` then blocks every opponent behind it —
+ * see [TournamentManager.unseatedPlayersWithMatchesLeft].
  */
 class TournamentProgressionTest : FunSpec({
 
@@ -161,6 +167,67 @@ class TournamentProgressionTest : FunSpec({
         manager.hasActiveMatch(human) shouldBe true
         manager.reportMatchResult(humanRound1.gameSessionId!!, human)
         manager.hasActiveMatch(human) shouldBe false
+    }
+
+    test("a seat that left the lobby strands its opponent, and every opponent behind them") {
+        // The production stall this guards: the bracket is built once from the lobby's roster, and a
+        // seat that leaves afterwards stays in it. Nothing can put a departed seat in a game, so its
+        // matches never complete — and `hasIncompleteMatchBefore` turns that one dead pair into a
+        // block on every later match of whoever it was scheduled against.
+        val ghost = ai.last()
+        val seated = everyone - ghost
+
+        val manager = tournament()
+        val round1 = manager.startNextRound()!!
+        val stranded = round1.matchFor(ghost).opponentOf(ghost)
+
+        // Only three of the four round-1 matches can start: the ghost is never in the ready set,
+        // because it is no longer a lobby seat that could be readied.
+        manager.startableMatches(seated).size shouldBe 3
+
+        // Drive the bracket to exhaustion — start and resolve everything that ever becomes startable.
+        // The stall is progressive, not immediate, which is what made it hard to spot in production:
+        // the bracket keeps launching the pairs the ghost hasn't reached yet and gives out a player at
+        // a time, as each round arrives at it.
+        var sweeps = 0
+        while (true) {
+            val startable = manager.startableMatches(seated)
+            if (startable.isEmpty()) break
+            startable.forEach { (round, match) -> match.gameSessionId = "r${round.roundNumber}-${match.player1Id.value}" }
+            startable.forEach { (_, match) -> manager.reportMatchResult(match.gameSessionId!!, match.player1Id) }
+            check(sweeps++ < 20) { "the sweep never settled" }
+        }
+
+        // It runs out of work with the bracket unfinished and round 1 still open — nothing will ever
+        // start again, and the stranded seat never got to play at all.
+        manager.isComplete shouldBe false
+        manager.isRoundComplete() shouldBe false
+        manager.hasIncompleteMatchBefore(stranded, 2) shouldBe true
+
+        // Naming the ghost is what breaks the deadlock; forfeiting it uses the same path a disconnect
+        // does, and the bracket moves again.
+        manager.unseatedPlayersWithMatchesLeft(seated) shouldContainExactly listOf(ghost)
+        manager.recordAbandon(ghost)
+
+        manager.isRoundComplete() shouldBe true
+        manager.hasIncompleteMatchBefore(stranded, 2) shouldBe false
+        manager.startableMatches(seated).shouldNotBeEmpty()
+    }
+
+    test("the ghost sweep names nobody when the roster is intact, and nobody twice") {
+        // The backstop runs on every readiness change and every result, so it has to be quiet when
+        // there is nothing to repair — otherwise it re-forfeits a settled seat on each pass.
+        val ghost = ai.first()
+        val seated = everyone - ghost
+
+        val manager = tournament()
+        manager.startNextRound()
+
+        manager.unseatedPlayersWithMatchesLeft(everyone).shouldBeEmpty()
+
+        manager.unseatedPlayersWithMatchesLeft(seated) shouldContainExactly listOf(ghost)
+        manager.recordAbandon(ghost)
+        manager.unseatedPlayersWithMatchesLeft(seated).shouldBeEmpty()
     }
 
     test("a seat that is not ready keeps its match out of the sweep") {
