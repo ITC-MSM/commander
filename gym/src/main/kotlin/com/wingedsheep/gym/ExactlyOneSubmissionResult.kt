@@ -9,13 +9,13 @@ import com.wingedsheep.engine.core.GameAction
  * authoritative [com.wingedsheep.engine.core.ActionProcessor] boundary, not a game transition
  * with a reward or terminal outcome.
  */
-sealed interface ExactOneSubmissionResult {
+sealed interface ExactlyOneSubmissionResult {
     /** The submitted action was accepted and its direct engine result was installed. */
-    data class Applied(val step: StepResult) : ExactOneSubmissionResult
+    data class Applied(val step: StepResult) : ExactlyOneSubmissionResult
 
     /** The submitted [action] was rejected atomically by the action processor. */
     data class Rejected(
         val action: GameAction,
         val reason: String
-    ) : ExactOneSubmissionResult
+    ) : ExactlyOneSubmissionResult
 }
