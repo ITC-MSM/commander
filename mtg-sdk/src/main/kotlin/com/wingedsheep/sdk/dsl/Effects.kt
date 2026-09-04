@@ -3674,6 +3674,18 @@ object Effects {
         CounterEffect(counterDestination = CounterDestination.Exile(grantFreeCast))
 
     /**
+     * Counter target spell. If countered, put it into its owner's hand instead of their
+     * graveyard — Remand.
+     *
+     * Still a counter in every way that matters: an uncounterable spell is untouched (neither
+     * countered nor returned), "whenever a spell is countered" triggers fire, and a flashback
+     * card's own exile replacement still wins. Prefer [ReturnSpellToOwnersHand] only for cards
+     * that literally return a spell without countering it.
+     */
+    fun CounterSpellToHand(): Effect =
+        CounterEffect(counterDestination = CounterDestination.Hand)
+
+    /**
      * Counter the spell that triggered this ability (non-targeted).
      * "Counter that spell."
      */
