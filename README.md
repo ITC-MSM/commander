@@ -102,7 +102,7 @@ Copy `.env.example` to `.env` to configure:
 | `REDIS_HOST` | `localhost` | Redis host |
 | `REDIS_PORT` | `6379` | Redis port |
 | `GAME_AI_ENABLED` | `true` | Enable AI opponent |
-| `GAME_AI_MODE` | `engine` | AI mode: `engine` (built-in) or `llm` (requires API key) |
+| `GAME_AI_MODE` | `engine` | AI mode: `engine` (built-in), `llm` (requires API key), or the mode of a registered `AiControllerProvider`. An unrecognised value fails startup. |
 | `OPENROUTER_API_KEY` | | OpenRouter API key (only needed for `llm` mode) |
 | `GAME_AI_MODEL` | `google/gemini-3.1-flash-lite-preview` | LLM model (only for `llm` mode) |
 
@@ -180,7 +180,7 @@ The LLM AI receives the same masked game state as a human player and responds th
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `GAME_AI_ENABLED` | `true` | Enable the AI opponent feature |
-| `GAME_AI_MODE` | `llm` | `engine` — built-in AI (no API key needed); `llm` — LLM-powered AI |
+| `GAME_AI_MODE` | `llm` | `engine` — built-in AI (no API key needed); `llm` — LLM-powered AI; or the mode of an `AiControllerProvider` bean supplied by another build. An unrecognised value fails startup. |
 | `GAME_AI_BASE_URL` | `https://openrouter.ai/api/v1` | LLM API endpoint (LLM mode only) |
 | `GAME_AI_API_KEY` | | API key for LLM provider (LLM mode only) |
 | `GAME_AI_MODEL` | `google/gemini-3.1-flash-lite-preview` | LLM model name (LLM mode only) |
