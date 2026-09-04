@@ -12,8 +12,11 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.player.CardsDrawnThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PlayerLostComponent
 import com.wingedsheep.engine.state.components.player.SkipDrawStepComponent
+import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.RoomFaceStatics
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.SkipDrawStep
 import com.wingedsheep.sdk.scripting.effects.Effect
 
 /**
@@ -100,6 +103,7 @@ class DrawPhaseManager(
                 s = s.updateEntity(teammate) { it.without<SkipDrawStepComponent>() }
                 continue
             }
+            if (skipsDrawStep(s, teammate)) continue
             val r = drawCards(s, teammate, 1)
             if (r.isPaused) {
                 return ExecutionResult.paused(r.newState, r.pendingDecision!!, teammateEvents + r.events)
@@ -118,6 +122,15 @@ class DrawPhaseManager(
             )
         }
 
+        // A standing "Skip your draw step" static (Colfenor's Plans) — unlike the marker above it
+        // is not consumed, so it applies every turn for as long as the permanent is around.
+        if (skipsDrawStep(s, activePlayer)) {
+            return ExecutionResult.success(
+                s.withPriority(activePlayer),
+                teammateEvents + StepChangedEvent(Step.DRAW)
+            )
+        }
+
         val drawResult = drawCards(s, activePlayer, 1)
         if (!drawResult.isSuccess) {
             return drawResult
@@ -125,6 +138,27 @@ class DrawPhaseManager(
 
         val newState = drawResult.newState.withPriority(activePlayer)
         return ExecutionResult.success(newState, teammateEvents + drawResult.events + StepChangedEvent(Step.DRAW))
+    }
+
+    /**
+     * Whether [playerId] controls a permanent with the [SkipDrawStep] static ability.
+     *
+     * Read the same way maximum hand size is ([com.wingedsheep.engine.core.MaximumHandSize]): a
+     * turn-based scan of the projected battlefield rather than a continuous-projection value,
+     * because a skipped draw step is a turn-based action, not a characteristic. Routed through
+     * [RoomFaceStatics] so a Room face's static counts only while its door is unlocked (CR 709.5).
+     */
+    private fun skipsDrawStep(state: GameState, playerId: EntityId): Boolean {
+        val projected = state.projectedState
+        for (permanentId in projected.getBattlefieldControlledBy(playerId)) {
+            val container = state.getEntity(permanentId) ?: continue
+            val card = container.get<CardComponent>() ?: continue
+            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+            if (RoomFaceStatics.activeStaticAbilities(container, cardDef).any { it is SkipDrawStep }) {
+                return true
+            }
+        }
+        return false
     }
 
     /**

@@ -4842,6 +4842,12 @@ work for abilities-on-stack (which carry no `CardComponent`).
 - `HasLeastManaValueAmong(candidates)` (filter builder `hasLeastManaValueAmong(candidates)`) — has the
   least mana value among battlefield permanents matching the supplied composable filter. Ties all
   qualify, and target legality is rechecked at resolution (Culling Scales).
+- `HasGreatestManaValueAmongAllCreatures` (filter builder `hasGreatestManaValueAmongAllCreatures()`) —
+  has the greatest mana value among **all** creatures on the battlefield, both players' (Favor of the
+  Mighty). Ties all qualify. Its candidate set is fixed rather than filter-supplied precisely so the
+  continuous-effect projection pass can evaluate it — `HasLeastManaValueAmong` above takes a filter and
+  is therefore a point-of-use (target / gather) predicate only, inert as a static's affected set. Mana
+  value is read off the printed cost, so X counts as 0 (CR 202.3b) and a face-down creature counts as 0.
 - `IsRingBearer` (filter builder `ringBearer()`) — the creature is its controller's Ring-bearer
   (CR 701.54: has `RingBearerComponent` and is controlled by its designating owner). Used for
   player-level Ring-bearer conditions via `Conditions.YouControl(Creature.ringBearer(), negate = …)`
@@ -7414,6 +7420,12 @@ staticAbility {
 - `LegendRuleDoesNotApplyTo(filter)` — "The 'legend rule' doesn't apply to [filter] you control"
   (Spider-Verse — Spiders). Scan-based: `LegendRuleCheck` excludes permanents you control matching
   `filter` from the same-name duplicate grouping, so you may keep multiple copies (CR 704.5j).
+- `SkipDrawStep` — "Skip your draw step." Controller-scoped and standing: `DrawPhaseManager` scans the
+  projected battlefield (via `RoomFaceStatics`) as the draw step begins and takes no draw for a player
+  who controls one, every turn, without consuming anything. The one-shot counterparts are the
+  `SkipDrawStepComponent` marker and `Effects.SkipStepOrPhaseThisTurn`, both of which are spent by the
+  step they skip. Not unwrapped from a `ConditionalStaticAbility` — add that to
+  `DrawPhaseManager.skipsDrawStep` if an "as long as …" wording ever needs it. (Colfenor's Plans)
 - `NoMaximumHandSize` — controller has no hand-size limit *while this permanent is on the
   battlefield*. (Thought Vessel, Reliquary Tower) For a one-shot resolution effect that confers a
   *permanent, player-scoped* "no maximum hand size for the rest of the game" (survives the source
@@ -7691,6 +7703,12 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   taxed by {2} becomes `{2}, {T}:` — and there is no `manaFloor`, since costs only grow. Skyseer's
   Chariot: "Activated abilities of sources with the chosen name cost {2} more to activate" →
   `IncreaseActivatedAbilityCost(GroupFilter(GameObjectFilter.Any.namedFromChosenComponent()), DynamicAmount.Fixed(2))`.
+  `excludeManaAbilities = true` leaves mana abilities (CR 605) untaxed — the flag reads the ability's
+  own `isManaAbility`, the mirror of `PreventActivatedAbilities(nonManaAbilitiesOnly = true)`. It is
+  what makes a *board-wide* tax playable at all: Suppression Field, "Activated abilities cost {2}
+  more to activate unless they're mana abilities" →
+  `IncreaseActivatedAbilityCost(GroupFilter(GameObjectFilter.Any), DynamicAmount.Fixed(2), excludeManaAbilities = true)`.
+  Without it, every land's `{T}: Add …` would be taxed too.
 - `MayCastFromGraveyard(filter, lifeCost = 0, duringYourTurnOnly = false, entersWithCounter = null, addedSubtypeOnEntry = null, oncePerTurn = false, exileInsteadOfGraveyard = false)`
   — cast spells matching `filter` from your graveyard following normal timing, optionally paying
   `lifeCost` life. Free for Yawgmoth's Agenda (`MayCastFromGraveyard(Nonland)`); `lifeCost = 1,
@@ -11810,6 +11828,15 @@ The priority groups are (CR 616.1a–f):
   `RecipientFilter` the prevention and `ModifyDamageAmount` paths understand works here too —
   including `RecipientFilter.OpponentOrPermanentTheyControl` (Twinflame Tyrant). Each hosting
   permanent is its own replacement and applies once (CR 616.1): two Twinflame Tyrants quadruple.
+- `HalveDamage(restrictions?, appliesTo)` — the dividing mirror of `DoubleDamage`: matching damage is
+  halved, **rounded down**. Ghosts of the Innocent: `HalveDamage(appliesTo = DamageEvent(recipient =
+  RecipientFilter.Any))` — "a permanent or player" is the unscoped recipient, so combat and burn,
+  creatures and players, the host's own controller included, are all halved. Its own type rather than
+  a negative `ModifyDamageAmount` because the reduction is *multiplicative* and no `DynamicAmount` can
+  read the incoming amount. Half of 1 rounded down is 0, so a 1-damage source deals nothing; each
+  hosting permanent applies once (CR 616.1), so three copies take 14 to 7, 3, then 1. It runs after
+  the `DoubleDamage` pass and shares its `restrictions` / `damageType` / source / recipient handling.
+  It is **not** a prevention effect, so `DamageCantBePrevented` (Excruciator) does not switch it off.
   A player who is a legal recipient sees a "Damage Doubled" badge on their life orb — **except** when
   the source filter is attachment-scoped (`SourceFilter.EquippedCreature` / `EnchantedCreature`), which
   badges the attached creature's card instead, and only while it is attached. That case is a property

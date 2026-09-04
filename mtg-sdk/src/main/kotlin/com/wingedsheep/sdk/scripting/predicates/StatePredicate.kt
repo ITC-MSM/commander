@@ -694,6 +694,25 @@ sealed interface StatePredicate {
     }
 
     /**
+     * Has the greatest mana value among *all* creatures on the battlefield (global scope, both
+     * players), not just the ones its controller controls. Ties match every creature sharing the
+     * maximum — "if there's a tie for highest mana value, all of those creatures" (Favor of the
+     * Mighty, 2007-10-01).
+     *
+     * Mana value is read off the printed mana cost, so an X in it counts as 0 (CR 202.3b) and a
+     * face-down creature — which has no mana cost — counts as 0. The mirror of
+     * [HasLeastPowerAmongAllCreatures] on the mana-value axis; unlike [HasLeastManaValueAmong] its
+     * candidate set is fixed rather than filter-supplied, which is what lets the continuous-effect
+     * projection pass evaluate it (a static ability's affected set is resolved without an
+     * ability-controller context).
+     */
+    @SerialName("HasGreatestManaValueAmongAllCreatures")
+    @Serializable
+    data object HasGreatestManaValueAmongAllCreatures : Entity {
+        override val description: String = "with the greatest mana value"
+    }
+
+    /**
      * Has the least mana value among battlefield permanents matching [candidates]. Ties match every
      * permanent sharing the minimum, allowing ordinary target selection to choose among them.
      */
