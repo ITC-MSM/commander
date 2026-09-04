@@ -14,11 +14,13 @@ import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent
 import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
-import com.wingedsheep.engine.state.components.stack.abilityIdentityOf
+import com.wingedsheep.engine.state.components.stack.triggerIdentityFromCurrentCardDefinition
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
+import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
@@ -29,9 +31,11 @@ import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.AbilityIdentity
 import com.wingedsheep.sdk.scripting.ActivatedAbility
+import com.wingedsheep.sdk.scripting.ClassLevelAbility
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
+import com.wingedsheep.sdk.scripting.ReplaceLandManaColor
 import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import io.kotest.core.spec.style.FunSpec
@@ -96,6 +100,27 @@ class AbilityIdentityTest : FunSpec({
                 isManaAbility = true,
                 timing = TimingRule.ManaAbility,
             )
+        ),
+    )
+
+    val identityClass = CardDefinition.enchantment(
+        name = "Identity Class",
+        manaCost = ManaCost.parse("{1}"),
+        subtypes = setOf(Subtype.CLASS),
+        script = CardScript(
+            classLevels = listOf(
+                ClassLevelAbility(level = 2, cost = ManaCost.ZERO),
+            ),
+        ),
+    )
+
+    val intrinsicManaChoice = CardDefinition.enchantment(
+        name = "Intrinsic Mana Choice",
+        manaCost = ManaCost.parse("{1}"),
+        script = CardScript(
+            staticAbilities = listOf(
+                ReplaceLandManaColor(filter = GameObjectFilter.BasicLand.youControl()),
+            ),
         ),
     )
 
@@ -290,6 +315,47 @@ class AbilityIdentityTest : FunSpec({
         continuation.baseContext.activatedAbilityId shouldBe grantedId
     }
 
+    test("a generated Class level-up ability receives the current definition identity") {
+        val driver = GameTestDriver()
+        driver.registerCards(TestCards.all + identityClass)
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 40))
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val player = driver.activePlayer!!
+        val source = driver.putPermanentOnBattlefield(player, "Identity Class", classLevel = 1)
+        val levelUpId = AbilityId.classLevelUp(2)
+        driver.submit(
+            ActivateAbility(playerId = player, sourceId = source, abilityId = levelUpId)
+        ).isSuccess shouldBe true
+
+        val onStack = driver.state.getEntity(driver.state.stack.last())
+            ?.get<ActivatedAbilityOnStackComponent>()
+            .shouldNotBeNull()
+        onStack.abilityIdentity shouldBe AbilityIdentity("Identity Class", levelUpId)
+        onStack.activatedAbilityId shouldBe levelUpId
+    }
+
+    test("an intrinsic basic-land mana ability retains its id without definition identity") {
+        val driver = GameTestDriver()
+        driver.registerCards(TestCards.all + intrinsicManaChoice)
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 40))
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val player = driver.activePlayer!!
+        driver.putPermanentOnBattlefield(player, "Intrinsic Mana Choice")
+        val forest = driver.putLandOnBattlefield(player, "Forest")
+        val intrinsicId = AbilityId.intrinsicMana(Color.GREEN.symbol)
+
+        driver.submit(
+            ActivateAbility(playerId = player, sourceId = forest, abilityId = intrinsicId)
+        ).isPaused shouldBe true
+
+        val continuation = driver.state.peekContinuation()
+            .shouldBeInstanceOf<ChooseManaColorContinuation>()
+        continuation.baseContext.abilityIdentity shouldBe null
+        continuation.baseContext.activatedAbilityId shouldBe intrinsicId
+    }
+
     test("triggered abilities from two copies of the same card share one AbilityIdentity") {
         val driver = GameTestDriver()
         driver.registerCards(TestCards.all + listOf(identityBear))
@@ -337,9 +403,9 @@ class AbilityIdentityTest : FunSpec({
         decision.context.abilityIdentity shouldBe identity
     }
 
-    test("abilityIdentityOf returns null for a source with no card definition") {
+    test("the transitional trigger identity derivation returns null without a card definition") {
         // A bare state with no entity for the given id has no CardComponent → no identity, no throw.
         val state = GameState(rng = GameRng.seeded(1L))
-        state.abilityIdentityOf(EntityId.of("ghost"), AbilityId("x")) shouldBe null
+        state.triggerIdentityFromCurrentCardDefinition(EntityId.of("ghost"), AbilityId("x")) shouldBe null
     }
 })

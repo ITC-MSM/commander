@@ -13057,13 +13057,15 @@ Card authors rarely reference these directly; they are created/updated by the ma
 
 `AbilityIdentity(cardDefinitionId, abilityId)` (`mtg-sdk` `scripting/AbilityIdentity.kt`) is the stable, **definition-scoped**
 identity of a *kind* of ability — independent of the stack object or source entity instance. Two permanents printed from the
-same card (and every future instance) share one identity for a given ability, because both halves are definition-scoped:
-`cardDefinitionId` is the source's `CardComponent.cardDefinitionId`, and `abilityId` is the ability's `AbilityId` (generated
-once when the card definition is built). Cards never author it: the engine threads it onto `TriggeredAbilityOnStackComponent`
-/ `ActivatedAbilityOnStackComponent` (via `GameState.abilityIdentityOf(sourceId, abilityId)`) and onto `DecisionContext`, so
-batch decisions can group structurally identical triggers and persistent yields can remember a per-ability answer across all
-copies. Null for synthesized sources with no card definition (e.g. spell copies). See
-`backlog/stack-collapse-and-batch-decisions.md` §C.2.
+same card (and every future instance) share one identity for a given ability, because both halves are definition-scoped.
+Cards never author it. Activated-ability lookup records whether the concrete ability came from the current card definition:
+printed abilities and generated Class level-up abilities receive the corresponding identity, while runtime-, static-, and
+emblem-granted abilities and intrinsic subtype abilities retain their concrete `AbilityId` without claiming definition
+ownership. The engine threads proven
+identities onto `ActivatedAbilityOnStackComponent` and `DecisionContext`, so persistent yields can remember a per-ability
+answer across all copies. The triggered-ability path still derives a provisional key from the current source card definition;
+typed ownership provenance for granted and synthesized triggers remains an explicit follow-up in
+`backlog/stack-collapse-and-batch-decisions.md` §4. See that backlog's §C.2 for the original identity contract.
 
 ### Batched may-question (engine-internal, not authored)
 

@@ -63,8 +63,6 @@ import com.wingedsheep.sdk.scripting.AbilityIdentity
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.ExtraLoyaltyActivation
-import com.wingedsheep.sdk.scripting.GrantActivatedAbility
-import com.wingedsheep.sdk.scripting.filters.unified.Scope
 import com.wingedsheep.sdk.scripting.targets.TargetChooser
 import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.effects.LevelUpClassEffect
@@ -91,10 +89,11 @@ import kotlin.reflect.KClass
 /**
  * Result of resolving an activated-ability id on an object.
  *
- * The concrete [ability] is not enough to infer semantic identity: runtime, static, and intrinsic
- * abilities all have ids, but those ids do not belong to the receiving object's card definition.
- * Keeping the lookup provenance in the result makes the definition-owned cases explicit and keeps
- * a static granter attached only to the branch that actually supplied the ability.
+ * The concrete [ability] is not enough to infer semantic identity: runtime, static, emblem-granted,
+ * and intrinsic abilities all have ids, but those ids do not belong to the receiving object's card
+ * definition. Keeping the lookup provenance in the result makes the definition-owned cases
+ * explicit and keeps a static granter attached only to the branch that actually supplied the
+ * ability.
  */
 private sealed interface ActivatedAbilityLookup {
     val ability: ActivatedAbility
@@ -116,6 +115,8 @@ private sealed interface ActivatedAbilityLookup {
         val granterId: EntityId,
     ) : ActivatedAbilityLookup
 
+    data class EmblemGranted(override val ability: ActivatedAbility) : ActivatedAbilityLookup
+
     data class Intrinsic(override val ability: ActivatedAbility) : ActivatedAbilityLookup
 
     val staticGranterId: EntityId?
@@ -125,7 +126,7 @@ private sealed interface ActivatedAbilityLookup {
         get() = when (this) {
             is DirectDefinition -> identity
             is DefinitionDerivedClass -> identity
-            is RuntimeGranted, is StaticGranted, is Intrinsic -> null
+            is RuntimeGranted, is StaticGranted, is EmblemGranted, is Intrinsic -> null
         }
 }
 
@@ -218,18 +219,15 @@ class ActivateAbilityHandler(
         val cardComponent = container.get<CardComponent>()
             ?: return "Source is not a card"
 
-        // Tokens (and other entities without a registered CardDefinition) only have abilities
+        // Tokens (and other entities without a registered CardDefinition) can still have abilities
         // via static grants (e.g., Brightcap Badger granting "{T}: Add {G}" to Saproling tokens),
-        // intrinsic mana abilities (basic-land subtypes), or temporarily granted abilities. Don't
-        // bail out when the lookup fails — fall through to those sources instead.
+        // emblems, intrinsic mana abilities (basic-land subtypes), or temporary grants. Don't bail
+        // out before the provenance-aware lookup has checked those sources.
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
+        val classLevel = container.get<ClassLevelComponent>()?.currentLevel
 
         // Keep lookup provenance: only definition-owned results can later form AbilityIdentity.
-        val classLevel = container.get<ClassLevelComponent>()?.currentLevel
-        val abilityLookup = lookupActivatedAbility(
-            state, action.sourceId, action.abilityId, container,
-            cardComponent.cardDefinitionId, cardDef
-        )
+        val abilityLookup = lookupActivatedAbility(state, action.sourceId, action.abilityId)
             ?: return "Ability not found on this card"
         val ability = abilityLookup.ability
 
@@ -688,17 +686,10 @@ class ActivateAbilityHandler(
         val cardComponent = container.get<CardComponent>()
             ?: return ExecutionResult.error(state, "Source is not a card")
 
-        // Tokens (no registered CardDefinition) reach this path when activating granted abilities;
-        // fall through with a null cardDef and let the granted-ability lookup succeed.
-        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
-
         // Retain which lookup branch supplied the concrete ability. A CardComponent on the
         // receiving permanent proves only that the object is a card; it does not make a runtime,
-        // static, or intrinsic ability part of that card's definition.
-        val abilityLookup = lookupActivatedAbility(
-            state, action.sourceId, action.abilityId, container,
-            cardComponent.cardDefinitionId, cardDef
-        )
+        // static, emblem-granted, or intrinsic ability part of that card's definition.
+        val abilityLookup = lookupActivatedAbility(state, action.sourceId, action.abilityId)
             ?: return ExecutionResult.error(state, "Ability not found")
         val ability = abilityLookup.ability
         val staticGranterId = abilityLookup.staticGranterId
@@ -2836,16 +2827,18 @@ class ActivateAbilityHandler(
      * The order matches legal-action enumeration and the historical handler lookup. In
      * particular, an id directly declared by the current definition wins over an equal id from a
      * grant. Only the first two branches prove definition ownership; every other branch retains a
-     * concrete id for execution while remaining semantically identityless.
+     * concrete id for execution while remaining semantically identityless. Static and emblem
+     * grants come from the same shared resolvers used by legal-action enumeration, so the engine
+     * cannot advertise one grant set and validate another.
      */
     private fun lookupActivatedAbility(
         state: GameState,
         sourceId: EntityId,
         abilityId: AbilityId,
-        container: com.wingedsheep.engine.state.ComponentContainer,
-        cardDefinitionId: String,
-        cardDef: com.wingedsheep.sdk.model.CardDefinition?,
     ): ActivatedAbilityLookup? {
+        val container = state.getEntity(sourceId) ?: return null
+        val cardDefinitionId = container.get<CardComponent>()?.cardDefinitionId ?: return null
+        val cardDef = cardRegistry.getCard(cardDefinitionId)
         val classLevel = container.get<ClassLevelComponent>()?.currentLevel
 
         cardDef?.script?.effectiveActivatedAbilities(classLevel)
@@ -2870,11 +2863,15 @@ class ActivateAbilityHandler(
             ?.ability
             ?.let { return ActivatedAbilityLookup.RuntimeGranted(it) }
 
-        getStaticGrantedAbilitiesWithGranter(sourceId, state)
-            .firstOrNull { it.first.id == abilityId }
-            ?.let { (ability, granterId) ->
-                return ActivatedAbilityLookup.StaticGranted(ability, granterId)
+        castPermissionUtils.getStaticGrantedAbilitiesWithGranter(sourceId, state)
+            .firstOrNull { it.ability.id == abilityId }
+            ?.let {
+                return ActivatedAbilityLookup.StaticGranted(it.ability, it.granterId)
             }
+
+        castPermissionUtils.getEmblemGrantedActivatedAbilities(sourceId, state)
+            .firstOrNull { it.id == abilityId }
+            ?.let { return ActivatedAbilityLookup.EmblemGranted(it) }
 
         return resolveIntrinsicManaAbility(state, sourceId, abilityId)
             ?.let { ActivatedAbilityLookup.Intrinsic(it) }
@@ -2903,155 +2900,6 @@ class ActivateAbilityHandler(
             descriptionOverride = "Level up to level $targetLevel"
         )
     }
-
-    /**
-     * Get activated abilities granted to an entity by static abilities on battlefield permanents,
-     * paired with the EntityId of the permanent that granted each ability.
-     * E.g., Spectral Sliver grants a pump ability to all Sliver creatures via
-     * GrantActivatedAbility. The Dominion Bracelet grants its activated
-     * ability to the equipped creature via GrantActivatedAbility; the
-     * granter ID is needed to resolve AbilityCost.ExileGrantingPermanent.
-     */
-    private fun getStaticGrantedAbilitiesWithGranter(
-        entityId: EntityId,
-        state: GameState
-    ): List<Pair<ActivatedAbility, EntityId>> {
-        if (state.getEntity(entityId) == null) return emptyList()
-
-        val result = mutableListOf<Pair<ActivatedAbility, EntityId>>()
-
-        for (permanentId in state.getBattlefield()) {
-            val container = state.getEntity(permanentId) ?: continue
-            val card = container.get<CardComponent>() ?: continue
-            if (container.has<FaceDownComponent>()) continue
-
-            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            val classLevel = container.get<com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent>()?.currentLevel
-            for (rawAbility in cardDef.script.effectiveStaticAbilities(classLevel)) {
-                // A grant can be gated by a ConditionalStaticAbility (Nature's Embrace: the land host
-                // gains "{T}: Add two mana of any one color" only while it is a land). Unwrap the
-                // condition against the granter here so the actual-activation path agrees with the
-                // enumerator; skip when the gate is currently false.
-                val ability = when (rawAbility) {
-                    is com.wingedsheep.sdk.scripting.ConditionalStaticAbility -> {
-                        val granterController = state.projectedState.getController(permanentId)
-                            ?: container.get<ControllerComponent>()?.playerId
-                            ?: continue
-                        val ctx = EffectContext(sourceId = permanentId, controllerId = granterController)
-                        if (!conditionEvaluator.evaluate(state, rawAbility.condition, ctx)) continue
-                        rawAbility.ability
-                    }
-                    else -> rawAbility
-                }
-                // "[receivedBy] have all activated abilities of the [cardFilter] cards exiled with/to
-                // craft this / in your graveyard" (Territory Forge / Locus of Enlightenment /
-                // Thranduil = Self; Agatha's Soul Cauldron = creatures you control with a +1/+1
-                // counter). Mirror CastPermissionUtils.getStaticGrantedAbilitiesWithGranter: grant each
-                // donor ability (per `ability.donors`) to every matching permanent, recording the
-                // *receiver* as the granter so `{T}`/self-references bind to the permanent that gained
-                // the ability. When `oncePerTurnEach` is set (Locus), the util re-stamps each ability
-                // with a donor-derived AbilityId + once-per-turn cap.
-                if (ability is com.wingedsheep.sdk.scripting.HasAllActivatedAbilitiesOfCards) {
-                    val receives = when (val scope = ability.receivedBy.scope) {
-                        is Scope.Self -> permanentId == entityId
-                        is Scope.Specific -> scope.entityId == entityId
-                        is Scope.AttachedTo -> container.get<AttachedToComponent>()?.targetId == entityId
-                        is Scope.SoulbondPair ->
-                            com.wingedsheep.engine.mechanics.SoulbondPairing.isInPairOf(state, permanentId, entityId)
-                        is Scope.Battlefield -> {
-                            if (ability.receivedBy.excludeSelf && permanentId == entityId) false
-                            else {
-                                val granterController = state.projectedState.getController(permanentId)
-                                granterController != null && predicateEvaluator.matches(
-                                    state, state.projectedState, entityId, ability.receivedBy.baseFilter,
-                                    PredicateContext(controllerId = granterController, sourceId = permanentId)
-                                )
-                            }
-                        }
-                    }
-                    if (receives) {
-                        for (granted in com.wingedsheep.engine.legalactions.utils.donorCardsActivatedAbilities(
-                            state, permanentId, cardRegistry, predicateEvaluator,
-                            ability.donors, ability.cardFilter, ability.oncePerTurnEach
-                        )) {
-                            result.add(granted to entityId)
-                        }
-                    }
-                    continue
-                }
-                // "This permanent has all activated and triggered abilities of the last chosen card
-                // exiled with it" (Koh, the Face Stealer). Self-scoped: only the source receives the
-                // chosen card's *activated* abilities here (triggered ones flow through
-                // TriggerAbilityResolver), with the source recorded as granter so `{T}`/self-references
-                // bind to it.
-                if (ability is com.wingedsheep.sdk.scripting.HasAbilitiesOfChosenLinkedExiledCard) {
-                    if (ability.grantActivated && permanentId == entityId) {
-                        for (granted in com.wingedsheep.engine.legalactions.utils.chosenLinkedExiledActivatedAbilities(state, permanentId, cardRegistry)) {
-                            result.add(granted to entityId)
-                        }
-                    }
-                    continue
-                }
-                if (ability !is GrantActivatedAbility) continue
-                when (ability.filter.scope) {
-                    is Scope.Battlefield -> {
-                        if (ability.filter.excludeSelf && permanentId == entityId) continue
-                        val granterController = state.projectedState.getController(permanentId) ?: continue
-                        val matches = predicateEvaluator.matches(
-                            state,
-                            state.projectedState,
-                            entityId,
-                            ability.filter.baseFilter,
-                            PredicateContext(controllerId = granterController, sourceId = permanentId)
-                        )
-                        if (matches) {
-                            result.add(ability.ability to permanentId)
-                        }
-                    }
-                    is Scope.AttachedTo -> {
-                        val attachedTo = container.get<AttachedToComponent>()
-                        if (attachedTo != null && attachedTo.targetId == entityId) {
-                            result.add(ability.ability to permanentId)
-                        }
-                    }
-                    is Scope.Self -> {
-                        if (permanentId == entityId) result.add(ability.ability to permanentId)
-                    }
-                    // Soulbond payoff (CR 702.95b) — must mirror the enumerator's SoulbondPair
-                    // branch in CastPermissionUtils exactly, or the ability shows as a button on the
-                    // paired creature and then fails legality when clicked.
-                    is Scope.SoulbondPair -> {
-                        if (com.wingedsheep.engine.mechanics.SoulbondPairing.isInPairOf(state, permanentId, entityId)) {
-                            result.add(ability.ability to permanentId)
-                        }
-                    }
-                    is Scope.Specific -> {
-                        if ((ability.filter.scope as Scope.Specific).entityId == entityId) {
-                            result.add(ability.ability to permanentId)
-                        }
-                    }
-                }
-            }
-        }
-
-        // Granted GrantActivatedAbility statics (CR 611): a permanent that was itself *granted* an
-        // ability-granting static — e.g. Roar of the Fifth People chapter II. Resolved by the shared
-        // helper so this handler and the enumerators agree on the granted set.
-        castPermissionUtils.getGrantedStaticGrantActivatedAbilities(entityId, state)
-            .forEach { result.add(it.ability to it.granterId) }
-
-        // GainActivatedAbilitiesOfPermanents (Sharkey): copies of opponents' lands' abilities, etc.
-        // Resolved by the shared helper so the enumerator and this handler agree on the gained set.
-        castPermissionUtils.getGainedAbilitiesOfPermanents(entityId, state)
-            .forEach { result.add(it.ability to it.granterId) }
-
-        return result
-    }
-
-    private fun getStaticGrantedActivatedAbilities(
-        entityId: EntityId,
-        state: GameState
-    ): List<ActivatedAbility> = getStaticGrantedAbilitiesWithGranter(entityId, state).map { it.first }
 
     companion object {
         fun create(services: EngineServices): ActivateAbilityHandler {
