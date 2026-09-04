@@ -79,6 +79,21 @@ sealed interface CounterDestination {
     @SerialName("CounterDestination.Exile")
     @Serializable
     data class Exile(val grantFreeCast: Boolean = false) : CounterDestination
+
+    /**
+     * Spell is put into its owner's **hand** instead of their graveyard — Remand's "put it into
+     * its owner's hand instead of into that player's graveyard".
+     *
+     * This is a genuine counter, not a bounce: the spell can't be countered check still applies
+     * (Remand's 2021-03-19 ruling — an uncounterable spell is neither countered nor returned),
+     * a `SpellCounteredEvent` still fires so "whenever a spell is countered" triggers see it, and
+     * a card cast with flashback is still exiled by its own replacement rather than landing in
+     * hand. That is exactly why this is a [CounterDestination] rather than
+     * `ReturnSpellToOwnersHandEffect`, which is explicitly *not* a counter.
+     */
+    @SerialName("CounterDestination.Hand")
+    @Serializable
+    data object Hand : CounterDestination
 }
 
 /**
@@ -184,6 +199,13 @@ data class CounterEffect(
                         }
                         if (dest.grantFreeCast) {
                             append(". You may cast that card without paying its mana cost for as long as it remains exiled")
+                        }
+                    }
+                    CounterDestination.Hand -> {
+                        if (condition is CounterCondition.UnlessPaysMana || condition is CounterCondition.UnlessPaysDynamic) {
+                            append(". If countered, put it into its owner's hand")
+                        } else {
+                            append(". If that spell is countered this way, put it into its owner's hand instead of into that player's graveyard")
                         }
                     }
                 }

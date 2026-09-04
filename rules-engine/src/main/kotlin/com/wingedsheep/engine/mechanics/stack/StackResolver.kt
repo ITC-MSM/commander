@@ -3123,6 +3123,68 @@ class StackResolver(
     }
 
     /**
+     * Counter a spell on the stack and put it into its owner's **hand** instead of their
+     * graveyard (Remand). If the spell can't be countered, nothing happens — the spell resolves
+     * and is *not* returned, which is Remand's 2021-03-19 ruling.
+     *
+     * The sibling of [counterSpellToExile] on the other destination, and it keeps the two things
+     * that make this a counter rather than a bounce: the [SpellCounteredEvent] still fires, and
+     * an [AfterResolveDestinationComponent] that applies on a counter (a flashback card's exile
+     * replacement) still wins over the hand, exactly as it does over the graveyard in
+     * [counterSpell].
+     *
+     * A hand is not a public zone reachable by `RedirectZoneChange` replacements the way a
+     * graveyard is (those key on "put into a graveyard from anywhere"), so no redirect check runs
+     * here; the rider is the only thing that can move the destination.
+     */
+    fun counterSpellToHand(state: GameState, spellId: EntityId): ExecutionResult {
+        if (spellId !in state.stack) {
+            return ExecutionResult.error(state, "Spell not on stack: $spellId")
+        }
+
+        val container = state.getEntity(spellId)
+            ?: return ExecutionResult.error(state, "Spell not found: $spellId")
+
+        val cardComponent = container.get<CardComponent>()
+
+        if (container.has<CantBeCounteredComponent>() || isGrantedCantBeCountered(state, spellId)) {
+            return ExecutionResult.success(state)
+        }
+
+        val spellComponent = container.get<SpellOnStackComponent>()
+        val ownerId = cardComponent?.ownerId
+            ?: spellComponent?.casterId
+            ?: return ExecutionResult.error(state, "Cannot determine spell owner")
+
+        var newState = state.removeFromStack(spellId)
+
+        // A flashback/foretell-style "exile it instead" rider that applies on a counter still
+        // overrides the printed destination — the same precedence [counterSpell] gives it.
+        val riderOnCounter = container.get<AfterResolveDestinationComponent>()
+            ?.takeIf { !it.onlyIfResolved }
+        val destZone = riderOnCounter?.zone ?: Zone.HAND
+        newState = newState.addToZone(ZoneKey(ownerId, destZone), spellId)
+
+        newState = newState.updateEntity(spellId) { c ->
+            c.without<SpellOnStackComponent>().without<TargetsComponent>()
+        }
+
+        return ExecutionResult.success(
+            newState,
+            listOf(
+                SpellCounteredEvent(spellId, cardComponent?.name ?: "Unknown"),
+                ZoneChangeEvent(
+                    spellId,
+                    cardComponent?.name ?: "Unknown",
+                    null,
+                    destZone,
+                    ownerId
+                )
+            )
+        )
+    }
+
+    /**
      * Counter a spell on the stack and exile it instead of putting it into
      * its owner's graveyard. If the spell can't be countered, nothing happens.
      *

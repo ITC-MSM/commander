@@ -6,6 +6,7 @@ import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.effects.CounterDestination
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import com.wingedsheep.sdk.scripting.effects.WardCost
@@ -36,7 +37,7 @@ data class CounterUnlessPaysContinuation(
     val manaCost: ManaCost,
     val sourceId: EntityId?,
     val sourceName: String?,
-    val exileOnCounter: Boolean = false,
+    val counterDestination: CounterDestination = CounterDestination.Graveyard,
     val controllerId: EntityId? = null,
     val onPaid: Effect? = null
 ) : ContinuationFrame
@@ -172,7 +173,8 @@ data class MayPayManaTriggerContinuation(
  * @property manaCost The mana cost to pay
  * @property availableSources Available mana sources the player can choose from
  * @property autoPaySuggestion Pre-computed auto-tap suggestion
- * @property exileOnCounter Whether to exile the spell if countered
+ * @property counterDestination Where the spell goes if it is countered (CR 701.5a default is
+ *   the graveyard; Remand's hand and Spelljack's exile are the other two)
  * @property controllerId The controller of the counter effect
  */
 @Serializable
@@ -183,7 +185,7 @@ data class CounterUnlessPaysManaSelectionContinuation(
     val manaCost: ManaCost,
     val availableSources: List<ManaSourceOption>,
     val autoPaySuggestion: List<EntityId>,
-    val exileOnCounter: Boolean = false,
+    val counterDestination: CounterDestination = CounterDestination.Graveyard,
     val controllerId: EntityId? = null,
     /** See [CounterUnlessPaysContinuation.onPaid]. */
     val onPaid: Effect? = null,
@@ -458,7 +460,7 @@ data class WardTapPermanentsSubCostContinuation(
     val payingPlayerId: EntityId,
     val spellEntityId: EntityId,
     val manaCost: com.wingedsheep.sdk.core.ManaCost,
-    val exileOnCounter: Boolean,
+    val counterDestination: CounterDestination,
     val controllerId: EntityId?,
     /** Source IDs still to process. Head is the one the current prompt is for. */
     val pendingSubCostSources: List<EntityId>,
