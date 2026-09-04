@@ -21,7 +21,11 @@ This branch tracks completion of Lorwyn and the engine capabilities its cards re
 
 ## Work in progress
 
-Bog Hoodlums and Nath's Elite are the first implementation unit. Both compose existing blocking abilities and the clash pattern. Canonical-printing checks pass. Assay declines the clash lines; its result is not behavioral verification. The required `just build` gate is running; snapshots, final validation, and commits remain pending.
+Bog Hoodlums and Nath's Elite are implemented with existing blocking abilities and the clash pattern. Canonical printing, fresh Scryfall fields and image URLs, and snapshot checks passed. Source completeness is now 242 / 286 (44 missing). Assay declines their clash text; this is not behavioral verification.
+
+The differential audit found seven existing Harbinger bugs: declining the optional search incorrectly forced a search and shuffle. All seven now gate the entire search. Their 21 per-card regression tests passed, covering declining, finding a card, and accepting but finding no card. Snapshot changes were checked field by field: only the two new cards and seven optional gates changed. The differential now agrees for 108 / 111 compared cards; three equivalent static-ability folds remain (see `assay-review.md`).
+
+The first `just build` failed only on the expected new-card snapshot additions. The initial implementation batch is recorded in the draft PR with its focused checks passing. The broader build remains pending: its queued invocation was stopped before Gradle started so newly authored cards can be snapshotted first. Fistful of Force, Spring Cleaning, and Woodland Guidance are now authored locally with seven focused tests; their fields, art URLs, and canonical-printing checks pass, and their snapshot job is queued. They are not yet checked off in this committed checklist. No manual playthrough or end-to-end UI test has run.
 
 ## Existing repository drift
 

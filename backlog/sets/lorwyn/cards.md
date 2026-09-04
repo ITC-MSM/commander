@@ -2,8 +2,7 @@
 
 **Set Size:** 286 cards
 **Release Date:** October 12, 2007
-**Implemented:** 240 / 286
-
+**Implemented:** 242 / 286
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 49    | 41   |
@@ -123,7 +122,7 @@
 
 ### Black
 - [x] Black Poplar Shaman
-- [ ] Bog Hoodlums
+- [x] Bog Hoodlums
 - [x] Boggart Birth Rite
 - [x] Boggart Harbinger
 - [x] Boggart Loggers
@@ -258,7 +257,7 @@
 - [x] Lignify
 - [x] Lys Alana Huntmaster
 - [x] Masked Admirers
-- [ ] Nath's Elite
+- [x] Nath's Elite
 - [x] Oakgnarl Warrior
 - [x] Primal Command
 - [x] Rootgrapple
