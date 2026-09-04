@@ -4248,9 +4248,16 @@ object Effects {
 
     /**
      * Target creature can't block this turn.
+     *
+     * Pass [attacker] for the *pairwise* form — "target creature can't block **this creature**
+     * this turn" (Screeching Griffin: `CantBlock(attacker = EffectTarget.Self)`). The target is
+     * then free to block anything else; only the named attacker is off limits.
      */
-    fun CantBlock(target: EffectTarget = EffectTarget.ContextTarget(0), duration: Duration = Duration.EndOfTurn): Effect =
-        CantBlockEffect(target, duration)
+    fun CantBlock(
+        target: EffectTarget = EffectTarget.ContextTarget(0),
+        duration: Duration = Duration.EndOfTurn,
+        attacker: EffectTarget? = null
+    ): Effect = CantBlockEffect(target, duration, attacker)
 
     /**
      * Target creature can't attack or block this turn.
