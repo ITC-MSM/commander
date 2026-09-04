@@ -1929,6 +1929,27 @@ class PredicateEvaluator {
                 entityPower <= minPower
             }
 
+            // Global greatest mana value among every creature on the battlefield. Mana value is
+            // a printed characteristic (no projection entry), so it is read off CardComponent; a
+            // face-down creature has no mana cost and counts as 0, mirroring the least-mana-value
+            // reading below. Ties leave every maximum-mana-value creature matching.
+            StatePredicate.HasGreatestManaValueAmongAllCreatures -> {
+                if (!projected.isCreature(entityId)) return false
+                val entityManaValue = if (projected.getProjectedValues(entityId)?.isFaceDown == true) 0
+                else container.get<CardComponent>()?.manaValue ?: return false
+                val maxManaValue = state.getBattlefield()
+                    .asSequence()
+                    .filter { projected.isCreature(it) }
+                    .mapNotNull { candidateId ->
+                        val candidate = state.getEntity(candidateId) ?: return@mapNotNull null
+                        if (projected.getProjectedValues(candidateId)?.isFaceDown == true) 0
+                        else candidate.get<CardComponent>()?.manaValue
+                    }
+                    .maxOrNull()
+                    ?: return false
+                entityManaValue >= maxManaValue
+            }
+
             is StatePredicate.HasLeastManaValueAmong -> {
                 val predicateContext = context ?: return false
                 val entityManaValue = if (projected.getProjectedValues(entityId)?.isFaceDown == true) {

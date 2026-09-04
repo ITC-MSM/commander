@@ -2105,8 +2105,8 @@ object DamageUtils {
      * Apply static damage amplification from permanents on the battlefield.
      *
      * Scans all battlefield entities for ReplacementEffectSourceComponent containing
-     * DoubleDamage effects, and doubles damage if the source and recipient match.
-     * Per MTG rules, damage amplification applies before prevention.
+     * DoubleDamage, HalveDamage and ModifyDamageAmount effects, and scales damage if the source and
+     * recipient match. Per MTG rules, damage amplification applies before prevention.
      *
      * @param state The current game state
      * @param targetId The entity receiving damage
@@ -2173,6 +2173,53 @@ object DamageUtils {
                 // Each DoubleDamage source is its own replacement effect and applies once
                 // (CR 616.1), so two Twinflame Tyrants quadruple rather than double.
                 amplifiedAmount *= 2
+            }
+        }
+
+        // Halving (Ghosts of the Innocent) — the dividing mirror of the loop above, run after it so
+        // an odd amount is doubled before it is halved. CR 616.1 lets the affected player order the
+        // two, and this fixed order is the one their rulings call out as the usual choice; each
+        // HalveDamage applies once, so three of them turn 14 into 1. Integer division is the
+        // "rounded down" half of the wording, and it is what takes a 1-damage source to 0.
+        for (entityId in state.getBattlefield()) {
+            val container = state.getEntity(entityId) ?: continue
+            val replacementComponent = container.get<ReplacementEffectSourceComponent>() ?: continue
+            val sourceControllerId = replacementHostController(state, entityId) ?: continue
+
+            for (effect in replacementComponent.replacementEffects) {
+                if (effect !is com.wingedsheep.sdk.scripting.HalveDamage) continue
+
+                val damageEvent = effect.appliesTo
+                if (damageEvent !is com.wingedsheep.sdk.scripting.EventPattern.DamageEvent) continue
+
+                val damageTypeMatches = when (damageEvent.damageType) {
+                    is DamageType.Any -> true
+                    is DamageType.Combat -> isCombatDamage
+                    is DamageType.NonCombat -> !isCombatDamage
+                }
+                if (!damageTypeMatches) continue
+
+                if (effect.restrictions.isNotEmpty()) {
+                    val context = EffectContext(
+                        sourceId = entityId,
+                        controllerId = sourceControllerId,
+                    )
+                    if (effect.restrictions.any { !conditionEvaluator.evaluate(state, it, context) }) continue
+                }
+
+                val sourceMatches = damageSourceMatches(
+                    state, projected, damageEvent.source, sourceId,
+                    hostId = entityId, hostControllerId = sourceControllerId, recipientId = targetId,
+                )
+                if (!sourceMatches) continue
+
+                val recipientMatches = damageRecipientMatches(
+                    state, projected, damageEvent.recipient, targetId,
+                    hostId = entityId, hostControllerId = sourceControllerId,
+                )
+                if (!recipientMatches) continue
+
+                amplifiedAmount /= 2
             }
         }
 

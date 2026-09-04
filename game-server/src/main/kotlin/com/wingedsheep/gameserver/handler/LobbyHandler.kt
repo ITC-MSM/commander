@@ -1524,6 +1524,7 @@ class LobbyHandler(
         }
 
         lobby.forceRemovePlayer(aiPlayerId)
+        forfeitBracketMatchesIfSeatGone(lobby, aiPlayerId)
         sessionRegistry.removeIdentity(aiPlayerState.identity.token)
         lobbyRepository.saveLobby(lobby)
 
@@ -2110,6 +2111,7 @@ class LobbyHandler(
 
         // Use forceRemovePlayer for explicit leave - player cannot rejoin
         lobby.forceRemovePlayer(identity.playerId)
+        forfeitBracketMatchesIfSeatGone(lobby, identity.playerId)
         identity.currentLobbyId = null
 
         logger.info("Player ${identity.playerName} left lobby $lobbyId (cannot rejoin)")
@@ -2128,6 +2130,27 @@ class LobbyHandler(
     }
 
     /**
+     * Forfeit a departed seat's remaining bracket matches, if the seat really is gone.
+     *
+     * The `TournamentManager` is built once, from the roster the lobby had then, and nothing rebuilds
+     * it afterwards — so every path that drops a player from `lobby.players` has to settle what the
+     * bracket still has them scheduled for. Only the disconnect-timeout path did (via
+     * [TournamentMatchHandler.handleAbandon]); an explicit Leave and a removed AI seat did not, and
+     * left a seat in the bracket that can never be put in a game. Its matches then sit unplayed
+     * forever, and `hasIncompleteMatchBefore` blocks every later match of whoever it was paired
+     * against, idling the tournament a player at a time.
+     *
+     * Guarded on the seat actually being gone, because [TournamentLobby.removePlayer] deliberately
+     * *keeps* the state during a tournament so the player can rejoin — forfeiting one of those would
+     * decide matches they are still entitled to play. [TournamentMatchHandler.handleAbandon] is a
+     * no-op when the lobby has no bracket yet, which covers everything before the tournament starts.
+     */
+    private fun forfeitBracketMatchesIfSeatGone(lobby: TournamentLobby, playerId: EntityId) {
+        if (lobby.players.containsKey(playerId)) return
+        tournamentMatchHandler.handleAbandon(lobby.lobbyId, playerId)
+    }
+
+    /**
      * Helper to leave current lobby if the player is in one.
      * Used when creating/joining a new lobby to auto-leave the old one.
      */
@@ -2140,6 +2163,7 @@ class LobbyHandler(
         }
 
         lobby.removePlayer(identity.playerId)
+        forfeitBracketMatchesIfSeatGone(lobby, identity.playerId)
         identity.currentLobbyId = null
 
         logger.info("Player ${identity.playerName} auto-left lobby $lobbyId")

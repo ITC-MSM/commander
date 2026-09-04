@@ -49,7 +49,7 @@ class SelfPlayLoop<T>(
     private val maxSteps: Int = 2000,
     private val rng: Random = Random.Default,
     private val structuredExpander: StructuredDecisionExpander =
-        com.wingedsheep.gym.trainer.defaults.ExactStructuredDecisionExpander
+        com.wingedsheep.gym.trainer.defaults.ExactStructuredDecisionExpander.Default
 ) {
     /** Run one game. Returns the winner (null = draw / truncation). */
     fun playGame(config: GameConfig, gameId: String = UUID.randomUUID().toString()): GameOutcome {

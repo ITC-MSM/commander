@@ -275,6 +275,31 @@ class CantBeBlockedByRule(
 }
 
 /**
+ * CantBlockSpecificAttacker: this blocker can't block *this one* attacker (floating effect).
+ *
+ * The restriction mirror of provoke's `MustBlockSpecificAttacker`, and unlike the blanket
+ * `SetCantBlock` it is pairwise — the blocker is free to block every other attacker, so it can't
+ * be a projected per-creature flag. Screeching Griffin's "{R}: Target creature can't block this
+ * creature this turn"; the floating effect's affectedEntities holds the blocker and the
+ * modification holds the attacker it may not block.
+ */
+class CantBlockSpecificAttackerRule : BlockEvasionRule {
+    override fun check(ctx: BlockCheckContext): String? {
+        val forbidden = ctx.state.floatingEffects.any { floatingEffect ->
+            val modification = floatingEffect.effect.modification
+            modification is SerializableModification.CantBlockSpecificAttacker &&
+                modification.attackerId == ctx.attackerId &&
+                ctx.blockerId in floatingEffect.effect.affectedEntities
+        }
+        if (!forbidden) return null
+
+        val blockerName = ctx.state.getEntity(ctx.blockerId)?.get<CardComponent>()?.name ?: "Creature"
+        val attackerName = ctx.state.getEntity(ctx.attackerId)?.get<CardComponent>()?.name ?: "Creature"
+        return "$blockerName can't block $attackerName this turn"
+    }
+}
+
+/**
  * CantBeBlockedExceptByColor: Can only be blocked by creatures of the specified color (floating effect).
  */
 class CantBeBlockedExceptByColorRule : BlockEvasionRule {
@@ -720,6 +745,7 @@ fun defaultBlockEvasionRules(
     IntimidateRule(),
     LandwalkRule(),
     CantBeBlockedByRule(predicateEvaluator),
+    CantBlockSpecificAttackerRule(),
     CantBeBlockedExceptByColorRule(),
     CantBeBlockedByColorRule(),
     CantBeBlockedExceptByRule(predicateEvaluator),

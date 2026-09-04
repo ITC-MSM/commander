@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.blc.cards
+package com.wingedsheep.mtg.sets.definitions.rix.cards
 
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.card
@@ -15,6 +15,9 @@ import com.wingedsheep.sdk.scripting.SpellCostTarget
  *
  * This spell costs {X} less to cast, where X is the total power of creatures you control.
  * Trample
+ *
+ * Canonical printing: Rivals of Ixalan, the card's earliest real printing. Later sets (BLC, FDN,
+ * JMP, …) carry `Printing` rows.
  */
 val GhaltaPrimalHunger = card("Ghalta, Primal Hunger") {
     manaCost = "{10}{G}{G}"
@@ -35,9 +38,9 @@ val GhaltaPrimalHunger = card("Ghalta, Primal Hunger") {
 
     metadata {
         rarity = Rarity.RARE
-        collectorNumber = "220"
+        collectorNumber = "130"
         artist = "Chase Stone"
-        imageUri = "https://cards.scryfall.io/normal/front/e/f/ef6a7dc0-35c2-4300-b0c5-28b04706291f.jpg?1721429280"
+        imageUri = "https://cards.scryfall.io/normal/front/0/1/0104b5b3-9376-4ad7-9a77-3e564e9c42e6.jpg?1783935288"
         flavorText = "The earth walks, strongest of all."
         ruling("2018-01-19", "To determine Ghalta's total cost, start with the mana cost (or an alternative cost if another card's effect allows you to pay one instead), add any cost increases, then apply any cost reductions. Ghalta's mana value remains unchanged, no matter what the total cost to cast it was.")
         ruling("2018-01-19", "The total cost to cast Ghalta is locked in before you pay that cost. For example, if you control three 2/2 creatures, including one you can sacrifice to add {C}, the total cost of Ghalta is {4}{G}{G}. Then you can sacrifice the creature when you activate mana abilities just before paying the cost.")

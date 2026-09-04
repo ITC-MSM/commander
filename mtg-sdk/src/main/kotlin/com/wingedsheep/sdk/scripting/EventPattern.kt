@@ -951,16 +951,28 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * [attackerFilter] restricts the blocked attacker (e.g. "blocks a creature with flying").
      * When set with SELF binding, fires once per blocked attacker matching the filter and
      * sets TriggerContext.triggeringEntityId to that attacker. Skystinger pattern.
+     *
+     * [minBlockedAttackers] raises the bar to "blocks *N or more* creatures" (Lairwatch Giant),
+     * the blocking-side mirror of [CreaturesAttackYourOpponentEvent.minAttackers]. It fires **once**
+     * for the whole combat rather than once per blocked attacker, because "blocks two or more
+     * creatures" is one event no matter how many are blocked. SELF binding only — the detector's
+     * ANY branch fans out per blocker and has no count to read — and [Triggers.blocks] rejects the
+     * other combinations rather than silently misfiring.
      */
     @SerialName("BlockEvent")
     @Serializable
     data class BlockEvent(
         val filter: GameObjectFilter? = null,
-        val attackerFilter: GameObjectFilter? = null
+        val attackerFilter: GameObjectFilter? = null,
+        val minBlockedAttackers: Int = 1
     ) : EventPattern {
         override val description: String = buildString {
             append(if (filter != null) "a ${filter.description} blocks" else "a creature blocks")
-            if (attackerFilter != null) append(" a ${attackerFilter.description}")
+            if (minBlockedAttackers > 1) {
+                append(" $minBlockedAttackers or more creatures")
+            } else if (attackerFilter != null) {
+                append(" a ${attackerFilter.description}")
+            }
         }
         override fun applyTextReplacement(replacer: TextReplacer): EventPattern {
             val newFilter = filter?.applyTextReplacement(replacer)
@@ -1191,11 +1203,23 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     @SerialName("CreatureDealtDamageBySourceDiesEvent")
     @Serializable
     data class CreatureDealtDamageBySourceDiesEvent(
-        val sourceFilter: GameObjectFilter? = null
+        val sourceFilter: GameObjectFilter? = null,
+        /**
+         * Narrows the *dying* creature, orthogonally to [sourceFilter], which narrows the damaging
+         * source. Trophy Hunter: "whenever a creature **with flying** dealt damage by this creature
+         * this turn dies". Evaluated against the dying creature's last-known information (CR
+         * 608.2h) — its ruling is explicit that the check is whether it "currently has flying",
+         * i.e. as it left the battlefield, not what its printed card says.
+         */
+        val dyingFilter: GameObjectFilter? = null
     ) : EventPattern {
-        override val description: String =
-            if (sourceFilter == null) "whenever a creature dealt damage by this creature this turn dies"
-            else "whenever a creature dealt damage this turn by ${sourceFilter.description} dies"
+        override val description: String = buildString {
+            append("whenever a ")
+            append(dyingFilter?.description ?: "creature")
+            append(" dealt damage ")
+            if (sourceFilter == null) append("by this creature this turn dies")
+            else append("this turn by ${sourceFilter.description} dies")
+        }
     }
 
     /**

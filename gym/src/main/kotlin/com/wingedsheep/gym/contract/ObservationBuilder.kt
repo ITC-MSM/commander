@@ -192,14 +192,13 @@ class ObservationBuilder(
         perspectivePlayerId: EntityId,
         revealAll: Boolean
     ): List<ZoneView> {
-        // Emit a view for every (player, zone) in turn order so trainers see a
-        // consistent shape regardless of whether a zone happens to be empty.
-        val perPlayerZones = listOf(
-            Zone.HAND, Zone.LIBRARY, Zone.GRAVEYARD, Zone.EXILE, Zone.BATTLEFIELD
-        )
+        // Emit a view for every modeled (player, zone) in the contract's stable order so trainers
+        // see a consistent shape regardless of whether a zone happens to be empty. The stack has
+        // its own ordered representation above; see [TRAINING_OBSERVATION_ZONE_ORDER] for why the
+        // order is spelled out rather than taken from the enum.
         val views = mutableListOf<ZoneView>()
         for (playerId in state.turnOrder) {
-            for (zone in perPlayerZones) {
+            for (zone in TRAINING_OBSERVATION_ZONE_ORDER) {
                 val key = ZoneKey(playerId, zone)
                 val ids = state.getZone(key)
                 val wholeZoneVisible = revealAll ||

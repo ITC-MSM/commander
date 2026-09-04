@@ -22,7 +22,9 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.collections.shouldNotContainAnyOf
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -74,12 +76,40 @@ class TrainingObservationTest : FunSpec({
         obs.stateDigest shouldMatch Regex("[0-9a-f]{64}")
         obs.legalActions.shouldNotBeEmpty()
 
-        // Hand + library + graveyard + exile + battlefield for each player.
-        obs.zones.size shouldBe 2 * 5
+        // Every player-keyed zone is present; stack has its own ordered field.
+        obs.zones.size shouldBe 2 * (Zone.entries.size - 1)
 
         val encoded = json.encodeToString(TrainingObservation.serializer(), obs)
         val decoded = json.decodeFromString(TrainingObservation.serializer(), encoded)
         decoded shouldBe obs
+    }
+
+    test("per-player zones have an explicit complete schema order") {
+        TRAINING_OBSERVATION_ZONE_ORDER.shouldContainExactly(
+            Zone.HAND,
+            Zone.LIBRARY,
+            Zone.GRAVEYARD,
+            Zone.EXILE,
+            Zone.BATTLEFIELD,
+            Zone.COMMAND,
+            Zone.SIDEBOARD,
+        )
+        // Every engine zone is classified in the contract itself, so a new one cannot be absorbed
+        // by relaxing this test — it has to be named either per-player or explicitly not.
+        TRAINING_OBSERVATION_ZONE_ORDER.toSet() + NON_PLAYER_KEYED_ZONES shouldBe
+            Zone.entries.toSet()
+        TRAINING_OBSERVATION_ZONE_ORDER.toSet() shouldNotContainAnyOf NON_PLAYER_KEYED_ZONES
+
+        val env = newEnv()
+        val perspective = env.playerIds[0]
+        val observation = ObservationBuilder(env.cardRegistry)
+            .build(env.state, perspective, env.legalActions())
+            .observation as TrainingObservation
+
+        observation.zones
+            .filter { it.ownerId == perspective }
+            .map { it.zoneType }
+            .shouldContainExactly(TRAINING_OBSERVATION_ZONE_ORDER)
     }
 
     test("an actionId from the observation resolves to a steppable action") {

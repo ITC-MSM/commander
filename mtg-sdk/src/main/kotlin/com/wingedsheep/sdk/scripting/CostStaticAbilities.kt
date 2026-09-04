@@ -1143,12 +1143,18 @@ data class ReduceActivatedAbilityCost(
  *   [com.wingedsheep.sdk.scripting.filters.unified.GroupFilter.source] for "this permanent's
  *   abilities" or a battlefield filter for a group).
  * @property amount Dynamic generic-mana increase applied to each matching ability's cost.
+ * @property excludeManaAbilities Leave mana abilities (CR 605) untaxed — Suppression Field's
+ *   "unless they're mana abilities". A board-wide tax without this would price every land's
+ *   `{T}: Add …` at {2} more, which is the opposite of what the card says. The flag is the mirror of
+ *   [PreventActivatedAbilities]'s `nonManaAbilitiesOnly`; the ability's own `isManaAbility` flag
+ *   (CR 605.1a, enforced by `CardLinter`) is what the engine reads.
  */
 @SerialName("IncreaseActivatedAbilityCost")
 @Serializable
 data class IncreaseActivatedAbilityCost(
     val filter: GroupFilter,
-    val amount: DynamicAmount
+    val amount: DynamicAmount,
+    val excludeManaAbilities: Boolean = false
 ) : StaticAbility {
     override val description: String = buildString {
         append(filter.description.replaceFirstChar { it.uppercase() })
@@ -1156,6 +1162,7 @@ data class IncreaseActivatedAbilityCost(
             is DynamicAmount.Fixed -> append("'s activated abilities cost {${amount.amount}} more to activate")
             else -> append("'s activated abilities cost {X} more to activate, where X is ${amount.description}")
         }
+        if (excludeManaAbilities) append(" unless they're mana abilities")
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {

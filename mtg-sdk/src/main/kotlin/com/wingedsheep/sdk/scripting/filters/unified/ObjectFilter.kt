@@ -1258,6 +1258,14 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.HasLeastPowerAmongAllCreatures
     )
 
+    /**
+     * Must have the greatest mana value among *all* creatures on the battlefield (global, both
+     * players). On a tie every maximum-mana-value creature matches (Favor of the Mighty).
+     */
+    fun hasGreatestManaValueAmongAllCreatures() = copy(
+        statePredicates = statePredicates + StatePredicate.HasGreatestManaValueAmongAllCreatures
+    )
+
     /** Must have the least mana value among battlefield permanents matching [candidates]. */
     fun hasLeastManaValueAmong(candidates: GameObjectFilter) = copy(
         statePredicates = statePredicates + StatePredicate.HasLeastManaValueAmong(candidates)

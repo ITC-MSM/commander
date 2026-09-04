@@ -2,9 +2,13 @@ package com.wingedsheep.gym.trainer.search
 
 import com.wingedsheep.engine.core.CardsSelectedResponse
 import com.wingedsheep.engine.core.ChooseTargetsDecision
+import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.DecisionResponse
 import com.wingedsheep.engine.core.GameAction
 import com.wingedsheep.engine.core.ManaSourcesSelectedResponse
+import com.wingedsheep.engine.core.MoveCollectionOrderContinuation
+import com.wingedsheep.engine.core.OrderedResponse
+import com.wingedsheep.engine.core.ReorderLibraryDecision
 import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.core.SubmitDecision
@@ -28,16 +32,27 @@ import com.wingedsheep.gym.trainer.spi.TrainerContext
 import com.wingedsheep.mtg.sets.tokens.PredefinedTokens
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.floats.shouldBeExactly
 import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+
+private const val ORDERING_HEAD = "ordering"
+
+/** Lexicographic-by-input-index permutations — the same enumeration the expander produces. */
+private fun <T> permutationsOf(items: List<T>): List<List<T>> =
+    if (items.isEmpty()) listOf(emptyList())
+    else items.indices.flatMap { index ->
+        permutationsOf(items.filterIndexed { other, _ -> other != index }).map { listOf(items[index]) + it }
+    }
 
 class StructuredDecisionSearchTest : FunSpec({
 
@@ -146,6 +161,101 @@ class StructuredDecisionSearchTest : FunSpec({
         }
         responsesByTarget.getValue(ownCreature).child!!.state shouldNotBe
             responsesByTarget.getValue(opposingCreature).child!!.state
+    }
+
+    test("default MCTS exposes every small library ordering and selects the best-evaluated one") {
+        val driver = newDriver("Mountain")
+        val player = driver.activePlayer!!
+        val cards = driver.state.getLibrary(player).take(3)
+        val orders = permutationsOf(cards)
+        orders.size shouldBe 6
+        val favoured = orders[4]
+
+        val decision = ReorderLibraryDecision(
+            id = "search-ordering",
+            playerId = player,
+            prompt = "Put them back in any order",
+            context = DecisionContext(),
+            cards = cards,
+            cardInfo = emptyMap(),
+        )
+        val rootState = driver.state
+            .withPendingDecision(decision)
+            .pushContinuation(
+                MoveCollectionOrderContinuation(
+                    decisionId = decision.id,
+                    playerId = player,
+                    sourceId = null,
+                    sourceName = "Search ordering probe",
+                    cards = cards,
+                    destinationZone = Zone.LIBRARY,
+                    destinationPlayerId = player,
+                )
+            )
+        val env = GameEnvironment.create(driver.cardRegistry).also {
+            it.restore(rootState, listOf(driver.player1, driver.player2))
+        }
+
+        // One head per ordering slot, so the evaluator can prefer a single permutation. A shared
+        // featurizer would collapse all six onto one slot and make "best evaluated" untestable —
+        // exactly the gap that a two-object ordering hides.
+        val orderingFeaturizer = object : ActionFeaturizer {
+            override val heads: List<PolicyHead> =
+                listOf(PolicyHead(ORDERING_HEAD, orders.size), PolicyHead("shared", 1))
+
+            override fun slot(action: GameAction, ctx: TrainerContext): SlotEncoding {
+                val response = (action as? SubmitDecision)?.response
+                val index = (response as? OrderedResponse)?.let { orders.indexOf(it.orderedObjects) } ?: -1
+                return if (index >= 0) SlotEncoding(ORDERING_HEAD, index) else SlotEncoding("shared", 0)
+            }
+        }
+        val favouringEvaluator = Evaluator<Unit> { _, _, _ ->
+            val orderingPriors = FloatArray(orders.size) { if (it == orders.indexOf(favoured)) 10f else 1f }
+            EvaluationResult(
+                priors = mapOf(ORDERING_HEAD to orderingPriors, "shared" to floatArrayOf(1f)),
+                value = 0f,
+            )
+        }
+
+        val result = AlphaZeroSearch(
+            env = env,
+            featurizer = stateFeaturizer,
+            actionFeaturizer = orderingFeaturizer,
+            evaluator = favouringEvaluator,
+            structuredResolver = StructuredDecisionResolver { _, pending ->
+                error("exact expansion unexpectedly fell back for ${pending::class.simpleName}")
+            },
+            dirichletAlpha = null,
+        ).run(simulations = 12)
+
+        result.root.edges.size shouldBe 6
+        val responses = result.root.edges.map { edge ->
+            (edge.action as SubmitDecision).response.shouldBeInstanceOf<OrderedResponse>()
+        }
+        responses.map { it.orderedObjects }.toSet() shouldBe orders.toSet()
+        result.root.edges.map { it.slot }.toSet().size shouldBe 6
+        result.visits.sum() shouldBe 12
+
+        val bestEdge = result.bestEdge.shouldNotBeNull()
+        (bestEdge.action as SubmitDecision).response
+            .shouldBeInstanceOf<OrderedResponse>().orderedObjects shouldBe favoured
+        val others = result.root.edges.filter { it !== bestEdge }
+        others.forEach { bestEdge.visits shouldBeGreaterThan it.visits }
+
+        // Executed rather than read off the tree: a 10:1 prior leaves the weakest orders unvisited,
+        // so the tree holds fewer children than edges. Every edge must still be a distinct, legal,
+        // engine-accepted branch.
+        val branchStates = result.root.edges.zip(responses).map { (edge, response) ->
+            val branch = GameEnvironment.create(driver.cardRegistry).also {
+                it.restore(rootState, listOf(driver.player1, driver.player2))
+            }
+            branch.step(edge.action)
+
+            branch.lastRejection shouldBe null
+            branch.state.getLibrary(player).take(3) shouldBe response.orderedObjects
+            branch.state
+        }
+        branchStates.toSet().size shouldBe 6
     }
 
     test("existing yes-no folding remains a complete two-edge decision") {

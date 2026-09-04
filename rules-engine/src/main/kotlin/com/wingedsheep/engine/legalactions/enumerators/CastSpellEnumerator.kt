@@ -304,7 +304,7 @@ class CastSpellEnumerator : ActionEnumerator {
                             // permanent(s) matching [filter] you control to its owner's hand."
                             // Mirrors the TapPermanents selection model (permanents you control,
                             // no destruction), but the payment bounces instead of tapping.
-                            val validBounceTargets = context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter)
+                            val validBounceTargets = context.costUtils.findAbilityBounceTargets(state, playerId, atom.filter, atom.youControl)
                             if (validBounceTargets.size < atom.count) {
                                 canPayAdditionalCosts = false
                             }
