@@ -13222,3 +13222,12 @@ the linter).
 
 For step-by-step authoring workflow see [`api-guide.md`](api-guide.md) (and use the `add-card` skill);
 for hard cases see [`managing-complex-and-rare-abilities.md`](managing-complex-and-rare-abilities.md).
+
+### Transmute
+
+`transmute("{1}{U}{U}")` composes a hand-zone activated ability: pay the mana,
+discard the source as a cost, and search for one card with the same mana value.
+The chosen card is revealed and put into hand, then the library is shuffled; the
+search may find nothing. Activation is restricted to sorcery timing. It uses
+`Costs.DiscardSelf`, `DynamicAmounts.sourceManaValue()`, and the existing library
+search pipeline. Callers: Drift of Phantasms and Dimir Infiltrator.
