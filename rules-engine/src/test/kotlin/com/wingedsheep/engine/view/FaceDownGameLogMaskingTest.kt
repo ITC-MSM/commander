@@ -138,9 +138,9 @@ class FaceDownGameLogMaskingTest : FunSpec({
         )
         val castEvent = d.events.filterIsInstance<SpellCastEvent>().single()
         // Keep the historical public-name field safe while the trusted snapshot retains the
-        // semantic identity required by rules and knowledge code.
+        // underlying identity required by knowledge bookkeeping.
         castEvent.cardName shouldBe FACE_DOWN_DISPLAY_NAME
-        castEvent.semanticCardName shouldBe "Disguised Angel"
+        castEvent.underlyingCardName shouldBe "Disguised Angel"
         castEvent.cardPresentation?.nameFor(caster) shouldBe "Disguised Angel"
         castEvent.cardPresentation?.nameFor(opponent) shouldBe FACE_DOWN_DISPLAY_NAME
         d.bothPass()
@@ -191,7 +191,7 @@ class FaceDownGameLogMaskingTest : FunSpec({
 
         val castEvent = result.events.filterIsInstance<SpellCastEvent>().single()
         castEvent.cardName shouldBe FACE_DOWN_DISPLAY_NAME
-        castEvent.semanticCardName shouldBe "Disguised Angel"
+        castEvent.underlyingCardName shouldBe "Disguised Angel"
         castEvent.cardPresentation?.nameFor(caster) shouldBe "Disguised Angel"
         castEvent.cardPresentation?.nameFor(opponent) shouldBe "Disguised Angel"
         castEvent.cardPresentation?.nameFor(EntityId.of("spectator"), isSpectator = true) shouldBe

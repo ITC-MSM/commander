@@ -336,7 +336,7 @@ class LookAtHandTest : FunSpec({
         result.isSuccess shouldBe true
         val castEvent = result.events.filterIsInstance<SpellCastEvent>().single()
         castEvent.cardName shouldBe FACE_DOWN_DISPLAY_NAME
-        castEvent.semanticCardName shouldBe "Test Morph"
+        castEvent.underlyingCardName shouldBe "Test Morph"
         castEvent.cardPresentation?.nameFor(viewer) shouldBe FACE_DOWN_DISPLAY_NAME
         driver.state.getEntity(castMorph)?.get<RevealedToComponent>() shouldBe null
         driver.state.getEntity(otherMorph)?.get<RevealedToComponent>() shouldBe null

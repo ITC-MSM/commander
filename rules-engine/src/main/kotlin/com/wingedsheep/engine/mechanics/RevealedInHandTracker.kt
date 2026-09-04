@@ -116,7 +116,7 @@ object RevealedInHandTracker {
         // Only a card played *from hand* makes the known copies of its name ambiguous;
         // casting the same name from the graveyard/exile leaves the hand copy identifiable.
         if (castFromZone == Zone.HAND) {
-            newState = forgetSameNamedInHand(newState, event.casterId, event.semanticCardName)
+            newState = forgetSameNamedInHand(newState, event.casterId, event.underlyingCardName)
         }
         return newState
     }

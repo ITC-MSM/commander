@@ -626,12 +626,13 @@ data class SpellCastEvent(
     val targetNames: List<String> = emptyList(),
     val xValue: Int? = null,
     /**
-     * Trusted semantic identity and viewer entitlement snapshot captured from event-time
-     * [com.wingedsheep.engine.view.Visibility]. Rules and knowledge consumers use
-     * [semanticCardName]; client projection selects one safe name through this snapshot.
+     * Trusted underlying card identity and viewer entitlement snapshot captured from event-time
+     * [com.wingedsheep.engine.view.Visibility]. Knowledge bookkeeping uses [underlyingCardName];
+     * client projection selects one safe display name through this snapshot.
      *
      * `null` represents serialized events produced before this field existed. Their [cardName]
-     * remains a safe presentation fallback and the best semantic name that historical event kept.
+     * remains a safe presentation fallback and the only identity information that historical
+     * event retained.
      */
     val cardPresentation: EventCardPresentation? = null,
     /**
@@ -702,8 +703,11 @@ data class SpellCastEvent(
      */
     val sacrificedAsCostNames: List<String> = emptyList()
 ) : GameEvent {
-    /** Exact cast identity when current event-time capture retained it; legacy events kept only [cardName]. */
-    val semanticCardName: String get() = cardPresentation?.semanticName ?: cardName
+    /**
+     * Underlying card-definition identity when current event-time capture retained it; legacy
+     * events kept only [cardName]. This is not the name characteristic of a face-down spell.
+     */
+    val underlyingCardName: String get() = cardPresentation?.semanticName ?: cardName
 }
 
 /**
