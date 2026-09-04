@@ -191,12 +191,24 @@ values, layer interactions, "as ~ enters", protection / hexproof / ward).
 
 ## 7. Output
 
-1. **Verdict** (1–2 sentences) — is the behavior right? Is the SDK shape right?
-2. **What's good** — genuine positives worth keeping if the author rewrites: clean tests,
+Lead with the overview. The author needs to see that you understood the change before
+they'll trust a single finding, and a reviewer who can't summarize the diff hasn't read
+it.
+
+1. **Overview of the change** — what this PR does, written from the diff itself, *before*
+   any comment or judgement. A short prose paragraph (or a few grouped bullets when the
+   diff spans several areas) covering: the intent (what problem it solves / which cards
+   or mechanic it enables), the shape of the implementation (which modules and types it
+   touches, what's new vs. modified), and what the tests cover. Name the files that carry
+   the substance, not every touched path. Describe, don't evaluate — no praise, no
+   findings, no "but"; those start at step 2. If the PR body claims something the diff
+   doesn't do, note the discrepancy here as a plain fact.
+2. **Verdict** (1–2 sentences) — is the behavior right? Is the SDK shape right?
+3. **What's good** — genuine positives worth keeping if the author rewrites: clean tests,
    right plumbing, good naming, well-chosen primitives. Skip filler; if there's nothing
    real to praise, say so briefly. Do this *before* the issues so the author knows what
    not to throw away.
-3. **Issues, by severity:**
+4. **Issues, by severity:**
    - **Blocking** — wrong behavior, broken rules, missing wiring (new event without
      `ClientEvent.kt` branch), tests that don't exercise the change, base-vs-projected
      state bugs. Must be fixed before merge. Numbered B#
@@ -207,7 +219,7 @@ values, layer interactions, "as ~ enters", protection / hexproof / ward).
      inconsistencies. Author's discretion. Numbered M#
 
    Each issue: one short paragraph with `file:line` and the concrete fix.
-4. **Recommendation** — concrete next action ("drop type X, define card via Y, add a
+5. **Recommendation** — concrete next action ("drop type X, define card via Y, add a
    test for Z"). If the diff is fine as-is, say so.
 
 This skill writes a review into the conversation. It does not push, post via `gh`, run
