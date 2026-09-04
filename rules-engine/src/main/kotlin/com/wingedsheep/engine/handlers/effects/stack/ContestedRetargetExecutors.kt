@@ -20,9 +20,10 @@ import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import kotlin.reflect.KClass
 
 /**
- * Executor for [ChangeTriggeringObjectTargetsEffect] — the chosen player may change the triggering
- * spell/ability's targets. Delegates the interactive slot-by-slot retargeting to
- * [ContestedRetargetLogic] (shared with the resumer).
+ * Executor for [ChangeTriggeringObjectTargetsEffect] — the chosen player may change the targets of
+ * the spell/ability named by `effect.spell` (the triggering one by default, or a spell this card
+ * targeted). Delegates the interactive slot-by-slot retargeting to [ContestedRetargetLogic]
+ * (shared with the resumer).
  */
 class ChangeTriggeringObjectTargetsExecutor :
     EffectExecutor<ChangeTriggeringObjectTargetsEffect> {
@@ -35,7 +36,7 @@ class ChangeTriggeringObjectTargetsExecutor :
         effect: ChangeTriggeringObjectTargetsEffect,
         context: EffectContext
     ): EffectResult {
-        val stackObjectId = context.triggeringEntityId ?: return EffectResult.success(state)
+        val stackObjectId = context.resolveTarget(effect.spell) ?: return EffectResult.success(state)
         if (!state.stack.contains(stackObjectId)) return EffectResult.success(state)
         val targetsComponent = state.getEntity(stackObjectId)?.get<TargetsComponent>()
             ?: return EffectResult.success(state)

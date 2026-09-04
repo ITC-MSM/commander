@@ -6194,6 +6194,69 @@
     ]
 }
 
+// Horde of Notions
+{
+    "name": "Horde of Notions",
+    "manaCost": "{W}{U}{B}{R}{G}",
+    "typeLine": "Legendary Creature — Elemental",
+    "oracleText": "Vigilance, trample, haste\n{W}{U}{B}{R}{G}: You may play target Elemental card from your graveyard without paying its mana cost.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "VIGILANCE",
+        "TRAMPLE",
+        "HASTE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{W}{U}{B}{R}{G}"
+                    }
+                },
+                "effect": "GrantFreeCastTargetFromExile",
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "Elemental own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "elemental"
+                    }
+                ],
+                "descriptionOverride": "You may play target Elemental card from your graveyard without paying its mana cost."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "249",
+        "rarity": "RARE",
+        "artist": "Adam Rex",
+        "flavorText": "Even the oldest treefolk was but an acorn when Lorwyn's first mysteries were born.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/0/80b9ea46-ae9b-4729-b206-0ba3ddc7660d.jpg?1783942856",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "This ability does not allow you to pay the evoke cost of the targeted Elemental card."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE",
+        "BLACK",
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Hornet Harasser
 {
     "name": "Hornet Harasser",
@@ -8095,6 +8158,59 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Lairwatch Giant
+{
+    "name": "Lairwatch Giant",
+    "manaCost": "{5}{W}",
+    "typeLine": "Creature — Giant Warrior",
+    "oracleText": "This creature can block an additional creature each combat.\nWhenever this creature blocks two or more creatures, it gains first strike until end of turn.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "BlockEvent",
+                    "minBlockedAttackers": 2
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "FIRST_STRIKE",
+                    "target": "Self"
+                },
+                "descriptionOverride": "it gains first strike until end of turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CanBlockAdditionalForCreatureGroup",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "29",
+        "artist": "Warren Mahy",
+        "flavorText": "A giant can brood over a grudge for decades, and woe to those who interrupt him.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/6/c64ba1c8-b93a-4169-9ba0-d3fc5bf57676.jpg?1783942912",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "Lairwatch Giant's second ability triggers if it blocks at least two creatures when blockers are declared. It will also trigger if it blocks fewer than two creatures when blockers are declared and effects then cause it to block more creatures. However, if Lairwatch Giant is already blocking two or more creatures, and effects then cause it to block more creatures, the ability won't trigger again."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -14339,6 +14455,85 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Wild Ricochet
+{
+    "name": "Wild Ricochet",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Instant",
+    "oracleText": "You may choose new targets for target instant or sorcery spell. Then copy that spell. You may choose new targets for the copy.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ChangeTriggeringObjectTargets",
+                    "spell": {
+                        "type": "BoundVariable",
+                        "name": "target instant or sorcery spell"
+                    }
+                },
+                {
+                    "type": "CopyTargetSpell",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target instant or sorcery spell"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "instant|sorcery",
+                    "zone": "Stack"
+                },
+                "id": "target instant or sorcery spell"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "196",
+        "rarity": "RARE",
+        "artist": "Dan Murayama Scott",
+        "flavorText": "\"I knew that trick long before your great-grandmother's great-grandmother was born.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/7/d76f09bc-b49a-4ad2-be2d-2a191d41b86d.jpg?1783942868",
+        "rulings": [
+            {
+                "date": "2013-07-01",
+                "text": "Wild Ricochet can target (and copy) any instant or sorcery spell, not just one with targets. It doesn't matter who controls it."
+            },
+            {
+                "date": "2013-07-01",
+                "text": "When Wild Ricochet resolves, it creates a copy of a spell. You control the copy. The controller of the original spell retains control of that spell. The copy is created on the stack, so it's not \"cast.\" Abilities that trigger when a player casts a spell won't trigger. The copy will then resolve like a normal spell, after players get a chance to cast spells and activate abilities. The copy resolves before the original spell."
+            },
+            {
+                "date": "2013-07-01",
+                "text": "The copy will have the same targets as the spell it's copying unless you choose new ones. You may change any number of the targets, including all of them or none of them. If, for one of the targets, you can't choose a new legal target, then it remains unchanged (even if the current target is illegal)."
+            },
+            {
+                "date": "2013-07-01",
+                "text": "If the spell Wild Ricochet copies is modal (that is, it says \"Choose one —\" or the like), the copy will have the same mode. You can't choose a different one."
+            },
+            {
+                "date": "2013-07-01",
+                "text": "If the spell Wild Ricochet copies has an X whose value was determined as it was cast (like Volcanic Geyser does), the copy has the same value of X."
+            },
+            {
+                "date": "2013-07-01",
+                "text": "You can't choose to pay any additional costs for the copy. However, effects based on any additional costs that were paid for the original spell are copied as though those same costs were paid for the copy too. For example, if a player sacrifices a 3/3 creature to cast Fling, and you copy it with Wild Ricochet, the copy of Fling will also deal 3 damage to its target."
+            },
+            {
+                "date": "2013-07-01",
+                "text": "If the copy says that it affects \"you,\" it affects the controller of the copy, not the controller of the original spell. Similarly, if the copy says that it affects an \"opponent,\" it affects an opponent of the copy's controller, not an opponent of the original spell's controller."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
