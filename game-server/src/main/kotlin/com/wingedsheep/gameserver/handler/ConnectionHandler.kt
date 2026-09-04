@@ -443,6 +443,14 @@ class ConnectionHandler(
                 when (lobby.state) {
                     LobbyState.WAITING_FOR_PLAYERS, LobbyState.DRAFTING, LobbyState.DECK_BUILDING -> {
                         lobby.removePlayer(identity.playerId)
+                        // `removePlayer` only really removes while WAITING_FOR_PLAYERS; during a draft
+                        // or deck building it keeps the seat so the player can rejoin. A bracket can
+                        // already exist by then (it is created early, for matchups), so when the seat
+                        // *is* gone its scheduled matches have to be forfeited — otherwise nothing can
+                        // ever start them and they block every opponent behind them.
+                        if (!lobby.players.containsKey(identity.playerId)) {
+                            handleAbandonCallback?.invoke(lobbyId, identity.playerId)
+                        }
                         if (lobby.playerCount == 0) {
                             tournamentResultSink.recordAbandoned(lobbyId)
                             lobbyRepository.removeLobby(lobbyId)

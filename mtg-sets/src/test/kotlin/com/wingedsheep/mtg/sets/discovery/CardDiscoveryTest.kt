@@ -36,13 +36,14 @@ class CardDiscoveryTest : FunSpec({
         // EOE's reprints live in `cards/BanishingLightReprint.kt`, `cards/Annul.kt`, and the
         // Ravnica-block shock land reprints (`BreedingPoolReprint.kt`, `GodlessShrineReprint.kt`,
         // `SacredFoundryReprint.kt`, `StompingGroundReprint.kt`, `WateryGraveReprint.kt`) plus
-        // `VirusBeetleReprint.kt` (canonical relocated to NEO, its earliest printing); KTK's
-        // is `cards/NaturalizeReprint.kt`. All should surface via [findPrintingsIn] without a
+        // `VirusBeetleReprint.kt` (canonical relocated to NEO, its earliest printing) and
+        // `BombardReprint.kt` (canonical relocated to RIX, likewise); KTK's is
+        // `cards/NaturalizeReprint.kt`. All should surface via [findPrintingsIn] without a
         // hand-maintained list.
         val eoePrintings = CardDiscovery.findPrintingsIn("com.wingedsheep.mtg.sets.definitions.eoe.cards")
         eoePrintings.map { it.name } shouldContainExactlyInAnyOrder listOf(
-            "Annul", "Banishing Light", "Breeding Pool", "Godless Shrine", "Sacred Foundry",
-            "Stomping Ground", "Virus Beetle", "Watery Grave"
+            "Annul", "Banishing Light", "Bombard", "Breeding Pool", "Godless Shrine",
+            "Sacred Foundry", "Stomping Ground", "Virus Beetle", "Watery Grave"
         )
         eoePrintings.forEach { it.setCode shouldBe "EOE" }
 

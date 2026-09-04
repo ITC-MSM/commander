@@ -489,6 +489,8 @@ class TournamentMatchHandler(
      * match runs this pass.
      */
     fun startReadyMatches(lobby: TournamentLobby, tournament: TournamentManager) {
+        forfeitUnseatedMatches(lobby, tournament)
+
         var startedAny = false
         for ((round, match) in tournament.startableMatches(lobby.getReadyPlayerIds())) {
             val player2Id = match.player2Id ?: continue
@@ -508,23 +510,93 @@ class TournamentMatchHandler(
         if (startedAny) broadcastReadyStatus(lobby)
     }
 
+    /**
+     * Forfeit every match still owed by a bracket seat the lobby no longer has, and open the round
+     * that clears.
+     *
+     * Removal paths forfeit as they go (see `LobbyHandler.forfeitBracketMatchesIfSeatGone`), so this
+     * is the backstop rather than the first line: it also repairs a bracket that drifted before that
+     * existed, or through a path nobody has thought of yet. It sits at the top of [startReadyMatches]
+     * because that is the one pass every readiness change and every match result already runs through
+     * — see [TournamentManager.unseatedPlayersWithMatchesLeft] for what a ghost seat does to the rest
+     * of the bracket if nothing forfeits it.
+     *
+     * Closing the round here is not optional: the forfeits can decide the open round outright, and if
+     * this is the pass that unstuck a bracket with nothing left to play, no later result is coming to
+     * notice.
+     */
+    private fun forfeitUnseatedMatches(lobby: TournamentLobby, tournament: TournamentManager) {
+        val unseated = tournament.unseatedPlayersWithMatchesLeft(lobby.players.keys)
+        if (unseated.isEmpty()) return
+
+        for (playerId in unseated) {
+            logger.warn(
+                "Tournament {}: bracket seat {} is no longer in the lobby; forfeiting its remaining matches",
+                lobby.lobbyId,
+                playerId.value,
+            )
+            tournament.recordAbandon(playerId)
+        }
+        ctx.lobbyRepository.saveTournament(lobby.lobbyId, tournament)
+        recordTournamentProgress(lobby.lobbyId)
+
+        // Report it the way a real last result would: [doHandleRoundComplete] broadcasts the standings,
+        // advances the bracket, and completes the tournament if nothing is left. It re-enters this
+        // sweep, which is why the forfeits above come first — the second pass finds nothing and stops.
+        if (tournament.isRoundComplete()) {
+            doHandleRoundComplete(lobby.lobbyId)
+        }
+    }
+
     fun startSingleMatch(
         lobby: TournamentLobby,
         tournament: TournamentManager,
         round: TournamentRound,
         match: TournamentMatch
     ): Boolean {
-        val player1State = lobby.players[match.player1Id] ?: return false
-        val player2State = lobby.players[match.player2Id ?: return false] ?: return false
+        // A BYE has no game to start; [TournamentManager.startableMatches] already filters them out.
+        val player2Id = match.player2Id ?: return false
 
-        val baseDeck1 = BoosterGenerator.withBasicLandArt(
-            lobby.getSubmittedDeck(match.player1Id) ?: return false,
-            lobby.basicLands
-        )
-        val baseDeck2 = BoosterGenerator.withBasicLandArt(
-            lobby.getSubmittedDeck(match.player2Id) ?: return false,
-            lobby.basicLands
-        )
+        // Both refusals below used to be bare `?: return false`. They cost us a production stall: the
+        // sweep re-picked the same unstartable match on every pass, refused it without a word, and left
+        // the pair incomplete forever — so the only symptom in the log was silence. Say which seat and
+        // why; the two causes want opposite handling.
+        val player1State = lobby.players[match.player1Id]
+        val player2State = lobby.players[player2Id]
+        if (player1State == null || player2State == null) {
+            // Structural, and [forfeitUnseatedMatches] should already have forfeited it: reaching here
+            // means a seat left between that reconcile and this call.
+            logger.warn(
+                "Tournament {}: cannot start round {} match — no lobby seat for {}",
+                lobby.lobbyId,
+                round.roundNumber,
+                listOfNotNull(
+                    match.player1Id.value.takeIf { player1State == null },
+                    player2Id.value.takeIf { player2State == null },
+                ).joinToString(", "),
+            )
+            return false
+        }
+
+        val submittedDeck1 = lobby.getSubmittedDeck(match.player1Id)
+        val submittedDeck2 = lobby.getSubmittedDeck(player2Id)
+        if (submittedDeck1 == null || submittedDeck2 == null) {
+            // Transient — an AI seat whose deck build hasn't landed yet, most likely. Deliberately not
+            // forfeited: the next sweep starts the match once the deck arrives.
+            logger.warn(
+                "Tournament {}: cannot start round {} match yet — no submitted deck for {}",
+                lobby.lobbyId,
+                round.roundNumber,
+                listOfNotNull(
+                    player1State.identity.playerName.takeIf { submittedDeck1 == null },
+                    player2State.identity.playerName.takeIf { submittedDeck2 == null },
+                ).joinToString(", "),
+            )
+            return false
+        }
+
+        val baseDeck1 = BoosterGenerator.withBasicLandArt(submittedDeck1, lobby.basicLands)
+        val baseDeck2 = BoosterGenerator.withBasicLandArt(submittedDeck2, lobby.basicLands)
         val deckPrintings1 = player1State.cardPool + lobby.basicLands.values
         val deckPrintings2 = player2State.cardPool + lobby.basicLands.values
         val deck1WithEgg = EasterEggDeckInjector.maybeInjectEasterEggs(

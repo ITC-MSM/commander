@@ -467,20 +467,28 @@ data class GrantCantBeBlockedExceptByEffect(
 }
 
 /**
- * Target creature can't block this turn.
+ * Target creature can't block this turn — either at all, or only [attacker].
  *
  * For multi-target spells, wrap in ForEachTargetEffect with EffectTarget.ContextTarget(0).
  *
  * @property target The creature that can't block
+ * @property attacker When set, the restriction is *pairwise*: [target] may still block anything
+ *   else, it just can't block this one creature ("target creature can't block this creature this
+ *   turn" — Screeching Griffin, where [attacker] is [EffectTarget.Self]). The mirror of
+ *   `MustBlockSpecificAttacker` (provoke) on the restriction side. Null (the default) is the
+ *   blanket "can't block at all" the card pool spells far more often.
  * @property duration How long the restriction lasts
  */
 @SerialName("CantBlockTargetCreatures")
 @Serializable
 data class CantBlockEffect(
     val target: EffectTarget,
-    val duration: Duration = Duration.EndOfTurn
+    val duration: Duration = Duration.EndOfTurn,
+    val attacker: EffectTarget? = null
 ) : Effect {
-    override val description: String = "${target.description} can't block this turn"
+    override val description: String =
+        if (attacker == null) "${target.description} can't block this turn"
+        else "${target.description} can't block ${attacker.description} this turn"
 }
 
 /**
