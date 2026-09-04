@@ -9365,6 +9365,61 @@
     ]
 }
 
+// Screeching Griffin
+{
+    "name": "Screeching Griffin",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Griffin",
+    "oracleText": "Flying\n{R}: Target creature can't block this creature this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{R}"
+                    }
+                },
+                "effect": {
+                    "type": "CantBlockTargetCreatures",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "attacker": "Self"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "29",
+        "artist": "Greg Hildebrandt",
+        "flavorText": "They were master fishers, but their seas are now the streets and their catch, the goblins that run pell-mell from the screeching in the sky.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/e/5e2fa710-4615-42de-8716-41b009b56d32.jpg?1783943695"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Searing Meditation
 {
     "name": "Searing Meditation",
