@@ -3,7 +3,7 @@
 Branch: `worktree-rav-completion`. Baseline: `4f09fec7e2`. Draft PR: #2236.
 
 The goal is all 291 cards, their required engine functionality, and full set verification.
-The initial source inventory was 239/291; the current inventory is **251/291**, with 40 missing.
+The initial source inventory was 239/291; the current inventory is **255/291**, with 36 missing.
 The checklist is an inventory, not proof of rules correctness. Existing generated definitions
 also need field and behavior review before completion can be claimed.
 
@@ -26,9 +26,17 @@ also need field and behavior review before completion can be claimed.
 - Optional draw continuations preserve remaining draws through nested decisions and retain
   prior declines through pauses and saved-game reloads. A live client check exposed repeated
   offers after multiple declines; the regression now covers three dredgers and the next draw.
+- Golgari Thug, Life from the Loam, Nightmare Void, and Stinkweed Imp compose existing
+  primitives. Seventeen scenarios cover dredge, Thug targeting itself after death, Loam
+  choosing zero through three lands and losing one target, caster-controlled discard,
+  and Imp combat versus noncombat damage.
 - Backlog bootstrap recognizes `basicLand(...)`, matching the authoritative card inventory.
 
 ## Current verification
+
+- Latest four-card unit: `just build` passed (5m 30s), all 17 focused scenarios passed,
+  fresh Scryfall fields/art and canonical-printing checks passed. Snapshots added exactly
+  these four cards and changed no existing entry. Assay compared 103 with no divergences.
 
 - `just test`: passed after dredge and both continuation regressions (7m 34s).
   An earlier dashboard timeout passed on focused rerun and in this final full run.
@@ -38,7 +46,7 @@ also need field and behavior review before completion can be claimed.
 - Transmute: 27 scenarios across seven separate card files passed in the preceding unit;
   `just build` passed there and the full test gate above includes them again.
 - Canonical-printing checks, fresh Scryfall fields, and HTTP 200 art checks passed for all
-  twelve added cards. Snapshot changes contain only the intended additions/corrections.
+  sixteen added cards. Snapshot changes contain only the intended additions/corrections.
 - `just assay-differential --set RAV`: no divergences among 103 compared cards. Assay
   declines transmute and dredge, so it does not independently verify these abilities.
 - Client typecheck passed. Live client inspection and two headless Chrome regressions
@@ -51,8 +59,9 @@ also need field and behavior review before completion can be claimed.
 
 ## Remaining work
 
-- Finish the seven remaining dredge cards: Golgari Brownscale, Golgari Grave-Troll,
-  Golgari Thug, Life from the Loam, Necroplasm, Nightmare Void, and Stinkweed Imp.
+- Finish the three remaining dredge cards: Golgari Brownscale (self graveyard-exit trigger),
+  Golgari Grave-Troll (verify the reanimation counter count), and Necroplasm (source counters
+  after it leaves before its end-step trigger resolves).
 - Finish the six remaining transmute cards: Clutch of the Undercity, Dimir Machinations,
   Grozoth, Netherborn Phalanx, Perplex, Shred Memory.
 - Complete the other card-specific investigations in `mechanics.md` and all unchecked cards.
