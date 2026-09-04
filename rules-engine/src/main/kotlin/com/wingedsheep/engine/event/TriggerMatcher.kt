@@ -2331,6 +2331,7 @@ class TriggerMatcher(
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsRingBearer,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasGreatestPower,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasLeastPowerAmongAllCreatures,
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasGreatestManaValueAmongAllCreatures,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasLeastPower,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsEquipped,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsEnchanted,

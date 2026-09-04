@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.roe
 
-import com.wingedsheep.mtg.sets.definitions.por.PortalSet
 import com.wingedsheep.mtg.sets.discovery.CardDiscovery
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.MtgSet
@@ -24,11 +23,14 @@ object RiseOfTheEldraziSet : MtgSet {
     override val displayName = "Rise of the Eldrazi"
     override val releaseDate = "2010-04-23"
     override val block = "Zendikar"
-    override val basicLandsFallback = PortalSet
     override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)
+    }
+
+    override val basicLands: List<CardDefinition> by lazy {
+        CardDiscovery.findBasicLandsIn(CARDS_PACKAGE, code)
     }
 
     override val printings: List<Printing> by lazy {

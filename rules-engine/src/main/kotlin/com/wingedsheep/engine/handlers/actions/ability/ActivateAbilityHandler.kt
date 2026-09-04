@@ -308,7 +308,8 @@ class ActivateAbilityHandler(
             costWithDefinedX, ability, state, action.sourceId, action.playerId, action.targets
         )
         val costAfterAbilityReduction = castPermissionUtils.applyActivatedAbilityCostReduction(
-            costAfterGenericReduction, state, action.sourceId, ability.isExhaust, ability.isPowerUp
+            costAfterGenericReduction, state, action.sourceId, ability.isExhaust, ability.isPowerUp,
+            ability.isManaAbility
         )
         val costAfterEquipReduction = castPermissionUtils.applyEquipCostReduction(
             costAfterAbilityReduction, ability, state, action.playerId, equipTargetIdForCost,
@@ -701,7 +702,7 @@ class ActivateAbilityHandler(
                 castPermissionUtils.applyEquipCostReduction(
                     castPermissionUtils.applyActivatedAbilityCostReduction(
                         applyGenericCostReduction(costWithDefinedX, ability, state, action.sourceId, action.playerId, action.targets),
-                        state, action.sourceId, ability.isExhaust, ability.isPowerUp
+                        state, action.sourceId, ability.isExhaust, ability.isPowerUp, ability.isManaAbility
                     ),
                     ability, state, action.playerId, equipTargetIdForCost,
                     abilitySourceId = action.sourceId
