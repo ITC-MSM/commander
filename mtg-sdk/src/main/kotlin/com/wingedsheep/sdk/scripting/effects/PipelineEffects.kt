@@ -722,6 +722,20 @@ enum class Chooser {
      * gets its own pick.
      */
     Opponent,
+
+    /**
+     * The opponent already *chosen* for this source decides — the durable pick a preceding
+     * [ChooseOpponentForSourceEffect] wrote into the source's `OPPONENT` cast-choices slot, the
+     * decision-side twin of [com.wingedsheep.sdk.scripting.references.Player.ChosenOpponent].
+     *
+     * Distinct from [Opponent] in exactly the way clash (CR 701.30b) needs: [Opponent] picks *an*
+     * opponent afresh at each step, so a mechanic that first reads one opponent's library and then
+     * asks that same opponent to decide could split across two different players in a multiplayer
+     * game. This resolves to the one already named, so the reveal and the decision stay paired.
+     * Unresolvable when no choice has been made — a card using it must run
+     * [ChooseOpponentForSourceEffect] first.
+     */
+    ChosenOpponent,
     /** The target player decides (resolved from context.targets[0]) */
     TargetPlayer,
     /** The triggering player decides (resolved from trigger context) */

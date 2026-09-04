@@ -2688,6 +2688,88 @@
     ]
 }
 
+// Dimir Doppelganger
+{
+    "name": "Dimir Doppelganger",
+    "manaCost": "{1}{U}{B}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "{1}{U}{B}: Exile target creature card from a graveyard. This creature becomes a copy of that card, except it has this ability.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{U}{B}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card from a graveyard"
+                            },
+                            "destination": "Exile",
+                            "fromZone": "Graveyard"
+                        },
+                        {
+                            "type": "EachPermanentBecomesCopyOfTarget",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card from a graveyard"
+                            },
+                            "affected": "Self",
+                            "sourceFromAnyZone": true,
+                            "retainActivatingAbility": true
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature",
+                            "zone": "Graveyard"
+                        },
+                        "id": "target creature card from a graveyard"
+                    }
+                ],
+                "descriptionOverride": "{1}{U}{B}: Exile target creature card from a graveyard. This creature becomes a copy of that card, except it has this ability."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "202",
+        "rarity": "RARE",
+        "artist": "Jim Murray",
+        "flavorText": "\"Fear not. Your life will not go unlived.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a48be841-d35c-4d99-aebc-3684b36760ac.jpg?1783943622",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "This creature becomes an exact copy of a copied card, except that it also has Dimir Doppelganger's activated ability. If it becomes a copy of a different creature card, the new copy will overwrite the old copy."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "A permanent's ability that refers to cards the creature exiled (such as Sisters of Stone Death's third ability) only affects cards exiled by other abilities intrinsic to that permanent (such as Sisters of Stone Death's second ability). Suppose that (a) Dimir Doppelganger copies Arc-Slogger, (b) its \"deal 2 damage\" ability is activated, and then (c) it copies Sisters of Stone Death. Creatures exiled by Arc-Slogger's ability can't be returned with Sisters of Stone Death's ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Dimir Guildmage
 {
     "name": "Dimir Guildmage",
@@ -8713,6 +8795,62 @@
     ]
 }
 
+// Remand
+{
+    "name": "Remand",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target spell. If that spell is countered this way, put it into its owner's hand instead of into that player's graveyard.\nDraw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Counter",
+                    "counterDestination": "CounterDestination.Hand"
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                },
+                "id": "target spell"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "63",
+        "rarity": "UNCOMMON",
+        "artist": "Mark A. Nelson",
+        "flavorText": "\"Well, at least all of that arm-waving and arcane babbling you did was impressive.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/8/581f3780-c480-48c6-b15c-1618f2feccb9.jpg?1783943680",
+        "rulings": [
+            {
+                "date": "2021-03-19",
+                "text": "Remand can target a spell that can't be countered. That spell won't be countered or returned to its owner's hand, but you'll draw a card."
+            },
+            {
+                "date": "2021-03-19",
+                "text": "If you target a card that was cast with flashback with Remand, the card will still be exiled."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Reroute
 {
     "name": "Reroute",
@@ -11885,6 +12023,101 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Tunnel Vision
+{
+    "name": "Tunnel Vision",
+    "manaCost": "{5}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose a card name. Target player reveals cards from the top of their library until a card with that name is revealed. If it is, that player puts the rest of the revealed cards into their graveyard and puts the card with the chosen name on top of their library. Otherwise, the player shuffles.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ChooseOption",
+                    "optionType": "CARD_NAME",
+                    "storeAs": "chosenName",
+                    "prompt": "Choose a card name"
+                },
+                {
+                    "type": "GatherUntilMatch",
+                    "player": "TargetPlayer",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "NameEqualsChosen",
+                                "variableName": "chosenName"
+                            }
+                        ]
+                    },
+                    "storeMatch": "match",
+                    "storeRevealed": "revealed"
+                },
+                {
+                    "type": "RevealCollection",
+                    "from": "revealed"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "revealed",
+                    "selection": "SelectAll",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "NameEqualsChosen",
+                                "variableName": "chosenName"
+                            }
+                        ]
+                    },
+                    "storeSelected": "namedCard",
+                    "storeRemainder": "rest"
+                },
+                {
+                    "type": "ConditionalOnCollection",
+                    "collection": "match",
+                    "ifNotEmpty": {
+                        "type": "MoveCollection",
+                        "from": "rest",
+                        "destination": {
+                            "type": "ToZone",
+                            "zone": "Graveyard",
+                            "player": "TargetPlayer"
+                        }
+                    },
+                    "ifEmpty": {
+                        "type": "ShuffleLibrary",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target player"
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "target player"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "72",
+        "rarity": "RARE",
+        "artist": "Dany Orizio",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/e/ae3eba31-02eb-449a-8a36-899ada5664bc.jpg?1783943676",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "If the named card is found, everything from the top of the library down to the named card is put into the graveyard and the library isn't shuffled. If the named card isn't in the library, no cards are put into the graveyard and the library is shuffled."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

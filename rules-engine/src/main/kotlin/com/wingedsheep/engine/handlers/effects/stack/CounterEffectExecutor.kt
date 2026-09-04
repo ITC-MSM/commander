@@ -108,6 +108,7 @@ class CounterEffectExecutor(
                 is CounterDestination.Exile -> resolver.counterSpellToExile(
                     state, entityId, dest.grantFreeCast, context.controllerId
                 )
+                CounterDestination.Hand -> resolver.counterSpellToHand(state, entityId)
             }
             CounterTarget.SpellOrAbility -> error("unreachable — resolved above")
         })
@@ -185,8 +186,6 @@ class CounterEffectExecutor(
             noText = "Don't pay"
         )
 
-        val exileOnCounter = effect.counterDestination is CounterDestination.Exile
-
         val continuation = CounterUnlessPaysContinuation(
             decisionId = decisionResult.pendingDecision!!.id,
             payingPlayerId = payingPlayerId,
@@ -194,7 +193,7 @@ class CounterEffectExecutor(
             manaCost = manaCost,
             sourceId = context.sourceId,
             sourceName = "Counter unless pays",
-            exileOnCounter = exileOnCounter,
+            counterDestination = effect.counterDestination,
             controllerId = context.controllerId,
             onPaid = onPaid
         )

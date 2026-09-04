@@ -18,6 +18,7 @@ import com.wingedsheep.engine.state.components.stack.TargetsComponent
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.effects.CounterDestination
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.composite.asOptionalManaPayment
@@ -176,7 +177,7 @@ class ManaPaymentContinuationResumer(
                 manaCost = continuation.manaCost,
                 availableSources = sourceOptions,
                 autoPaySuggestion = autoPaySuggestion,
-                exileOnCounter = continuation.exileOnCounter,
+                counterDestination = continuation.counterDestination,
                 controllerId = continuation.controllerId,
                 onPaid = continuation.onPaid,
                 sourceId = continuation.sourceId
@@ -200,7 +201,7 @@ class ManaPaymentContinuationResumer(
         } else {
             // Player chose not to pay — counter the spell
             return counterForUnpaidCost(
-                state, continuation.spellEntityId, continuation.exileOnCounter,
+                state, continuation.spellEntityId, continuation.counterDestination,
                 continuation.controllerId ?: continuation.payingPlayerId, checkForMore
             )
         }
@@ -237,7 +238,7 @@ class ManaPaymentContinuationResumer(
             // Here we require the player has at least lifeCost life remaining.
             if (currentLife < continuation.lifeCost) {
                 return counterForUnpaidCost(
-                    state, continuation.spellEntityId, continuation.exileOnCounter,
+                    state, continuation.spellEntityId, exileOrGraveyard(continuation.exileOnCounter),
                     continuation.controllerId ?: continuation.payingPlayerId, checkForMore
                 )
             }
@@ -255,7 +256,7 @@ class ManaPaymentContinuationResumer(
             return checkForMore(newState, events)
         } else {
             return counterForUnpaidCost(
-                state, continuation.spellEntityId, continuation.exileOnCounter,
+                state, continuation.spellEntityId, exileOrGraveyard(continuation.exileOnCounter),
                 continuation.controllerId ?: continuation.payingPlayerId, checkForMore
             )
         }
@@ -284,7 +285,7 @@ class ManaPaymentContinuationResumer(
 
         if (!response.choice) {
             return counterForUnpaidCost(
-                state, continuation.spellEntityId, continuation.exileOnCounter,
+                state, continuation.spellEntityId, exileOrGraveyard(continuation.exileOnCounter),
                 continuation.controllerId ?: continuation.payingPlayerId, checkForMore
             )
         }
@@ -306,7 +307,7 @@ class ManaPaymentContinuationResumer(
         }
         if (eligibleCount < continuation.count) {
             return counterForUnpaidCost(
-                state, continuation.spellEntityId, continuation.exileOnCounter,
+                state, continuation.spellEntityId, exileOrGraveyard(continuation.exileOnCounter),
                 continuation.controllerId ?: continuation.payingPlayerId, checkForMore
             )
         }
@@ -374,7 +375,7 @@ class ManaPaymentContinuationResumer(
         // Declined / underpaid → counter the spell.
         if (selectedPermanents.size < continuation.count) {
             return counterForUnpaidCost(
-                state, continuation.spellEntityId, continuation.exileOnCounter,
+                state, continuation.spellEntityId, exileOrGraveyard(continuation.exileOnCounter),
                 continuation.controllerId ?: continuation.payingPlayerId, checkForMore
             )
         }
@@ -494,7 +495,7 @@ class ManaPaymentContinuationResumer(
 
         if (!response.choice) {
             return counterForUnpaidCost(
-                state, continuation.spellEntityId, exileOnCounter = false,
+                state, continuation.spellEntityId, CounterDestination.Graveyard,
                 controllerId = continuation.controllerId ?: continuation.payingPlayerId,
                 checkForMore = checkForMore
             )
@@ -560,7 +561,7 @@ class ManaPaymentContinuationResumer(
 
         val chosen = continuation.options.getOrNull(response.optionIndex)
             ?: return counterForUnpaidCost(
-                state, continuation.spellEntityId, exileOnCounter = false,
+                state, continuation.spellEntityId, CounterDestination.Graveyard,
                 controllerId = continuation.controllerId ?: continuation.payingPlayerId,
                 checkForMore = checkForMore
             )
@@ -591,20 +592,29 @@ class ManaPaymentContinuationResumer(
     private fun counterForUnpaidCost(
         state: GameState,
         spellEntityId: EntityId,
-        exileOnCounter: Boolean,
+        destination: CounterDestination,
         controllerId: EntityId,
         checkForMore: CheckForMore,
         precedingEvents: List<GameEvent> = emptyList()
     ): ExecutionResult {
-        val result = if (exileOnCounter) {
-            services.stackResolver.counterSpellToExile(
+        val result = when (destination) {
+            is CounterDestination.Exile -> services.stackResolver.counterSpellToExile(
                 state, spellEntityId, grantFreeCast = false, controllerId = controllerId
             )
-        } else {
-            services.stackResolver.counterSpellOrAbility(state, spellEntityId)
+            CounterDestination.Hand -> services.stackResolver.counterSpellToHand(state, spellEntityId)
+            CounterDestination.Graveyard -> services.stackResolver.counterSpellOrAbility(state, spellEntityId)
         }
         return checkForMore(result.newState, precedingEvents + result.events)
     }
+
+    /**
+     * The ward / pay-life / discard / sacrifice continuations still carry a plain
+     * `exileOnCounter` flag: ward's own vocabulary has only those two destinations, and no printed
+     * ward or punisher counter puts the spell into a hand. Only the two continuations reachable
+     * from [com.wingedsheep.sdk.scripting.effects.CounterEffect] carry the full destination.
+     */
+    private fun exileOrGraveyard(exileOnCounter: Boolean): CounterDestination =
+        if (exileOnCounter) CounterDestination.Exile() else CounterDestination.Graveyard
 
     /**
      * Resume after the controller selects mana sources to pay a "counter unless pays" cost.
@@ -623,7 +633,7 @@ class ManaPaymentContinuationResumer(
         // and nothing floating that already covers the cost), counter the spell.
         if (response.isDecline(floatingCovers(state, continuation.payingPlayerId, continuation.manaCost))) {
             return counterForUnpaidCost(
-                state, continuation.spellEntityId, continuation.exileOnCounter,
+                state, continuation.spellEntityId, continuation.counterDestination,
                 continuation.controllerId ?: continuation.payingPlayerId, checkForMore
             )
         }
@@ -721,7 +731,7 @@ class ManaPaymentContinuationResumer(
                         payingPlayerId = playerId,
                         spellEntityId = continuation.spellEntityId,
                         manaCost = effectiveCost,
-                        exileOnCounter = continuation.exileOnCounter,
+                        counterDestination = continuation.counterDestination,
                         controllerId = continuation.controllerId,
                         pendingSubCostSources = subCostSources,
                         availableSources = continuation.availableSources,
@@ -738,7 +748,7 @@ class ManaPaymentContinuationResumer(
         if (newPool == null) {
             // Payment failed — counter the spell
             return counterForUnpaidCost(
-                state, continuation.spellEntityId, continuation.exileOnCounter,
+                state, continuation.spellEntityId, continuation.counterDestination,
                 continuation.controllerId ?: continuation.payingPlayerId, checkForMore
             )
         }
@@ -1534,7 +1544,7 @@ class ManaPaymentContinuationResumer(
         payingPlayerId: EntityId,
         spellEntityId: EntityId,
         manaCost: com.wingedsheep.sdk.core.ManaCost,
-        exileOnCounter: Boolean,
+        counterDestination: CounterDestination,
         controllerId: EntityId?,
         pendingSubCostSources: List<EntityId>,
         availableSources: List<ManaSourceOption>,
@@ -1587,7 +1597,7 @@ class ManaPaymentContinuationResumer(
             payingPlayerId = payingPlayerId,
             spellEntityId = spellEntityId,
             manaCost = manaCost,
-            exileOnCounter = exileOnCounter,
+            counterDestination = counterDestination,
             controllerId = controllerId,
             pendingSubCostSources = pendingSubCostSources,
             availableSources = availableSources,
@@ -1705,7 +1715,7 @@ class ManaPaymentContinuationResumer(
                 payingPlayerId = continuation.payingPlayerId,
                 spellEntityId = continuation.spellEntityId,
                 manaCost = continuation.manaCost,
-                exileOnCounter = continuation.exileOnCounter,
+                counterDestination = continuation.counterDestination,
                 controllerId = continuation.controllerId,
                 pendingSubCostSources = remaining,
                 availableSources = continuation.availableSources,
@@ -1720,7 +1730,7 @@ class ManaPaymentContinuationResumer(
         val newPool = pool.pay(continuation.manaCost)
         if (newPool == null) {
             return counterForUnpaidCost(
-                currentState, continuation.spellEntityId, continuation.exileOnCounter,
+                currentState, continuation.spellEntityId, continuation.counterDestination,
                 continuation.controllerId ?: continuation.payingPlayerId, checkForMore,
                 precedingEvents = events
             )

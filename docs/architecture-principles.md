@@ -1453,6 +1453,24 @@ and the sweep re-checks the roster on the way in
 already drifted. Only a seat that is *gone* may be forfeited: `removePlayer` deliberately keeps a
 disconnected player's state during a tournament so they can rejoin.
 
+**Simulated AI-vs-AI matches.** A round-robin with one human and N AI seats schedules O(N²) matches,
+and the human is in only N of them; every other game is two AI controllers driving a full engine game
+that no one is in, which on a shared box is where most of the tournament's CPU goes. When
+`game.tournament.simulate-ai-matches` is on (the default), the start sweep decides such a pair with
+`AiMatchSimulator` instead of launching a `GameSession`, and reports it through the same result path a
+played match uses — so it closes rounds, moves standings and unblocks `hasIncompleteMatchBefore` the
+same way. The winner is a fair coin flip: any cheap deck-strength proxy would be unvalidated against
+how the engine AI actually plays, and an unmeasured bias in the standings is worse than an honest
+50/50. A simulated match never gets a `gameSessionId`, so it has no replay and never appears as
+something to spectate — `TournamentMatch.isSimulated` is what lets the standings say so, and turning
+the property off is how you get the games back when somebody wants to watch them.
+
+An **all-AI bracket is never simulated**, whatever the property says. A bracket with no human seat was
+built to be watched — the AI Sandbox (`/api/dev/ai-tournament`, behind `just watch-ai-match`) and the
+model-comparison runs are exactly that — and simulating it would decide the whole tournament in one
+sweep, deleting the feature rather than speeding it up. The saving only exists next to a human: the
+AI-vs-AI games running *alongside* the matches somebody is sitting in.
+
 BYE handling (odd player counts), reconnection across matches, and spectating between rounds are
 all managed at this layer. The tournament system reuses the same `GameSession` and `ActionProcessor`
 for each match — it's purely orchestration, with no game logic of its own.
