@@ -4823,7 +4823,12 @@ work for abilities-on-stack (which carry no `CardComponent`).
   against `PredicateContext.sourceId`; inert with no source / unattached source, and never matches in
   group-static projection or trigger-gating contexts (no source there).
 - `IsSource` (filter builder `sourceItself()`) — source-relative: matches only the effect's source
-  permanent itself (`PredicateContext.sourceId == candidate`). The `GameObjectFilter` counterpart of
+  permanent itself. During ability resolution it also matches the captured battlefield visit, so a
+  card that left and returned is not the old source. Consequently `notSourceItself()` allows that
+  returned card when an old ability chooses "another" permanent. `Effects.SacrificeTarget(EffectTarget.Self)` likewise
+  ignores a returned source rather than sacrificing its new visit. Source references are checked
+  when the ability begins resolving; an effect can still return its own source and then modify it.
+  The `GameObjectFilter` counterpart of
   `GroupFilter`'s `Scope.Self` — use it to scope a filter-carrying static ability to the very
   permanent that carries it. Backs the granted form of `PreventActivatedAbilities`: a permanent
   granted `PreventActivatedAbilities(GameObjectFilter.Permanent.sourceItself())` has *its own*

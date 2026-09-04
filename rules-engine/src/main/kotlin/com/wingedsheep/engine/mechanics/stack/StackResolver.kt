@@ -2776,7 +2776,7 @@ class StackResolver(
             abilityComponent,
             targets = resolvedTargets2,
             targetRequirements = targetReqs
-        )
+        ).forAbilityResolution(state)
 
         // CR 608.2a, then CR 608.2b — in that lettered order. 608.2a: "If a triggered ability has
         // an intervening 'if' clause, it checks whether the clause's condition is true. If it
@@ -2963,7 +2963,7 @@ class StackResolver(
                     ?.let { mapOf(ChooseCreatureTypePipelineExecutor.CHOSEN_CREATURE_TYPE_KEY to it) }
                     ?: emptyMap()
             )
-        )
+        ).forAbilityResolution(state)
 
         val effectResult = effectHandler.execute(state, abilityComponent.effect, context)
 

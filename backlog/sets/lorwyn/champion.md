@@ -52,3 +52,22 @@ This does not implement champion. Remaining work includes linking distinct abili
 source, the actual champion event and Mistbind follow-up, source-instance-aware self/exclusion
 semantics, and the rest of the behavioral matrix above. Ad hoc battlefield-entry event producers
 also need review before claiming every batched entry path captures the originating visit.
+
+
+## Source-reference prerequisite verified
+
+Source-visit timestamps now flow into predicate contexts, so `sourceItself`/`notSourceItself`
+distinguish the original permanent from a returned card. At the start of ability resolution, the
+engine also records whether its source has already returned as a new battlefield object; `Self`
+cannot act on that new object. Freezing this at resolution start still lets an effect return its
+own source and subsequently modify it. Battlefield-only stat and keyword changes benignly ignore
+a known source that has left, while other parts of the ability still resolve.
+
+`just test` passed (4m 27s, 106 tasks), including eight linked-exile scenarios, three source-reference
+scenarios, and Sentry Oak's source-absent and source-returned combat triggers. Lifetime scenarios
+cast their sources normally: the direct-placement GameTestDriver helper bypasses battlefield-entry
+tracking and is unsuitable for proving object identity.
+
+Champion is still unimplemented. Distinct linked ability pairs, champion occurrences and Mistbind's
+live follow-up, actual-exile/replacement tracking, and the remaining entry-producer/behavioral audit
+above remain required.

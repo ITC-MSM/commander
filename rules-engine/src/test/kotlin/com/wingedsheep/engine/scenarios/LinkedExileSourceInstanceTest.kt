@@ -222,4 +222,38 @@ class LinkedExileSourceInstanceTest : FunSpec({
         }
     }
 
+
+    test("an old entry trigger may choose the returned source as another permanent") {
+        val d = driver()
+        val victim = d.putCreatureOnBattlefield(d.player1, "Grizzly Bears")
+        val source = d.putCardInHand(d.player1, "Linked Exile Probe")
+        d.giveMana(d.player1, Color.BLUE, 3)
+        d.castSpell(d.player1, source).error shouldBe null
+        d.bothPass().error shouldBe null
+        d.stackSize shouldBe 1
+        val flicker = d.putCardInHand(d.player1, "Linked Exile Blink")
+        d.giveMana(d.player1, Color.BLUE, 1)
+        d.castSpell(d.player1, flicker, listOf(source)).error shouldBe null
+        d.bothPass().error shouldBe null
+
+        // Resolve only the new visit's entry and the old visit's departure. Decline the new
+        // visit's choice, then let the original entry choose the returned source itself.
+        var guard = 0
+        while (d.stackSize > 1 || d.pendingDecision != null) {
+            check(guard++ < 16)
+            when (val decision = d.pendingDecision) {
+                null -> d.bothPass().error shouldBe null
+                is SelectCardsDecision -> d.submitCardSelection(decision.playerId, emptyList()).error shouldBe null
+                is OrderObjectsDecision -> d.submitDecision(decision.playerId,
+                    OrderedResponse(decision.id, decision.objects)).error shouldBe null
+                else -> error("Unexpected decision: $decision")
+            }
+        }
+        d.stackSize shouldBe 1
+        d.resolveChoosing(source)
+        (source in d.state.getBattlefield()) shouldBe false
+        (victim in d.state.getBattlefield()) shouldBe true
+        d.state.departedLinkedExile.values.flatten() shouldBe listOf(source)
+    }
+
 })

@@ -78,6 +78,12 @@ data class EffectContext(
     val sourceFaceChanges: Int? = null,
     /** Battlefield visit of the resolving ability's source. */
     val sourceBattlefieldTimestamp: Long? = null,
+    /**
+     * The source had already returned as a different permanent when this ability began resolving.
+     * Retain sourceId for linked data and last-known information, but do not act on that new permanent.
+     * Frozen at resolution start so instructions can still track a source they themselves return.
+     */
+    val sourceReferenceLost: Boolean = false,
     val targets: List<ChosenTarget> = emptyList(),
     /**
      * Positionally-aligned view of [targets]: the same length as the originally-chosen target
@@ -442,6 +448,20 @@ data class EffectContext(
         } else {
             targets.getOrNull(index)
         }
+
+    /** Capture source-reference validity once, before executing an ability's effect. */
+    fun forAbilityResolution(state: GameState): EffectContext {
+        val currentVisit = sourceId?.let { state.getEntity(it) }
+            ?.get<com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent>()?.timestamp
+        return copy(sourceReferenceLost = sourceBattlefieldTimestamp != null && currentVisit != null &&
+            currentVisit != sourceBattlefieldTimestamp)
+    }
+
+    /** Battlefield-only instructions cannot affect a source that has left or already returned. */
+    fun isUnavailableBattlefieldSource(target: EffectTarget, state: GameState): Boolean =
+        target == EffectTarget.Self && pipeline.iterationTarget == null &&
+            (sourceReferenceLost || (sourceBattlefieldTimestamp != null && sourceId != null &&
+                sourceId !in state.getBattlefield()))
 
     fun resolveTarget(target: EffectTarget): EntityId? =
         TargetResolutionUtils.resolveTarget(target, this)
