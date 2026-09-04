@@ -18,3 +18,6 @@ Initial run after adding Bog Hoodlums and Nath’s Elite: 236 canonical cards; 1
 The seven Harbinger scripts now wrap the full search in the existing optional trigger gate. Each has its own scenario test covering decline without a search or shuffle, successful search, and accepting but finding no card. All 21 scenario tests passed. Snapshot regeneration passed, with the seven old card trees changing only by the optional gate. The fresh differential now agrees on 108 of 111 compared cards; the remaining three rows are the equivalent folds below. The full build remains pending while the next three authored cards await snapshot regeneration.
 
 The three equivalent folds were checked by expanding composite static abilities and distributing their existing condition over each child, then comparing every remaining field. No card changes are needed for those three rows.
+
+
+After Fistful of Force, Spring Cleaning, and Woodland Guidance: 239 canonical cards, 111 compared, 108 agreed, the same three equivalent folds, 126 declined, and two failed to fold. All three newly added clash scripts are among the declines. Their seven focused scenario tests passed; snapshot comparison found exactly the three intended additions and no changed existing entries.

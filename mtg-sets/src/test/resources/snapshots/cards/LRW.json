@@ -4613,6 +4613,102 @@
     ]
 }
 
+// Fistful of Force
+{
+    "name": "Fistful of Force",
+    "manaCost": "{1}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +2/+2 until end of turn. Clash with an opponent. If you win, that creature gets an additional +2/+2 and gains trample until end of turn. (Each clashing player reveals the top card of their library, then puts that card on their choice of the top or bottom. A player wins if their card had a greater mana value.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ChooseOpponentForSource",
+                                    "prompt": "Choose an opponent to clash with"
+                                },
+                                "Clash"
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "clashWon"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature"
+                                }
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "TRAMPLE",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature"
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Clash with an opponent. If you win, target gets +2/+2 until end of turn. target gains trample until end of turn"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "212",
+        "artist": "Ralph Horsley",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/7/f7f77c7e-d35f-477e-acc4-a393044319ea.jpg?1783942864"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Flamekin Brawler
 {
     "name": "Flamekin Brawler",
@@ -13074,6 +13170,100 @@
     ]
 }
 
+// Spring Cleaning
+{
+    "name": "Spring Cleaning",
+    "manaCost": "{1}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Destroy target enchantment. Clash with an opponent. If you win, destroy all enchantments your opponents control. (Each clashing player reveals the top card of their library, then puts that card on their choice of the top or bottom. A player wins if their card had a greater mana value.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target enchantment"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ChooseOpponentForSource",
+                                    "prompt": "Choose an opponent to clash with"
+                                },
+                                "Clash"
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "clashWon"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "BattlefieldMatching",
+                                    "filter": "enchantment ctrl:opponent"
+                                },
+                                "storeAs": "destroyAll_gathered"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "destroyAll_gathered",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Destroy"
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Clash with an opponent. If you win, look at all an opponent controls enchantment permanents on the battlefield. Put those cards into a graveyard"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "enchantment"
+                },
+                "id": "target enchantment"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "236",
+        "artist": "Michael Sutfin",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/c/dc20ef13-e97f-454c-8295-7bb8a7c4e4be.jpg?1783942857",
+        "rulings": [
+            {
+                "date": "2013-09-20",
+                "text": "If you win the clash and the targeted enchantment is controlled by an opponent, it will be destroyed a second time if it's still on the battlefield (for instance, if it somehow regenerated)."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If you win the clash, you destroy all enchantments all of your opponents control, not just enchantments controlled by the opponent you clashed with."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Springleaf Drum
 {
     "name": "Springleaf Drum",
@@ -15495,6 +15685,84 @@
         "artist": "Franz Vohwinkel",
         "flavorText": "Changelings cannot resist the draw of a new shape, even if doing so would be in their best interests.",
         "imageUri": "https://cards.scryfall.io/normal/front/a/a/aa41edf8-88a1-46dd-8315-b0afe7e14b7e.jpg?1783942855"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Woodland Guidance
+{
+    "name": "Woodland Guidance",
+    "manaCost": "{3}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return target card from your graveyard to your hand. Clash with an opponent. If you win, untap all Forests you control. (Each clashing player reveals the top card of their library, then puts that card on their choice of the top or bottom. A player wins if their card had a greater mana value.)\nExile Woodland Guidance.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target card from your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ChooseOpponentForSource",
+                                    "prompt": "Choose an opponent to clash with"
+                                },
+                                "Clash"
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "clashWon"
+                        }
+                    },
+                    "then": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "land Forest ctrl:you"
+                            }
+                        },
+                        "body": {
+                            "type": "TapUntap",
+                            "target": "Self",
+                            "tap": false
+                        }
+                    },
+                    "descriptionOverride": "Clash with an opponent. If you win, untap each you control Forest lands"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "target card from your graveyard"
+            }
+        ],
+        "selfExileOnResolve": true
+    },
+    "metadata": {
+        "collectorNumber": "243",
+        "rarity": "UNCOMMON",
+        "artist": "Richard Sardinha",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/2/92adead0-f8b4-4c49-b4ce-d9253980ee03.jpg?1783942855"
     },
     "colorIdentityOverride": [
         "GREEN"

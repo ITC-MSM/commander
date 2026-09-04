@@ -21,11 +21,13 @@ This branch tracks completion of Lorwyn and the engine capabilities its cards re
 
 ## Work in progress
 
-Bog Hoodlums and Nath's Elite are implemented with existing blocking abilities and the clash pattern. Canonical printing, fresh Scryfall fields and image URLs, and snapshot checks passed. Source completeness is now 242 / 286 (44 missing). Assay declines their clash text; this is not behavioral verification.
+Five new cards are implemented: Bog Hoodlums, Nath's Elite, Fistful of Force, Spring Cleaning, and Woodland Guidance. All compose existing primitives. Canonical-printing checks, fresh Scryfall fields, image HTTP 200 checks, and snapshot validation passed. Source completeness is now 245 / 286 (41 missing). Seven focused scenario tests for the three spells passed, covering clash win/loss, target preservation, temporary bonuses, destruction scope, graveyard targeting, untapping, and self-exile.
 
-The differential audit found seven existing Harbinger bugs: declining the optional search incorrectly forced a search and shuffle. All seven now gate the entire search. Their 21 per-card regression tests passed, covering declining, finding a card, and accepting but finding no card. Snapshot changes were checked field by field: only the two new cards and seven optional gates changed. The differential now agrees for 108 / 111 compared cards; three equivalent static-ability folds remain (see `assay-review.md`).
+The differential audit also found and fixed seven existing Harbinger bugs: declining the optional search incorrectly forced a search and shuffle. All seven now gate the entire search. Their 21 per-card regression tests passed. Snapshots were compared field by field: only the five new cards and seven optional gates changed from the starting point.
 
-The first `just build` failed only on the expected new-card snapshot additions. The initial implementation batch is recorded in the draft PR with its focused checks passing. The broader build remains pending: its queued invocation was stopped before Gradle started so newly authored cards can be snapshotted first. Fistful of Force, Spring Cleaning, and Woodland Guidance are now authored locally with seven focused tests; their fields, art URLs, and canonical-printing checks pass, and their snapshot job is queued. They are not yet checked off in this committed checklist. No manual playthrough or end-to-end UI test has run.
+Assay now agrees for 108 / 111 compared canonical cards; three equivalent static-ability folds remain (see `assay-review.md`). It declines 126 cards, including all five new clash cards, and two more cards fail to fold. Those results do not verify behavior for the uncovered cards.
+
+The earlier full builds failed only on expected new-card snapshot additions. Regeneration passed and the final `just build` for this batch passed (3m 27s, 128 tasks). No manual playthrough or end-to-end UI test has run. Champion research and required edge cases are recorded in `champion.md`; the mechanic is not implemented yet.
 
 ## Existing repository drift
 

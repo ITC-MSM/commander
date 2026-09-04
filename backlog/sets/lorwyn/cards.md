@@ -2,7 +2,7 @@
 
 **Set Size:** 286 cards
 **Release Date:** October 12, 2007
-**Implemented:** 242 / 286
+**Implemented:** 245 / 286
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 49    | 41   |
@@ -238,7 +238,7 @@
 - [x] Epic Proportions
 - [x] Eyes of the Wisent
 - [x] Fertile Ground
-- [ ] Fistful of Force
+- [x] Fistful of Force
 - [x] Garruk Wildspeaker
 - [ ] Gilt-Leaf Ambush
 - [x] Gilt-Leaf Seer
@@ -262,14 +262,14 @@
 - [x] Primal Command
 - [x] Rootgrapple
 - [x] Seedguide Ash
-- [ ] Spring Cleaning
+- [x] Spring Cleaning
 - [x] Sylvan Echoes
 - [x] Timber Protector
 - [x] Treefolk Harbinger
 - [ ] Vigor
 - [x] Warren-Scourge Elf
 - [x] Woodland Changeling
-- [ ] Woodland Guidance
+- [x] Woodland Guidance
 - [ ] Wren's Run Packmaster
 - [ ] Wren's Run Vanquisher
 
