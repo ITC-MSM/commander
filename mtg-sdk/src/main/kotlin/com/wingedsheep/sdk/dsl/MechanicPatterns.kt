@@ -15,6 +15,8 @@ import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.Chooser
 import com.wingedsheep.sdk.scripting.effects.ChooseActionEffect
 import com.wingedsheep.sdk.scripting.effects.ChooseOpponentForSourceEffect
+import com.wingedsheep.sdk.scripting.effects.CLASH_WON
+import com.wingedsheep.sdk.scripting.effects.ClashEffect
 import com.wingedsheep.sdk.scripting.effects.CollectionFilter
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.ConditionalOnCollectionEffect
@@ -36,6 +38,7 @@ import com.wingedsheep.sdk.scripting.effects.MoveType
 import com.wingedsheep.sdk.scripting.effects.SacrificeEffect
 import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.SelectionMode
+import com.wingedsheep.sdk.scripting.effects.SuccessCriterion
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -282,6 +285,60 @@ object MechanicPatterns {
             )
         )
     }
+
+    // =========================================================================
+    // Clash Pattern (Lorwyn, CR 701.30)
+    // =========================================================================
+
+    /**
+     * "Clash with an opponent. If you win, [ifYouWin]." — the whole printed Lorwyn template
+     * (CR 701.30b), and the only clash spelling a card should ever author.
+     *
+     * Three existing pieces, composed:
+     *
+     *  1. [ChooseOpponentForSourceEffect] fixes *which* opponent clashes with you. Clash chooses an
+     *     opponent rather than targeting one, and the same player must both reveal and decide, so
+     *     the choice is written to the source's durable `OPPONENT` slot and read back by
+     *     [Player.ChosenOpponent]. A bare `Chooser.Opponent` would re-pick per step and could split
+     *     a multiplayer clash across two different opponents. With one opponent the choice is
+     *     forced and promptless.
+     *  2. [com.wingedsheep.sdk.scripting.effects.ClashEffect] performs the clash: reveal, decide,
+     *     move, score, and fire "Whenever you clash" for both participants.
+     *  3. A [Gate.DoAction] gate scored by [SuccessCriterion.CollectionNonEmpty] reads the win.
+     *     "If you win" is an action-*outcome* rider, which is exactly what that gate models — the
+     *     clash writes your revealed card into a collection only on a win, so winning is an
+     *     ordinary pipeline result and clash needs no gate kind of its own. The gate's existing
+     *     continuation plumbing is what carries the two top-or-bottom pauses.
+     *
+     * [otherwise] is the "Otherwise, …" half printed on Captivating Glance; every other Lorwyn
+     * clash card leaves it null.
+     *
+     * ```kotlin
+     * // Adder-Staff Boggart — "When this creature enters, clash with an opponent.
+     * //                        If you win, put a +1/+1 counter on this creature."
+     * Patterns.Mechanic.clash(Effects.AddCounters(Counters.plusOnePlusOne(1)))
+     * ```
+     */
+    fun clash(ifYouWin: Effect, otherwise: Effect? = null): GatedEffect = GatedEffect(
+        gate = Gate.DoAction(
+            action = CompositeEffect(
+                listOf(
+                    ChooseOpponentForSourceEffect(prompt = "Choose an opponent to clash with"),
+                    ClashEffect()
+                )
+            ),
+            successCriterion = SuccessCriterion.CollectionNonEmpty(CLASH_WON)
+        ),
+        then = ifYouWin,
+        otherwise = otherwise,
+        descriptionOverride = buildString {
+            append("Clash with an opponent. If you win, ")
+            append(ifYouWin.description.replaceFirstChar { it.lowercase() })
+            if (otherwise != null) {
+                append(". Otherwise, ${otherwise.description.replaceFirstChar { it.lowercase() }}")
+            }
+        }
+    )
 
     // =========================================================================
     // Gift Pattern (Bloomburrow)

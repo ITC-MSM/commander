@@ -61,6 +61,7 @@ class LibraryExecutors(
 
     override fun executors(): List<EffectExecutor<*>> = listOf(
         ScryExecutor(recursion),
+        ClashExecutor(recursion),
         SurveilExecutor(recursion),
         ShuffleLibraryExecutor(),
         GrantMayPlayFromExileExecutor(),
@@ -116,6 +117,7 @@ class LibraryExecutors(
         StoreNumberExecutor(),
         StoreCardNameExecutor(),
         EmitScriedEventExecutor(),
+        EmitClashedEventExecutor(),
         EmitSurveiledEventExecutor(),
         EmitDiscoveredEventExecutor(),
         EmitManifestedDreadEventExecutor(),

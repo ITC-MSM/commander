@@ -2541,6 +2541,36 @@ object Triggers {
     )
 
     // =========================================================================
+    // Clash Triggers (CR 701.30)
+    // =========================================================================
+
+    /**
+     * Whenever you clash (CR 701.30) — Entangling Trap, Rebellion of the Flamekin. Fires once the
+     * clash has fully ended: both cards revealed, both top-or-bottom decisions taken and both moves
+     * resolved, exactly as the printed reminder text says.
+     *
+     * **Fires for a clash you did not start.** A clash names two players, and the ruling on these
+     * cards is explicit: "if you clash because of a spell or ability an opponent controls, the
+     * ability will still trigger." Use [WheneverYouClashAndWin] for the "and win" wording; a card
+     * whose payoff merely *differs* on a win (Entangling Trap's "If you won, …") uses this trigger
+     * and branches inside its effect.
+     */
+    val WheneverYouClash: TriggerSpec = TriggerSpec(
+        event = ClashedEvent(Player.You),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
+     * Whenever you clash **and win** (CR 701.30d) — Sylvan Echoes. The win is a condition on the
+     * trigger itself, so a clash you lose never puts the ability on the stack at all. As with
+     * [WheneverYouClash], winning a clash an opponent initiated counts.
+     */
+    val WheneverYouClashAndWin: TriggerSpec = TriggerSpec(
+        event = ClashedEvent(Player.You, requireWin = true),
+        binding = TriggerBinding.ANY
+    )
+
+    // =========================================================================
     // Scry Triggers (CR 701.22)
     // =========================================================================
 
