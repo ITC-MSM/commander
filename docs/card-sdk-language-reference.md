@@ -13099,8 +13099,9 @@ identity of a *kind* of ability — independent of the stack object or source en
 same card (and every future instance) share one identity for a given ability, because both halves are definition-scoped.
 Cards never author it. Activated-ability lookup records whether the concrete ability came from the current card definition:
 printed abilities and generated Class level-up abilities receive the corresponding identity, while runtime-, static-, and
-emblem-granted abilities and intrinsic subtype abilities retain their concrete `AbilityId` without claiming definition
-ownership. The engine threads proven
+emblem-granted abilities and intrinsic subtype abilities retain their concrete `ActivatedAbility` without claiming definition
+ownership. The activation snapshot travels through stack copies and resolution; its `activatedAbilityId` is derived from the
+snapshot, so retaining “this ability” never depends on a grant still existing when the effect resolves. The engine threads proven
 identities onto `ActivatedAbilityOnStackComponent` and `DecisionContext`, so persistent yields can remember a per-ability
 answer across all copies. The triggered-ability path still derives a provisional key from the current source card definition;
 typed ownership provenance for granted and synthesized triggers remains an explicit follow-up in

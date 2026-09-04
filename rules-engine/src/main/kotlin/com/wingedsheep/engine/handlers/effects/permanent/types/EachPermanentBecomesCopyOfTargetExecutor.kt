@@ -3,7 +3,6 @@ package com.wingedsheep.engine.handlers.effects.permanent.types
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.event.GrantedActivatedAbility
 import com.wingedsheep.engine.handlers.EffectContext
-import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.copy.CopyExceptionApplier
@@ -44,9 +43,7 @@ import kotlin.reflect.KClass
  * copies. Likeness Looter's "{X}: … becomes a copy of target creature card in your graveyard with
  * mana value X, except it has flying and this ability" is both riders at once.
  */
-class EachPermanentBecomesCopyOfTargetExecutor(
-    private val cardRegistry: CardRegistry
-) : EffectExecutor<EachPermanentBecomesCopyOfTargetEffect> {
+class EachPermanentBecomesCopyOfTargetExecutor : EffectExecutor<EachPermanentBecomesCopyOfTargetEffect> {
 
     override val effectType: KClass<EachPermanentBecomesCopyOfTargetEffect> =
         EachPermanentBecomesCopyOfTargetEffect::class
@@ -145,34 +142,17 @@ class EachPermanentBecomesCopyOfTargetExecutor(
                 updated
             }
 
-            // "…and this ability": re-grant the concrete activated ability that produced this
-            // copy. After the first copy it lives in the runtime-grant store and intentionally has
-            // no definition-scoped AbilityIdentity, so routing must use activatedAbilityId. Read the
-            // grant first, then use a proven definition identity to recover the first activation's
-            // ability even if the source's characteristics changed before this resolved.
-            if (effect.retainActivatingAbility) {
-                val activatedAbilityId = context.activatedAbilityId
-                if (activatedAbilityId != null && newState.grantedActivatedAbilities
-                        .none { it.entityId == entityId && it.ability.id == activatedAbilityId }
-                ) {
-                    val ability = state.grantedActivatedAbilities
-                        .firstOrNull { it.entityId == entityId && it.ability.id == activatedAbilityId }
-                        ?.ability
-                        ?: context.abilityIdentity
-                            ?.takeIf { it.abilityId == activatedAbilityId }
-                            ?.let { cardRegistry.getCard(it.cardDefinitionId) }
-                            ?.activatedAbilities?.firstOrNull { it.id == activatedAbilityId }
-                    if (ability != null) {
-                        newState = newState.copy(
-                            grantedActivatedAbilities = newState.grantedActivatedAbilities +
-                                GrantedActivatedAbility(
-                                    entityId = entityId,
-                                    ability = ability,
-                                    duration = Duration.Permanent
-                                )
-                        )
-                    }
+            // The activation snapshot survives changes to the source and to its granting effect.
+            val retainedAbility = context.activatedAbility
+            if (effect.retainActivatingAbility && retainedAbility != null &&
+                newState.grantedActivatedAbilities.none {
+                    it.entityId == entityId && it.ability.id == retainedAbility.id
                 }
+            ) {
+                newState = newState.copy(
+                    grantedActivatedAbilities = newState.grantedActivatedAbilities +
+                        GrantedActivatedAbility(entityId, retainedAbility, Duration.Permanent)
+                )
             }
         }
 

@@ -35,6 +35,7 @@ import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.mechanics.targeting.TargetValidator
 import com.wingedsheep.engine.legalactions.utils.CastPermissionUtils
 import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.state.nameVisibleToAll
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
@@ -686,6 +687,8 @@ class ActivateAbilityHandler(
         val cardComponent = container.get<CardComponent>()
             ?: return ExecutionResult.error(state, "Source is not a card")
 
+        val sourceName = nameVisibleToAll(state, action.sourceId, cardComponent.name)
+
         // Retain which lookup branch supplied the concrete ability. A CardComponent on the
         // receiving permanent proves only that the object is a card; it does not make a runtime,
         // static, emblem-granted, or intrinsic ability part of that card's definition.
@@ -701,7 +704,7 @@ class ActivateAbilityHandler(
         if (action.xValue != null && action.xValue < ability.minimumXValue) {
             return ExecutionResult.error(
                 state,
-                "X must be at least ${ability.minimumXValue} for ${cardComponent.name}"
+                "X must be at least ${ability.minimumXValue} for ${sourceName}"
             )
         }
 
@@ -771,7 +774,7 @@ class ActivateAbilityHandler(
             val opponentReqs = fullTargetReqs.filter { it.chooser == TargetChooser.Opponent }
             if (opponentReqs.isNotEmpty()) {
                 return pauseForOpponentChosenTargets(
-                    state, action, cardComponent.name, fullTargetReqs, opponentReqs
+                    state, action, sourceName, fullTargetReqs, opponentReqs
                 )
             }
         }
@@ -801,10 +804,10 @@ class ActivateAbilityHandler(
             val decision = com.wingedsheep.engine.core.ChooseNumberDecision(
                 id = decisionId,
                 playerId = action.playerId,
-                prompt = "Choose X for ${cardComponent.name} (0-$maxX)",
+                prompt = "Choose X for ${sourceName} (0-$maxX)",
                 context = com.wingedsheep.engine.core.DecisionContext(
                     sourceId = action.sourceId,
-                    sourceName = cardComponent.name,
+                    sourceName = sourceName,
                     phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
                 ),
                 minValue = 0,
@@ -847,10 +850,10 @@ class ActivateAbilityHandler(
             val decision = com.wingedsheep.engine.core.ChooseNumberDecision(
                 id = decisionId,
                 playerId = action.playerId,
-                prompt = "Choose X for ${cardComponent.name} ($minX-$maxX)",
+                prompt = "Choose X for ${sourceName} ($minX-$maxX)",
                 context = com.wingedsheep.engine.core.DecisionContext(
                     sourceId = action.sourceId,
-                    sourceName = cardComponent.name,
+                    sourceName = sourceName,
                     phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
                 ),
                 minValue = minX,
@@ -911,9 +914,9 @@ class ActivateAbilityHandler(
                 val decisionId = java.util.UUID.randomUUID().toString()
                 val prompt = if (fixedCount != null) {
                     "Select $fixedCount card${if (fixedCount > 1) "s" else ""} to exile from " +
-                        "graveyard for ${cardComponent.name}"
+                        "graveyard for ${sourceName}"
                 } else {
-                    "Select any number of cards to exile from graveyard for ${cardComponent.name} " +
+                    "Select any number of cards to exile from graveyard for ${sourceName} " +
                         "(X is the number you choose)"
                 }
                 val decision = com.wingedsheep.engine.core.SelectCardsDecision(
@@ -922,7 +925,7 @@ class ActivateAbilityHandler(
                     prompt = prompt,
                     context = com.wingedsheep.engine.core.DecisionContext(
                         sourceId = action.sourceId,
-                        sourceName = cardComponent.name,
+                        sourceName = sourceName,
                         phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
                     ),
                     options = exileXCandidates,
@@ -990,14 +993,14 @@ class ActivateAbilityHandler(
                 }
             if (exileCandidates.size > exileFromGraveyardCost.count) {
                 val decisionId = java.util.UUID.randomUUID().toString()
-                val prompt = "Select ${exileFromGraveyardCost.count} card${if (exileFromGraveyardCost.count > 1) "s" else ""} to exile from graveyard for ${cardComponent.name}"
+                val prompt = "Select ${exileFromGraveyardCost.count} card${if (exileFromGraveyardCost.count > 1) "s" else ""} to exile from graveyard for ${sourceName}"
                 val decision = com.wingedsheep.engine.core.SelectCardsDecision(
                     id = decisionId,
                     playerId = action.playerId,
                     prompt = prompt,
                     context = com.wingedsheep.engine.core.DecisionContext(
                         sourceId = action.sourceId,
-                        sourceName = cardComponent.name,
+                        sourceName = sourceName,
                         phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
                     ),
                     options = exileCandidates,
@@ -1055,14 +1058,14 @@ class ActivateAbilityHandler(
             // pick a distinctly-named set even when candidates == count — so always pause for it.
             if (sacrificeCandidates.size > sacrificeCost.count || sacrificeCost.distinctNames) {
                 val decisionId = java.util.UUID.randomUUID().toString()
-                val prompt = "Select ${sacrificeCost.count} permanent${if (sacrificeCost.count > 1) "s" else ""} to sacrifice for ${cardComponent.name}"
+                val prompt = "Select ${sacrificeCost.count} permanent${if (sacrificeCost.count > 1) "s" else ""} to sacrifice for ${sourceName}"
                 val decision = com.wingedsheep.engine.core.SelectCardsDecision(
                     id = decisionId,
                     playerId = action.playerId,
                     prompt = prompt,
                     context = com.wingedsheep.engine.core.DecisionContext(
                         sourceId = action.sourceId,
-                        sourceName = cardComponent.name,
+                        sourceName = sourceName,
                         phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
                     ),
                     options = sacrificeCandidates,
@@ -1113,17 +1116,17 @@ class ActivateAbilityHandler(
                 .let { if (variablePermanentsCost.excludeSelf) it.filter { id -> id != action.sourceId } else it }
             val minCount = variablePermanentsCost.minCount
             if (candidates.size < minCount) {
-                return ExecutionResult.error(state, "Not enough permanents to $verb for ${cardComponent.name}")
+                return ExecutionResult.error(state, "Not enough permanents to $verb for ${sourceName}")
             }
             val decisionId = java.util.UUID.randomUUID().toString()
-            val prompt = "Choose one or more ${variablePermanentsCost.filter.description}s to $verb for ${cardComponent.name}"
+            val prompt = "Choose one or more ${variablePermanentsCost.filter.description}s to $verb for ${sourceName}"
             val decision = com.wingedsheep.engine.core.SelectCardsDecision(
                 id = decisionId,
                 playerId = action.playerId,
                 prompt = prompt,
                 context = com.wingedsheep.engine.core.DecisionContext(
                     sourceId = action.sourceId,
-                    sourceName = cardComponent.name,
+                    sourceName = sourceName,
                     phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
                 ),
                 options = candidates,
@@ -1178,7 +1181,7 @@ class ActivateAbilityHandler(
                         state, req, action.playerId, action.sourceId, pipelineContext = pipelineContext
                     )
                     if (legal.isEmpty() && req.effectiveMinCount > 0) {
-                        return ExecutionResult.error(state, "No legal target for ${cardComponent.name}")
+                        return ExecutionResult.error(state, "No legal target for ${sourceName}")
                     }
                     legalTargets[index] = legal
                     com.wingedsheep.engine.core.TargetRequirementInfo(
@@ -1189,14 +1192,14 @@ class ActivateAbilityHandler(
                     )
                 }
                 val decisionId = java.util.UUID.randomUUID().toString()
-                val prompt = "Choose ${controllerTargetReqsExec.joinToString(" and ") { it.description }} for ${cardComponent.name}"
+                val prompt = "Choose ${controllerTargetReqsExec.joinToString(" and ") { it.description }} for ${sourceName}"
                 val decision = com.wingedsheep.engine.core.ChooseTargetsDecision(
                     id = decisionId,
                     playerId = action.playerId,
                     prompt = prompt,
                     context = com.wingedsheep.engine.core.DecisionContext(
                         sourceId = action.sourceId,
-                        sourceName = cardComponent.name,
+                        sourceName = sourceName,
                         phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
                     ),
                     targetRequirements = requirementInfos,
@@ -1322,7 +1325,7 @@ class ActivateAbilityHandler(
                     }
                 }
                 else -> {
-                    val autoTapResult = autoTapForManaCost(currentState, action.playerId, manaPool, manaCost, cardComponent.name, manaXValue, selfExcludedSources, executeAbilityContext, ability.xManaRestriction)
+                    val autoTapResult = autoTapForManaCost(currentState, action.playerId, manaPool, manaCost, sourceName, manaXValue, selfExcludedSources, executeAbilityContext, ability.xManaRestriction)
                         ?: return ExecutionResult.error(state, "Not enough mana to activate this ability")
                     currentState = autoTapResult.newState
                     manaPool = autoTapResult.newPool
@@ -1592,7 +1595,7 @@ class ActivateAbilityHandler(
         // only the loyalty change — which payAbilityCost mutates without an event — is emitted here.
         val abilityCost = ability.cost
         if (abilityCost is AbilityCost.Loyalty) {
-            events.add(LoyaltyChangedEvent(action.sourceId, cardComponent.name, abilityCost.change))
+            events.add(LoyaltyChangedEvent(action.sourceId, sourceName, abilityCost.change))
         }
 
         // Snapshot of the activation's cost-side events (cost payment + the {T}/tap/loyalty events
@@ -1684,7 +1687,7 @@ class ActivateAbilityHandler(
             // Adding it to [events] now carries it out through those exits too.
             val manaAbilityActivatedEvent = AbilityActivatedEvent(
                 sourceId = action.sourceId,
-                sourceName = cardComponent.name,
+                sourceName = sourceName,
                 controllerId = action.playerId,
                 abilityEntityId = null,
                 costsTap = hasTapCost(effectiveCost),
@@ -1752,7 +1755,7 @@ class ActivateAbilityHandler(
                 // provenance must enter the effect context here. The concrete id remains useful
                 // even when this lookup branch could not prove a definition-scoped identity.
                 abilityIdentity = abilityIdentity,
-                activatedAbilityId = ability.id,
+                activatedAbility = ability,
             )
 
             val effectResult = effectExecutorRegistry.execute(currentState, finalEffect, context).toExecutionResult()
@@ -1804,7 +1807,7 @@ class ActivateAbilityHandler(
                 ManaAddedEvent(
                     playerId = action.playerId,
                     sourceId = action.sourceId,
-                    sourceName = cardComponent.name,
+                    sourceName = sourceName,
                     colorless = 1
                 )
             } else when (val effect = finalEffect) {
@@ -1813,7 +1816,7 @@ class ActivateAbilityHandler(
                     ManaAddedEvent(
                         playerId = action.playerId,
                         sourceId = action.sourceId,
-                        sourceName = cardComponent.name,
+                        sourceName = sourceName,
                         white = if (effect.color == Color.WHITE) amount else 0,
                         blue = if (effect.color == Color.BLUE) amount else 0,
                         black = if (effect.color == Color.BLACK) amount else 0,
@@ -1827,7 +1830,7 @@ class ActivateAbilityHandler(
                     ManaAddedEvent(
                         playerId = action.playerId,
                         sourceId = action.sourceId,
-                        sourceName = cardComponent.name,
+                        sourceName = sourceName,
                         colorless = amount
                     )
                 }
@@ -1840,7 +1843,7 @@ class ActivateAbilityHandler(
                     ManaAddedEvent(
                         playerId = action.playerId,
                         sourceId = action.sourceId,
-                        sourceName = cardComponent.name,
+                        sourceName = sourceName,
                         white = if (chosenColor == Color.WHITE) amount else 0,
                         blue = if (chosenColor == Color.BLUE) amount else 0,
                         black = if (chosenColor == Color.BLACK) amount else 0,
@@ -1861,7 +1864,7 @@ class ActivateAbilityHandler(
                             ManaAddedEvent(
                                 playerId = action.playerId,
                                 sourceId = action.sourceId,
-                                sourceName = cardComponent.name,
+                                sourceName = sourceName,
                                 white = if (manaEffect.color == Color.WHITE) amount else 0,
                                 blue = if (manaEffect.color == Color.BLUE) amount else 0,
                                 black = if (manaEffect.color == Color.BLACK) amount else 0,
@@ -1875,7 +1878,7 @@ class ActivateAbilityHandler(
                             ManaAddedEvent(
                                 playerId = action.playerId,
                                 sourceId = action.sourceId,
-                                sourceName = cardComponent.name,
+                                sourceName = sourceName,
                                 colorless = amount
                             )
                         }
@@ -1888,7 +1891,7 @@ class ActivateAbilityHandler(
                             ManaAddedEvent(
                                 playerId = action.playerId,
                                 sourceId = action.sourceId,
-                                sourceName = cardComponent.name,
+                                sourceName = sourceName,
                                 white = if (chosenColor == Color.WHITE) amount else 0,
                                 blue = if (chosenColor == Color.BLUE) amount else 0,
                                 black = if (chosenColor == Color.BLACK) amount else 0,
@@ -1953,7 +1956,7 @@ class ActivateAbilityHandler(
         // Non-mana abilities go on the stack
         val abilityOnStack = ActivatedAbilityOnStackComponent(
             sourceId = action.sourceId,
-            sourceName = cardComponent.name,
+            sourceName = sourceName,
             controllerId = action.playerId,
             effect = finalEffect,
             sacrificedPermanents = sacrificedSnapshots,
@@ -1973,7 +1976,7 @@ class ActivateAbilityHandler(
             revealedNotedCreatureType = revealedNotedCreatureType,
             descriptionOverride = ability.descriptionOverride,
             abilityIdentity = abilityIdentity,
-            activatedAbilityId = ability.id,
+            activatedAbility = ability,
             granterId = staticGranterId,
             // CR 701.28f — freeze the source's face-change clock as the ability goes on the stack;
             // an instruction inside it to transform that same permanent is ignored if the permanent
@@ -2022,7 +2025,7 @@ class ActivateAbilityHandler(
 
                 // Auto-tap for mana cost
                 if (manaCost != null) {
-                    val autoTapResult = autoTapForManaCost(currentState, action.playerId, repeatPool, manaCost, cardComponent.name, 0, abilityContext = executeAbilityContext)
+                    val autoTapResult = autoTapForManaCost(currentState, action.playerId, repeatPool, manaCost, sourceName, 0, abilityContext = executeAbilityContext)
                         ?: break // Can't afford — stop early
                     currentState = autoTapResult.newState
                     repeatPool = autoTapResult.newPool
@@ -2072,7 +2075,7 @@ class ActivateAbilityHandler(
                 // Put another ability on the stack
                 val repeatAbilityOnStack = ActivatedAbilityOnStackComponent(
                     sourceId = action.sourceId,
-                    sourceName = cardComponent.name,
+                    sourceName = sourceName,
                     controllerId = action.playerId,
                     effect = finalEffect,
                     sacrificedPermanents = emptyList(),
@@ -2081,7 +2084,7 @@ class ActivateAbilityHandler(
                     tappedEntitySnapshots = repeatTapSnapshots,
                     descriptionOverride = ability.descriptionOverride,
                     abilityIdentity = abilityIdentity,
-                    activatedAbilityId = ability.id,
+                    activatedAbility = ability,
                     granterId = staticGranterId
                 )
                 val repeatStackResult = stackResolver.putActivatedAbility(
@@ -2941,7 +2944,7 @@ class ActivateAbilityHandler(
         return ManaAddedEvent(
             playerId = action.playerId,
             sourceId = action.sourceId,
-            sourceName = cardComponent.name,
+            sourceName = nameVisibleToAll(oldState, action.sourceId, cardComponent.name),
             white = newPool.white - (oldPool?.white ?: 0),
             blue = newPool.blue - (oldPool?.blue ?: 0),
             black = newPool.black - (oldPool?.black ?: 0),

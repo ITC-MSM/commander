@@ -54,14 +54,11 @@ data class EffectContext(
      */
     val abilityIdentity: com.wingedsheep.sdk.scripting.AbilityIdentity? = null,
     /**
-     * Concrete id of the *activated* ability currently resolving. Modern activated stack objects
-     * always carry it even when [abilityIdentity] is null, which lets a runtime-granted ability
-     * route "this ability" without inventing a semantic card-definition pair (Likeness Looter).
-     * Off-stack mana abilities carry it through their direct resolution context as well. Null for
-     * spells, triggered abilities, and specialized synthesized activations with no concrete
-     * ability.
+     * The concrete ability captured at activation. Resolution must not rediscover it from a
+     * source or grant that can change before resolving (including "retain this ability" copies).
+     * Null for spells, triggers, and synthesized activations without an ActivatedAbility.
      */
-    val activatedAbilityId: com.wingedsheep.sdk.scripting.AbilityId? = null,
+    val activatedAbility: com.wingedsheep.sdk.scripting.ActivatedAbility? = null,
     /**
      * The player currently under consideration as a target, bound while evaluating a
      * `TargetPlayer.restriction` / `TargetOpponent.restriction` (CR 115). Resolves
@@ -411,6 +408,9 @@ data class EffectContext(
      */
     val resolutionDepth: Int = 0
 ) {
+    val activatedAbilityId: com.wingedsheep.sdk.scripting.AbilityId?
+        get() = activatedAbility?.id
+
     /**
      * Resolve a symbolic effect target to a concrete entity id using just the context.
      *

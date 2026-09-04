@@ -206,7 +206,10 @@ class StackResolver(
         spentManaProvenance: com.wingedsheep.engine.mechanics.mana.SpentManaProvenance =
             com.wingedsheep.engine.mechanics.mana.SpentManaProvenance(),
         castTimeFlags: Set<String> = emptySet(),
-        alternativeCost: com.wingedsheep.engine.core.AlternativeCostType? = null
+        alternativeCost: com.wingedsheep.engine.core.AlternativeCostType? = null,
+        // Payment can tap or remove the source that made the origin visible. This immutable
+        // input is consulted only while capturing the event; the event retains no GameState.
+        castOriginState: GameState = state
     ): ExecutionResult {
         val container = state.getEntity(cardId)
             ?: return ExecutionResult.error(state, "Card not found: $cardId")
@@ -519,7 +522,7 @@ class StackResolver(
                 targetNames = targetNames,
                 xValue = boundXValue,
                 cardPresentation = eventPresentationFactory.castSpellIdentity(
-                    beforeCast = state,
+                    beforeCast = castOriginState,
                     onStack = newState,
                     castFromZone = castFromZone,
                     entityId = cardId,
@@ -2950,7 +2953,7 @@ class StackResolver(
             controllerId = abilityComponent.controllerId,
             granterId = abilityComponent.granterId,
             abilityIdentity = abilityComponent.abilityIdentity,
-            activatedAbilityId = abilityComponent.activatedAbilityId,
+            activatedAbility = abilityComponent.activatedAbility,
             sourceFaceChanges = abilityComponent.sourceFaceChanges,
             targets = activatedTargets,
             alignedTargets = alignedActivatedTargets,

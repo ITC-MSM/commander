@@ -386,13 +386,11 @@ data class ActivatedAbilityOnStackComponent(
      */
     val abilityIdentity: com.wingedsheep.sdk.scripting.AbilityIdentity? = null,
     /**
-     * Concrete activated-ability id used for resolution-time routing and ability-local
-     * bookkeeping. Unlike [abilityIdentity], this need not be definition-scoped: runtime/static
-     * grants retain their id here without claiming that it belongs to the receiver's definition.
-     * Stack copies inherit it with the rest of this component. Null for specialized synthesized
-     * actions such as crew and saddle, which have no [com.wingedsheep.sdk.scripting.ActivatedAbility].
+     * Concrete ability captured at activation, independent of definition ownership. Stack copies
+     * retain this snapshot even if the source changes or the grant disappears before resolution.
+     * Null for synthesized actions such as crew and saddle.
      */
-    val activatedAbilityId: AbilityId? = null,
+    val activatedAbility: com.wingedsheep.sdk.scripting.ActivatedAbility? = null,
     /**
      * The permanent whose static ability granted this activated ability (the Equipment/Aura/permanent
      * bearing the `GrantActivatedAbility` static), captured at activation. Read at resolution into
@@ -418,6 +416,9 @@ data class ActivatedAbilityOnStackComponent(
      */
     val damageDistribution: Map<EntityId, Int>? = null
 ) : Component {
+    val activatedAbilityId: AbilityId?
+        get() = activatedAbility?.id
+
     val hasTargets: Boolean = false  // Will be updated based on effect
 }
 

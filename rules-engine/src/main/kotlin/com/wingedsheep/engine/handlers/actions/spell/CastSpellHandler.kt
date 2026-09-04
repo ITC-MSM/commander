@@ -3673,7 +3673,8 @@ class CastSpellHandler(
             // Every enumerated alternative-cost offer names its mechanic explicitly, so this is the
             // declared choice rather than a guess. Descriptive only — the rules consequences of each
             // mechanic ride the `was*` flags above.
-            alternativeCost = action.alternativeCostType?.takeIf { action.useAlternativeCost }
+            alternativeCost = action.alternativeCostType?.takeIf { action.useAlternativeCost },
+            castOriginState = state
         )
 
         if (!castResult.isSuccess) {
