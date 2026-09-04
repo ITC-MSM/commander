@@ -3262,6 +3262,24 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
 - `rummage(count?)` — discard then draw.
 - `connive(target?)` — draw 1, discard 1, then put a +1/+1 counter on `target` (default Self) if the discard was a nonland (CR 701.50). Also exposed as `Effects.Connive(target)`. Returns the pipeline wrapped in `ConniveEffect(subject = target, body = …)`: the wrapper names the keyword action and its subject, which is what lets `ModifyKeywordAction` replace it and what makes it emit `PermanentConnivedEvent` (CR 701.50f). The pipeline itself is unchanged.
 - `conniveTargeting(requirement, storeAs?)` — connive whose +1/+1 counter lands on a *reflexively chosen* target: "draw a card, then discard a card. When you discard a nonland card this way, put a +1/+1 counter on target creature you control" (Teo, Spirited Glider). The recipient is selected at resolution via `SelectTargetEffect` *inside* the nonland gate — so the player never chooses up front or when the discard is a land. Pass the recipient's `TargetRequirement` (e.g. `Targets.CreatureYouControl`); do **not** also declare it as a cast-time `target(...)`. Exposed as `Effects.ConniveTargeting(requirement)`. Deliberately **not** wrapped in `ConniveEffect` — Teo's printed text spells the looting out and never says "connive", so it is not the keyword action: it fires no connive triggers and is not touched by "if a creature you control would connive" replacements.
+- `Patterns.Mechanic.clash(ifYouWin, otherwise?)` — **Clash** (CR 701.30, Lorwyn), and the only clash
+  spelling a card should author. It is the whole printed template, not just the keyword action:
+  *"Clash with an opponent. If you win, [ifYouWin]."*, with `otherwise` for the one card that prints
+  an "Otherwise, …" half (Captivating Glance). Composed from three existing pieces —
+  `ChooseOpponentForSourceEffect` (clash *chooses* an opponent, CR 701.30b; forced and promptless
+  with a single opponent, and the durable `OPPONENT` slot is what keeps the same player revealing
+  *and* deciding, which a bare `Chooser.Opponent` would not), then `ClashEffect`, wrapped in a
+  `Gate.DoAction` scored by `SuccessCriterion.CollectionNonEmpty(CLASH_WON)`. **"If you win" is an
+  action-outcome rider, not a new gate kind**: the clash writes your revealed card into the
+  `clashWon` collection only on a win, so the existing gate — and its pause/resume machinery, which
+  is what carries the two top-or-bottom decisions — does the whole job. `ClashEffect` is a *macro*
+  in the `ScryEffect` sense: the engine expands it to Gather → Select → Move over the ordinary
+  library primitives, and builds it against live state only so the two selections can be emitted in
+  APNAP order (CR 701.30c) rather than clasher-first. Both gathers are `revealed = true` (a clash is
+  a public reveal, CR 701.30a) and both precede either decision, so the reveal is simultaneous.
+  Scoring is CR 701.30d, *strictly* greater mana value: **a tie wins for nobody**, and a player with
+  an empty library reveals nothing and so can never win — though their opponent still wins with any
+  card at all, a `{0}` included. Adder-Staff Boggart, Oaken Brawler, Paperfin Rascal, Lash Out.
 - `Patterns.Mechanic.learn()` — **Learn** (CR 701.48, Strixhaven), the keyword action printed as a
   bare "Learn." with reminder text. CR 701.48a is sequential, not a choose-one: *"You may discard a
   card. If you do, draw a card. If you didn't discard a card, you may reveal a Lesson card you own
@@ -6004,6 +6022,20 @@ Triggers.youCastSpell(
   A `RingTemptedEvent` pattern with `requireBearerChosen = true`, so it fires only when the temptation
   actually designates a creature (the event's `bearerId` is non-null) — not when you control none to
   choose. Used by Call of the Ring.
+
+### Clash
+
+- `WheneverYouClash` — fires once the clash has fully ended (CR 701.30): both cards revealed, both
+  top-or-bottom decisions taken and both moves resolved, exactly as the printed reminder text says
+  ("This ability triggers after the clash ends"). **Fires for a clash you did not start** — a clash
+  names two players, and the ruling on Entangling Trap and Rebellion of the Flamekin is explicit
+  that "if you clash because of a spell or ability an opponent controls, the ability will still
+  trigger." The engine emits one `ClashedEvent` per participant for exactly this reason.
+- `WheneverYouClashAndWin` — the "and win" wording (Sylvan Echoes). The win is a condition on the
+  *trigger* (`EventPattern.ClashedEvent(requireWin = true)`), so a lost clash puts nothing on the
+  stack at all. You can win — and be paid for — a clash an opponent initiated. A card whose payoff
+  merely *differs* on a win ("… If you won, …" — Entangling Trap) uses `WheneverYouClash` and
+  branches inside its effect instead.
 
 ### Scry / Surveil
 
@@ -12645,6 +12677,13 @@ Counter effects live in §4 (`AddCounters`, `RemoveCounters`, `Proliferate`, `Mo
     cast-time "you may promise **an opponent** a gift"-style recipient choice, use
     `Effects.ChooseOpponentForSource` + `Player.ChosenOpponent` instead — that one is stored on the source and
     persists past the resolution.)
+  - **`Chooser.ChosenOpponent`** is the decision-side twin of `Player.ChosenOpponent`: the opponent a
+    preceding `Effects.ChooseOpponentForSource` already named for this source makes the choice. Use it,
+    not `Chooser.Opponent`, whenever the *same* opponent has to appear in two steps of one mechanic —
+    `Chooser.Opponent` re-picks per step, so in a multiplayer game a mechanic that reads one opponent's
+    library and then asks that opponent to decide could split across two different players. Clash
+    (CR 701.30b) is the case in hand. Unresolvable if no choice has been made, so a card using it must
+    run `Effects.ChooseOpponentForSource` first.
 
 **Linked exile**
 

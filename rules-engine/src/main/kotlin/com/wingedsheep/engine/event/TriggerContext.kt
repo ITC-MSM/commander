@@ -282,6 +282,12 @@ data class TriggerContext(
                     triggeringEntityId = event.playerId,
                     triggeringPlayerId = event.playerId
                 )
+                // Clash (CR 701.30): the clashing player this event is about is the triggering
+                // player, so "whenever you clash" resolves "you" to that participant even when
+                // the opponent's spell started the clash.
+                is com.wingedsheep.engine.core.ClashedEvent -> TriggerContext(
+                    triggeringPlayerId = event.playerId
+                )
                 is com.wingedsheep.engine.core.ScriedEvent -> TriggerContext(
                     triggeringPlayerId = event.playerId,
                     scryCount = event.count

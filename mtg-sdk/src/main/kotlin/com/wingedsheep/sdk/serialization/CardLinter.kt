@@ -587,6 +587,11 @@ object CardLinter {
         // exiled, in every round, as another.
         put("ExileTopCardContest" to "storeWinnerAs", write(Space.COLLECTION))
         put("ExileTopCardContest" to "storeExiledAs", write(Space.COLLECTION))
+        // Clash (CR 701.30) publishes its outcome the same way ExileTopCardContest does: the
+        // clashing player's revealed card lands here iff they won, and the collection stays empty
+        // on a loss or a tie. `Patterns.Mechanic.clash` reads it back through
+        // SuccessCriterion.CollectionNonEmpty, which is the "If you win, ..." rider.
+        put("Clash" to "storeWonAs", write(Space.COLLECTION))
         put("Discover" to "storeDiscoveredAs", write(Space.COLLECTION))
         put("CopyCardIntoCollection" to "storeAs", write(Space.COLLECTION))
         put("CopyCollectionIntoCollection" to "storeAs", write(Space.COLLECTION))
