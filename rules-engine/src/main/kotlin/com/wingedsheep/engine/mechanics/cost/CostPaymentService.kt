@@ -843,8 +843,13 @@ class CostPaymentService(private val services: EngineServices) {
                 is CostAtom.Sacrifice ->
                     controlledMatching(state, payerId, atom.filter, if (atom.excludeSelf) sourceId else null)
                 // ReturnToHand carries no `excludeSelf` axis, so the source stays out of the pool —
-                // one rule, applied identically by affordability, prompt, and validation.
-                is CostAtom.ReturnToHand -> controlledMatching(state, payerId, atom.filter, sourceId)
+                // one rule, applied identically by affordability, prompt, and validation. Its
+                // `youControl` axis is off by default only for the handful of cards whose ruling
+                // says any permanent qualifies (Drake Familiar), and then the pool is the whole
+                // battlefield rather than the payer's half.
+                is CostAtom.ReturnToHand ->
+                    if (atom.youControl) controlledMatching(state, payerId, atom.filter, sourceId)
+                    else anyMatching(state, payerId, atom.filter, sourceId)
                 is CostAtom.TapPermanents ->
                     controlledUntapped(state, payerId, atom.filter, if (atom.excludeSelf) sourceId else null)
                 // "Remove a counter from among permanents you control" never says "another", so the
@@ -910,6 +915,22 @@ class CostPaymentService(private val services: EngineServices) {
         ): List<EntityId> =
             BattlefieldFilterUtils.findMatchingOnBattlefield(
                 state, filter.youControl(), PredicateContext(controllerId = playerId), excludeSelfId = excludeSelfId
+            )
+
+        /**
+         * Every permanent matching [filter], whoever controls it — the pool for a cost whose
+         * ruling is explicitly control-agnostic ([CostAtom.ReturnToHand] with `youControl = false`).
+         * The filter is passed through untouched, so a controller predicate it carries of its own
+         * still applies.
+         */
+        fun anyMatching(
+            state: GameState,
+            playerId: EntityId,
+            filter: GameObjectFilter,
+            excludeSelfId: EntityId? = null
+        ): List<EntityId> =
+            BattlefieldFilterUtils.findMatchingOnBattlefield(
+                state, filter, PredicateContext(controllerId = playerId), excludeSelfId = excludeSelfId
             )
 
         /** [excludeSelfId] only for costs that say "another" — a plain "tap two untapped …" may tap the source itself. */

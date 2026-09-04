@@ -556,6 +556,18 @@ object Triggers {
     )
 
     /**
+     * [CreatureDealtDamageByThisDies] narrowed to a dying creature matching [dyingFilter] (Trophy
+     * Hunter: "whenever a creature **with flying** dealt damage by this creature this turn dies").
+     * The damaging source is still this permanent — [dyingFilter] describes the creature that died,
+     * matched against its last-known information as it left the battlefield (CR 608.2h), so a
+     * creature that lost flying before dying doesn't count and one that gained it does.
+     */
+    fun creatureDealtDamageByThisDies(dyingFilter: GameObjectFilter): TriggerSpec = TriggerSpec(
+        event = CreatureDealtDamageBySourceDiesEvent(dyingFilter = dyingFilter),
+        binding = TriggerBinding.SELF
+    )
+
+    /**
      * Whenever a creature dealt damage by the *attached* permanent this turn dies — the Soul Collector
      * shape read one object further out, for an Equipment or Aura whose text says "equipped creature" /
      * "enchanted creature" (Scythe of the Wretched). Binding ATTACHED, which is the only difference from

@@ -454,8 +454,9 @@ exist in the cost and charges the life through the shared life-payment service.
   `Costs.ExileSelf`: deterministic, so there is no player selection and no `additionalCostInfo` is
   surfaced to the client — the engine pays it during activation, before the ability goes on the
   stack (CR 601.2h), and the ability still resolves with its source gone. Contrast
-  `Costs.ReturnToHand(filter, count)`, the choose-a-permanent-you-control bounce cost, which
-  deliberately excludes the source. Like the other self-removing costs it snapshots the source's
+  `Costs.ReturnToHand(filter, count, youControl = true)`, the choose-a-permanent bounce cost, which
+  deliberately excludes the source and is scoped to permanents you control unless `youControl` is
+  turned off. Like the other self-removing costs it snapshots the source's
   counters first, so the resolving effect can still read them via
   `DynamicAmounts.lastKnownSourceCounters(...)`.
 - `Costs.ExileFromGraveyard(count, filter)` — exile N matching cards from your graveyard.
@@ -727,7 +728,7 @@ exist in the cost and charges the life through the shared life-payment service.
 **`Costs.additional.*`** (wraps `AdditionalCost`) — extra costs paid alongside the mana cost. Card
 definitions construct these through the facade, e.g. `Costs.additional.SacrificePermanent(Filters.Creature)`.
 
-- `Costs.additional.ReturnToHand(filter = Filters.Any, count = 1)` — "as an additional cost to cast
+- `Costs.additional.ReturnToHand(filter = Filters.Any, count = 1, youControl = true)` — "as an additional cost to cast
   this spell, return [count] permanent(s) you control to its owner's hand" (Fear of Isolation). Paid
   as the spell is cast (CR 601.2f) via `additionalCostPayment.bouncedPermanents`; the enumerator
   surfaces the returnable permanents (a `costType = "ReturnToHand"` cost) and the client picks them
@@ -922,8 +923,13 @@ blanket exclusion: a self-inclusive cost stays payable on a board holding only t
 self-exclusive one is never offered the source in the first place.
 - `Costs.pay.Choice(options)` — present several `PayCost`s; player picks one (or the suffer effect).
   Unaffordable options are hidden. "...unless they sacrifice a nonland permanent or discard a card."
-- `Costs.pay.ReturnToHand(filter, count = 1)` — return permanents you control to their owner's hand.
-  Currently only consumed by `morphCost`; not yet wired into `PayOrSufferEffect`.
+- `Costs.pay.ReturnToHand(filter, count = 1, youControl = true)` — return permanents to their
+  owner's hand. Wired into `PayOrSufferEffect` (Drake Familiar: "sacrifice it unless you return an
+  enchantment to its owner's hand") as well as `morphCost`. Set `youControl = false` for the cards
+  whose ruling is control-agnostic — Drake Familiar's says *any* enchantment on the battlefield
+  qualifies, an opponent's included, and that an untargetable one does too because the ability never
+  targets. Selecting nothing is a decline, so the suffer half runs; with no legal permanent at all
+  there is no prompt. The source is always out of the pool.
 - `Costs.pay.RevealCard(filter, count = 1)` — reveal a card from hand matching `filter`. Currently
   only consumed by `morphCost`; not yet wired into `PayOrSufferEffect`.
 - `Costs.pay.RemoveCounters(count, counterType = null, filter = Any)` — remove `count` counters
@@ -5394,6 +5400,7 @@ Named sugar for the common cases; reach for the factories for any other combinat
 - `damageDealtToYou(sourceFilter?, damageType?)` — the source-restricted factory behind `YouAreDealtDamage`: "whenever [a source matching the filter] deals damage to you". `GameObjectFilter.Creature` for Aurification's "whenever a creature deals damage to you"; `GameObjectFilter.Any.opponentControls()` for Farsight Mask's "a source an opponent controls". "You" is the controller of the permanent bearing the trigger, and the filter's controller-relative predicates resolve against that same player. **Always use one of these two for a player-recipient damage trigger** — `RecipientFilter.You` is unmatchable on the general observer path (`TriggerMatcher.matchesDealsDamageTrigger` returns false for it) and reaches its ability only through the dedicated damage-to-you index.
 - `CreatureDealtDamageByThisDies` — Etali / Sengir / Soul Collector shape (SELF binding): "whenever a creature dealt damage by *this* permanent this turn dies". Uses `CreatureDealtDamageBySourceDiesEvent(sourceFilter = null)`.
 - `CreatureDealtDamageByAttachedDies` — the same event and the same tracker read one object further out (ATTACHED binding): "whenever a creature dealt damage by **equipped** creature this turn dies" (Scythe of the Wretched). The only difference from `CreatureDealtDamageByThisDies` is where the damage tracker is read from — the attachment target rather than the permanent bearing the trigger. The attachment is resolved when the creature *dies*, not when the damage was dealt, so an Equipment that moved between the two moments still fires (its own ruling) and an unattached Equipment never fires. Use this for any Equipment or Aura whose text says "equipped creature" / "enchanted creature" in a dealt-damage-dies trigger; `creatureDealtDamageBySourceDies(filter)` is for the board-wide observer wording instead.
+- `creatureDealtDamageByThisDies(dyingFilter)` — `CreatureDealtDamageByThisDies` narrowed to a dying creature matching `dyingFilter` (Trophy Hunter: "whenever a creature **with flying** dealt damage by this creature this turn dies"). `dyingFilter` is orthogonal to `sourceFilter` — the latter narrows the damaging source, this one the creature that died — and is matched against the dying creature's last-known information as it left the battlefield (CR 608.2h), through the same LKI-aware predicate path as an ordinary dies trigger. Trophy Hunter's ruling turns on exactly that: the check is whether the creature *currently* has flying, so one that lost it before dying doesn't count and one that gained it does.
 - `creatureDealtDamageBySourceDies(sourceFilter)` — observer variant (ANY binding): "whenever another creature dealt damage this turn by [a source matching the filter] dies" (Shelob, Child of Ungoliant: `GameObjectFilter.Creature.youControl().withSubtype("Spider")`). The damaging source is matched against the filter using last-known info from when it dealt the damage (a `DamagedBySourcesThisTurnComponent` snapshot of the source's controller + subtypes), so a source that died in the same combat still qualifies (CR 608.2h). Only the filter's controller predicate, required subtype, and creature requirement are evaluated against the snapshot.
 
 **Factories** (axes: `damageType` × `recipient` × `sourceFilter` × `binding` for outgoing; `source` × `binding` for incoming):
