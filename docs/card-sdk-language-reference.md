@@ -4842,6 +4842,12 @@ work for abilities-on-stack (which carry no `CardComponent`).
 - `HasLeastManaValueAmong(candidates)` (filter builder `hasLeastManaValueAmong(candidates)`) — has the
   least mana value among battlefield permanents matching the supplied composable filter. Ties all
   qualify, and target legality is rechecked at resolution (Culling Scales).
+- `HasGreatestManaValueAmongAllCreatures` (filter builder `hasGreatestManaValueAmongAllCreatures()`) —
+  has the greatest mana value among **all** creatures on the battlefield, both players' (Favor of the
+  Mighty). Ties all qualify. Its candidate set is fixed rather than filter-supplied precisely so the
+  continuous-effect projection pass can evaluate it — `HasLeastManaValueAmong` above takes a filter and
+  is therefore a point-of-use (target / gather) predicate only, inert as a static's affected set. Mana
+  value is read off the printed cost, so X counts as 0 (CR 202.3b) and a face-down creature counts as 0.
 - `IsRingBearer` (filter builder `ringBearer()`) — the creature is its controller's Ring-bearer
   (CR 701.54: has `RingBearerComponent` and is controlled by its designating owner). Used for
   player-level Ring-bearer conditions via `Conditions.YouControl(Creature.ringBearer(), negate = …)`

@@ -4155,6 +4155,116 @@
     ]
 }
 
+// Favor of the Mighty
+{
+    "name": "Favor of the Mighty",
+    "manaCost": "{1}{W}",
+    "typeLine": "Kindred Enchantment — Giant",
+    "oracleText": "Each creature with the greatest mana value has protection from each color.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantProtection",
+                "color": "WHITE",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "HasGreatestManaValueAmongAllCreatures"
+                        ]
+                    }
+                }
+            },
+            {
+                "type": "GrantProtection",
+                "color": "BLUE",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "HasGreatestManaValueAmongAllCreatures"
+                        ]
+                    }
+                }
+            },
+            {
+                "type": "GrantProtection",
+                "color": "BLACK",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "HasGreatestManaValueAmongAllCreatures"
+                        ]
+                    }
+                }
+            },
+            {
+                "type": "GrantProtection",
+                "color": "RED",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "HasGreatestManaValueAmongAllCreatures"
+                        ]
+                    }
+                }
+            },
+            {
+                "type": "GrantProtection",
+                "color": "GREEN",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "HasGreatestManaValueAmongAllCreatures"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "14",
+        "rarity": "RARE",
+        "artist": "Larry MacDougall",
+        "flavorText": "\"What does a mountain fear of a fly? Giants are barely aware of us, let alone afraid.\"\n—Gaddock Teeg",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/0/20d858be-4c03-4819-94e9-ca4ca3de9032.jpg?1783942915",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "If there's a tie for highest mana value, all of those creatures have protection from all colors."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "This effect is checked continuously. If a new creature enters with the highest mana value, it gains protection from all colors and the previous highest loses it."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If a creature has X in its mana cost, that X is treated as 0 for the purposes of this effect. It doesn't matter what the value of X was while the creature was on the stack."
+            },
+            {
+                "date": "2024-06-07",
+                "text": "This cards was originally printed with the \"tribal\" card type. That card type has been replaced with \"kindred\". This change does not affect the gameplay function of this card."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Final Revels
 {
     "name": "Final Revels",
