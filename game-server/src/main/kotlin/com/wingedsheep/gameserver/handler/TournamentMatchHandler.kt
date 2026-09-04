@@ -9,6 +9,7 @@ import com.wingedsheep.gameserver.repository.GameRepository
 import com.wingedsheep.gameserver.session.GameSession
 import com.wingedsheep.gameserver.session.PlayerIdentity
 import com.wingedsheep.gameserver.session.PlayerSession
+import com.wingedsheep.gameserver.tournament.AiMatchSimulator
 import com.wingedsheep.gameserver.tournament.TournamentManager
 import com.wingedsheep.gameserver.tournament.TournamentMatch
 import com.wingedsheep.gameserver.tournament.TournamentRound
@@ -31,9 +32,17 @@ class TournamentMatchHandler(
     private val gameProperties: GameProperties,
     private val gameRepository: GameRepository,
     private val aiGameManager: AiGameManager,
+    private val aiMatchSimulator: AiMatchSimulator,
     private val tournamentResultSink: com.wingedsheep.gameserver.stats.TournamentResultSink
 ) {
     private val logger = LoggerFactory.getLogger(TournamentMatchHandler::class.java)
+
+    /** One in-flight [startReadyMatches] trampoline. Thread-confined: the sweep never leaves its thread. */
+    private class Sweep(val lobbyId: String) {
+        var again: Boolean = false
+    }
+
+    private val activeSweep = ThreadLocal<Sweep?>()
 
     fun handleReadyForNextRound(session: WebSocketSession) {
         val token = ctx.sessionRegistry.getTokenByWsId(session.id)
@@ -120,41 +129,57 @@ class TournamentMatchHandler(
             tournament.reportMatchResult(gameSessionId, winnerId, winnerLifeRemaining)
             ctx.lobbyRepository.saveTournament(lobbyId, tournament)
 
-            handleMatchComplete(lobbyId, gameSessionId)
-            // Persist the freshly-updated standings so profiles/dashboard show live results.
-            recordTournamentProgress(lobbyId)
-            spectatingHandler.broadcastActiveMatchesToWaitingPlayers(lobbyId)
-
-            // Test round completion *before* touching ready state: `autoReadyAiPlayers` prepares the
-            // next round when the current one is done, which would make `isRoundComplete()` report on
-            // the fresh round and swallow this round's `RoundComplete` broadcast entirely. The
-            // round-complete path readies the AI itself, so either branch ends with a start sweep.
-            //
-            // Only a result *from* the current round can close it. Matches from later rounds run
-            // concurrently with it (eager starting), and letting one of those answer for the current
-            // round would re-report a round already closed — announcing stale results and clearing
-            // every player's game-session pointer, including seats mid-game.
             val resultRound = tournament.getRoundForMatch(gameSessionId)
-            val closesCurrentRound = resultRound != null &&
-                    resultRound.roundNumber == tournament.currentRound?.roundNumber
-            if (closesCurrentRound && tournament.isRoundComplete()) {
-                doHandleRoundComplete(lobbyId)
-            } else {
-                val lobby = ctx.lobbyRepository.findLobbyById(lobbyId)
-                if (lobby != null) {
-                    // Ready the AI, but not the human: they must click "Ready for Next Round" after
-                    // dismissing the game-over overlay, so the next game can't start underneath it.
-                    // The sweep inside also retries pairs this result just unblocked.
-                    autoReadyAiPlayers(lobby, tournament, autoReadyHumansVsAi = false)
-                    ctx.lobbyRepository.saveLobby(lobby)
-                }
-            }
-
-            // `MatchComplete` / `RoundComplete` make the client drop its ready list, and the readies
-            // that survive a round boundary would otherwise vanish from the lobby's counter. Re-state
-            // the authoritative set once everything above has settled.
-            ctx.lobbyRepository.findLobbyById(lobbyId)?.let { broadcastReadyStatus(it) }
+            val match = resultRound?.matches?.find { it.gameSessionId == gameSessionId }
+            afterMatchResult(lobbyId, resultRound, match)
         }
+    }
+
+    /**
+     * Everything a decided match sets in motion, once the result itself is recorded: announce it,
+     * persist the standings, re-advertise the active matches, close the round if this was its last
+     * game, and sweep for whatever that just unblocked.
+     *
+     * Shared by the played path ([handleMatchResult]) and the simulated one ([simulateMatch]) so a
+     * simulated result moves the bracket in exactly the same way a played one does — the only thing
+     * that differs about it is that no game was run. Assumes the per-lobby round lock is held.
+     */
+    private fun afterMatchResult(lobbyId: String, resultRound: TournamentRound?, match: TournamentMatch?) {
+        val tournament = ctx.lobbyRepository.findTournamentById(lobbyId) ?: return
+
+        if (resultRound != null && match != null) announceMatchComplete(lobbyId, resultRound, match)
+        // Persist the freshly-updated standings so profiles/dashboard show live results.
+        recordTournamentProgress(lobbyId)
+        spectatingHandler.broadcastActiveMatchesToWaitingPlayers(lobbyId)
+
+        // Test round completion *before* touching ready state: `autoReadyAiPlayers` prepares the
+        // next round when the current one is done, which would make `isRoundComplete()` report on
+        // the fresh round and swallow this round's `RoundComplete` broadcast entirely. The
+        // round-complete path readies the AI itself, so either branch ends with a start sweep.
+        //
+        // Only a result *from* the current round can close it. Matches from later rounds run
+        // concurrently with it (eager starting), and letting one of those answer for the current
+        // round would re-report a round already closed — announcing stale results and clearing
+        // every player's game-session pointer, including seats mid-game.
+        val closesCurrentRound = resultRound != null &&
+                resultRound.roundNumber == tournament.currentRound?.roundNumber
+        if (closesCurrentRound && tournament.isRoundComplete()) {
+            doHandleRoundComplete(lobbyId)
+        } else {
+            val lobby = ctx.lobbyRepository.findLobbyById(lobbyId)
+            if (lobby != null) {
+                // Ready the AI, but not the human: they must click "Ready for Next Round" after
+                // dismissing the game-over overlay, so the next game can't start underneath it.
+                // The sweep inside also retries pairs this result just unblocked.
+                autoReadyAiPlayers(lobby, tournament, autoReadyHumansVsAi = false)
+                ctx.lobbyRepository.saveLobby(lobby)
+            }
+        }
+
+        // `MatchComplete` / `RoundComplete` make the client drop its ready list, and the readies
+        // that survive a round boundary would otherwise vanish from the lobby's counter. Re-state
+        // the authoritative set once everything above has settled.
+        ctx.lobbyRepository.findLobbyById(lobbyId)?.let { broadcastReadyStatus(it) }
     }
 
     fun handleAbandon(lobbyId: String, playerId: EntityId) {
@@ -371,18 +396,21 @@ class TournamentMatchHandler(
         }
     }
 
-    private fun handleMatchComplete(lobbyId: String, gameSessionId: String) {
+    /**
+     * Tell the two seats of a decided match how the bracket now stands.
+     *
+     * Keyed by the match rather than by a game session id: a simulated match never had a session, and
+     * it still has to report itself the same way a played one does.
+     */
+    private fun announceMatchComplete(lobbyId: String, completedRound: TournamentRound, match: TournamentMatch) {
         val lobby = ctx.lobbyRepository.findLobbyById(lobbyId) ?: return
         val tournament = ctx.lobbyRepository.findTournamentById(lobbyId) ?: return
-
-        val completedRound = tournament.getRoundForMatch(gameSessionId) ?: return
 
         val connectedIds = lobby.players.values
             .filter { it.identity.isConnected }
             .map { it.identity.playerId }
             .toSet()
 
-        val match = completedRound.matches.find { it.gameSessionId == gameSessionId } ?: return
         val matchPlayerIds = listOfNotNull(match.player1Id, match.player2Id)
 
         for (playerId in matchPlayerIds) {
@@ -487,13 +515,53 @@ class TournamentMatchHandler(
      * ready, and `markPlayerReady` will never transition false→true for them a second time. Nothing
      * else would ever reconsider them, so every caller that changes the ready set *or* completes a
      * match runs this pass.
+     *
+     * Re-entrant by trampoline rather than by recursion. Reporting a result runs the sweep again (a
+     * finished match unblocks other pairs), and with simulated AI matches that result comes back
+     * *inside* this call — so an all-AI bracket resolves as one cascade and per-match recursion would
+     * nest one level per match, hundreds deep on a long schedule. A nested call therefore asks the
+     * outermost sweep for another pass and returns; the loop below re-queries the live ready set, so
+     * the deferred pass sees everything the nested one would have.
      */
     fun startReadyMatches(lobby: TournamentLobby, tournament: TournamentManager) {
+        val enclosing = activeSweep.get()
+        if (enclosing != null && enclosing.lobbyId == lobby.lobbyId) {
+            enclosing.again = true
+            return
+        }
+
+        val sweep = Sweep(lobby.lobbyId)
+        activeSweep.set(sweep)
+        try {
+            do {
+                sweep.again = false
+                sweepReadyMatches(lobby, tournament)
+            } while (sweep.again)
+        } finally {
+            activeSweep.set(enclosing)
+        }
+    }
+
+    /** One pass of [startReadyMatches]; never call directly — the trampoline owns the repetition. */
+    private fun sweepReadyMatches(lobby: TournamentLobby, tournament: TournamentManager) {
         forfeitUnseatedMatches(lobby, tournament)
 
         var startedAny = false
         for ((round, match) in tournament.startableMatches(lobby.getReadyPlayerIds())) {
             val player2Id = match.player2Id ?: continue
+
+            // The list above was snapshotted before anything in this loop ran, and simulating a match
+            // decides it on the spot — which re-enters this sweep through the result path (to open the
+            // next round, to re-ready the AI). A later entry can therefore already be decided or
+            // launched by the time we reach it; acting on it again would run the pair twice.
+            if (match.isComplete || match.gameSessionId != null) continue
+
+            if (shouldSimulate(lobby, match, player2Id)) {
+                simulateMatch(lobby, tournament, round, match, player2Id)
+                startedAny = true
+                continue
+            }
+
             logger.info(
                 "Both players ready, starting round ${round.roundNumber} match: " +
                     "${lobby.players[match.player1Id]?.identity?.playerName} vs " +
@@ -546,6 +614,72 @@ class TournamentMatchHandler(
         if (tournament.isRoundComplete()) {
             doHandleRoundComplete(lobby.lobbyId)
         }
+    }
+
+    /**
+     * Whether this match can be decided without playing it: the server has
+     * `game.tournament.simulate-ai-matches` on, and [AiMatchSimulator.shouldSimulate] agrees on the
+     * shape of the bracket.
+     *
+     * The cost this avoids is the point: a round-robin with one human and N AI seats schedules O(N²)
+     * matches and the human is in only N of them, so nearly every game the server runs is two AI
+     * controllers grinding out a result that reaches nobody but the standings table. See
+     * [AiMatchSimulator] for what "decide" means (a coin flip, deliberately).
+     */
+    private fun shouldSimulate(lobby: TournamentLobby, match: TournamentMatch, player2Id: EntityId): Boolean =
+        gameProperties.tournament.simulateAiMatches &&
+            aiMatchSimulator.shouldSimulate(
+                bracketSeats = lobby.players.keys,
+                aiSeats = aiSeats(lobby),
+                player1Id = match.player1Id,
+                player2Id = player2Id,
+            )
+
+    /**
+     * The lobby's AI seats. A seat counts as AI if either the live AI registry or its persisted
+     * identity says so. The two can disagree for a window after a restart — the registry is rebuilt by
+     * rehydration, the identity flag survives in the lobby — and an AI seat the registry hasn't
+     * re-wired yet is exactly the seat whose game would hang, so treating it as AI is also the safe
+     * reading.
+     */
+    private fun aiSeats(lobby: TournamentLobby): Set<EntityId> =
+        lobby.players.keys.filterTo(mutableSetOf()) { playerId ->
+            aiGameManager.isAiPlayer(playerId) || lobby.players[playerId]?.identity?.isAi == true
+        }
+
+    /**
+     * Decide an AI-vs-AI match without running a game, and report it exactly as a played one reports.
+     *
+     * Consuming both ready flags mirrors a real start: a flag is spent the moment the seat is put in a
+     * match, and [afterMatchResult] re-readies the AI for whatever comes next. Nothing else about the
+     * bracket knows the difference — the match keeps no `gameSessionId`, so it never shows up as
+     * something to spectate and has no replay, which is what [TournamentMatch.isSimulated] tells the
+     * standings to say.
+     */
+    private fun simulateMatch(
+        lobby: TournamentLobby,
+        tournament: TournamentManager,
+        round: TournamentRound,
+        match: TournamentMatch,
+        player2Id: EntityId,
+    ) {
+        val winnerId = aiMatchSimulator.pickWinner(match.player1Id, player2Id)
+        logger.info(
+            "Simulating round {} AI match in tournament {}: {} vs {} — winner {}",
+            round.roundNumber,
+            lobby.lobbyId,
+            lobby.players[match.player1Id]?.identity?.playerName,
+            lobby.players[player2Id]?.identity?.playerName,
+            lobby.players[winnerId]?.identity?.playerName,
+        )
+
+        tournament.reportSimulatedResult(match, winnerId)
+        lobby.clearPlayerReady(match.player1Id)
+        lobby.clearPlayerReady(player2Id)
+        ctx.lobbyRepository.saveTournament(lobby.lobbyId, tournament)
+        ctx.lobbyRepository.saveLobby(lobby)
+
+        afterMatchResult(lobby.lobbyId, round, match)
     }
 
     fun startSingleMatch(

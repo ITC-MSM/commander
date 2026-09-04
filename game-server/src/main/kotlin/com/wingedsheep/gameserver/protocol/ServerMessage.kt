@@ -745,7 +745,10 @@ sealed interface ServerMessage {
         val player2Id: String?,
         val winnerId: String?,
         val isDraw: Boolean = false,
-        val isBye: Boolean = false
+        val isBye: Boolean = false,
+        /** True when the result was simulated rather than played — an AI-vs-AI match on a server that
+         *  has `game.tournament.simulate-ai-matches` on. Such a match has no replay to open. */
+        val isSimulated: Boolean = false
     )
 
     /**

@@ -3143,6 +3143,15 @@
   border-radius: var(--radius-sm);
 }
 
+/* Badge on an AI-vs-AI result the server decided without playing the game. */
+.resultSimulated {
+  margin-left: 6px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
 /* =========================================================================
  * Fullscreen Button
  * ========================================================================= */
