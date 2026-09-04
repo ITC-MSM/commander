@@ -83,29 +83,36 @@ class UnattachedAurasCheck(
             val hostLeft = container.get<AttachmentHostLeftComponent>()
             if (hostLeft != null) {
                 newState = newState.updateEntity(entityId) { c -> c.without<AttachmentHostLeftComponent>() }
-                if (isAura) {
-                    val result = SbaZoneMovementHelper.putPermanentInGraveyard(
-                        newState, entityId, cardComponent,
-                        lastKnownAttachedTo = hostLeft.lastKnownHostId
-                    )
-                    newState = result.newState
-                    events.addAll(result.events)
-                } else {
-                    // CR 704.5n: an Equipment whose host left becomes unattached but stays on the
-                    // battlefield. Only force the unattach when it's still pointing at the host that
-                    // left (or is already unattached) — the marker exists for the blink case where the
-                    // host returns under the same EntityId. If an effect has *re-attached* it to a
-                    // different permanent in the meantime (e.g. Zack Fair attaches "an Equipment that
-                    // was attached to it" to another creature as it's sacrificed), leave that new
-                    // attachment in place; the legality checks below validate the new host instead.
-                    val current = container.get<AttachedToComponent>()
-                    if (current == null || current.targetId == hostLeft.lastKnownHostId) {
+                // Only act on the marker while the attachment is *still* pointing at the host that
+                // left (or is already unattached) — the marker exists for the blink case where the
+                // host returns under the same EntityId. If an effect has re-attached it to a
+                // different permanent in the meantime, both 704.5m and 704.5n are silent: the
+                // attachment is neither unattached nor (necessarily) illegally attached, so the
+                // ordinary legality checks below judge the *new* host instead. Two printed cards
+                // do exactly this inside one resolution — Zack Fair attaches "an Equipment that was
+                // attached to it" to another creature as it is sacrificed, and Breath of Fury
+                // sacrifices its own enchanted creature and attaches itself to another creature
+                // you control. Applying the marker blindly would put a legally-attached Aura into
+                // its owner's graveyard.
+                val current = container.get<AttachedToComponent>()
+                if (current == null || current.targetId == hostLeft.lastKnownHostId) {
+                    if (isAura) {
+                        // CR 704.5m: an Aura whose host left is put into its owner's graveyard.
+                        val result = SbaZoneMovementHelper.putPermanentInGraveyard(
+                            newState, entityId, cardComponent,
+                            lastKnownAttachedTo = hostLeft.lastKnownHostId
+                        )
+                        newState = result.newState
+                        events.addAll(result.events)
+                    } else {
+                        // CR 704.5n: an Equipment whose host left becomes unattached but stays on
+                        // the battlefield.
                         val (detached, unattachEvents) = unattachEmittingEvent(newState, entityId)
                         newState = detached
                         events.addAll(unattachEvents)
                     }
+                    continue
                 }
-                continue
             }
 
             val attachedTo = container.get<AttachedToComponent>()
