@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.hidden
 
+import com.wingedsheep.engine.core.CardEntityFactory
 import com.wingedsheep.engine.core.CardsSelectedResponse
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.ChooseOptionDecision
@@ -14,6 +15,7 @@ import com.wingedsheep.engine.core.SubmitDecision
 import com.wingedsheep.engine.core.PlayLand
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.LastKnownPermanentComponent
@@ -64,6 +66,64 @@ class HiddenWorldMaterializerTest : ScenarioTestBase() {
 
     init {
         cardRegistry.register(chooseThenShuffle)
+
+        test("zone membership retains multiplicity and sorted refusal order") {
+            val game = scenario().withPlayers()
+                .withCardInLibrary(2, "Forest").withCardInLibrary(2, "Mountain")
+                .withCardInLibrary(2, "Swamp")
+                .build()
+            val ids = game.state.getLibrary(game.player2Id).sortedBy { it.value }
+            val first = ids.first()
+            val later = ids.last()
+            val source = game.state.updateEntity(later) {
+                it.with(RevealedToComponent.to(game.player1Id))
+            }
+            val library = ZoneKey(game.player2Id, Zone.LIBRARY)
+            val hand = ZoneKey(game.player2Id, Zone.HAND)
+            val battlefield = ZoneKey(game.player2Id, Zone.BATTLEFIELD)
+            val withoutFirst = source.zones.mapValues { (_, cards) -> cards.filterNot { it == first } }
+            val cases = listOf(
+                withoutFirst to "entity is not in a zone",
+                (source.zones + (library to (source.zones.getValue(library) + first))) to
+                    "entity occurs in zones 2 times",
+                (source.zones + (hand to listOf(first))) to "entity occurs in zones 2 times",
+                (withoutFirst + (battlefield to listOf(first))) to
+                    "supported slots are HAND/LIBRARY; found BATTLEFIELD",
+            )
+            for ((zones, expectedDetail) in cases) {
+                val malformed = source.copy(zones = zones)
+                val result = materializer.materialize(
+                    malformed,
+                    HiddenWorldMaterializationRequest(
+                        // Insertion order opposes the required sorted failure order. The later
+                        // slot also fails, but its runtime-state refusal must not take precedence.
+                        ids.reversed().associateWith { cardRegistry.requireCard("Island") },
+                        GameRng.seeded(901L),
+                    ),
+                ).shouldBeInstanceOf<HiddenWorldMaterializationResult.Unsupported>()
+                withClue(expectedDetail) {
+                    result.reason.kind shouldBe UnsupportedHiddenWorldKind.INVALID_ASSIGNMENT
+                    result.reason.entityId shouldBe first
+                    result.reason.details shouldBe listOf(expectedDetail)
+                    materializer.materialize(
+                        malformed,
+                        HiddenWorldMaterializationRequest(
+                            mapOf(first to cardRegistry.requireCard("Island")),
+                            GameRng.seeded(901L),
+                        ),
+                    ) shouldBe result
+                    materializer.materialize(
+                        malformed,
+                        HiddenWorldMaterializationRequest(
+                            linkedMapOf(later to cardRegistry.requireCard("Island"), first to cardRegistry.requireCard("Island")),
+                            GameRng.seeded(901L),
+                        ),
+                    ) shouldBe result
+                    malformed.entities shouldBe source.entities
+                    malformed.rng shouldBe source.rng
+                }
+            }
+        }
 
         test("a Monstrous Emergence hand choice is pinned by the live stack object") {
             val game = scenario()
@@ -123,6 +183,7 @@ class HiddenWorldMaterializerTest : ScenarioTestBase() {
             val assignedIds = listOf(hiddenHandId) + hiddenLibraryIds
             val source = game.state
                 .copy(lastCardDrawnThisTurnByPlayer = mapOf(game.player2Id to hiddenHandId))
+            val sourceEntities = source.entities.toMap()
             val futureRng = GameRng.seeded(202L)
 
             val result = materializer.materialize(
@@ -144,6 +205,10 @@ class HiddenWorldMaterializerTest : ScenarioTestBase() {
             world.zones shouldBe source.zones
             world.lastCardDrawnThisTurnByPlayer shouldBe mapOf(game.player2Id to hiddenHandId)
             cardName(world, hiddenHandId) shouldBe "Fiery Temper"
+            world.getEntity(hiddenHandId)?.get<CardComponent>()?.cardDefinitionId shouldBe
+                CardEntityFactory.create(cardRegistry.requireCard("Fiery Temper"), game.player2Id)
+                    .require<CardComponent>().cardDefinitionId
+            world.getEntity(hiddenHandId)?.get<ControllerComponent>() shouldBe ControllerComponent(game.player2Id)
             cardName(world, hiddenLibraryIds[0]) shouldBe "Mountain"
             cardName(world, hiddenLibraryIds[1]) shouldBe "Island"
             withClue("definition-derived components are rebuilt for the assigned identity") {
@@ -159,7 +224,92 @@ class HiddenWorldMaterializerTest : ScenarioTestBase() {
             }
             withClue("materialization is purely functional") {
                 game.state.getEntity(hiddenHandId)?.get<CardComponent>()?.name shouldBe "Grizzly Bears"
+                source.entities shouldBe sourceEntities
+                world.entities.keys.toList() shouldBe source.entities.keys.toList()
+                val retainedEntities = world.entities.toMap()
+                materializer.materialize(
+                    world,
+                    HiddenWorldMaterializationRequest(
+                        assignedIds.associateWith { cardRegistry.requireCard("Swamp") },
+                        GameRng.seeded(203L),
+                    ),
+                ).shouldBeInstanceOf<HiddenWorldMaterializationResult.Materialized>()
+                world.entities shouldBe retainedEntities
             }
+        }
+
+        test("a refusal after a valid slot leaves the entire input world unchanged") {
+            val game = scenario().withPlayers()
+                .withCardInLibrary(2, "Forest").withCardInLibrary(2, "Mountain")
+                .build()
+            val ids = game.state.getLibrary(game.player2Id).sortedBy { it.value }
+            val source = game.state.updateEntity(ids.last()) {
+                it.with(RevealedToComponent.to(game.player1Id))
+            }
+            val originalEntities = source.entities.toMap()
+            val originalRng = source.rng
+            val result = materializer.materialize(
+                source,
+                HiddenWorldMaterializationRequest(
+                    ids.associateWith { cardRegistry.requireCard("Island") },
+                    GameRng.seeded(204L),
+                ),
+            ).shouldBeInstanceOf<HiddenWorldMaterializationResult.Unsupported>()
+
+            result.reason.kind shouldBe UnsupportedHiddenWorldKind.RUNTIME_STATE
+            result.reason.entityId shouldBe ids.last()
+            source.entities shouldBe originalEntities
+            source.rng shouldBe originalRng
+        }
+
+        test("repeated source definitions retain owner-specific validation and per-slot blockers") {
+            val game = scenario().withPlayers()
+                .withCardInHand(1, "Grizzly Bears")
+                .withCardInLibrary(1, "Grizzly Bears")
+                .withCardInHand(2, "Grizzly Bears")
+                .build()
+            val source = game.state
+            val slots = source.turnOrder.flatMap { source.getHand(it) + source.getLibrary(it) }
+            val request = HiddenWorldMaterializationRequest(
+                slots.associateWith { cardRegistry.requireCard("Forest") }, GameRng.seeded(321L),
+            )
+            val world = materializer.materialize(source, request)
+                .shouldBeInstanceOf<HiddenWorldMaterializationResult.Materialized>().state
+            for (id in slots) {
+                world.getEntity(id)!!.require<CardComponent>().ownerId shouldBe
+                    source.getEntity(id)!!.require<CardComponent>().ownerId
+            }
+
+            val blockedId = (source.getHand(game.player1Id) + source.getLibrary(game.player1Id))
+                .maxBy { it.value }
+            val blocked = source.updateEntity(blockedId) { it.with(RevealedToComponent.to(game.player2Id)) }
+            val originalEntities = blocked.entities.toMap()
+            val result = materializer.materialize(blocked, request)
+                .shouldBeInstanceOf<HiddenWorldMaterializationResult.Unsupported>()
+            result.reason.kind shouldBe UnsupportedHiddenWorldKind.RUNTIME_STATE
+            result.reason.entityId shouldBe blockedId
+            result.reason.details shouldBe listOf("RevealedToComponent")
+            blocked.entities shouldBe originalEntities
+            blocked.rng shouldBe source.rng
+        }
+
+        test("source validation observes registry changes between materialization requests") {
+            val game = scenario().withPlayers().withCardInHand(2, "Fiery Temper").build()
+            val registry = CardRegistry(cardRegistry)
+            val localMaterializer = HiddenWorldMaterializer(registry)
+            val id = game.state.getHand(game.player2Id).single()
+            val request = HiddenWorldMaterializationRequest(
+                mapOf(id to cardRegistry.requireCard("Forest")), GameRng.seeded(322L),
+            )
+            localMaterializer.materialize(game.state, request)
+                .shouldBeInstanceOf<HiddenWorldMaterializationResult.Materialized>()
+
+            registry.register(cardRegistry.requireCard("Fiery Temper").copy(keywordAbilities = emptyList()))
+            val result = localMaterializer.materialize(game.state, request)
+                .shouldBeInstanceOf<HiddenWorldMaterializationResult.Unsupported>()
+            result.reason.kind shouldBe UnsupportedHiddenWorldKind.RUNTIME_STATE
+            result.reason.entityId shouldBe id
+            result.reason.details shouldBe listOf("MadnessComponent")
         }
 
         test("caller-generated assignments are reproducible and do not consume source randomness") {
@@ -417,6 +567,7 @@ class HiddenWorldMaterializerTest : ScenarioTestBase() {
             ).shouldBeInstanceOf<HiddenWorldMaterializationResult.Materialized>().state
 
             world shouldBe source.copy(rng = futureRng)
+            (world.entities === source.entities) shouldBe true
         }
 
         test("a paused continuation consumes the caller RNG only when its later shuffle executes") {
@@ -524,6 +675,10 @@ class HiddenWorldMaterializerTest : ScenarioTestBase() {
 
             result.reason.kind shouldBe UnsupportedHiddenWorldKind.IN_FLIGHT_REFERENCES
             result.reason.entityId shouldBe null
+            rejectingMaterializer.materialize(
+                source,
+                HiddenWorldMaterializationRequest(emptyMap(), GameRng.seeded(619L)),
+            ) shouldBe result
             result.reason.details shouldContain "could not traverse pending decision test: forced"
             cardName(source, handId) shouldBe "Grizzly Bears"
             cardName(source, libraryId) shouldBe "Forest"

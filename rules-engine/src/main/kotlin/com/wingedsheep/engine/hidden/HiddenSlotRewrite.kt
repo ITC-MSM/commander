@@ -125,14 +125,15 @@ object HiddenSlotRewrite {
         container: ComponentContainer,
         currentDefinition: CardDefinition,
         ownerId: EntityId,
-    ): List<String> {
-        val expectedByType = CardEntityFactory.create(currentDefinition, ownerId)
-            .all()
-            .associateBy { it::class.java }
+    ): List<String> = runtimeBlockers(container, CardEntityFactory.create(currentDefinition, ownerId))
+
+    /** Reuse a factory-built expectation while still checking each source container separately. */
+    internal fun runtimeBlockers(container: ComponentContainer, expected: ComponentContainer): List<String> {
         return container.all()
-            .filterNot { it is CardComponent }
-            .filter { component -> expectedByType[component::class.java] != component }
-            .map { component -> component::class.simpleName ?: component::class.java.name }
+            .mapNotNull { component ->
+                if (component is CardComponent || expected.components[component::class.java] == component) null
+                else component::class.simpleName ?: component::class.java.name
+            }
             .sorted()
     }
 
@@ -154,10 +155,22 @@ object HiddenSlotRewrite {
         ownerId: EntityId,
     ): GameState {
         val source = state.getEntity(entityId) ?: return state
-        val rebuilt = CardEntityFactory.create(definition, ownerId)
-        val withController = source.get<ControllerComponent>()
+        return state.withEntity(entityId, rewrite(source, definition, ownerId))
+    }
+
+    /**
+     * The container-only form lets callers batch several rewrites into one entity-map copy.
+     * As with the state form, callers must first clear [runtimeBlockers] for the source slot.
+     */
+    fun rewrite(
+        source: ComponentContainer,
+        definition: CardDefinition,
+        ownerId: EntityId,
+    ): ComponentContainer = rewrite(source, CardEntityFactory.create(definition, ownerId))
+
+    /** Reuse a factory container already built and validated by the materializer. */
+    internal fun rewrite(source: ComponentContainer, rebuilt: ComponentContainer): ComponentContainer =
+        source.get<ControllerComponent>()
             ?.let { rebuilt.with(it) }
             ?: rebuilt.without<ControllerComponent>()
-        return state.withEntity(entityId, withController)
-    }
 }
