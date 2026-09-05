@@ -1368,7 +1368,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 ### Linked exile & play-from-exile permissions
 
 - `ReturnLinkedExile()` — return all from source's linked exile, under controller.
-- `ReturnLinkedExileUnderOwnersControl()` — return under each card's owner.
+- `ReturnLinkedExileUnderOwnersControl()` — return under each card's owner. `CardSource.FromLinkedExile()` and `linkToSource` pipeline moves retain the resolving ability's original battlefield source visit: a source that blinks gets a new pile, while its old return trigger reads the departed visit's pile. A token source may cease to exist before that trigger resolves. Leaving exile invalidates the old link even if the same card later returns to exile.
 - `ReturnLinkedExileToHand()` — return all from linked exile to hand.
 - `ReturnLinkedExileToZoneExiledFrom()` — return each linked-exiled card to **the zone it was exiled from** (CR 610.3 "this second one-shot effect returns the object to its previous zone"), under its owner's control when that zone is the battlefield (CR 610.3c). For an exile-until clause whose exile half can reach more than one zone: **Cloak and Dagger, Entwined** exiles either a nonland card from an opponent's *hand* or the chosen creature from the *battlefield*, and one leaves-the-battlefield trigger puts each back where it belongs. Built on `CardDestination.ToZoneExiledFrom` (below); prefer the fixed-destination siblings when the card names one zone explicitly. Recorded origins are honoured as-is (battlefield, hand, graveyard, library, command zone, sideboard), with two special cases: a card recorded as exiled from the **stack**, or with no recorded origin at all, falls back to the battlefield, and a card exiled **from exile** (CR 406.7) stays put.
 - `ReturnOneFromLinkedExile()` — return one chosen card.
@@ -2199,6 +2199,10 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   attacked instead (Tolsimir, Midnight's Light: "blocks **that Wolf** this combat if able"). A requirement, not a guarantee (CR 509.1c): a tapped creature, one
   that can't block, or one whose every block would be illegal is excused, and its controller is
   never forced to pay a cost associated with blocking. Used by Culvert Ambusher (MKM).
+- `Effects.ForceBlock(blocker, attacker)` also accepts two spell targets (Hunt Down, LRW).
+  The blocker is checked using projected creature types, including animated lands and artifacts.
+  The end-of-turn requirement is removed when either permanent leaves the battlefield; returning
+  that card does not restore the old requirement.
 - `Effects.SkipNextTurn(target = Controller, count = Fixed(1))` (`SkipNextTurnEffect`) — target skips their next `count` turns. `count` is a `DynamicAmount`, so it can read a pipeline value (e.g. a coin-flip tally via `DynamicAmount.VariableReference`). Skips accumulate on a `SkipNextTurnComponent(turns)`, decremented one turn per the player's turn-start; a resolved count of 0 is a no-op. Used by Lethal Vapors (one turn) and **Ral Zarek, Guest Lecturer** (skip N turns where N = heads).
 - `Effects.FlipCoins(count, storeHeadsAs = "heads")` (`FlipCoinsEffect`) — flip `count` coins and store the number of heads under `storeHeadsAs` in the pipeline (`storedNumbers`) so a later sub-effect in the same composite can scale off it via `DynamicAmount.VariableReference`. The general "flip N coins, count heads" primitive (CR 705); unlike `FlipCoinEffect` (branch on win/lose) and `FlipTwoCoinsEffect` (branch on combined outcome) it only tallies. Each flip emits a `CoinFlipEvent`. **Ral Zarek, Guest Lecturer**'s ultimate composes `FlipCoins(5, "heads")` then `SkipNextTurn(target, count = VariableReference("heads"))`.
 - `Effects.FlipCoinsUntilLoss(storeWinsAs = "wins")` (`FlipCoinsUntilLossEffect`) — `FlipCoins`'s open-ended sibling: flip one coin at a time until the flipper *loses* a flip or answers "stop flipping", then store how many flips they won under `storeWinsAs`. The run length is discovered rather than given, and the order within an iteration is flip → check → ask, so the stop question only ever follows a *won* flip ("after each flip, you choose whether to continue flipping"). Losing the first flip stores 0, and since an unread pipeline number reads as 0, a card gating payoffs on "if you win one or more flips" needs no separate "this has no effect" branch — that sentence *is* the absence of every payoff. Deliberately **not** a `RepeatWhile` over `FlipCoinEffect`: a repeat condition is asked unconditionally after each body (so it can't stop *because* a flip was lost) and the repeat loop restarts each iteration from the pristine pre-loop context (so a running tally couldn't survive the prompt). The tally rides `FlipCoinsUntilLossContinuation` instead and is published once, when the run ends. Unlike `FlipCoins`, where the whole batch is one flip event, each coin here is its own flip — so a "the first time you flip one or more coins each turn" replacement (Edgar, King of Figaro) covers only the first coin. Bounded by `GameLimits.MAX_COIN_FLIPS_PER_EFFECT` as a backstop against a forced-win static plus an always-continue automated answer. **Fiery Gambit** composes `FlipCoinsUntilLoss("fieryGambitWins")` with three cumulative `Gate.WhenCondition(Compare(VariableReference("fieryGambitWins"), GTE, Fixed(n)))` tiers.
@@ -3262,10 +3266,14 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
 - `rummage(count?)` — discard then draw.
 - `connive(target?)` — draw 1, discard 1, then put a +1/+1 counter on `target` (default Self) if the discard was a nonland (CR 701.50). Also exposed as `Effects.Connive(target)`. Returns the pipeline wrapped in `ConniveEffect(subject = target, body = …)`: the wrapper names the keyword action and its subject, which is what lets `ModifyKeywordAction` replace it and what makes it emit `PermanentConnivedEvent` (CR 701.50f). The pipeline itself is unchanged.
 - `conniveTargeting(requirement, storeAs?)` — connive whose +1/+1 counter lands on a *reflexively chosen* target: "draw a card, then discard a card. When you discard a nonland card this way, put a +1/+1 counter on target creature you control" (Teo, Spirited Glider). The recipient is selected at resolution via `SelectTargetEffect` *inside* the nonland gate — so the player never chooses up front or when the discard is a land. Pass the recipient's `TargetRequirement` (e.g. `Targets.CreatureYouControl`); do **not** also declare it as a cast-time `target(...)`. Exposed as `Effects.ConniveTargeting(requirement)`. Deliberately **not** wrapped in `ConniveEffect` — Teo's printed text spells the looting out and never says "connive", so it is not the keyword action: it fires no connive triggers and is not touched by "if a creature you control would connive" replacements.
-- `Patterns.Mechanic.clash(ifYouWin, otherwise?)` — **Clash** (CR 701.30, Lorwyn), and the only clash
-  spelling a card should author. It is the whole printed template, not just the keyword action:
-  *"Clash with an opponent. If you win, [ifYouWin]."*, with `otherwise` for the one card that prints
-  an "Otherwise, …" half (Captivating Glance). Composed from three existing pieces —
+- `Patterns.Mechanic.clash()` — the clash procedure without an immediate win rider. It chooses
+  the opponent and runs the shared reveal/top-or-bottom procedure, replacing `CLASH_WON` with the
+  winning revealed card or an empty collection every time. Use it inside `Effects.RepeatWhile`
+  with `RepeatCondition.WhileCondition(Conditions.CollectionContainsMatch(CLASH_WON))` for
+  Hoarder's Greed's mandatory repeat-on-win loop; do not add a consent question between iterations.
+- `Patterns.Mechanic.clash(ifYouWin, otherwise?)` — **Clash** (CR 701.30, Lorwyn) with a win rider:
+  *"Clash with an opponent. If you win, [ifYouWin]."*, with `otherwise` for a nonwinning branch
+  (Captivating Glance or Whirlpool Whelm). Composed from three existing pieces —
   `ChooseOpponentForSourceEffect` (clash *chooses* an opponent, CR 701.30b; forced and promptless
   with a single opponent, and the durable `OPPONENT` slot is what keeps the same player revealing
   *and* deciding, which a bare `Chooser.Opponent` would not), then `ClashEffect`, wrapped in a
@@ -4823,7 +4831,12 @@ work for abilities-on-stack (which carry no `CardComponent`).
   against `PredicateContext.sourceId`; inert with no source / unattached source, and never matches in
   group-static projection or trigger-gating contexts (no source there).
 - `IsSource` (filter builder `sourceItself()`) — source-relative: matches only the effect's source
-  permanent itself (`PredicateContext.sourceId == candidate`). The `GameObjectFilter` counterpart of
+  permanent itself. During ability resolution it also matches the captured battlefield visit, so a
+  card that left and returned is not the old source. Consequently `notSourceItself()` allows that
+  returned card when an old ability chooses "another" permanent. `Effects.SacrificeTarget(EffectTarget.Self)` likewise
+  ignores a returned source rather than sacrificing its new visit. Source references are checked
+  when the ability begins resolving; an effect can still return its own source and then modify it.
+  The `GameObjectFilter` counterpart of
   `GroupFilter`'s `Scope.Self` — use it to scope a filter-carrying static ability to the very
   permanent that carries it. Backs the granted form of `PreventActivatedAbilities`: a permanent
   granted `PreventActivatedAbilities(GameObjectFilter.Permanent.sourceItself())` has *its own*

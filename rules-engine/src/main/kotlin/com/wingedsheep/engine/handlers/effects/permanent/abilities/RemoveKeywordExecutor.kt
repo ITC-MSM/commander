@@ -32,6 +32,8 @@ class RemoveKeywordExecutor : EffectExecutor<RemoveKeywordEffect> {
         effect: RemoveKeywordEffect,
         context: EffectContext
     ): EffectResult {
+        if (context.isUnavailableBattlefieldSource(effect.target, state)) return EffectResult.success(state)
+
         // The two-arg overload is required: the one-arg form can't resolve attachment-relative
         // targets (EffectTarget.AttachedTo and friends).
         val targetId = context.resolveTarget(effect.target, state)

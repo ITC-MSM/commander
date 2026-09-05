@@ -32,6 +32,7 @@ val MerrowHarbinger = card("Merrow Harbinger") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
+        optional = true
         effect = Patterns.Library.searchLibrary(
             filter = GameObjectFilter.Any.withSubtype(Subtype.MERFOLK),
             count = 1,

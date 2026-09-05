@@ -20,7 +20,6 @@ import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
-import com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.sdk.core.Zone
@@ -149,15 +148,8 @@ class MoveToZoneEffectExecutor(
 
         // Link exiled card to source permanent via LinkedExileComponent
         if (effect.linkToSource && effect.destination == Zone.EXILE) {
-            val sourceId = context.sourceId
-                ?: return EffectResult.success(resultState, transitionResult.events + extraEvents)
-            val sourceContainer = resultState.getEntity(sourceId)
-                ?: return EffectResult.success(resultState, transitionResult.events + extraEvents)
-            val existingLinked = sourceContainer.get<LinkedExileComponent>()
-            val allExiled = (existingLinked?.exiledIds ?: emptyList()) + listOf(targetId)
-            resultState = resultState.updateEntity(sourceId) { c ->
-                c.with(LinkedExileComponent(allExiled))
-            }
+            resultState = com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExileLookup
+                .link(resultState, context, listOf(targetId))
         }
 
         // Auto-reveal: when a card moves from a publicly visible zone (graveyard/exile)

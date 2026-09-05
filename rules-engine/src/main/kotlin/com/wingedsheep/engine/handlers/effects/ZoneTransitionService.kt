@@ -344,6 +344,7 @@ object ZoneTransitionService {
         val lastKnownSnapshot = if (leavingBattlefield) {
             com.wingedsheep.engine.state.components.stack.EntitySnapshot(
                 entityId = entityId,
+                battlefieldEntryTimestamp = container.get<BattlefieldEntryTimestampComponent>()?.timestamp,
                 power = lastKnownPower,
                 toughness = lastKnownToughness,
                 // Mirror the projected type line's subtypes into the snapshot's own `subtypes`
@@ -517,6 +518,11 @@ object ZoneTransitionService {
             // until then, graveyard/exile instances need the component for last-known-info triggers.
             val preStripLinkedExile = newState.getEntity(entityId)
                 ?.get<com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent>()
+            val departedTimestamp = lastKnownSnapshot?.battlefieldEntryTimestamp
+            if (departedTimestamp != null && !preStripLinkedExile?.exiledIds.isNullOrEmpty()) {
+                newState = newState.copy(departedLinkedExile = newState.departedLinkedExile +
+                    (departedTimestamp to preStripLinkedExile.exiledIds))
+            }
             // Same last-known-info preservation for the noted-exile snapshot (Tawnos's Coffin):
             // its "return the exiled card with the noted counters" LTB trigger reads it after the
             // source has left.
@@ -740,6 +746,8 @@ object ZoneTransitionService {
                 // The former ~16 lastKnown* scalars are now the snapshot's fields; the counter
                 // counts derive from its `counters` map (plusOnePlusOneCounters / etc.).
                 lastKnown = lastKnownSnapshot,
+                enteredBattlefieldTimestamp = if (actualDestZone == Zone.BATTLEFIELD)
+                    newState.getEntity(entityId)?.get<BattlefieldEntryTimestampComponent>()?.timestamp else null,
                 xValue = lastKnownCastX,
                 wasSacrificed = wasSacrificed,
                 // Only a battlefield exit can be a craft-material exile; the flag is carried on the

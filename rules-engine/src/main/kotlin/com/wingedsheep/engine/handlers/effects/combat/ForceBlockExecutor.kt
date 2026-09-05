@@ -7,7 +7,6 @@ import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.addFloatingEffect
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.effects.ForceBlockEffect
 import kotlin.reflect.KClass
@@ -35,11 +34,7 @@ class ForceBlockExecutor : EffectExecutor<ForceBlockEffect> {
         val targetId = context.resolveTarget(effect.target)
             ?: return EffectResult.error(state, "No valid target for force block effect")
 
-        val targetContainer = state.getEntity(targetId)
-            ?: return EffectResult.error(state, "Target creature no longer exists")
-        val cardComponent = targetContainer.get<CardComponent>()
-            ?: return EffectResult.error(state, "Target is not a card")
-        if (!cardComponent.typeLine.isCreature) {
+        if (!state.projectedState.isCreature(targetId)) {
             return EffectResult.error(state, "Target is not a creature")
         }
 

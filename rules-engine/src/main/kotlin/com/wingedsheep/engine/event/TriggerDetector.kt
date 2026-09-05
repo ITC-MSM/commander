@@ -425,7 +425,12 @@ class TriggerDetector(
         triggers: List<PendingTrigger>
     ): List<PendingTrigger> {
         val cursor = HashMap<Pair<EntityId, com.wingedsheep.sdk.scripting.AbilityId>, Int>()
-        return triggers.map { trigger ->
+        return triggers.map { unstamped ->
+            val trigger = unstamped.copy(sourceBattlefieldTimestamp = unstamped.sourceBattlefieldTimestamp
+                ?: unstamped.triggerContext.triggeringBattlefieldTimestamp
+                    ?.takeIf { unstamped.triggerContext.triggeringEntityId == unstamped.sourceId }
+                ?: state.getEntity(unstamped.sourceId)
+                    ?.get<com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent>()?.timestamp)
             val granters = abilityResolver.resolveGranterIds(state, trigger.sourceId, trigger.ability.id)
             if (granters.isEmpty()) return@map trigger
             val key = trigger.sourceId to trigger.ability.id

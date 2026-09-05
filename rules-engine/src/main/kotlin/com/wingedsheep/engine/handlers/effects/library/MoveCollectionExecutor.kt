@@ -299,15 +299,8 @@ class MoveCollectionExecutor(
         context: EffectContext,
         cards: List<EntityId>
     ): EffectResult {
-        val sourceId = context.sourceId ?: return result
-        var newState = result.state
-        val sourceContainer = newState.getEntity(sourceId) ?: return result
-        val existingLinked = sourceContainer.get<com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent>()
-        val allExiled = (existingLinked?.exiledIds ?: emptyList()) + cards
-        newState = newState.updateEntity(sourceId) { c ->
-            c.with(com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent(allExiled))
-        }
-        return EffectResult.success(newState, result.events)
+        return result.copy(state = com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExileLookup
+            .link(result.state, context, cards))
     }
 
     /**

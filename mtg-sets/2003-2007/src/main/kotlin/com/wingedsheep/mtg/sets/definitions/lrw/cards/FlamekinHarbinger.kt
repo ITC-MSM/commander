@@ -27,6 +27,7 @@ val FlamekinHarbinger = card("Flamekin Harbinger") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
+        optional = true
         effect = Patterns.Library.searchLibrary(
             filter = GameObjectFilter.Any.withSubtype(Subtype.ELEMENTAL),
             count = 1,

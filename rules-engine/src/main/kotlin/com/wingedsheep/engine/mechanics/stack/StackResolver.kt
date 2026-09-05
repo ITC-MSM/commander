@@ -1033,7 +1033,9 @@ class StackResolver(
                     null, // Was on stack
                     Zone.BATTLEFIELD,
                     cardComponent?.ownerId ?: spellComponent.casterId,
-                    xValue = spellComponent.xValue
+                    xValue = spellComponent.xValue,
+                    enteredBattlefieldTimestamp = newState.getEntity(spellId)
+                        ?.get<com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent>()?.timestamp
                 )
             )
         } else {
@@ -2788,7 +2790,7 @@ class StackResolver(
             abilityComponent,
             targets = resolvedTargets2,
             targetRequirements = targetReqs
-        )
+        ).forAbilityResolution(state)
 
         // CR 608.2a, then CR 608.2b — in that lettered order. 608.2a: "If a triggered ability has
         // an intervening 'if' clause, it checks whether the clause's condition is true. If it
@@ -2955,6 +2957,7 @@ class StackResolver(
             abilityIdentity = abilityComponent.abilityIdentity,
             activatedAbility = abilityComponent.activatedAbility,
             sourceFaceChanges = abilityComponent.sourceFaceChanges,
+            sourceBattlefieldTimestamp = abilityComponent.sourceBattlefieldTimestamp,
             targets = activatedTargets,
             alignedTargets = alignedActivatedTargets,
             sacrificedPermanents = abilityComponent.sacrificedPermanents,
@@ -2975,7 +2978,7 @@ class StackResolver(
                     ?.let { mapOf(ChooseCreatureTypePipelineExecutor.CHOSEN_CREATURE_TYPE_KEY to it) }
                     ?: emptyMap()
             )
-        )
+        ).forAbilityResolution(state)
 
         val effectResult = effectHandler.execute(state, abilityComponent.effect, context)
 
