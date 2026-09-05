@@ -58,8 +58,7 @@ HTTP 200 checks, and canonical-printing checks passed. Source completeness is 24
 
 The full gate completed with one unrelated 120-second timeout in AbattoirGhoulScenarioTest;
 all eight new scenarios passed. After user authorization to continue, that test passed in
-isolation without code changes (1m 16s, 43 tasks). A full retry is running; no successful full
-retry is claimed yet. The fresh Assay differential covers 243 canonicals: 111 compared,
+isolation without code changes (1m 16s, 43 tasks). The full `just test` retry passed (1m 21s, 106 tasks). The fresh Assay differential covers 243 canonicals: 111 compared,
 108 agree, the same three previously verified equivalent static folds, 130 declined, and two
 failed to fold. Neither new card is covered by the grammar.
 
