@@ -300,7 +300,7 @@ Cards: Vivid Crag, Vivid Creek, Vivid Grove, Vivid Marsh, Vivid Meadow
 
 Require a creature to block another, require all able creatures to block an attacker, or permit a blocker to block additional attackers. Requirements must be evaluated with restrictions.
 
-**Engine support:** Partial: [Lairwatch Giant](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/LairwatchGiant.kt) demonstrates extra blocking; Nath's Elite now uses `MustBeBlocked(allCreatures = true)`. Hunt Down remains unauthored. Check the existing combat-requirement atoms against the specified blocker/attacker relationship and multiple simultaneous requirements before declaring those templates supported.
+**Engine support:** Partial: [Lairwatch Giant](../../../mtg-sets/2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/lrw/cards/LairwatchGiant.kt) demonstrates extra blocking; Nath's Elite now uses `MustBeBlocked(allCreatures = true)`. Hunt Down uses `ForceBlock` with two spell targets. Its scenarios cover projected animated lands, impossible blocks, partially illegal targets, both creatures leaving and returning, and end-of-turn expiry. Multiple simultaneous requirements still need the broader mechanic audit before declaring every template supported.
 
 Cards: Hunt Down, Lairwatch Giant, Nath's Elite, Thoughtweft Trio
 

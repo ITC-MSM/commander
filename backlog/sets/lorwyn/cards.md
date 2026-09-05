@@ -2,14 +2,14 @@
 
 **Set Size:** 286 cards
 **Release Date:** October 12, 2007
-**Implemented:** 250 / 286
+**Implemented:** 251 / 286
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 49    | 43   |
 | Blue       | 49    | 39   |
 | Black      | 49    | 42   |
 | Red        | 49    | 42   |
-| Green      | 49    | 40   |
+| Green      | 49    | 41   |
 | Multicolor | 8     | 7    |
 | Artifact   | 12    | 11   |
 | Land       | 21    | 16   |
@@ -244,7 +244,7 @@
 - [x] Gilt-Leaf Seer
 - [x] Guardian of Cloverdell
 - [x] Heal the Scars
-- [ ] Hunt Down
+- [x] Hunt Down
 - [x] Immaculate Magistrate
 - [x] Imperious Perfect
 - [x] Incremental Growth

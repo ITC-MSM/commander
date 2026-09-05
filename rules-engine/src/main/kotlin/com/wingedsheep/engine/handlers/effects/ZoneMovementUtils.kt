@@ -326,6 +326,12 @@ object ZoneMovementUtils {
      */
     fun removeFloatingEffectsTargeting(state: GameState, entityId: EntityId): GameState {
         val updatedEffects = state.floatingEffects.mapNotNull { floatingEffect ->
+            val modification = floatingEffect.effect.modification
+            // The named attacker is a permanent reference too: a returned card is a new object.
+            if (modification is SerializableModification.MustBlockSpecificAttacker &&
+                modification.attackerId == entityId) {
+                return@mapNotNull null
+            }
             if (entityId !in floatingEffect.effect.affectedEntities) {
                 floatingEffect
             } else {

@@ -46,3 +46,9 @@ Fresh differential: 244 canonical cards, 111 compared, 108 agree, 131 declined, 
 fold. The same three equivalent static folds are the only divergences; existing goldens remain
 unchanged. The new card is declined and the draftability probe emits SCAFFOLD. Its three
 scenarios pass, including the clash reward on all four tokens created with Doubling Season.
+
+
+After Hunt Down: 245 canonical cards, 111 compared, 108 agreed, the same three equivalent folds,
+132 declined, and two failed to fold. Hunt Down is declined. Expanding composite static abilities
+and distributing their conditions again matches all three divergent scripts; Epic Proportions
+also differs only in the unused Aura target label. No existing golden entry changed.

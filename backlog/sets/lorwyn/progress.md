@@ -21,7 +21,7 @@ This branch tracks completion of Lorwyn and the engine capabilities its cards re
 
 ## Work in progress
 
-Ten new cards are implemented: Bog Hoodlums, Nath's Elite, Fistful of Force, Spring Cleaning, Woodland Guidance, Sentry Oak, Springjack Knight, Whirlpool Whelm, Hoarder’s Greed, and Gilt-Leaf Ambush. All compose existing primitives. Canonical-printing checks, fresh Scryfall fields, image HTTP 200 checks, and snapshot validation passed. Source completeness is now 250 / 286 (36 missing). Seven focused scenario tests for the three spells passed, covering clash win/loss, target preservation, temporary bonuses, destruction scope, graveyard targeting, untapping, and self-exile.
+Eleven new cards are implemented: Bog Hoodlums, Nath's Elite, Fistful of Force, Spring Cleaning, Woodland Guidance, Sentry Oak, Springjack Knight, Whirlpool Whelm, Hoarder’s Greed, Gilt-Leaf Ambush, and Hunt Down. All compose existing primitives. Canonical-printing checks, fresh Scryfall fields, image HTTP 200 checks, and snapshot validation passed. Source completeness is now 251 / 286 (35 missing). Seven focused scenario tests for the three spells passed, covering clash win/loss, target preservation, temporary bonuses, destruction scope, graveyard targeting, untapping, and self-exile.
 
 The differential audit also found and fixed seven existing Harbinger bugs: declining the optional search incorrectly forced a search and shuffle. All seven now gate the entire search. Their 21 per-card regression tests passed. At that stage, snapshots were compared field by field: only the five new cards and seven optional gates changed from the starting point.
 
@@ -79,3 +79,26 @@ its three scenario tests provide the behavioral evidence.
 ## Existing repository drift
 
 The initial repository-wide backlog implementation check reported 78 implemented-but-unchecked entries in Bloomburrow Commander and its deck lists. Lorwyn had no such drift before this unit. These unrelated files are untouched. All 14 card-count headers passed the count check.
+
+
+## Hunt Down
+
+Merged current main without conflicts and rechecked all three source-reference regressions.
+Hunt Down uses the existing two-target `ForceBlock` effect. Its nine scenarios pass: ordinary
+blocking, an animated Forest, flying and same-controller restrictions, either target dying before
+resolution, either creature leaving and returning, and end-of-turn expiry. The tests reproduced
+two shared engine bugs before their fixes: printed-type checks rejected animated lands, and an
+old blocking requirement followed a returned attacker. The executor now reads projected creature
+types; battlefield cleanup discards the requirement when its named attacker leaves.
+
+The full `just test` gate passed (4m 53s, 106 tasks). Snapshot regeneration passed (19s, 29 tasks);
+only Hunt Down was added, with all 244 prior Lorwyn canonical entries unchanged. Fresh compiled
+fields, artwork HTTP 200, and canonical-printing checks pass. Assay reports 245 canonicals,
+111 compared, 108 agreements, the same three equivalent folds, 132 declines and two failed folds.
+Hunt Down is declined; its scenarios prove behavior. Source and checklist agree at 251 / 286.
+
+The existing cast-time battlefield targeting flow selects the blocker and attacker separately,
+and the existing server effect indicator names the creature to be blocked. Combat validation and
+turn cleanup reuse the current engine paths; no SDK type or client interaction was added. No
+manual playthrough or end-to-end UI run was performed. Champion and the other completion work
+remain outstanding; the set stays incomplete and the PR stays draft.
