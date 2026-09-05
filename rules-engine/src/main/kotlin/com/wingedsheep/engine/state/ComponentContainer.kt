@@ -53,10 +53,12 @@ data class ComponentContainer(
     }
 
     /**
-     * Remove a component type (returns new container).
+     * Remove a component type, retaining this container when the type is absent.
      */
     inline fun <reified T : Component> without(): ComponentContainer {
-        return ComponentContainer(components - T::class.java)
+        val key = T::class.java
+        if (!components.containsKey(key)) return this
+        return ComponentContainer(components - key)
     }
 
     /**
@@ -76,15 +78,22 @@ data class ComponentContainer(
          * Create a container with the given components.
          */
         fun of(vararg components: Component): ComponentContainer {
-            return components.fold(EMPTY) { container, component ->
-                container.withComponent(component)
+            if (components.isEmpty()) return EMPTY
+            if (components.size == 1) {
+                val component = components[0]
+                return ComponentContainer(java.util.Collections.singletonMap(component::class.java, component))
             }
+
+            val byType = LinkedHashMap<Class<*>, Component>(components.size)
+            for (component in components) {
+                byType[component::class.java] = component
+            }
+            return ComponentContainer(byType)
         }
     }
 
     /**
      * Internal method to add a component without inline reification.
-     * Used by the of() factory method.
      */
     fun withComponent(component: Component): ComponentContainer {
         val key = component::class.java
