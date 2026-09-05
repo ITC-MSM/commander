@@ -47,6 +47,8 @@ class CoreAutoResumerModule(
         },
 
         autoResumer(DrawReplacementRemainingDrawsContinuation::class) { state, continuation, events, checkForMore ->
+            // The preceding draw and all its replacement work are complete.
+            val nextDrawState = state.copy(activeReplacementChain = null)
             if (continuation.remainingDraws > 0) {
                 // CR 121.2a is announced once per instruction; these draws are the tail
                 // of one that already went through it, so don't re-announce.
@@ -57,7 +59,7 @@ class CoreAutoResumerModule(
                         effectExecutor = services.effectExecutorRegistry::execute,
                         replacementProcessor = services.replacementEffectProcessor
                     )
-                    val drawResult = turnManager.drawCards(state, continuation.drawingPlayerId, continuation.remainingDraws, announce)
+                    val drawResult = turnManager.drawCards(nextDrawState, continuation.drawingPlayerId, continuation.remainingDraws, announce)
                     mergeAndContinue(drawResult, events, checkForMore)
                 } else {
                     val drawExecutor = com.wingedsheep.engine.handlers.effects.drawing.DrawCardsExecutor(
@@ -66,12 +68,16 @@ class CoreAutoResumerModule(
                         replacementProcessor = services.replacementEffectProcessor
                     )
                     val drawResult = drawExecutor.executeDraws(
-                        state, continuation.drawingPlayerId, continuation.remainingDraws, announce = announce
+                        nextDrawState, continuation.drawingPlayerId, continuation.remainingDraws, announce = announce
                     ).toExecutionResult()
                     mergeAndContinue(drawResult, events, checkForMore)
                 }
             } else {
-                checkForMore(state, events)
+                checkForMore(
+                    if (continuation.isDrawStep) nextDrawState.withPriority(continuation.drawingPlayerId)
+                    else nextDrawState,
+                    events
+                )
             }
         },
 

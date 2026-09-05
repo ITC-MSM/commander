@@ -359,7 +359,9 @@ class ReplacementEffectProcessor {
         context: EffectContext?
     ): ProcessorResult {
         val decisionId = UUID.randomUUID().toString()
-        val promptResult = event.createOptionalPrompt(decisionId, gathered, state, context)
+        val promptResult = event.createOptionalPrompt(
+            decisionId, gathered, state.copy(activeReplacementChain = alreadyApplied), context
+        )
             ?: // Event doesn't support optional prompts — treat as mandatory
             return applySingle(state, gathered, event, alreadyApplied)
 
@@ -503,6 +505,8 @@ class ReplacementEffectProcessor {
                 )
             }
         }
+
+        results.addAll(DredgeReplacements.gather(state, event, context))
 
         return results
     }

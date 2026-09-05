@@ -1692,6 +1692,10 @@ object Effects {
     fun CantBeRegenerated(target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
         CantBeRegeneratedEffect(target)
 
+    /** Create a regeneration shield for the target permanent. */
+    fun Regenerate(target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
+        com.wingedsheep.sdk.scripting.effects.RegenerateEffect(target)
+
     /**
      * "If it would die this turn, exile it instead." Marks a creature so its death is replaced by
      * exile; a no-op on a non-creature. Composed after damage (Carbonize) or granted as a rider

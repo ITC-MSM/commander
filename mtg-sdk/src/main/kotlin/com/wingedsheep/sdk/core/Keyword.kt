@@ -219,6 +219,7 @@ enum class Keyword(val displayName: String) {
      * triggered half is the synthesized [com.wingedsheep.sdk.scripting.Madness.castAbility].
      */
     MADNESS("Madness"),
+    DREDGE("Dredge"),
 
     /**
      * Disturb [cost] (CR 702.146). "You may cast this card transformed from your graveyard by

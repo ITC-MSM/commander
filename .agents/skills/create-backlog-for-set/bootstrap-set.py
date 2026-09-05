@@ -55,7 +55,7 @@ REQUEST_TIMEOUT_SEC = 30
 REFRESH_WINDOW_DAYS = 30
 DUMP_SCHEMA_VERSION = 1
 
-CARD_DSL_RE = re.compile(r'\bcard\(\s*"([^"]+)"')
+CARD_DSL_RE = re.compile(r'\b(?:card|basicLand)\(\s*"([^"]+)"')
 PRINTING_NAME_RE = re.compile(r'\bname\s*=\s*"([^"]+)"')
 ABILITY_WORD_RE = re.compile(r"^([A-Z][A-Za-z'\-]*(?: [a-z'\-]+){0,3}) —", re.MULTILINE)
 

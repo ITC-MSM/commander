@@ -5069,6 +5069,12 @@ controlled, so its owner controls any ability it produces. Coverage differs by z
 | `COMMAND` | ✅ | ✅ | *eminence* — Edgar Markov |
 | `EXILE` | — (dedicated paths) | ✅ | suspend, madness, paradigm |
 
+A self-bound `EventPattern.ZoneChangeEvent(from = Zone.GRAVEYARD, to = Zone.HAND)` with
+`triggerZone = Zone.GRAVEYARD` also fires after its card has left that zone (Golgari Brownscale).
+A dedicated event-source pass inspects the returned card, retaining owner control and firing once
+if a later effect in the same resolution discards it again. Resident-zone scans defer that event
+to this pass; the ability does not need to be active in hand.
+
 Exile has no general per-event pass on purpose: suspend, madness and paradigm each already have a
 dedicated detector, and a general pass would fire them twice.
 
@@ -13238,3 +13244,35 @@ the linter).
 
 For step-by-step authoring workflow see [`api-guide.md`](api-guide.md) (and use the `add-card` skill);
 for hard cases see [`managing-complex-and-rare-abilities.md`](managing-complex-and-rare-abilities.md).
+
+### Transmute
+
+`transmute("{1}{U}{U}")` composes a hand-zone activated ability: pay the mana,
+discard the source as a cost, and search for one card with the same mana value.
+The chosen card is revealed and put into hand, then the library is shuffled; the
+search may find nothing. Activation is restricted to sorcery timing. It uses
+`Costs.DiscardSelf` and the existing library search pipeline. Declare `manaCost`
+before `transmute`: the helper compiles the card's hand-zone mana value into the
+search filter, so reanimating and copying the discarded card in response does not
+change the search. Mana paid and later characteristics of a new incarnation are
+irrelevant. Callers: Drift of Phantasms and Dimir Infiltrator.
+
+`Effects.Regenerate(target)` creates the existing regeneration shield through the
+DSL facade. Dimir House Guard composes it with a creature sacrifice cost. The
+default target is `ContextTarget(0)`; self-regeneration passes `EffectTarget.Self`.
+
+### Dredge
+
+`keywordAbility(KeywordAbility.dredge(N))` declares dredge N. The optional replacement
+functions only in the card owner's graveyard and only when that player has at least
+N cards in their library. It replaces one draw with milling N cards and returning
+the source to hand. Each draw of a multi-card instruction rechecks the graveyard,
+so cards milled by the first replacement may be available for the next draw.
+
+The engine keeps the intrinsic amounts in `DredgeComponent` and supplies matching
+graveyard sources to the ordinary draw-replacement processor with `CardZoneIdentity`.
+The effect recipe composes library milling and return-to-hand; no new decision or
+resolution executor is introduced. The existing Yes/No decision belongs to the
+drawing player, and its source identifies the public graveyard card. The client
+keyword label is `DREDGE`. The mtgish emitter preserves the numeric argument through
+`KeywordAbility.dredge(N)`; unsupported numeric shapes remain scaffolded.

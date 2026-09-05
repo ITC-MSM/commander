@@ -34,6 +34,15 @@ sealed interface ReplacementEffectIdentity {
         val effectIndex: Int = 0
     ) : ReplacementEffectIdentity
 
+    /** An intrinsic replacement on a card in a specified non-battlefield zone. */
+    @SerialName("CardZoneIdentity")
+    @Serializable
+    data class CardZoneIdentity(
+        val sourceEntityId: EntityId,
+        val zone: com.wingedsheep.sdk.core.Zone,
+        val effectIndex: Int = 0
+    ) : ReplacementEffectIdentity
+
     /**
      * A replacement effect originating from a floating-effect.
      *
