@@ -3,6 +3,8 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.HandLookedAtEvent
 import com.wingedsheep.engine.core.PaymentStrategy
+import com.wingedsheep.engine.core.SpellCastEvent
+import com.wingedsheep.engine.state.FACE_DOWN_DISPLAY_NAME
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
@@ -332,6 +334,10 @@ class LookAtHandTest : FunSpec({
         )
 
         result.isSuccess shouldBe true
+        val castEvent = result.events.filterIsInstance<SpellCastEvent>().single()
+        castEvent.cardName shouldBe FACE_DOWN_DISPLAY_NAME
+        castEvent.underlyingCardName shouldBe "Test Morph"
+        castEvent.cardPresentation?.nameFor(viewer) shouldBe FACE_DOWN_DISPLAY_NAME
         driver.state.getEntity(castMorph)?.get<RevealedToComponent>() shouldBe null
         driver.state.getEntity(otherMorph)?.get<RevealedToComponent>() shouldBe null
 

@@ -18,6 +18,7 @@ import com.wingedsheep.engine.mechanics.layers.ContinuousEffectSourceComponent
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
+import com.wingedsheep.engine.state.FACE_DOWN_DISPLAY_NAME
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
@@ -38,8 +39,9 @@ import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.handlers.effects.FaceDownTurnUp
 import com.wingedsheep.engine.handlers.effects.library.ChooseCreatureTypePipelineExecutor
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
-import com.wingedsheep.engine.state.FACE_DOWN_DISPLAY_NAME
 import com.wingedsheep.engine.state.nameVisibleToAll
+import com.wingedsheep.engine.view.EventPresentationFactory
+import com.wingedsheep.engine.view.Visibility
 import com.wingedsheep.engine.state.components.identity.FaceDownModeComponent
 import com.wingedsheep.engine.state.components.identity.HasMorphAbilityComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
@@ -106,6 +108,7 @@ class StackResolver(
     private val staticAbilityHandler: StaticAbilityHandler = StaticAbilityHandler(cardRegistry),
     private val predicateEvaluator: PredicateEvaluator = PredicateEvaluator()
 ) {
+    private val eventPresentationFactory = EventPresentationFactory(Visibility(cardRegistry))
 
     /**
      * Re-validates a spliced card's own targets as the spell resolves (CR 608.2b via 702.47d): the
@@ -203,7 +206,10 @@ class StackResolver(
         spentManaProvenance: com.wingedsheep.engine.mechanics.mana.SpentManaProvenance =
             com.wingedsheep.engine.mechanics.mana.SpentManaProvenance(),
         castTimeFlags: Set<String> = emptySet(),
-        alternativeCost: com.wingedsheep.engine.core.AlternativeCostType? = null
+        alternativeCost: com.wingedsheep.engine.core.AlternativeCostType? = null,
+        // Payment can tap or remove the source that made the origin visible. This immutable
+        // input is consulted only while capturing the event; the event retains no GameState.
+        castOriginState: GameState = state
     ): ExecutionResult {
         val container = state.getEntity(cardId)
             ?: return ExecutionResult.error(state, "Card not found: $cardId")
@@ -472,9 +478,9 @@ class StackResolver(
         } else {
             cardComponent.name
         }
-        // For face-down creatures, use a generic name in the event (CR 708.2a)
+        // Preserve SpellCastEvent.cardName's historical public-name contract. The trusted
+        // presentation snapshot below separately retains semantic identity and private audiences.
         val eventName = if (castFaceDown) FACE_DOWN_DISPLAY_NAME else spellName
-
         // Collect target names for the cast event log
         val targetNames = effectiveTargets.mapNotNull { target ->
             when (target) {
@@ -515,6 +521,13 @@ class StackResolver(
                 casterId = casterId,
                 targetNames = targetNames,
                 xValue = boundXValue,
+                cardPresentation = eventPresentationFactory.castSpellIdentity(
+                    beforeCast = castOriginState,
+                    onStack = newState,
+                    castFromZone = castFromZone,
+                    entityId = cardId,
+                    semanticName = spellName,
+                ),
                 declaredCostSlot = declaredCostSlot,
                 totalManaSpent = totalManaSpent,
                 distinctColorsSpent =
@@ -534,14 +547,14 @@ class StackResolver(
         // Crime detection (CR Outlaws of Thunder Junction). Emit at most once per cast,
         // regardless of how many opponent-controlled targets the spell chose.
         if (CrimeDetector.isCrime(newState, casterId, effectiveTargets)) {
-            events.add(CommitCrimeEvent(casterId, cardId, eventName))
+            events.add(CommitCrimeEvent(casterId, cardId, spellName))
             newState = recordCrime(newState, casterId)
         }
 
         // "Whenever a player chooses one or more targets" (Psychic Battle). Emit once per cast
         // when the spell chose at least one target.
         if (effectiveTargets.isNotEmpty()) {
-            events.add(TargetsChosenEvent(casterId, cardId, eventName))
+            events.add(TargetsChosenEvent(casterId, cardId, spellName))
         }
 
         // Emit BecomesTargetEvent for each permanent, spell, or player target (Rule 601.2c)
@@ -1006,8 +1019,9 @@ class StackResolver(
             events.addAll(permanentResult.events)
             // CR 708.2a — a permanent that entered face down has no name, so neither the
             // "resolved" line nor the "entered the battlefield" line may carry the printed one.
-            // The cast line was already masked at `eventName` above; leaving these two unmasked
-            // made the log contradict it and told the opponent exactly what they were looking at.
+            // The cast line has its own event-time client presentation; leaving these two
+            // audience-agnostic log events unmasked made the log contradict it and told the
+            // opponent exactly what they were looking at.
             // Read the resolved entity rather than `spellComponent.castFaceDown` so every route
             // that lands a permanent face down is covered, not only a face-down cast.
             val permanentName = nameVisibleToAll(newState, spellId, cardComponent?.name ?: "Unknown")
@@ -2939,6 +2953,7 @@ class StackResolver(
             controllerId = abilityComponent.controllerId,
             granterId = abilityComponent.granterId,
             abilityIdentity = abilityComponent.abilityIdentity,
+            activatedAbility = abilityComponent.activatedAbility,
             sourceFaceChanges = abilityComponent.sourceFaceChanges,
             targets = activatedTargets,
             alignedTargets = alignedActivatedTargets,

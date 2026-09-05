@@ -22,6 +22,7 @@ import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.ProtectionScope
 import com.wingedsheep.engine.state.FACE_DOWN_CARD_DISPLAY_NAME
 import com.wingedsheep.engine.state.FACE_DOWN_DISPLAY_NAME
+import com.wingedsheep.engine.state.nameVisibleToAll
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.*
@@ -463,12 +464,29 @@ class ClientStateTransformer(
             } ?: emptyList()
         }
 
+        // A public ability must not expose the hidden card underneath its face-down source.
+        fun sourceIdentityVisible(sourceId: EntityId): Boolean {
+            val zone = if (sourceId in state.stack) Zone.STACK
+                else findEntityZone(state, sourceId)?.let(Zone::valueOf) ?: return true
+            return visibility.isCardIdentityVisibleTo(state, zone, sourceId, viewingPlayerId, isSpectator)
+        }
+
+        fun sourceColors(sourceId: EntityId, visibleCard: CardComponent?): Set<Color> =
+            if (sourceId in state.getBattlefield()) {
+                state.projectedState.getColors(sourceId).mapNotNull { name ->
+                    Color.entries.firstOrNull { it.name == name }
+                }.toSet()
+            } else visibleCard?.colors.orEmpty()
+
         // Check for activated ability
         val activatedAbility = container.get<ActivatedAbilityOnStackComponent>()
         if (activatedAbility != null) {
             // Get the source card's info to display
+            val identityVisible = sourceIdentityVisible(activatedAbility.sourceId)
             val sourceCard = state.getEntity(activatedAbility.sourceId)?.get<CardComponent>()
-            val cardDef = cardRegistry.getCard(activatedAbility.sourceName)
+                ?.takeIf { identityVisible }
+            val sourceName = nameVisibleToAll(state, activatedAbility.sourceId, activatedAbility.sourceName)
+            val cardDef = cardRegistry.getCard(sourceName).takeIf { identityVisible }
 
             // Get targets for this ability
             val targetsComponent = container.get<TargetsComponent>()
@@ -476,13 +494,13 @@ class ClientStateTransformer(
 
             return ClientCard(
                 id = entityId,
-                name = "${activatedAbility.sourceName} ability",
+                name = "$sourceName ability",
                 manaCost = "",
                 manaValue = 0,
                 typeLine = "Ability",
                 cardTypes = setOf("Ability"),
                 subtypes = emptySet(),
-                colors = sourceCard?.colors ?: emptySet(),
+                colors = sourceColors(activatedAbility.sourceId, sourceCard),
                 oracleText = activatedAbility.descriptionOverride
                     ?: runtimeAbilityText(state, entityId, activatedAbility)
                     ?: effectDisplayText(activatedAbility.effect, selfNounFor(state, activatedAbility.sourceId)),
@@ -510,7 +528,7 @@ class ClientStateTransformer(
                 targets = targets,
                 imageUri = sourceCard?.imageUri ?: cardDef?.metadata?.imageUri,
                 chosenX = activatedAbility.xValue,
-                abilityIdentity = activatedAbility.abilityIdentity?.let {
+                abilityIdentity = activatedAbility.abilityIdentity?.takeIf { identityVisible }?.let {
                     ClientAbilityIdentity(it.cardDefinitionId, it.abilityId.value)
                 }
             )
@@ -519,8 +537,11 @@ class ClientStateTransformer(
         // Check for triggered ability
         val triggeredAbility = container.get<TriggeredAbilityOnStackComponent>()
         if (triggeredAbility != null) {
+            val identityVisible = sourceIdentityVisible(triggeredAbility.sourceId)
             val sourceCard = state.getEntity(triggeredAbility.sourceId)?.get<CardComponent>()
-            val cardDef = cardRegistry.getCard(triggeredAbility.sourceName)
+                ?.takeIf { identityVisible }
+            val sourceName = nameVisibleToAll(state, triggeredAbility.sourceId, triggeredAbility.sourceName)
+            val cardDef = cardRegistry.getCard(sourceName).takeIf { identityVisible }
 
             val targetsComponent = container.get<TargetsComponent>()
             val targets = transformTargets(targetsComponent)
@@ -564,13 +585,13 @@ class ClientStateTransformer(
 
             return ClientCard(
                 id = entityId,
-                name = "${triggeredAbility.sourceName} trigger",
+                name = "$sourceName trigger",
                 manaCost = "",
                 manaValue = 0,
                 typeLine = "Triggered Ability",
                 cardTypes = setOf("Ability"),
                 subtypes = emptySet(),
-                colors = sourceCard?.colors ?: emptySet(),
+                colors = sourceColors(triggeredAbility.sourceId, sourceCard),
                 oracleText = triggeredAbility.descriptionOverride
                     ?: runtimeAbilityText(state, entityId, triggeredAbility)
                     ?: effectDisplayText(triggeredAbility.effect, selfNounFor(state, triggeredAbility.sourceId)),
@@ -600,7 +621,7 @@ class ClientStateTransformer(
                 imageUri = sourceCard?.imageUri ?: cardDef?.metadata?.imageUri,
                 sourceZone = sourceZone,
                 chosenX = triggeredAbility.xValue,
-                abilityIdentity = triggeredAbility.abilityIdentity?.let {
+                abilityIdentity = triggeredAbility.abilityIdentity?.takeIf { identityVisible }?.let {
                     ClientAbilityIdentity(it.cardDefinitionId, it.abilityId.value)
                 },
                 copyIndex = triggeredAbility.copyIndex,

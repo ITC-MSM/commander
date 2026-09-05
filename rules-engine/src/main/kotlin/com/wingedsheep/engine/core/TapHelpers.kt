@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.core
 
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
+import com.wingedsheep.engine.state.nameVisibleToAll
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.HasBecomeTappedComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
@@ -105,7 +106,7 @@ fun tap(
     // CR 701.26a: only untapped permanents can be tapped, so tapping an already-tapped
     // permanent is not a transition — no event.
     if (container.has<TappedComponent>()) return state to null
-    val cardName = container.get<CardComponent>()?.name ?: "Permanent"
+    val cardName = nameVisibleToAll(state, entityId, container.get<CardComponent>()?.name ?: "Permanent")
     val tapper = tappedById
         ?: state.projectedState.getController(entityId)
         ?: container.get<ControllerComponent>()?.playerId
@@ -203,7 +204,7 @@ fun untapOrConsumeStun(
         return newState to emptyList()
     }
 
-    val cardName = container.get<CardComponent>()?.name ?: "Permanent"
+    val cardName = nameVisibleToAll(state, entityId, container.get<CardComponent>()?.name ?: "Permanent")
 
     // Granted "remove a +1/+1 counter to untap" replacement (untap-step path only).
     if (projected != null && projected.hasKeyword(entityId, AbilityFlag.REMOVE_COUNTER_TO_UNTAP)) {
