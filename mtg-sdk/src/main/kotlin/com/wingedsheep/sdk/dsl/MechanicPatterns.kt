@@ -290,9 +290,17 @@ object MechanicPatterns {
     // Clash Pattern (Lorwyn, CR 701.30)
     // =========================================================================
 
+    /** Clash without an immediate win rider; each clash replaces the CLASH_WON collection. */
+    fun clash(): CompositeEffect = CompositeEffect(
+        listOf(
+            ChooseOpponentForSourceEffect(prompt = "Choose an opponent to clash with"),
+            ClashEffect()
+        )
+    )
+
     /**
      * "Clash with an opponent. If you win, [ifYouWin]." — the whole printed Lorwyn template
-     * (CR 701.30b), and the only clash spelling a card should ever author.
+     * (CR 701.30b). Use the no-argument overload for a standalone clash inside a repeat loop.
      *
      * Three existing pieces, composed:
      *
@@ -310,8 +318,7 @@ object MechanicPatterns {
      *     ordinary pipeline result and clash needs no gate kind of its own. The gate's existing
      *     continuation plumbing is what carries the two top-or-bottom pauses.
      *
-     * [otherwise] is the "Otherwise, …" half printed on Captivating Glance; every other Lorwyn
-     * clash card leaves it null.
+     * [otherwise] supplies the nonwinning branch, such as Captivating Glance or Whirlpool Whelm.
      *
      * ```kotlin
      * // Adder-Staff Boggart — "When this creature enters, clash with an opponent.
@@ -321,12 +328,7 @@ object MechanicPatterns {
      */
     fun clash(ifYouWin: Effect, otherwise: Effect? = null): GatedEffect = GatedEffect(
         gate = Gate.DoAction(
-            action = CompositeEffect(
-                listOf(
-                    ChooseOpponentForSourceEffect(prompt = "Choose an opponent to clash with"),
-                    ClashEffect()
-                )
-            ),
+            action = clash(),
             successCriterion = SuccessCriterion.CollectionNonEmpty(CLASH_WON)
         ),
         then = ifYouWin,

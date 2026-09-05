@@ -3262,10 +3262,14 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
 - `rummage(count?)` — discard then draw.
 - `connive(target?)` — draw 1, discard 1, then put a +1/+1 counter on `target` (default Self) if the discard was a nonland (CR 701.50). Also exposed as `Effects.Connive(target)`. Returns the pipeline wrapped in `ConniveEffect(subject = target, body = …)`: the wrapper names the keyword action and its subject, which is what lets `ModifyKeywordAction` replace it and what makes it emit `PermanentConnivedEvent` (CR 701.50f). The pipeline itself is unchanged.
 - `conniveTargeting(requirement, storeAs?)` — connive whose +1/+1 counter lands on a *reflexively chosen* target: "draw a card, then discard a card. When you discard a nonland card this way, put a +1/+1 counter on target creature you control" (Teo, Spirited Glider). The recipient is selected at resolution via `SelectTargetEffect` *inside* the nonland gate — so the player never chooses up front or when the discard is a land. Pass the recipient's `TargetRequirement` (e.g. `Targets.CreatureYouControl`); do **not** also declare it as a cast-time `target(...)`. Exposed as `Effects.ConniveTargeting(requirement)`. Deliberately **not** wrapped in `ConniveEffect` — Teo's printed text spells the looting out and never says "connive", so it is not the keyword action: it fires no connive triggers and is not touched by "if a creature you control would connive" replacements.
-- `Patterns.Mechanic.clash(ifYouWin, otherwise?)` — **Clash** (CR 701.30, Lorwyn), and the only clash
-  spelling a card should author. It is the whole printed template, not just the keyword action:
-  *"Clash with an opponent. If you win, [ifYouWin]."*, with `otherwise` for the one card that prints
-  an "Otherwise, …" half (Captivating Glance). Composed from three existing pieces —
+- `Patterns.Mechanic.clash()` — the clash procedure without an immediate win rider. It chooses
+  the opponent and runs the shared reveal/top-or-bottom procedure, replacing `CLASH_WON` with the
+  winning revealed card or an empty collection every time. Use it inside `Effects.RepeatWhile`
+  with `RepeatCondition.WhileCondition(Conditions.CollectionContainsMatch(CLASH_WON))` for
+  Hoarder's Greed's mandatory repeat-on-win loop; do not add a consent question between iterations.
+- `Patterns.Mechanic.clash(ifYouWin, otherwise?)` — **Clash** (CR 701.30, Lorwyn) with a win rider:
+  *"Clash with an opponent. If you win, [ifYouWin]."*, with `otherwise` for a nonwinning branch
+  (Captivating Glance or Whirlpool Whelm). Composed from three existing pieces —
   `ChooseOpponentForSourceEffect` (clash *chooses* an opponent, CR 701.30b; forced and promptless
   with a single opponent, and the durable `OPPONENT` slot is what keeps the same player revealing
   *and* deciding, which a bare `Chooser.Opponent` would not), then `ClashEffect`, wrapped in a
