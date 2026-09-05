@@ -15406,6 +15406,100 @@
     ]
 }
 
+// Whirlpool Whelm
+{
+    "name": "Whirlpool Whelm",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Clash with an opponent, then return target creature to its owner's hand. If you win, you may put that creature on top of its owner's library instead. (Each clashing player reveals the top card of their library, then puts that card on their choice of the top or bottom. A player wins if their card had a greater mana value.)",
+    "script": {
+        "spellEffect": {
+            "type": "Gated",
+            "gate": {
+                "type": "Gate.DoAction",
+                "action": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ChooseOpponentForSource",
+                            "prompt": "Choose an opponent to clash with"
+                        },
+                        "Clash"
+                    ]
+                },
+                "successCriterion": {
+                    "type": "SuccessCriterion.CollectionNonEmpty",
+                    "name": "clashWon"
+                }
+            },
+            "then": {
+                "type": "Gated",
+                "gate": {
+                    "type": "Gate.MayDecide",
+                    "prompt": "Put that creature on top of its owner's library?"
+                },
+                "then": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "destination": "Library",
+                    "placement": "Top"
+                },
+                "otherwise": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "destination": "Hand"
+                }
+            },
+            "otherwise": {
+                "type": "MoveToZone",
+                "target": {
+                    "type": "BoundVariable",
+                    "name": "target creature"
+                },
+                "destination": "Hand"
+            },
+            "descriptionOverride": "Clash with an opponent. If you win, put that creature on top of its owner's library?. Otherwise, return target to its owner's hand"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "96",
+        "artist": "Cyril Van Der Haegen",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/9/1934c34a-c163-4fac-a80d-8b17e8d64efa.jpg?1783942895",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "You choose the target when you play Whirlpool Whelm, not when you clash."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If you don't win the clash, the targeted creature always goes to its owner's hand. If you win the clash, you choose whether the creature goes to its owner's hand or the top of its owner's library."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If you clash with the owner of the targeted creature and win, the owner of the creature decides where to put to card revealed during the clash before you decide whether to put the creature on top of that library. You know the player's decision before you make your decision."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Wild Ricochet
 {
     "name": "Wild Ricochet",
