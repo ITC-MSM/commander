@@ -21,7 +21,7 @@ This branch tracks completion of Lorwyn and the engine capabilities its cards re
 
 ## Work in progress
 
-Seven new cards are implemented: Bog Hoodlums, Nath's Elite, Fistful of Force, Spring Cleaning, Woodland Guidance, Sentry Oak, and Springjack Knight. All compose existing primitives. Canonical-printing checks, fresh Scryfall fields, image HTTP 200 checks, and snapshot validation passed. Source completeness is now 247 / 286 (39 missing). Seven focused scenario tests for the three spells passed, covering clash win/loss, target preservation, temporary bonuses, destruction scope, graveyard targeting, untapping, and self-exile.
+Nine new cards are implemented: Bog Hoodlums, Nath's Elite, Fistful of Force, Spring Cleaning, Woodland Guidance, Sentry Oak, Springjack Knight, Whirlpool Whelm, and Hoarder’s Greed. All compose existing primitives. Canonical-printing checks, fresh Scryfall fields, image HTTP 200 checks, and snapshot validation passed. Source completeness is now 249 / 286 (37 missing). Seven focused scenario tests for the three spells passed, covering clash win/loss, target preservation, temporary bonuses, destruction scope, graveyard targeting, untapping, and self-exile.
 
 The differential audit also found and fixed seven existing Harbinger bugs: declining the optional search incorrectly forced a search and shuffle. All seven now gate the entire search. Their 21 per-card regression tests passed. At that stage, snapshots were compared field by field: only the five new cards and seven optional gates changed from the starting point.
 
@@ -45,6 +45,23 @@ sources. Their printing checks and fresh Scryfall/image rechecks passed. Snapsho
 only these two additions and no changes to existing entries. `just test` passed for the combined
 batch (4m 27s, 106 tasks), including engine, card, SDK, AI, gym and server suites. Both new cards'
 clash lines are declined by Assay; the generator supplies scaffolds rather than complete scripts.
+
+## Whirlpool Whelm and Hoarder's Greed
+
+Both cards now have four passing scenarios. Whelm tests target selection before the clash,
+its win-only destination choice after both library decisions, the opponent's library ordering,
+and a fully illegal target preventing the clash. Greed tests automatic repetition on a win and
+termination on a loss or tie, with the life loss and draws preceding each clash. The standalone
+clash helper composes existing effects; every pre-existing snapshot entry remains unchanged.
+Whirlpool Whelm also has its required Commander reprint row. Fresh Scryfall fields, image
+HTTP 200 checks, and canonical-printing checks passed. Source completeness is 249 / 286.
+
+The full gate completed with one unrelated 120-second timeout in AbattoirGhoulScenarioTest;
+all eight new scenarios passed. After user authorization to continue, that test passed in
+isolation without code changes (1m 16s, 43 tasks). A full retry is running; no successful full
+retry is claimed yet. The fresh Assay differential covers 243 canonicals: 111 compared,
+108 agree, the same three previously verified equivalent static folds, 130 declined, and two
+failed to fold. Neither new card is covered by the grammar.
 
 ## Existing repository drift
 

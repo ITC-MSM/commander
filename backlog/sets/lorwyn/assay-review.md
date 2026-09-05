@@ -29,3 +29,12 @@ Assay's installed CLI declines both clash lines (Sentry Oak's defender keyword r
 The draftability probe produces SCAFFOLD for both, naming Clash as unrecovered. Their authored
 compositions are verified by eight per-card scenarios and the passing full `just test` gate; the
 earlier aggregate differential counts above have not been recomputed for these two additions.
+
+
+## Whirlpool Whelm and Hoarder's Greed
+
+Fresh differential over the current goldens: 243 canonical cards, 111 compared, 108 agree,
+130 declined and two failed to fold. The only divergences remain Boggart Sprite-Chaser,
+Epic Proportions and Kithkin Greatheart, the equivalent conditional/composite static folds
+reviewed above. Existing golden entries are unchanged. Assay declines both new cards;
+the draftability probe emits SCAFFOLD (Clash / RepeatableActions). Eight per-card scenarios pass.

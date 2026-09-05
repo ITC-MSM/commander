@@ -2,12 +2,12 @@
 
 **Set Size:** 286 cards
 **Release Date:** October 12, 2007
-**Implemented:** 247 / 286
+**Implemented:** 249 / 286
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 49    | 43   |
-| Blue       | 49    | 38   |
-| Black      | 49    | 41   |
+| Blue       | 49    | 39   |
+| Black      | 49    | 42   |
 | Red        | 49    | 42   |
 | Green      | 49    | 39   |
 | Multicolor | 8     | 7    |
@@ -116,7 +116,7 @@
 - [x] Tideshaper Mystic
 - [ ] Turtleshell Changeling
 - [ ] Wanderwine Prophets
-- [ ] Whirlpool Whelm
+- [x] Whirlpool Whelm
 - [x] Wings of Velis Vel
 - [x] Zephyr Net
 
@@ -139,7 +139,7 @@
 - [x] Fodder Launch
 - [x] Footbottom Feast
 - [x] Ghostly Changeling
-- [ ] Hoarder's Greed
+- [x] Hoarder's Greed
 - [x] Hornet Harasser
 - [x] Hunter of Eyeblights
 - [x] Knucklebone Witch
