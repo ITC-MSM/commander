@@ -1,0 +1,54 @@
+{
+  "player1Name": "Transmute",
+  "player2Name": "Opponent",
+  "player1": {
+    "hand": [
+      "Drift of Phantasms",
+      "Dimir Infiltrator"
+    ],
+    "battlefield": [
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Swamp"
+      }
+    ],
+    "library": [
+      "Divination",
+      "Grizzly Bears",
+      "Island",
+      "Swamp"
+    ]
+  },
+  "player2": {
+    "battlefield": [
+      {
+        "name": "Grizzly Bears"
+      },
+      {
+        "name": "Wind Drake"
+      }
+    ],
+    "library": [
+      "Island",
+      "Island",
+      "Island"
+    ]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1
+}

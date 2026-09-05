@@ -32,6 +32,7 @@ val FaerieHarbinger = card("Faerie Harbinger") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
+        optional = true
         effect = Patterns.Library.searchLibrary(
             filter = GameObjectFilter.Any.withSubtype(Subtype.FAERIE),
             count = 1,

@@ -5,6 +5,8 @@ import com.wingedsheep.engine.core.InFlightEntityReferences
 import com.wingedsheep.engine.core.InFlightReferenceProjector
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.ComponentContainer
+import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.sdk.core.Zone
@@ -113,7 +115,25 @@ class HiddenWorldMaterializer internal constructor(
                 )
             }
         }
-        var materialized = state
+        if (request.slotAssignments.isEmpty()) {
+            return HiddenWorldMaterializationResult.Materialized(state.copy(rng = request.futureRng))
+        }
+        // Preserve each occurrence, including duplicates within one zone. Validation below still
+        // chooses the first obstruction in assignment order; unrelated malformed slots are ignored.
+        // For one or two assignments the original scan costs less than building an index.
+        val memberships = if (request.slotAssignments.size > 2) {
+            mutableMapOf<EntityId, MutableList<ZoneKey>>().also { index ->
+                for ((zoneKey, ids) in state.zones) {
+                    for (id in ids) {
+                        if (id in request.slotAssignments) index.getOrPut(id) { mutableListOf() }.add(zoneKey)
+                    }
+                }
+            }
+        } else null
+        // Accumulate privately: validation still reads the source, and a refusal publishes nothing.
+        val materializedEntities = state.entities.toMutableMap()
+        // Deck copies share factory defaults, but ownership and per-slot runtime state still differ.
+        val expectedContainers = mutableMapOf<Pair<String, EntityId>, ComponentContainer>()
 
         // Slots are independent, so the order only decides *which* obstruction is reported when a
         // request has several. Sorting makes that report stable across equal requests.
@@ -131,20 +151,28 @@ class HiddenWorldMaterializer internal constructor(
                     listOf("slot is conservatively pinned by in-flight execution"),
                 )
             }
-            val zones = state.zones.filterValues { entityId in it }
-            val occurrences = zones.values.sumOf { zone -> zone.count { it == entityId } }
-            if (occurrences != 1 || zones.keys.singleOrNull()?.zoneType !in SUPPORTED_ZONES) {
+            val zones = if (memberships == null) state.zones.filterValues { entityId in it } else null
+            val indexedZones = memberships?.get(entityId).orEmpty()
+            val occurrences = if (zones != null) zones.values.sumOf { zone -> zone.count { it == entityId } }
+                else indexedZones.size
+            if (occurrences != 1) {
                 return unsupported(
                     UnsupportedHiddenWorldKind.INVALID_ASSIGNMENT,
                     entityId,
                     listOf(
                         if (occurrences == 0) "entity is not in a zone"
-                        else if (occurrences > 1) "entity occurs in zones $occurrences times"
-                        else "supported slots are HAND/LIBRARY; found ${zones.keys.single().zoneType.name}"
+                        else "entity occurs in zones $occurrences times"
                     ),
                 )
             }
-            val zoneKey = zones.keys.single()
+            val zoneKey = zones?.keys?.single() ?: indexedZones.single()
+            if (zoneKey.zoneType !in SUPPORTED_ZONES) {
+                return unsupported(
+                    UnsupportedHiddenWorldKind.INVALID_ASSIGNMENT,
+                    entityId,
+                    listOf("supported slots are HAND/LIBRARY; found ${zoneKey.zoneType.name}"),
+                )
+            }
 
             val ownerId = container.get<OwnerComponent>()?.playerId
                 ?: return unsupported(
@@ -178,7 +206,10 @@ class HiddenWorldMaterializer internal constructor(
                     entityId,
                     listOf("source definition is not registered: ${currentCard.cardDefinitionId}"),
                 )
-            val blockers = HiddenSlotRewrite.runtimeBlockers(container, currentDefinition, ownerId)
+            val expected = expectedContainers.getOrPut(currentCard.cardDefinitionId to ownerId) {
+                CardEntityFactory.create(currentDefinition, ownerId)
+            }
+            val blockers = HiddenSlotRewrite.runtimeBlockers(container, expected)
             if (blockers.isNotEmpty()) {
                 return unsupported(UnsupportedHiddenWorldKind.RUNTIME_STATE, entityId, blockers)
             }
@@ -189,7 +220,8 @@ class HiddenWorldMaterializer internal constructor(
                     listOf("replacement HAND/LIBRARY identity is a DFC back face: ${replacementDefinition.name}"),
                 )
             }
-            val replacementDefinitionId = CardEntityFactory.create(replacementDefinition, ownerId)
+            val replacementContainer = CardEntityFactory.create(replacementDefinition, ownerId)
+            val replacementDefinitionId = replacementContainer
                 .require<CardComponent>()
                 .cardDefinitionId
             if (cardRegistry.getCard(replacementDefinitionId) != replacementDefinition) {
@@ -199,11 +231,11 @@ class HiddenWorldMaterializer internal constructor(
                     listOf("replacement definition is not registered: $replacementDefinitionId"),
                 )
             }
-            materialized = HiddenSlotRewrite.rewrite(materialized, entityId, replacementDefinition, ownerId)
+            materializedEntities[entityId] = HiddenSlotRewrite.rewrite(container, replacementContainer)
         }
 
         return HiddenWorldMaterializationResult.Materialized(
-            materialized.copy(rng = request.futureRng)
+            state.copy(entities = materializedEntities, rng = request.futureRng)
         )
     }
 

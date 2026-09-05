@@ -183,7 +183,7 @@ sealed interface PendingGameEvent {
                 ?.get<com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent>()
             val pileCount = linkedExile?.exiledIds?.size
 
-            val prompt = buildString {
+            val prompt = gathered.optionalPrompt ?: buildString {
                 // The effect's own text, not gathered.description — the latter is already
                 // prefixed with the card name, which this line supplies.
                 append("Use $cardName? ${replaceEffect.description}")
@@ -212,7 +212,8 @@ sealed interface PendingGameEvent {
                 drawCount = drawsLeft,
                 isDrawStep = isDrawStep,
                 drawnCardsSoFar = drawnCardsSoFar,
-                declinedIdentity = gathered.identity
+                declinedIdentity = gathered.identity,
+                alreadyApplied = state.activeReplacementChain ?: emptySet()
             )
 
             return OptionalPromptResult(

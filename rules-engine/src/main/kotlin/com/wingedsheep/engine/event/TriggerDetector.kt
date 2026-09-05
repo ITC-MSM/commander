@@ -425,7 +425,12 @@ class TriggerDetector(
         triggers: List<PendingTrigger>
     ): List<PendingTrigger> {
         val cursor = HashMap<Pair<EntityId, com.wingedsheep.sdk.scripting.AbilityId>, Int>()
-        return triggers.map { trigger ->
+        return triggers.map { unstamped ->
+            val trigger = unstamped.copy(sourceBattlefieldTimestamp = unstamped.sourceBattlefieldTimestamp
+                ?: unstamped.triggerContext.triggeringBattlefieldTimestamp
+                    ?.takeIf { unstamped.triggerContext.triggeringEntityId == unstamped.sourceId }
+                ?: state.getEntity(unstamped.sourceId)
+                    ?.get<com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent>()?.timestamp)
             val granters = abilityResolver.resolveGranterIds(state, trigger.sourceId, trigger.ability.id)
             if (granters.isEmpty()) return@map trigger
             val key = trigger.sourceId to trigger.ability.id
@@ -1097,6 +1102,7 @@ class TriggerDetector(
 
             for (ability in entry.abilities) {
                 if (Zone.BATTLEFIELD !in ability.activeZones) continue
+                if (isGraveyardToHandSelfTrigger(ability, event, entityId)) continue
                 if (matcher.matchesTrigger(ability.trigger, ability.binding, event, entityId, controllerId, state)) {
                     // For "whenever a creature attacks" (AttackEvent with ANY binding),
                     // create one trigger per attacking creature (Rule 603.2c)
@@ -1513,6 +1519,7 @@ class TriggerDetector(
 
                     for (ability in abilities) {
                         if (zone !in ability.activeZones) continue
+                        if (isGraveyardToHandSelfTrigger(ability, event, entityId)) continue
                         val ownerId = cardComponent.ownerId
                             ?: container.get<OwnerComponent>()?.playerId
                             ?: continue
@@ -1568,6 +1575,11 @@ class TriggerDetector(
         // Handle leaves-the-battlefield triggers (source is no longer on battlefield)
         if (event is ZoneChangeEvent && event.fromZone == Zone.BATTLEFIELD) {
             deathAndLeaveDetector.detectLeavesBattlefieldTriggers(state, index.statics, event, triggers)
+        }
+
+        // A card returning to hand is absent from the graveyard's resident-source pass.
+        if (event is ZoneChangeEvent && event.fromZone == Zone.GRAVEYARD && event.toZone == Zone.HAND) {
+            detectGraveyardToHandTriggers(state, index.statics, event, triggers)
         }
 
         // Handle cycling triggers on the cycled card itself (e.g., Renewed Faith)
@@ -1950,6 +1962,43 @@ class TriggerDetector(
                     )
                 )
             }
+        }
+    }
+
+    /**
+     * Self-bound graveyard-to-hand triggers look back at the card that left the graveyard
+     * (CR 603.10a). Only the moving card is inspected; unrelated draws do not scan any hands.
+     * The owner controls the ability even when another player caused the return.
+     */
+    private fun isGraveyardToHandSelfTrigger(
+        ability: com.wingedsheep.sdk.scripting.TriggeredAbility,
+        event: EngineGameEvent,
+        sourceId: EntityId
+    ): Boolean = event is ZoneChangeEvent && event.fromZone == Zone.GRAVEYARD &&
+        event.toZone == Zone.HAND && event.entityId == sourceId &&
+        Zone.GRAVEYARD in ability.activeZones && ability.binding == TriggerBinding.SELF &&
+        ability.trigger is EventPattern.ZoneChangeEvent
+
+    private fun detectGraveyardToHandTriggers(
+        state: GameState,
+        statics: BattlefieldStaticsIndex,
+        event: ZoneChangeEvent,
+        triggers: MutableList<PendingTrigger>
+    ) {
+        val card = state.getEntity(event.entityId)?.get<CardComponent>() ?: return
+        val abilities = abilityResolver.getTriggeredAbilities(event.entityId, card.cardDefinitionId, state, statics)
+        for (ability in abilities) {
+            if (Zone.GRAVEYARD !in ability.activeZones || ability.binding != TriggerBinding.SELF) continue
+            val pattern = ability.trigger as? EventPattern.ZoneChangeEvent ?: continue
+            if (!matcher.matchesZoneChangeTrigger(pattern, ability.binding, event,
+                    event.entityId, event.ownerId, state)) continue
+            triggers.add(PendingTrigger(
+                ability = ability,
+                sourceId = event.entityId,
+                sourceName = event.entityName,
+                controllerId = event.ownerId,
+                triggerContext = TriggerContext.fromEvent(event)
+            ))
         }
     }
 

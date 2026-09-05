@@ -27,6 +27,7 @@ val GiantHarbinger = card("Giant Harbinger") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
+        optional = true
         effect = Patterns.Library.searchLibrary(
             filter = GameObjectFilter.Any.withSubtype(Subtype.GIANT),
             count = 1,

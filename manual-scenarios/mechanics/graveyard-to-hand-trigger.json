@@ -1,0 +1,51 @@
+{
+  "player1Name": "Brownscale",
+  "player2Name": "Opponent",
+  "player1": {
+    "hand": [
+      "Inspiration",
+      "Raise Dead"
+    ],
+    "battlefield": [
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Swamp"
+      }
+    ],
+    "graveyard": [
+      "Golgari Brownscale"
+    ],
+    "library": [
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest"
+    ]
+  },
+  "player2": {
+    "hand": [],
+    "battlefield": [],
+    "library": [
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest"
+    ]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1
+}

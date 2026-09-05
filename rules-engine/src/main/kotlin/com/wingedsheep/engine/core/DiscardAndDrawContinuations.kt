@@ -123,7 +123,9 @@ data class StaticDrawReplacementContinuation(
     val drawCount: Int,
     val isDrawStep: Boolean,
     val drawnCardsSoFar: List<EntityId> = emptyList(),
-    val declinedIdentity: ReplacementEffectIdentity? = null
+    val declinedIdentity: ReplacementEffectIdentity? = null,
+    /** Prior applications and declines for this individual draw, retained across pauses. */
+    val alreadyApplied: Set<ReplacementEffectIdentity> = emptySet()
 ) : ContinuationFrame
 
 /**

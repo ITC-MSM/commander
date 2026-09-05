@@ -1,0 +1,97 @@
+{
+  "player1Name": "Dredge",
+  "player2Name": "Opponent",
+  "player1": {
+    "hand": [
+      "Inspiration",
+      "Darkblast",
+      "Moldervine Cloak",
+      "Greater Mossdog"
+    ],
+    "battlefield": [
+      {
+        "name": "Grave-Shell Scarab"
+      },
+      {
+        "name": "Shambling Shell"
+      },
+      {
+        "name": "Grizzly Bears"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Swamp"
+      }
+    ],
+    "graveyard": [
+      "Greater Mossdog",
+      "Darkblast",
+      "Moldervine Cloak"
+    ],
+    "library": [
+      "Forest",
+      "Shambling Shell",
+      "Island",
+      "Swamp",
+      "Forest",
+      "Island",
+      "Forest",
+      "Swamp",
+      "Forest",
+      "Island"
+    ]
+  },
+  "player2": {
+    "hand": [],
+    "battlefield": [
+      {
+        "name": "Grizzly Bears"
+      }
+    ],
+    "library": [
+      "Forest",
+      "Island",
+      "Swamp",
+      "Mountain"
+    ]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1,
+  "player1StopAtSteps": [
+    "DRAW"
+  ],
+  "player2StopAtSteps": []
+}

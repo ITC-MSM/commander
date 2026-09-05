@@ -3,6 +3,8 @@ package com.wingedsheep.ai.engine.hidden
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.hidden.HiddenSlotRewrite
+import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
@@ -12,6 +14,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.engine.view.ClientStateTransformer
 import com.wingedsheep.engine.view.Visibility
 import com.wingedsheep.sdk.model.GameRng
+import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
@@ -21,6 +24,74 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 class DeterminizerInvariantsTest : ScenarioTestBase() {
 
     init {
+        test("sampling retains the pre-batching assignment and library sequence") {
+            val game = scenario().withPlayers().withRngSeed(883L)
+                .withCardInHand(1, "Forest")
+                .withCardInLibrary(1, "Mountain").withCardInLibrary(1, "Hill Giant")
+                .withCardInHand(2, "Mountain").withCardInHand(2, "Hill Giant")
+                .withCardInLibrary(2, "Grizzly Bears").withCardInLibrary(2, "Craw Wurm")
+                .build()
+            val revealed = game.state.getHand(game.player2Id).first()
+            val before = game.state.updateEntity(revealed) { it.with(RevealedToComponent.to(game.player1Id)) }
+            val originalEntities = before.entities.toMap()
+            val originalZones = before.zones.mapValues { it.value.toList() }
+            val models = listOf(
+                emptyMap<EntityId, OpponentModel>(),
+                mapOf(
+                    game.player1Id to OpponentModel.KnownDecklist(
+                        mapOf("Forest" to 1, "Mountain" to 1, "Hill Giant" to 1),
+                    ),
+                    game.player2Id to OpponentModel.KnownDecklist(
+                        mapOf("Mountain" to 1, "Hill Giant" to 1, "Grizzly Bears" to 1, "Craw Wurm" to 1),
+                    ),
+                ),
+            )
+            val sampler = Determinizer(cardRegistry)
+            val signature = buildString {
+                for (model in models) for (viewer in before.turnOrder) for (seed in 1L..16L) {
+                    val world = sampler.sample(before, viewer, model, GameRng.seeded(seed))
+                    world.copy(entities = before.entities, zones = before.zones) shouldBe before
+                    before.entities shouldBe originalEntities
+                    before.zones shouldBe originalZones
+                    world.getEntity(revealed) shouldBe before.getEntity(revealed)
+                    append(viewer.value).append('/').append(seed).append(':')
+                    world.entities.forEach { (id, components) ->
+                        append(id.value).append('=').append(components.get<CardComponent>()?.name).append(';')
+                    }
+                    append(world.zones).append('\n')
+                    val retainedEntities = world.entities.toMap()
+                    sampler.sample(world, viewer, model, GameRng.seeded(seed + 100))
+                    world.entities shouldBe retainedEntities
+                }
+            }
+            // Captured from the per-card-copy implementation at upstream 12589ae4a2.
+            java.security.MessageDigest.getInstance("SHA-256").digest(signature.toByteArray())
+                .joinToString("") { "%02x".format(it) } shouldBe
+                "fe26af39d1fb97c30edbebf726115360a34a390af7d4c15e9c00a80b3ca8620b"
+        }
+
+        test("library membership lookup retains duplicate occurrences and repeated player traversal") {
+            val game = scenario().withPlayers()
+                .withCardInLibrary(2, "Forest")
+                .withCardInLibrary(2, "Mountain")
+                .withCardInLibrary(2, "Hill Giant")
+                .build()
+            val libraryKey = ZoneKey(game.player2Id, Zone.LIBRARY)
+            val library = game.state.getLibrary(game.player2Id)
+            val duplicated = library + library.first()
+            val source = game.state.copy(
+                zones = game.state.zones + (libraryKey to duplicated),
+                turnOrder = game.state.turnOrder + game.player2Id,
+            )
+            val sampler = Determinizer(cardRegistry)
+            for (seed in 1L..16L) {
+                val world = sampler.sample(source, game.player1Id, OpponentModel.IdentityPermutation, GameRng.seeded(seed))
+                world.getLibrary(game.player2Id).shouldContainExactlyInAnyOrder(duplicated)
+                world.entities.keys.toList() shouldBe source.entities.keys.toList()
+                source.getLibrary(game.player2Id) shouldBe duplicated
+            }
+        }
+
         test("sampling preserves structure and everything visible to the viewer") {
             val game = scenario()
                 .withPlayers()
@@ -255,7 +326,9 @@ class DeterminizerInvariantsTest : ScenarioTestBase() {
             val candidateIdentities = candidateIds.associateWith {
                 source.getEntity(it)!!.require<CardComponent>()
             }
+            var analyses = 0
             val determinizer = Determinizer(cardRegistry, Visibility(cardRegistry)) {
+                analyses++
                 HiddenSlotRewrite.IdentitySensitiveInFlightPins.Incomplete("forced for test")
             }
 
@@ -270,6 +343,38 @@ class DeterminizerInvariantsTest : ScenarioTestBase() {
                 sampled.getEntity(entityId)!!.require<CardComponent>() shouldBe identity
             }
             sampled shouldBe source
+            analyses shouldBe 1
+        }
+
+        test("in-flight references are analyzed once for all players in a sample") {
+            val game = scenario()
+                .withPlayers()
+                .withCardInLibrary(1, "Forest")
+                .withCardInLibrary(1, "Mountain")
+                .withCardInHand(2, "Grizzly Bears")
+                .withCardInLibrary(2, "Hill Giant")
+                .build()
+            var analyses = 0
+            val determinizer = Determinizer(cardRegistry, Visibility(cardRegistry)) { state ->
+                analyses++
+                HiddenSlotRewrite.identitySensitiveInFlightPins(state)
+            }
+            val rng = GameRng.seeded(914L)
+
+            determinizer.sample(game.state, game.player1Id, OpponentModel.IdentityPermutation, rng) shouldBe
+                Determinizer(cardRegistry).sample(game.state, game.player1Id, OpponentModel.IdentityPermutation, rng)
+            analyses shouldBe 1
+        }
+
+        test("a position without players does not analyze in-flight references") {
+            val game = scenario().withPlayers().build()
+            val source = game.state.copy(turnOrder = emptyList())
+            val determinizer = Determinizer(cardRegistry, Visibility(cardRegistry)) {
+                error("There are no players to sample")
+            }
+
+            (determinizer.sample(source, game.player1Id, OpponentModel.IdentityPermutation, GameRng.seeded(915L)) ===
+                source) shouldBe true
         }
 
         test("the viewer does not retain knowledge of their own library order") {

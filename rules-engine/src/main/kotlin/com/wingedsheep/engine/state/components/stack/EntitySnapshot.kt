@@ -93,6 +93,8 @@ data class EntitySnapshot(
     override val counters: Map<String, Int> = emptyMap(),
     override val keywords: Set<String> = emptySet(),
     override val lostAllAbilities: Boolean = false,
+    /** Identity of this battlefield visit, retained after the entity changes zones. */
+    val battlefieldEntryTimestamp: Long? = null,
     // --- battlefield-exit-only fields (no meaning for a live permanent) ---
     /** Projected type line at capture, so leaves-battlefield triggers see continuous-effect-granted types. */
     val typeLine: TypeLine? = null,
@@ -204,6 +206,8 @@ data class EntitySnapshot(
             val projected = state.projectedState
             return EntitySnapshot(
                 entityId = entityId,
+                battlefieldEntryTimestamp = state.getEntity(entityId)
+                    ?.get<com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent>()?.timestamp,
                 power = projected.getPower(entityId),
                 toughness = projected.getToughness(entityId),
                 subtypes = projected.getSubtypes(entityId),
@@ -261,6 +265,8 @@ fun captureEntitySnapshots(
 ): List<EntitySnapshot> = captureEntitySnapshots(ids, state.projectedState).map { snapshot ->
     val container = state.getEntity(snapshot.entityId)
     snapshot.copy(
+        battlefieldEntryTimestamp = container
+            ?.get<com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent>()?.timestamp,
         wasToken = container?.has<TokenComponent>() ?: false,
         name = container?.get<CardComponent>()?.name,
     )
