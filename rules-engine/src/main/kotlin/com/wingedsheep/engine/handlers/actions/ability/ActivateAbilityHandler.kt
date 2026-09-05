@@ -35,6 +35,7 @@ import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.mechanics.targeting.TargetValidator
 import com.wingedsheep.engine.legalactions.utils.CastPermissionUtils
 import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.state.nameVisibleToAll
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
@@ -59,11 +60,10 @@ import com.wingedsheep.sdk.scripting.costs.PermanentCostAction
 import com.wingedsheep.sdk.scripting.costs.VariableCostMeasure
 import com.wingedsheep.sdk.scripting.costs.manaCostOrNull
 import com.wingedsheep.sdk.scripting.AbilityId
+import com.wingedsheep.sdk.scripting.AbilityIdentity
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.ExtraLoyaltyActivation
-import com.wingedsheep.sdk.scripting.GrantActivatedAbility
-import com.wingedsheep.sdk.scripting.filters.unified.Scope
 import com.wingedsheep.sdk.scripting.targets.TargetChooser
 import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.effects.LevelUpClassEffect
@@ -86,6 +86,50 @@ import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.Zone
 import kotlin.reflect.KClass
+
+/**
+ * Result of resolving an activated-ability id on an object.
+ *
+ * The concrete [ability] is not enough to infer semantic identity: runtime, static, emblem-granted,
+ * and intrinsic abilities all have ids, but those ids do not belong to the receiving object's card
+ * definition. Keeping the lookup provenance in the result makes the definition-owned cases
+ * explicit and keeps a static granter attached only to the branch that actually supplied the
+ * ability.
+ */
+private sealed interface ActivatedAbilityLookup {
+    val ability: ActivatedAbility
+
+    data class DirectDefinition(
+        override val ability: ActivatedAbility,
+        val identity: AbilityIdentity,
+    ) : ActivatedAbilityLookup
+
+    data class DefinitionDerivedClass(
+        override val ability: ActivatedAbility,
+        val identity: AbilityIdentity,
+    ) : ActivatedAbilityLookup
+
+    data class RuntimeGranted(override val ability: ActivatedAbility) : ActivatedAbilityLookup
+
+    data class StaticGranted(
+        override val ability: ActivatedAbility,
+        val granterId: EntityId,
+    ) : ActivatedAbilityLookup
+
+    data class EmblemGranted(override val ability: ActivatedAbility) : ActivatedAbilityLookup
+
+    data class Intrinsic(override val ability: ActivatedAbility) : ActivatedAbilityLookup
+
+    val staticGranterId: EntityId?
+        get() = (this as? StaticGranted)?.granterId
+
+    val definitionIdentity: AbilityIdentity?
+        get() = when (this) {
+            is DirectDefinition -> identity
+            is DefinitionDerivedClass -> identity
+            is RuntimeGranted, is StaticGranted, is EmblemGranted, is Intrinsic -> null
+        }
+}
 
 /**
  * Handler for the ActivateAbility action.
@@ -176,24 +220,17 @@ class ActivateAbilityHandler(
         val cardComponent = container.get<CardComponent>()
             ?: return "Source is not a card"
 
-        // Tokens (and other entities without a registered CardDefinition) only have abilities
+        // Tokens (and other entities without a registered CardDefinition) can still have abilities
         // via static grants (e.g., Brightcap Badger granting "{T}: Add {G}" to Saproling tokens),
-        // intrinsic mana abilities (basic-land subtypes), or temporarily granted abilities. Don't
-        // bail out when the lookup fails — fall through to those sources instead.
+        // emblems, intrinsic mana abilities (basic-land subtypes), or temporary grants. Don't bail
+        // out before the provenance-aware lookup has checked those sources.
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
-
-        // Look up ability from card definition (including class-level abilities), granted abilities, or static grants
         val classLevel = container.get<ClassLevelComponent>()?.currentLevel
-        val staticGrants = getStaticGrantedAbilitiesWithGranter(action.sourceId, state)
-        val ability = cardDef?.script?.effectiveActivatedAbilities(classLevel)?.find { it.id == action.abilityId }
-            ?: cardDef?.let { findClassLevelUpAbility(it, container, action.abilityId) }
-            ?: state.grantedActivatedAbilities
-                .filter { it.entityId == action.sourceId }
-                .map { it.ability }
-                .find { it.id == action.abilityId }
-            ?: staticGrants.firstOrNull { it.first.id == action.abilityId }?.first
-            ?: resolveIntrinsicManaAbility(state, action.sourceId, action.abilityId)
+
+        // Keep lookup provenance: only definition-owned results can later form AbilityIdentity.
+        val abilityLookup = lookupActivatedAbility(state, action.sourceId, action.abilityId)
             ?: return "Ability not found on this card"
+        val ability = abilityLookup.ability
 
         // The mana-payment window (CR 605.3a) opens the door for mana abilities only — everything
         // else still needs priority.
@@ -472,7 +509,7 @@ class ActivateAbilityHandler(
 
         // The granter of a statically-granted ability, so AbilityCost.TapGrantingPermanent can be
         // checked against the *Equipment's* tap state rather than the host creature's.
-        val validationGranterId = staticGrants.firstOrNull { it.first.id == action.abilityId }?.second
+        val validationGranterId = abilityLookup.staticGranterId
 
         if (action.paymentStrategy !is PaymentStrategy.Explicit && !canPayAbilityCostWithSources(state, costAfterConvokeReduction, action.sourceId, action.playerId, abilityPaymentContext, validationGranterId)) {
             return when (effectiveCost) {
@@ -650,24 +687,16 @@ class ActivateAbilityHandler(
         val cardComponent = container.get<CardComponent>()
             ?: return ExecutionResult.error(state, "Source is not a card")
 
-        // Tokens (no registered CardDefinition) reach this path when activating granted abilities;
-        // fall through with a null cardDef and let the granted-ability lookup succeed.
-        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
+        val sourceName = nameVisibleToAll(state, action.sourceId, cardComponent.name)
 
-        // Look up ability from card definition (including class-level abilities), granted abilities, or static grants
-        val classLevel = container.get<ClassLevelComponent>()?.currentLevel
-        val staticGrants = getStaticGrantedAbilitiesWithGranter(action.sourceId, state)
-        val staticGrantMatch = staticGrants.firstOrNull { it.first.id == action.abilityId }
-        val ability = cardDef?.script?.effectiveActivatedAbilities(classLevel)?.find { it.id == action.abilityId }
-            ?: cardDef?.let { findClassLevelUpAbility(it, container, action.abilityId) }
-            ?: state.grantedActivatedAbilities
-                .filter { it.entityId == action.sourceId }
-                .map { it.ability }
-                .find { it.id == action.abilityId }
-            ?: staticGrantMatch?.first
-            ?: resolveIntrinsicManaAbility(state, action.sourceId, action.abilityId)
+        // Retain which lookup branch supplied the concrete ability. A CardComponent on the
+        // receiving permanent proves only that the object is a card; it does not make a runtime,
+        // static, emblem-granted, or intrinsic ability part of that card's definition.
+        val abilityLookup = lookupActivatedAbility(state, action.sourceId, action.abilityId)
             ?: return ExecutionResult.error(state, "Ability not found")
-        val staticGranterId = staticGrantMatch?.second
+        val ability = abilityLookup.ability
+        val staticGranterId = abilityLookup.staticGranterId
+        val abilityIdentity = abilityLookup.definitionIdentity
 
         // "X can't be 0" abilities (Gogo, Master of Mimicry): reject an engine-direct activation that
         // pre-fills an X below the ability's minimum. The legal-actions submission path enforces the
@@ -675,7 +704,7 @@ class ActivateAbilityHandler(
         if (action.xValue != null && action.xValue < ability.minimumXValue) {
             return ExecutionResult.error(
                 state,
-                "X must be at least ${ability.minimumXValue} for ${cardComponent.name}"
+                "X must be at least ${ability.minimumXValue} for ${sourceName}"
             )
         }
 
@@ -745,7 +774,7 @@ class ActivateAbilityHandler(
             val opponentReqs = fullTargetReqs.filter { it.chooser == TargetChooser.Opponent }
             if (opponentReqs.isNotEmpty()) {
                 return pauseForOpponentChosenTargets(
-                    state, action, cardComponent.name, fullTargetReqs, opponentReqs
+                    state, action, sourceName, fullTargetReqs, opponentReqs
                 )
             }
         }
@@ -775,10 +804,10 @@ class ActivateAbilityHandler(
             val decision = com.wingedsheep.engine.core.ChooseNumberDecision(
                 id = decisionId,
                 playerId = action.playerId,
-                prompt = "Choose X for ${cardComponent.name} (0-$maxX)",
+                prompt = "Choose X for ${sourceName} (0-$maxX)",
                 context = com.wingedsheep.engine.core.DecisionContext(
                     sourceId = action.sourceId,
-                    sourceName = cardComponent.name,
+                    sourceName = sourceName,
                     phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
                 ),
                 minValue = 0,
@@ -821,10 +850,10 @@ class ActivateAbilityHandler(
             val decision = com.wingedsheep.engine.core.ChooseNumberDecision(
                 id = decisionId,
                 playerId = action.playerId,
-                prompt = "Choose X for ${cardComponent.name} ($minX-$maxX)",
+                prompt = "Choose X for ${sourceName} ($minX-$maxX)",
                 context = com.wingedsheep.engine.core.DecisionContext(
                     sourceId = action.sourceId,
-                    sourceName = cardComponent.name,
+                    sourceName = sourceName,
                     phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
                 ),
                 minValue = minX,
@@ -885,9 +914,9 @@ class ActivateAbilityHandler(
                 val decisionId = java.util.UUID.randomUUID().toString()
                 val prompt = if (fixedCount != null) {
                     "Select $fixedCount card${if (fixedCount > 1) "s" else ""} to exile from " +
-                        "graveyard for ${cardComponent.name}"
+                        "graveyard for ${sourceName}"
                 } else {
-                    "Select any number of cards to exile from graveyard for ${cardComponent.name} " +
+                    "Select any number of cards to exile from graveyard for ${sourceName} " +
                         "(X is the number you choose)"
                 }
                 val decision = com.wingedsheep.engine.core.SelectCardsDecision(
@@ -896,7 +925,7 @@ class ActivateAbilityHandler(
                     prompt = prompt,
                     context = com.wingedsheep.engine.core.DecisionContext(
                         sourceId = action.sourceId,
-                        sourceName = cardComponent.name,
+                        sourceName = sourceName,
                         phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
                     ),
                     options = exileXCandidates,
@@ -964,14 +993,14 @@ class ActivateAbilityHandler(
                 }
             if (exileCandidates.size > exileFromGraveyardCost.count) {
                 val decisionId = java.util.UUID.randomUUID().toString()
-                val prompt = "Select ${exileFromGraveyardCost.count} card${if (exileFromGraveyardCost.count > 1) "s" else ""} to exile from graveyard for ${cardComponent.name}"
+                val prompt = "Select ${exileFromGraveyardCost.count} card${if (exileFromGraveyardCost.count > 1) "s" else ""} to exile from graveyard for ${sourceName}"
                 val decision = com.wingedsheep.engine.core.SelectCardsDecision(
                     id = decisionId,
                     playerId = action.playerId,
                     prompt = prompt,
                     context = com.wingedsheep.engine.core.DecisionContext(
                         sourceId = action.sourceId,
-                        sourceName = cardComponent.name,
+                        sourceName = sourceName,
                         phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
                     ),
                     options = exileCandidates,
@@ -1029,14 +1058,14 @@ class ActivateAbilityHandler(
             // pick a distinctly-named set even when candidates == count — so always pause for it.
             if (sacrificeCandidates.size > sacrificeCost.count || sacrificeCost.distinctNames) {
                 val decisionId = java.util.UUID.randomUUID().toString()
-                val prompt = "Select ${sacrificeCost.count} permanent${if (sacrificeCost.count > 1) "s" else ""} to sacrifice for ${cardComponent.name}"
+                val prompt = "Select ${sacrificeCost.count} permanent${if (sacrificeCost.count > 1) "s" else ""} to sacrifice for ${sourceName}"
                 val decision = com.wingedsheep.engine.core.SelectCardsDecision(
                     id = decisionId,
                     playerId = action.playerId,
                     prompt = prompt,
                     context = com.wingedsheep.engine.core.DecisionContext(
                         sourceId = action.sourceId,
-                        sourceName = cardComponent.name,
+                        sourceName = sourceName,
                         phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
                     ),
                     options = sacrificeCandidates,
@@ -1087,17 +1116,17 @@ class ActivateAbilityHandler(
                 .let { if (variablePermanentsCost.excludeSelf) it.filter { id -> id != action.sourceId } else it }
             val minCount = variablePermanentsCost.minCount
             if (candidates.size < minCount) {
-                return ExecutionResult.error(state, "Not enough permanents to $verb for ${cardComponent.name}")
+                return ExecutionResult.error(state, "Not enough permanents to $verb for ${sourceName}")
             }
             val decisionId = java.util.UUID.randomUUID().toString()
-            val prompt = "Choose one or more ${variablePermanentsCost.filter.description}s to $verb for ${cardComponent.name}"
+            val prompt = "Choose one or more ${variablePermanentsCost.filter.description}s to $verb for ${sourceName}"
             val decision = com.wingedsheep.engine.core.SelectCardsDecision(
                 id = decisionId,
                 playerId = action.playerId,
                 prompt = prompt,
                 context = com.wingedsheep.engine.core.DecisionContext(
                     sourceId = action.sourceId,
-                    sourceName = cardComponent.name,
+                    sourceName = sourceName,
                     phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
                 ),
                 options = candidates,
@@ -1152,7 +1181,7 @@ class ActivateAbilityHandler(
                         state, req, action.playerId, action.sourceId, pipelineContext = pipelineContext
                     )
                     if (legal.isEmpty() && req.effectiveMinCount > 0) {
-                        return ExecutionResult.error(state, "No legal target for ${cardComponent.name}")
+                        return ExecutionResult.error(state, "No legal target for ${sourceName}")
                     }
                     legalTargets[index] = legal
                     com.wingedsheep.engine.core.TargetRequirementInfo(
@@ -1163,14 +1192,14 @@ class ActivateAbilityHandler(
                     )
                 }
                 val decisionId = java.util.UUID.randomUUID().toString()
-                val prompt = "Choose ${controllerTargetReqsExec.joinToString(" and ") { it.description }} for ${cardComponent.name}"
+                val prompt = "Choose ${controllerTargetReqsExec.joinToString(" and ") { it.description }} for ${sourceName}"
                 val decision = com.wingedsheep.engine.core.ChooseTargetsDecision(
                     id = decisionId,
                     playerId = action.playerId,
                     prompt = prompt,
                     context = com.wingedsheep.engine.core.DecisionContext(
                         sourceId = action.sourceId,
-                        sourceName = cardComponent.name,
+                        sourceName = sourceName,
                         phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
                     ),
                     targetRequirements = requirementInfos,
@@ -1296,7 +1325,7 @@ class ActivateAbilityHandler(
                     }
                 }
                 else -> {
-                    val autoTapResult = autoTapForManaCost(currentState, action.playerId, manaPool, manaCost, cardComponent.name, manaXValue, selfExcludedSources, executeAbilityContext, ability.xManaRestriction)
+                    val autoTapResult = autoTapForManaCost(currentState, action.playerId, manaPool, manaCost, sourceName, manaXValue, selfExcludedSources, executeAbilityContext, ability.xManaRestriction)
                         ?: return ExecutionResult.error(state, "Not enough mana to activate this ability")
                     currentState = autoTapResult.newState
                     manaPool = autoTapResult.newPool
@@ -1566,7 +1595,7 @@ class ActivateAbilityHandler(
         // only the loyalty change — which payAbilityCost mutates without an event — is emitted here.
         val abilityCost = ability.cost
         if (abilityCost is AbilityCost.Loyalty) {
-            events.add(LoyaltyChangedEvent(action.sourceId, cardComponent.name, abilityCost.change))
+            events.add(LoyaltyChangedEvent(action.sourceId, sourceName, abilityCost.change))
         }
 
         // Snapshot of the activation's cost-side events (cost payment + the {T}/tap/loyalty events
@@ -1658,7 +1687,7 @@ class ActivateAbilityHandler(
             // Adding it to [events] now carries it out through those exits too.
             val manaAbilityActivatedEvent = AbilityActivatedEvent(
                 sourceId = action.sourceId,
-                sourceName = cardComponent.name,
+                sourceName = sourceName,
                 controllerId = action.playerId,
                 abilityEntityId = null,
                 costsTap = hasTapCost(effectiveCost),
@@ -1722,9 +1751,11 @@ class ActivateAbilityHandler(
                 // amount resolves to 0 and the ability produces nothing.
                 sacrificedPermanents = sacrificedSnapshots,
                 manaColorChoice = action.manaColorChoice,
-                // The tally above was already incremented for this activation, so a burnout clause
-                // reading "four or more times this turn" sees the fourth activation as the fourth.
-                activatedAbilityId = if (ability.trackActivations) ability.id else null,
+                // Mana abilities resolve without a stack component, so their activation-time
+                // provenance must enter the effect context here. The concrete id remains useful
+                // even when this lookup branch could not prove a definition-scoped identity.
+                abilityIdentity = abilityIdentity,
+                activatedAbility = ability,
             )
 
             val effectResult = effectExecutorRegistry.execute(currentState, finalEffect, context).toExecutionResult()
@@ -1776,7 +1807,7 @@ class ActivateAbilityHandler(
                 ManaAddedEvent(
                     playerId = action.playerId,
                     sourceId = action.sourceId,
-                    sourceName = cardComponent.name,
+                    sourceName = sourceName,
                     colorless = 1
                 )
             } else when (val effect = finalEffect) {
@@ -1785,7 +1816,7 @@ class ActivateAbilityHandler(
                     ManaAddedEvent(
                         playerId = action.playerId,
                         sourceId = action.sourceId,
-                        sourceName = cardComponent.name,
+                        sourceName = sourceName,
                         white = if (effect.color == Color.WHITE) amount else 0,
                         blue = if (effect.color == Color.BLUE) amount else 0,
                         black = if (effect.color == Color.BLACK) amount else 0,
@@ -1799,7 +1830,7 @@ class ActivateAbilityHandler(
                     ManaAddedEvent(
                         playerId = action.playerId,
                         sourceId = action.sourceId,
-                        sourceName = cardComponent.name,
+                        sourceName = sourceName,
                         colorless = amount
                     )
                 }
@@ -1812,7 +1843,7 @@ class ActivateAbilityHandler(
                     ManaAddedEvent(
                         playerId = action.playerId,
                         sourceId = action.sourceId,
-                        sourceName = cardComponent.name,
+                        sourceName = sourceName,
                         white = if (chosenColor == Color.WHITE) amount else 0,
                         blue = if (chosenColor == Color.BLUE) amount else 0,
                         black = if (chosenColor == Color.BLACK) amount else 0,
@@ -1833,7 +1864,7 @@ class ActivateAbilityHandler(
                             ManaAddedEvent(
                                 playerId = action.playerId,
                                 sourceId = action.sourceId,
-                                sourceName = cardComponent.name,
+                                sourceName = sourceName,
                                 white = if (manaEffect.color == Color.WHITE) amount else 0,
                                 blue = if (manaEffect.color == Color.BLUE) amount else 0,
                                 black = if (manaEffect.color == Color.BLACK) amount else 0,
@@ -1847,7 +1878,7 @@ class ActivateAbilityHandler(
                             ManaAddedEvent(
                                 playerId = action.playerId,
                                 sourceId = action.sourceId,
-                                sourceName = cardComponent.name,
+                                sourceName = sourceName,
                                 colorless = amount
                             )
                         }
@@ -1860,7 +1891,7 @@ class ActivateAbilityHandler(
                             ManaAddedEvent(
                                 playerId = action.playerId,
                                 sourceId = action.sourceId,
-                                sourceName = cardComponent.name,
+                                sourceName = sourceName,
                                 white = if (chosenColor == Color.WHITE) amount else 0,
                                 blue = if (chosenColor == Color.BLUE) amount else 0,
                                 black = if (chosenColor == Color.BLACK) amount else 0,
@@ -1925,7 +1956,7 @@ class ActivateAbilityHandler(
         // Non-mana abilities go on the stack
         val abilityOnStack = ActivatedAbilityOnStackComponent(
             sourceId = action.sourceId,
-            sourceName = cardComponent.name,
+            sourceName = sourceName,
             controllerId = action.playerId,
             effect = finalEffect,
             sacrificedPermanents = sacrificedSnapshots,
@@ -1944,9 +1975,8 @@ class ActivateAbilityHandler(
             lastKnownSourceAttachments = lastKnownSourceAttachments,
             revealedNotedCreatureType = revealedNotedCreatureType,
             descriptionOverride = ability.descriptionOverride,
-            abilityIdentity = com.wingedsheep.sdk.scripting.AbilityIdentity(
-                cardComponent.cardDefinitionId, ability.id
-            ),
+            abilityIdentity = abilityIdentity,
+            activatedAbility = ability,
             granterId = staticGranterId,
             // CR 701.28f — freeze the source's face-change clock as the ability goes on the stack;
             // an instruction inside it to transform that same permanent is ignored if the permanent
@@ -1995,7 +2025,7 @@ class ActivateAbilityHandler(
 
                 // Auto-tap for mana cost
                 if (manaCost != null) {
-                    val autoTapResult = autoTapForManaCost(currentState, action.playerId, repeatPool, manaCost, cardComponent.name, 0, abilityContext = executeAbilityContext)
+                    val autoTapResult = autoTapForManaCost(currentState, action.playerId, repeatPool, manaCost, sourceName, 0, abilityContext = executeAbilityContext)
                         ?: break // Can't afford — stop early
                     currentState = autoTapResult.newState
                     repeatPool = autoTapResult.newPool
@@ -2045,7 +2075,7 @@ class ActivateAbilityHandler(
                 // Put another ability on the stack
                 val repeatAbilityOnStack = ActivatedAbilityOnStackComponent(
                     sourceId = action.sourceId,
-                    sourceName = cardComponent.name,
+                    sourceName = sourceName,
                     controllerId = action.playerId,
                     effect = finalEffect,
                     sacrificedPermanents = emptyList(),
@@ -2053,9 +2083,8 @@ class ActivateAbilityHandler(
                     tappedPermanents = repeatTapSlice,
                     tappedEntitySnapshots = repeatTapSnapshots,
                     descriptionOverride = ability.descriptionOverride,
-                    abilityIdentity = com.wingedsheep.sdk.scripting.AbilityIdentity(
-                        cardComponent.cardDefinitionId, ability.id
-                    ),
+                    abilityIdentity = abilityIdentity,
+                    activatedAbility = ability,
                     granterId = staticGranterId
                 )
                 val repeatStackResult = stackResolver.putActivatedAbility(
@@ -2796,6 +2825,62 @@ class ActivateAbilityHandler(
     }
 
     /**
+     * Resolve [abilityId] without discarding how the concrete ability was found.
+     *
+     * The order matches legal-action enumeration and the historical handler lookup. In
+     * particular, an id directly declared by the current definition wins over an equal id from a
+     * grant. Only the first two branches prove definition ownership; every other branch retains a
+     * concrete id for execution while remaining semantically identityless. Static and emblem
+     * grants come from the same shared resolvers used by legal-action enumeration, so the engine
+     * cannot advertise one grant set and validate another.
+     */
+    private fun lookupActivatedAbility(
+        state: GameState,
+        sourceId: EntityId,
+        abilityId: AbilityId,
+    ): ActivatedAbilityLookup? {
+        val container = state.getEntity(sourceId) ?: return null
+        val cardDefinitionId = container.get<CardComponent>()?.cardDefinitionId ?: return null
+        val cardDef = cardRegistry.getCard(cardDefinitionId)
+        val classLevel = container.get<ClassLevelComponent>()?.currentLevel
+
+        cardDef?.script?.effectiveActivatedAbilities(classLevel)
+            ?.firstOrNull { it.id == abilityId }
+            ?.let {
+                return ActivatedAbilityLookup.DirectDefinition(
+                    it,
+                    AbilityIdentity(cardDefinitionId, it.id),
+                )
+            }
+
+        cardDef?.let { findClassLevelUpAbility(it, container, abilityId) }
+            ?.let {
+                return ActivatedAbilityLookup.DefinitionDerivedClass(
+                    it,
+                    AbilityIdentity(cardDefinitionId, it.id),
+                )
+            }
+
+        state.grantedActivatedAbilities
+            .firstOrNull { it.entityId == sourceId && it.ability.id == abilityId }
+            ?.ability
+            ?.let { return ActivatedAbilityLookup.RuntimeGranted(it) }
+
+        castPermissionUtils.getStaticGrantedAbilitiesWithGranter(sourceId, state)
+            .firstOrNull { it.ability.id == abilityId }
+            ?.let {
+                return ActivatedAbilityLookup.StaticGranted(it.ability, it.granterId)
+            }
+
+        castPermissionUtils.getEmblemGrantedActivatedAbilities(sourceId, state)
+            .firstOrNull { it.id == abilityId }
+            ?.let { return ActivatedAbilityLookup.EmblemGranted(it) }
+
+        return resolveIntrinsicManaAbility(state, sourceId, abilityId)
+            ?.let { ActivatedAbilityLookup.Intrinsic(it) }
+    }
+
+    /**
      * Find a class level-up ability by its deterministic ID.
      * Returns the generated ActivatedAbility if the ID matches a valid level-up,
      * or null if this isn't a class level-up ability.
@@ -2818,155 +2903,6 @@ class ActivateAbilityHandler(
             descriptionOverride = "Level up to level $targetLevel"
         )
     }
-
-    /**
-     * Get activated abilities granted to an entity by static abilities on battlefield permanents,
-     * paired with the EntityId of the permanent that granted each ability.
-     * E.g., Spectral Sliver grants a pump ability to all Sliver creatures via
-     * GrantActivatedAbility. The Dominion Bracelet grants its activated
-     * ability to the equipped creature via GrantActivatedAbility; the
-     * granter ID is needed to resolve AbilityCost.ExileGrantingPermanent.
-     */
-    private fun getStaticGrantedAbilitiesWithGranter(
-        entityId: EntityId,
-        state: GameState
-    ): List<Pair<ActivatedAbility, EntityId>> {
-        if (state.getEntity(entityId) == null) return emptyList()
-
-        val result = mutableListOf<Pair<ActivatedAbility, EntityId>>()
-
-        for (permanentId in state.getBattlefield()) {
-            val container = state.getEntity(permanentId) ?: continue
-            val card = container.get<CardComponent>() ?: continue
-            if (container.has<FaceDownComponent>()) continue
-
-            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            val classLevel = container.get<com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent>()?.currentLevel
-            for (rawAbility in cardDef.script.effectiveStaticAbilities(classLevel)) {
-                // A grant can be gated by a ConditionalStaticAbility (Nature's Embrace: the land host
-                // gains "{T}: Add two mana of any one color" only while it is a land). Unwrap the
-                // condition against the granter here so the actual-activation path agrees with the
-                // enumerator; skip when the gate is currently false.
-                val ability = when (rawAbility) {
-                    is com.wingedsheep.sdk.scripting.ConditionalStaticAbility -> {
-                        val granterController = state.projectedState.getController(permanentId)
-                            ?: container.get<ControllerComponent>()?.playerId
-                            ?: continue
-                        val ctx = EffectContext(sourceId = permanentId, controllerId = granterController)
-                        if (!conditionEvaluator.evaluate(state, rawAbility.condition, ctx)) continue
-                        rawAbility.ability
-                    }
-                    else -> rawAbility
-                }
-                // "[receivedBy] have all activated abilities of the [cardFilter] cards exiled with/to
-                // craft this / in your graveyard" (Territory Forge / Locus of Enlightenment /
-                // Thranduil = Self; Agatha's Soul Cauldron = creatures you control with a +1/+1
-                // counter). Mirror CastPermissionUtils.getStaticGrantedAbilitiesWithGranter: grant each
-                // donor ability (per `ability.donors`) to every matching permanent, recording the
-                // *receiver* as the granter so `{T}`/self-references bind to the permanent that gained
-                // the ability. When `oncePerTurnEach` is set (Locus), the util re-stamps each ability
-                // with a donor-derived AbilityId + once-per-turn cap.
-                if (ability is com.wingedsheep.sdk.scripting.HasAllActivatedAbilitiesOfCards) {
-                    val receives = when (val scope = ability.receivedBy.scope) {
-                        is Scope.Self -> permanentId == entityId
-                        is Scope.Specific -> scope.entityId == entityId
-                        is Scope.AttachedTo -> container.get<AttachedToComponent>()?.targetId == entityId
-                        is Scope.SoulbondPair ->
-                            com.wingedsheep.engine.mechanics.SoulbondPairing.isInPairOf(state, permanentId, entityId)
-                        is Scope.Battlefield -> {
-                            if (ability.receivedBy.excludeSelf && permanentId == entityId) false
-                            else {
-                                val granterController = state.projectedState.getController(permanentId)
-                                granterController != null && predicateEvaluator.matches(
-                                    state, state.projectedState, entityId, ability.receivedBy.baseFilter,
-                                    PredicateContext(controllerId = granterController, sourceId = permanentId)
-                                )
-                            }
-                        }
-                    }
-                    if (receives) {
-                        for (granted in com.wingedsheep.engine.legalactions.utils.donorCardsActivatedAbilities(
-                            state, permanentId, cardRegistry, predicateEvaluator,
-                            ability.donors, ability.cardFilter, ability.oncePerTurnEach
-                        )) {
-                            result.add(granted to entityId)
-                        }
-                    }
-                    continue
-                }
-                // "This permanent has all activated and triggered abilities of the last chosen card
-                // exiled with it" (Koh, the Face Stealer). Self-scoped: only the source receives the
-                // chosen card's *activated* abilities here (triggered ones flow through
-                // TriggerAbilityResolver), with the source recorded as granter so `{T}`/self-references
-                // bind to it.
-                if (ability is com.wingedsheep.sdk.scripting.HasAbilitiesOfChosenLinkedExiledCard) {
-                    if (ability.grantActivated && permanentId == entityId) {
-                        for (granted in com.wingedsheep.engine.legalactions.utils.chosenLinkedExiledActivatedAbilities(state, permanentId, cardRegistry)) {
-                            result.add(granted to entityId)
-                        }
-                    }
-                    continue
-                }
-                if (ability !is GrantActivatedAbility) continue
-                when (ability.filter.scope) {
-                    is Scope.Battlefield -> {
-                        if (ability.filter.excludeSelf && permanentId == entityId) continue
-                        val granterController = state.projectedState.getController(permanentId) ?: continue
-                        val matches = predicateEvaluator.matches(
-                            state,
-                            state.projectedState,
-                            entityId,
-                            ability.filter.baseFilter,
-                            PredicateContext(controllerId = granterController, sourceId = permanentId)
-                        )
-                        if (matches) {
-                            result.add(ability.ability to permanentId)
-                        }
-                    }
-                    is Scope.AttachedTo -> {
-                        val attachedTo = container.get<AttachedToComponent>()
-                        if (attachedTo != null && attachedTo.targetId == entityId) {
-                            result.add(ability.ability to permanentId)
-                        }
-                    }
-                    is Scope.Self -> {
-                        if (permanentId == entityId) result.add(ability.ability to permanentId)
-                    }
-                    // Soulbond payoff (CR 702.95b) — must mirror the enumerator's SoulbondPair
-                    // branch in CastPermissionUtils exactly, or the ability shows as a button on the
-                    // paired creature and then fails legality when clicked.
-                    is Scope.SoulbondPair -> {
-                        if (com.wingedsheep.engine.mechanics.SoulbondPairing.isInPairOf(state, permanentId, entityId)) {
-                            result.add(ability.ability to permanentId)
-                        }
-                    }
-                    is Scope.Specific -> {
-                        if ((ability.filter.scope as Scope.Specific).entityId == entityId) {
-                            result.add(ability.ability to permanentId)
-                        }
-                    }
-                }
-            }
-        }
-
-        // Granted GrantActivatedAbility statics (CR 611): a permanent that was itself *granted* an
-        // ability-granting static — e.g. Roar of the Fifth People chapter II. Resolved by the shared
-        // helper so this handler and the enumerators agree on the granted set.
-        castPermissionUtils.getGrantedStaticGrantActivatedAbilities(entityId, state)
-            .forEach { result.add(it.ability to it.granterId) }
-
-        // GainActivatedAbilitiesOfPermanents (Sharkey): copies of opponents' lands' abilities, etc.
-        // Resolved by the shared helper so the enumerator and this handler agree on the gained set.
-        castPermissionUtils.getGainedAbilitiesOfPermanents(entityId, state)
-            .forEach { result.add(it.ability to it.granterId) }
-
-        return result
-    }
-
-    private fun getStaticGrantedActivatedAbilities(
-        entityId: EntityId,
-        state: GameState
-    ): List<ActivatedAbility> = getStaticGrantedAbilitiesWithGranter(entityId, state).map { it.first }
 
     companion object {
         fun create(services: EngineServices): ActivateAbilityHandler {
@@ -3008,7 +2944,7 @@ class ActivateAbilityHandler(
         return ManaAddedEvent(
             playerId = action.playerId,
             sourceId = action.sourceId,
-            sourceName = cardComponent.name,
+            sourceName = nameVisibleToAll(oldState, action.sourceId, cardComponent.name),
             white = newPool.white - (oldPool?.white ?: 0),
             blue = newPool.blue - (oldPool?.blue ?: 0),
             black = newPool.black - (oldPool?.black ?: 0),
