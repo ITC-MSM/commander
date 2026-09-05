@@ -32,6 +32,8 @@ class ModifyStatsExecutor(
         effect: ModifyStatsEffect,
         context: EffectContext
     ): EffectResult {
+        if (context.isUnavailableBattlefieldSource(effect.target, state)) return EffectResult.success(state)
+
         // Resolve the target creature
         val targetId = context.resolveTarget(effect.target, state)
             ?: return EffectResult.error(state, "No valid target for stat modification")

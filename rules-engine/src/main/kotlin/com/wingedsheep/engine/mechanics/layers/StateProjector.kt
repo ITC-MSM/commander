@@ -116,22 +116,26 @@ class StateProjector(
                 projectedValues[entityId] = MutableProjectedValues(
                     power = baseStats?.basePower,
                     toughness = baseStats?.baseToughness,
-                    keywords = (cardComponent.baseKeywords.map { it.name } +
-                        cardComponent.baseFlags.map { it.name } +
-                        (container.get<ProtectionComponent>()?.colors?.map { "PROTECTION_FROM_${it.name}" } ?: emptyList()) +
-                        (container.get<ProtectionComponent>()?.subtypes?.map { "PROTECTION_FROM_SUBTYPE_${it.uppercase()}" } ?: emptyList()) +
-            (container.get<ProtectionComponent>()?.supertypes?.map { "PROTECTION_FROM_SUPERTYPE_${it.uppercase()}" } ?: emptyList()) +
-                        (container.get<ProtectionComponent>()?.cardTypes?.map { "PROTECTION_FROM_CARDTYPE_$it" } ?: emptyList()) +
-                        (container.get<HexproofFromComponent>()?.colors?.map { "HEXPROOF_FROM_${it.name}" } ?: emptyList()) +
-                        (container.get<HexproofFromComponent>()?.cardTypes?.map { "HEXPROOF_FROM_CARDTYPE_$it" } ?: emptyList()) +
-                        (container.get<ToxicComponent>()?.let { listOf("TOXIC_${it.amount}") } ?: emptyList()) +
-                        // CR 702.109a: "as long as this permanent's dash cost was paid, it has
-                        // haste" — derived live from the marker every projection, not stored as a
-                        // floating effect (see DashedComponent's doc for why).
-                        (if (container.has<DashedComponent>()) listOf(Keyword.HASTE.name) else emptyList())).toMutableSet(),
-                    colors = cardComponent.colors.map { it.name }.toMutableSet(),
+                    keywords = linkedSetOf<String>().apply {
+                        cardComponent.baseKeywords.forEach { add(it.name) }
+                        cardComponent.baseFlags.forEach { add(it.name) }
+                        container.get<ProtectionComponent>()?.let { protection ->
+                            protection.colors.forEach { add("PROTECTION_FROM_${it.name}") }
+                            protection.subtypes.forEach { add("PROTECTION_FROM_SUBTYPE_${it.uppercase()}") }
+                            protection.supertypes.forEach { add("PROTECTION_FROM_SUPERTYPE_${it.uppercase()}") }
+                            protection.cardTypes.forEach { add("PROTECTION_FROM_CARDTYPE_$it") }
+                        }
+                        container.get<HexproofFromComponent>()?.let { hexproof ->
+                            hexproof.colors.forEach { add("HEXPROOF_FROM_${it.name}") }
+                            hexproof.cardTypes.forEach { add("HEXPROOF_FROM_CARDTYPE_$it") }
+                        }
+                        container.get<ToxicComponent>()?.let { add("TOXIC_${it.amount}") }
+                        // Dash supplies haste from the live marker on every projection.
+                        if (container.has<DashedComponent>()) add(Keyword.HASTE.name)
+                    },
+                    colors = cardComponent.colors.mapTo(linkedSetOf()) { it.name },
                     types = extractTypes(cardComponent),
-                    subtypes = cardComponent.typeLine.subtypes.map { it.value }.toMutableSet(),
+                    subtypes = cardComponent.typeLine.subtypes.mapTo(linkedSetOf()) { it.value },
                     controllerId = container.get<ControllerComponent>()?.playerId,
                     isFaceDown = false
                 )
@@ -394,16 +398,17 @@ class StateProjector(
         // Growth, Aggressive Urge), and lord-style anthems alike.
         applyAffectedPowerAtMostSourceGate(state, projectedValues)
 
-        // Convert to immutable
+        // Transfer the locally owned sets into the final projection. No later step mutates them;
+        // intermediate projections still copy their sets because subsequent layers can change them.
         val finalValues = projectedValues.mapValues { (_, v) ->
             ProjectedValues(
                 power = v.power,
                 toughness = v.toughness,
                 name = v.name,
-                keywords = v.keywords.toSet(),
-                colors = v.colors.toSet(),
-                types = v.types.toSet(),
-                subtypes = v.subtypes.toSet(),
+                keywords = v.keywords,
+                colors = v.colors,
+                types = v.types,
+                subtypes = v.subtypes,
                 controllerId = v.controllerId,
                 isFaceDown = v.isFaceDown,
                 isSuspected = v.isSuspected,
@@ -519,10 +524,10 @@ class StateProjector(
     }
 
     private fun extractTypes(card: CardComponent): MutableSet<String> {
-        val types = mutableSetOf<String>()
-        types.addAll(card.typeLine.supertypes.map { it.name })
-        types.addAll(card.typeLine.cardTypes.map { it.name })
-        types.addAll(card.typeLine.subtypes.map { it.value })
+        val types = linkedSetOf<String>()
+        card.typeLine.supertypes.forEach { types.add(it.name) }
+        card.typeLine.cardTypes.forEach { types.add(it.name) }
+        card.typeLine.subtypes.forEach { types.add(it.value) }
         return types
     }
 

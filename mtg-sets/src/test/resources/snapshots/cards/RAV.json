@@ -1007,6 +1007,122 @@
     "colorIdentityOverride": []
 }
 
+// Brainspoil
+{
+    "name": "Brainspoil",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy target creature that isn't enchanted. It can't be regenerated.\nTransmute {1}{B}{B} ({1}{B}{B}, Discard this card: Search your library for a card with the same mana value as this card, reveal it, put it into your hand, then shuffle. Transmute only as a sorcery.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "CantBeRegenerated",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature that isn't enchanted"
+                    }
+                },
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature that isn't enchanted"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "StateNot",
+                                "predicate": "IsEnchanted"
+                            }
+                        ]
+                    }
+                },
+                "id": "target creature that isn't enchanted"
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{B}{B}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "mv=5"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "activateFromZone": "Hand",
+                "descriptionOverride": "Transmute {1}{B}{B} — Discard this card to search for a card with the same mana value."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "78",
+        "artist": "Tomas Giorello",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c34fa44f-274e-4914-bbd5-71193f8d2f96.jpg?1783943674"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Bramble Elemental
 {
     "name": "Bramble Elemental",
@@ -2447,6 +2563,58 @@
     ]
 }
 
+// Darkblast
+{
+    "name": "Darkblast",
+    "manaCost": "{B}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets -1/-1 until end of turn.\nDredge 3 (If you would draw a card, you may mill three cards instead. If you do, return this card from your graveyard to your hand.)",
+    "keywords": [
+        "DREDGE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Dredge",
+            "amount": 3
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": -1
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": -1
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "rarity": "UNCOMMON",
+        "artist": "Randy Gallegos",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0dcaba91-06d3-4492-9e07-36a1b858ca47.jpg?1783943673"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Devouring Light
 {
     "name": "Devouring Light",
@@ -2885,6 +3053,187 @@
     ]
 }
 
+// Dimir House Guard
+{
+    "name": "Dimir House Guard",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Skeleton",
+    "oracleText": "Fear (This creature can't be blocked except by artifact creatures and/or black creatures.)\nSacrifice a creature: Regenerate this creature.\nTransmute {1}{B}{B} ({1}{B}{B}, Discard this card: Search your library for a card with the same mana value as this card, reveal it, put it into your hand, then shuffle. Transmute only as a sorcery.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FEAR"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "creature"
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{B}{B}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "mv=4"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "activateFromZone": "Hand",
+                "descriptionOverride": "Transmute {1}{B}{B} — Discard this card to search for a card with the same mana value."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "83",
+        "artist": "John Zeleznik",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/a/9a021caf-d9e7-470b-85be-3af42a3adfd3.jpg?1783943672"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Dimir Infiltrator
+{
+    "name": "Dimir Infiltrator",
+    "manaCost": "{U}{B}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "This creature can't be blocked.\nTransmute {1}{U}{B} ({1}{U}{B}, Discard this card: Search your library for a card with the same mana value as this card, reveal it, put it into your hand, then shuffle. Transmute only as a sorcery.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{U}{B}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "mv=2"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "activateFromZone": "Hand",
+                "descriptionOverride": "Transmute {1}{U}{B} — Discard this card to search for a card with the same mana value."
+            }
+        ],
+        "staticAbilities": [
+            "CantBeBlocked"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "203",
+        "artist": "Jim Nelson",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/d/3db9204c-dde8-4241-aac2-1f090566f604.jpg?1783943621"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "BLUE"
+    ]
+}
+
 // Dimir Signet
 {
     "name": "Dimir Signet",
@@ -3049,6 +3398,106 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Dizzy Spell
+{
+    "name": "Dizzy Spell",
+    "manaCost": "{U}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets -3/-0 until end of turn.\nTransmute {1}{U}{U} ({1}{U}{U}, Discard this card: Search your library for a card with the same mana value as this card, reveal it, put it into your hand, then shuffle. Transmute only as a sorcery.)",
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": -3
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": 0
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{U}{U}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "mv=1"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "activateFromZone": "Hand",
+                "descriptionOverride": "Transmute {1}{U}{U} — Discard this card to search for a card with the same mana value."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "43",
+        "artist": "Christopher Moeller",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/e/6e0db10d-fb6d-44df-9ff2-6f1e0e8f8209.jpg?1783943689"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -3225,6 +3674,90 @@
                 "text": "The ability lets you return any enchantment on the battlefield, including an opponent's enchantment. The ability isn't targeted, so you can return an untargetable enchantment. If there are no enchantments on the battlefield, or you choose not to return one, you must sacrifice Drake Familiar."
             }
         ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Drift of Phantasms
+{
+    "name": "Drift of Phantasms",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Defender (This creature can't attack.)\nFlying\nTransmute {1}{U}{U} ({1}{U}{U}, Discard this card: Search your library for a card with the same mana value as this card, reveal it, put it into your hand, then shuffle. Transmute only as a sorcery.)",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 5
+    },
+    "keywords": [
+        "DEFENDER",
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{U}{U}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "mv=3"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "activateFromZone": "Hand",
+                "descriptionOverride": "Transmute {1}{U}{U} — Discard this card to search for a card with the same mana value."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "46",
+        "artist": "Michael Phillippi",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c1096ce5-f776-4028-b231-e6eaee35014b.jpg?1783943687"
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -3633,6 +4166,120 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Ethereal Usher
+{
+    "name": "Ethereal Usher",
+    "manaCost": "{5}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "{U}, {T}: Target creature can't be blocked this turn.\nTransmute {1}{U}{U} ({1}{U}{U}, Discard this card: Search your library for a card with the same mana value as this card, reveal it, put it into your hand, then shuffle. Transmute only as a sorcery.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{U}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "CANT_BE_BLOCKED",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ]
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{U}{U}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "mv=6"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "activateFromZone": "Hand",
+                "descriptionOverride": "Transmute {1}{U}{U} — Discard this card to search for a card with the same mana value."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "47",
+        "rarity": "UNCOMMON",
+        "artist": "Mark A. Nelson",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/0/908901b7-fb40-4358-bca5-5e71bdafcbe7.jpg?1783943688"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -4930,6 +5577,57 @@
     ]
 }
 
+// Golgari Brownscale
+{
+    "name": "Golgari Brownscale",
+    "manaCost": "{1}{G}{G}",
+    "typeLine": "Creature — Lizard",
+    "oracleText": "When this card is put into your hand from your graveyard, you gain 2 life.\nDredge 2 (If you would draw a card, you may mill two cards instead. If you do, return this card from your graveyard to your hand.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "DREDGE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Dredge",
+            "amount": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Graveyard",
+                    "to": "Hand"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "activeZones": [
+                    "Graveyard"
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "166",
+        "artist": "Carl Critchlow",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/9/690cfc79-da41-4ac0-b0cc-719aa650b207.jpg?1783943638"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Golgari Germination
 {
     "name": "Golgari Germination",
@@ -5260,6 +5958,65 @@
     ]
 }
 
+// Golgari Thug
+{
+    "name": "Golgari Thug",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Human Warrior",
+    "oracleText": "When this creature dies, put target creature card from your graveyard on top of your library.\nDredge 4 (If you would draw a card, you may mill four cards instead. If you do, return this card from your graveyard to your hand.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "DREDGE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Dredge",
+            "amount": 4
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature"
+                    },
+                    "destination": "Library",
+                    "placement": "Top"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "87",
+        "rarity": "UNCOMMON",
+        "artist": "Kev Walker",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/7/87c39e21-3e2f-4cbf-9f99-69e977924a73.jpg?1783943669"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Goliath Spider
 {
     "name": "Goliath Spider",
@@ -5281,6 +6038,70 @@
         "imageUri": "https://cards.scryfall.io/normal/front/c/e/cecc53b1-942e-4b44-bf93-dd2d8cc92d6d.jpg"
     },
     "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Grave-Shell Scarab
+{
+    "name": "Grave-Shell Scarab",
+    "manaCost": "{2}{B}{G}{G}",
+    "typeLine": "Creature — Insect",
+    "oracleText": "{1}, Sacrifice this creature: Draw a card.\nDredge 1 (If you would draw a card, you may mill a card instead. If you do, return this card from your graveyard to your hand.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "DREDGE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Dredge",
+            "amount": 1
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "211",
+        "rarity": "RARE",
+        "artist": "Pete Venters",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/3/23f7c7d0-a48b-4153-8386-a9ab71e01dbe.jpg?1783943619",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "You may sacrifice Grave-Shell Scarab to pay for its first ability, then replace that draw using the Scarab's dredge ability. The result is that the top card of your library is put into your graveyard and Grave-Shell Scarab returns to your hand (after a brief trip to the graveyard)."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
         "GREEN"
     ]
 }
@@ -5354,6 +6175,36 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Greater Mossdog
+{
+    "name": "Greater Mossdog",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Plant Dog",
+    "oracleText": "Dredge 3 (If you would draw a card, you may mill three cards instead. If you do, return this card from your graveyard to your hand.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "DREDGE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Dredge",
+            "amount": 3
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "169",
+        "artist": "Chippy",
+        "flavorText": "Man's best fungus.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/1/e1f75b44-01a3-47f6-96c9-9ce327111e64.jpg?1783943635"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -6623,6 +7474,64 @@
     ]
 }
 
+// Life from the Loam
+{
+    "name": "Life from the Loam",
+    "manaCost": "{1}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return up to three target land cards from your graveyard to your hand.\nDredge 3 (If you would draw a card, you may mill three cards instead. If you do, return this card from your graveyard to your hand.)",
+    "keywords": [
+        "DREDGE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Dredge",
+            "amount": 3
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": "ChosenTargets",
+                    "storeAs": "gathered0"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "gathered0",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "count": 3,
+                "optional": true,
+                "filter": {
+                    "baseFilter": "land own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "lands"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "172",
+        "rarity": "RARE",
+        "artist": "Terese Nielsen",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7ac16d09-8bc7-407c-a757-666f4707bc90.jpg?1783943634"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Light of Sanction
 {
     "name": "Light of Sanction",
@@ -7202,6 +8111,47 @@
     ]
 }
 
+// Moldervine Cloak
+{
+    "name": "Moldervine Cloak",
+    "manaCost": "{2}{G}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature gets +3/+3.\nDredge 2 (If you would draw a card, you may mill two cards instead. If you do, return this card from your graveyard to your hand.)",
+    "keywords": [
+        "DREDGE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Dredge",
+            "amount": 2
+        }
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 3,
+                "toughnessBonus": 3
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "173",
+        "rarity": "UNCOMMON",
+        "artist": "Wayne England",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/7/871c3f80-aaa7-485f-b519-57363f5905dd.jpg?1783943634"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Moonlight Bargain
 {
     "name": "Moonlight Bargain",
@@ -7354,6 +8304,93 @@
     ]
 }
 
+// Muddle the Mixture
+{
+    "name": "Muddle the Mixture",
+    "manaCost": "{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target instant or sorcery spell.\nTransmute {1}{U}{U} ({1}{U}{U}, Discard this card: Search your library for a card with the same mana value as this card, reveal it, put it into your hand, then shuffle. Transmute only as a sorcery.)",
+    "script": {
+        "spellEffect": "Counter",
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "instant|sorcery",
+                    "zone": "Stack"
+                },
+                "id": "target instant or sorcery spell"
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{U}{U}"
+                            }
+                        },
+                        "CostDiscardSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "mv=2"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "activateFromZone": "Hand",
+                "descriptionOverride": "Transmute {1}{U}{U} — Discard this card to search for a card with the same mana value."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "60",
+        "artist": "Luca Zontini",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/c/4cc785b0-0a77-4b02-b0b4-2bda2fc621cc.jpg?1783943681"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Necromantic Thirst
 {
     "name": "Necromantic Thirst",
@@ -7438,6 +8475,90 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Nightmare Void
+{
+    "name": "Nightmare Void",
+    "manaCost": "{3}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Target player reveals their hand. You choose a card from it. That player discards that card.\nDredge 2 (If you would draw a card, you may mill two cards instead. If you do, return this card from your graveyard to your hand.)",
+    "keywords": [
+        "DREDGE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Dredge",
+            "amount": 2
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Hand",
+                        "player": {
+                            "type": "ContextPlayer",
+                            "index": 0
+                        }
+                    },
+                    "storeAs": "gathered0",
+                    "revealed": true
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "gathered0",
+                    "selection": {
+                        "type": "ChooseExactly",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "selected1",
+                    "prompt": "Choose a card for that player to discard"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "selected1",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard",
+                        "player": {
+                            "type": "ContextPlayer",
+                            "index": 0
+                        }
+                    },
+                    "moveType": "Discard"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "player"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "100",
+        "rarity": "UNCOMMON",
+        "artist": "Chippy",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/9/892299e9-8ee9-4a81-b4aa-b03ad2565eb4.jpg?1783943665",
+        "rulings": [
+            {
+                "date": "2014-02-01",
+                "text": "If you target yourself with this spell, you must reveal your entire hand to the other players just as any other player would."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -10223,6 +11344,62 @@
     ]
 }
 
+// Shambling Shell
+{
+    "name": "Shambling Shell",
+    "manaCost": "{1}{B}{G}",
+    "typeLine": "Creature — Plant Zombie",
+    "oracleText": "Sacrifice this creature: Put a +1/+1 counter on target creature.\nDredge 3 (If you would draw a card, you may mill three cards instead. If you do, return this card from your graveyard to your hand.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "DREDGE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Dredge",
+            "amount": 3
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "230",
+        "artist": "Joel Thomas",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/c/4c93baa2-a23e-4e18-b4cd-779c992d2042.jpg?1783943611"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Siege Wurm
 {
     "name": "Siege Wurm",
@@ -10509,6 +11686,60 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Stinkweed Imp
+{
+    "name": "Stinkweed Imp",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Imp",
+    "oracleText": "Flying\nWhenever this creature deals combat damage to a creature, destroy that creature.\nDredge 5 (If you would draw a card, you may mill five cards instead. If you do, return this card from your graveyard to your hand.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "DREDGE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Dredge",
+            "amount": 5
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyCreature"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "TriggeringEntity",
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "107",
+        "artist": "Edward P. Beard, Jr.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/2/628903a0-6695-4643-80f3-9a6efc4d6a27.jpg?1783943661",
+        "rulings": [
+            {
+                "date": "2021-03-19",
+                "text": "Notably, Stinkweed Imp's ability isn't deathtouch. It's a triggered ability that triggers only on combat damage."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

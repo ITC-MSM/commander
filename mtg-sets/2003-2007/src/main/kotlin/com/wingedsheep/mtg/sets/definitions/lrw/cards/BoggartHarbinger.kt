@@ -17,8 +17,8 @@ import com.wingedsheep.sdk.scripting.effects.SearchDestination
  * shuffle and put that card on top.
  *
  * One of Lorwyn's five (plus two) Harbingers: the same tutor-to-top with a different tribe. The
- * "you may" is the `ChooseUpTo(1)` inside [Patterns.Library.searchLibrary] — declining, or having
- * no Goblin card, simply moves nothing. The filter is a *card* filter (not a creature filter), so
+ * "you may" gates the whole search: declining does not shuffle. Once accepted, the search can
+ * still find no card. The filter is a *card* filter (not a creature filter), so
  * Kindred cards like Tarfire are found too.
  */
 val BoggartHarbinger = card("Boggart Harbinger") {
@@ -32,6 +32,7 @@ val BoggartHarbinger = card("Boggart Harbinger") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
+        optional = true
         effect = Patterns.Library.searchLibrary(
             filter = GameObjectFilter.Any.withSubtype(Subtype.GOBLIN),
             count = 1,

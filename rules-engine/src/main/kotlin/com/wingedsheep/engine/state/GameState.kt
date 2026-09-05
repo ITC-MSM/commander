@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.core.Format
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.TypeLine
+import com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent
 import com.wingedsheep.engine.state.components.battlefield.GraveyardEntryTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.PhasedOutComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
@@ -41,6 +42,9 @@ data class GameState(
 
     /** Zone contents - maps zone keys to lists of entity IDs */
     val zones: Map<ZoneKey, List<EntityId>> = emptyMap(),
+
+    /** Exile piles of departed battlefield visits, keyed by their unique entry timestamp. */
+    val departedLinkedExile: Map<Long, List<EntityId>> = emptyMap(),
 
     /**
      * Current turn number, counting **player turns** — every turn the game begins gets its own
@@ -545,7 +549,30 @@ data class GameState(
      */
     fun removeFromZone(key: ZoneKey, entityId: EntityId): GameState {
         val current = zones[key] ?: return this
-        return copy(zones = zones + (key to current - entityId))
+        val unlinked = if (key.zoneType == Zone.EXILE && entityId in current) forgetExileLinks(entityId) else this
+        return unlinked.copy(zones = unlinked.zones + (key to current - entityId))
+    }
+
+    /** A card leaving exile loses every old link, even if the same entity later returns to exile. */
+    private fun forgetExileLinks(cardId: EntityId): GameState {
+        val state = this
+        var result = state
+        val affectedHistory = state.departedLinkedExile.filterValues { cardId in it }
+        if (affectedHistory.isNotEmpty()) {
+            var history = state.departedLinkedExile
+            for ((timestamp, ids) in affectedHistory) {
+                val remaining = ids - cardId
+                history = if (remaining.isEmpty()) history - timestamp else history + (timestamp to remaining)
+            }
+            result = result.copy(departedLinkedExile = history)
+        }
+        for ((sourceId, container) in state.entities) {
+            val linked = container.get<LinkedExileComponent>() ?: continue
+            if (cardId in linked.exiledIds) {
+                result = result.updateEntity(sourceId) { it.with(LinkedExileComponent(linked.exiledIds - cardId)) }
+            }
+        }
+        return result
     }
 
     /**

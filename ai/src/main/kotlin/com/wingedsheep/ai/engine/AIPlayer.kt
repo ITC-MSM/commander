@@ -15,6 +15,7 @@ import com.wingedsheep.ai.engine.rollout.RolloutCandidateEvaluator
 import com.wingedsheep.ai.engine.rollout.StaticCandidateEvaluator
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.legalactions.LegalAction
+import com.wingedsheep.engine.legalactions.LegalActionEnumerator
 import com.wingedsheep.engine.legalactions.MeaningfulActionFilter
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
@@ -158,6 +159,30 @@ class AIPlayer(
         return current
     }
 
+    /**
+     * Reuses engine services when a caller needs many independent players for the same registry.
+     * Each [create] starts with fresh strategy memory and decision-resolution state. Keep the
+     * factory within one registry/session; this is not a cross-registry pool or a concurrency API.
+     */
+    class Factory(private val cardRegistry: CardRegistry) {
+        private val processor = ActionProcessor(EngineServices(cardRegistry), computeUndo = false)
+        private val enumerator = LegalActionEnumerator.create(cardRegistry)
+
+        fun create(
+            playerId: EntityId,
+            profile: AiProfile = AiProfile.CURRENT,
+            opponentModels: Map<EntityId, OpponentModel> = emptyMap(),
+            insightSink: AiInsightSink? = null,
+        ): AIPlayer = compose(cardRegistry, playerId, profile, opponentModels, insightSink) {
+            GameSimulator(
+                cardRegistry,
+                processor = processor,
+                enumerator = enumerator,
+                resolveThroughCombatDamage = profile.resolveThroughCombatDamage,
+            )
+        }
+    }
+
     companion object {
         /**
          * Create an AI player with the default evaluation weights.
@@ -186,6 +211,17 @@ class AIPlayer(
              * instead of being discarded. Null (the default) is production — no recording.
              */
             insightSink: AiInsightSink? = null,
+        ): AIPlayer = compose(cardRegistry, playerId, profile, opponentModels, insightSink) {
+            GameSimulator(cardRegistry, resolveThroughCombatDamage = profile.resolveThroughCombatDamage)
+        }
+
+        private fun compose(
+            cardRegistry: CardRegistry,
+            playerId: EntityId,
+            profile: AiProfile,
+            opponentModels: Map<EntityId, OpponentModel>,
+            insightSink: AiInsightSink?,
+            newSimulator: () -> GameSimulator,
         ): AIPlayer {
             val advisorRegistry = CardAdvisorRegistry()
             profile.advisorModules.forEach { it.register(advisorRegistry) }
@@ -194,10 +230,7 @@ class AIPlayer(
             // pre-Phase-6 behaviour — so a profile that doesn't opt in is untouched.
             val intents = if (profile.useCardIntent) IntentCatalog.of(cardRegistry) else IntentCatalog.NONE
 
-            val simulator = GameSimulator(
-                cardRegistry,
-                resolveThroughCombatDamage = profile.resolveThroughCombatDamage,
-            )
+            val simulator = newSimulator()
             // Raw Phase 9 vectors contain CardIntent-derived facts even when the surrounding
             // legacy-based arena profile deliberately keeps Phase 6 timing/targeting behavior off.
             // Give only the evaluator the full catalog so the fitted training schema and runtime
