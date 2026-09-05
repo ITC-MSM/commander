@@ -2,7 +2,7 @@
 
 **Set Size:** 291 cards
 **Release Date:** October 7, 2005
-**Implemented:** 255 / 291
+**Implemented:** 256 / 291
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 37    | 33   |
@@ -192,7 +192,7 @@
 - [x] Farseek
 - [x] Fists of Ironwood
 - [x] Gather Courage
-- [ ] Golgari Brownscale
+- [x] Golgari Brownscale
 - [ ] Golgari Grave-Troll
 - [x] Goliath Spider
 - [x] Greater Mossdog

@@ -5056,6 +5056,12 @@ controlled, so its owner controls any ability it produces. Coverage differs by z
 | `COMMAND` | ✅ | ✅ | *eminence* — Edgar Markov |
 | `EXILE` | — (dedicated paths) | ✅ | suspend, madness, paradigm |
 
+A self-bound `EventPattern.ZoneChangeEvent(from = Zone.GRAVEYARD, to = Zone.HAND)` with
+`triggerZone = Zone.GRAVEYARD` also fires after its card has left that zone (Golgari Brownscale).
+A dedicated event-source pass inspects the returned card, retaining owner control and firing once
+if a later effect in the same resolution discards it again. Resident-zone scans defer that event
+to this pass; the ability does not need to be active in hand.
+
 Exile has no general per-event pass on purpose: suspend, madness and paradigm each already have a
 dedicated detector, and a general pass would fire them twice.
 

@@ -21,7 +21,7 @@ Cards: Belltower Sphinx, Birds of Paradise, Blazing Archon, Cerulean Sphinx, Con
 
 Move cards from the top of a library into its graveyard. Dredge uses milling as part of its replacement, not as a separate draw trigger.
 
-**Engine support:** The library mill pipeline supports ordinary milling; dredge remains separate work.
+**Engine support:** The library mill pipeline supports ordinary milling and the composed milling step of dredge.
 
 Cards: Belltower Sphinx, Darkblast, Duskmantle, House of Shadow, Glimpse the Unthinkable, Golgari Brownscale, Golgari Grave-Troll, Golgari Thug, Grave-Shell Scarab, Greater Mossdog, Induce Paranoia, Life from the Loam, Moldervine Cloak, Necroplasm, Nightmare Void, Psychic Drain, Shambling Shell, Stinkweed Imp, Szadek, Lord of Secrets, Vedalken Entrancer
 
@@ -49,11 +49,11 @@ Pay mana and discard this card from hand, at sorcery timing, to search for and r
 
 Cards: Brainspoil, Clutch of the Undercity, Dimir House Guard, Dimir Infiltrator, Dimir Machinations, Dizzy Spell, Drift of Phantasms, Ethereal Usher, Grozoth, Muddle the Mixture, Netherborn Phalanx, Perplex, Shred Memory
 
-### - [ ] Dredge (12 cards)
+### - [x] Dredge (12 cards)
 
 Replace a draw by milling the specified number of cards and returning this graveyard card to hand; require enough cards in the library.
 
-**Engine support:** Missing: optional graveyard draw replacement with sufficient-library checks and continuation support.
+**Engine support:** `KeywordAbility.dredge(N)` uses intrinsic graveyard sources in the shared draw-replacement pipeline. Sufficient-library checks, sequential draws, nested decisions, repeated declines, and saved-game reloads are covered. Remaining cards need their other abilities completed; dredge itself is implemented.
 
 Cards: Darkblast, Golgari Brownscale, Golgari Grave-Troll, Golgari Thug, Grave-Shell Scarab, Greater Mossdog, Life from the Loam, Moldervine Cloak, Necroplasm, Nightmare Void, Shambling Shell, Stinkweed Imp
 

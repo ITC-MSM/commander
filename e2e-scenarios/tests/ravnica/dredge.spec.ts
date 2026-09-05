@@ -49,3 +49,32 @@ for (const acceptScarab of [true, false]) {
     await expect(player1.page.getByRole('heading', { name: /^Dredge / })).toHaveCount(0)
   })
 }
+
+test('Brownscale dredge returns the card and its trigger gains life', async ({ createGame }) => {
+  const { player1, player2 } = await createGame({
+    player1Name: 'Brownscale',
+    player2Name: 'Opponent',
+    player1: {
+      battlefield: [{ name: 'Grave-Shell Scarab' }, { name: 'Forest' }],
+      graveyard: ['Golgari Brownscale'],
+      library: ['Forest', 'Island', 'Swamp'],
+    },
+    player2: { library: ['Forest', 'Island'] },
+    phase: 'PRECOMBAT_MAIN',
+    activePlayer: 1,
+  })
+  const p1 = player1.gamePage
+  await p1.clickCard('Grave-Shell Scarab')
+  await p1.selectAction('Sacrifice this permanent: Draw a card')
+  await player2.gamePage.pass()
+  await expect(player1.page.getByRole('heading', {
+    name: 'Dredge 2 — Mill 2 cards and return Golgari Brownscale from your graveyard to your hand instead of drawing?',
+    exact: true,
+  })).toBeVisible()
+  await p1.answerYes()
+  await p1.expectInHand('Golgari Brownscale')
+  await player2.gamePage.dismissRevealedCards()
+  await player2.gamePage.resolveStack('Golgari Brownscale trigger')
+  await p1.expectLifeTotal(player1.playerId, 22)
+  await player2.gamePage.expectLifeTotal(player1.playerId, 22)
+})

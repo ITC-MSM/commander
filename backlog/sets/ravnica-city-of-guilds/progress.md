@@ -3,7 +3,7 @@
 Branch: `worktree-rav-completion`. Baseline: `4f09fec7e2`. Draft PR: #2236.
 
 The goal is all 291 cards, their required engine functionality, and full set verification.
-The initial source inventory was 239/291; the current inventory is **255/291**, with 36 missing.
+The initial source inventory was 239/291; the current inventory is **256/291**, with 35 missing.
 The checklist is an inventory, not proof of rules correctness. Existing generated definitions
 also need field and behavior review before completion can be claimed.
 
@@ -46,7 +46,7 @@ also need field and behavior review before completion can be claimed.
 - Transmute: 27 scenarios across seven separate card files passed in the preceding unit;
   `just build` passed there and the full test gate above includes them again.
 - Canonical-printing checks, fresh Scryfall fields, and HTTP 200 art checks passed for all
-  sixteen added cards. Snapshot changes contain only the intended additions/corrections.
+  seventeen added cards. Snapshot changes contain only the intended additions/corrections.
 - `just assay-differential --set RAV`: no divergences among 103 compared cards. Assay
   declines transmute and dredge, so it does not independently verify these abilities.
 - Client typecheck passed. Live client inspection and two headless Chrome regressions
@@ -57,10 +57,21 @@ also need field and behavior review before completion can be claimed.
   across four Bloomburrow Commander backlog files. The user authorized continuing and
   disclosing this unrelated failure. Those files are untouched.
 
+## Brownscale unit
+
+Golgari Brownscale adds self-bound graveyard-to-hand trigger detection using the moving card,
+without scanning hands. Six scenarios cover dredge, ordinary return, owner-controlled life gain,
+unrelated zone changes, and a return followed by discard in one resolution firing exactly once.
+Fresh Scryfall fields, art, printing placement, and the single-card snapshot change are verified.
+
+`just test` passed (3m 13s). An earlier unrelated Abattoir Ghoul timeout passed in this resumed
+full gate after the user authorized continuation. All three headless Chrome dredge regressions
+passed, including acknowledging Brownscale's public return and resolving its life-gain trigger.
+Assay compared 103 cards with no divergences; it declines Brownscale's full text.
+
 ## Remaining work
 
-- Finish the three remaining dredge cards: Golgari Brownscale (self graveyard-exit trigger),
-  Golgari Grave-Troll (verify the reanimation counter count), and Necroplasm (source counters
+- Finish the two remaining dredge cards: Golgari Grave-Troll (verify the reanimation counter count), and Necroplasm (source counters
   after it leaves before its end-step trigger resolves).
 - Finish the six remaining transmute cards: Clutch of the Undercity, Dimir Machinations,
   Grozoth, Netherborn Phalanx, Perplex, Shred Memory.
