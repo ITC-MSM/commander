@@ -2,14 +2,14 @@
 
 **Set Size:** 286 cards
 **Release Date:** October 12, 2007
-**Implemented:** 249 / 286
+**Implemented:** 250 / 286
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 49    | 43   |
 | Blue       | 49    | 39   |
 | Black      | 49    | 42   |
 | Red        | 49    | 42   |
-| Green      | 49    | 39   |
+| Green      | 49    | 40   |
 | Multicolor | 8     | 7    |
 | Artifact   | 12    | 11   |
 | Land       | 21    | 16   |
@@ -240,7 +240,7 @@
 - [x] Fertile Ground
 - [x] Fistful of Force
 - [x] Garruk Wildspeaker
-- [ ] Gilt-Leaf Ambush
+- [x] Gilt-Leaf Ambush
 - [x] Gilt-Leaf Seer
 - [x] Guardian of Cloverdell
 - [x] Heal the Scars

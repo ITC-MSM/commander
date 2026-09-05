@@ -38,3 +38,11 @@ Fresh differential over the current goldens: 243 canonical cards, 111 compared, 
 Epic Proportions and Kithkin Greatheart, the equivalent conditional/composite static folds
 reviewed above. Existing golden entries are unchanged. Assay declines both new cards;
 the draftability probe emits SCAFFOLD (Clash / RepeatableActions). Eight per-card scenarios pass.
+
+
+## Gilt-Leaf Ambush
+
+Fresh differential: 244 canonical cards, 111 compared, 108 agree, 131 declined, two failed to
+fold. The same three equivalent static folds are the only divergences; existing goldens remain
+unchanged. The new card is declined and the draftability probe emits SCAFFOLD. Its three
+scenarios pass, including the clash reward on all four tokens created with Doubling Season.

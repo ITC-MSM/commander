@@ -21,7 +21,7 @@ This branch tracks completion of Lorwyn and the engine capabilities its cards re
 
 ## Work in progress
 
-Nine new cards are implemented: Bog Hoodlums, Nath's Elite, Fistful of Force, Spring Cleaning, Woodland Guidance, Sentry Oak, Springjack Knight, Whirlpool Whelm, and Hoarder’s Greed. All compose existing primitives. Canonical-printing checks, fresh Scryfall fields, image HTTP 200 checks, and snapshot validation passed. Source completeness is now 249 / 286 (37 missing). Seven focused scenario tests for the three spells passed, covering clash win/loss, target preservation, temporary bonuses, destruction scope, graveyard targeting, untapping, and self-exile.
+Ten new cards are implemented: Bog Hoodlums, Nath's Elite, Fistful of Force, Spring Cleaning, Woodland Guidance, Sentry Oak, Springjack Knight, Whirlpool Whelm, Hoarder’s Greed, and Gilt-Leaf Ambush. All compose existing primitives. Canonical-printing checks, fresh Scryfall fields, image HTTP 200 checks, and snapshot validation passed. Source completeness is now 250 / 286 (36 missing). Seven focused scenario tests for the three spells passed, covering clash win/loss, target preservation, temporary bonuses, destruction scope, graveyard targeting, untapping, and self-exile.
 
 The differential audit also found and fixed seven existing Harbinger bugs: declining the optional search incorrectly forced a search and shuffle. All seven now gate the entire search. Their 21 per-card regression tests passed. At that stage, snapshots were compared field by field: only the five new cards and seven optional gates changed from the starting point.
 
@@ -61,6 +61,20 @@ all eight new scenarios passed. After user authorization to continue, that test 
 isolation without code changes (1m 16s, 43 tasks). The full `just test` retry passed (1m 21s, 106 tasks). The fresh Assay differential covers 243 canonicals: 111 compared,
 108 agree, the same three previously verified equivalent static folds, 130 declined, and two
 failed to fold. Neither new card is covered by the grammar.
+
+## Gilt-Leaf Ambush
+
+The card creates its tokens before the clash and grants temporary deathtouch only to the
+created-token collection. All three scenarios pass: win, loss, and a win with Doubling Season
+creating four tokens. They also prove another Elf is unaffected and the keyword expires.
+The card uses existing token, clash, collection-iteration and keyword primitives. Fresh card
+fields, canonical placement, card art and Lorwyn Elf Warrior token art are verified. Snapshot
+regeneration passed with only this card added and no existing entry changed. The required
+`just build` gate passed (4m 27s, 128 tasks). Source completeness is 250 / 286, with 36 remaining.
+
+Fresh Assay differential: 244 canonicals, 111 compared, 108 agree, the same three equivalent
+static folds, 131 declined, two failed to fold. Gilt-Leaf Ambush is among the declines;
+its three scenario tests provide the behavioral evidence.
 
 ## Existing repository drift
 
