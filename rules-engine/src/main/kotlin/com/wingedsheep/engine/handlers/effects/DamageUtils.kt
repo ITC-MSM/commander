@@ -18,6 +18,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
+import com.wingedsheep.engine.state.nameVisibleToAll
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
@@ -533,7 +534,9 @@ object DamageUtils {
             newState = trackDamageSourceForController(newState, sourceId)
         }
 
-        val sourceName = sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name }
+        val sourceName = sourceId?.let { id ->
+            state.getEntity(id)?.get<CardComponent>()?.name?.let { nameVisibleToAll(state, id, it) }
+        }
         val targetContainer = newState.getEntity(targetId)
         val targetName = targetContainer?.get<CardComponent>()?.name
         val targetIsPlayer = targetContainer?.get<LifeTotalComponent>() != null
@@ -1710,6 +1713,7 @@ object DamageUtils {
         updatedEffects.removeAt(shieldIndex)
         val newState = state.copy(floatingEffects = updatedEffects)
         val sourceName = state.getEntity(sourceId)?.get<CardComponent>()?.name
+            ?.let { nameVisibleToAll(state, sourceId, it) }
         val event = DamagePreventedEvent(
             sourceId = sourceId,
             recipientId = targetId,

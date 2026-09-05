@@ -922,8 +922,9 @@ data class GameState(
      * itself; during a Mindslaver-style hijacked turn this resolves to the hijacker.
      *
      * Resource ownership (mana, cards, life) is unaffected — it always stays with
-     * [playerId]. This helper is only consulted at the input-routing seam: legal
-     * action enumeration, decision validation, and per-action seat checks.
+     * [playerId]. This helper is consulted at input and private-view routing seams: legal action
+     * enumeration, decision validation, per-action seat checks, and the information shown to the
+     * connection acting for that seat.
      *
      * A session-level [com.wingedsheep.engine.state.components.player.HotseatControlComponent]
      * (play-against-yourself) takes precedence over a per-turn hijack: it permanently routes

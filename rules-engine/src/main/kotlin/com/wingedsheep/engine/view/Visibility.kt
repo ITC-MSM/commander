@@ -93,6 +93,57 @@ class Visibility(
     )
 
     /**
+     * Whether a recipient can carry [entityId]'s identity through the transition from its cast
+     * origin in [beforeCast] to the spell in [onStack].
+     *
+     * Looking only at the resulting stack object loses legitimate history: a card cast face down
+     * from face-up exile was public immediately before it became a nameless spell. Conversely, an
+     * individual [RevealedToComponent] on a card in an unordered hand does not prove which card
+     * left that hand face down. Existing cast handling deliberately clears those stale per-card
+     * hand reveals. Whole-hand visibility is different: while that effect remains active, the
+     * viewer sees the card actually leave.
+     *
+     * Keeping this distinction here makes [Visibility] the authority for both point-in-time
+     * identity and the one transition whose event presentation must retain it.
+     */
+    fun isCardIdentityVisibleThroughCast(
+        beforeCast: GameState,
+        onStack: GameState,
+        castFromZone: Zone?,
+        entityId: EntityId,
+        viewingPlayerId: EntityId,
+        isSpectator: Boolean = false,
+    ): Boolean {
+        val visibleOnStack = isCardIdentityVisibleTo(
+            state = onStack,
+            zoneType = Zone.STACK,
+            entityId = entityId,
+            viewingPlayerId = viewingPlayerId,
+            isSpectator = isSpectator,
+        )
+        if (visibleOnStack) return true
+
+        val origin = castFromZone ?: return false
+        if (origin == Zone.HAND) {
+            val ownerId = zoneOwnerOf(beforeCast, entityId, origin) ?: return false
+            return isZoneVisibleTo(
+                state = beforeCast,
+                zoneKey = ZoneKey(ownerId, origin),
+                viewingPlayerId = viewingPlayerId,
+                isSpectator = isSpectator,
+            )
+        }
+
+        return isCardIdentityVisibleTo(
+            state = beforeCast,
+            zoneType = origin,
+            entityId = entityId,
+            viewingPlayerId = viewingPlayerId,
+            isSpectator = isSpectator,
+        )
+    }
+
+    /**
      * Whether [viewingPlayerId] may know the identity of [entityId] in [zoneKey].
      *
      * A hidden zone is not all-or-nothing: [RevealedToComponent] and top-of-library effects can
@@ -116,8 +167,13 @@ class Visibility(
             // zone." Exile therefore gets no controller baseline: a card put there by a plain
             // "exile face down" rider is hidden from its owner too. Only an effect that grants
             // access opens one, and every such effect names its grantee — see below.
-            if (zoneKey.zoneType != Zone.EXILE &&
-                playerWhoMayLookAtFaceDown(state, entityId) == viewingPlayerId
+            // Private state is projected to the connection currently acting for a seat as well as
+            // to the seat itself, matching hand/sideboard visibility above. Spectator projection
+            // has already returned false, so acting authority never leaks into the public view.
+            val playerWhoMayLook = playerWhoMayLookAtFaceDown(state, entityId)
+            if (zoneKey.zoneType != Zone.EXILE && playerWhoMayLook != null &&
+                (playerWhoMayLook == viewingPlayerId ||
+                    state.actorFor(playerWhoMayLook) == viewingPlayerId)
             ) return true
             if (isCardRevealedTo(state, entityId, viewingPlayerId)) return true
             if (zoneKey.zoneType == Zone.BATTLEFIELD &&

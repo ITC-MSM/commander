@@ -11,7 +11,7 @@ import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityEffec
 import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityFiredEverComponent
 import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityFiredThisTurnComponent
 import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
-import com.wingedsheep.engine.state.components.stack.abilityIdentityOf
+import com.wingedsheep.engine.state.components.stack.triggerIdentityFromCurrentCardDefinition
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
@@ -179,7 +179,8 @@ class TriggerProcessor(
         // lowering in `withEffectBudgetGate` moves consent to resolution time — but this guard reads
         // the *un-lowered* ability, so it is still load-bearing.
         if (ability.effectOncePerTurn) return null
-        val identity = state.abilityIdentityOf(trigger.sourceId, ability.id) ?: return null
+        val identity = state.triggerIdentityFromCurrentCardDefinition(trigger.sourceId, ability.id)
+            ?: return null
         // Mirror processMayThenTargetTrigger's fizzle guard: a trigger with no legal targets (for a
         // mandatory-target requirement) fizzles without asking, so it must not join a batch.
         val legalTargets = targetFinder.findLegalTargets(
@@ -259,7 +260,7 @@ class TriggerProcessor(
                 sourceId = first.sourceId,
                 sourceName = first.sourceName,
                 phase = DecisionPhase.RESOLUTION,
-                abilityIdentity = state.abilityIdentityOf(first.sourceId, ability.id)
+                abilityIdentity = state.triggerIdentityFromCurrentCardDefinition(first.sourceId, ability.id)
             ),
             count = run.size
         )
@@ -477,7 +478,8 @@ class TriggerProcessor(
         // The gated "may" effect's own text is the prompt (GatedEffect.description renders
         // "You may …" for a Gate.MayDecide).
         val sourceName = trigger.sourceName
-        val abilityIdentity = state.abilityIdentityOf(trigger.sourceId, ability.id)
+        val abilityIdentity =
+            state.triggerIdentityFromCurrentCardDefinition(trigger.sourceId, ability.id)
 
         // Who is asked. Normally the ability's controller, but a card can name someone else —
         // Farrel's Mantle's "its controller may", where "it" is the enchanted creature and the Aura
@@ -613,7 +615,7 @@ class TriggerProcessor(
             yesText = "Pay $manaCost",
             noText = "Don't pay",
             phase = DecisionPhase.RESOLUTION,
-            abilityIdentity = state.abilityIdentityOf(trigger.sourceId, ability.id)
+            abilityIdentity = state.triggerIdentityFromCurrentCardDefinition(trigger.sourceId, ability.id)
         )
 
         if (!decisionResult.isPaused || decisionResult.pendingDecision == null) {
@@ -826,7 +828,7 @@ class TriggerProcessor(
             controllerId = trigger.controllerId,
             effect = ability.effect,
             description = ability.description,
-            abilityIdentity = state.abilityIdentityOf(trigger.sourceId, ability.id),
+            abilityIdentity = state.triggerIdentityFromCurrentCardDefinition(trigger.sourceId, ability.id),
             triggerDamageAmount = trigger.triggerContext.damageAmount,
             triggeringEntityId = trigger.triggerContext.triggeringEntityId,
             triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
@@ -893,7 +895,7 @@ class TriggerProcessor(
             controllerId = trigger.controllerId,
             effect = effectOverride ?: ability.effect,
             description = ability.description,
-            abilityIdentity = state.abilityIdentityOf(trigger.sourceId, ability.id),
+            abilityIdentity = state.triggerIdentityFromCurrentCardDefinition(trigger.sourceId, ability.id),
             granterId = trigger.granterId,
             // CR 701.28f — freeze the source's face-change clock as the trigger goes on the stack,
             // so an instruction inside it to transform that same permanent is ignored if the
