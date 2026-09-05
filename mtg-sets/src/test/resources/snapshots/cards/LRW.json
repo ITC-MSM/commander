@@ -5444,6 +5444,85 @@
     ]
 }
 
+// Gilt-Leaf Ambush
+{
+    "name": "Gilt-Leaf Ambush",
+    "manaCost": "{2}{G}",
+    "typeLine": "Kindred Instant — Elf",
+    "oracleText": "Create two 1/1 green Elf Warrior creature tokens. Clash with an opponent. If you win, those creatures gain deathtouch until end of turn. (Each clashing player reveals the top card of their library, then puts that card on their choice of the top or bottom. A player wins if their card had a greater mana value. Any amount of damage a creature with deathtouch deals to a creature is enough to destroy it.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Elf",
+                        "Warrior"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/2/7/27b171ac-b2ef-4a80-92d1-6d9e71f3e3ca.jpg?1783942838"
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ChooseOpponentForSource",
+                                    "prompt": "Choose an opponent to clash with"
+                                },
+                                "Clash"
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "clashWon"
+                        }
+                    },
+                    "then": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Collection",
+                            "collection": "createdTokens"
+                        },
+                        "body": {
+                            "type": "GrantKeyword",
+                            "keyword": "DEATHTOUCH",
+                            "target": "Self"
+                        }
+                    },
+                    "descriptionOverride": "Clash with an opponent. If you win, for each permanent in createdTokens, this creature gains deathtouch until end of turn"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "214",
+        "artist": "Steve Prescott",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/7/47bf7254-4302-41a0-bc87-d7dc437ff38d.jpg?1783942863",
+        "rulings": [
+            {
+                "date": "2024-06-07",
+                "text": "This cards was originally printed with the \"tribal\" card type. That card type has been replaced with \"kindred\". This change does not affect the gameplay function of this card."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Gilt-Leaf Palace
 {
     "name": "Gilt-Leaf Palace",
