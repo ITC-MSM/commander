@@ -253,15 +253,29 @@ private class ReplayEngine(
     }
 
     /**
-     * Re-bind a recorded action to the current reconstructed state. Decision ids are minted from a
-     * UUID each run, so a recorded [SubmitDecision] carries the *original* run's id; we retarget it
-     * at the id the freshly created pending decision actually has. The choice payload (targets,
+     * Re-bind a recorded action to the current reconstructed state. Historical recordings minted
+     * decision IDs from a UUID (bare, or as a `<label>-<uuid>` suffix), so the recorded ID never
+     * matched the freshly created one and had to be retargeted; the choice payload (targets,
      * cards, numbers — all by deterministic entity id) is untouched, so the outcome is identical.
+     *
+     * Current routing IDs reproduce from `GameState.nextRoutingId`, so a modern recording's ID
+     * already addresses the reconstructed prompt. A mismatch there is not bookkeeping noise — it
+     * means reconstruction reached a *different* question than the one the player answered, and
+     * silently retargeting would replace divergence with a plausible-looking wrong line of play.
+     * So the fallback is gated on the legacy ID shape and a modern mismatch is left to fail.
      */
     private fun rebind(action: GameAction, state: GameState): GameAction {
         if (action !is SubmitDecision) return action
         val pendingId = state.pendingDecision?.id ?: return action
-        if (pendingId == action.response.decisionId) return action
+        val recordedId = action.response.decisionId
+        if (pendingId == recordedId) return action
+        if (!LEGACY_DECISION_ID.containsMatchIn(recordedId)) return action
         return action.copy(response = action.response.withDecisionId(pendingId))
+    }
+
+    private companion object {
+        /** The UUID a pre-`nextRoutingId` recording embedded in every decision ID. */
+        private val LEGACY_DECISION_ID =
+            Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
     }
 }

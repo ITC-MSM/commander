@@ -117,30 +117,32 @@ class LibraryAndZoneContinuationResumer(
         var newState = state
         val events = mutableListOf<GameEvent>()
 
-        // Remove all cards from their current zones
+        // Source storage can be any owner's zone or the stack. A stolen permanent's
+        // battlefield bucket is not necessarily its owner's bucket.
         for (cardId in orderedCards) {
-            val ownerId = newState.getEntity(cardId)?.get<OwnerComponent>()?.playerId ?: destPlayerId
-            for (zone in Zone.entries) {
-                val zoneKey = ZoneKey(ownerId, zone)
-                if (cardId in newState.getZone(zoneKey)) {
-                    newState = newState.removeFromZone(zoneKey, cardId)
-                    break
-                }
-            }
+            val currentZone = newState.zones.entries.firstOrNull { cardId in it.value }?.key
+            if (currentZone != null) newState = newState.removeFromZone(currentZone, cardId)
+            if (cardId in newState.stack) newState = newState.removeFromStack(cardId)
         }
 
-        // Place cards in library in the chosen order
-        val currentLibrary = newState.getZone(libraryZone)
-        newState = if (continuation.placement == ZonePlacement.Bottom) {
-            // Bottom: append ordered cards at the end
-            newState.copy(
-                zones = newState.zones + (libraryZone to currentLibrary + orderedCards)
-            )
-        } else {
-            // Top (default): prepend ordered cards at the beginning
-            newState.copy(
-                zones = newState.zones + (libraryZone to orderedCards + currentLibrary)
-            )
+        // Positional entry distinguishes real arrivals from same-library ordering.
+        val insertionIndex = if (continuation.placement == ZonePlacement.Bottom)
+            newState.getZone(libraryZone).size else 0
+        for ((offset, cardId) in orderedCards.withIndex()) {
+            val oldObject = newState.objectRef(cardId)
+            val origin = newState.logicalZone(cardId)
+            newState = newState.insertIntoZone(libraryZone, cardId, insertionIndex + offset)
+            if (origin != null && origin != libraryZone) {
+                events.add(ZoneChangeEvent(
+                    entityId = cardId,
+                    entityName = newState.getEntity(cardId)?.get<CardComponent>()?.name ?: "Unknown",
+                    fromZone = origin.zoneType,
+                    toZone = Zone.LIBRARY,
+                    ownerId = newState.getEntity(cardId)?.get<CardComponent>()?.ownerId ?: destPlayerId,
+                    oldObject = oldObject,
+                    newObject = newState.objectRef(cardId)
+                ))
+            }
         }
 
         events.add(
@@ -174,21 +176,11 @@ class LibraryAndZoneContinuationResumer(
         val orderedCards = response.orderedObjects
         val libraryZone = ZoneKey(playerId, Zone.LIBRARY)
 
-        // Get current library
-        val currentLibrary = state.getZone(libraryZone).toMutableList()
-
-        // Remove the reordered cards from the library (they should already be removed by the executor,
-        // but filter just in case)
-        val cardsSet = orderedCards.toSet()
-        val remainingLibrary = currentLibrary.filter { it !in cardsSet }
-
-        // Place the cards on the BOTTOM in the player's chosen order
-        val newLibrary = remainingLibrary + orderedCards
-
-        // Update the library zone
-        val newState = state.copy(
-            zones = state.zones + (libraryZone to newLibrary)
-        )
+        // These are the same library objects, possibly detached by an older saved continuation.
+        // Reinsert through the shared entry helper so the retained logical visit is preserved.
+        var newState = state
+        for (cardId in orderedCards) newState = newState.removeFromZone(libraryZone, cardId)
+        for (cardId in orderedCards) newState = newState.addToZone(libraryZone, cardId)
 
         val events = listOf(
             LibraryReorderedEvent(
@@ -295,7 +287,6 @@ class LibraryAndZoneContinuationResumer(
                         controllerId = nextControllerId,
                         destPlayerId = nextControllerId,
                         remainingAuras = nextRemaining,
-                        decisionId = "skip"
                     ),
                     response,
                     checkForMore
@@ -320,7 +311,6 @@ class LibraryAndZoneContinuationResumer(
                             controllerId = nextControllerId,
                             destPlayerId = nextControllerId,
                             remainingAuras = nextRemaining.drop(1),
-                            decisionId = "skip"
                         ),
                         response,
                         checkForMore
@@ -330,7 +320,6 @@ class LibraryAndZoneContinuationResumer(
             }
 
             // Pause for next aura target
-            val decisionId = java.util.UUID.randomUUID().toString()
             val auraName = nextCardComponent.name
             val requirementInfo = TargetRequirementInfo(
                 index = 0,
@@ -338,7 +327,7 @@ class LibraryAndZoneContinuationResumer(
                 minTargets = 1,
                 maxTargets = 1
             )
-            val decision = ChooseTargetsDecision(
+            val question = { decisionId: String -> ChooseTargetsDecision(
                 id = decisionId,
                 playerId = nextControllerId,
                 prompt = "Choose what $auraName enchants",
@@ -349,27 +338,20 @@ class LibraryAndZoneContinuationResumer(
                 ),
                 targetRequirements = listOf(requirementInfo),
                 legalTargets = mapOf(0 to legalTargets)
-            )
+            ) }
 
             val nextContinuation = MoveCollectionAuraTargetContinuation(
-                decisionId = decisionId,
                 auraId = nextAuraId,
                 controllerId = nextControllerId,
                 destPlayerId = nextControllerId,
                 remainingAuras = nextRemaining,
                 sourceId = continuation.sourceId,
+                objectReferences = continuation.objectReferences,
                 sourceName = continuation.sourceName,
                 underOwnersControl = continuation.underOwnersControl
             )
 
-            val stateWithDecision = newState.withPendingDecision(decision)
-            val stateWithContinuation = stateWithDecision.pushContinuation(nextContinuation)
-
-            return ExecutionResult(
-                state = stateWithContinuation,
-                events = moveEvents,
-                pendingDecision = decision
-            )
+            return newState.suspendForDecision(question, nextContinuation, moveEvents)
         }
 
         return checkForMore(newState, moveEvents)
@@ -592,11 +574,12 @@ class LibraryAndZoneContinuationResumer(
             pendingPlayers = continuation.pendingPlayers,
             startCategory = continuation.categoryIndex + 1,
             picks = continuation.picks + response.selectedCards,
-            sourceId = continuation.sourceId
+            sourceId = continuation.sourceId,
+            objectReferences = continuation.objectReferences
         )
 
         if (result.isPaused) {
-            return ExecutionResult.paused(result.state, result.pendingDecision!!, result.events)
+            return ExecutionResult.propagatePause(result.state, result.events)
         }
 
         // Republish the pipeline's collections alongside the picks so the consumer frame sees both
@@ -763,18 +746,12 @@ class LibraryAndZoneContinuationResumer(
 
         val libZoneKey = ZoneKey(ownerId, Zone.LIBRARY)
         val currentLibrary = newState.getZone(libZoneKey)
-        val newLibrary = when (placement) {
-            com.wingedsheep.engine.handlers.effects.LibraryPlacement.Top ->
-                listOf(spellId) + currentLibrary
-            com.wingedsheep.engine.handlers.effects.LibraryPlacement.Bottom ->
-                currentLibrary + spellId
-            is com.wingedsheep.engine.handlers.effects.LibraryPlacement.NthFromTop -> {
-                val insertIndex = placement.position.coerceAtMost(currentLibrary.size)
-                currentLibrary.toMutableList().apply { add(insertIndex, spellId) }
-            }
-            else -> currentLibrary + spellId
+        val insertIndex = when (placement) {
+            com.wingedsheep.engine.handlers.effects.LibraryPlacement.Top -> 0
+            is com.wingedsheep.engine.handlers.effects.LibraryPlacement.NthFromTop -> placement.position
+            else -> currentLibrary.size
         }
-        newState = newState.copy(zones = newState.zones + (libZoneKey to newLibrary))
+        newState = newState.insertIntoZone(libZoneKey, spellId, insertIndex)
 
         // Both players watched the spell get placed at this position — mark it revealed to all
         // so each side's library viewer shows it face-up at the new slot.
@@ -788,6 +765,8 @@ class LibraryAndZoneContinuationResumer(
                 entityName = spellName,
                 fromZone = Zone.STACK,
                 toZone = Zone.LIBRARY,
+                oldObject = state.objectRef(spellId),
+                newObject = newState.objectRef(spellId),
                 ownerId = ownerId
             )
         )
@@ -875,11 +854,11 @@ class LibraryAndZoneContinuationResumer(
                 grantedPermissionId = permId,
                 onCastFailure = FreeCastFallback.BOTTOM_OF_LIBRARY,
             )
-            val pausedState = stateWithGrant
-                .pushContinuation(targetsContinuation)
-                .withPendingDecision(targetPrep.decision)
-                .withPriority(continuation.playerId)
-            return ExecutionResult.paused(pausedState, targetPrep.decision, bottomEvents + targetPrep.event)
+            return stateWithGrant.withPriority(continuation.playerId).suspendForDecision(
+                question = targetPrep.question,
+                answer = targetsContinuation,
+                events = bottomEvents,
+            )
         }
 
         // Hand priority to the cascade controller for the synthesized cast. The cast
@@ -911,9 +890,8 @@ class LibraryAndZoneContinuationResumer(
             // The cast paused (for target / X / mode selection). The leftover
             // bottoming is already done; let the cast's own continuations finish
             // the cast on resume.
-            return ExecutionResult.paused(
+            return ExecutionResult.propagatePause(
                 castResult.state,
-                castResult.pendingDecision,
                 bottomEvents + castResult.events
             ).copy(triggersAlreadyProcessed = castResult.triggersAlreadyProcessed)
         }
@@ -1019,12 +997,12 @@ class LibraryAndZoneContinuationResumer(
         if (continuation.thenEffect != null) {
             val thenCtx = EffectContext(
                 sourceId = continuation.sourceId,
+                objectReferences = continuation.objectReferences,
                 controllerId = continuation.playerId,
                 pipeline = PipelineState.EMPTY.copy(storedCollections = discoveredCollections)
             )
             stateForCast = stateForCast.pushContinuation(
                 EffectContinuation(
-                    decisionId = "pending",
                     remainingEffects = listOf(continuation.thenEffect),
                     effectContext = thenCtx
                 )
@@ -1036,11 +1014,11 @@ class LibraryAndZoneContinuationResumer(
                 grantedPermissionId = permId,
                 onCastFailure = FreeCastFallback.HAND,
             )
-            val pausedState = stateForCast
-                .pushContinuation(targetsContinuation)
-                .withPendingDecision(targetPrep.decision)
-                .withPriority(continuation.playerId)
-            return ExecutionResult.paused(pausedState, targetPrep.decision, bottomEvents + targetPrep.event)
+            return stateForCast.withPriority(continuation.playerId).suspendForDecision(
+                question = targetPrep.question,
+                answer = targetsContinuation,
+                events = bottomEvents,
+            )
         }
 
         val stateReady = stateForCast.copy(priorityPlayerId = continuation.playerId)
@@ -1068,7 +1046,7 @@ class LibraryAndZoneContinuationResumer(
 
         if (castResult.pendingDecision != null) {
             // The cast paused (targets / X); the pre-pushed follow-up runs when it resumes.
-            return ExecutionResult.paused(castResult.state, castResult.pendingDecision, bottomEvents + castResult.events)
+            return ExecutionResult.propagatePause(castResult.state, bottomEvents + castResult.events)
                 .copy(triggersAlreadyProcessed = castResult.triggersAlreadyProcessed)
         }
 
@@ -1103,7 +1081,7 @@ class LibraryAndZoneContinuationResumer(
         val processed = services.triggerProcessor.processTriggers(result.state, triggers)
         val events = result.events + processed.events
         return if (processed.isPaused) {
-            ExecutionResult.paused(processed.state, processed.pendingDecision!!, events)
+            ExecutionResult.propagatePause(processed.state, events)
                 .copy(triggersAlreadyProcessed = true)
         } else {
             ExecutionResult.success(processed.newState, events)
@@ -1123,12 +1101,13 @@ class LibraryAndZoneContinuationResumer(
             ?: return checkForMore(state, leadingEvents)
         val ctx = EffectContext(
             sourceId = continuation.sourceId,
+            objectReferences = continuation.objectReferences,
             controllerId = continuation.playerId,
             pipeline = PipelineState.EMPTY.copy(storedCollections = discoveredCollections)
         )
         val result = effectRunner.executeRemainingEffects(state, listOf(thenEffect), ctx)
         if (result.isPaused) {
-            return ExecutionResult.paused(result.state, result.pendingDecision!!, leadingEvents + result.events)
+            return ExecutionResult.propagatePause(result.state, leadingEvents + result.events)
         }
         return checkForMore(result.state, leadingEvents + result.events)
     }
@@ -1208,9 +1187,8 @@ class LibraryAndZoneContinuationResumer(
         // doesn't re-scan the SpellCastEvent and double-fire them.
         if (castResult.pendingDecision != null) {
             val exposed = exposeCollectionsToNextFrame(castResult.state, castCollections)
-            return ExecutionResult.paused(
+            return ExecutionResult.propagatePause(
                 exposed,
-                castResult.pendingDecision,
                 castResult.events,
             ).copy(triggersAlreadyProcessed = castResult.triggersAlreadyProcessed)
         }

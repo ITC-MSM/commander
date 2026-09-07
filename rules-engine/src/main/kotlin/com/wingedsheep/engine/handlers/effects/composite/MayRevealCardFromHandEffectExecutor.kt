@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.handlers.effects.composite
 
+import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.CardsRevealedEvent
 import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.DecisionPhase
@@ -15,7 +16,6 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.MayRevealCardFromHandEffect
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -67,8 +67,7 @@ class MayRevealCardFromHandEffectExecutor(
         val sourceName = context.sourceId
             ?.let { state.getEntity(it)?.get<CardComponent>()?.name }
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = SelectCardsDecision(
+        val decision = { decisionId: String -> SelectCardsDecision(
             id = decisionId,
             playerId = revealer,
             prompt = "You may reveal a ${effect.filter.description} card from your hand",
@@ -80,10 +79,9 @@ class MayRevealCardFromHandEffectExecutor(
             options = eligible,
             minSelections = 0,
             maxSelections = 1,
-        )
+        ) }
 
         val continuation = MayRevealCardFromHandContinuation(
-            decisionId = decisionId,
             revealerId = revealer,
             sourceId = context.sourceId,
             sourceName = sourceName,
@@ -91,10 +89,7 @@ class MayRevealCardFromHandEffectExecutor(
             effectContext = context,
         )
 
-        val paused = state
-            .pushContinuation(continuation)
-            .withPendingDecision(decision)
-        return EffectResult.paused(paused, decision)
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 
     private fun runOtherwise(

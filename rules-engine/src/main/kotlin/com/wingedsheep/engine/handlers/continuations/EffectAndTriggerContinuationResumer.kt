@@ -12,7 +12,6 @@ import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.Gate
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import com.wingedsheep.sdk.scripting.targets.withCount
-import java.util.UUID
 
 /**
  * Handles core effect and trigger resumption:
@@ -28,7 +27,6 @@ class EffectAndTriggerContinuationResumer(
 ) : ContinuationResumerModule {
 
     override fun resumers(): List<ContinuationResumer<*>> = listOf(
-        resumer(EffectContinuation::class, ::resumeEffect),
         resumer(TriggeredAbilityContinuation::class, ::resumeTriggeredAbility),
         resumer(TriggerDamageDistributionContinuation::class, ::resumeTriggerDamageDistribution),
         resumer(ResolveSpellContinuation::class) { state, _, _, _ ->
@@ -42,28 +40,7 @@ class EffectAndTriggerContinuationResumer(
         resumer(BatchMayTriggerContinuation::class, ::resumeBatchMayTrigger)
     )
 
-    private fun resumeEffect(
-        state: GameState,
-        continuation: EffectContinuation,
-        response: DecisionResponse,
-        checkForMore: CheckForMore
-    ): ExecutionResult {
-        val effectResult = effectRunner.executeRemainingEffects(state, continuation.remainingEffects, continuation.effectContext)
-        if (effectResult.isPaused) return effectResult.toExecutionResult()
-        // A drained composite hands its pipeline storage to the frame beneath — e.g. a DoAction
-        // gate scoring SuccessCriterion.CollectionNonEmpty, or a reflexive "when you do" reading a
-        // number the action stored. The full frame maps (not just this drain's accumulation) are
-        // what propagate: keys injected into this frame by an earlier select-resume are part of
-        // them. Numbers and chosen values ride along with collections so that pausing mid-composite
-        // preserves exactly what completing it synchronously would have.
-        val stateWithCollections = exposeCollectionsToNextFrame(
-            effectResult.state,
-            continuation.effectContext.pipeline.storedCollections + effectResult.updatedCollections,
-            continuation.effectContext.pipeline.storedNumbers + effectResult.updatedStoredNumbers,
-            continuation.effectContext.pipeline.chosenValues + effectResult.updatedChosenValues,
-        )
-        return checkForMore(stateWithCollections, effectResult.events.toList())
-    }
+
 
     private fun resumeTriggeredAbility(
         state: GameState,
@@ -109,6 +86,7 @@ class EffectAndTriggerContinuationResumer(
                 sourceId = continuation.sourceId,
                 sourceName = continuation.sourceName,
                 sourceBattlefieldTimestamp = continuation.sourceBattlefieldTimestamp,
+                objectReferences = continuation.objectReferences,
                 controllerId = continuation.controllerId,
                 effect = continuation.elseEffect,
                 description = continuation.description,
@@ -155,6 +133,7 @@ class EffectAndTriggerContinuationResumer(
                     it,
                     com.wingedsheep.engine.handlers.EffectContext(
                         sourceId = continuation.sourceId,
+            objectReferences = continuation.objectReferences,
                         controllerId = continuation.controllerId,
                     )
                 )
@@ -168,6 +147,7 @@ class EffectAndTriggerContinuationResumer(
             sourceId = continuation.sourceId,
             sourceName = continuation.sourceName,
             sourceBattlefieldTimestamp = continuation.sourceBattlefieldTimestamp,
+            objectReferences = continuation.objectReferences,
             controllerId = continuation.controllerId,
             effect = continuation.effect,
             description = continuation.description,
@@ -239,8 +219,7 @@ class EffectAndTriggerContinuationResumer(
                 is com.wingedsheep.engine.state.components.stack.ChosenTarget.Spell -> target.spellEntityId
             }
         }
-        val decisionId = UUID.randomUUID().toString()
-        val decision = DistributeDecision(
+        val question = { decisionId: String -> DistributeDecision(
             id = decisionId,
             playerId = continuation.controllerId,
             prompt = "Divide $totalDamage damage among ${selectedTargets.size} targets",
@@ -252,13 +231,13 @@ class EffectAndTriggerContinuationResumer(
             totalAmount = totalDamage,
             targets = targetEntityIds,
             minPerTarget = 1
-        )
+        ) }
 
         val distributionContinuation = TriggerDamageDistributionContinuation(
-            decisionId = decisionId,
             sourceId = continuation.sourceId,
             sourceName = continuation.sourceName,
             sourceBattlefieldTimestamp = continuation.sourceBattlefieldTimestamp,
+            objectReferences = continuation.objectReferences,
             controllerId = continuation.controllerId,
             effect = continuation.effect,
             description = continuation.description,
@@ -280,20 +259,7 @@ class EffectAndTriggerContinuationResumer(
             interveningIf = continuation.interveningIf
         )
 
-        val newState = state
-            .withPendingDecision(decision)
-            .pushContinuation(distributionContinuation)
-
-        val events = listOf(
-            DecisionRequestedEvent(
-                decisionId = decisionId,
-                playerId = continuation.controllerId,
-                decisionType = "DISTRIBUTE",
-                prompt = decision.prompt
-            )
-        )
-
-        return ExecutionResult.paused(newState, decision, events)
+        return state.suspendForDecision(question, distributionContinuation, emptyList())
     }
 
     /**
@@ -314,6 +280,7 @@ class EffectAndTriggerContinuationResumer(
             sourceId = continuation.sourceId,
             sourceName = continuation.sourceName,
             sourceBattlefieldTimestamp = continuation.sourceBattlefieldTimestamp,
+            objectReferences = continuation.objectReferences,
             controllerId = continuation.controllerId,
             effect = continuation.effect,
             description = continuation.description,
@@ -424,7 +391,6 @@ class EffectAndTriggerContinuationResumer(
         if (rest.isNotEmpty()) {
             workingState = workingState.pushContinuation(
                 PendingTriggersContinuation(
-                    decisionId = "batch-may-peel-${java.util.UUID.randomUUID()}",
                     remainingTriggers = rest
                 )
             )

@@ -1,10 +1,10 @@
 package com.wingedsheep.engine.handlers.effects
 
+import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.ChooseOpponentDeciderContinuation
 import com.wingedsheep.engine.core.ChooseOptionDecision
 import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.DecisionPhase
-import com.wingedsheep.engine.core.DecisionRequestedEvent
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.state.GameState
@@ -15,7 +15,6 @@ import com.wingedsheep.engine.state.components.identity.PlayerComponent
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.Chooser
 import com.wingedsheep.sdk.scripting.effects.Effect
-import java.util.UUID
 
 /**
  * The single place a [Chooser] becomes a concrete deciding player.
@@ -89,9 +88,7 @@ object ChooserResolution {
         // The durable pick a preceding ChooseOpponentForSourceEffect wrote onto the source, so the
         // opponent who revealed a card is the same one who decides where it goes (CR 701.30b/c).
         Chooser.ChosenOpponent -> {
-            val chosen = context.sourceId?.let {
-                state.getEntity(it)?.chosenOpponent()
-            }
+            val chosen = context.chosenOpponent(state)
             chosen?.let { Outcome.Resolved(it) }
                 ?: Outcome.Unresolvable("No opponent has been chosen for this source")
         }
@@ -168,9 +165,9 @@ object ChooserResolution {
         context: EffectContext,
         prompt: String
     ): EffectResult {
-        val decisionId = UUID.randomUUID().toString()
         val sourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name }
-        val decision = ChooseOptionDecision(
+
+        val decision = { decisionId: String -> ChooseOptionDecision(
             id = decisionId,
             playerId = context.controllerId,
             prompt = prompt,
@@ -180,27 +177,17 @@ object ChooserResolution {
                 phase = DecisionPhase.RESOLUTION
             ),
             options = opponents.map { playerName(state, it) }
-        )
+        ) }
+
         val continuation = ChooseOpponentDeciderContinuation(
-            decisionId = decisionId,
             controllerId = context.controllerId,
             sourceId = context.sourceId,
             opponentIds = opponents,
             effect = effect,
             baseContext = context
         )
-        return EffectResult.paused(
-            state.withPendingDecision(decision).pushContinuation(continuation),
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = context.controllerId,
-                    decisionType = "CHOOSE_OPTION",
-                    prompt = prompt
-                )
-            )
-        )
+
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 
     private fun playerName(state: GameState, playerId: EntityId): String =

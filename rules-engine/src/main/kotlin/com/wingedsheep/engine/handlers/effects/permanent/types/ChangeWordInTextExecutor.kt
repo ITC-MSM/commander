@@ -10,7 +10,6 @@ import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.ChangeWordInTextEffect
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -142,8 +141,7 @@ class ChangeWordInTextExecutor(
         // Pre-select the first on-card word so the common single-relevant case is one click.
         val defaultFromIndex = fromOptions.indexOfFirst { it in relevant }.takeIf { it >= 0 }
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = ChooseReplacementDecision(
+        val decision = { decisionId: String -> ChooseReplacementDecision(
             id = decisionId,
             playerId = context.controllerId,
             prompt = prompt(targetName),
@@ -158,12 +156,12 @@ class ChangeWordInTextExecutor(
             toMetadata = metadataFor(toOptions, emptySet(), null),
             allowedToByFrom = allowedToByFrom(fromOptions, toOptions),
             defaultFromIndex = defaultFromIndex
-        )
+        ) }
 
         val continuation = ChooseReplacementContinuation(
-            decisionId = decisionId,
             controllerId = context.controllerId,
             sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
             sourceName = sourceName,
             targetId = targetId,
             fromOptions = fromOptions,
@@ -172,20 +170,6 @@ class ChangeWordInTextExecutor(
             duration = effect.duration
         )
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = context.controllerId,
-                    decisionType = "CHOOSE_REPLACEMENT",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 }

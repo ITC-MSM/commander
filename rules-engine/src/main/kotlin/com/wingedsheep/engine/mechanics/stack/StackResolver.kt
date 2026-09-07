@@ -407,9 +407,11 @@ class StackResolver(
             }
         }
 
+        val objectBeforeCast = state.objectRef(cardId)
         // Push to stack and reset priority passes (new stack item requires fresh round of passes)
         newState = newState.pushToStack(cardId)
             .copy(priorityPassedBy = emptySet())
+        val objectOnStack = newState.objectRef(cardId)
 
         // Consume one-shot free-cast permissions used to play this spell. If the
         // spell is later countered or fizzles and AfterResolveDestinationComponent sends
@@ -515,6 +517,8 @@ class StackResolver(
         val reportedChosenModesCount = if (countsAsModalForTriggers) chosenModes.size else 0
 
         val events = mutableListOf<GameEvent>(
+            ZoneChangeEvent(cardId, eventName, castFromZone, Zone.STACK, cardComponent.ownerId ?: casterId,
+                oldObject = objectBeforeCast, newObject = objectOnStack),
             SpellCastEvent(
                 spellEntityId = cardId,
                 cardName = eventName,
@@ -1009,9 +1013,8 @@ class StackResolver(
             // Put permanent on battlefield
             val permanentResult = resolvePermanentSpell(newState, spellId, spellComponent, cardComponent)
             if (permanentResult.isPaused) {
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     permanentResult.state,
-                    permanentResult.pendingDecision!!,
                     events + permanentResult.events
                 )
             }
@@ -1026,18 +1029,7 @@ class StackResolver(
             // that lands a permanent face down is covered, not only a face-down cast.
             val permanentName = nameVisibleToAll(newState, spellId, cardComponent?.name ?: "Unknown")
             events.add(ResolvedEvent(spellId, permanentName))
-            events.add(
-                ZoneChangeEvent(
-                    spellId,
-                    permanentName,
-                    null, // Was on stack
-                    Zone.BATTLEFIELD,
-                    cardComponent?.ownerId ?: spellComponent.casterId,
-                    xValue = spellComponent.xValue,
-                    enteredBattlefieldTimestamp = newState.getEntity(spellId)
-                        ?.get<com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent>()?.timestamp
-                )
-            )
+
         } else {
             // Execute effects and put in graveyard
             val effectResult = resolveNonPermanentSpell(
@@ -1046,13 +1038,10 @@ class StackResolver(
                 alignedResolvedTargets
             )
             if (effectResult.isPaused) {
-                // Effect paused for a decision (e.g., draw replacement prompt).
-                // resolveNonPermanentSpell already moved spell to graveyard.
-                val allEvents = events + effectResult.events +
-                    ResolvedEvent(spellId, cardComponent?.name ?: "Unknown")
-                return ExecutionResult.paused(
+                // The spell remains on the stack until its final continuation completes.
+                val allEvents = events + effectResult.events
+                return ExecutionResult.propagatePause(
                     effectResult.state,
-                    effectResult.pendingDecision!!,
                     allEvents
                 )
             }
@@ -1116,31 +1105,8 @@ class StackResolver(
                     // Present the selection decision
                     val filterDesc = copyFilter.description
                     val whereDesc = if (copyFromGraveyard) "$filterDesc card in a graveyard" else "$filterDesc"
-                    val decisionId = "clone-enters-${spellId.value}"
-                    val decision = SelectCardsDecision(
-                        id = decisionId,
-                        playerId = controllerId,
-                        prompt = if (entersAsCopy.optional) {
-                            "You may choose a $whereDesc to copy"
-                        } else {
-                            "Choose a $whereDesc to copy"
-                        },
-                        context = DecisionContext(
-                            sourceId = spellId,
-                            sourceName = cardComponent.name,
-                            phase = DecisionPhase.RESOLUTION
-                        ),
-                        options = candidates,
-                        minSelections = if (entersAsCopy.optional) 0 else 1,
-                        maxSelections = 1,
-                        // Battlefield copies click permanents in-place; graveyard copies use the
-                        // modal card-list overlay (graveyards aren't on the battlefield).
-                        useTargetingUI = !copyFromGraveyard
-                    )
-
-                    // Push continuation
+                    // Store the operation that consumes the copy choice.
                     val continuation = CloneEntersContinuation(
-                        decisionId = decisionId,
                         spellId = spellId,
                         controllerId = controllerId,
                         ownerId = ownerId,
@@ -1153,11 +1119,31 @@ class StackResolver(
                         exileCopiedCard = entersAsCopy.exileCopiedCard,
                         additionalCounters = entersAsCopy.additionalCounters
                     )
-
-                    val pausedState = state
-                        .pushContinuation(continuation)
-                        .withPendingDecision(decision)
-                    return ExecutionResult.paused(pausedState, decision)
+                    return state.suspendForDecision(
+                        question = { decisionId ->
+                            SelectCardsDecision(
+                                id = decisionId,
+                                playerId = controllerId,
+                                prompt = if (entersAsCopy.optional) {
+                                    "You may choose a $whereDesc to copy"
+                                } else {
+                                    "Choose a $whereDesc to copy"
+                                },
+                                context = DecisionContext(
+                                    sourceId = spellId,
+                                    sourceName = cardComponent.name,
+                                    phase = DecisionPhase.RESOLUTION
+                                ),
+                                options = candidates,
+                                minSelections = if (entersAsCopy.optional) 0 else 1,
+                                maxSelections = 1,
+                                // Battlefield copies click permanents in-place; graveyard copies use the
+                                // modal card-list overlay (graveyards aren't on the battlefield).
+                                useTargetingUI = !copyFromGraveyard
+                            )
+                        },
+                        answer = continuation
+                    )
                 }
                 // No matching permanents on battlefield - fall through to enter as itself (0/0)
             }
@@ -1201,34 +1187,31 @@ class StackResolver(
                 }
 
                 if (validCards.isNotEmpty()) {
-                    val decisionId = "reveal-counters-enters-${spellId.value}"
-                    val decision = SelectCardsDecision(
-                        id = decisionId,
-                        playerId = controllerId,
-                        prompt = "Reveal cards from your ${revealCountersEffect.revealSource.name.lowercase()} that match ${cardComponent.name} (${revealCountersEffect.countersPerReveal} ${revealCountersEffect.counterType} counter${if (revealCountersEffect.countersPerReveal > 1) "s" else ""} each)",
-                        context = DecisionContext(
-                            sourceId = spellId,
-                            sourceName = cardComponent.name,
-                            phase = DecisionPhase.RESOLUTION
-                        ),
-                        options = validCards,
-                        minSelections = 0,
-                        maxSelections = validCards.size
-                    )
-
                     val continuation = RevealCountersContinuation(
-                        decisionId = decisionId,
                         spellId = spellId,
                         controllerId = controllerId,
                         ownerId = ownerId,
                         counterType = revealCountersEffect.counterType,
                         countersPerReveal = revealCountersEffect.countersPerReveal
                     )
-
-                    val pausedState = state
-                        .pushContinuation(continuation)
-                        .withPendingDecision(decision)
-                    return ExecutionResult.paused(pausedState, decision)
+                    return state.suspendForDecision(
+                        question = { decisionId ->
+                            SelectCardsDecision(
+                                id = decisionId,
+                                playerId = controllerId,
+                                prompt = "Reveal cards from your ${revealCountersEffect.revealSource.name.lowercase()} that match ${cardComponent.name} (${revealCountersEffect.countersPerReveal} ${revealCountersEffect.counterType} counter${if (revealCountersEffect.countersPerReveal > 1) "s" else ""} each)",
+                                context = DecisionContext(
+                                    sourceId = spellId,
+                                    sourceName = cardComponent.name,
+                                    phase = DecisionPhase.RESOLUTION
+                                ),
+                                options = validCards,
+                                minSelections = 0,
+                                maxSelections = validCards.size
+                            )
+                        },
+                        answer = continuation
+                    )
                 }
                 // No valid cards — enter normally without counters
             }
@@ -1253,30 +1236,31 @@ class StackResolver(
                     )
                 ).coerceAtLeast(0).coerceAtMost(candidates.size)
                 if (candidates.isNotEmpty() && maxCards > 0) {
-                    val decisionId = "exile-counters-enters-${spellId.value}"
-                    val decision = SelectCardsDecision(
-                        id = decisionId,
-                        playerId = controllerId,
-                        prompt = "Exile up to $maxCards ${exileCountersEffect.filter.description} cards from your ${exileCountersEffect.sourceZone.name.lowercase()} for ${cardComponent.name}",
-                        context = DecisionContext(
-                            sourceId = spellId,
-                            sourceName = cardComponent.name,
-                            phase = DecisionPhase.RESOLUTION
-                        ),
-                        options = candidates,
-                        minSelections = 0,
-                        maxSelections = maxCards
-                    )
                     val continuation = ExileCountersContinuation(
-                        decisionId = decisionId,
                         spellId = spellId,
                         controllerId = controllerId,
                         ownerId = ownerId,
                         counterType = exileCountersEffect.counterType.description,
                         countersPerCard = exileCountersEffect.countersPerCard
                     )
-                    val pausedState = state.pushContinuation(continuation).withPendingDecision(decision)
-                    return ExecutionResult.paused(pausedState, decision)
+                    return state.suspendForDecision(
+                        question = { decisionId ->
+                            SelectCardsDecision(
+                                id = decisionId,
+                                playerId = controllerId,
+                                prompt = "Exile up to $maxCards ${exileCountersEffect.filter.description} cards from your ${exileCountersEffect.sourceZone.name.lowercase()} for ${cardComponent.name}",
+                                context = DecisionContext(
+                                    sourceId = spellId,
+                                    sourceName = cardComponent.name,
+                                    phase = DecisionPhase.RESOLUTION
+                                ),
+                                options = candidates,
+                                minSelections = 0,
+                                maxSelections = maxCards
+                            )
+                        },
+                        answer = continuation
+                    )
                 }
             }
 
@@ -1292,35 +1276,32 @@ class StackResolver(
 
                 if (candidates.isNotEmpty()) {
                     val devourLabel = devourEffect.description.substringBefore(" (")
-                    val decisionId = "devour-enters-${spellId.value}"
-                    val decision = SelectCardsDecision(
-                        id = decisionId,
-                        playerId = controllerId,
-                        prompt = "$devourLabel: sacrifice any number of ${devourEffect.sacrificeFilter.description}s for ${cardComponent.name}",
-                        context = DecisionContext(
-                            sourceId = spellId,
-                            sourceName = cardComponent.name,
-                            phase = DecisionPhase.RESOLUTION
-                        ),
-                        options = candidates,
-                        minSelections = 0,
-                        maxSelections = candidates.size,
-                        useTargetingUI = true
-                    )
-
                     val continuation = DevourEntersContinuation(
-                        decisionId = decisionId,
                         spellId = spellId,
                         controllerId = controllerId,
                         ownerId = ownerId,
                         multiplier = devourEffect.multiplier,
                         counterType = devourEffect.counterType.description
                     )
-
-                    val pausedState = state
-                        .pushContinuation(continuation)
-                        .withPendingDecision(decision)
-                    return ExecutionResult.paused(pausedState, decision)
+                    return state.suspendForDecision(
+                        question = { decisionId ->
+                            SelectCardsDecision(
+                                id = decisionId,
+                                playerId = controllerId,
+                                prompt = "$devourLabel: sacrifice any number of ${devourEffect.sacrificeFilter.description}s for ${cardComponent.name}",
+                                context = DecisionContext(
+                                    sourceId = spellId,
+                                    sourceName = cardComponent.name,
+                                    phase = DecisionPhase.RESOLUTION
+                                ),
+                                options = candidates,
+                                minSelections = 0,
+                                maxSelections = candidates.size,
+                                useTargetingUI = true
+                            )
+                        },
+                        answer = continuation
+                    )
                 }
                 // No valid permanents to sacrifice — enter with zero devour counters
             }
@@ -1330,28 +1311,27 @@ class StackResolver(
         if (cardDef != null && !spellComponent.castFaceDown) {
             val entersTapped = cardDef.script.replacementEffects.filterIsInstance<EntersTapped>().firstOrNull()
             if (entersTapped?.payLifeCost != null) {
-                val decisionId = "pay-life-or-enter-tapped-spell-${spellId.value}"
-                val decision = YesNoDecision(
-                    id = decisionId,
-                    playerId = controllerId,
-                    prompt = "Pay ${entersTapped.payLifeCost} life to have ${cardComponent.name} enter untapped?",
-                    context = DecisionContext(
-                        sourceId = spellId,
-                        sourceName = cardComponent.name,
-                        phase = DecisionPhase.RESOLUTION
-                    )
-                )
                 val continuation = PayLifeOrEnterTappedSpellContinuation(
-                    decisionId = decisionId,
                     spellId = spellId,
                     controllerId = controllerId,
                     ownerId = ownerId,
                     lifeCost = entersTapped.payLifeCost!!
                 )
-                val pausedState = state
-                    .pushContinuation(continuation)
-                    .withPendingDecision(decision)
-                return ExecutionResult.paused(pausedState, decision)
+                return state.suspendForDecision(
+                    question = { decisionId ->
+                        YesNoDecision(
+                            id = decisionId,
+                            playerId = controllerId,
+                            prompt = "Pay ${entersTapped.payLifeCost} life to have ${cardComponent.name} enter untapped?",
+                            context = DecisionContext(
+                                sourceId = spellId,
+                                sourceName = cardComponent.name,
+                                phase = DecisionPhase.RESOLUTION
+                            )
+                        )
+                    },
+                    answer = continuation
+                )
             }
         }
 
@@ -1380,10 +1360,8 @@ class StackResolver(
                     xValue = spellComponent.xValue,
                 )
             if (onEnterResult != null) {
-                return ExecutionResult(
-                    state = onEnterResult.state,
+                return onEnterResult.toExecutionResult().copy(
                     events = enterEvents + sagaEvents + onEnterResult.events,
-                    pendingDecision = onEnterResult.pendingDecision,
                 )
             }
         }
@@ -1703,14 +1681,17 @@ class StackResolver(
             val sacrificeStep = copyRiders?.sacrificeAtStep
             if (sacrificeStep != null) {
                 val sourceName = newState.getEntity(spellId)?.get<CardComponent>()?.name ?: "Unknown"
-                newState = newState.addDelayedTrigger(
+                val (triggerId, allocatedState) = newState.newRoutingId()
+                newState = allocatedState.addDelayedTrigger(
                     DelayedTriggeredAbility(
-                        id = java.util.UUID.randomUUID().toString(),
+                        id = triggerId,
                         effect = com.wingedsheep.sdk.scripting.effects.SacrificeTargetEffect(
                             com.wingedsheep.sdk.scripting.targets.EffectTarget.SpecificEntity(spellId)
                         ),
                         fireAtStep = sacrificeStep,
                         sourceId = spellId,
+                        objectReferences = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(captured = true,
+                            origin = newState.objectRef(spellId), source = newState.objectRef(spellId)),
                         sourceName = sourceName,
                         controllerId = controllerId,
                         fireOnPlayerId = if (copyRiders.sacrificeOnlyOnControllersTurn) controllerId else null
@@ -1941,18 +1922,21 @@ class StackResolver(
             val entryTimestamp = newState.getEntity(spellId)
                 ?.get<com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent>()
                 ?.timestamp
+            val (triggerId, allocatedState) = newState.newRoutingId()
             val delayedTrigger = DelayedTriggeredAbility(
-                id = java.util.UUID.randomUUID().toString(),
+                id = triggerId,
                 effect = WarpExileEffect(
                     target = EffectTarget.SpecificEntity(spellId),
                     enteredBattlefieldTimestamp = entryTimestamp
                 ),
                 fireAtStep = Step.END,
                 sourceId = spellId,
+                        objectReferences = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(captured = true,
+                            origin = newState.objectRef(spellId), source = newState.objectRef(spellId)),
                 sourceName = cardComponent?.name ?: "Unknown",
                 controllerId = controllerId
             )
-            newState = newState.addDelayedTrigger(delayedTrigger)
+            newState = allocatedState.addDelayedTrigger(delayedTrigger)
         }
 
         // Dash (CR 702.109a): create delayed trigger to return this permanent to its owner's
@@ -1961,8 +1945,9 @@ class StackResolver(
             val entryTimestamp = newState.getEntity(spellId)
                 ?.get<com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent>()
                 ?.timestamp
+            val (triggerId, allocatedState) = newState.newRoutingId()
             val delayedTrigger = DelayedTriggeredAbility(
-                id = java.util.UUID.randomUUID().toString(),
+                id = triggerId,
                 effect = MoveTrackedBattlefieldObjectEffect(
                     target = EffectTarget.SpecificEntity(spellId),
                     destination = Zone.HAND,
@@ -1970,10 +1955,12 @@ class StackResolver(
                 ),
                 fireAtStep = Step.END,
                 sourceId = spellId,
+                        objectReferences = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(captured = true,
+                            origin = newState.objectRef(spellId), source = newState.objectRef(spellId)),
                 sourceName = cardComponent?.name ?: "Unknown",
                 controllerId = controllerId
             )
-            newState = newState.addDelayedTrigger(delayedTrigger)
+            newState = allocatedState.addDelayedTrigger(delayedTrigger)
         }
 
         // Prepared (Secrets of Strixhaven): a preparation creature whose face carries the PREPARED
@@ -1989,6 +1976,15 @@ class StackResolver(
             newState = PreparationLogic.makePrepared(newState, spellId, cardDef, controllerId)
         }
 
+        // Entry precedes the counters placed on that battlefield object.
+        counterEvents.add(0, ZoneChangeEvent(
+            spellId, nameVisibleToAll(newState, spellId, cardComponent?.name ?: "Unknown"),
+            Zone.STACK, Zone.BATTLEFIELD, cardComponent?.ownerId ?: controllerId,
+            xValue = spellComponent.xValue,
+            enteredBattlefieldTimestamp = newState.getEntity(spellId)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent>()?.timestamp,
+            oldObject = state.objectRef(spellId), newObject = newState.objectRef(spellId),
+        ))
         return newState to counterEvents
     }
 
@@ -2022,31 +2018,39 @@ class StackResolver(
         exiledCardId: EntityId,
         casterId: EntityId,
         sourceName: String
-    ): GameState = state.addDelayedTrigger(
-        com.wingedsheep.engine.event.DelayedTriggeredAbility(
-            id = java.util.UUID.randomUUID().toString(),
-            effect = com.wingedsheep.sdk.scripting.effects.MayEffect(
-                com.wingedsheep.sdk.scripting.effects.CompositeEffect(
-                    listOf(
-                        com.wingedsheep.sdk.scripting.effects.GatherCardsEffect(
-                            source = com.wingedsheep.sdk.scripting.effects.CardSource.Self,
-                            storeAs = "rebound_recast",
-                        ),
-                        com.wingedsheep.sdk.scripting.effects.CastFromCollectionWithoutPayingCostEffect(
-                            from = "rebound_recast",
-                        ),
-                    )
+    ): GameState {
+        val (triggerId, allocatedState) = state.newRoutingId()
+        return allocatedState.addDelayedTrigger(
+            com.wingedsheep.engine.event.DelayedTriggeredAbility(
+                id = triggerId,
+                effect = com.wingedsheep.sdk.scripting.effects.MayEffect(
+                    com.wingedsheep.sdk.scripting.effects.CompositeEffect(
+                        listOf(
+                            com.wingedsheep.sdk.scripting.effects.GatherCardsEffect(
+                                source = com.wingedsheep.sdk.scripting.effects.CardSource.Self,
+                                storeAs = "rebound_recast",
+                            ),
+                            com.wingedsheep.sdk.scripting.effects.CastFromCollectionWithoutPayingCostEffect(
+                                from = "rebound_recast",
+                            ),
+                        )
+                    ),
+                    descriptionOverride = "cast this card from exile without paying its mana cost",
                 ),
-                descriptionOverride = "cast this card from exile without paying its mana cost",
-            ),
-            fireAtStep = com.wingedsheep.sdk.core.Step.UPKEEP,
-            fireOnPlayerId = casterId,
-            notBeforeTurn = state.turnNumber + 1,
-            sourceId = exiledCardId,
-            sourceName = sourceName,
-            controllerId = casterId,
+                fireAtStep = com.wingedsheep.sdk.core.Step.UPKEEP,
+                fireOnPlayerId = casterId,
+                notBeforeTurn = state.turnNumber + 1,
+                sourceId = exiledCardId,
+                objectReferences = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(
+                    captured = true,
+                    origin = state.objectRef(exiledCardId),
+                    source = state.objectRef(exiledCardId),
+                ),
+                sourceName = sourceName,
+                controllerId = casterId,
+            )
         )
-    )
+    }
 
     /**
      * Resolve a non-permanent spell - execute effects, put in graveyard.
@@ -2063,7 +2067,9 @@ class StackResolver(
         // rather than shifting onto a later still-valid target.
         alignedTargets: List<ChosenTarget?> = targets,
     ): ExecutionResult {
-        var newState = state
+        // resolveTop removed the item from the priority stack; a resolving spell itself
+        // remains a stack object until its effects finish, below any spell those effects cast.
+        var newState = if (spellId !in state.stack) state.copy(stack = state.stack + spellId) else state
         val events = mutableListOf<GameEvent>()
 
         // Execute the spell effect if present, applying text replacement if the spell
@@ -2123,6 +2129,10 @@ class StackResolver(
                 if (splicedSlotCount == 0) targets else mainAlignedTargets.filterNotNull()
             val context = EffectContext(
                 sourceId = spellId,
+                objectReferences = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(
+                    captured = true, origin = state.objectRef(spellId), source = state.objectRef(spellId),
+                    resolutionKey = "$spellId:${state.objectRef(spellId)?.generation}",
+                ),
                 controllerId = spellComponent.casterId,
                 targets = mainTargets,
                 // Position-preserving view (null in slots dropped by 608.2b) so positional
@@ -2166,17 +2176,24 @@ class StackResolver(
                 )
             )
 
+            val finishing = FinishResolvingSpellContinuation(
+                spellObject = state.objectRef(spellId)!!,
+                spellComponent = spellComponent,
+                cardComponent = cardComponent,
+            )
+            newState = newState.pushContinuation(finishing)
+
             // Pre-push the splice tail so it runs whether the main spell's effect finishes here or
             // pauses for a decision of its own — the frame sits beneath the inner decision's frames
             // and auto-resumes once they finish (CR 702.47b: main spell first, then the spliced text).
             val stateForMainEffect = if (spliceEntries.isNotEmpty()) {
                 newState.pushContinuation(
                     SpliceTailContinuation(
-                        decisionId = "splice-tail-${java.util.UUID.randomUUID()}",
                         controllerId = spellComponent.casterId,
                         sourceId = spellId,
                         sourceName = cardComponent?.name,
-                        remainingEntries = spliceEntries
+                        remainingEntries = spliceEntries,
+                        objectReferences = context.objectReferences
                     )
                 )
             } else newState
@@ -2195,7 +2212,8 @@ class StackResolver(
                         sourceId = spellId,
                         sourceName = cardComponent?.name,
                         xValue = null,
-                        triggeringEntityId = null
+                        triggeringEntityId = null,
+                        objectReferences = context.objectReferences.authorize(effectResult.events)
                     ),
                     effectExecutor = { s, e, c -> effectHandler.execute(s, e, c) },
                     targetValidator = spliceTargetValidator,
@@ -2204,184 +2222,49 @@ class StackResolver(
                 effectResult = tail
             }
 
-            // If effect is paused awaiting a decision, we still need to move the spell
-            // to graveyard/exile (it has already resolved from the stack). The decision only
-            // determines how the effect completes.
             if (effectResult.isPaused) {
-                val pausedIsCopy = effectResult.state.getEntity(spellId)?.has<CopyOfComponent>() == true
-                if (pausedIsCopy) {
-                    // Rule 112.3b — copies cease to exist when they leave the stack.
-                    val pausedState = effectResult.state.removeEntity(spellId)
-                    return ExecutionResult.paused(
-                        pausedState,
-                        effectResult.pendingDecision!!,
-                        events + effectResult.events
-                    )
-                }
-
-                val ownerId = cardComponent?.ownerId ?: spellComponent.casterId
-                val pausedCardDef = cardComponent?.let { cardRegistry.getCard(it.name) }
-                // For a cast face (Adventure / modal DFC), "Exile <name>." lives on the face's script.
-                val pausedResolvedScript = spellComponent.faceIndex?.let { pausedCardDef?.cardFaces?.getOrNull(it)?.script }
-                    ?: pausedCardDef?.script
-
-                // Esper Origins: a graveyard-cast that returns itself to the battlefield transformed
-                // does so even when its resolution paused mid-way (e.g. the Surveil earlier in the
-                // same resolution). The card leaves the stack and enters transformed now; the paused
-                // continuation still resolves the remaining effects. Precedence over flashback exile.
-                val pausedReturnTransformed = pausedResolvedScript?.returnTransformedFromGraveyardOnResolve
-                if (pausedReturnTransformed != null && spellComponent.castFromZone == Zone.GRAVEYARD) {
-                    val transformEvents = mutableListOf<GameEvent>()
-                    val transformed = resolveSelfToBattlefieldTransformed(
-                        effectResult.state, spellId, pausedReturnTransformed.counters, transformEvents
-                    )
-                    if (transformed != null) {
-                        return ExecutionResult.paused(
-                            transformed,
-                            effectResult.pendingDecision!!,
-                            events + effectResult.events + transformEvents
-                        )
-                    }
-                }
-
-                val pausedSelfExile = pausedResolvedScript?.selfExileOnResolve == true
-                // Flashback (printed or granted — Archmage's Newt) or Harmonize (printed or granted
-                // — Songcrafter Mage): a graveyard cast exiles on resolution instead of returning
-                // to the graveyard.
-                val pausedFlashbackExile = spellComponent.castFromZone == Zone.GRAVEYARD &&
-                    (FlashbackGrants.effectiveFlashback(
-                        state, spellId, pausedCardDef, spellComponent.casterId, cardRegistry, predicateEvaluator
-                    ) != null ||
-                        HarmonizeGrants.effectiveHarmonize(state, spellId, pausedCardDef) != null)
-                val pausedExileAfterResolveComp = effectResult.state.getEntity(spellId)?.get<AfterResolveDestinationComponent>()
-                val pausedAdventureFaceExile = pausedCardDef?.layout == com.wingedsheep.sdk.model.CardLayout.ADVENTURE &&
-                    spellComponent.faceIndex != null
-                val pausedOmenFaceShuffle = pausedCardDef?.layout == com.wingedsheep.sdk.model.CardLayout.OMEN &&
-                    spellComponent.faceIndex != null
-                // "Shuffle <name> into its owner's library." printed on the card itself (the
-                // Mirrodin Besieged Zenith cycle). Same seam as pausedSelfExile — it replaces the
-                // CR 608.2n destination — but lands in the library shuffled rather than in exile.
-                val pausedSelfShuffleIntoLibrary = pausedResolvedScript?.selfShuffleIntoLibraryOnResolve == true
-                val pausedReboundExile = spellComponent.castFromZone == Zone.HAND &&
-                    spellHasRebound(effectResult.state, spellId, pausedCardDef)
-                // See the resolved twin below for why this isn't a plain priority order.
-                val pausedIntended = when {
-                    // The cast-this-way rider is the most specific instruction on this one spell,
-                    // so it outranks the card-intrinsic exile reasons below rather than being
-                    // OR'd into them — it is the only one that can name a zone other than exile.
-                    // It replaces "would be put into a graveyard", though (Kylox's Voltstrider),
-                    // and a spell that shuffles itself into its owner's library never would be —
-                    // hence the guard, which hands that case to the printed clause below.
-                    pausedExileAfterResolveComp != null && !pausedSelfShuffleIntoLibrary ->
-                        pausedExileAfterResolveComp.zone
-                    // Flashback (CR 702.34a) and harmonize (CR 702.180a) are the two replacements
-                    // here worded "instead of putting it anywhere else any time it would leave the
-                    // stack" rather than naming the graveyard, so they outrank even the printed
-                    // clause: a flashbacked spell that shuffles itself in is exiled instead.
-                    pausedFlashbackExile -> Zone.EXILE
-                    pausedSelfShuffleIntoLibrary -> Zone.LIBRARY
-                    pausedSelfExile || pausedAdventureFaceExile || pausedReboundExile -> Zone.EXILE
-                    pausedOmenFaceShuffle -> Zone.LIBRARY
-                    else -> Zone.GRAVEYARD
-                }
-
-                // Apply RedirectZoneChange replacement effects (e.g., Festival of Embers).
-                val pausedRedirect = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.checkZoneChangeRedirect(
-                    effectResult.state, spellId, Zone.STACK, pausedIntended
-                )
-                val pausedDestZone = pausedRedirect.destinationZone
-                val pausedDestZoneKey = ZoneKey(ownerId, pausedDestZone)
-
-                // Move spell to graveyard/exile even though effect is paused
-                var pausedState = effectResult.state.updateEntity(spellId) { c ->
-                    c.without<SpellOnStackComponent>().without<TargetsComponent>()
-                }
-                pausedState = pausedState.addToZone(pausedDestZoneKey, spellId)
-
-                // Paradigm: tag the just-exiled spell even when its effect paused mid-resolution.
-                if (pausedDestZone == Zone.EXILE && pausedResolvedScript?.paradigm == true) {
-                    pausedState = pausedState.updateEntity(spellId) { c ->
-                        c.with(com.wingedsheep.engine.state.components.battlefield.ParadigmComponent)
-                    }
-                }
-
-                // Rebound: arm the next-upkeep free recast even when the effect paused mid-resolution.
-                if (pausedReboundExile && pausedDestZone == Zone.EXILE) {
-                    pausedState = scheduleReboundRecast(
-                        pausedState, spellId, spellComponent.casterId, cardComponent?.name ?: "Unknown"
-                    )
-                }
-
-                // Link an opponent's resolving spell exiled by a RedirectZoneChange(linkToSource)
-                // replacement (Valgavoth) even when the effect paused mid-resolution.
-                if (pausedDestZone == Zone.EXILE && pausedRedirect.linkSourceId != null) {
-                    pausedState = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
-                        .linkExiledToSource(pausedState, spellId, pausedRedirect.linkSourceId)
-                }
-
-                // CR 715.3d — Adventure exiled by its own resolution: re-grant cast-from-exile.
-                if (pausedAdventureFaceExile && pausedDestZone == Zone.EXILE) {
-                    val (permId, stateWithPerm) = pausedState.newEntity()
-                    pausedState = stateWithPerm.addMayPlayPermission(
-                        com.wingedsheep.engine.state.permissions.MayPlayPermission(
-                            id = permId,
-                            cardIds = setOf(spellId),
-                            controllerId = spellComponent.casterId,
-                            permanent = true,
-                            timestamp = state.timestamp,
-                        )
-                    )
-                }
-
-                val pausedCounterEvents = mutableListOf<GameEvent>()
-                if (pausedDestZone == Zone.EXILE && pausedExileAfterResolveComp != null && pausedExileAfterResolveComp.withCounters.isNotEmpty()) {
-                    pausedState = applyExileCounters(pausedState, spellId, pausedExileAfterResolveComp.withCounters, pausedCounterEvents)
-                }
-
-                // Omen (Tarkir: Dragonstorm), and the Zenith cycle's printed "Shuffle <name> into
-                // its owner's library.": shuffle the just-added card into its owner's library.
-                // Gated on the *final* destination for the same two reasons as the resolved twin —
-                // a RedirectZoneChange may have sent the card elsewhere, and
-                // AfterResolveDestination.BOTTOM_OF_LIBRARY also lands in Zone.LIBRARY but must
-                // not shuffle.
-                if ((pausedOmenFaceShuffle || pausedSelfShuffleIntoLibrary) && pausedDestZone == Zone.LIBRARY) {
-                    pausedState = shuffleOwnerLibrary(pausedState, ownerId)
-                    pausedCounterEvents.add(LibraryShuffledEvent(ownerId))
-                }
-
-                pausedRedirect.additionalEffect?.let { extra ->
-                    val (updatedState, extraEvents) = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.applyReplacementAdditionalEffect(
-                        pausedState, extra, pausedRedirect.effectControllerId, spellId,
-                        sourceId = pausedRedirect.effectSourceId
-                    )
-                    pausedState = updatedState
-                    pausedCounterEvents.addAll(extraEvents)
-                }
-
-                // Include the zone change event along with effect events
-                val allEvents = events + effectResult.events + ZoneChangeEvent(
-                    spellId,
-                    cardComponent?.name ?: "Unknown",
-                    null,
-                    pausedDestZone,
-                    ownerId
-                ) + pausedCounterEvents
-
-                return ExecutionResult.paused(
-                    pausedState,
-                    effectResult.pendingDecision!!,
-                    allEvents
-                )
+                // The finalizer is below all effect and splice frames; no zone change yet.
+                return ExecutionResult.propagatePause(effectResult.state, events + effectResult.events)
             }
 
             // Always apply state changes from effect execution, even on partial
             // failure. Per MTG rules, when a spell resolves, you do as much as
             // possible. Partial state changes (e.g., first target destroyed but
             // second target missing) should be preserved.
-            newState = effectResult.newState
+            // The finalizer ran inline, so drop the frame pre-pushed for the paused path. There is
+            // at most one per resolving spell object, which is what identifies it now that automatic
+            // work carries no routing ID.
+            newState = effectResult.newState.copy(continuationStack = effectResult.newState.continuationStack
+                .filterNot { it is FinishResolvingSpellContinuation && it.spellObject == finishing.spellObject })
             events.addAll(effectResult.events)
         }
 
+        val completed = if (state.objectRef(spellId)?.let(newState::isCurrentObject) == true)
+            finishNonPermanentSpell(newState, spellId, spellComponent, cardComponent)
+        else ExecutionResult.success(newState)
+        return completed.copy(events = events + completed.events)
+    }
+
+    /** Finish only the captured resolving spell, never a later visit of the same card. */
+    fun finishResolvingSpell(state: GameState, continuation: FinishResolvingSpellContinuation): ExecutionResult {
+        val result = if (state.isCurrentObject(continuation.spellObject) &&
+            state.logicalZone(continuation.spellObject.entityId)?.zoneType == Zone.STACK
+        ) finishNonPermanentSpell(state, continuation.spellObject.entityId,
+            continuation.spellComponent, continuation.cardComponent)
+        else ExecutionResult.success(state)
+        return result.copy(events = result.events + ResolvedEvent(continuation.spellObject.entityId,
+            continuation.cardComponent?.name ?: "Unknown"))
+    }
+
+    private fun finishNonPermanentSpell(
+        state: GameState,
+        spellId: EntityId,
+        spellComponent: SpellOnStackComponent,
+        cardComponent: CardComponent?,
+    ): ExecutionResult {
+        if (state.logicalZone(spellId)?.zoneType != Zone.STACK) return ExecutionResult.success(state)
+        var newState = if (spellId in state.stack) state.copy(stack = state.stack.filterNot { it == spellId }) else state
+        val events = mutableListOf<GameEvent>()
         // Rule 112.3b: a copy of a spell ceases to exist when it leaves the stack —
         // it does not go to a graveyard or exile.
         val isCopy = newState.getEntity(spellId)?.has<CopyOfComponent>() == true
@@ -2485,6 +2368,7 @@ class StackResolver(
         }
         newState = newState.removeMayPlayPermissionsForCard(spellId)
         newState = newState.addToZone(destZoneKey, spellId)
+        val destinationObject = newState.objectRef(spellId)
 
         // Paradigm (Secrets of Strixhaven): tag the just-exiled spell so the engine synthesizes its
         // recurring precombat-main free-recast ability (Paradigm.recastAbility). The marker is the
@@ -2575,9 +2459,9 @@ class StackResolver(
             ZoneChangeEvent(
                 spellId,
                 cardComponent?.name ?: "Unknown",
-                null,
+                Zone.STACK,
                 destinationZone,
-                ownerId
+                ownerId, oldObject = state.objectRef(spellId), newObject = destinationObject
             )
         )
 
@@ -2745,6 +2629,7 @@ class StackResolver(
             c.without<SpellOnStackComponent>().without<TargetsComponent>()
         }
         newState = newState.addToZone(destZoneKey, spellId)
+        val destinationObject = newState.objectRef(spellId)
         // A card-intrinsic redirect into the library shuffles the card in (Progenitus).
         if (destZone == Zone.LIBRARY && fizzleRedirect.shuffleIntoLibrary) {
             newState = shuffleOwnerLibrary(newState, ownerId)
@@ -2761,9 +2646,9 @@ class StackResolver(
                 ZoneChangeEvent(
                     spellId,
                     cardComponent?.name ?: "Unknown",
-                    null,
+                    Zone.STACK,
                     destZone,
-                    ownerId
+                    ownerId, oldObject = state.objectRef(spellId), newObject = destinationObject
                 )
             )
         )
@@ -2790,7 +2675,7 @@ class StackResolver(
             abilityComponent,
             targets = resolvedTargets2,
             targetRequirements = targetReqs
-        ).forAbilityResolution(state)
+        ).forAbilityResolution(state, abilityId)
 
         // CR 608.2a, then CR 608.2b — in that lettered order. 608.2a: "If a triggered ability has
         // an intervening 'if' clause, it checks whether the clause's condition is true. If it
@@ -2860,9 +2745,8 @@ class StackResolver(
         // The ability entity stays removed (it's off the stack), but the decision must resolve
         if (effectResult.isPaused) {
             val pausedState = effectResult.state.removeEntity(abilityId)
-            return ExecutionResult.paused(
+            return ExecutionResult.propagatePause(
                 pausedState,
-                effectResult.pendingDecision!!,
                 effectResult.events
             )
         }
@@ -2958,6 +2842,7 @@ class StackResolver(
             activatedAbility = abilityComponent.activatedAbility,
             sourceFaceChanges = abilityComponent.sourceFaceChanges,
             sourceBattlefieldTimestamp = abilityComponent.sourceBattlefieldTimestamp,
+            objectReferences = abilityComponent.objectReferences,
             targets = activatedTargets,
             alignedTargets = alignedActivatedTargets,
             sacrificedPermanents = abilityComponent.sacrificedPermanents,
@@ -2978,7 +2863,7 @@ class StackResolver(
                     ?.let { mapOf(ChooseCreatureTypePipelineExecutor.CHOSEN_CREATURE_TYPE_KEY to it) }
                     ?: emptyMap()
             )
-        ).forAbilityResolution(state)
+        ).forAbilityResolution(state, abilityId)
 
         val effectResult = effectHandler.execute(state, abilityComponent.effect, context)
 
@@ -2986,9 +2871,8 @@ class StackResolver(
         // The ability entity stays removed (it's off the stack), but the decision must resolve
         if (effectResult.isPaused) {
             val pausedState = effectResult.state.removeEntity(abilityId)
-            return ExecutionResult.paused(
+            return ExecutionResult.propagatePause(
                 pausedState,
-                effectResult.pendingDecision!!,
                 effectResult.events
             )
         }
@@ -3111,6 +2995,7 @@ class StackResolver(
         val destZone = counterRedirect.destinationZone
         val destZoneKey = ZoneKey(ownerId, destZone)
         newState = newState.addToZone(destZoneKey, spellId)
+        val destinationObject = newState.objectRef(spellId)
         // A card-intrinsic redirect into the library shuffles the card in (Progenitus).
         if (destZone == Zone.LIBRARY && counterRedirect.shuffleIntoLibrary) {
             newState = shuffleOwnerLibrary(newState, ownerId)
@@ -3132,9 +3017,9 @@ class StackResolver(
                 ZoneChangeEvent(
                     spellId,
                     cardComponent?.name ?: "Unknown",
-                    null,
+                    Zone.STACK,
                     destZone,
-                    ownerId
+                    ownerId, oldObject = state.objectRef(spellId), newObject = destinationObject
                 )
             )
         )
@@ -3182,6 +3067,7 @@ class StackResolver(
             ?.takeIf { !it.onlyIfResolved }
         val destZone = riderOnCounter?.zone ?: Zone.HAND
         newState = newState.addToZone(ZoneKey(ownerId, destZone), spellId)
+        val destinationObject = newState.objectRef(spellId)
 
         newState = newState.updateEntity(spellId) { c ->
             c.without<SpellOnStackComponent>().without<TargetsComponent>()
@@ -3194,9 +3080,9 @@ class StackResolver(
                 ZoneChangeEvent(
                     spellId,
                     cardComponent?.name ?: "Unknown",
-                    null,
+                    Zone.STACK,
                     destZone,
-                    ownerId
+                    ownerId, oldObject = state.objectRef(spellId), newObject = destinationObject
                 )
             )
         )
@@ -3273,9 +3159,9 @@ class StackResolver(
                 ZoneChangeEvent(
                     spellId,
                     cardComponent?.name ?: "Unknown",
-                    null,
+                    Zone.STACK,
                     Zone.EXILE,
-                    ownerId
+                    ownerId, oldObject = state.objectRef(spellId), newObject = newState.objectRef(spellId)
                 )
             )
         )
@@ -3329,7 +3215,8 @@ class StackResolver(
         }
 
         val events = mutableListOf<GameEvent>(
-            ZoneChangeEvent(spellId, cardComponent?.name ?: "Unknown", Zone.STACK, Zone.EXILE, ownerId)
+            ZoneChangeEvent(spellId, cardComponent?.name ?: "Unknown", Zone.STACK, Zone.EXILE, ownerId,
+                oldObject = state.objectRef(spellId), newObject = newState.objectRef(spellId))
         )
 
         if (makePlotted) {
@@ -3986,58 +3873,56 @@ class StackResolver(
 
         return when (choice.choiceType) {
             ChoiceType.COLOR -> {
-                val decisionId = "choose-color-enters-${spellId.value}"
-                val decision = ChooseColorDecision(
-                    id = decisionId,
-                    playerId = chooserId,
-                    prompt = "Choose a color",
-                    context = DecisionContext(
-                        sourceId = spellId,
-                        sourceName = cardComponent.name,
-                        phase = DecisionPhase.RESOLUTION
-                    )
-                )
                 val continuation = EntersWithChoiceSpellContinuation(
-                    decisionId = decisionId,
                     spellId = spellId,
                     controllerId = controllerId,
                     ownerId = ownerId,
                     choiceType = ChoiceType.COLOR
                 )
-                val pausedState = state
-                    .pushContinuation(continuation)
-                    .withPendingDecision(decision)
-                ExecutionResult.paused(pausedState, decision)
+                state.suspendForDecision(
+                    question = { decisionId ->
+                        ChooseColorDecision(
+                            id = decisionId,
+                            playerId = chooserId,
+                            prompt = "Choose a color",
+                            context = DecisionContext(
+                                sourceId = spellId,
+                                sourceName = cardComponent.name,
+                                phase = DecisionPhase.RESOLUTION
+                            )
+                        )
+                    },
+                    answer = continuation
+                )
             }
 
             ChoiceType.CREATURE_TYPE -> {
                 val creatureTypeOptions = choice.allowedCreatureTypes
                     ?: com.wingedsheep.sdk.core.Subtype.ALL_CREATURE_TYPES
-                val decisionId = "choose-creature-type-enters-${spellId.value}"
-                val decision = ChooseOptionDecision(
-                    id = decisionId,
-                    playerId = chooserId,
-                    prompt = "Choose a creature type",
-                    context = DecisionContext(
-                        sourceId = spellId,
-                        sourceName = cardComponent.name,
-                        phase = DecisionPhase.RESOLUTION
-                    ),
-                    options = creatureTypeOptions,
-                    defaultSearch = ""
-                )
                 val continuation = EntersWithChoiceSpellContinuation(
-                    decisionId = decisionId,
                     spellId = spellId,
                     controllerId = controllerId,
                     ownerId = ownerId,
                     choiceType = ChoiceType.CREATURE_TYPE,
                     creatureTypes = creatureTypeOptions
                 )
-                val pausedState = state
-                    .pushContinuation(continuation)
-                    .withPendingDecision(decision)
-                ExecutionResult.paused(pausedState, decision)
+                state.suspendForDecision(
+                    question = { decisionId ->
+                        ChooseOptionDecision(
+                            id = decisionId,
+                            playerId = chooserId,
+                            prompt = "Choose a creature type",
+                            context = DecisionContext(
+                                sourceId = spellId,
+                                sourceName = cardComponent.name,
+                                phase = DecisionPhase.RESOLUTION
+                            ),
+                            options = creatureTypeOptions,
+                            defaultSearch = ""
+                        )
+                    },
+                    answer = continuation
+                )
             }
 
             ChoiceType.CREATURE_ON_BATTLEFIELD -> {
@@ -4047,58 +3932,38 @@ class StackResolver(
                         state.projectedState.isCreature(entityId)
                 }
                 if (battlefieldCreatures.isEmpty()) return null // No creatures — enter without choice
-                val decisionId = "choose-creature-enters-${spellId.value}"
-                val decision = SelectCardsDecision(
-                    id = decisionId,
-                    playerId = controllerId,
-                    prompt = "Choose another creature you control",
-                    context = DecisionContext(
-                        sourceId = spellId,
-                        sourceName = cardComponent.name,
-                        phase = DecisionPhase.RESOLUTION
-                    ),
-                    options = battlefieldCreatures,
-                    minSelections = 1,
-                    maxSelections = 1,
-                    useTargetingUI = true
-                )
                 val continuation = EntersWithChoiceSpellContinuation(
-                    decisionId = decisionId,
                     spellId = spellId,
                     controllerId = controllerId,
                     ownerId = ownerId,
                     choiceType = ChoiceType.CREATURE_ON_BATTLEFIELD
                 )
-                val pausedState = state
-                    .pushContinuation(continuation)
-                    .withPendingDecision(decision)
-                ExecutionResult.paused(pausedState, decision)
+                state.suspendForDecision(
+                    question = { decisionId ->
+                        SelectCardsDecision(
+                            id = decisionId,
+                            playerId = controllerId,
+                            prompt = "Choose another creature you control",
+                            context = DecisionContext(
+                                sourceId = spellId,
+                                sourceName = cardComponent.name,
+                                phase = DecisionPhase.RESOLUTION
+                            ),
+                            options = battlefieldCreatures,
+                            minSelections = 1,
+                            maxSelections = 1,
+                            useTargetingUI = true
+                        )
+                    },
+                    answer = continuation
+                )
             }
 
             ChoiceType.MODE -> {
                 if (choice.modeOptions.isEmpty()) {
                     return null
                 }
-                // A permanent granted multiple riot instances re-pauses on the same spell; suffix the
-                // id with the remaining count so each instance's decision is distinct (CR 702.136b).
-                val decisionId = "choose-mode-enters-${spellId.value}" +
-                    if (syntheticRiot) "-riot$syntheticRiotRemaining" else ""
-                val decision = ChooseOptionDecision(
-                    id = decisionId,
-                    playerId = chooserId,
-                    prompt = "Choose for ${cardComponent.name}",
-                    context = DecisionContext(
-                        sourceId = spellId,
-                        sourceName = cardComponent.name,
-                        phase = DecisionPhase.RESOLUTION
-                    ),
-                    options = choice.modeOptions.map { it.label },
-                    optionMetadata = choice.modeOptions.map {
-                        OptionMetadata(id = it.id, description = it.description, iconKey = it.iconKey)
-                    }
-                )
                 val continuation = EntersWithChoiceSpellContinuation(
-                    decisionId = decisionId,
                     spellId = spellId,
                     controllerId = controllerId,
                     ownerId = ownerId,
@@ -4107,39 +3972,53 @@ class StackResolver(
                     syntheticRiot = syntheticRiot,
                     syntheticRiotRemaining = syntheticRiotRemaining
                 )
-                val pausedState = state
-                    .pushContinuation(continuation)
-                    .withPendingDecision(decision)
-                ExecutionResult.paused(pausedState, decision)
+                state.suspendForDecision(
+                    question = { decisionId ->
+                        ChooseOptionDecision(
+                            id = decisionId,
+                            playerId = chooserId,
+                            prompt = "Choose for ${cardComponent.name}",
+                            context = DecisionContext(
+                                sourceId = spellId,
+                                sourceName = cardComponent.name,
+                                phase = DecisionPhase.RESOLUTION
+                            ),
+                            options = choice.modeOptions.map { it.label },
+                            optionMetadata = choice.modeOptions.map {
+                                OptionMetadata(id = it.id, description = it.description, iconKey = it.iconKey)
+                            }
+                        )
+                    },
+                    answer = continuation
+                )
             }
 
             ChoiceType.BASIC_LAND_TYPE -> {
                 val landTypeOptions = com.wingedsheep.sdk.core.Subtype.ALL_BASIC_LAND_TYPES.toList()
-                val decisionId = "choose-land-type-enters-${spellId.value}"
-                val decision = ChooseOptionDecision(
-                    id = decisionId,
-                    playerId = chooserId,
-                    prompt = "Choose a basic land type",
-                    context = DecisionContext(
-                        sourceId = spellId,
-                        sourceName = cardComponent.name,
-                        phase = DecisionPhase.RESOLUTION
-                    ),
-                    options = landTypeOptions,
-                    defaultSearch = ""
-                )
                 val continuation = EntersWithChoiceSpellContinuation(
-                    decisionId = decisionId,
                     spellId = spellId,
                     controllerId = controllerId,
                     ownerId = ownerId,
                     choiceType = ChoiceType.BASIC_LAND_TYPE,
                     landTypes = landTypeOptions
                 )
-                val pausedState = state
-                    .pushContinuation(continuation)
-                    .withPendingDecision(decision)
-                ExecutionResult.paused(pausedState, decision)
+                state.suspendForDecision(
+                    question = { decisionId ->
+                        ChooseOptionDecision(
+                            id = decisionId,
+                            playerId = chooserId,
+                            prompt = "Choose a basic land type",
+                            context = DecisionContext(
+                                sourceId = spellId,
+                                sourceName = cardComponent.name,
+                                phase = DecisionPhase.RESOLUTION
+                            ),
+                            options = landTypeOptions,
+                            defaultSearch = ""
+                        )
+                    },
+                    answer = continuation
+                )
             }
 
             ChoiceType.OPPONENT -> {
@@ -4154,30 +4033,29 @@ class StackResolver(
                         ?.get<com.wingedsheep.engine.state.components.identity.PlayerComponent>()?.name
                         ?: "Player ${pid.value}"
                 }
-                val decisionId = "choose-opponent-enters-${spellId.value}"
-                val decision = ChooseOptionDecision(
-                    id = decisionId,
-                    playerId = chooserId,
-                    prompt = "Choose an opponent",
-                    context = DecisionContext(
-                        sourceId = spellId,
-                        sourceName = cardComponent.name,
-                        phase = DecisionPhase.RESOLUTION
-                    ),
-                    options = opponentNames
-                )
                 val continuation = EntersWithChoiceSpellContinuation(
-                    decisionId = decisionId,
                     spellId = spellId,
                     controllerId = controllerId,
                     ownerId = ownerId,
                     choiceType = ChoiceType.OPPONENT,
                     opponentIds = opponentIds
                 )
-                val pausedState = state
-                    .pushContinuation(continuation)
-                    .withPendingDecision(decision)
-                ExecutionResult.paused(pausedState, decision)
+                state.suspendForDecision(
+                    question = { decisionId ->
+                        ChooseOptionDecision(
+                            id = decisionId,
+                            playerId = chooserId,
+                            prompt = "Choose an opponent",
+                            context = DecisionContext(
+                                sourceId = spellId,
+                                sourceName = cardComponent.name,
+                                phase = DecisionPhase.RESOLUTION
+                            ),
+                            options = opponentNames
+                        )
+                    },
+                    answer = continuation
+                )
             }
 
             ChoiceType.CARD_NAME -> {
@@ -4194,59 +4072,58 @@ class StackResolver(
                         .revealOpponentHandForEntersChoice(state, controllerId)
                 } else state to emptyList()
                 val prompt = choice.cardNamePool.prompt
-                val decisionId = "choose-card-name-enters-${spellId.value}"
-                val decision = ChooseOptionDecision(
-                    id = decisionId,
-                    playerId = chooserId,
-                    prompt = prompt,
-                    context = DecisionContext(
-                        sourceId = spellId,
-                        sourceName = cardComponent.name,
-                        phase = DecisionPhase.RESOLUTION
-                    ),
-                    options = cardNames
-                )
                 val continuation = EntersWithChoiceSpellContinuation(
-                    decisionId = decisionId,
                     spellId = spellId,
                     controllerId = controllerId,
                     ownerId = ownerId,
                     choiceType = ChoiceType.CARD_NAME,
                     cardNames = cardNames
                 )
-                val pausedState = baseState
-                    .pushContinuation(continuation)
-                    .withPendingDecision(decision)
-                ExecutionResult.paused(pausedState, decision, lookEvents)
+                baseState.suspendForDecision(
+                    question = { decisionId ->
+                        ChooseOptionDecision(
+                            id = decisionId,
+                            playerId = chooserId,
+                            prompt = prompt,
+                            context = DecisionContext(
+                                sourceId = spellId,
+                                sourceName = cardComponent.name,
+                                phase = DecisionPhase.RESOLUTION
+                            ),
+                            options = cardNames
+                        )
+                    },
+                    answer = continuation,
+                    events = lookEvents
+                )
             }
 
             ChoiceType.NUMBER -> {
                 // "As this creature enters, choose a number between [min] and [max]" (Shapeshifter).
                 // The chosen number is stored durably under [ChoiceSlot.CHOSEN_NUMBER] by the resumer.
-                val decisionId = "choose-number-enters-${spellId.value}"
-                val decision = ChooseNumberDecision(
-                    id = decisionId,
-                    playerId = chooserId,
-                    prompt = "Choose a number between ${choice.minValue} and ${choice.maxValue}",
-                    context = DecisionContext(
-                        sourceId = spellId,
-                        sourceName = cardComponent.name,
-                        phase = DecisionPhase.RESOLUTION
-                    ),
-                    minValue = choice.minValue,
-                    maxValue = choice.maxValue
-                )
                 val continuation = EntersWithChoiceSpellContinuation(
-                    decisionId = decisionId,
                     spellId = spellId,
                     controllerId = controllerId,
                     ownerId = ownerId,
                     choiceType = ChoiceType.NUMBER
                 )
-                val pausedState = state
-                    .pushContinuation(continuation)
-                    .withPendingDecision(decision)
-                ExecutionResult.paused(pausedState, decision)
+                state.suspendForDecision(
+                    question = { decisionId ->
+                        ChooseNumberDecision(
+                            id = decisionId,
+                            playerId = chooserId,
+                            prompt = "Choose a number between ${choice.minValue} and ${choice.maxValue}",
+                            context = DecisionContext(
+                                sourceId = spellId,
+                                sourceName = cardComponent.name,
+                                phase = DecisionPhase.RESOLUTION
+                            ),
+                            minValue = choice.minValue,
+                            maxValue = choice.maxValue
+                        )
+                    },
+                    answer = continuation
+                )
             }
         }
     }

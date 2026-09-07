@@ -582,6 +582,9 @@ class CostHandler {
         abilityContext: SpellPaymentContext?,
     ): Boolean = when (atom) {
         is CostAtom.Mana -> canPayManaCost(manaPool, atom.cost, abilityContext)
+        // Always payable — an empty hand discards nothing, and a cost of nothing is a cost you can
+        // pay (CR 118.3). Same answer the AbilityCost.DiscardHand branch gives above.
+        is CostAtom.DiscardHand -> true
         is CostAtom.PayLife -> {
             // CR 810.9a — affordability uses the team's shared total in Two-Headed Giant.
             val life = state.lifeTotal(controllerId)
@@ -711,6 +714,17 @@ class CostHandler {
             val newPool = payManaCost(manaPool, atom.cost, abilityContext)
                 ?: return CostPaymentResult.failure("Cannot pay mana cost")
             CostPaymentResult.success(state, newPool)
+        }
+        // Every card at once, through the shared discard path so a card-intrinsic discard
+        // replacement (madness, CR 702.35a) still applies. An empty hand pays it for free.
+        is CostAtom.DiscardHand -> {
+            val cardsInHand = state.getZone(ZoneKey(controllerId, Zone.HAND))
+            if (cardsInHand.isEmpty()) {
+                CostPaymentResult.success(state, manaPool)
+            } else {
+                val result = ZoneTransitionService.discardCards(state, controllerId, cardsInHand)
+                CostPaymentResult.success(result.state, manaPool, result.events)
+            }
         }
         is CostAtom.PayLife -> {
             val (newState, events) = LifePaymentService.pay(state, controllerId, atom.amount)
@@ -1265,6 +1279,8 @@ class CostHandler {
     ): Boolean {
         return when (cost) {
             is AdditionalCost.Atom -> when (val atom = cost.atom) {
+                // An empty hand discards nothing, so this is always payable (CR 118.3).
+                is CostAtom.DiscardHand -> true
                 is CostAtom.Sacrifice ->
                     findMatchingPermanentsUnified(state, controllerId, atom.filter).size >= atom.count
                 is CostAtom.Discard ->
@@ -1523,6 +1539,7 @@ class CostHandler {
             val owner = ownerOf.getValue(cardId)
             val cardName = newState.getEntity(cardId)?.get<CardComponent>()?.name ?: "Card"
             newState = newState.removeFromZone(ZoneKey(owner, fromZone), cardId)
+            val oldObjectRef = newState.objectRef(cardId)
             newState = newState.addToZone(ZoneKey(owner, Zone.EXILE), cardId)
             events.add(
                 ZoneChangeEvent(
@@ -1530,7 +1547,9 @@ class CostHandler {
                     entityName = cardName,
                     fromZone = fromZone,
                     toZone = Zone.EXILE,
-                    ownerId = owner
+                    ownerId = owner,
+                    oldObject = oldObjectRef,
+                    newObject = newState.objectRef(cardId)
                 )
             )
         }

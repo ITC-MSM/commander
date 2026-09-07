@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.handlers.effects.composite
 
+import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.BeholdContinuation
 import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.DecisionPhase
@@ -12,7 +13,6 @@ import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.effects.BeholdEffect
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -70,8 +70,7 @@ class BeholdEffectExecutor(
         val sourceName = context.sourceId
             ?.let { state.getEntity(it)?.get<CardComponent>()?.name }
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = SelectCardsDecision(
+        val decision = { decisionId: String -> SelectCardsDecision(
             id = decisionId,
             playerId = beholder,
             prompt = "You may behold a ${effect.filter.description}",
@@ -83,10 +82,9 @@ class BeholdEffectExecutor(
             options = options,
             minSelections = 0,
             maxSelections = 1,
-        )
+        ) }
 
         val continuation = BeholdContinuation(
-            decisionId = decisionId,
             beholderId = beholder,
             sourceName = sourceName,
             handOptionIds = handMatches.toSet(),
@@ -94,9 +92,6 @@ class BeholdEffectExecutor(
             effectContext = context,
         )
 
-        val paused = state
-            .pushContinuation(continuation)
-            .withPendingDecision(decision)
-        return EffectResult.paused(paused, decision)
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 }

@@ -22,7 +22,6 @@ import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.SelectionMode
 import com.wingedsheep.sdk.scripting.effects.SelectionRestriction
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -417,7 +416,6 @@ class SelectFromCollectionExecutor(
         conditionalMinimums: List<ConditionalSelectionMinimum> = emptyList()
     ): EffectResult {
         val playerId = decidingPlayerId ?: context.controllerId
-        val decisionId = UUID.randomUUID().toString()
         val sourceName = context.sourceId?.let { sourceId ->
             state.getEntity(sourceId)?.get<CardComponent>()?.name
         }
@@ -443,7 +441,7 @@ class SelectFromCollectionExecutor(
             else -> "Choose $minSelections to $maxSelections cards"
         }
 
-        val decision = SelectCardsDecision(
+        val decision = { decisionId: String -> SelectCardsDecision(
             id = decisionId,
             playerId = playerId,
             prompt = prompt,
@@ -486,12 +484,12 @@ class SelectFromCollectionExecutor(
                 }
                 .singleOrNull()?.max,
             conditionalMinimums = conditionalMinimums
-        )
+        ) }
 
         val continuation = SelectFromCollectionContinuation(
-            decisionId = decisionId,
             playerId = playerId,
             sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
             sourceName = sourceName,
             allCards = allCards,
             storeSelected = effect.storeSelected,
@@ -500,21 +498,7 @@ class SelectFromCollectionExecutor(
             restrictions = effect.restrictions
         )
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = playerId,
-                    decisionType = "SELECT_CARDS",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 
     private fun conditionalMinimumsFor(

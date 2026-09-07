@@ -74,6 +74,10 @@ class CardSpecificContinuationResumer(
             services.effectExecutorRegistry.execute(s, e, c)
         }
 
+        val context = (continuation.effectContext ?: EffectContext(
+            sourceId = continuation.sourceId, controllerId = continuation.casterId, targets = continuation.targets
+        )).copy(objectReferences = continuation.objectReferences)
+
         return when (continuation.stage) {
             OpenLifeBidStage.AWAITING_TOP_DECISION -> {
                 if (response !is YesNoResponse) {
@@ -83,7 +87,7 @@ class CardSpecificContinuationResumer(
                     // Pass — the high bid stands; resolve in favor of the current high bidder.
                     val result = OpenLifeBidLogic.resolve(
                         state, continuation.casterId, continuation.highBidder, continuation.highBid,
-                        continuation.onWin, continuation.targets, continuation.sourceId, executeEffect
+                        continuation.onWin, continuation.targets, continuation.sourceId, executeEffect, context
                     )
                     if (result.pendingDecision != null) result else checkForMore(result.state, result.events)
                 } else {
@@ -102,7 +106,7 @@ class CardSpecificContinuationResumer(
                     highBidder = continuation.bidderToAsk, highBid = newBid,
                     bidderToAsk = continuation.highBidder, onWin = continuation.onWin,
                     targets = continuation.targets, sourceId = continuation.sourceId,
-                    sourceName = continuation.sourceName, executeEffect = executeEffect
+                    sourceName = continuation.sourceName, executeEffect = executeEffect, context = context
                 )
                 if (result.pendingDecision != null) result else checkForMore(result.state, result.events)
             }
@@ -132,6 +136,12 @@ class CardSpecificContinuationResumer(
             val prompt = "Secretly choose a number (you will lose that much life if you have the highest bid)"
 
             val decisionHandler = DecisionHandler()
+            val newContinuation = continuation.copy(
+                currentPlayerId = nextPlayer,
+                remainingPlayers = nextRemainingPlayers,
+                chosenNumbers = newChosenNumbers
+            )
+
             val decisionResult = decisionHandler.createNumberDecision(
                 state = state,
                 playerId = nextPlayer,
@@ -140,21 +150,12 @@ class CardSpecificContinuationResumer(
                 prompt = prompt,
                 minValue = 0,
                 maxValue = 99,
-                phase = DecisionPhase.RESOLUTION
+                phase = DecisionPhase.RESOLUTION,
+                answer = newContinuation,
             )
 
-            val newContinuation = continuation.copy(
-                decisionId = decisionResult.pendingDecision!!.id,
-                currentPlayerId = nextPlayer,
-                remainingPlayers = nextRemainingPlayers,
-                chosenNumbers = newChosenNumbers
-            )
-
-            val stateWithContinuation = decisionResult.state.pushContinuation(newContinuation)
-
-            return ExecutionResult.paused(
-                stateWithContinuation,
-                decisionResult.pendingDecision,
+            return ExecutionResult.propagatePause(
+                decisionResult.state,
                 decisionResult.events
             )
         }
@@ -228,6 +229,7 @@ class CardSpecificContinuationResumer(
     ): ExecutionResult {
         val context = com.wingedsheep.engine.handlers.EffectContext(
             sourceId = continuation.sourceId,
+            objectReferences = continuation.objectReferences,
             controllerId = playerId,
             xValue = bidAmount
         )

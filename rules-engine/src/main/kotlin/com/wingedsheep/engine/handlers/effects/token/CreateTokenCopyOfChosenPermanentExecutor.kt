@@ -61,6 +61,12 @@ class CreateTokenCopyOfChosenPermanentExecutor(
         }
 
         // Present choice to the player
+        val continuation = CreateTokenCopyOfChosenContinuation(
+            controllerId = controllerId,
+            sourceId = sourceId,
+            sourceName = sourceName
+        )
+
         val decisionResult = decisionHandler.createCardSelectionDecision(
             state = state,
             playerId = controllerId,
@@ -72,21 +78,12 @@ class CreateTokenCopyOfChosenPermanentExecutor(
             maxSelections = 1,
             ordered = false,
             phase = DecisionPhase.RESOLUTION,
-            useTargetingUI = true
+            useTargetingUI = true,
+            answer = continuation
         )
 
-        val continuation = CreateTokenCopyOfChosenContinuation(
-            decisionId = decisionResult.pendingDecision!!.id,
-            controllerId = controllerId,
-            sourceId = sourceId,
-            sourceName = sourceName
-        )
-
-        val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decisionResult.pendingDecision,
+        return EffectResult.propagatePause(
+            decisionResult.state,
             decisionResult.events
         )
     }
@@ -188,7 +185,9 @@ class CreateTokenCopyOfChosenPermanentExecutor(
                 entityName = tokenCard.name,
                 fromZone = null,
                 toZone = Zone.BATTLEFIELD,
-                ownerId = controllerId
+                ownerId = controllerId,
+                oldObject = null,
+                newObject = newState.objectRef(tokenId)
             )
 
             // CR 714.2b/714.3a: a token copy of a Saga enters as a Saga with its on-enter lore

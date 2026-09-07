@@ -18,7 +18,6 @@ import com.wingedsheep.sdk.scripting.costs.PayCost
 import com.wingedsheep.sdk.scripting.effects.ChainCopyEffect
 import com.wingedsheep.sdk.scripting.effects.CopyRecipient
 import com.wingedsheep.sdk.scripting.effects.Effect
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -44,11 +43,12 @@ class ChainCopyExecutor(
             ?: return EffectResult.success(state)
 
         // Step 2: Pre-push after-action continuation (sits below any inner continuations)
+
         val afterActionContinuation = ChainCopyAfterActionContinuation(
-            decisionId = "chain-after-action-${UUID.randomUUID()}",
             effect = effect,
             recipientPlayerId = recipientPlayerId,
-            sourceId = context.sourceId
+            sourceId = context.sourceId,
+            objectReferences = context.objectReferences
         )
         val stateWithContinuation = state.pushContinuation(afterActionContinuation)
 
@@ -135,7 +135,6 @@ class ChainCopyExecutor(
         }
 
         // Build the yes/no decision
-        val decisionId = UUID.randomUUID().toString()
         val sourceName = context.sourceId?.let { sourceId ->
             state.getEntity(sourceId)?.get<CardComponent>()?.name
         } ?: effect.spellName
@@ -153,7 +152,7 @@ class ChainCopyExecutor(
             copyCost.description.replaceFirstChar { it.uppercase() } to "Decline"
         }
 
-        val decision = YesNoDecision(
+        val decision = { decisionId: String -> YesNoDecision(
             id = decisionId,
             playerId = recipientPlayerId,
             prompt = prompt,
@@ -164,29 +163,16 @@ class ChainCopyExecutor(
             ),
             yesText = yesText,
             noText = noText
-        )
+        ) }
 
         val continuation = ChainCopyDecisionContinuation(
-            decisionId = decisionId,
             effect = effect,
             copyControllerId = recipientPlayerId,
-            sourceId = context.sourceId
+            sourceId = context.sourceId,
+            objectReferences = context.objectReferences
         )
 
-        val newState = state.withPendingDecision(decision).pushContinuation(continuation)
-
-        return EffectResult.paused(
-            newState,
-            decision,
-            events + listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = recipientPlayerId,
-                    decisionType = "YES_NO",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation, events = events + emptyList()))
     }
 
     companion object {

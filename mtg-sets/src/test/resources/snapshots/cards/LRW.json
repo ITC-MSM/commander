@@ -349,6 +349,79 @@
     ]
 }
 
+// Aquitect's Will
+{
+    "name": "Aquitect's Will",
+    "manaCost": "{U}",
+    "typeLine": "Kindred Sorcery — Merfolk",
+    "oracleText": "Put a flood counter on target land. That land is an Island in addition to its other types for as long as it has a flood counter on it. If you control a Merfolk, draw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "AddCounters",
+                    "counterType": "flood",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target land"
+                    }
+                },
+                {
+                    "type": "AddSubtype",
+                    "subtype": "Island",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target land"
+                    },
+                    "duration": {
+                        "type": "WhileAffectedHasCounter",
+                        "counterType": "flood"
+                    }
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Exists",
+                            "player": "You",
+                            "zone": "Battlefield",
+                            "filter": "Merfolk"
+                        }
+                    },
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "land"
+                },
+                "id": "target land"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "52",
+        "artist": "Jeff Easley",
+        "flavorText": "There is nowhere on Lorwyn that the Merrow Lanes cannot go.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fd13d2c1-3db7-4fdc-9321-57c9d6e8c3ae.jpg?1783942906"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Arbiter of Knollridge
 {
     "name": "Arbiter of Knollridge",
@@ -1935,6 +2008,126 @@
     ]
 }
 
+// Broken Ambitions
+{
+    "name": "Broken Ambitions",
+    "manaCost": "{X}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target spell unless its controller pays {X}. Clash with an opponent. If you win, that spell's controller mills four cards. (Each clashing player reveals the top card of their library, then puts that card on their choice of the top or bottom. A player wins if their card had a greater mana value.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": "ChosenTargets",
+                    "storeAs": "ambitionsSpell"
+                },
+                {
+                    "type": "CaptureControllers",
+                    "from": "ambitionsSpell",
+                    "storeAs": "ambitionsControllers"
+                },
+                {
+                    "type": "Counter",
+                    "condition": {
+                        "type": "CounterCondition.UnlessPaysDynamic",
+                        "amount": "XValue"
+                    }
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ChooseOpponentForSource",
+                                    "prompt": "Choose an opponent to clash with"
+                                },
+                                "Clash"
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "clashWon"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ForEachCapturedController",
+                                "collection": "ambitionsSpell",
+                                "originalCollection": "ambitionsSpell",
+                                "controllerSnapshot": "ambitionsControllers",
+                                "countVariable": "count0",
+                                "effects": [
+                                    {
+                                        "type": "Composite",
+                                        "effects": [
+                                            {
+                                                "type": "GatherCards",
+                                                "source": {
+                                                    "type": "TopOfLibrary",
+                                                    "count": {
+                                                        "type": "Fixed",
+                                                        "amount": 4
+                                                    },
+                                                    "isMill": true
+                                                },
+                                                "storeAs": "milled"
+                                            },
+                                            {
+                                                "type": "MoveCollection",
+                                                "from": "milled",
+                                                "destination": {
+                                                    "type": "ToZone",
+                                                    "zone": "Graveyard"
+                                                }
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Clash with an opponent. If you win, for each player who controlled at least one of those cards, look at the top 4 cards of your library. Put those cards into a graveyard"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                },
+                "id": "target spell"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "54",
+        "artist": "Franz Vohwinkel",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/0/8052d90b-bc49-4a9e-9211-159a54aa2bcd.jpg?1783942905",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "The opponent you clash with doesn't have to be the controller of the targeted spell."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "The clash (and the result of the clash if you win) happens regardless of whether the targeted spell was countered or {X} was paid."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Burrenton Forge-Tender
 {
     "name": "Burrenton Forge-Tender",
@@ -1994,6 +2187,100 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Captivating Glance
+{
+    "name": "Captivating Glance",
+    "manaCost": "{2}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nAt the beginning of your end step, clash with an opponent. If you win, gain control of enchanted creature. Otherwise, that player gains control of enchanted creature. (Each clashing player reveals the top card of their library, then puts that card on their choice of the top or bottom. A player wins if their card had a greater mana value.)",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ChooseOpponentForSource",
+                                    "prompt": "Choose an opponent to clash with"
+                                },
+                                "Clash"
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "clashWon"
+                        }
+                    },
+                    "then": {
+                        "type": "GainControl",
+                        "target": "EnchantedCreature"
+                    },
+                    "otherwise": {
+                        "type": "GiveControlToTargetPlayer",
+                        "newController": {
+                            "type": "PlayerRef",
+                            "player": "ChosenOpponent"
+                        }
+                    },
+                    "descriptionOverride": "Clash with an opponent. If you win, gain control of enchanted creature. Otherwise, target opponent gains control of enchanted creature"
+                },
+                "descriptionOverride": "clash with an opponent. If you win, gain control of enchanted creature. Otherwise, that player gains control of enchanted creature."
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "55",
+        "rarity": "UNCOMMON",
+        "artist": "Dan Dos Santos",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/4/642be353-a46a-4d14-a35a-7716fd552870.jpg?1783942904",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "The ability triggers at the end of Captivating Glance's controller's turn. \"You\" refers to the controller of Captivating Glance, not the controller of the enchanted creature."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "The opponent you clash with doesn't have to be the controller of the enchanted creature."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If you win the clash, you gain control of the enchanted creature. If you don't win the clash, the other player gains control of the enchanted creature (even if that player didn't win the clash either)."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "Captivating Glance's controller never changes as a result of this card."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "Captivating Glance may cause a player to gain control of a creature they already control. This layers a new control effect on that creature, but doing so rarely has any visible effect."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "Captivating Glance's control-change effect continues to apply even if Captivating Glance leaves the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -5049,6 +5336,72 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Gaddock Teeg
+{
+    "name": "Gaddock Teeg",
+    "manaCost": "{G}{W}",
+    "typeLine": "Legendary Creature — Kithkin Advisor",
+    "oracleText": "Noncreature spells with mana value 4 or greater can't be cast.\nNoncreature spells with {X} in their mana costs can't be cast.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "PlayersCantCastSpells",
+                "affected": "Each",
+                "spellFilter": {
+                    "cardPredicates": [
+                        {
+                            "type": "Not",
+                            "predicate": "IsCreature"
+                        },
+                        {
+                            "type": "ManaValueAtLeast",
+                            "min": 4
+                        }
+                    ]
+                }
+            },
+            {
+                "type": "PlayersCantCastSpells",
+                "affected": "Each",
+                "spellFilter": {
+                    "cardPredicates": [
+                        {
+                            "type": "Not",
+                            "predicate": "IsCreature"
+                        },
+                        "HasXInManaCost"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "248",
+        "rarity": "RARE",
+        "artist": "Greg Staples",
+        "flavorText": "So great is his wisdom and spirit that many who have met him say that they stood before a giant of a man and talked to the wisest of the four winds.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/2/32c16e1b-f4ce-409f-928a-42c666adac9d.jpg?1783942856",
+        "rulings": [
+            {
+                "date": "2018-12-07",
+                "text": "A spell's mana value is determined only by its mana cost. Alternative costs (including casting a spell \"without paying its mana cost\"), additional costs, and cost reductions don't affect a spell's mana value."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If one half of a split card has a mana value of 3 or less and doesn't have an {X} in its mana cost, Gaddock Teeg lets you cast that half."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
     ]
 }
 
@@ -11030,6 +11383,58 @@
     ]
 }
 
+// Oona's Prowler
+{
+    "name": "Oona's Prowler",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Faerie Rogue",
+    "oracleText": "Flying\nDiscard a card: This creature gets -2/-0 until end of turn. Any player may activate this ability.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": "AtomDiscard"
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "restrictions": [
+                    "AnyPlayerMay"
+                ],
+                "descriptionOverride": "This creature gets -2/-0 until end of turn. Any player may activate this ability."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "133",
+        "rarity": "RARE",
+        "artist": "Wayne Reynolds",
+        "flavorText": "Deep in Glen Elendra blossoms Oona, queen of the faeries, nourished by secrets and pollinated by stolen dreams.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/9675b8ea-47f9-440e-9535-de879da53f76.jpg?1783942886"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Paperfin Rascal
 {
     "name": "Paperfin Rascal",
@@ -11250,6 +11655,63 @@
         "artist": "Quinton Hoover",
         "flavorText": "The knights are a major attraction at every Lammastide festival. Teams of riders perform daring feats of flight to the delight of all below.",
         "imageUri": "https://cards.scryfall.io/normal/front/e/a/ea2de26e-4cb3-4d7e-b884-54d6056dc9e9.jpg?1783942911"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Pollen Lullaby
+{
+    "name": "Pollen Lullaby",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Prevent all combat damage that would be dealt this turn. Clash with an opponent. If you win, creatures that player controls don't untap during the player's next untap step. (Each clashing player reveals the top card of their library, then puts that card on their choice of the top or bottom. A player wins if their card had a greater mana value.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "PreventDamageShield",
+                    "scope": "CombatOnly"
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ChooseOpponentForSource",
+                                    "prompt": "Choose an opponent to clash with"
+                                },
+                                "Clash"
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "clashWon"
+                        }
+                    },
+                    "then": {
+                        "type": "SkipUntap",
+                        "target": {
+                            "type": "PlayerRef",
+                            "player": "ChosenOpponent"
+                        },
+                        "affectsLands": false
+                    },
+                    "descriptionOverride": "Clash with an opponent. If you win, creatures the chosen player controls don't untap during their next untap step"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "36",
+        "rarity": "UNCOMMON",
+        "artist": "Warren Mahy",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/e/deb2156a-8a77-4954-b557-1bdaf3ba171a.jpg?1783942910"
     },
     "colorIdentityOverride": [
         "WHITE"
@@ -11821,6 +12283,75 @@
     }
 }
 
+// Ringskipper
+{
+    "name": "Ringskipper",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flying\nWhen this creature dies, clash with an opponent. If you win, return this card to its owner's hand. (Each clashing player reveals the top card of their library, then puts that card on their choice of the top or bottom. A player wins if their card had a greater mana value.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ChooseOpponentForSource",
+                                    "prompt": "Choose an opponent to clash with"
+                                },
+                                "Clash"
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "clashWon"
+                        }
+                    },
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": "Self",
+                        "destination": "Hand",
+                        "fromZone": "Graveyard"
+                    },
+                    "descriptionOverride": "Clash with an opponent. If you win, return this creature to its owner's hand"
+                },
+                "descriptionOverride": "Clash with an opponent. If you win, return this card to its owner's hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "81",
+        "artist": "Heather Hudson",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/2/72d3ae1f-5442-4725-a16a-502f13359a85.jpg?1783942899",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "If Ringskipper is removed from the graveyard before the ability resolves, you still clash, but nothing will happen if you win."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Rootgrapple
 {
     "name": "Rootgrapple",
@@ -11996,6 +12527,100 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Scattering Stroke
+{
+    "name": "Scattering Stroke",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target spell. Clash with an opponent. If you win, at the beginning of your next main phase, you may add an amount of {C} equal to that spell's mana value. (Each clashing player reveals the top card of their library, then puts that card on their choice of the top or bottom. A player wins if their card had a greater mana value.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "StoreNumber",
+                    "name": "scatteredManaValue",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Target",
+                        "numericProperty": "ManaValue"
+                    }
+                },
+                "Counter",
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ChooseOpponentForSource",
+                                    "prompt": "Choose an opponent to clash with"
+                                },
+                                "Clash"
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "clashWon"
+                        }
+                    },
+                    "then": {
+                        "type": "CreateDelayedTrigger",
+                        "step": "PRECOMBAT_MAIN",
+                        "effect": {
+                            "type": "Gated",
+                            "gate": "Gate.MayDecide",
+                            "then": {
+                                "type": "AddColorlessMana",
+                                "amount": {
+                                    "type": "VariableReference",
+                                    "variableName": "scatteredManaValue"
+                                }
+                            }
+                        },
+                        "fireOnPlayer": {
+                            "type": "PlayerRef",
+                            "player": "You"
+                        }
+                    },
+                    "descriptionOverride": "Clash with an opponent. If you win, create a delayed trigger at the beginning of the next Precombat Main Phase"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                },
+                "id": "target spell"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "rarity": "UNCOMMON",
+        "artist": "Franz Vohwinkel",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/5/c536c1ce-a012-4d77-ab29-8574be164731.jpg?1783942899",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "You decide whether or not to add that much {C} as the delayed triggered ability resolves at the beginning of your next main phase. You don't decide before then."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "You can't add just some of the mana. You either add all the mana or none of it."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -14944,6 +15569,64 @@
     ]
 }
 
+// Turtleshell Changeling
+{
+    "name": "Turtleshell Changeling",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\n{1}{U}: Switch this creature's power and toughness until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "keywords": [
+        "CHANGELING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "SwitchPowerToughness",
+                    "target": "Self"
+                },
+                "descriptionOverride": "Switch this creature's power and toughness until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "94",
+        "rarity": "UNCOMMON",
+        "artist": "Ron Spencer",
+        "flavorText": "A changeling involuntarily mimics the nearest being at hand, sometimes trading a borrowed shell for borrowed claws.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/7/a72b078e-e324-4775-9d38-08943017a48e.jpg?1783942895",
+        "rulings": [
+            {
+                "date": "2021-03-19",
+                "text": "Effects that switch a creature's power and toughness apply after all other effects, regardless of when those effects began to apply. For instance, if you target a 1/2 creature then give it +2/+0 later in the turn, it's a 2/3 creature, not a 4/1 creature."
+            },
+            {
+                "date": "2021-03-19",
+                "text": "Because damage remains marked on a creature until the damage is removed as the turn ends, nonlethal damage dealt to a creature may become lethal if you switch its power and toughness during that turn."
+            },
+            {
+                "date": "2021-03-19",
+                "text": "Switching a creature's power and toughness twice (or any even number of times) effectively returns the creature to the power and toughness it had before any switches."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Veteran of the Depths
 {
     "name": "Veteran of the Depths",
@@ -15547,6 +16230,84 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Weed Strangle
+{
+    "name": "Weed Strangle",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy target creature. Clash with an opponent. If you win, you gain life equal to that creature's toughness. (Each clashing player reveals the top card of their library, then puts that card on their choice of the top or bottom. A player wins if their card had a greater mana value.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "StoreNumber",
+                    "name": "strangledToughness",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Target",
+                        "numericProperty": "Toughness"
+                    }
+                },
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "ChooseOpponentForSource",
+                                    "prompt": "Choose an opponent to clash with"
+                                },
+                                "Clash"
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "clashWon"
+                        }
+                    },
+                    "then": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "VariableReference",
+                            "variableName": "strangledToughness"
+                        }
+                    },
+                    "descriptionOverride": "Clash with an opponent. If you win, you gain the stored strangledToughness life"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "147",
+        "artist": "Jesper Ejsing",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c1f7fb79-19a8-483a-bf91-e687f7da4e9c.jpg?1783942880"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

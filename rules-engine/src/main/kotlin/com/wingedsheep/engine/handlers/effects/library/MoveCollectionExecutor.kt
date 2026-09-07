@@ -30,7 +30,6 @@ import com.wingedsheep.engine.state.components.stack.captureEntitySnapshots
 import com.wingedsheep.sdk.scripting.effects.MoveType
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -83,7 +82,7 @@ class MoveCollectionExecutor(
                 if (destPlayerId != null) {
                     val destZoneKey = ZoneKey(destPlayerId, Zone.LIBRARY)
                     val (shuffledLibrary, shuffledState) = state.nextRandom { shuffle(state.getZone(destZoneKey)) }
-                    val newState = shuffledState.copy(zones = shuffledState.zones + (destZoneKey to shuffledLibrary))
+                    val newState = shuffledState.reorderZone(destZoneKey, shuffledLibrary)
                     return EffectResult.success(newState, listOf(LibraryShuffledEvent(destPlayerId)))
                 }
             }
@@ -403,7 +402,6 @@ class MoveCollectionExecutor(
             )
         }
 
-        val decisionId = UUID.randomUUID().toString()
         val sourceName = context.sourceId?.let { sourceId ->
             state.getEntity(sourceId)?.get<CardComponent>()?.name
         }
@@ -416,7 +414,7 @@ class MoveCollectionExecutor(
                 else "Look at the top ${cards.size} cards of $libraryOwner library. Put them back in any order."
         }
 
-        val decision = ReorderLibraryDecision(
+        val decision = { decisionId: String -> ReorderLibraryDecision(
             id = decisionId,
             playerId = playerId,
             prompt = promptText,
@@ -427,12 +425,12 @@ class MoveCollectionExecutor(
             ),
             cards = cards,
             cardInfo = cardInfoMap
-        )
+        ) }
 
         val continuation = MoveCollectionOrderContinuation(
-            decisionId = decisionId,
             playerId = playerId,
             sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
             sourceName = sourceName,
             cards = cards,
             destinationZone = destZone,
@@ -440,21 +438,7 @@ class MoveCollectionExecutor(
             placement = placement
         )
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = playerId,
-                    decisionType = "REORDER_LIBRARY",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 
     /**
@@ -575,7 +559,6 @@ class MoveCollectionExecutor(
             )
         }
 
-        val decisionId = UUID.randomUUID().toString()
         val auraName = cardComponent.name
         val requirementInfo = TargetRequirementInfo(
             index = 0,
@@ -583,7 +566,7 @@ class MoveCollectionExecutor(
             minTargets = 1,
             maxTargets = 1
         )
-        val decision = ChooseTargetsDecision(
+        val decision = { decisionId: String -> ChooseTargetsDecision(
             id = decisionId,
             playerId = controllerId,
             prompt = "Choose what $auraName enchants",
@@ -594,10 +577,9 @@ class MoveCollectionExecutor(
             ),
             targetRequirements = listOf(requirementInfo),
             legalTargets = mapOf(0 to legalTargets)
-        )
+        ) }
 
         val continuation = MoveCollectionAuraTargetContinuation(
-            decisionId = decisionId,
             auraId = auraId,
             controllerId = controllerId,
             destPlayerId = destPlayerId,
@@ -607,14 +589,7 @@ class MoveCollectionExecutor(
             underOwnersControl = underOwnersControl
         )
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
-
-        return EffectResult(
-            state = stateWithContinuation,
-            events = events,
-            pendingDecision = decision
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation, emptyList()))
     }
 
     /**
@@ -707,7 +682,9 @@ class MoveCollectionExecutor(
                     entityName = cardName,
                     fromZone = fromZone,
                     toZone = Zone.BATTLEFIELD,
-                    ownerId = ownerId
+                    ownerId = ownerId,
+                    oldObject = state.objectRef(auraId),
+                    newObject = newState.objectRef(auraId)
                 )
             )
         }
@@ -888,7 +865,7 @@ class MoveCollectionExecutor(
                 // Strip reveals before shuffling — once shuffled, no one knows positions any more
                 newState = LibraryRevealUtils.clearLibraryReveals(newState, libraryOwnerId)
                 val (shuffledLibrary, shuffledState) = newState.nextRandom { shuffle(newState.getZone(destZoneKey)) }
-                newState = shuffledState.copy(zones = shuffledState.zones + (destZoneKey to shuffledLibrary))
+                newState = shuffledState.reorderZone(destZoneKey, shuffledLibrary)
                 events.add(LibraryShuffledEvent(libraryOwnerId))
             }
         }

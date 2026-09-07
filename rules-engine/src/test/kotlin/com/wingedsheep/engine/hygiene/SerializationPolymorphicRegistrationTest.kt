@@ -1,5 +1,7 @@
 package com.wingedsheep.engine.hygiene
 
+import com.wingedsheep.engine.core.AnswerContinuation
+import com.wingedsheep.engine.core.AutomaticContinuation
 import com.wingedsheep.engine.core.ContinuationFrame
 import com.wingedsheep.engine.core.DecisionResponse
 import com.wingedsheep.engine.core.GameAction
@@ -21,9 +23,14 @@ import kotlin.reflect.KClass
 
 /**
  * Guards principle §2.4: the engine must be able to serialize a paused `GameState` — which
- * means every concrete [GameAction], [GameEvent], [ContinuationFrame], [PendingDecision],
- * [DecisionResponse], and [Component] must be polymorphically registered in
- * [engineSerializersModule].
+ * means every concrete [GameAction], [GameEvent], [ContinuationFrame], [AutomaticContinuation],
+ * [AnswerContinuation], [PendingDecision], [DecisionResponse], and [Component] must be
+ * polymorphically registered in [engineSerializersModule].
+ *
+ * [AnswerContinuation] is a separate sealed root from [ContinuationFrame] — it reaches the wire
+ * through `Suspension.answer`, not through `continuationStack` — so it needs its own assertion.
+ * Without one, the ~150 answer payloads would be unguarded and a missing `subclass(...)` line
+ * would only surface when a player pauses on that decision and the snapshot fails to encode.
  *
  * The old bug: the list in `Serialization.kt` was maintained manually. Adding a new continuation
  * or component without remembering to register it silently broke round-trip of any state that
@@ -50,6 +57,14 @@ class SerializationPolymorphicRegistrationTest : FunSpec({
 
     test("every sealed ContinuationFrame subclass is polymorphically registered") {
         assertAllLeavesRegistered(ContinuationFrame::class)
+    }
+
+    test("every sealed AutomaticContinuation subclass is polymorphically registered") {
+        assertAllLeavesRegistered(AutomaticContinuation::class)
+    }
+
+    test("every sealed AnswerContinuation subclass is polymorphically registered") {
+        assertAllLeavesRegistered(AnswerContinuation::class)
     }
 
     test("every sealed PendingDecision subclass is polymorphically registered") {

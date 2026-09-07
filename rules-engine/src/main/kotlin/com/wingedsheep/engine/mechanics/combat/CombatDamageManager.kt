@@ -37,7 +37,6 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AssignCombatDamageAsUnblocked
 import com.wingedsheep.sdk.scripting.DivideCombatDamageFreely
 import com.wingedsheep.sdk.scripting.effects.RedirectScope
-import java.util.UUID
 
 /**
  * Handles combat damage using a three-phase pipeline:
@@ -112,33 +111,29 @@ internal class CombatDamageManager(
             if (attackerPower <= 0) continue
 
             val attackingPlayer = projected.getController(attackerId) ?: continue
-            val decisionId = UUID.randomUUID().toString()
-
-            val decision = YesNoDecision(
-                id = decisionId,
-                playerId = attackingPlayer,
-                prompt = "Assign ${attackerCard.name}'s combat damage as though it weren't blocked?",
-                context = DecisionContext(
-                    sourceId = attackerId,
-                    sourceName = attackerCard.name,
-                    phase = DecisionPhase.COMBAT
-                ),
-                yesText = "Assign to player",
-                noText = "Assign to blockers"
-            )
 
             val continuation = AssignAsUnblockedContinuation(
-                decisionId = decisionId,
                 attackerId = attackerId,
                 defendingPlayerId = attackingComponent.defenderId,
                 firstStrike = firstStrike
             )
-
-            val pausedState = state
-                .withPendingDecision(decision)
-                .pushContinuation(continuation)
-
-            return ExecutionResult.paused(pausedState, decision)
+            return state.suspendForDecision(
+                question = { decisionId ->
+                    YesNoDecision(
+                        id = decisionId,
+                        playerId = attackingPlayer,
+                        prompt = "Assign ${attackerCard.name}'s combat damage as though it weren't blocked?",
+                        context = DecisionContext(
+                            sourceId = attackerId,
+                            sourceName = attackerCard.name,
+                            phase = DecisionPhase.COMBAT
+                        ),
+                        yesText = "Assign to player",
+                        noText = "Assign to blockers"
+                    )
+                },
+                answer = continuation
+            )
         }
 
         // Pre-check: if any attacker with DivideCombatDamageFreely needs a distribution
@@ -199,35 +194,31 @@ internal class CombatDamageManager(
 
             if (targets.size <= 1) continue
 
-            val decisionId = UUID.randomUUID().toString()
             val attackingPlayer = projected.getController(attackerId) ?: continue
 
-            val decision = DistributeDecision(
-                id = decisionId,
-                playerId = attackingPlayer,
-                prompt = "Divide ${attackerCard.name}'s $attackerPower combat damage among targets",
-                context = DecisionContext(
-                    sourceId = attackerId,
-                    sourceName = attackerCard.name,
-                    phase = DecisionPhase.COMBAT
-                ),
-                totalAmount = attackerPower,
-                targets = targets,
-                minPerTarget = 0
-            )
-
             val continuation = DamageAssignmentContinuation(
-                decisionId = decisionId,
                 attackerId = attackerId,
                 defendingPlayerId = defenderId,
                 firstStrike = firstStrike
             )
-
-            val pausedState = state
-                .withPendingDecision(decision)
-                .pushContinuation(continuation)
-
-            return ExecutionResult.paused(pausedState, decision)
+            return state.suspendForDecision(
+                question = { decisionId ->
+                    DistributeDecision(
+                        id = decisionId,
+                        playerId = attackingPlayer,
+                        prompt = "Divide ${attackerCard.name}'s $attackerPower combat damage among targets",
+                        context = DecisionContext(
+                            sourceId = attackerId,
+                            sourceName = attackerCard.name,
+                            phase = DecisionPhase.COMBAT
+                        ),
+                        totalAmount = attackerPower,
+                        targets = targets,
+                        minPerTarget = 0
+                    )
+                },
+                answer = continuation
+            )
         }
 
         // Pre-check: bundle every attacker that needs a manual damage-assignment choice into a
@@ -267,14 +258,13 @@ internal class CombatDamageManager(
         )
         var newState = when (redirectChoice) {
             is OptionalDamageRedirect.Check.Ask -> {
-                val pausedState = redirectChoice.state.pushContinuation(
-                    CombatOptionalRedirectContinuation(
-                        decisionId = redirectChoice.decision.id,
+                return redirectChoice.state.suspendForDecision(
+                    question = redirectChoice.question,
+                    answer = CombatOptionalRedirectContinuation(
                         choiceKey = redirectChoice.choiceKey,
                         firstStrike = firstStrike
                     )
                 )
-                return ExecutionResult.paused(pausedState, redirectChoice.decision)
             }
             is OptionalDamageRedirect.Check.Ready -> redirectChoice.state
         }
@@ -620,7 +610,6 @@ internal class CombatDamageManager(
             .filterNot { it in attackerChoosers }
         val choosers = attackerChoosers + blockerChoosers
 
-        val decisionId = UUID.randomUUID().toString()
         // Names here are the real card names; per-viewer face-down masking is applied downstream at
         // delivery time (DecisionEnricher), since this one decision graph is shown to both choosers.
         val prompt = if (candidates.size == 1) {
@@ -628,31 +617,30 @@ internal class CombatDamageManager(
         } else {
             "Assign combat damage for ${candidates.size} attackers"
         }
-        val decision = CombatResolutionDecision(
-            id = decisionId,
-            playerId = choosers.first(),
-            prompt = prompt,
-            context = DecisionContext(
-                sourceId = candidates.firstOrNull()?.attackerId,
-                sourceName = if (candidates.size == 1) candidates[0].attackerName else "Combat damage",
-                phase = DecisionPhase.COMBAT,
-            ),
-            firstStrike = firstStrike,
-            attackers = attackerNodes,
-            blockers = blockerNodes,
-            defenders = defenderNodes,
-            edges = edges,
-            coChooserId = choosers.getOrNull(1),
-        )
         val continuation = CombatResolutionContinuation(
-            decisionId = decisionId,
             firstStrike = firstStrike,
             pendingChoosers = choosers,
-            decisionShape = decision,
         )
-        return ExecutionResult.paused(
-            state.withPendingDecision(decision).pushContinuation(continuation),
-            decision,
+        return state.suspendForDecision(
+            question = { decisionId ->
+                CombatResolutionDecision(
+                    id = decisionId,
+                    playerId = choosers.first(),
+                    prompt = prompt,
+                    context = DecisionContext(
+                        sourceId = candidates.firstOrNull()?.attackerId,
+                        sourceName = if (candidates.size == 1) candidates[0].attackerName else "Combat damage",
+                        phase = DecisionPhase.COMBAT,
+                    ),
+                    firstStrike = firstStrike,
+                    attackers = attackerNodes,
+                    blockers = blockerNodes,
+                    defenders = defenderNodes,
+                    edges = edges,
+                    coChooserId = choosers.getOrNull(1),
+                )
+            },
+            answer = continuation
         )
     }
 
@@ -673,22 +661,19 @@ internal class CombatDamageManager(
         val updatedEdges = previous.edges.map { edge ->
             latestAmounts[edge.id]?.let { edge.copy(amount = it) } ?: edge
         }
-        val decisionId = UUID.randomUUID().toString()
-        val newDecision = previous.copy(
-            id = decisionId,
-            playerId = nextChooser,
-            coChooserId = remainingChoosers.getOrNull(1),
-            edges = updatedEdges,
-        )
-        val continuation = CombatResolutionContinuation(
-            decisionId = decisionId,
-            firstStrike = firstStrike,
-            pendingChoosers = remainingChoosers,
-            decisionShape = newDecision,
-        )
-        return ExecutionResult.paused(
-            state.withPendingDecision(newDecision).pushContinuation(continuation),
-            newDecision,
+        return state.suspendForDecision(
+            question = { decisionId ->
+                previous.copy(
+                    id = decisionId,
+                    playerId = nextChooser,
+                    coChooserId = remainingChoosers.getOrNull(1),
+                    edges = updatedEdges,
+                )
+            },
+            answer = CombatResolutionContinuation(
+                firstStrike = firstStrike,
+                pendingChoosers = remainingChoosers,
+            )
         )
     }
 
@@ -1645,37 +1630,32 @@ internal class CombatDamageManager(
                 val shieldAmount = mod.remainingAmount
                 if (shieldAmount >= totalDamage) continue
 
-                val decisionId = UUID.randomUUID().toString()
-
-                val decision = DistributeDecision(
-                    id = decisionId,
-                    playerId = recipientId,
-                    prompt = "Distribute $shieldAmount damage prevention among attacking creatures",
-                    context = DecisionContext(
-                        sourceId = floatingEffect.sourceId,
-                        sourceName = floatingEffect.sourceName,
-                        phase = DecisionPhase.COMBAT
-                    ),
-                    totalAmount = shieldAmount,
-                    targets = sourcesDamage.keys.toList(),
-                    minPerTarget = 0,
-                    maxPerTarget = sourcesDamage
-                )
-
                 val continuation = DamagePreventionContinuation(
-                    decisionId = decisionId,
                     recipientId = recipientId,
                     shieldEffectId = floatingEffect.id,
                     shieldAmount = shieldAmount,
                     damageBySource = sourcesDamage,
                     firstStrike = firstStrike
                 )
-
-                val pausedState = state
-                    .withPendingDecision(decision)
-                    .pushContinuation(continuation)
-
-                return ExecutionResult.paused(pausedState, decision)
+                return state.suspendForDecision(
+                    question = { decisionId ->
+                        DistributeDecision(
+                            id = decisionId,
+                            playerId = recipientId,
+                            prompt = "Distribute $shieldAmount damage prevention among attacking creatures",
+                            context = DecisionContext(
+                                sourceId = floatingEffect.sourceId,
+                                sourceName = floatingEffect.sourceName,
+                                phase = DecisionPhase.COMBAT
+                            ),
+                            totalAmount = shieldAmount,
+                            targets = sourcesDamage.keys.toList(),
+                            minPerTarget = 0,
+                            maxPerTarget = sourcesDamage
+                        )
+                    },
+                    answer = continuation
+                )
             }
         }
 

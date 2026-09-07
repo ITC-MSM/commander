@@ -137,9 +137,8 @@ class PassPriorityHandler(
                 if (triggers.isNotEmpty()) {
                     val triggerResult = triggerProcessor.processTriggers(currentState, triggers)
                     if (triggerResult.isPaused) {
-                        return ExecutionResult.paused(
+                        return ExecutionResult.propagatePause(
                             triggerResult.state,
-                            triggerResult.pendingDecision!!,
                             advanceResult.events + triggerResult.events
                         )
                     }
@@ -190,16 +189,14 @@ class PassPriorityHandler(
             )
             if (triggers.isNotEmpty()) {
                 val pendingTriggers = PendingTriggersContinuation(
-                    decisionId = "resolution-deferred-triggers-${java.util.UUID.randomUUID()}",
                     remainingTriggers = triggers
                 )
                 val stack = result.newState.continuationStack
                 val newStack = stack.subList(0, preResolutionStackSize) +
                     pendingTriggers +
                     stack.subList(preResolutionStackSize, stack.size)
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     result.newState.copy(continuationStack = newStack),
-                    result.pendingDecision!!,
                     result.events
                 )
             }
@@ -230,7 +227,7 @@ class PassPriorityHandler(
 
         // Check state-based actions after resolution
         val preSbaStackSize = trackedState.continuationStack.size
-        val sbaResult = sbaChecker.checkAndApply(trackedState)
+        val sbaResult = sbaChecker.checkAndApply(trackedState, preSbaTriggers.mapNotNull { it.objectReferences.origin }.toSet())
 
         // If SBA needs player input (e.g., legend rule for two copies of a legendary
         // creature entering at once), return paused. Queue preSbaTriggers beneath the
@@ -240,7 +237,6 @@ class PassPriorityHandler(
             var pausedState = sbaResult.state
             if (preSbaTriggers.isNotEmpty()) {
                 val pendingTriggers = PendingTriggersContinuation(
-                    decisionId = "sba-deferred-triggers-${java.util.UUID.randomUUID()}",
                     remainingTriggers = preSbaTriggers
                 )
                 val stack = pausedState.continuationStack
@@ -249,9 +245,8 @@ class PassPriorityHandler(
                     stack.subList(preSbaStackSize, stack.size)
                 pausedState = pausedState.copy(continuationStack = newStack)
             }
-            return ExecutionResult.paused(
+            return ExecutionResult.propagatePause(
                 pausedState,
-                sbaResult.pendingDecision!!,
                 result.events + sbaResult.events
             )
         }
@@ -279,9 +274,8 @@ class PassPriorityHandler(
             val triggerResult = triggerProcessor.processTriggers(postPollState, triggers)
 
             if (triggerResult.isPaused) {
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     triggerResult.state,
-                    triggerResult.pendingDecision!!,
                     combinedEvents + triggerResult.events
                 )
             }
@@ -312,7 +306,7 @@ class PassPriorityHandler(
         val priorEvents = resolutionEvents + endResult.events
 
         if (endResult.isPaused) {
-            return ExecutionResult.paused(endResult.newState, endResult.pendingDecision!!, priorEvents)
+            return ExecutionResult.propagatePause(endResult.newState, priorEvents)
         }
         if (!endResult.isSuccess || endResult.newState.gameOver) {
             return ExecutionResult.success(endResult.newState, priorEvents)
@@ -343,9 +337,8 @@ class PassPriorityHandler(
         if (triggers.isNotEmpty()) {
             val triggerResult = triggerProcessor.processTriggers(currentState, triggers)
             if (triggerResult.isPaused) {
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     triggerResult.state,
-                    triggerResult.pendingDecision!!,
                     priorEvents + triggerResult.events
                 )
             }

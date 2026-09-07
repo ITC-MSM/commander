@@ -53,7 +53,7 @@
 - [ ] 1 Perch Protection
 - [ ] 1 Perplexing Test
 - [ ] 1 Riot Control
-- [ ] 1 Swords to Plowshares
+- [x] 1 Swords to Plowshares
 
 ## Sorceries (7)
 

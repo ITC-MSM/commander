@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.handlers.effects.zones
 
+import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.CardsRevealedEvent
 import com.wingedsheep.engine.core.ChooseTargetsDecision
 import com.wingedsheep.engine.core.DecisionContext
@@ -28,7 +29,6 @@ import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.FaceDownMode
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -58,7 +58,10 @@ class MoveToZoneEffectExecutor(
         context: EffectContext
     ): EffectResult {
         val targetId = context.resolveTarget(effect.target, state)
-            ?: return EffectResult.error(state, "No valid target for move to zone")
+            ?: return if (effect.target == com.wingedsheep.sdk.scripting.targets.EffectTarget.Self ||
+                effect.target == com.wingedsheep.sdk.scripting.targets.EffectTarget.TriggeringEntity) {
+                EffectResult.success(state)
+            } else EffectResult.error(state, "No valid target for move to zone")
 
         // byDestruction delegates to destroyPermanent (handles indestructible)
         if (effect.byDestruction) {
@@ -258,8 +261,7 @@ class MoveToZoneEffectExecutor(
         }
 
         val cardName = cardComponent.name
-        val decisionId = UUID.randomUUID().toString()
-        val decision = ChooseTargetsDecision(
+        val decision = { decisionId: String -> ChooseTargetsDecision(
             id = decisionId,
             playerId = controllerId,
             prompt = "Choose what $cardName attaches to",
@@ -277,14 +279,12 @@ class MoveToZoneEffectExecutor(
                 )
             ),
             legalTargets = mapOf(0 to legalHosts)
-        )
+        ) }
         val continuation = PutOntoBattlefieldAttachedToChosenContinuation(
-            decisionId = decisionId,
             cardId = cardId,
             controllerId = controllerId
         )
-        val newState = state.withPendingDecision(decision).pushContinuation(continuation)
-        return EffectResult(state = newState, events = emptyList(), pendingDecision = decision)
+        return EffectResult.from(state.suspendForDecision(decision, continuation, emptyList()))
     }
 
     private fun autoRevealForReturn(

@@ -2,14 +2,14 @@
 
 **Set Size:** 291 cards
 **Release Date:** October 7, 2005
-**Implemented:** 256 / 291
+**Implemented:** 265 / 291
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 37    | 33   |
-| Blue       | 39    | 33   |
-| Black      | 37    | 27   |
+| Blue       | 39    | 34   |
+| Black      | 37    | 35   |
 | Red        | 39    | 37   |
-| Green      | 37    | 34   |
+| Green      | 37    | 37   |
 | Multicolor | 64    | 54   |
 | Artifact   | 21    | 16   |
 | Land       | 17    | 17   |
@@ -73,7 +73,7 @@
 - [x] Flow of Ideas
 - [x] Followed Footsteps
 - [x] Grayscaled Gharial
-- [ ] Grozoth
+- [x] Grozoth
 - [x] Halcyon Glaze
 - [x] Hunted Phantasm
 - [x] Induce Paranoia
@@ -99,14 +99,14 @@
 - [x] Zephyr Spirit
 
 ### Black
-- [ ] Blood Funnel
+- [x] Blood Funnel
 - [x] Brainspoil
 - [x] Carrion Howler
 - [x] Clinging Darkness
 - [x] Dark Confidant
 - [x] Darkblast
 - [x] Dimir House Guard
-- [ ] Dimir Machinations
+- [x] Dimir Machinations
 - [x] Disembowel
 - [x] Empty the Catacombs
 - [x] Golgari Thug
@@ -120,14 +120,14 @@
 - [x] Moonlight Bargain
 - [x] Mortipede
 - [x] Necromantic Thirst
-- [ ] Necroplasm
-- [ ] Netherborn Phalanx
+- [x] Necroplasm
+- [x] Netherborn Phalanx
 - [x] Nightmare Void
 - [x] Ribbons of Night
 - [x] Roofstalker Wight
 - [x] Sadistic Augermage
 - [x] Sewerdreg
-- [ ] Shred Memory
+- [x] Shred Memory
 - [ ] Sins of the Past
 - [x] Stinkweed Imp
 - [x] Strands of Undeath
@@ -193,7 +193,7 @@
 - [x] Fists of Ironwood
 - [x] Gather Courage
 - [x] Golgari Brownscale
-- [ ] Golgari Grave-Troll
+- [x] Golgari Grave-Troll
 - [x] Goliath Spider
 - [x] Greater Mossdog
 - [x] Hunted Troll
@@ -228,7 +228,7 @@
 - [x] Centaur Safeguard
 - [ ] Chorus of the Conclave
 - [ ] Circu, Dimir Lobotomist
-- [ ] Clutch of the Undercity
+- [x] Clutch of the Undercity
 - [x] Congregation at Dawn
 - [x] Consult the Necrosages
 - [x] Dark Heart of the Wood
@@ -254,7 +254,7 @@
 - [ ] Master Warcraft
 - [ ] Mindleech Mass
 - [x] Moroii
-- [ ] Perplex
+- [x] Perplex
 - [x] Phytohydra
 - [x] Pollenbright Wings
 - [x] Privileged Position

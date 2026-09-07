@@ -52,6 +52,7 @@ class CreatureTypeChoiceContinuationResumer(
 
         val context = EffectContext(
             sourceId = continuation.sourceId,
+            objectReferences = continuation.objectReferences,
             controllerId = continuation.controllerId
         )
         val newState = state.addFloatingEffect(
@@ -196,6 +197,7 @@ class CreatureTypeChoiceContinuationResumer(
         // Create a floating effect that sets creature subtypes
         val context = EffectContext(
             sourceId = continuation.sourceId,
+            objectReferences = continuation.objectReferences,
             controllerId = continuation.controllerId,
         )
         val newState = state.addFloatingEffect(
@@ -247,8 +249,7 @@ class CreatureTypeChoiceContinuationResumer(
             val nextPlayer = continuation.remainingPlayers.first()
             val nextRemaining = continuation.remainingPlayers.drop(1)
 
-            val decisionId = java.util.UUID.randomUUID().toString()
-            val decision = ChooseOptionDecision(
+            val question = { decisionId: String -> ChooseOptionDecision(
                 id = decisionId,
                 playerId = nextPlayer,
                 prompt = "Choose a creature type",
@@ -258,29 +259,18 @@ class CreatureTypeChoiceContinuationResumer(
                     phase = DecisionPhase.RESOLUTION
                 ),
                 options = continuation.creatureTypes
-            )
+            ) }
 
             val newContinuation = continuation.copy(
-                decisionId = decisionId,
                 currentPlayerId = nextPlayer,
                 remainingPlayers = nextRemaining,
                 chosenTypes = updatedChosenTypes
             )
 
-            val stateWithDecision = state.withPendingDecision(decision)
-            val stateWithContinuation = stateWithDecision.pushContinuation(newContinuation)
-
-            return ExecutionResult.paused(
-                stateWithContinuation,
-                decision,
-                listOf(
-                    DecisionRequestedEvent(
-                        decisionId = decisionId,
-                        playerId = nextPlayer,
-                        decisionType = "CHOOSE_OPTION",
-                        prompt = decision.prompt
-                    )
-                )
+            return state.suspendForDecision(
+                question = question,
+                answer = newContinuation,
+                events = emptyList(),
             )
         }
 

@@ -47,7 +47,6 @@ import com.wingedsheep.sdk.scripting.effects.SelectionMode
 import com.wingedsheep.sdk.scripting.effects.SuccessCriterion
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -243,8 +242,7 @@ class GatedEffectExecutor(
         // player confirms a number, not a formula.
         val payLabel = (gate as? Gate.MayPay)?.let { computedCostLabel(state, it.cost, context) }
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = YesNoDecision(
+        val decision = { decisionId: String -> YesNoDecision(
             id = decisionId,
             playerId = playerId,
             prompt = effect.description,
@@ -256,31 +254,16 @@ class GatedEffectExecutor(
             yesText = payLabel ?: "Yes",
             noText = if (payLabel != null) "Don't pay" else "No",
             hint = hint
-        )
+        ) }
 
         val continuation = GatedEffectContinuation(
-            decisionId = decisionId,
             gate = gate,
             then = effect.then,
             otherwise = effect.otherwise,
             effectContext = context
         )
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = playerId,
-                    decisionType = "YES_NO",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 
     /**
@@ -300,18 +283,16 @@ class GatedEffectExecutor(
             state.getEntity(sourceId)?.get<CardComponent>()?.name
         }
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = YesNoDecision(
+        val decision = { decisionId: String -> YesNoDecision(
             id = decisionId,
             playerId = playerId,
             prompt = "Pay $manaCost?",
             context = decisionContext(context, sourceName),
             yesText = "Pay $manaCost",
             noText = "Don't pay"
-        )
+        ) }
 
         val continuation = MayPayManaContinuation(
-            decisionId = decisionId,
             playerId = playerId,
             sourceName = sourceName,
             manaCost = manaCost,
@@ -319,20 +300,7 @@ class GatedEffectExecutor(
             effectContext = context
         )
 
-        val stateWithContinuation = state.withPendingDecision(decision).pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = playerId,
-                    decisionType = "YES_NO",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 
     /**
@@ -384,9 +352,9 @@ class GatedEffectExecutor(
             WaterbendPermanentChoice(it.entityId, it.name, it.isCreature)
         }
 
-        val decisionId = UUID.randomUUID().toString()
         val declineText = otherwise?.description?.replaceFirstChar { it.lowercase() }
-        val decision = SelectManaSourcesDecision(
+
+        val decision = { decisionId: String -> SelectManaSourcesDecision(
             id = decisionId,
             playerId = playerId,
             prompt = if (declineText != null) {
@@ -400,10 +368,9 @@ class GatedEffectExecutor(
             autoPaySuggestion = autoPaySuggestion,
             canDecline = true,
             waterbendPermanents = waterbendOptions
-        )
+        ) }
 
         val continuation = MayPayManaSelectionContinuation(
-            decisionId = decisionId,
             playerId = playerId,
             sourceName = sourceName,
             manaCost = manaCost,
@@ -415,20 +382,7 @@ class GatedEffectExecutor(
             otherwise = otherwise
         )
 
-        val stateWithContinuation = state.withPendingDecision(decision).pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = playerId,
-                    decisionType = "SELECT_MANA_SOURCES",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 
     /**
@@ -513,18 +467,16 @@ class GatedEffectExecutor(
             state.getEntity(sourceId)?.get<CardComponent>()?.name
         }
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = ChooseNumberDecision(
+        val decision = { decisionId: String -> ChooseNumberDecision(
             id = decisionId,
             playerId = playerId,
             prompt = "Pay {X}? Choose X (0 to decline)",
             context = decisionContext(context, sourceName),
             minValue = 0,
             maxValue = maxAffordable
-        )
+        ) }
 
         val continuation = MayPayXContinuation(
-            decisionId = decisionId,
             playerId = playerId,
             sourceName = sourceName,
             effect = effect.then,
@@ -532,20 +484,7 @@ class GatedEffectExecutor(
             effectContext = context
         )
 
-        val stateWithContinuation = state.withPendingDecision(decision).pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = playerId,
-                    decisionType = "CHOOSE_NUMBER",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 
     /**
@@ -739,7 +678,6 @@ class GatedEffectExecutor(
         val snapshot = captureSnapshot(state, gate.action, gate.successCriterion, context)
 
         val continuation = GatedActionContinuation(
-            decisionId = "pending",
             then = effect.then,
             otherwise = effect.otherwise,
             successCriterion = gate.successCriterion,

@@ -140,6 +140,7 @@ class CopyTargetSpellExecutor(
                 }
                 val copyAbility = TriggeredAbilityOnStackComponent(
                     sourceId = sourceId,
+            objectReferences = context.objectReferences,
                     sourceName = spellName,
                     controllerId = context.controllerId,
                     effect = spellEffect,
@@ -237,7 +238,6 @@ class CopyTargetSpellExecutor(
         copyCount: Int = 1,
         stackResolver: StackResolver = StackResolver(cardRegistry = cardRegistry)
     ): EffectResult {
-        val decisionId = "copy-spell-target-${System.nanoTime()}"
 
         val legalTargetsMap = mutableMapOf<Int, List<EntityId>>()
         for ((index, requirement) in targetRequirements.withIndex()) {
@@ -267,7 +267,6 @@ class CopyTargetSpellExecutor(
         // creatures with no SpellOnStackComponent). It also walks any copies beyond
         // the first, prompting once per copy.
         val continuation = StormCopyTargetContinuation(
-            decisionId = decisionId,
             remainingCopies = copyCount,
             spellEffect = spellEffect,
             spellTargetRequirements = targetRequirements,
@@ -287,7 +286,7 @@ class CopyTargetSpellExecutor(
 
         // Matches the Storm path's labelling so a multi-copy prompt says which copy it is for.
         val copyLabel = if (copyCount > 1) "copy 1 of $copyCount of $spellName" else "copy of $spellName"
-        val decision = ChooseTargetsDecision(
+        val decision = { decisionId: String -> ChooseTargetsDecision(
             id = decisionId,
             playerId = context.controllerId,
             prompt = "Choose new targets for $copyLabel",
@@ -298,11 +297,8 @@ class CopyTargetSpellExecutor(
             ),
             targetRequirements = targetReqInfos,
             legalTargets = legalTargetsMap
-        )
+        ) }
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
-
-        return EffectResult.paused(stateWithContinuation, decision)
+        return EffectResult.from(state.suspendForDecision(decision, continuation, emptyList()))
     }
 }

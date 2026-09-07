@@ -240,6 +240,27 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
         }
     }
 
+    /**
+     * Discard your entire hand — "unless its controller discards their hand" (Perplex).
+     *
+     * Distinct from [Discard] rather than a count on it: the number is whatever the payer holds
+     * when the cost is paid, so there is no count to write down, and there is nothing to *select* —
+     * every card goes. An empty hand pays it for free (CR 118.3, a cost of nothing is a cost you
+     * can pay), which is why affordability is unconditionally true rather than "has a card".
+     *
+     * The shared-vocabulary twin of [com.wingedsheep.sdk.scripting.AbilityCost.DiscardHand], which
+     * is the same payable thing in the activated-ability context.
+     */
+    @SerialName("AtomDiscardHand")
+    @Serializable
+    data object DiscardHand : CostAtom {
+        // The whole hand goes, so the payer picks nothing.
+        override val selectionCount: Int get() = 0
+        override val description: String get() = "discard your hand"
+
+        override fun applyTextReplacement(replacer: TextReplacer): CostAtom = this
+    }
+
     /** Exile [count] cards matching [filter] from [zone]. */
     @SerialName("AtomExileFrom")
     @Serializable

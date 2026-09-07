@@ -27,7 +27,6 @@ import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.SelectTargetEffect
 import com.wingedsheep.sdk.scripting.effects.SelectionMode
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -98,8 +97,7 @@ class ReflexiveTriggerEffectExecutor(
             state.getEntity(sourceId)?.get<CardComponent>()?.name
         }
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = YesNoDecision(
+        val decision = { decisionId: String -> YesNoDecision(
             id = decisionId,
             playerId = playerId,
             prompt = effect.description,
@@ -111,10 +109,9 @@ class ReflexiveTriggerEffectExecutor(
             yesText = "Yes",
             noText = "No",
             hint = effect.hint
-        )
+        ) }
 
         val continuation = MayAbilityContinuation(
-            decisionId = decisionId,
             playerId = playerId,
             sourceName = sourceName,
             effectIfYes = effect.copy(optional = false),
@@ -122,21 +119,7 @@ class ReflexiveTriggerEffectExecutor(
             effectContext = context
         )
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = playerId,
-                    decisionType = "YES_NO",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 
     /**
@@ -406,7 +389,6 @@ class ReflexiveTriggerEffectExecutor(
         context: EffectContext
     ): EffectResult {
         val continuation = ReflexiveTriggerTargetContinuation(
-            decisionId = "pending",
             reflexiveEffect = effect.reflexiveEffect,
             reflexiveTargetRequirements = effect.reflexiveTargetRequirements,
             effectContext = context,
@@ -451,7 +433,7 @@ class ReflexiveTriggerEffectExecutor(
 
         val event = buildReflexiveTriggeredEvent(
             stateWithoutCont, effect.reflexiveEffect, effect.reflexiveTargetRequirements,
-            effect.descriptionOverride, mergedContext
+            effect.descriptionOverride, mergedContext.authorizeObjectMoves(result.events)
         )
         return EffectResult.success(stateWithoutCont, result.events.toList() + event)
     }
@@ -485,6 +467,7 @@ class ReflexiveTriggerEffectExecutor(
                 reflexiveTargetRequirements = reflexiveTargetRequirements,
                 descriptionOverride = descriptionOverride,
                 carriedPipeline = effectContext.pipeline,
+                carriedObjectReferences = effectContext.objectReferences,
                 carriedTriggerContext = com.wingedsheep.engine.event.TriggerContext(
                     triggeringEntityId = effectContext.triggeringEntityId,
                     triggeringPlayerId = effectContext.triggeringPlayerId,

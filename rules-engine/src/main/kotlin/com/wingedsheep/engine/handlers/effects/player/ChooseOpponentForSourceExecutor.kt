@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.handlers.effects.player
 
+import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.ChooseOpponentForSourceContinuation
 import com.wingedsheep.engine.core.ChooseOptionDecision
 import com.wingedsheep.engine.core.DecisionContext
@@ -36,44 +37,42 @@ class ChooseOpponentForSourceExecutor : EffectExecutor<ChooseOpponentForSourceEf
         context: EffectContext
     ): EffectResult {
         val sourceId = context.sourceId ?: return EffectResult.success(state)
-        val source = state.getEntity(sourceId) ?: return EffectResult.success(state)
+        val source = state.getEntity(sourceId)
 
         val opponents = state.getOpponents(context.controllerId)
         if (opponents.isEmpty()) return EffectResult.success(state)
 
         // Sole opponent → forced choice, no prompt.
         if (opponents.size == 1) {
-            val newState = state.updateEntity(sourceId) { container ->
+            val newState = if (source != null && context.objectReferences.isCurrent(context.objectReferences.source, state)) state.updateEntity(sourceId) { container ->
                 container.withCastChoice(ChoiceSlot.OPPONENT, ChoiceValue.EntityChoice(opponents.single()))
-            }
-            return EffectResult.success(newState)
+            } else state
+            return EffectResult.success(newState).copy(updatedCollections = mapOf(
+                com.wingedsheep.engine.handlers.RESOLUTION_CHOSEN_OPPONENT to listOf(opponents.single()),
+            ))
         }
 
         val opponentNames = opponents.map { pid ->
             state.getEntity(pid)?.get<PlayerComponent>()?.name ?: "Player ${pid.value}"
         }
-        val decisionId = "choose-opponent-for-source-${sourceId.value}"
-        val decision = ChooseOptionDecision(
+        val decision = { decisionId: String -> ChooseOptionDecision(
             id = decisionId,
             playerId = context.controllerId,
             prompt = effect.prompt,
             context = DecisionContext(
                 sourceId = sourceId,
-                sourceName = source.get<CardComponent>()?.name ?: "Unknown",
+                sourceName = source?.get<CardComponent>()?.name ?: "Unknown",
                 phase = DecisionPhase.RESOLUTION
             ),
             options = opponentNames
-        )
+        ) }
         val continuation = ChooseOpponentForSourceContinuation(
-            decisionId = decisionId,
             sourceId = sourceId,
+            objectReferences = context.objectReferences,
             controllerId = context.controllerId,
             opponentIds = opponents
         )
 
-        return EffectResult.paused(
-            state.withPendingDecision(decision).pushContinuation(continuation),
-            decision
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation, emptyList()))
     }
 }

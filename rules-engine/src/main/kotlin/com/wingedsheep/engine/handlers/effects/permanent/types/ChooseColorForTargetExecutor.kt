@@ -26,27 +26,27 @@ class ChooseColorForTargetExecutor(
         if (!state.getBattlefield().contains(targetId)) return EffectResult.success(state)
 
         val sourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name }
+        val continuation = ChooseColorForTargetContinuation(
+            controllerId = context.controllerId,
+            sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
+            sourceName = sourceName,
+            targetEntityId = targetId
+        )
+
         val decisionResult = decisionHandler.createColorDecision(
             state = state,
             playerId = context.controllerId,
             sourceId = context.sourceId,
             sourceName = sourceName,
             prompt = effect.prompt,
-            phase = DecisionPhase.RESOLUTION
+            phase = DecisionPhase.RESOLUTION,
+            answer = continuation
         )
         val decision = decisionResult.pendingDecision ?: return EffectResult.success(decisionResult.state)
 
-        val continuation = ChooseColorForTargetContinuation(
-            decisionId = decision.id,
-            controllerId = context.controllerId,
-            sourceId = context.sourceId,
-            sourceName = sourceName,
-            targetEntityId = targetId
-        )
-
-        return EffectResult.paused(
-            decisionResult.state.pushContinuation(continuation),
-            decision,
+        return EffectResult.propagatePause(
+            decisionResult.state,
             decisionResult.events
         )
     }

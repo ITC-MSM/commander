@@ -60,15 +60,15 @@ class DrawReplacementContinuationResumer(
             val effectContext = EffectContext(
                 controllerId = playerId,
                 sourceId = continuation.sourceId,
+            objectReferences = continuation.objectReferences,
                 targets = emptyList()
             )
             val effectResult = services.effectExecutorRegistry.execute(
                 newState, continuation.replacementEffect, effectContext
             ).toExecutionResult()
             if (effectResult.isPaused) {
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     effectResult.state,
-                    effectResult.pendingDecision!!,
                     events + effectResult.events
                 )
             }
@@ -97,9 +97,8 @@ class DrawReplacementContinuationResumer(
                 stateWithDeclined, playerId, 1, announce = false
             ).toExecutionResult()
             if (singleDrawResult.isPaused) {
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     singleDrawResult.state,
-                    singleDrawResult.pendingDecision!!,
                     events + singleDrawResult.events
                 )
             }

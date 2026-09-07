@@ -16,12 +16,12 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class PutFromHandContinuation(
-    override val decisionId: String,
     val playerId: EntityId,
     val entersTapped: Boolean,
     val sourceId: EntityId?,
-    val sourceName: String?
-) : ContinuationFrame
+    val sourceName: String?,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after a player chooses a number for secret bidding effects (Menacing Ogre).
@@ -41,7 +41,6 @@ data class PutFromHandContinuation(
  */
 @Serializable
 data class SecretBidContinuation(
-    override val decisionId: String,
     val sourceId: EntityId?,
     val sourceName: String?,
     val controllerId: EntityId,
@@ -50,8 +49,9 @@ data class SecretBidContinuation(
     val chosenNumbers: Map<EntityId, Int>,
     val highestBidderEffect: Effect?,
     val lowestBidderEffect: Effect?,
-    val tiedBidderEffect: Effect?
-) : ContinuationFrame
+    val tiedBidderEffect: Effect?,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Which step of the [OpenLifeBidContinuation] the pending decision belongs to.
@@ -85,7 +85,6 @@ enum class OpenLifeBidStage {
  */
 @Serializable
 data class OpenLifeBidContinuation(
-    override val decisionId: String,
     val casterId: EntityId,
     val highBidder: EntityId,
     val highBid: Int,
@@ -94,8 +93,10 @@ data class OpenLifeBidContinuation(
     val onWin: Effect,
     val targets: List<ChosenTarget>,
     val sourceId: EntityId?,
-    val sourceName: String?
-) : ContinuationFrame
+    val sourceName: String?,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+    val effectContext: com.wingedsheep.engine.handlers.EffectContext? = null
+) : AnswerContinuation
 
 /**
  * Resume a chosen player's optional retargeting of the triggering spell/ability (Psychic Battle's
@@ -114,7 +115,6 @@ data class OpenLifeBidContinuation(
  */
 @Serializable
 data class ContestedRetargetContinuation(
-    override val decisionId: String,
     val stackObjectId: EntityId,
     val chooserId: EntityId,
     val ownerControllerId: EntityId,
@@ -122,8 +122,9 @@ data class ContestedRetargetContinuation(
     val originalTargets: List<ChosenTarget>,
     val newTargets: List<ChosenTarget>,
     val currentSlot: Int,
-    val sourceId: EntityId?
-) : ContinuationFrame
+    val sourceId: EntityId?,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after player has distributed counters from a source creature to other creatures.
@@ -137,7 +138,6 @@ data class ContestedRetargetContinuation(
  */
 @Serializable
 data class DistributeCountersContinuation(
-    override val decisionId: String,
     val sourceId: EntityId,
     val controllerId: EntityId,
     val counterType: String,
@@ -147,8 +147,9 @@ data class DistributeCountersContinuation(
      * created on the chosen recipients with nothing removed from the source — the "distribute N
      * counters among …" shape (e.g. Crashing Wave's three stun counters).
      */
-    val removeFromSource: Boolean = true
-) : ContinuationFrame
+    val removeFromSource: Boolean = true,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after the controller picks how many counters of one kind to remove
@@ -176,7 +177,6 @@ data class DistributeCountersContinuation(
  */
 @Serializable
 data class RemoveAnyNumberOfCountersContinuation(
-    override val decisionId: String,
     val targetId: EntityId,
     val controllerId: EntityId,
     val currentCounterType: String,
@@ -187,8 +187,9 @@ data class RemoveAnyNumberOfCountersContinuation(
     val sourceName: String?,
     val remainingBudget: Int? = null,
     val currentMinAmount: Int = 0,
-    val remainingFloor: Int = 0
-) : ContinuationFrame
+    val remainingFloor: Int = 0,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after the controller picks how many counters (0..max) to put on a target, for
@@ -212,19 +213,18 @@ data class RemoveAnyNumberOfCountersContinuation(
  */
 @Serializable
 data class PayAnyAmountOfLifeAsEntersContinuation(
-    override val decisionId: String,
     val permanentId: EntityId,
     val controllerId: EntityId
-) : ContinuationFrame
+) : AnswerContinuation
 
 @Serializable
 data class AddCountersUpToContinuation(
-    override val decisionId: String,
     val targetId: EntityId,
     val controllerId: EntityId,
     val counterType: String,
-    val sourceId: EntityId?
-) : ContinuationFrame
+    val sourceId: EntityId?,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after a player picks how many [counterType] counters to pay (0..their current total),
@@ -241,12 +241,12 @@ data class AddCountersUpToContinuation(
  */
 @Serializable
 data class PayCountersContinuation(
-    override val decisionId: String,
     val playerId: EntityId,
     val counterType: String,
     val storeAmountAs: String,
-    val sourceId: EntityId?
-) : ContinuationFrame
+    val sourceId: EntityId?,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after the controller picks how many counters of one kind to move from a
@@ -269,7 +269,6 @@ data class PayCountersContinuation(
  */
 @Serializable
 data class MoveChosenCountersToTargetContinuation(
-    override val decisionId: String,
     val sourceId: EntityId,
     val destinationId: EntityId,
     val controllerId: EntityId,
@@ -279,8 +278,9 @@ data class MoveChosenCountersToTargetContinuation(
     val sourceName: String,
     val destinationName: String,
     val drawCardOnMove: Boolean,
-    val anyMovedSoFar: Boolean = false
-) : ContinuationFrame
+    val anyMovedSoFar: Boolean = false,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after the controller picks the permanents and/or players that should
@@ -294,10 +294,9 @@ data class MoveChosenCountersToTargetContinuation(
  */
 @Serializable
 data class ProliferateContinuation(
-    override val decisionId: String,
     val controllerId: EntityId,
     val eligibleEntities: List<EntityId>
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after a tempted player chooses which creature becomes their Ring-bearer (CR 701.54a).
@@ -312,12 +311,11 @@ data class ProliferateContinuation(
  */
 @Serializable
 data class RingTemptContinuation(
-    override val decisionId: String,
     val temptedPlayerId: EntityId,
     val temptCount: Int,
     val sourceName: String,
     val candidates: List<EntityId>
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume "amass [subtype] N" after the controller chooses which Army to put the counters on
@@ -332,13 +330,13 @@ data class RingTemptContinuation(
  */
 @Serializable
 data class AmassContinuation(
-    override val decisionId: String,
     val controllerId: EntityId,
     val subtype: String,
     val amount: Int,
     val sourceId: EntityId?,
-    val candidates: List<EntityId>
-) : ContinuationFrame
+    val candidates: List<EntityId>,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume creating a copy of a triggered ability after the player selects new targets.
@@ -353,11 +351,10 @@ data class AmassContinuation(
  */
 @Serializable
 data class CopyTriggeredAbilityTargetContinuation(
-    override val decisionId: String,
     val abilityEntityId: EntityId,
     val controllerId: EntityId,
     val targetRequirements: List<TargetRequirement>
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume creating a copy of an *activated* ability after the copier selects new targets
@@ -371,11 +368,10 @@ data class CopyTriggeredAbilityTargetContinuation(
  */
 @Serializable
 data class CopyActivatedAbilityTargetContinuation(
-    override val decisionId: String,
     val abilityEntityId: EntityId,
     val controllerId: EntityId,
     val targetRequirements: List<TargetRequirement>
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume the "copy target activated or triggered ability [N] times" loop after the copier chooses
@@ -394,7 +390,6 @@ data class CopyActivatedAbilityTargetContinuation(
  */
 @Serializable
 data class CopyAbilityTargetContinuation(
-    override val decisionId: String,
     val abilityEntityId: EntityId,
     val controllerId: EntityId,
     /** The copier's source (e.g. Gogo) — used to validate the new targets for each copy. */
@@ -402,7 +397,7 @@ data class CopyAbilityTargetContinuation(
     val targetRequirements: List<TargetRequirement>,
     val remainingCopies: Int,
     val totalCopies: Int
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume creating Storm copies after the player selects targets for a copy.
@@ -424,7 +419,6 @@ data class CopyAbilityTargetContinuation(
  */
 @Serializable
 data class StormCopyTargetContinuation(
-    override val decisionId: String,
     val remainingCopies: Int,
     val spellEffect: Effect?,
     val spellTargetRequirements: List<TargetRequirement>,
@@ -434,8 +428,9 @@ data class StormCopyTargetContinuation(
     val totalCopies: Int = remainingCopies,  // Original total copies (defaults to remainingCopies for backward compat)
     /** Keyword enum names (e.g., "WITHER") to grant to each copy while it's on the stack. */
     val keywordsForCopy: Set<String> = emptySet(),
-    val removeLegendary: Boolean = false
-) : ContinuationFrame
+    val removeLegendary: Boolean = false,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume copying a list of targeted spells one at a time (CR 707.10).
@@ -451,13 +446,12 @@ data class StormCopyTargetContinuation(
  */
 @Serializable
 data class CopyEachSpellContinuation(
-    override val decisionId: String,
     val remainingSpellIds: List<EntityId>,
     val controllerId: EntityId,
     val targetRequirements: List<TargetRequirement>,
     val keywordsForCopy: Set<String> = emptySet(),
     val removeLegendary: Boolean = false
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume Storm modal target selection (rule 702.40a + 707.10).
@@ -483,7 +477,6 @@ data class CopyEachSpellContinuation(
  */
 @Serializable
 data class StormCopyModalTargetContinuation(
-    override val decisionId: String,
     val remainingCopies: Int,
     val totalCopies: Int,
     val spellName: String,
@@ -496,8 +489,9 @@ data class StormCopyModalTargetContinuation(
     /** Keyword enum names (e.g., "WITHER") to grant to each copy while it's on the stack. */
     val keywordsForCopy: Set<String> = emptySet(),
     /** If true, strip the Legendary supertype from each resulting copy. */
-    val removeLegendary: Boolean = false
-) : ContinuationFrame
+    val removeLegendary: Boolean = false,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after Meddle's controller chooses a new creature target for a spell.
@@ -507,10 +501,10 @@ data class StormCopyModalTargetContinuation(
  */
 @Serializable
 data class ChangeSpellTargetContinuation(
-    override val decisionId: String,
     val spellEntityId: EntityId,
-    val sourceId: EntityId?
-) : ContinuationFrame
+    val sourceId: EntityId?,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after player selects which legendary permanent to keep (legend rule 704.5j).
@@ -522,10 +516,9 @@ data class ChangeSpellTargetContinuation(
  */
 @Serializable
 data class LegendRuleContinuation(
-    override val decisionId: String,
     val playerId: EntityId,
     val allDuplicates: List<EntityId>
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the commander's owner answers the CR 903.9a state-based action prompt.
@@ -543,11 +536,10 @@ data class LegendRuleContinuation(
  */
 @Serializable
 data class CommanderZoneChoiceContinuation(
-    override val decisionId: String,
     val commanderId: EntityId,
     val ownerId: EntityId,
     val currentZone: com.wingedsheep.sdk.core.Zone
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after a battle's controller picks its protector for the CR 704.5x/y state-based action
@@ -561,10 +553,9 @@ data class CommanderZoneChoiceContinuation(
  */
 @Serializable
 data class BattleProtectorChoiceContinuation(
-    override val decisionId: String,
     val battleId: EntityId,
     val candidateIds: List<EntityId>
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after a player picks X for an activated ability with an X-variable cost
@@ -584,10 +575,9 @@ data class BattleProtectorChoiceContinuation(
  */
 @Serializable
 data class ActivateAbilityChooseXContinuation(
-    override val decisionId: String,
     val action: ActivateAbility,
     val tapTargets: List<EntityId>
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after a player chooses X for an activated ability whose cost contains `{X}` **mana**
@@ -601,9 +591,8 @@ data class ActivateAbilityChooseXContinuation(
  */
 @Serializable
 data class ActivateAbilityChooseManaXContinuation(
-    override val decisionId: String,
     val action: ActivateAbility
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after a player picks which permanents to tap to satisfy a TapXPermanents cost,
@@ -616,11 +605,10 @@ data class ActivateAbilityChooseManaXContinuation(
  */
 @Serializable
 data class ActivateAbilityTapXTargetsContinuation(
-    override val decisionId: String,
     val action: ActivateAbility,
     val chosenX: Int,
     val tapTargets: List<EntityId>
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after a player picks which graveyard cards to exile to satisfy an
@@ -643,11 +631,10 @@ data class ActivateAbilityTapXTargetsContinuation(
  */
 @Serializable
 data class ActivateAbilityExileFromGraveyardContinuation(
-    override val decisionId: String,
     val action: ActivateAbility,
     val exileCandidates: List<EntityId>,
     val exileCount: Int
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after a player picks the graveyard cards for an
@@ -667,11 +654,10 @@ data class ActivateAbilityExileFromGraveyardContinuation(
  */
 @Serializable
 data class ActivateAbilityExileXFromGraveyardContinuation(
-    override val decisionId: String,
     val action: ActivateAbility,
     val exileCandidates: List<EntityId>,
     val fixedCount: Int? = null
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after an opponent picks the target(s) for an activated ability's "… of an opponent's
@@ -698,12 +684,11 @@ data class ActivateAbilityExileXFromGraveyardContinuation(
  */
 @Serializable
 data class ActivateAbilityOpponentTargetContinuation(
-    override val decisionId: String,
     val action: ActivateAbility,
     val opponentRequirements: List<com.wingedsheep.sdk.scripting.targets.TargetRequirement>,
     val fullRequirements: List<com.wingedsheep.sdk.scripting.targets.TargetRequirement>,
     val deciderId: EntityId
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after an activated ability's controller chooses which opponent will choose the
@@ -712,13 +697,12 @@ data class ActivateAbilityOpponentTargetContinuation(
  */
 @Serializable
 data class ActivateAbilityOpponentChooserContinuation(
-    override val decisionId: String,
     val action: ActivateAbility,
     val sourceName: String,
     val opponentRequirements: List<com.wingedsheep.sdk.scripting.targets.TargetRequirement>,
     val fullRequirements: List<com.wingedsheep.sdk.scripting.targets.TargetRequirement>,
     val opponentIds: List<EntityId>
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after a player picks which permanents to sacrifice to satisfy a
@@ -744,12 +728,11 @@ data class ActivateAbilityOpponentChooserContinuation(
  */
 @Serializable
 data class ActivateAbilitySacrificeContinuation(
-    override val decisionId: String,
     val action: ActivateAbility,
     val sacrificeCandidates: List<EntityId>,
     val sacrificeCount: Int,
     val distinctNames: Boolean = false
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the controller picks which permanents pay a variable-count
@@ -770,11 +753,10 @@ data class ActivateAbilitySacrificeContinuation(
  */
 @Serializable
 data class ActivateAbilityVariablePermanentsContinuation(
-    override val decisionId: String,
     val action: ActivateAbility,
     val candidates: List<EntityId>,
     val minCount: Int
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the controller picks the target for an activated ability whose target legality
@@ -795,7 +777,6 @@ data class ActivateAbilityVariablePermanentsContinuation(
  */
 @Serializable
 data class ActivateAbilityControllerTargetContinuation(
-    override val decisionId: String,
     val action: ActivateAbility,
     val requirements: List<TargetRequirement>
-) : ContinuationFrame
+) : AnswerContinuation

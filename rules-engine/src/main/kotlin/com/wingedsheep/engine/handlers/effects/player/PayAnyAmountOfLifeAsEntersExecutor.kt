@@ -1,9 +1,9 @@
 package com.wingedsheep.engine.handlers.effects.player
 
+import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.ChooseNumberDecision
 import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.DecisionPhase
-import com.wingedsheep.engine.core.DecisionRequestedEvent
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.PayAnyAmountOfLifeAsEntersContinuation
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
@@ -14,7 +14,6 @@ import com.wingedsheep.engine.state.components.battlefield.EnteredWithValueCompo
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.PayAnyAmountOfLifeAsEntersEffect
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -52,8 +51,7 @@ class PayAnyAmountOfLifeAsEntersExecutor(
         }
 
         val permanentName = state.getEntity(permanentId)?.get<CardComponent>()?.name ?: "it"
-        val decisionId = UUID.randomUUID().toString()
-        val decision = ChooseNumberDecision(
+        val decision = { decisionId: String -> ChooseNumberDecision(
             id = decisionId,
             playerId = context.controllerId,
             prompt = "Pay how much life as $permanentName enters? (0-$max)",
@@ -64,30 +62,14 @@ class PayAnyAmountOfLifeAsEntersExecutor(
             ),
             minValue = 0,
             maxValue = max
-        )
+        ) }
 
-        val newState = state
-            .withPendingDecision(decision)
-            .pushContinuation(
-                PayAnyAmountOfLifeAsEntersContinuation(
-                    decisionId = decisionId,
+        val continuation = PayAnyAmountOfLifeAsEntersContinuation(
                     permanentId = permanentId,
                     controllerId = context.controllerId
                 )
-            )
 
-        return EffectResult.paused(
-            newState,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = context.controllerId,
-                    decisionType = "CHOOSE_NUMBER",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation, emptyList()))
     }
 
     companion object {

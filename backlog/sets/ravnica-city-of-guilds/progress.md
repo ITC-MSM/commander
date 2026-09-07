@@ -3,7 +3,7 @@
 Branch: `worktree-rav-completion`. Baseline: `4f09fec7e2`. Draft PR: #2236.
 
 The goal is all 291 cards, their required engine functionality, and full set verification.
-The initial source inventory was 239/291; the current inventory is **256/291**, with 35 missing.
+The initial source inventory was 239/291; the current inventory is **260/291**, with 31 missing.
 The checklist is an inventory, not proof of rules correctness. Existing generated definitions
 also need field and behavior review before completion can be claimed.
 
@@ -71,10 +71,13 @@ Assay compared 103 cards with no divergences; it declines Brownscale's full text
 
 ## Remaining work
 
-- Finish the two remaining dredge cards: Golgari Grave-Troll (verify the reanimation counter count), and Necroplasm (source counters
-  after it leaves before its end-step trigger resolves).
-- Finish the six remaining transmute cards: Clutch of the Undercity, Dimir Machinations,
-  Grozoth, Netherborn Phalanx, Perplex, Shred Memory.
+- ~~Finish the two remaining dredge cards~~ — done. Golgari Grave-Troll and Necroplasm both compose
+  existing primitives (`EntersWithDynamicCounters` over a graveyard count, `Effects.Regenerate` behind a
+  `RemoveCounterFromSelf` cost, and a `manaValueEqualsDynamic` destroy filter reading the source's counter
+  count). Blood Funnel shipped in the same unit as a `PayOrSufferEffect` punisher. Sixteen scenarios cover
+  them; Necroplasm's C16 reprint row was added. Dredge is now complete for the set.
+- Finish the two remaining transmute cards: Clutch of the Undercity and Perplex. Dimir
+  Machinations, Grozoth, Netherborn Phalanx, and Shred Memory shipped separately.
 - Complete the other card-specific investigations in `mechanics.md` and all unchecked cards.
 - Verify client interactions for new capabilities, and run the appropriate engine/server/client gates.
 - Run the verify-set workflow over every card, printing, and token-art mapping; include self-play.

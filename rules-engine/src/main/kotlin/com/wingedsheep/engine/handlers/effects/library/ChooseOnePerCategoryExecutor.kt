@@ -64,7 +64,8 @@ class ChooseOnePerCategoryExecutor(
             pendingPlayers = choosersInApnapOrder(state, pool),
             startCategory = 0,
             picks = emptyList(),
-            sourceId = context.sourceId
+            sourceId = context.sourceId,
+            objectReferences = context.objectReferences
         )
     }
 
@@ -82,7 +83,8 @@ class ChooseOnePerCategoryExecutor(
         pendingPlayers: List<EntityId>,
         startCategory: Int,
         picks: List<EntityId>,
-        sourceId: EntityId?
+        sourceId: EntityId?,
+        objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment()
     ): EffectResult {
         val pool = storedCollections[effect.from].orEmpty()
         val accumulated = picks.toMutableList()
@@ -110,7 +112,8 @@ class ChooseOnePerCategoryExecutor(
                     categoryIndex = categoryIndex,
                     pendingPlayers = pendingPlayers.drop(offset),
                     picks = accumulated,
-                    sourceId = sourceId
+                    sourceId = sourceId,
+                    objectReferences = objectReferences
                 )
             }
         }
@@ -167,7 +170,8 @@ class ChooseOnePerCategoryExecutor(
         categoryIndex: Int,
         pendingPlayers: List<EntityId>,
         picks: List<EntityId>,
-        sourceId: EntityId?
+        sourceId: EntityId?,
+        objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment()
     ): EffectResult {
         val sourceName = sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name }
         val noun = effect.categories[categoryIndex].description
@@ -176,6 +180,17 @@ class ChooseOnePerCategoryExecutor(
         } else {
             "a"
         }
+
+        val continuation = ChooseOnePerCategoryContinuation(
+            effect = effect,
+            sourceId = sourceId,
+            sourceName = sourceName,
+            storedCollections = storedCollections,
+            pendingPlayers = pendingPlayers,
+            categoryIndex = categoryIndex,
+            picks = picks,
+            objectReferences = objectReferences
+        )
 
         val decisionResult = decisionHandler.createCardSelectionDecision(
             state = state,
@@ -190,23 +205,12 @@ class ChooseOnePerCategoryExecutor(
             phase = DecisionPhase.RESOLUTION,
             // On-battlefield selection: the chooser is picking among permanents already in play,
             // where counters, auras and duplicates matter (see the UX rules in AGENTS.md).
-            useTargetingUI = true
+            useTargetingUI = true,
+            answer = continuation
         )
 
-        val continuation = ChooseOnePerCategoryContinuation(
-            decisionId = decisionResult.pendingDecision!!.id,
-            effect = effect,
-            sourceId = sourceId,
-            sourceName = sourceName,
-            storedCollections = storedCollections,
-            pendingPlayers = pendingPlayers,
-            categoryIndex = categoryIndex,
-            picks = picks
-        )
-
-        return EffectResult.paused(
-            decisionResult.state.pushContinuation(continuation),
-            decisionResult.pendingDecision,
+        return EffectResult.propagatePause(
+            decisionResult.state,
             decisionResult.events
         )
     }

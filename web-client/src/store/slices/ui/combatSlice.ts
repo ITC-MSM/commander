@@ -8,7 +8,6 @@ import type {
 } from '../types'
 import {
   entityId,
-  createSubmitActionMessage,
   createUpdateAttackerTargetsMessage,
   createUpdateBlockerAssignmentsMessage,
 } from '@/types'
@@ -76,8 +75,8 @@ export interface CombatSliceActions {
   stopDraggingAttacker: () => void
   startDraggingCard: (cardId: EntityId) => void
   stopDraggingCard: () => void
-  confirmCombat: () => void
-  cancelCombat: () => void
+  confirmCombat: (interactionEpoch: string | null) => void
+  cancelCombat: (interactionEpoch: string | null) => void
   attackWithAll: () => void
   clearAttackers: () => void
   clearCombat: () => void
@@ -113,6 +112,7 @@ export const createCombatSlice: SliceCreator<CombatSlice> = (set, get) => ({
   opponentBlockerAssignments: null,
 
   startCombat: (combatState) => {
+    if (!combatState.interactionEpoch || combatState.interactionEpoch !== get().interactionEpoch) return
     set({ combatState })
     // Sync pre-populated blocker assignments with opponent
     if (combatState.mode === 'declareBlockers' && Object.keys(combatState.blockerAssignments).length > 0) {
@@ -304,9 +304,12 @@ export const createCombatSlice: SliceCreator<CombatSlice> = (set, get) => ({
     set({ draggingCardId: null })
   },
 
-  confirmCombat: () => {
+  confirmCombat: (interactionEpoch) => {
+    if (!interactionEpoch || interactionEpoch !== get().interactionEpoch) return
     const { combatState, playerId, gameState } = get()
-    if (!combatState || !playerId) return
+    // The submission below carries combatState's captured origin, so that is the value that has
+    // to be current — checking only the caller's would let a stale declaration through.
+    if (!combatState || combatState.interactionEpoch !== interactionEpoch || !playerId) return
     // In hotseat the single connection declares for whichever seat the server is asking:
     // the acting seat from the legal action (active player / defending player fallback).
     const actingSeat = combatActingSeat(combatState, playerId, gameState)
@@ -351,7 +354,7 @@ export const createCombatSlice: SliceCreator<CombatSlice> = (set, get) => ({
         attackers,
         ...(validBands.length > 0 ? { bands: validBands } : {}),
       }
-      getWebSocket()?.send(createSubmitActionMessage(action))
+      get().submitAction(action, combatState.interactionEpoch)
     } else if (combatState.mode === 'declareBlockers') {
       const blockers: Record<EntityId, readonly EntityId[]> = {}
       for (const [blockerIdStr, attackerIds] of Object.entries(combatState.blockerAssignments)) {
@@ -363,7 +366,7 @@ export const createCombatSlice: SliceCreator<CombatSlice> = (set, get) => ({
         playerId: actingSeat,
         blockers,
       }
-      getWebSocket()?.send(createSubmitActionMessage(action))
+      get().submitAction(action, combatState.interactionEpoch)
     }
 
     set({ draggingBlockerId: null })
@@ -396,9 +399,10 @@ export const createCombatSlice: SliceCreator<CombatSlice> = (set, get) => ({
     })
   },
 
-  cancelCombat: () => {
+  cancelCombat: (interactionEpoch) => {
+    if (!interactionEpoch || interactionEpoch !== get().interactionEpoch) return
     const { combatState, playerId, gameState } = get()
-    if (!combatState || !playerId) return
+    if (!combatState || combatState.interactionEpoch !== interactionEpoch || !playerId) return
     const actingSeat = combatActingSeat(combatState, playerId, gameState)
 
     if (combatState.mode === 'declareAttackers') {
@@ -407,14 +411,14 @@ export const createCombatSlice: SliceCreator<CombatSlice> = (set, get) => ({
         playerId: actingSeat,
         attackers: {} as Record<EntityId, EntityId>,
       }
-      getWebSocket()?.send(createSubmitActionMessage(action))
+      get().submitAction(action, combatState.interactionEpoch)
     } else if (combatState.mode === 'declareBlockers') {
       const action = {
         type: 'DeclareBlockers' as const,
         playerId: actingSeat,
         blockers: {} as Record<EntityId, readonly EntityId[]>,
       }
-      getWebSocket()?.send(createSubmitActionMessage(action))
+      get().submitAction(action, combatState.interactionEpoch)
     }
 
     set({ draggingBlockerId: null })

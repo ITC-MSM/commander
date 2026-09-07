@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.handlers.continuations
 
+import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.ActivateAbilityChooseManaXContinuation
 import com.wingedsheep.engine.core.ActivateAbilityChooseXContinuation
 import com.wingedsheep.engine.core.ActivateAbilityControllerTargetContinuation
@@ -13,11 +14,9 @@ import com.wingedsheep.engine.core.CardsSelectedResponse
 import com.wingedsheep.engine.core.ChooseNumberDecision
 import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.DecisionPhase
-import com.wingedsheep.engine.core.DecisionRequestedEvent
 import com.wingedsheep.engine.core.DecisionResponse
 import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.core.ExecutionResult
-import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.NumberChosenResponse
 import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.core.TargetsResponse
@@ -107,9 +106,8 @@ class ActivateAbilityXCostContinuationResumer(
         // the frontend renders "Select N/N" with a hard count (this is the assertion the
         // SecludedStarforgeTest UI-flow case pins).
         val sourceName = state.getEntity(action.sourceId)?.get<CardComponent>()?.name
-        val decisionId = java.util.UUID.randomUUID().toString()
         val prompt = "Select $chosenX permanents to tap for ${sourceName ?: "this ability"}"
-        val decision = SelectCardsDecision(
+        val question = { decisionId: String -> SelectCardsDecision(
             id = decisionId,
             playerId = action.playerId,
             prompt = prompt,
@@ -122,23 +120,13 @@ class ActivateAbilityXCostContinuationResumer(
             minSelections = chosenX,
             maxSelections = chosenX,
             useTargetingUI = true
-        )
+        ) }
         val nextFrame = ActivateAbilityTapXTargetsContinuation(
-            decisionId = decisionId,
             action = action,
             chosenX = chosenX,
             tapTargets = continuation.tapTargets
         )
-        val pausedState = state
-            .withPendingDecision(decision)
-            .pushContinuation(nextFrame)
-        val event: GameEvent = DecisionRequestedEvent(
-            decisionId = decisionId,
-            playerId = action.playerId,
-            decisionType = "SELECT_CARDS",
-            prompt = prompt
-        )
-        return ExecutionResult.paused(pausedState, decision, listOf(event))
+        return state.suspendForDecision(question, nextFrame, emptyList())
     }
 
     /**

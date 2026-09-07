@@ -23,14 +23,14 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class SacrificeContinuation(
-    override val decisionId: String,
     val playerId: EntityId,
     val sourceId: EntityId?,
     val sourceName: String?,
     val remainingPlayers: List<EntityId> = emptyList(),
     val filter: GameObjectFilter? = null,
-    val count: Int = 1
-) : ContinuationFrame
+    val count: Int = 1,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after a player picked the one permanent they keep for a single category of a
@@ -47,15 +47,15 @@ data class SacrificeContinuation(
  */
 @Serializable
 data class ChooseOnePerCategoryContinuation(
-    override val decisionId: String,
     val effect: ChooseOnePerCategoryEffect,
     val sourceId: EntityId?,
     val sourceName: String?,
     val storedCollections: Map<String, List<EntityId>>,
     val pendingPlayers: List<EntityId>,
     val categoryIndex: Int,
-    val picks: List<EntityId>
-) : ContinuationFrame
+    val picks: List<EntityId>,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after player selects cards for multi-zone exile.
@@ -67,11 +67,11 @@ data class ChooseOnePerCategoryContinuation(
  */
 @Serializable
 data class ExileMultiZoneContinuation(
-    override val decisionId: String,
     val playerId: EntityId,
     val sourceId: EntityId?,
-    val sourceName: String?
-) : ContinuationFrame
+    val sourceName: String?,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after player selects cards/permanents for a generic "pay or suffer" effect.
@@ -89,7 +89,6 @@ data class ExileMultiZoneContinuation(
  */
 @Serializable
 data class PayOrSufferContinuation(
-    override val decisionId: String,
     val playerId: EntityId,
     val sourceId: EntityId,
     val sourceName: String,
@@ -148,8 +147,9 @@ data class PayOrSufferContinuation(
      * pay with, no prompt) worked while the far more common declined-a-prompt path silently
      * matched nothing.
      */
-    val iterationEntityId: EntityId? = null
-) : ContinuationFrame
+    val iterationEntityId: EntityId? = null,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Discriminator for the cost type in PayOrSufferContinuation.
@@ -166,7 +166,13 @@ enum class PayOrSufferCostType {
     REMOVE_COUNTERS,
     PUT_COUNTERS,
     MILL,
-    RETURN_TO_HAND
+    RETURN_TO_HAND,
+
+    /**
+     * Discard your entire hand (Perplex). A yes/no rather than a card selection: the payer picks
+     * nothing, so the only decision is whether to pay at all.
+     */
+    DISCARD_HAND
 }
 
 /**
@@ -180,7 +186,6 @@ enum class PayOrSufferCostType {
  */
 @Serializable
 data class PayOrSufferChoiceContinuation(
-    override val decisionId: String,
     val playerId: EntityId,
     val sourceId: EntityId,
     val sourceName: String,
@@ -203,8 +208,9 @@ data class PayOrSufferChoiceContinuation(
     /** Mirror of [PayOrSufferContinuation.storedCollections] for the multi-option path. */
     val storedCollections: Map<String, List<EntityId>> = emptyMap(),
     /** Mirror of [PayOrSufferContinuation.iterationEntityId] for the multi-option path. */
-    val iterationEntityId: EntityId? = null
-) : ContinuationFrame
+    val iterationEntityId: EntityId? = null,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after a player decides whether to pay a cost for "any player may [cost]" effects.
@@ -236,7 +242,6 @@ data class PayOrSufferChoiceContinuation(
  */
 @Serializable
 data class AnyPlayerMayPayContinuation(
-    override val decisionId: String,
     val currentPlayerId: EntityId,
     val remainingPlayers: List<EntityId>,
     val sourceId: EntityId,
@@ -250,8 +255,9 @@ data class AnyPlayerMayPayContinuation(
     val storedCollections: Map<String, List<EntityId>> = emptyMap(),
     val triggeringEntityId: EntityId? = null,
     val triggeringPlayerId: EntityId? = null,
-    val iterationTarget: EntityId? = null
-) : ContinuationFrame
+    val iterationTarget: EntityId? = null,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after player selects which permanents to keep tapped during untap step.
@@ -269,11 +275,10 @@ data class AnyPlayerMayPayContinuation(
  */
 @Serializable
 data class UntapChoiceContinuation(
-    override val decisionId: String,
     val playerId: EntityId,
     val allPermanentsToUntap: List<EntityId>,
     val untapLimits: List<UntapLimitChoice> = emptyList()
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * One active untap-count cap during a player's untap step: at most [max] of [matchingPermanents]
@@ -298,12 +303,12 @@ data class UntapLimitChoice(
  */
 @Serializable
 data class ReturnFromGraveyardContinuation(
-    override val decisionId: String,
     val playerId: EntityId,
     val sourceId: EntityId?,
     val sourceName: String?,
-    val destination: SearchDestination
-) : ContinuationFrame
+    val destination: SearchDestination,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after the payer picks mana sources for a "pay {N} or suffer" cost they already agreed to.
@@ -315,8 +320,7 @@ data class ReturnFromGraveyardContinuation(
  */
 @Serializable
 data class PayOrSufferManaSelectionContinuation(
-    override val decisionId: String,
     val inner: PayOrSufferContinuation,
     val manaCost: ManaCost,
     val availableSources: List<ManaSourceOption>
-) : ContinuationFrame
+) : AnswerContinuation

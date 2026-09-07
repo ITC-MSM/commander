@@ -23,10 +23,9 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class EffectContinuation(
-    override val decisionId: String,
     val remainingEffects: List<Effect>,
     val effectContext: EffectContext
-) : ContinuationFrame
+) : AutomaticContinuation
 
 /**
  * Resume placing a triggered ability on the stack after targets have been selected.
@@ -43,10 +42,11 @@ data class EffectContinuation(
  */
 @Serializable
 data class TriggeredAbilityContinuation(
-    override val decisionId: String,
     val sourceId: EntityId,
     val sourceName: String,
     val sourceBattlefieldTimestamp: Long? = null,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment =
+        com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
     val controllerId: EntityId,
     val effect: Effect,
     val description: String,
@@ -120,7 +120,7 @@ data class TriggeredAbilityContinuation(
      *  object built on resume can re-check it as it resolves. See
      *  [com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent.interveningIf]. */
     val interveningIf: com.wingedsheep.sdk.scripting.conditions.Condition? = null
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume placing a triggered ability on the stack after the player distributes damage.
@@ -141,10 +141,11 @@ data class TriggeredAbilityContinuation(
  */
 @Serializable
 data class TriggerDamageDistributionContinuation(
-    override val decisionId: String,
     val sourceId: EntityId,
     val sourceName: String,
     val sourceBattlefieldTimestamp: Long? = null,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment =
+        com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
     val controllerId: EntityId,
     val effect: Effect,
     val description: String,
@@ -176,7 +177,7 @@ data class TriggerDamageDistributionContinuation(
     /** The ability's intervening-"if" (CR 603.4), preserved across the distribution decision so the
      *  stack object built on resume can re-check it as it resolves. */
     val interveningIf: com.wingedsheep.sdk.scripting.conditions.Condition? = null
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Stores remaining pending triggers that still need to be processed.
@@ -188,9 +189,8 @@ data class TriggerDamageDistributionContinuation(
  */
 @Serializable
 data class PendingTriggersContinuation(
-    override val decisionId: String,
     val remainingTriggers: List<PendingTrigger>
-) : ContinuationFrame
+) : AutomaticContinuation
 
 /**
  * Resume spell resolution after target or mode selection.
@@ -200,10 +200,9 @@ data class PendingTriggersContinuation(
  */
 @Serializable
 data class ResolveSpellContinuation(
-    override val decisionId: String,
     val spellId: EntityId,
     val casterId: EntityId
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Pre-pushed by [com.wingedsheep.engine.handlers.effects.composite.GatedEffectExecutor] for a
@@ -222,13 +221,12 @@ data class ResolveSpellContinuation(
  */
 @Serializable
 data class GatedActionContinuation(
-    override val decisionId: String,
     val then: Effect,
     val otherwise: Effect?,
     val successCriterion: SuccessCriterion,
     val snapshot: GatedActionSnapshot,
     val effectContext: EffectContext
-) : ContinuationFrame
+) : AutomaticContinuation
 
 /**
  * Probe data captured before [GatedActionContinuation]'s action ran.
@@ -260,13 +258,12 @@ data class GatedActionSnapshot(
  */
 @Serializable
 data class MayAbilityContinuation(
-    override val decisionId: String,
     val playerId: EntityId,
     val sourceName: String?,
     val effectIfYes: Effect?,
     val effectIfNo: Effect?,
     val effectContext: EffectContext
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume a [com.wingedsheep.sdk.scripting.effects.GatedEffect] after its gate has been
@@ -287,12 +284,11 @@ data class MayAbilityContinuation(
  */
 @Serializable
 data class GatedEffectContinuation(
-    override val decisionId: String,
     val gate: Gate,
     val then: Effect,
     val otherwise: Effect?,
     val effectContext: EffectContext
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the player picks a card (or declines) for [MayRevealCardFromHandEffect].
@@ -306,13 +302,12 @@ data class GatedEffectContinuation(
  */
 @Serializable
 data class MayRevealCardFromHandContinuation(
-    override val decisionId: String,
     val revealerId: EntityId,
     val sourceId: EntityId?,
     val sourceName: String?,
     val otherwise: Effect?,
     val effectContext: EffectContext,
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the player chooses to behold (or declines) for
@@ -327,13 +322,12 @@ data class MayRevealCardFromHandContinuation(
  */
 @Serializable
 data class BeholdContinuation(
-    override val decisionId: String,
     val beholderId: EntityId,
     val sourceName: String?,
     val handOptionIds: Set<EntityId>,
     val ifBeheld: Effect?,
     val effectContext: EffectContext,
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume placing a triggered ability on the stack after the player answers a "may" question.
@@ -349,10 +343,9 @@ data class BeholdContinuation(
  */
 @Serializable
 data class MayTriggerContinuation(
-    override val decisionId: String,
     val trigger: PendingTrigger,
     val targetRequirement: TargetRequirement
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the controller answers a [com.wingedsheep.engine.core.BatchYesNoDecision] raised on
@@ -370,9 +363,8 @@ data class MayTriggerContinuation(
  */
 @Serializable
 data class BatchMayTriggerContinuation(
-    override val decisionId: String,
     val triggers: List<PendingTrigger>,
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * One snapshotted iteration item of a [com.wingedsheep.sdk.scripting.effects.ForEachEffect].
@@ -412,11 +404,10 @@ sealed interface ForEachItem {
  */
 @Serializable
 data class ForEachContinuation(
-    override val decisionId: String,
     val remainingItems: List<ForEachItem>,
     val effect: com.wingedsheep.sdk.scripting.effects.ForEachEffect,
     val effectContext: EffectContext
-) : ContinuationFrame
+) : AutomaticContinuation
 
 /**
  * Continuation for RepeatWhileEffect.
@@ -449,15 +440,19 @@ data class ForEachContinuation(
  */
 @Serializable
 data class RepeatWhileContinuation(
-    override val decisionId: String,
     val body: Effect,
     val repeatCondition: com.wingedsheep.sdk.scripting.effects.RepeatCondition,
     val resolvedDeciderId: EntityId? = null,
     val sourceName: String?,
-    val phase: RepeatWhilePhase,
     val effectContext: EffectContext,
     val bodyCollections: Map<String, List<EntityId>> = emptyMap()
-) : ContinuationFrame
+) : AutomaticContinuation
+
+/** The loop's player-choice phase; the body tail itself is automatic work. */
+@Serializable
+data class RepeatWhileDecisionContinuation(
+    val loop: RepeatWhileContinuation,
+) : AnswerContinuation
 
 /**
  * Resume after the flipper answers "flip another coin?" during a
@@ -477,12 +472,12 @@ data class RepeatWhileContinuation(
  */
 @Serializable
 data class FlipCoinsUntilLossContinuation(
-    override val decisionId: String,
     val flipperId: EntityId,
     val storeWinsAs: String,
     val winsSoFar: Int,
-    val sourceId: EntityId?
-) : ContinuationFrame
+    val sourceId: EntityId?,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume a coin flip after the flipper says which of the coins to keep — the pause a
@@ -509,23 +504,11 @@ data class FlipCoinsUntilLossContinuation(
  */
 @Serializable
 data class CoinFlipChoiceContinuation(
-    override val decisionId: String,
     val effect: Effect,
     val effectContext: EffectContext,
     val pending: com.wingedsheep.engine.handlers.effects.CoinFlipService.PendingCoinFlipChoice,
     val winsSoFar: Int = 0
-) : ContinuationFrame
-
-/**
- * Phase discriminator for RepeatWhileContinuation.
- */
-@Serializable
-enum class RepeatWhilePhase {
-    /** Pre-pushed before body executes; found in checkForMoreContinuations after body completes */
-    AFTER_BODY,
-    /** Waiting for the player's yes/no decision (PlayerChooses only) */
-    AFTER_DECISION
-}
+) : AnswerContinuation
 
 /**
  * Pre-pushed before executing a `ReflexiveTriggerEffect`'s action half. Auto-resumed after the
@@ -544,11 +527,10 @@ enum class RepeatWhilePhase {
  */
 @Serializable
 data class ReflexiveTriggerTargetContinuation(
-    override val decisionId: String,
     val reflexiveEffect: Effect,
     val reflexiveTargetRequirements: List<TargetRequirement>,
     val effectContext: EffectContext,
     /** Optional human-readable description override, carried through to the emitted
      *  [com.wingedsheep.engine.core.ReflexiveAbilityTriggeredEvent]. */
     val descriptionOverride: String? = null
-) : ContinuationFrame
+) : AutomaticContinuation

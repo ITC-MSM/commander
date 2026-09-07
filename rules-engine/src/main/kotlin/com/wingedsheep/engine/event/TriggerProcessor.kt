@@ -123,20 +123,17 @@ class TriggerProcessor(
                 var stateWithContinuations = result.state
                 if (remainingTriggers.isNotEmpty()) {
                     val pendingContinuation = PendingTriggersContinuation(
-                        decisionId = "pending-triggers-${java.util.UUID.randomUUID()}",
                         remainingTriggers = remainingTriggers
                     )
-                    // Push BELOW the TriggeredAbilityContinuation that was just pushed
-                    // by inserting at the bottom of what was just added
+                    // The question and its answer occupy one top suspension; keep the automatic
+                    // trigger queue beneath it so the current trigger completes first.
                     val stack = stateWithContinuations.continuationStack
-                    // The TriggeredAbilityContinuation is at the top; insert pending triggers below it
                     val newStack = stack.dropLast(1) + pendingContinuation + stack.last()
                     stateWithContinuations = stateWithContinuations.copy(continuationStack = newStack)
                 }
 
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     stateWithContinuations,
-                    result.pendingDecision!!,
                     allEvents + result.events
                 )
             }
@@ -249,8 +246,7 @@ class TriggerProcessor(
     ): ExecutionResult {
         val first = run.first()
         val ability = first.ability
-        val decisionId = "batch-may-${java.util.UUID.randomUUID()}"
-        val decision = BatchYesNoDecision(
+        val question = { decisionId: String -> BatchYesNoDecision(
             id = decisionId,
             // Same player the BatchKey was built on, so the auto-answer store is keyed identically
             // on the batched and single paths.
@@ -263,32 +259,22 @@ class TriggerProcessor(
                 abilityIdentity = state.triggerIdentityFromCurrentCardDefinition(first.sourceId, ability.id)
             ),
             count = run.size
-        )
+        ) }
 
         // Queue the triggers after the run first (deepest), then the batch frame on top, so the
         // batch resolves before the trailing triggers (APNAP order preserved).
-        var stateWithContinuations = state.withPendingDecision(decision)
+        var stateWithContinuations = state
         if (remainingTriggers.isNotEmpty()) {
             stateWithContinuations = stateWithContinuations.pushContinuation(
                 PendingTriggersContinuation(
-                    decisionId = "pending-triggers-${java.util.UUID.randomUUID()}",
                     remainingTriggers = remainingTriggers
                 )
             )
         }
-        stateWithContinuations = stateWithContinuations.pushContinuation(
-            BatchMayTriggerContinuation(decisionId = decisionId, triggers = run)
-        )
-
-        return ExecutionResult.paused(
-            stateWithContinuations,
-            decision,
-            priorEvents + DecisionRequestedEvent(
-                decisionId = decisionId,
-                playerId = first.controllerId,
-                decisionType = "BATCH_YES_NO",
-                prompt = decision.prompt
-            )
+        return stateWithContinuations.suspendForDecision(
+            question = question,
+            answer = BatchMayTriggerContinuation(triggers = run),
+            events = priorEvents,
         )
     }
 
@@ -419,6 +405,7 @@ class TriggerProcessor(
         val chooser = trigger.ability.effect.asMayDecide()?.decisionMaker ?: return trigger.controllerId
         val context = EffectContext(
             sourceId = trigger.sourceId,
+            objectReferences = trigger.objectReferences,
             controllerId = trigger.controllerId,
             triggeringEntityId = trigger.triggerContext.triggeringEntityId,
             triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
@@ -513,27 +500,18 @@ class TriggerProcessor(
             sourceName = sourceName,
             prompt = ability.descriptionOverride ?: ability.effect.description,
             phase = DecisionPhase.RESOLUTION,
-            abilityIdentity = abilityIdentity
+            abilityIdentity = abilityIdentity,
+            answer = MayTriggerContinuation(
+                trigger = trigger,
+                targetRequirement = targetRequirement
+            ),
         )
 
         if (!decisionResult.isPaused || decisionResult.pendingDecision == null) {
             return ExecutionResult.error(state, "Failed to create yes/no decision for may trigger")
         }
 
-        // Create continuation to resume with target selection if player says yes
-        val continuation = MayTriggerContinuation(
-            decisionId = decisionResult.pendingDecision.id,
-            trigger = trigger,
-            targetRequirement = targetRequirement
-        )
-
-        val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
-
-        return ExecutionResult.paused(
-            stateWithContinuation,
-            decisionResult.pendingDecision,
-            decisionResult.events.toList()
-        )
+        return decisionResult
     }
 
     /**
@@ -615,28 +593,19 @@ class TriggerProcessor(
             yesText = "Pay $manaCost",
             noText = "Don't pay",
             phase = DecisionPhase.RESOLUTION,
-            abilityIdentity = state.triggerIdentityFromCurrentCardDefinition(trigger.sourceId, ability.id)
+            abilityIdentity = state.triggerIdentityFromCurrentCardDefinition(trigger.sourceId, ability.id),
+            answer = MayPayManaTriggerContinuation(
+                trigger = trigger,
+                targetRequirement = targetRequirement,
+                manaCost = manaCost
+            ),
         )
 
         if (!decisionResult.isPaused || decisionResult.pendingDecision == null) {
             return ExecutionResult.error(state, "Failed to create yes/no decision for may pay mana trigger")
         }
 
-        // Create continuation to resume with mana source selection if player says yes
-        val continuation = MayPayManaTriggerContinuation(
-            decisionId = decisionResult.pendingDecision.id,
-            trigger = trigger,
-            targetRequirement = targetRequirement,
-            manaCost = manaCost
-        )
-
-        val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
-
-        return ExecutionResult.paused(
-            stateWithContinuation,
-            decisionResult.pendingDecision,
-            decisionResult.events.toList()
-        )
+        return decisionResult
     }
 
     /**
@@ -772,6 +741,7 @@ class TriggerProcessor(
             val evaluator = DynamicAmountEvaluator()
             val context = EffectContext(
                 sourceId = trigger.sourceId,
+            objectReferences = trigger.objectReferences,
                 controllerId = trigger.controllerId,
                 triggeringEntityId = trigger.triggerContext.triggeringEntityId,
                 triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
@@ -812,65 +782,56 @@ class TriggerProcessor(
             sourceName = trigger.sourceName,
             requirements = requirementInfos,
             legalTargets = allLegalTargets,
-            effectHint = effectHint
+            effectHint = effectHint,
+            answer = TriggeredAbilityContinuation(
+                sourceId = trigger.sourceId,
+                sourceName = trigger.sourceName,
+                sourceBattlefieldTimestamp = trigger.sourceBattlefieldTimestamp,
+                objectReferences = trigger.objectReferences,
+                controllerId = trigger.controllerId,
+                effect = ability.effect,
+                description = ability.description,
+                abilityIdentity = state.triggerIdentityFromCurrentCardDefinition(trigger.sourceId, ability.id),
+                triggerDamageAmount = trigger.triggerContext.damageAmount,
+                triggeringEntityId = trigger.triggerContext.triggeringEntityId,
+                triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+                elseEffect = ability.elseEffect,
+                targetRequirements = allRequirements,
+                triggerCounterCount = trigger.triggerContext.counterCount,
+                triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
+                triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
+                triggerLastKnownSubtypes = trigger.triggerContext.lastKnownSubtypes,
+                triggerLastKnownCardTypes = trigger.triggerContext.lastKnownCardTypes,
+                triggerLastKnownDamageDealtByPlayers =
+                    trigger.triggerContext.lastKnownDamageDealtByPlayers,
+                triggerLastKnownBlockingOrBlockedByIds =
+                    trigger.triggerContext.lastKnownBlockingOrBlockedByIds,
+                lastKnownPower = trigger.triggerContext.lastKnownPower,
+                lastKnownToughness = trigger.triggerContext.lastKnownToughness,
+                diedBatchTotalPower = trigger.triggerContext.diedBatchTotalPower,
+                triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
+                enchantedCreatureLastKnownPower = trigger.triggerContext.enchantedCreatureLastKnownPower,
+                triggerScryCount = trigger.triggerContext.scryCount,
+                triggerDiscardCount = trigger.triggerContext.discardedCardCount,
+                triggerDiscoverValue = trigger.triggerContext.discoverValue,
+                triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
+                triggerRecipientToughness = trigger.triggerContext.recipientToughnessAtDamage,
+                triggerManaSpentOnTriggeringSpell = trigger.triggerContext.manaSpentOnTriggeringSpell,
+                triggerColorsSpentOnTriggeringSpell = trigger.triggerContext.colorsSpentOnTriggeringSpell,
+                triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell,
+                triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
+                xValue = trigger.triggerContext.xValue,
+                carriedPipeline = trigger.carriedPipeline,
+                capturedEntityIds = trigger.triggerContext.capturedEntityIds ?: emptyList(),
+                interveningIf = ability.interveningIf
+            ),
         )
 
         if (!decisionResult.isPaused || decisionResult.pendingDecision == null) {
             return ExecutionResult.error(state, "Failed to create target decision")
         }
 
-        // Create continuation frame to remember this trigger
-        val continuation = TriggeredAbilityContinuation(
-            decisionId = decisionResult.pendingDecision.id,
-            sourceId = trigger.sourceId,
-            sourceName = trigger.sourceName,
-            sourceBattlefieldTimestamp = trigger.sourceBattlefieldTimestamp,
-            controllerId = trigger.controllerId,
-            effect = ability.effect,
-            description = ability.description,
-            abilityIdentity = state.triggerIdentityFromCurrentCardDefinition(trigger.sourceId, ability.id),
-            triggerDamageAmount = trigger.triggerContext.damageAmount,
-            triggeringEntityId = trigger.triggerContext.triggeringEntityId,
-            triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
-            elseEffect = ability.elseEffect,
-            targetRequirements = allRequirements,
-            triggerCounterCount = trigger.triggerContext.counterCount,
-            triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
-            triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
-            triggerLastKnownSubtypes = trigger.triggerContext.lastKnownSubtypes,
-            triggerLastKnownCardTypes = trigger.triggerContext.lastKnownCardTypes,
-            triggerLastKnownDamageDealtByPlayers =
-                trigger.triggerContext.lastKnownDamageDealtByPlayers,
-            triggerLastKnownBlockingOrBlockedByIds =
-                trigger.triggerContext.lastKnownBlockingOrBlockedByIds,
-            lastKnownPower = trigger.triggerContext.lastKnownPower,
-            lastKnownToughness = trigger.triggerContext.lastKnownToughness,
-            diedBatchTotalPower = trigger.triggerContext.diedBatchTotalPower,
-            triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
-            enchantedCreatureLastKnownPower = trigger.triggerContext.enchantedCreatureLastKnownPower,
-            triggerScryCount = trigger.triggerContext.scryCount,
-            triggerDiscardCount = trigger.triggerContext.discardedCardCount,
-            triggerDiscoverValue = trigger.triggerContext.discoverValue,
-            triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
-            triggerRecipientToughness = trigger.triggerContext.recipientToughnessAtDamage,
-            triggerManaSpentOnTriggeringSpell = trigger.triggerContext.manaSpentOnTriggeringSpell,
-            triggerColorsSpentOnTriggeringSpell = trigger.triggerContext.colorsSpentOnTriggeringSpell,
-            triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell,
-            triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
-            xValue = trigger.triggerContext.xValue,
-            carriedPipeline = trigger.carriedPipeline,
-            capturedEntityIds = trigger.triggerContext.capturedEntityIds ?: emptyList(),
-            interveningIf = ability.interveningIf
-        )
-
-        // Push the continuation onto the stack
-        val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
-
-        return ExecutionResult.paused(
-            stateWithContinuation,
-            decisionResult.pendingDecision,
-            decisionResult.events.toList()
-        )
+        return decisionResult
     }
 
     /**
@@ -891,6 +852,7 @@ class TriggerProcessor(
         val abilityComponent = TriggeredAbilityOnStackComponent(
             sourceId = trigger.sourceId,
             sourceBattlefieldTimestamp = trigger.sourceBattlefieldTimestamp,
+            objectReferences = trigger.objectReferences,
             sourceName = trigger.sourceName,
             controllerId = trigger.controllerId,
             effect = effectOverride ?: ability.effect,
@@ -1068,7 +1030,6 @@ class TriggerProcessor(
         val optionLabels = offerIndices.map { modal.modes[it].description } +
             (if (doneOffered) listOf(ModalEffectExecutor.DECLINE_MODE_LABEL) else emptyList())
 
-        val decisionId = java.util.UUID.randomUUID().toString()
         val pickNumber = selectedModeIndices.size + 1
         val alreadyPicked = if (selectedModeIndices.isEmpty()) "" else {
             "\nAlready picked: ${selectedModeIndices.joinToString("; ") { modal.modes[it].description }}"
@@ -1078,7 +1039,7 @@ class TriggerProcessor(
             "$basePrompt ($pickNumber of $chooseCount)$alreadyPicked"
         } else basePrompt
 
-        val decision = ChooseOptionDecision(
+        val question = { decisionId: String -> ChooseOptionDecision(
             id = decisionId,
             playerId = ability.controllerId,
             prompt = prompt,
@@ -1090,10 +1051,9 @@ class TriggerProcessor(
                 phase = DecisionPhase.TRIGGER
             ),
             options = optionLabels
-        )
+        ) }
 
         val continuation = TriggerModalModeSelectionContinuation(
-            decisionId = decisionId,
             ability = ability,
             outerTargets = outerTargets,
             outerTargetRequirements = outerTargetRequirements,
@@ -1111,18 +1071,7 @@ class TriggerProcessor(
             recordChosenModesThisTurn = modal.excludeModesChosenThisTurn
         )
 
-        return ExecutionResult.paused(
-            state.pushContinuation(continuation).withPendingDecision(decision),
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = ability.controllerId,
-                    decisionType = "CHOOSE_OPTION",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return state.suspendForDecision(question, continuation)
     }
 
     /**
@@ -1176,14 +1125,13 @@ class TriggerProcessor(
                 continue
             }
 
-            val decisionId = java.util.UUID.randomUUID().toString()
             val pickNumber = ordinal + 1
             val prompt = if (chosenModeIndices.size > 1) {
                 "Choose targets for ${ability.sourceName} — ${mode.description} ($pickNumber of ${chosenModeIndices.size})"
             } else {
                 "Choose targets for ${ability.sourceName} — ${mode.description}"
             }
-            val decision = ChooseTargetsDecision(
+            val question = { decisionId: String -> ChooseTargetsDecision(
                 id = decisionId,
                 playerId = ability.controllerId,
                 prompt = prompt,
@@ -1196,10 +1144,9 @@ class TriggerProcessor(
                 ),
                 targetRequirements = requirementInfos,
                 legalTargets = legalTargetsMap
-            )
+            ) }
 
             val continuation = TriggerModalTargetSelectionContinuation(
-                decisionId = decisionId,
                 ability = ability,
                 outerTargets = outerTargets,
                 outerTargetRequirements = outerTargetRequirements,
@@ -1212,18 +1159,7 @@ class TriggerProcessor(
                 recordChosenModesThisTurn = recordChosenModesThisTurn
             )
 
-            return ExecutionResult.paused(
-                state.pushContinuation(continuation).withPendingDecision(decision),
-                decision,
-                listOf(
-                    DecisionRequestedEvent(
-                        decisionId = decisionId,
-                        playerId = ability.controllerId,
-                        decisionType = "CHOOSE_TARGETS",
-                        prompt = decision.prompt
-                    )
-                )
-            )
+            return state.suspendForDecision(question, continuation)
         }
 
         return finalizeModalTrigger(
@@ -1415,6 +1351,7 @@ class TriggerProcessor(
         } else rawAmount
         val context = EffectContext(
             sourceId = trigger.sourceId,
+            objectReferences = trigger.objectReferences,
             controllerId = trigger.controllerId,
         )
         return DynamicAmountEvaluator().evaluate(state, resolvedAmount, context)
@@ -1507,6 +1444,7 @@ class TriggerProcessor(
                 val resolved = try {
                     val context = EffectContext(
                         sourceId = trigger.sourceId,
+            objectReferences = trigger.objectReferences,
                         controllerId = trigger.controllerId,
                         triggeringEntityId = trigger.triggerContext.triggeringEntityId,
                         triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
@@ -1573,6 +1511,7 @@ class TriggerProcessor(
         return try {
             val context = EffectContext(
                 sourceId = trigger.sourceId,
+            objectReferences = trigger.objectReferences,
                 controllerId = trigger.controllerId,
                 triggeringEntityId = trigger.triggerContext.triggeringEntityId,
                 triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,

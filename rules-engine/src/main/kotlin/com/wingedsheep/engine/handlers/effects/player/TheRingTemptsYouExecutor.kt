@@ -1,8 +1,8 @@
 package com.wingedsheep.engine.handlers.effects.player
 
+import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.DecisionPhase
-import com.wingedsheep.engine.core.DecisionRequestedEvent
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.RingTemptContinuation
 import com.wingedsheep.engine.core.RingTemptedEvent
@@ -15,7 +15,6 @@ import com.wingedsheep.engine.state.components.identity.RingBearerComponent
 import com.wingedsheep.engine.state.components.player.TheRingComponent
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.TheRingTemptsYouEffect
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -68,8 +67,7 @@ class TheRingTemptsYouExecutor : EffectExecutor<TheRingTemptsYouEffect> {
             )
         }
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = SelectCardsDecision(
+        val decision = { decisionId: String -> SelectCardsDecision(
             id = decisionId,
             playerId = temptedId,
             prompt = "The Ring tempts you — choose a creature to become your Ring-bearer",
@@ -82,32 +80,16 @@ class TheRingTemptsYouExecutor : EffectExecutor<TheRingTemptsYouEffect> {
             minSelections = 1,
             maxSelections = 1,
             useTargetingUI = true
-        )
+        ) }
 
         val continuation = RingTemptContinuation(
-            decisionId = decisionId,
             temptedPlayerId = temptedId,
             temptCount = newCount,
             sourceName = sourceName,
             candidates = candidates
         )
 
-        newState = newState
-            .withPendingDecision(decision)
-            .pushContinuation(continuation)
-
-        return EffectResult.paused(
-            newState,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = temptedId,
-                    decisionType = "SELECT_CARDS",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(newState.suspendForDecision(decision, continuation, emptyList()))
     }
 
     private fun currentBearer(state: GameState, ownerId: EntityId): EntityId? =

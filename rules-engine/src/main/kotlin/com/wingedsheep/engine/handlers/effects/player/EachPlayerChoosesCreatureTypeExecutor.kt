@@ -7,7 +7,6 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.scripting.effects.EachPlayerChoosesCreatureTypeEffect
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -37,8 +36,7 @@ class EachPlayerChoosesCreatureTypeExecutor : EffectExecutor<EachPlayerChoosesCr
         val firstPlayer = playerOrder.first()
         val remainingPlayers = playerOrder.drop(1)
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = ChooseOptionDecision(
+        val decision = { decisionId: String -> ChooseOptionDecision(
             id = decisionId,
             playerId = firstPlayer,
             prompt = "Choose a creature type",
@@ -48,11 +46,11 @@ class EachPlayerChoosesCreatureTypeExecutor : EffectExecutor<EachPlayerChoosesCr
                 phase = DecisionPhase.RESOLUTION
             ),
             options = allCreatureTypes
-        )
+        ) }
 
         val continuation = EachPlayerChoosesCreatureTypeContinuation(
-            decisionId = decisionId,
             sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
             sourceName = sourceName,
             controllerId = context.controllerId,
             currentPlayerId = firstPlayer,
@@ -62,20 +60,6 @@ class EachPlayerChoosesCreatureTypeExecutor : EffectExecutor<EachPlayerChoosesCr
             storeAs = effect.storeAs
         )
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = firstPlayer,
-                    decisionType = "CHOOSE_OPTION",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 }

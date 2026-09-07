@@ -50,17 +50,15 @@ class DeclareBlockersHandler(
             val triggers = triggerDetector.detectTriggers(result.newState, result.events)
             if (triggers.isNotEmpty()) {
                 val pendingTriggers = PendingTriggersContinuation(
-                    decisionId = "block-triggers-${java.util.UUID.randomUUID()}",
                     remainingTriggers = triggers
                 )
-                // Insert BELOW the top continuation so the pause resolves first, then
+                // Insert BELOW the active suspension so the question resolves first, then
                 // checkForMoreContinuations picks up the triggers afterwards.
                 val stack = result.newState.continuationStack
                 val newStack = stack.dropLast(1) + pendingTriggers + stack.last()
                 val stateWithTriggers = result.newState.copy(continuationStack = newStack)
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     stateWithTriggers,
-                    result.pendingDecision!!,
                     result.events
                 )
             }
@@ -77,9 +75,8 @@ class DeclareBlockersHandler(
             val triggerResult = triggerProcessor.processTriggers(result.newState, triggers)
 
             if (triggerResult.isPaused) {
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     triggerResult.state,
-                    triggerResult.pendingDecision!!,
                     result.events + triggerResult.events
                 )
             }

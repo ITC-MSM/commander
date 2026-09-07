@@ -62,22 +62,11 @@ class SecretBidExecutor(
 
         val prompt = "Secretly choose a number (you will lose that much life if you have the highest bid)"
 
-        val decisionResult = decisionHandler.createNumberDecision(
-            state = state,
-            playerId = playerId,
-            sourceId = context.sourceId,
-            sourceName = sourceName,
-            prompt = prompt,
-            minValue = 0,
-            maxValue = 99,
-            phase = DecisionPhase.RESOLUTION
-        )
-
         val remainingPlayers = playerOrder.drop(currentPlayerIndex + 1)
 
         val continuation = SecretBidContinuation(
-            decisionId = decisionResult.pendingDecision!!.id,
             sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
             sourceName = sourceName,
             controllerId = context.controllerId,
             currentPlayerId = playerId,
@@ -88,11 +77,20 @@ class SecretBidExecutor(
             tiedBidderEffect = effect.tiedBidderEffect
         )
 
-        val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
+        val decisionResult = decisionHandler.createNumberDecision(
+            state = state,
+            playerId = playerId,
+            sourceId = context.sourceId,
+            sourceName = sourceName,
+            prompt = prompt,
+            minValue = 0,
+            maxValue = 99,
+            phase = DecisionPhase.RESOLUTION,
+            answer = continuation
+        )
 
-        return EffectResult.paused(
-            stateWithContinuation,
-            decisionResult.pendingDecision,
+        return EffectResult.propagatePause(
+            decisionResult.state,
             decisionResult.events
         )
     }

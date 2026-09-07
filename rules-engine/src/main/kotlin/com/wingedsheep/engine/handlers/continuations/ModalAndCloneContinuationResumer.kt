@@ -94,14 +94,13 @@ class ModalAndCloneContinuationResumer(
         // More modes still need to be picked — present the next ChooseOptionDecision.
         if (newSelectedIndices.size < continuation.chooseCount && newAvailableIndices.isNotEmpty()) {
             val sourceName = continuation.sourceName ?: "modal spell"
-            val decisionId = java.util.UUID.randomUUID().toString()
             val prompt = "Choose a mode for $sourceName (${newSelectedIndices.size + 1} of ${continuation.chooseCount})"
             val nextCanDecline = newSelectedIndices.size >= continuation.minChooseCount
             val baseOptions = newAvailableIndices.map { continuation.modes[it].description }
             val decisionOptions = if (nextCanDecline) {
                 baseOptions + com.wingedsheep.engine.handlers.effects.composite.ModalEffectExecutor.DECLINE_MODE_LABEL
             } else baseOptions
-            val decision = ChooseOptionDecision(
+            val question = { decisionId: String -> ChooseOptionDecision(
                 id = decisionId,
                 playerId = continuation.controllerId,
                 prompt = prompt,
@@ -111,25 +110,15 @@ class ModalAndCloneContinuationResumer(
                     phase = DecisionPhase.RESOLUTION
                 ),
                 options = decisionOptions
-            )
+            ) }
             val nextContinuation = continuation.copy(
-                decisionId = decisionId,
                 selectedModeIndices = newSelectedIndices,
                 availableIndices = newAvailableIndices
             )
-            val stateWithDecision = stateAfterRecord.withPendingDecision(decision)
-            val stateWithContinuation = stateWithDecision.pushContinuation(nextContinuation)
-            return ExecutionResult.paused(
-                stateWithContinuation,
-                decision,
-                listOf(
-                    DecisionRequestedEvent(
-                        decisionId = decisionId,
-                        playerId = continuation.controllerId,
-                        decisionType = "CHOOSE_OPTION",
-                        prompt = decision.prompt
-                    )
-                )
+            return stateAfterRecord.suspendForDecision(
+                question = question,
+                answer = nextContinuation,
+                events = emptyList(),
             )
         }
 
@@ -162,6 +151,8 @@ class ModalAndCloneContinuationResumer(
             allowCancelBackToModesList = if (allowCancelBackToModes) continuation.modes else null,
             outerTargets = continuation.outerTargets,
             outerNamedTargets = continuation.outerNamedTargets,
+            pipeline = continuation.pipeline,
+            objectReferences = continuation.objectReferences,
             accumulatedEvents = emptyList(),
             checkForMore = checkForMore
         )
@@ -198,10 +189,11 @@ class ModalAndCloneContinuationResumer(
 
         val context = EffectContext(
             sourceId = continuation.sourceId,
+            objectReferences = continuation.objectReferences,
             controllerId = continuation.controllerId,
             xValue = continuation.xValue,
             targets = chosenTargets,
-            pipeline = PipelineState(namedTargets = EffectContext.buildNamedTargets(continuation.targetRequirements, chosenTargets)),
+            pipeline = continuation.pipeline.copy(namedTargets = continuation.pipeline.namedTargets + EffectContext.buildNamedTargets(continuation.targetRequirements, chosenTargets)),
             triggeringEntityId = continuation.triggeringEntityId
         )
 
@@ -402,19 +394,12 @@ class ModalAndCloneContinuationResumer(
             newState, spellId, spellComponent, finalCardComponent, copiedCardDef
         )
         newState = enterState
-        events.addAll(enterEvents)
+        events.addAll(enterEvents.map { event ->
+            if (event is ZoneChangeEvent && event.entityId == spellId && event.toZone == Zone.BATTLEFIELD)
+                event.copy(copyOfOriginalName = copyOfOriginalName) else event
+        })
 
         events.add(ResolvedEvent(spellId, finalCardComponent.name))
-        events.add(
-            ZoneChangeEvent(
-                spellId,
-                finalCardComponent.name,
-                null,
-                Zone.BATTLEFIELD,
-                ownerId,
-                copyOfOriginalName = copyOfOriginalName
-            )
-        )
 
         // "When you do, exile that card." (Superior Spider-Man) — exile the copied
         // graveyard card after the copy has been applied and the permanent has entered.
@@ -519,15 +504,15 @@ class ModalAndCloneContinuationResumer(
             continuation.fromZone,
             Zone.BATTLEFIELD,
             continuation.controllerId,
-            copyOfOriginalName = copyOfOriginalName
+            copyOfOriginalName = copyOfOriginalName,
+            oldObject = continuation.entryOldObject, newObject = continuation.entryNewObject,
         )
         val triggers = services.triggerDetector.detectTriggers(newState, listOf(zoneChangeEvent))
         if (triggers.isNotEmpty()) {
             val triggerResult = services.triggerProcessor.processTriggers(newState, triggers)
             if (triggerResult.isPaused) {
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     triggerResult.state,
-                    triggerResult.pendingDecision!!,
                     outEvents + zoneChangeEvent + triggerResult.events
                 )
             }
@@ -656,8 +641,8 @@ class ModalAndCloneContinuationResumer(
                         syntheticRiotRemaining = continuation.syntheticRiotRemaining - 1
                     )
                     if (repause != null && repause.isPaused) {
-                        return ExecutionResult.paused(
-                            repause.state, repause.pendingDecision!!, syntheticRiotEvents + repause.events
+                        return ExecutionResult.propagatePause(
+                            repause.state, syntheticRiotEvents + repause.events
                         )
                     }
                 }
@@ -696,15 +681,6 @@ class ModalAndCloneContinuationResumer(
         events.addAll(syntheticRiotEvents)
         events.addAll(enterEvents)
         events.add(ResolvedEvent(spellId, cardComponent.name))
-        events.add(
-            ZoneChangeEvent(
-                spellId,
-                cardComponent.name,
-                null,
-                Zone.BATTLEFIELD,
-                ownerId
-            )
-        )
 
         return checkForMore(newState, events)
     }
@@ -825,7 +801,8 @@ class ModalAndCloneContinuationResumer(
                             continuation.fromZone,
                             carryEvents = syntheticRiotEvents,
                             syntheticRiot = true,
-                            syntheticRiotRemaining = continuation.syntheticRiotRemaining - 1
+                            syntheticRiotRemaining = continuation.syntheticRiotRemaining - 1,
+                            entryOldObject = continuation.entryOldObject, entryNewObject = continuation.entryNewObject,
                         )
                     if (repause != null) return repause
                 }
@@ -844,7 +821,8 @@ class ModalAndCloneContinuationResumer(
 
         if (nextChoice != null) {
             val result = com.wingedsheep.engine.handlers.effects.PermanentEntryReplacements.pauseForEntersWithChoice(
-                newState, entityId, continuation.controllerId, cardComponent, nextChoice, continuation.fromZone
+                newState, entityId, continuation.controllerId, cardComponent, nextChoice, continuation.fromZone,
+                entryOldObject = continuation.entryOldObject, entryNewObject = continuation.entryNewObject,
             )
             if (result != null) return result
             // null means the chained choice couldn't be presented — fall through to fire triggers.
@@ -859,16 +837,16 @@ class ModalAndCloneContinuationResumer(
             cardComponent?.name ?: "Unknown",
             continuation.fromZone,
             Zone.BATTLEFIELD,
-            continuation.controllerId
+            continuation.controllerId,
+            oldObject = continuation.entryOldObject, newObject = continuation.entryNewObject,
         )
         val triggerEvents = listOf(zoneChangeEvent)
         val triggers = services.triggerDetector.detectTriggers(newState, triggerEvents)
         if (triggers.isNotEmpty()) {
             val triggerResult = services.triggerProcessor.processTriggers(newState, triggers)
             if (triggerResult.isPaused) {
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     triggerResult.state,
-                    triggerResult.pendingDecision!!,
                     syntheticRiotEvents + triggerResult.events
                 )
             }
@@ -919,7 +897,8 @@ class ModalAndCloneContinuationResumer(
             cardComponent?.name ?: "Unknown",
             continuation.fromZone,
             Zone.BATTLEFIELD,
-            continuation.controllerId
+            continuation.controllerId,
+            oldObject = continuation.entryOldObject, newObject = continuation.entryNewObject,
         )
         val triggerEvents = listOf(zoneChangeEvent)
         val triggers = services.triggerDetector.detectTriggers(newState, triggerEvents)
@@ -927,9 +906,8 @@ class ModalAndCloneContinuationResumer(
             val triggerResult = services.triggerProcessor.processTriggers(newState, triggers)
 
             if (triggerResult.isPaused) {
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     triggerResult.state,
-                    triggerResult.pendingDecision!!,
                     events + triggerResult.events
                 )
             }
@@ -994,15 +972,6 @@ class ModalAndCloneContinuationResumer(
         }
 
         events.add(ResolvedEvent(continuation.spellId, cardComponent?.name ?: "Unknown"))
-        events.add(
-            ZoneChangeEvent(
-                continuation.spellId,
-                cardComponent?.name ?: "Unknown",
-                null,
-                Zone.BATTLEFIELD,
-                continuation.ownerId
-            )
-        )
 
         return checkForMore(newState, events)
     }
@@ -1050,9 +1019,8 @@ class ModalAndCloneContinuationResumer(
             val triggerResult = services.triggerProcessor.processTriggers(castResult.newState, triggers)
 
             if (triggerResult.isPaused) {
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     triggerResult.state.withPriority(continuation.casterId),
-                    triggerResult.pendingDecision!!,
                     allEvents + triggerResult.events
                 )
             }
@@ -1146,15 +1114,6 @@ class ModalAndCloneContinuationResumer(
         events.addAll(enterEvents4)
         events.addAll(revealEvents)
         events.add(ResolvedEvent(spellId, cardComponent.name))
-        events.add(
-            ZoneChangeEvent(
-                spellId,
-                cardComponent.name,
-                null,
-                Zone.BATTLEFIELD,
-                ownerId
-            )
-        )
 
         return checkForMore(newState, events)
     }
@@ -1222,9 +1181,6 @@ class ModalAndCloneContinuationResumer(
         )
         events.addAll(enterEvents)
         events.add(ResolvedEvent(continuation.spellId, cardComponent.name))
-        events.add(ZoneChangeEvent(
-            continuation.spellId, cardComponent.name, null, Zone.BATTLEFIELD, continuation.ownerId
-        ))
         return checkForMore(enteredState, events)
     }
 
@@ -1304,15 +1260,6 @@ class ModalAndCloneContinuationResumer(
         newState = afterEnter
         events.addAll(enterEvents)
         events.add(ResolvedEvent(spellId, cardComponent.name))
-        events.add(
-            ZoneChangeEvent(
-                spellId,
-                cardComponent.name,
-                null,
-                Zone.BATTLEFIELD,
-                ownerId
-            )
-        )
 
         return checkForMore(newState, events)
     }
@@ -1393,9 +1340,8 @@ class ModalAndCloneContinuationResumer(
         // The mint can pause again (a devour creature that also has an as-enters choice); carry the
         // sacrifice events across that pause so they are not lost.
         if (minted.isPaused) {
-            return ExecutionResult.paused(
+            return ExecutionResult.propagatePause(
                 minted.state,
-                minted.pendingDecision!!,
                 sacrificeEvents + minted.events
             )
         }
@@ -1459,6 +1405,7 @@ class ModalAndCloneContinuationResumer(
 
         val context = EffectContext(
             sourceId = continuation.sourceId,
+            objectReferences = continuation.objectReferences,
             controllerId = continuation.controllerId,
         )
 
@@ -1535,6 +1482,18 @@ class ModalAndCloneContinuationResumer(
             return checkForMore(created.state, created.events.toList())
         }
 
+        // The token copy can open a question of its own — a printed "choose ... as this enters"
+        // (CR 614.12) or granted riot. Only one suspension may be installed at a time, so the next
+        // host prompt cannot be stacked on top of it; asking anyway trips the guard in
+        // `suspendForDecision`. Report it rather than throwing out of the action processor.
+        // Chaining the remaining prompts underneath that choice needs a continuation of its own.
+        if (created.isPaused) {
+            return ExecutionResult.error(
+                created.state,
+                "Cannot ask for the next Aura token host while the previous copy owes an as-enters choice"
+            )
+        }
+
         // More Aura copies owed — each gets its own host choice.
         val next = com.wingedsheep.engine.handlers.effects.token.AuraTokenHostChooser.pause(
             state = created.state,
@@ -1546,9 +1505,9 @@ class ModalAndCloneContinuationResumer(
             remaining = remaining,
             cardRegistry = services.cardRegistry,
         )
-        val nextDecision = next.pendingDecision
-            ?: return checkForMore(next.state, created.events.toList() + next.events.toList())
-        return ExecutionResult.paused(next.state, nextDecision, created.events.toList())
+        val events = created.events.toList() + next.events.toList()
+        if (next.pendingDecision == null) return checkForMore(next.state, events)
+        return ExecutionResult.propagatePause(next.state, events)
     }
 
     /**
@@ -1562,9 +1521,8 @@ class ModalAndCloneContinuationResumer(
         val sourceName = continuation.sourceName ?: "modal spell"
 
         val modeDescriptions = modes.map { it.description }
-        val decisionId = java.util.UUID.randomUUID().toString()
 
-        val decision = ChooseOptionDecision(
+        val question = { decisionId: String -> ChooseOptionDecision(
             id = decisionId,
             playerId = continuation.controllerId,
             prompt = "Choose a mode for $sourceName",
@@ -1574,34 +1532,25 @@ class ModalAndCloneContinuationResumer(
                 phase = DecisionPhase.RESOLUTION
             ),
             options = modeDescriptions
-        )
+        ) }
 
         val modalContinuation = ModalContinuation(
-            decisionId = decisionId,
             controllerId = continuation.controllerId,
             sourceId = continuation.sourceId,
+            objectReferences = continuation.objectReferences,
             sourceName = continuation.sourceName,
             modes = modes,
             xValue = continuation.xValue,
             triggeringEntityId = continuation.triggeringEntityId,
             outerTargets = continuation.outerTargets,
-            outerNamedTargets = continuation.outerNamedTargets
+            outerNamedTargets = continuation.outerNamedTargets,
+            pipeline = continuation.pipeline
         )
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(modalContinuation)
-
-        return ExecutionResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = continuation.controllerId,
-                    decisionType = "CHOOSE_OPTION",
-                    prompt = decision.prompt
-                )
-            )
+        return state.suspendForDecision(
+            question = question,
+            answer = modalContinuation,
+            events = emptyList(),
         )
     }
 
@@ -1629,6 +1578,7 @@ class ModalAndCloneContinuationResumer(
         // Build context preserving original targets so ContextTarget references still work
         val context = EffectContext(
             sourceId = continuation.sourceId,
+            objectReferences = continuation.objectReferences,
             controllerId = continuation.controllerId,
             targets = continuation.targets,
             triggeringEntityId = continuation.triggeringEntityId,
@@ -1677,7 +1627,9 @@ internal fun processChosenModeQueue(
     outerTargets: List<com.wingedsheep.engine.state.components.stack.ChosenTarget>,
     outerNamedTargets: Map<String, com.wingedsheep.engine.state.components.stack.ChosenTarget>,
     accumulatedEvents: List<GameEvent>,
-    checkForMore: CheckForMore
+    checkForMore: CheckForMore,
+    pipeline: PipelineState = PipelineState.EMPTY,
+    objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment()
 ): ExecutionResult {
     if (queue.isEmpty()) return checkForMore(state, accumulatedEvents)
 
@@ -1691,10 +1643,11 @@ internal fun processChosenModeQueue(
         // targets chosen by the enclosing spell/ability.
         val context = EffectContext(
             sourceId = sourceId,
+            objectReferences = objectReferences,
             controllerId = controllerId,
             xValue = xValue,
             targets = outerTargets,
-            pipeline = PipelineState(namedTargets = outerNamedTargets),
+            pipeline = pipeline.copy(namedTargets = pipeline.namedTargets + outerNamedTargets),
             triggeringEntityId = triggeringEntityId
         )
         return executeChosenModeWithTail(
@@ -1730,7 +1683,7 @@ internal fun processChosenModeQueue(
         return processChosenModeQueue(
             services, state, tail, controllerId, sourceId, sourceName, xValue,
             triggeringEntityId, allowCancelBackToModesList, outerTargets, outerNamedTargets,
-            accumulatedEvents, checkForMore
+            accumulatedEvents, checkForMore, pipeline, objectReferences
         )
     }
 
@@ -1742,10 +1695,11 @@ internal fun processChosenModeQueue(
             val chosenTargets = listOf(entityIdToChosenTarget(state, targets[0]))
             val context = EffectContext(
                 sourceId = sourceId,
+                objectReferences = objectReferences,
                 controllerId = controllerId,
                 xValue = xValue,
                 targets = chosenTargets,
-                pipeline = PipelineState(namedTargets = EffectContext.buildNamedTargets(head.targetRequirements, chosenTargets)),
+                pipeline = pipeline.copy(namedTargets = pipeline.namedTargets + EffectContext.buildNamedTargets(head.targetRequirements, chosenTargets)),
                 triggeringEntityId = triggeringEntityId
             )
             return executeChosenModeWithTail(
@@ -1760,9 +1714,8 @@ internal fun processChosenModeQueue(
     // knows which mode of a Choose-N modal ability they are targeting for. The tail
     // rides on the ModalTargetContinuation; resumeModalTarget re-enters via
     // executeChosenModeWithTail so a nested pause inside this mode still survives.
-    val decisionId = java.util.UUID.randomUUID().toString()
     val prompt = "Choose targets for $displayName — ${head.description}"
-    val decision = ChooseTargetsDecision(
+    val question = { decisionId: String -> ChooseTargetsDecision(
         id = decisionId,
         playerId = controllerId,
         prompt = prompt,
@@ -1774,10 +1727,9 @@ internal fun processChosenModeQueue(
         targetRequirements = requirementInfos,
         legalTargets = legalTargetsMap,
         canCancel = allowCancelBackToModesList != null && tail.isEmpty()
-    )
+    ) }
 
     val modalTargetContinuation = ModalTargetContinuation(
-        decisionId = decisionId,
         controllerId = controllerId,
         sourceId = sourceId,
         sourceName = sourceName,
@@ -1788,21 +1740,12 @@ internal fun processChosenModeQueue(
         triggeringEntityId = triggeringEntityId,
         remainingChosenModes = tail,
         outerTargets = outerTargets,
-        outerNamedTargets = outerNamedTargets
+        outerNamedTargets = outerNamedTargets,
+        pipeline = pipeline,
+        objectReferences = objectReferences
     )
 
-    val stateWithContinuation = state.withPendingDecision(decision).pushContinuation(modalTargetContinuation)
-
-    return ExecutionResult.paused(
-        stateWithContinuation,
-        decision,
-        accumulatedEvents + DecisionRequestedEvent(
-            decisionId = decisionId,
-            playerId = controllerId,
-            decisionType = "CHOOSE_TARGETS",
-            prompt = decision.prompt
-        )
-    )
+    return state.suspendForDecision(question, modalTargetContinuation, accumulatedEvents)
 }
 
 /**
@@ -1836,7 +1779,6 @@ private fun executeChosenModeWithTail(
     val stateForExecution = if (tail.isNotEmpty()) {
         state.pushContinuation(
             ModalChosenModeTailContinuation(
-                decisionId = "modal-chosen-tail-${java.util.UUID.randomUUID()}",
                 controllerId = controllerId,
                 sourceId = sourceId,
                 sourceName = sourceName,
@@ -1844,7 +1786,9 @@ private fun executeChosenModeWithTail(
                 triggeringEntityId = triggeringEntityId,
                 remainingChosenModes = tail,
                 outerTargets = outerTargets,
-                outerNamedTargets = outerNamedTargets
+                outerNamedTargets = outerNamedTargets,
+                pipeline = context.pipeline,
+                objectReferences = context.objectReferences
             )
         )
     } else state
@@ -1853,7 +1797,7 @@ private fun executeChosenModeWithTail(
     val events = accumulatedEvents + result.events
 
     if (result.isPaused) {
-        return ExecutionResult.paused(result.state, result.pendingDecision!!, events)
+        return ExecutionResult.propagatePause(result.state, events)
     }
     if (result.error != null) {
         return result.copy(events = events)
@@ -1864,6 +1808,7 @@ private fun executeChosenModeWithTail(
     return processChosenModeQueue(
         services, nextState, tail, controllerId, sourceId, sourceName, xValue,
         triggeringEntityId, allowCancelBackToModesList = null,
-        outerTargets, outerNamedTargets, events, checkForMore
+        outerTargets, outerNamedTargets, events, checkForMore,
+        context.pipeline, context.objectReferences.authorize(result.events)
     )
 }

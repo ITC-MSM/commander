@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.handlers.effects.token
 
+import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.ChooseTargetsDecision
 import com.wingedsheep.engine.core.CreateTokenCopyAuraHostContinuation
 import com.wingedsheep.engine.core.DecisionContext
@@ -13,7 +14,6 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfTargetEffect
-import java.util.UUID
 
 /**
  * Raises the "what does this Aura token enchant?" choice (CR 303.4h).
@@ -55,8 +55,7 @@ internal object AuraTokenHostChooser {
             return EffectResult.success(state)
         }
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = ChooseTargetsDecision(
+        val decision = { decisionId: String -> ChooseTargetsDecision(
             id = decisionId,
             playerId = controllerId,
             prompt = "Choose what the $auraName token enchants",
@@ -74,10 +73,9 @@ internal object AuraTokenHostChooser {
                 )
             ),
             legalTargets = mapOf(0 to hosts),
-        )
+        ) }
 
         val continuation = CreateTokenCopyAuraHostContinuation(
-            decisionId = decisionId,
             effect = effect,
             context = context,
             controllerId = controllerId,
@@ -86,11 +84,7 @@ internal object AuraTokenHostChooser {
             remaining = remaining,
         )
 
-        return EffectResult(
-            state = state.withPendingDecision(decision).pushContinuation(continuation),
-            events = emptyList(),
-            pendingDecision = decision,
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation, emptyList()))
     }
 
     /**
