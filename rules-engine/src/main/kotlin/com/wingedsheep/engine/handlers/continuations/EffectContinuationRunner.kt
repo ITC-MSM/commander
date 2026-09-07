@@ -31,7 +31,6 @@ class EffectContinuationRunner(
 
             val stateForExecution = if (stillRemaining.isNotEmpty()) {
                 val remainingContinuation = EffectContinuation(
-                    decisionId = "pending",
                     remainingEffects = stillRemaining,
                     effectContext = currentContext
                 )
@@ -54,9 +53,8 @@ class EffectContinuationRunner(
             }
 
             if (result.isPaused) {
-                return EffectResult.paused(
+                return EffectResult.propagatePause(
                     result.state,
-                    result.pendingDecision!!,
                     allEvents + result.events
                 )
             }
@@ -68,6 +66,7 @@ class EffectContinuationRunner(
                 result.state
             }
             allEvents.addAll(result.events)
+            currentContext = currentContext.authorizeObjectMoves(result.events)
 
             if (result.updatedCollections.isNotEmpty() ||
                 result.updatedSubtypeGroups.isNotEmpty() ||

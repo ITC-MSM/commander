@@ -10,7 +10,6 @@ import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.ReturnOneFromLinkedExileEffect
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -73,7 +72,6 @@ class ReturnOneFromLinkedExileExecutor : EffectExecutor<ReturnOneFromLinkedExile
         }
 
         // Multiple eligible cards — create a decision
-        val decisionId = UUID.randomUUID().toString()
 
         val cardInfoMap = playerCards.associateWith { cardId ->
             val container = state.getEntity(cardId)
@@ -88,7 +86,7 @@ class ReturnOneFromLinkedExileExecutor : EffectExecutor<ReturnOneFromLinkedExile
 
         val sourceName = sourceContainer.get<CardComponent>()?.name ?: "Unknown"
 
-        val decision = SelectCardsDecision(
+        val decision = { decisionId: String -> SelectCardsDecision(
             id = decisionId,
             playerId = activePlayerId,
             prompt = "Choose a card to return to the battlefield",
@@ -102,30 +100,15 @@ class ReturnOneFromLinkedExileExecutor : EffectExecutor<ReturnOneFromLinkedExile
             maxSelections = 1,
             ordered = false,
             cardInfo = cardInfoMap
-        )
+        ) }
 
         val continuation = ReturnFromLinkedExileContinuation(
-            decisionId = decisionId,
             playerId = activePlayerId,
             sourceId = sourceId,
             eligibleCards = playerCards
         )
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = activePlayerId,
-                    decisionType = "SELECT_CARDS",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 
     companion object {
@@ -161,7 +144,9 @@ class ReturnOneFromLinkedExileExecutor : EffectExecutor<ReturnOneFromLinkedExile
                     entityName = cardComponent.name,
                     fromZone = Zone.EXILE,
                     toZone = Zone.BATTLEFIELD,
-                    ownerId = ownerId
+                    ownerId = ownerId,
+                    oldObject = state.objectRef(cardId),
+                    newObject = newState.objectRef(cardId)
                 )
             )
 

@@ -16,7 +16,6 @@ import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.PayCost
 import com.wingedsheep.sdk.scripting.references.Player
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -97,16 +96,7 @@ class AnyPlayerMayPayExecutor(
 
         // No more players can pay - run the "none paid" branch (e.g., reanimate the card).
         if (index >= playerOrder.size) {
-            return runConsequence(
-                state,
-                effect.consequenceIfNonePaid,
-                context.controllerId,
-                sourceId,
-                context.pipeline.storedCollections,
-                context.triggeringEntityId,
-                context.triggeringPlayerId,
-                context.pipeline.iterationTarget
-            )
+            return runConsequence(state, effect.consequenceIfNonePaid, context)
         }
 
         val playerId = playerOrder[index]
@@ -158,6 +148,17 @@ class AnyPlayerMayPayExecutor(
 
         val prompt = "You may sacrifice ${cost.count} ${cost.filter.description}s to cause $sourceName to be sacrificed, or skip"
 
+        val continuation = anyPlayerMayPayContinuation(
+            effect, context,
+
+            currentPlayerId = playerId,
+            remainingPlayers = playerOrder.drop(currentIndex + 1),
+            sourceId = sourceId,
+            sourceName = sourceName,
+            requiredCount = cost.count,
+            filter = cost.filter
+        )
+
         val decisionResult = decisionHandler.createCardSelectionDecision(
             state = state,
             playerId = playerId,
@@ -169,25 +170,12 @@ class AnyPlayerMayPayExecutor(
             maxSelections = cost.count,
             ordered = false,
             phase = DecisionPhase.RESOLUTION,
-            useTargetingUI = true
+            useTargetingUI = true,
+            answer = continuation
         )
 
-        val continuation = anyPlayerMayPayContinuation(
-            effect, context,
-            decisionId = decisionResult.pendingDecision!!.id,
-            currentPlayerId = playerId,
-            remainingPlayers = playerOrder.drop(currentIndex + 1),
-            sourceId = sourceId,
-            sourceName = sourceName,
-            requiredCount = cost.count,
-            filter = cost.filter
-        )
-
-        val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decisionResult.pendingDecision,
+        return EffectResult.propagatePause(
+            decisionResult.state,
             decisionResult.events
         )
     }
@@ -203,10 +191,9 @@ class AnyPlayerMayPayExecutor(
         playerOrder: List<EntityId>,
         currentIndex: Int
     ): EffectResult {
-        val decisionId = UUID.randomUUID().toString()
         val prompt = "Pay ${cost.amount} life to prevent $sourceName's effect?"
 
-        val decision = YesNoDecision(
+        val decision = { decisionId: String -> YesNoDecision(
             id = decisionId,
             playerId = playerId,
             prompt = prompt,
@@ -217,11 +204,11 @@ class AnyPlayerMayPayExecutor(
             ),
             yesText = "Pay ${cost.amount} life",
             noText = "Don't pay"
-        )
+        ) }
 
         val continuation = anyPlayerMayPayContinuation(
             effect, context,
-            decisionId = decisionId,
+
             currentPlayerId = playerId,
             remainingPlayers = playerOrder.drop(currentIndex + 1),
             sourceId = sourceId,
@@ -230,27 +217,12 @@ class AnyPlayerMayPayExecutor(
             filter = com.wingedsheep.sdk.scripting.GameObjectFilter.Any
         )
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = playerId,
-                    decisionType = "YES_NO",
-                    prompt = prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation, emptyList()))
     }
 
     private fun anyPlayerMayPayContinuation(
         effect: AnyPlayerMayPayEffect,
         context: EffectContext,
-        decisionId: String,
         currentPlayerId: EntityId,
         remainingPlayers: List<EntityId>,
         sourceId: EntityId,
@@ -258,7 +230,6 @@ class AnyPlayerMayPayExecutor(
         requiredCount: Int,
         filter: com.wingedsheep.sdk.scripting.GameObjectFilter
     ): AnyPlayerMayPayContinuation = AnyPlayerMayPayContinuation(
-        decisionId = decisionId,
         currentPlayerId = currentPlayerId,
         remainingPlayers = remainingPlayers,
         sourceId = sourceId,
@@ -272,35 +243,17 @@ class AnyPlayerMayPayExecutor(
         storedCollections = context.pipeline.storedCollections,
         triggeringEntityId = context.triggeringEntityId,
         triggeringPlayerId = context.triggeringPlayerId,
-        iterationTarget = context.pipeline.iterationTarget
+        iterationTarget = context.pipeline.iterationTarget,
+        objectReferences = context.objectReferences
     )
 
     /**
      * Run one of the two consequence branches (may be null = nothing). Carries the pipeline's
      * stored collections so the effect can reference cards gathered earlier this resolution.
      */
-    private fun runConsequence(
-        state: GameState,
-        consequence: Effect?,
-        controllerId: EntityId,
-        sourceId: EntityId,
-        storedCollections: Map<String, List<EntityId>>,
-        triggeringEntityId: EntityId? = null,
-        triggeringPlayerId: EntityId? = null,
-        iterationTarget: EntityId? = null
-    ): EffectResult {
+    private fun runConsequence(state: GameState, consequence: Effect?, context: EffectContext): EffectResult {
         if (consequence == null) return EffectResult.success(state)
         val executor = executeEffect ?: return EffectResult.success(state)
-        val context = EffectContext(
-            sourceId = sourceId,
-            controllerId = controllerId,
-            pipeline = PipelineState(
-                storedCollections = storedCollections,
-                iterationTarget = iterationTarget
-            ),
-            triggeringEntityId = triggeringEntityId,
-            triggeringPlayerId = triggeringPlayerId
-        )
         return executor(state, consequence, context)
     }
 

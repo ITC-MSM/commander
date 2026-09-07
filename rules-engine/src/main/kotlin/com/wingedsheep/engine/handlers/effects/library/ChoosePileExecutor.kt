@@ -7,7 +7,6 @@ import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.effects.ChoosePileEffect
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -59,8 +58,7 @@ class ChoosePileExecutor : EffectExecutor<ChoosePileEffect> {
             )
         }
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = ChooseOptionDecision(
+        val decision = { decisionId: String -> ChooseOptionDecision(
             id = decisionId,
             playerId = deciderId,
             prompt = effect.prompt ?: "Choose a pile to keep",
@@ -74,12 +72,12 @@ class ChoosePileExecutor : EffectExecutor<ChoosePileEffect> {
                 0 to pileA,
                 1 to pileB
             )
-        )
+        ) }
 
         val continuation = ChoosePileContinuation(
-            decisionId = decisionId,
             playerId = deciderId,
             sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
             sourceName = sourceName,
             pileAIds = pileA,
             pileBIds = pileB,
@@ -90,20 +88,6 @@ class ChoosePileExecutor : EffectExecutor<ChoosePileEffect> {
             storedCollections = context.pipeline.storedCollections
         )
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = deciderId,
-                    decisionType = "CHOOSE_OPTION",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 }

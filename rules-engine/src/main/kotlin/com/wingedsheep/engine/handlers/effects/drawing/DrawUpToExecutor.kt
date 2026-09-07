@@ -55,6 +55,16 @@ class DrawUpToExecutor(
             }
         }
 
+        val continuation = DrawUpToContinuation(
+            playerId = playerId,
+            sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
+            sourceName = sourceName,
+            maxCards = actualMax,
+            originalMaxCards = effect.maxCards,
+            storeNotDrawnAs = effect.storeNotDrawnAs
+        )
+
         val decisionResult = decisionHandler.createNumberDecision(
             state = state,
             playerId = playerId,
@@ -63,24 +73,12 @@ class DrawUpToExecutor(
             prompt = "Choose how many cards to draw (0-$actualMax)",
             minValue = 0,
             maxValue = actualMax,
-            phase = DecisionPhase.RESOLUTION
+            phase = DecisionPhase.RESOLUTION,
+            answer = continuation
         )
 
-        val continuation = DrawUpToContinuation(
-            decisionId = decisionResult.pendingDecision!!.id,
-            playerId = playerId,
-            sourceId = context.sourceId,
-            sourceName = sourceName,
-            maxCards = actualMax,
-            originalMaxCards = effect.maxCards,
-            storeNotDrawnAs = effect.storeNotDrawnAs
-        )
-
-        val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decisionResult.pendingDecision,
+        return EffectResult.propagatePause(
+            decisionResult.state,
             decisionResult.events
         )
     }

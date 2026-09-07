@@ -41,7 +41,10 @@ class StateBasedActionChecker(
      * Check and apply all state-based actions until none apply.
      * Returns the new state and all events that occurred.
      */
-    fun checkAndApply(state: GameState): ExecutionResult {
+    fun checkAndApply(
+        state: GameState,
+        pendingTriggerSources: Set<com.wingedsheep.engine.state.ObjectRef> = emptySet()
+    ): ExecutionResult {
         var currentState = state
         val allEvents = mutableListOf<GameEvent>()
 
@@ -66,13 +69,12 @@ class StateBasedActionChecker(
                 return ExecutionResult.success(drawnState, allEvents + drawEvent)
             }
 
-            val result = checkOnce(currentState)
+            val result = checkOnce(currentState, pendingTriggerSources)
 
             // If an SBA needs player input (e.g., legend rule choice), return paused
             if (result.isPaused) {
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     result.state,
-                    result.pendingDecision!!,
                     allEvents + result.events
                 )
             }
@@ -90,7 +92,10 @@ class StateBasedActionChecker(
     /**
      * Check state-based actions once by running all registered checks in order.
      */
-    private fun checkOnce(state: GameState): ExecutionResult {
+    private fun checkOnce(
+        state: GameState,
+        pendingTriggerSources: Set<com.wingedsheep.engine.state.ObjectRef>
+    ): ExecutionResult {
         var newState = state
         val events = mutableListOf<GameEvent>()
 
@@ -98,13 +103,12 @@ class StateBasedActionChecker(
             // `state` is the pass-start snapshot: everything this pass performs is one
             // simultaneous event (CR 704.3), so a check that must see the battlefield as it
             // stood before the batch started gets it rather than reconstructing it.
-            val result = check.check(newState, state)
+            val result = check.check(newState, state, pendingTriggerSources)
 
             if (result.isPaused) {
                 // Return paused with events accumulated so far + this check's events
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     result.state,
-                    result.pendingDecision!!,
                     events + result.events
                 )
             }

@@ -31,7 +31,6 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class CounterUnlessPaysContinuation(
-    override val decisionId: String,
     val payingPlayerId: EntityId,
     val spellEntityId: EntityId,
     val manaCost: ManaCost,
@@ -39,8 +38,9 @@ data class CounterUnlessPaysContinuation(
     val sourceName: String?,
     val counterDestination: CounterDestination = CounterDestination.Graveyard,
     val controllerId: EntityId? = null,
-    val onPaid: Effect? = null
-) : ContinuationFrame
+    val onPaid: Effect? = null,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after the controller decides whether to pay a mana cost for an optional
@@ -59,13 +59,12 @@ data class CounterUnlessPaysContinuation(
  */
 @Serializable
 data class MayPayManaContinuation(
-    override val decisionId: String,
     val playerId: EntityId,
     val sourceName: String?,
     val manaCost: ManaCost,
     val effect: Effect,
     val effectContext: EffectContext
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the controller selects mana sources to pay a "you may pay" cost
@@ -81,7 +80,6 @@ data class MayPayManaContinuation(
  */
 @Serializable
 data class MayPayManaSelectionContinuation(
-    override val decisionId: String,
     val playerId: EntityId,
     val sourceName: String?,
     val manaCost: ManaCost,
@@ -104,7 +102,7 @@ data class MayPayManaSelectionContinuation(
      * optional payment where declining simply does nothing.
      */
     val otherwise: Effect? = null
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the controller chooses an X value for "you may pay {X}" effects.
@@ -116,13 +114,12 @@ data class MayPayManaSelectionContinuation(
  */
 @Serializable
 data class MayPayXContinuation(
-    override val decisionId: String,
     val playerId: EntityId,
     val sourceName: String?,
     val effect: Effect,
     val maxX: Int,
     val effectContext: EffectContext
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the payer names how many times to pay a
@@ -137,12 +134,11 @@ data class MayPayXContinuation(
  */
 @Serializable
 data class PayManaCostRepeatedlyContinuation(
-    override val decisionId: String,
     val playerId: EntityId,
     val cost: ManaCost,
     val maxTimes: Int,
     val storeCountAs: String
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the controller decides whether to pay a mana cost for a triggered
@@ -157,11 +153,10 @@ data class PayManaCostRepeatedlyContinuation(
  */
 @Serializable
 data class MayPayManaTriggerContinuation(
-    override val decisionId: String,
     val trigger: PendingTrigger,
     val targetRequirement: TargetRequirement,
     val manaCost: ManaCost
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the controller selects mana sources to pay a "counter unless pays" cost.
@@ -179,7 +174,6 @@ data class MayPayManaTriggerContinuation(
  */
 @Serializable
 data class CounterUnlessPaysManaSelectionContinuation(
-    override val decisionId: String,
     val payingPlayerId: EntityId,
     val spellEntityId: EntityId,
     val manaCost: ManaCost,
@@ -205,8 +199,9 @@ data class CounterUnlessPaysManaSelectionContinuation(
      * of the generic, via the shared waterbend payment machinery) before paying the remainder with
      * mana sources.
      */
-    val waterbend: Boolean = false
-) : ContinuationFrame
+    val waterbend: Boolean = false,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Resume after the controller selects mana sources to pay a cost for a triggered
@@ -222,13 +217,12 @@ data class CounterUnlessPaysManaSelectionContinuation(
  */
 @Serializable
 data class ManaSourceSelectionContinuation(
-    override val decisionId: String,
     val trigger: PendingTrigger,
     val targetRequirement: TargetRequirement,
     val manaCost: ManaCost,
     val availableSources: List<ManaSourceOption>,
     val autoPaySuggestion: List<EntityId>
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the controller decides whether to pay a life cost
@@ -247,7 +241,6 @@ data class ManaSourceSelectionContinuation(
  */
 @Serializable
 data class CounterUnlessPaysLifeContinuation(
-    override val decisionId: String,
     val payingPlayerId: EntityId,
     val spellEntityId: EntityId,
     val lifeCost: Int,
@@ -257,7 +250,7 @@ data class CounterUnlessPaysLifeContinuation(
     val remainingWardParts: List<WardCost> = emptyList(),
     /** See [CounterUnlessPaysManaSelectionContinuation.wardSourceId]. */
     val wardSourceId: EntityId? = null
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the controller decides whether to discard cards
@@ -273,7 +266,6 @@ data class CounterUnlessPaysLifeContinuation(
  */
 @Serializable
 data class CounterUnlessDiscardContinuation(
-    override val decisionId: String,
     val payingPlayerId: EntityId,
     val spellEntityId: EntityId,
     val count: Int,
@@ -285,7 +277,7 @@ data class CounterUnlessDiscardContinuation(
     val remainingWardParts: List<WardCost> = emptyList(),
     /** See [CounterUnlessPaysManaSelectionContinuation.wardSourceId]. */
     val wardSourceId: EntityId? = null
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the controller chooses which permanent(s) to sacrifice to prevent
@@ -304,7 +296,6 @@ data class CounterUnlessDiscardContinuation(
  */
 @Serializable
 data class CounterUnlessSacrificeContinuation(
-    override val decisionId: String,
     val payingPlayerId: EntityId,
     val spellEntityId: EntityId,
     val filter: GameObjectFilter,
@@ -315,7 +306,7 @@ data class CounterUnlessSacrificeContinuation(
     val remainingWardParts: List<WardCost> = emptyList(),
     /** See [CounterUnlessPaysManaSelectionContinuation.wardSourceId]. */
     val wardSourceId: EntityId? = null
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the controller chooses which graveyard cards to exile to collect evidence
@@ -338,7 +329,6 @@ data class CounterUnlessSacrificeContinuation(
  */
 @Serializable
 data class CounterUnlessCollectEvidenceContinuation(
-    override val decisionId: String,
     val payingPlayerId: EntityId,
     val spellEntityId: EntityId,
     val amount: Int,
@@ -348,7 +338,7 @@ data class CounterUnlessCollectEvidenceContinuation(
     val remainingWardParts: List<WardCost> = emptyList(),
     /** See [CounterUnlessPaysManaSelectionContinuation.wardSourceId]. */
     val wardSourceId: EntityId? = null
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the controller decides whether to take counters on themselves to prevent their
@@ -370,7 +360,6 @@ data class CounterUnlessCollectEvidenceContinuation(
  */
 @Serializable
 data class CounterUnlessPlayerCountersContinuation(
-    override val decisionId: String,
     val payingPlayerId: EntityId,
     val spellEntityId: EntityId,
     val counterType: String,
@@ -380,7 +369,7 @@ data class CounterUnlessPlayerCountersContinuation(
     val remainingWardParts: List<WardCost> = emptyList(),
     /** See [CounterUnlessPaysManaSelectionContinuation.wardSourceId]. */
     val wardSourceId: EntityId? = null
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Resume after the controller picks **which** of a disjunctive ward cost's options to pay
@@ -401,7 +390,6 @@ data class CounterUnlessPlayerCountersContinuation(
  */
 @Serializable
 data class WardCostChoiceContinuation(
-    override val decisionId: String,
     val payingPlayerId: EntityId,
     val spellEntityId: EntityId,
     val options: List<WardCost>,
@@ -410,7 +398,7 @@ data class WardCostChoiceContinuation(
     val remainingWardParts: List<WardCost> = emptyList(),
     /** See [CounterUnlessPaysManaSelectionContinuation.wardSourceId]. */
     val wardSourceId: EntityId? = null
-) : ContinuationFrame
+) : AnswerContinuation
 
 /**
  * Information about a mana source available for manual selection.
@@ -456,7 +444,6 @@ data class ManaSourceOption(
  */
 @Serializable
 data class WardTapPermanentsSubCostContinuation(
-    override val decisionId: String,
     val payingPlayerId: EntityId,
     val spellEntityId: EntityId,
     val manaCost: com.wingedsheep.sdk.core.ManaCost,
@@ -475,8 +462,9 @@ data class WardTapPermanentsSubCostContinuation(
      *  components of an enclosing composite ward cost, charged once this mana part is fully paid. */
     val remainingWardParts: List<WardCost> = emptyList(),
     /** See [CounterUnlessPaysManaSelectionContinuation.wardSourceId]. */
-    val wardSourceId: EntityId? = null
-) : ContinuationFrame
+    val wardSourceId: EntityId? = null,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Continuation for AddDynamicManaEffect.
@@ -493,15 +481,15 @@ data class WardTapPermanentsSubCostContinuation(
  */
 @Serializable
 data class AddDynamicManaContinuation(
-    override val decisionId: String,
     val playerId: EntityId,
     val sourceId: EntityId?,
     val sourceName: String?,
     val totalAmount: Int,
     val firstColor: Color,
     val secondColor: Color,
-    val restriction: ManaRestriction? = null
-) : ContinuationFrame
+    val restriction: ManaRestriction? = null,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Continuation for [com.wingedsheep.sdk.scripting.effects.AddDynamicManaEffect] when the
@@ -516,27 +504,25 @@ data class AddDynamicManaContinuation(
  */
 @Serializable
 data class AddManaPipsContinuation(
-    override val decisionId: String,
     val playerId: EntityId,
     val sourceId: EntityId?,
     val sourceName: String?,
     val remainingPips: Int,
     val allowedColors: Set<Color>,
-    val restriction: ManaRestriction? = null
-) : ContinuationFrame
+    val restriction: ManaRestriction? = null,
+    val objectReferences: com.wingedsheep.engine.handlers.ObjectReferenceEnvironment = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(),
+) : AnswerContinuation
 
 /**
  * Restores a mana-payment window that was set aside so the player could activate a mana ability
  * inside it (CR 605.3a).
  *
- * Pushed by [com.wingedsheep.engine.mechanics.mana.ManaPaymentWindow.suspend] on top of the payment
- * continuation the window belongs to, so a decision the mana ability raises for itself (a color
- * choice for Birds of Paradise, a Fertile Ground tap bonus) nests above this frame and the window
- * is re-raised only once the ability has fully resolved. Carries the decision verbatim; the
- * auto-resumer refreshes it against the post-activation board before re-raising it.
+ * [com.wingedsheep.engine.mechanics.mana.ManaPaymentWindow.suspend] replaces the payment suspension
+ * with this automatic frame, retaining the complete question/answer pair inside it. A decision
+ * raised by the mana ability nests above this frame. After it resolves, the auto-resumer restores
+ * the original suspension with its question refreshed against the post-activation board.
  */
 @Serializable
 data class ReopenManaPaymentDecisionContinuation(
-    override val decisionId: String,
-    val decision: SelectManaSourcesDecision
-) : ContinuationFrame
+    val suspension: Suspension
+) : AutomaticContinuation

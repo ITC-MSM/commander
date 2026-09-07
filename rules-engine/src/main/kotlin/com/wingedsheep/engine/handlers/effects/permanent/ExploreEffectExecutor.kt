@@ -22,7 +22,6 @@ import com.wingedsheep.sdk.scripting.effects.ExploreEffect
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -129,8 +128,7 @@ class ExploreEffectExecutor(
 
             val (stateAfterCounter, counterEvents) = addPlusOneCounter(stateWithRevealed, exploringCreatureId, context)
 
-            val decisionId = UUID.randomUUID().toString()
-            val decision = YesNoDecision(
+            val decision = { decisionId: String -> YesNoDecision(
                 id = decisionId,
                 playerId = explorerId,
                 prompt = "Put $topCardName back on top of your library? (No = graveyard)",
@@ -141,7 +139,7 @@ class ExploreEffectExecutor(
                 ),
                 yesText = "Library (top)",
                 noText = "Graveyard"
-            )
+            ) }
 
             // Defer the explored event to after the top/graveyard move resolves (CR 701.44b): a
             // game event emitted in the paused batch below does not reliably fire watcher triggers,
@@ -151,7 +149,6 @@ class ExploreEffectExecutor(
                 revealedCardWasLand = false
             )
             val continuation = MayAbilityContinuation(
-                decisionId = decisionId,
                 playerId = explorerId,
                 sourceName = sourceName,
                 effectIfYes = CompositeEffect(listOf(
@@ -172,22 +169,7 @@ class ExploreEffectExecutor(
                 effectContext = context
             )
 
-            val stateWithContinuation = stateAfterCounter
-                .withPendingDecision(decision)
-                .pushContinuation(continuation)
-
-            EffectResult.paused(
-                stateWithContinuation,
-                decision,
-                listOf(revealEvent) + counterEvents + listOf(
-                    DecisionRequestedEvent(
-                        decisionId = decisionId,
-                        playerId = explorerId,
-                        decisionType = "YES_NO",
-                        prompt = decision.prompt
-                    )
-                )
-            )
+            EffectResult.from(stateAfterCounter.suspendForDecision(decision, continuation, listOf(revealEvent) + counterEvents))
         }
     }
 

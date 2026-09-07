@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.handlers.actions.land
 
 import com.wingedsheep.engine.core.ExecutionResult
+import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.PlayLand
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.event.TriggerDetector
@@ -181,9 +182,8 @@ class PlayLandHandler(
         // An SBA that needs input (the legend rule's "which one do you keep?") pauses the action;
         // the land is already on the battlefield, so the decision resolves against the real board.
         if (sbaResult.isPaused) {
-            return ExecutionResult.paused(
+            return ExecutionResult.propagatePause(
                 sbaResult.state,
-                sbaResult.pendingDecision!!,
                 played.events + sbaResult.events,
             )
         }
@@ -284,6 +284,7 @@ class PlayLandHandler(
 
         newState = com.wingedsheep.engine.handlers.effects.BattlefieldEntry
             .place(newState, action.playerId, action.cardId)
+        val enteredObject = newState.objectRef(action.cardId)
 
         // Lands bypass ZoneTransitionService, which is where every other zone-change path
         // stamps EnteredThisTurnComponent (cleared again at the controller's next untap step,
@@ -443,6 +444,8 @@ class PlayLandHandler(
                     fromZone,
                     Zone.BATTLEFIELD,
                     action.playerId,
+                    oldObject = state.objectRef(action.cardId),
+                    newObject = enteredObject,
                 )
                 val onEnterEvents = mutableListOf<com.wingedsheep.engine.core.GameEvent>(zoneChangeEvent)
                 onEnterEvents.addAll(entersWithEvents)
@@ -453,12 +456,15 @@ class PlayLandHandler(
                 val effectContext = EffectContext(
                     sourceId = action.cardId,
                     controllerId = action.playerId,
+                    objectReferences = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(
+                        captured = true, origin = enteredObject, source = enteredObject,
+                        resolutionKey = "entry:${action.cardId}:${enteredObject?.generation}"
+                    ),
                 )
                 val effectResult = effectExecutor(newState, onEnter.effect, effectContext)
                 if (effectResult.isPaused) {
-                    return ExecutionResult.paused(
+                    return ExecutionResult.propagatePause(
                         effectResult.state,
-                        effectResult.pendingDecision!!,
                         onEnterEvents + effectResult.events,
                     )
                 }
@@ -471,7 +477,7 @@ class PlayLandHandler(
                     val triggerResult = triggerProcessor.processTriggers(newState, triggers)
                     val allEvents = onEnterEvents + triggerResult.events
                     if (triggerResult.isPaused) {
-                        return ExecutionResult.paused(triggerResult.state, triggerResult.pendingDecision!!, allEvents)
+                        return ExecutionResult.propagatePause(triggerResult.state, allEvents)
                     }
                     return ExecutionResult.success(triggerResult.newState, allEvents)
                 }
@@ -514,6 +520,8 @@ class PlayLandHandler(
                         cardComponent = cardComponent,
                         effect = entersAsCopy,
                         fromZone = fromZone,
+                        entryOldObject = state.objectRef(action.cardId),
+                        entryNewObject = enteredObject,
                         carryEvents = listOfNotNull(riderPlayEvent, landPlayedEvent),
                     )
                 if (result != null) return result
@@ -553,33 +561,37 @@ class PlayLandHandler(
                         cardComponent.name,
                         fromZone,
                         Zone.BATTLEFIELD,
-                        action.playerId
+                        action.playerId,
+                        oldObject = state.objectRef(action.cardId),
+                        newObject = enteredObject,
                     )
                     val events = listOf(zoneChangeEvent) + entersWithEvents + listOfNotNull(riderPlayEvent, landPlayedEvent)
                     newState = newState.tick()
 
-                    val decisionId = "pay-life-or-enter-tapped-${action.cardId.value}"
-                    val decision = com.wingedsheep.engine.core.YesNoDecision(
-                        id = decisionId,
-                        playerId = action.playerId,
-                        prompt = "Pay ${entersTapped.payLifeCost} life to have ${cardComponent.name} enter untapped?",
-                        context = com.wingedsheep.engine.core.DecisionContext(
-                            sourceId = action.cardId,
-                            sourceName = cardComponent.name,
-                            phase = com.wingedsheep.engine.core.DecisionPhase.RESOLUTION
-                        )
-                    )
                     val continuation = com.wingedsheep.engine.core.PayLifeOrEnterTappedLandContinuation(
-                        decisionId = decisionId,
                         landId = action.cardId,
                         controllerId = action.playerId,
                         lifeCost = entersTapped.payLifeCost!!,
-                        fromZone = fromZone
+                        fromZone = fromZone,
+                        entryOldObject = state.objectRef(action.cardId),
+                        entryNewObject = enteredObject,
                     )
-                    val pausedState = newState
-                        .pushContinuation(continuation)
-                        .withPendingDecision(decision)
-                    return ExecutionResult.paused(pausedState, decision, events)
+                    return newState.suspendForDecision(
+                        question = { decisionId ->
+                            com.wingedsheep.engine.core.YesNoDecision(
+                                id = decisionId,
+                                playerId = action.playerId,
+                                prompt = "Pay ${entersTapped.payLifeCost} life to have ${cardComponent.name} enter untapped?",
+                                context = com.wingedsheep.engine.core.DecisionContext(
+                                    sourceId = action.cardId,
+                                    sourceName = cardComponent.name,
+                                    phase = com.wingedsheep.engine.core.DecisionPhase.RESOLUTION
+                                )
+                            )
+                        },
+                        answer = continuation,
+                        events = events
+                    )
                 } else {
                     val shouldEnterTapped = if (entersTapped.unlessCondition != null) {
                         // Conditional: enters tapped UNLESS condition is met
@@ -639,7 +651,9 @@ class PlayLandHandler(
                     cardComponent.name,
                     fromZone,
                     Zone.BATTLEFIELD,
-                    action.playerId
+                    action.playerId,
+                    oldObject = state.objectRef(action.cardId),
+                    newObject = enteredObject,
                 )
                 val events = listOf(zoneChangeEvent) + entersWithEvents + listOfNotNull(riderPlayEvent, landPlayedEvent)
                 newState = newState.tick()
@@ -655,6 +669,8 @@ class PlayLandHandler(
                         cardComponent = cardComponent,
                         choice = firstChoice,
                         fromZone = fromZone,
+                        entryOldObject = state.objectRef(action.cardId),
+                        entryNewObject = enteredObject,
                         carryEvents = events,
                         cardNameOptions = if (firstChoice.choiceType == ChoiceType.CARD_NAME) {
                             cardRegistry.cardNamesIn(firstChoice.cardNamePool).toList()
@@ -677,7 +693,9 @@ class PlayLandHandler(
             cardComponent.name,
             fromZone,
             Zone.BATTLEFIELD,
-            action.playerId
+            action.playerId,
+            oldObject = state.objectRef(action.cardId),
+            newObject = enteredObject,
         )
 
         val events = listOf(zoneChangeEvent) + entersWithEvents + listOfNotNull(riderPlayEvent, landPlayedEvent)
@@ -689,9 +707,8 @@ class PlayLandHandler(
             val triggerResult = triggerProcessor.processTriggers(newState, triggers)
 
             if (triggerResult.isPaused) {
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     triggerResult.state,
-                    triggerResult.pendingDecision!!,
                     events + triggerResult.events
                 )
             }

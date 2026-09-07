@@ -59,6 +59,12 @@ val BreOfClanStoutarm = card("Bre of Clan Stoutarm") {
     // less than or equal to the amount of life you gained this turn.
     // Otherwise, put it into your hand.
     triggeredAbility {
+        // Every road out of the "may cast" ends in your hand — the mana value being too high, and
+        // declining the offered cast — so both branches below move the same stored card the same way.
+        val nonlandToHand = MoveCollectionEffect(
+            from = "nonland",
+            destination = CardDestination.ToZone(Zone.HAND)
+        )
         trigger = Triggers.YourEndStep
         interveningIf = Conditions.YouGainedLifeThisTurn
         effect = Effects.Composite(listOf(
@@ -82,15 +88,19 @@ val BreOfClanStoutarm = card("Bre of Clan Stoutarm") {
                 ),
                 // MV ≤ life gained: you may cast it for free *while this ability resolves* (the
                 // printed ruling — you can't wait to cast it later), so cast inline from exile
-                // rather than granting deferred may-play permission. Declining leaves it in exile.
-                effect = MayEffect(Effects.CastFromCollectionWithoutPayingCost("nonland")),
-                // Otherwise (MV > life gained), put the nonland into your hand. The "Otherwise" is
-                // tied to the mana-value comparison, not to declining the cast — cf. Solstice
-                // Revelations' distinct "if you don't cast that card this way" wording.
-                elseEffect = MoveCollectionEffect(
-                    from = "nonland",
-                    destination = CardDestination.ToZone(Zone.HAND)
-                )
+                // rather than granting deferred may-play permission.
+                effect = MayEffect(
+                    Effects.CastFromCollectionWithoutPayingCost("nonland"),
+                    otherwise = nonlandToHand
+                ),
+                // "Otherwise" covers every way you don't cast it — the mana value being too high,
+                // and declining the offer above. Matter Reshaper prints the same shape ("You may put
+                // that card onto the battlefield if it's a permanent card with mana value 3 or less.
+                // Otherwise, put that card into your hand.") and is ruled "If you don't put the card
+                // onto the battlefield for any reason, you put the card into your hand." Cf. Fecund
+                // Greenshell and Aid from the Cowl, both ruled the same way. Nothing is ever left
+                // stranded in exile.
+                elseEffect = nonlandToHand
             )
         ))
     }

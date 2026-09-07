@@ -2,17 +2,17 @@
 
 **Set Size:** 286 cards
 **Release Date:** October 12, 2007
-**Implemented:** 251 / 286
+**Implemented:** 261 / 286
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 49    | 43   |
-| Blue       | 49    | 39   |
-| Black      | 49    | 42   |
+| Blue       | 49    | 41   |
+| Black      | 49    | 44   |
 | Red        | 49    | 42   |
-| Green      | 49    | 41   |
+| Green      | 49    | 45   |
 | Multicolor | 8     | 7    |
 | Artifact   | 12    | 11   |
-| Land       | 21    | 16   |
+| Land       | 21    | 21   |
 
 > Verify status anytime with `scripts/card-status --set LRW` (and `--list`). That command's count is authoritative — keep this file's `Implemented:` line in sync (`just fix-backlog`) as boxes are checked. The set's mechanics are catalogued in [`mechanics.md`](mechanics.md).
 
@@ -54,7 +54,7 @@
 - [x] Oaken Brawler
 - [x] Oblivion Ring
 - [x] Plover Knights
-- [ ] Pollen Lullaby
+- [x] Pollen Lullaby
 - [ ] Purity
 - [x] Sentry Oak
 - [x] Shields of Velis Vel
@@ -72,10 +72,10 @@
 ### Blue
 - [x] Aethersnipe
 - [x] Amoeboid Changeling
-- [ ] Aquitect's Will
+- [x] Aquitect's Will
 - [x] Benthicore
-- [ ] Broken Ambitions
-- [ ] Captivating Glance
+- [x] Broken Ambitions
+- [x] Captivating Glance
 - [x] Cryptic Command
 - [x] Deeptread Merrow
 - [x] Drowner of Secrets
@@ -101,8 +101,8 @@
 - [x] Pestermite
 - [x] Ponder
 - [x] Protective Bubble
-- [ ] Ringskipper
-- [ ] Scattering Stroke
+- [x] Ringskipper
+- [x] Scattering Stroke
 - [x] Scion of Oona
 - [x] Sentinels of Glen Elendra
 - [x] Shapesharer
@@ -114,7 +114,7 @@
 - [x] Streambed Aquitects
 - [x] Surgespanner
 - [x] Tideshaper Mystic
-- [ ] Turtleshell Changeling
+- [x] Turtleshell Changeling
 - [ ] Wanderwine Prophets
 - [x] Whirlpool Whelm
 - [x] Wings of Velis Vel
@@ -155,7 +155,7 @@
 - [x] Nectar Faerie
 - [x] Nettlevine Blight
 - [x] Nightshade Stinger
-- [ ] Oona's Prowler
+- [x] Oona's Prowler
 - [x] Peppersmoke
 - [x] Profane Command
 - [x] Prowess of the Fair
@@ -169,7 +169,7 @@
 - [x] Thorntooth Witch
 - [x] Thoughtseize
 - [x] Warren Pilferers
-- [ ] Weed Strangle
+- [x] Weed Strangle
 
 ### Red
 - [x] Adder-Staff Boggart
@@ -276,7 +276,7 @@
 ### Multicolor
 - [x] Brion Stoutarm
 - [x] Doran, the Siege Tower
-- [ ] Gaddock Teeg
+- [x] Gaddock Teeg
 - [x] Horde of Notions
 - [x] Nath of the Gilt-Leaf
 - [x] Sygg, River Guide

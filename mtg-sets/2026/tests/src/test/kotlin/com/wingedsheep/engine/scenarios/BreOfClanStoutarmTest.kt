@@ -28,7 +28,8 @@ import io.kotest.matchers.shouldBe
  * Per the printed rulings, casting the exiled card happens *while Bre's ability is resolving*
  * (an inline "you may cast it for free" choice), not as deferred permission to cast later. When
  * the nonland's mana value exceeds the life gained, there is no cast option and the card is put
- * straight into hand.
+ * straight into hand. Declining an offered free cast also puts the card into hand — nothing is
+ * ever left stranded in exile.
  *
  * The library is seeded with a land on top of the nonland so the "exile until a nonland" walk
  * exiles more than one card — the lands stay in exile; only the nonland is ever put into hand.
@@ -258,7 +259,7 @@ class BreOfClanStoutarmTest : ScenarioTestBase() {
                 }
             }
 
-            test("mana value ≤ life gained: declining the free cast leaves it in exile (not hand)") {
+            test("mana value ≤ life gained: declining the free cast puts it into hand (not exile)") {
                 val game = scenario()
                     .withPlayers("Player1", "Player2")
                     .withCardOnBattlefield(1, "Bre of Clan Stoutarm")
@@ -275,15 +276,19 @@ class BreOfClanStoutarmTest : ScenarioTestBase() {
 
                 game.passUntilPhase(Phase.ENDING, Step.END)
                 game.resolveStack()
-                // Decline the free cast. "Otherwise" (put into hand) only applies when MV > life, so
-                // a declined castable card stays in exile rather than going to hand.
+                // Decline the free cast. Nothing is left stranded in exile — a declined card goes to
+                // hand just like the MV > life-gained branch does.
                 game.answerYesNo(false)
+                game.resolveStack()
 
-                withClue("Declined free-cast → Cheap Ogre stays in exile") {
-                    namesInExile(game, 1).contains("Cheap Ogre") shouldBe true
+                withClue("Declined free-cast → Cheap Ogre is put into hand") {
+                    namesInHand(game, 1).contains("Cheap Ogre") shouldBe true
                 }
-                withClue("It is not put into hand (the MV ≤ life branch never moves to hand)") {
-                    namesInHand(game, 1).contains("Cheap Ogre") shouldBe false
+                withClue("It is not left stranded in exile") {
+                    namesInExile(game, 1).contains("Cheap Ogre") shouldBe false
+                }
+                withClue("The land exiled along the way stays in exile (only the nonland moves)") {
+                    namesInExile(game, 1).contains("Forest") shouldBe true
                 }
             }
         }

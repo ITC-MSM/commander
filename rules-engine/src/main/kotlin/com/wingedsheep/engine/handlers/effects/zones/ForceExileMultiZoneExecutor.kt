@@ -70,6 +70,12 @@ class ForceExileMultiZoneExecutor(
         // Player must choose which to exile
         val prompt = "Choose $exileCount permanent(s) or card(s) to exile"
 
+        val continuation = ExileMultiZoneContinuation(
+            playerId = playerId,
+            sourceId = sourceId,
+            sourceName = sourceName
+        )
+
         val decisionResult = decisionHandler.createCardSelectionDecision(
             state = state,
             playerId = playerId,
@@ -81,21 +87,12 @@ class ForceExileMultiZoneExecutor(
             maxSelections = exileCount,
             ordered = false,
             phase = DecisionPhase.RESOLUTION,
-            useTargetingUI = true
+            useTargetingUI = true,
+            answer = continuation
         )
 
-        val continuation = ExileMultiZoneContinuation(
-            decisionId = decisionResult.pendingDecision!!.id,
-            playerId = playerId,
-            sourceId = sourceId,
-            sourceName = sourceName
-        )
-
-        val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decisionResult.pendingDecision,
+        return EffectResult.propagatePause(
+            decisionResult.state,
             decisionResult.events
         )
     }

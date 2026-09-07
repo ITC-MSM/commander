@@ -183,21 +183,18 @@ class BeginningPhaseManager(
                 maxSelections = choosablePermanents.size,
                 ordered = false,
                 phase = DecisionPhase.STATE_BASED,
-                useTargetingUI = true
+                useTargetingUI = true,
+                answer = UntapChoiceContinuation(
+                    playerId = activePlayer,
+                    allPermanentsToUntap = permanentsAfterCantUntap,
+                    untapLimits = untapLimits
+                ),
             )
 
-            val continuation = UntapChoiceContinuation(
-                decisionId = decisionResult.pendingDecision!!.id,
-                playerId = activePlayer,
-                allPermanentsToUntap = permanentsAfterCantUntap,
-                untapLimits = untapLimits
-            )
 
-            val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
 
-            return ExecutionResult.paused(
-                stateWithContinuation,
-                decisionResult.pendingDecision,
+            return ExecutionResult.propagatePause(
+                decisionResult.state,
                 events + decisionResult.events
             )
         }

@@ -367,7 +367,6 @@ data class GameState(
     val step: Step = Step.UNTAP,
     val floatingEffects: List<ActiveFloatingEffect> = emptyList(),
     val continuationStack: List<ContinuationFrame> = emptyList(),
-    val pendingDecision: PendingDecision? = null,
     // ... more fields
 )
 ```
@@ -397,6 +396,31 @@ engine*, not across time. Cards are data this pure function folds through, so ed
 what an old input stream re-simulates to. Stored replays therefore pin the card definitions they ran
 on and carry position checkpoints, with an archived frame stream as the last resort — see
 [data-contracts.md](data-contracts.md) → *Compact replays*.
+
+#### Reproducible routing identity
+
+`GameState.newRoutingId()` allocates game-local correlation tokens for player questions,
+delayed triggers, and combat bands. Fresh questions allocate through `suspendForDecision`. Its serialized `nextRoutingId` counter is
+independent of entity allocation and gameplay RNG. Every caller must carry the returned state
+forward before allocating another token or executing a nested effect. Restoring the same snapshot
+and repeating the same actions reproduces those tokens, including their linked references.
+Tokens are opaque to consumers: their spelling is neither a game identifier nor an action's
+semantic identity, and separate games or divergent simulation branches can reuse the same token.
+
+Live request freshness belongs to `GameSession`, separately from engine correlation identity.
+Browser-facing decision IDs include a session epoch that rotates on successful undo; the server
+validates that epoch before rebinding a response to its engine ID. Undo restores the exact engine
+checkpoint, and replay records only canonical engine actions. Repeated delivery or reconnect to
+the same session preserves an outstanding live ID; a recovered session issues a fresh epoch.
+In-process AI receives engine IDs so its response simulations still address the raw snapshot,
+plus the live epoch captured with that update. Its asynchronous callback returns that epoch;
+the server atomically validates it before execution. An obsolete callback is discarded without
+fallback actions or rejection accounting.
+
+Current-format snapshots may retain opaque UUID or clock-based tokens. An omitted routing
+counter defaults to zero; this default does not provide compatibility with older suspension storage. Historical action logs may still need decision-ID rebinding; replay should use
+its recorded engine version. This routing guarantee does not remove other sources of identity
+variation, such as process-global IDs for dynamically constructed abilities.
 
 ### 2.2 Entity-Component-System (ECS)
 
@@ -484,6 +508,59 @@ entry pointing at a different card. Closing that means extending the analysis, n
 already covers them. `HiddenWorldMaterializer` is the all-or-nothing caller (`docs/ai/architecture.md`
 covers the sampling one).
 
+#### Rules object identity across zones
+
+`EntityId` is the stable card/entity slot. `ObjectRef(entityId, generation)` identifies one rules
+object occupying that slot. `GameState.objectIdentities` stores its generation and logical zone
+outside the ECS component container; battlefield/stack component cleanup cannot strip it. The
+allocator is independent of timestamps used to order continuous effects. `objectRef` and
+`isCurrentObject` are constant-time queries and never infer history from current characteristics.
+
+Every real destination insertion goes through `addToZone`, positional `insertIntoZone`, or
+`pushToStack`. They allocate the first visit, then a new generation on a zone change, including
+exile-to-exile. Removing from a zone list or popping the stack preserves the logical origin until
+the actual destination is committed: a popped spell is still its original stack object while it
+resolves. Shared battlefield/controller buckets denote one zone; private owner-specific zones do
+not. Library ordering, control changes, phasing, transformation, component replacement and hidden
+world reconstruction preserve the object. Deletion removes its identity without resetting the
+allocator, so recreating an entity ID cannot revive an old reference.
+
+A resolving nonpermanent spell stays physically on the stack while its effects execute, including
+nested serialized decisions. `FinishResolvingSpellContinuation` captures the original stack object
+and performs the shared cleanup exactly once after those effects finish. It removes that specific
+spell, preserving any other spells cast during resolution above it, and then applies the ordinary
+resolution destination rules. The finalizer checks the original reference directly: if an effect
+already moved the spell, it cannot move a later visit of that card. This finalization identity is
+separate from the effect context's permission to follow its own moves. Triggers detected between
+nested choices are deferred beneath this finalizer, even when the finalizer is unchanged by the
+latest response. Their placement and target choices happen after the spell leaves the stack.
+
+Insertion is a movement/creation operation, not a reconstruction API. An already-present destination
+member is idempotent; insertion while still present in its origin is rejected. Pure permutations
+use `reorderZone`. Fresh constructor fixtures and legacy JSON without identity fields initialize
+current zone members once through constructor defaults. Copies preserve recorded identity data;
+copy-based imports call `initializeObjectIdentities` explicitly, as do session persistence and dev
+injection boundaries. This migration establishes current visits only: it cannot recover the origin
+of an ability or continuation saved before references were recorded. Consumers must not pretend
+such history was recovered by resolving the entity's latest visit.
+
+`ZoneChangeEvent.oldObject` and `.newObject` are captured at the actual movement before later effects
+can move the entity again. `ZoneTransitionService` returns individual `ZoneTransitionOutcome` values
+with requested/actual destination and `PRIMARY` versus `REPLACEMENT_ADDITIONAL` attribution. A
+replacement's extra token entry or move cannot stand in for the requested move. Prevented moves and
+same-zone reordering produce no transition outcome. Last-known characteristics remain separate from
+actionable references: invalidating a live object does not erase the event's last-known information.
+These fields are internal engine data; client event mapping continues to expose the existing game
+log shape.
+
+Triggered abilities detected before state-based actions carry their origin references into
+`StateBasedActionChecker` as a transient `pendingTriggerSources` set. This lets a zero-defense Siege
+remain while an ability from that exact object awaits the stack. If an SBA pauses for a decision,
+the existing deferred-trigger continuation preserves those references; the battle check also reads
+pending target/mode/consent frames and stacked triggered abilities. A later visit of the same card
+receives no reprieve from an old origin, and removing or declining the last pending ability leaves
+no persistent protection. Other state-based checks ignore this context.
+
 ### 2.3 Rule 613: Base State vs. Projected State
 
 **Principle:** The engine explicitly separates stored state from derived state.
@@ -526,32 +603,45 @@ before falling back to timestamp ordering.
 
 ### 2.4 Reentrant Continuations
 
-**Principle:** When the engine needs player input, it pauses and saves a serializable continuation.
+**Principle:** One serializable suspension owns a question and the operation that consumes its answer.
 
-Many Magic cards require player decisions mid-resolution — "search your library for a card" requires
-the player to browse and choose. The engine cannot block a thread waiting for network input. Instead,
-it pauses by:
-
-1. Setting `GameState.pendingDecision` to describe what input is needed
-2. Pushing a `ContinuationFrame` onto `GameState.continuationStack` that describes how to resume
+An effect supplies its rules-specific question factory and answer data to
+`GameState.suspendForDecision`. This operation allocates the routing ID, associates the question
+with the answer, installs the suspension, and emits `DecisionRequestedEvent`. The factory runs
+immediately; it is not retained in state.
 
 ```kotlin
-sealed interface ContinuationFrame {
-    val decisionId: String
-}
+sealed interface ContinuationFrame
+sealed interface AutomaticContinuation : ContinuationFrame
+sealed interface AnswerContinuation
 
-data class EffectContinuation(
-    override val decisionId: String,
-    val remainingEffects: List<Effect>,
-    val sourceId: EntityId?,
-    val controllerId: EntityId,
-    val storedCollections: Map<String, List<EntityId>>,
-    // ... all context needed to resume
+data class Suspension(
+    val question: PendingDecision,
+    val answer: AnswerContinuation,
 ) : ContinuationFrame
 ```
 
-When the player submits their decision, `ContinuationHandler.resume()` pops the frame, restores
-context, and continues executing the remaining effects.
+`GameState.pendingDecision` is derived from the top suspension. An answer payload cannot be
+pushed independently, and automatic work such as `EffectContinuation` carries no routing ID:
+its position under a suspension supplies its relationship. `ContinuationHandler.resume` checks
+the response against that suspension's question, pops the pair, and dispatches its answer payload.
+
+Creating a question and propagating a pause are separate operations.
+`ExecutionResult.propagatePause` carries an already installed suspension through enclosing
+execution without allocating or emitting another request. Mana-ability execution temporarily
+moves the complete payment suspension into an automatic reopen frame; restoration refreshes
+its menu while preserving the original identity and answer.
+
+Snapshots store the structural representation. `LegacyGameStateSerializer` reads the previous
+format by pairing the active question with its matching top answer and saved mana questions with
+their lower answer frames. It preserves intervening automatic work, counters, and gameplay state;
+malformed associations fail explicitly. The translated state then passes through the current-format
+`GameStateSerializer` rejection check. Writes contain only the current representation.
+
+Automatic work no longer consumes a routing ID, so a given line of play allocates fewer of them
+than it did before this change. `rules-engine/src/test/resources/suspension-traces/` holds captured
+executions from the previous engine as regression evidence; comparing against them rebinds later
+recorded responses while keeping their player and choice payloads.
 
 **Why serializable continuations instead of coroutines or blocked threads?**
 

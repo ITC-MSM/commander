@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.mechanics.cost
 
+import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.CardsDiscardedEvent
 import com.wingedsheep.engine.core.CardsRevealedEvent
 import com.wingedsheep.engine.core.CountersRemovedEvent
@@ -7,7 +8,6 @@ import com.wingedsheep.engine.core.ChooseOptionDecision
 import com.wingedsheep.engine.core.CostPaymentContinuation
 import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.DecisionPhase
-import com.wingedsheep.engine.core.DecisionRequestedEvent
 import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ManaSpentEvent
@@ -39,7 +39,6 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.DistributedCounterRemoval
 import com.wingedsheep.sdk.scripting.costs.PayCost
-import java.util.UUID
 
 /**
  * Single, shared engine service that owns paying every [PayCost] variant.
@@ -131,6 +130,9 @@ class CostPaymentService(private val services: EngineServices) {
                     yesNoPrompt(state, payerId, resolved, sourceId, sourceName, ctx, "Pay ${atom.cost}?", "Pay ${atom.cost}")
                 is CostAtom.PayLife ->
                     yesNoPrompt(state, payerId, resolved, sourceId, sourceName, ctx, "Pay ${atom.amount} life?", "Pay ${atom.amount} life")
+                // Nothing to select — every card goes — so this is a yes/no like a random discard.
+                is CostAtom.DiscardHand ->
+                    yesNoPrompt(state, payerId, resolved, sourceId, sourceName, ctx, "Discard your hand?", "Discard hand")
                 is CostAtom.Discard ->
                     if (atom.random) {
                         val word = if (atom.count == 1) "a card" else "${atom.count} cards"
@@ -232,11 +234,11 @@ class CostPaymentService(private val services: EngineServices) {
             prompt = prompt,
             yesText = yesText,
             noText = "Don't pay",
-            phase = DecisionPhase.RESOLUTION
+            phase = DecisionPhase.RESOLUTION,
+            answer = continuation(payerId, sourceId, sourceName, cost, ctx)
         )
         val decision = result.pendingDecision!!
-        val stateWithContinuation = result.state.pushContinuation(continuation(decision.id, payerId, sourceId, sourceName, cost, ctx))
-        return PaymentResult.Pending(stateWithContinuation, decision, result.events)
+        return PaymentResult.Pending(result.state, decision, result.events)
     }
 
     private fun selectionPrompt(
@@ -269,11 +271,11 @@ class CostPaymentService(private val services: EngineServices) {
             ordered = false,
             phase = DecisionPhase.RESOLUTION,
             useTargetingUI = useTargetingUI,
-            minTotalManaValue = minTotalManaValue
+            minTotalManaValue = minTotalManaValue,
+            answer = continuation(payerId, sourceId, sourceName, cost, ctx)
         )
         val decision = result.pendingDecision!!
-        val stateWithContinuation = result.state.pushContinuation(continuation(decision.id, payerId, sourceId, sourceName, cost, ctx))
-        return PaymentResult.Pending(stateWithContinuation, decision, result.events)
+        return PaymentResult.Pending(result.state, decision, result.events)
     }
 
     private fun choicePrompt(
@@ -288,39 +290,34 @@ class CostPaymentService(private val services: EngineServices) {
         // and the trailing "Don't pay" option means decline.
         val affordable = cost.options.filter { canAfford(state, payerId, it, sourceId) }
         val labels = affordable.map { it.description.replaceFirstChar { ch -> ch.uppercase() } } + "Don't pay"
-        val decisionId = UUID.randomUUID().toString()
-        val decision = ChooseOptionDecision(
-            id = decisionId,
-            playerId = payerId,
-            prompt = "Choose one:",
-            context = DecisionContext(sourceId = sourceId, sourceName = sourceName, phase = DecisionPhase.RESOLUTION),
-            options = labels
-        )
         // Store the reduced (affordable-only) Choice so the resumer can map the option index directly.
         val reduced = PayCost.Choice(affordable)
-        val stateWithContinuation = state.withPendingDecision(decision)
-            .pushContinuation(continuation(decisionId, payerId, sourceId, sourceName, reduced, ctx))
-        return PaymentResult.Pending(
-            stateWithContinuation,
-            decision,
-            listOf(DecisionRequestedEvent(decisionId, payerId, "CHOOSE_OPTION", decision.prompt))
+        val result = state.suspendForDecision(
+            question = { id -> ChooseOptionDecision(
+                id = id,
+                playerId = payerId,
+                prompt = "Choose one:",
+                context = DecisionContext(sourceId = sourceId, sourceName = sourceName, phase = DecisionPhase.RESOLUTION),
+                options = labels
+            ) },
+            answer = continuation(payerId, sourceId, sourceName, reduced, ctx)
         )
+        return PaymentResult.Pending(result.state, result.pendingDecision!!, result.events)
     }
 
     private fun continuation(
-        decisionId: String,
         payerId: EntityId,
         sourceId: EntityId,
         sourceName: String,
         cost: PayCost,
         ctx: CostPaymentContext
     ): CostPaymentContinuation = CostPaymentContinuation(
-        decisionId = decisionId,
         payerId = payerId,
         sourceId = sourceId,
         sourceName = sourceName,
         cost = cost,
         onPaid = ctx.onPaid,
+        objectReferences = ctx.objectReferences,
         onDeclined = ctx.onDeclined,
         targets = ctx.targets,
         namedTargets = ctx.namedTargets,
@@ -356,6 +353,7 @@ class CostPaymentService(private val services: EngineServices) {
             is CostAtom.Discard ->
                 if (atom.random) discardRandom(state, payerId, atom.filter, atom.count)
                 else discardSelected(state, payerId, selected.keys.toList())
+            is CostAtom.DiscardHand -> discardHand(state, payerId)
             is CostAtom.ExileFrom -> exileSelected(state, payerId, selected.keys.toList(), atom.zone)
             is CostAtom.CollectEvidence ->
                 when (
@@ -565,6 +563,17 @@ class CostPaymentService(private val services: EngineServices) {
         return CostPaymentExecution(result.state, result.events, success = true)
     }
 
+    /**
+     * Discard every card in [payerId]'s hand as a cost payment. An empty hand is a successful
+     * payment of nothing (CR 118.3), not a failure.
+     */
+    private fun discardHand(state: GameState, payerId: EntityId): CostPaymentExecution {
+        val hand = state.getZone(ZoneKey(payerId, Zone.HAND)).toList()
+        if (hand.isEmpty()) return CostPaymentExecution(state, emptyList(), success = true)
+        val result = ZoneTransitionService.discardCards(state, payerId, hand)
+        return CostPaymentExecution(result.state, result.events, success = true)
+    }
+
     private fun discardRandom(state: GameState, payerId: EntityId, filter: GameObjectFilter, count: Int): CostPaymentExecution {
         val handZone = ZoneKey(payerId, Zone.HAND)
         val context = PredicateContext(controllerId = payerId)
@@ -612,12 +621,13 @@ class CostPaymentService(private val services: EngineServices) {
         val events = mutableListOf<GameEvent>()
         for (cardId in selected) {
             val name = newState.getEntity(cardId)?.get<CardComponent>()?.name ?: "Unknown"
+            val oldObjectRef = newState.objectRef(cardId)
             newState = newState.removeFromZone(fromZone, cardId).addToZone(exileZone, cardId)
             // Record the origin zone the way ZoneTransitionService does, so a later CR 610.3
             // "return it to its previous zone" (CardDestination.ToZoneExiledFrom) can put a card
             // exiled as a *cost* back where it came from instead of taking the fallback.
             newState = newState.updateEntity(cardId) { c -> c.with(ExiledFromZoneComponent(zone)) }
-            events.add(ZoneChangeEvent(cardId, name, zone, Zone.EXILE, payerId))
+            events.add(ZoneChangeEvent(cardId, name, zone, Zone.EXILE, payerId, oldObject = oldObjectRef, newObject = newState.objectRef(cardId)))
         }
         return CostPaymentExecution(newState, events, success = true)
     }
@@ -746,6 +756,8 @@ class CostPaymentService(private val services: EngineServices) {
                     // life that would reduce them to 0 or less is legal (they then lose as a state-based action).
                     is CostAtom.PayLife -> life(state, payerId) >= atom.amount
                     is CostAtom.Discard -> domain(state, payerId, c, sourceId).size >= atom.count
+                    // CR 118.3 — an empty hand discards nothing, and a cost of nothing is payable.
+                    is CostAtom.DiscardHand -> true
                     is CostAtom.ExileFrom -> domain(state, payerId, c, sourceId).size >= atom.count
                     // CR 701.59b — unpayable unless the graveyard's *total mana value* reaches N.
                     // Card count says nothing here: five lands total 0 and pay nothing.
@@ -834,6 +846,8 @@ class CostPaymentService(private val services: EngineServices) {
             is PayCost.OwnManaCost, is PayCost.Choice, is PayCost.DynamicLife -> null
             is PayCost.Atom -> when (val atom = c.atom) {
                 is CostAtom.Discard -> cardsInHand(state, payerId, atom.filter)
+                // The whole hand goes, so there is nothing for the payer to pick.
+                is CostAtom.DiscardHand -> null
                 is CostAtom.RevealFromHand -> cardsInHand(state, payerId, atom.filter)
                 is CostAtom.ExileFrom -> cardsInZone(state, payerId, atom.filter, atom.zone)
                 // Collect evidence N (CR 701.59a) — the whole graveyard is selectable; the gate is

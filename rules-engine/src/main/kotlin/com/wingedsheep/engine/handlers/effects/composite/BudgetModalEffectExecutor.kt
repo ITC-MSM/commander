@@ -7,7 +7,6 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.effects.BudgetModalEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -34,8 +33,7 @@ class BudgetModalEffectExecutor(
             state.getEntity(sourceId)?.get<CardComponent>()?.name
         }
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = BudgetModalDecision(
+        val decision = { decisionId: String -> BudgetModalDecision(
             id = decisionId,
             playerId = playerId,
             prompt = "Choose modes for ${sourceName ?: "budget modal spell"}",
@@ -48,32 +46,18 @@ class BudgetModalEffectExecutor(
             modes = effect.modes.map { mode ->
                 BudgetModeOption(cost = mode.cost, description = mode.description)
             }
-        )
+        ) }
 
         val continuation = BudgetModalContinuation(
-            decisionId = decisionId,
             controllerId = context.controllerId,
             sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
             sourceName = sourceName,
             modes = effect.modes,
             remainingBudget = effect.budget,
             selectedModeIndices = emptyList(),
         )
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = playerId,
-                    decisionType = "BUDGET_MODAL",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 }

@@ -1,9 +1,9 @@
 package com.wingedsheep.engine.handlers.effects.permanent.counters
 
+import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.DecisionPhase
-import com.wingedsheep.engine.core.DecisionRequestedEvent
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ProliferateContinuation
@@ -18,7 +18,6 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.ProliferateEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -87,8 +86,7 @@ class ProliferateExecutor : EffectExecutor<ProliferateEffect> {
             ?.let { state.getEntity(it)?.get<CardComponent>()?.name }
             ?: "Proliferate"
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = SelectCardsDecision(
+        val decision = { decisionId: String -> SelectCardsDecision(
             id = decisionId,
             playerId = context.controllerId,
             prompt = "Proliferate — choose any number of permanents and/or players that have a counter",
@@ -101,28 +99,14 @@ class ProliferateExecutor : EffectExecutor<ProliferateEffect> {
             minSelections = 0,
             maxSelections = eligible.size,
             useTargetingUI = true
-        )
+        ) }
 
         val continuation = ProliferateContinuation(
-            decisionId = decisionId,
             controllerId = context.controllerId,
             eligibleEntities = eligible
         )
 
-        val newState = state
-            .withPendingDecision(decision)
-            .pushContinuation(continuation)
-
-        val events = listOf(
-            DecisionRequestedEvent(
-                decisionId = decisionId,
-                playerId = context.controllerId,
-                decisionType = "PROLIFERATE",
-                prompt = decision.prompt
-            )
-        )
-
-        return EffectResult.paused(newState, decision, events)
+        return EffectResult.from(state.suspendForDecision(decision, continuation, eventType = "PROLIFERATE"))
     }
 
     companion object {

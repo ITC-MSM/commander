@@ -86,6 +86,12 @@ class ChangeTargetExecutor : EffectExecutor<ChangeTargetEffect> {
 
         // 4. Present selection decision to the controller
         val sourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name }
+        val continuation = ChangeSpellTargetContinuation(
+            spellEntityId = targetSpell.spellEntityId,
+            sourceId = context.sourceId,
+            objectReferences = context.objectReferences
+        )
+
         val decisionResult = decisionHandler.createCardSelectionDecision(
             state = state,
             playerId = context.controllerId,
@@ -95,21 +101,12 @@ class ChangeTargetExecutor : EffectExecutor<ChangeTargetEffect> {
             options = legalNewTargets,
             minSelections = 1,
             maxSelections = 1,
-            useTargetingUI = true
+            useTargetingUI = true,
+            answer = continuation
         )
 
-        // 5. Push continuation (reuse ChangeSpellTargetContinuation)
-        val continuation = ChangeSpellTargetContinuation(
-            decisionId = decisionResult.pendingDecision!!.id,
-            spellEntityId = targetSpell.spellEntityId,
-            sourceId = context.sourceId
-        )
-
-        val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decisionResult.pendingDecision,
+        return EffectResult.propagatePause(
+            decisionResult.state,
             decisionResult.events
         )
     }

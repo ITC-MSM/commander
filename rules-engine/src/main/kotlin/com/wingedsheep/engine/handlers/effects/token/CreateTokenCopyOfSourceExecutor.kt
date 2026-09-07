@@ -25,7 +25,6 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfSourceEffect
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -154,9 +153,8 @@ class CreateTokenCopyOfSourceExecutor(
                 val remaining = cappedCount - (index + 1)
                 var pausedState = newState
                 if (remaining > 0) {
-                    pausedState = pausedState.pushContinuation(
+                    pausedState = newState.pushContinuation(
                         com.wingedsheep.engine.core.CreateTokenCopyRemainingContinuation(
-                            decisionId = "create-token-copy-remaining-${UUID.randomUUID()}",
                             effect = effect,
                             context = context,
                             controllerId = controllerId,
@@ -201,7 +199,9 @@ class CreateTokenCopyOfSourceExecutor(
                     entityName = tokenCard.name,
                     fromZone = null,
                     toZone = Zone.BATTLEFIELD,
-                    ownerId = controllerId
+                    ownerId = controllerId,
+                    oldObject = null,
+                    newObject = newState.objectRef(tokenId)
                 )
             )
             createdTokens.add(tokenId)
@@ -210,12 +210,14 @@ class CreateTokenCopyOfSourceExecutor(
             // (Stormsplitter: "exile it at the beginning of the next end step").
             val exileStep = effect.exileAtStep
             if (exileStep != null) {
-                newState = newState.addDelayedTrigger(
+                val (delayedTriggerId, stateWithRoutingId) = newState.newRoutingId()
+                newState = stateWithRoutingId.addDelayedTrigger(
                     DelayedTriggeredAbility(
-                        id = UUID.randomUUID().toString(),
+                        id = delayedTriggerId,
                         effect = MoveToZoneEffect(EffectTarget.SpecificEntity(tokenId), Zone.EXILE),
                         fireAtStep = exileStep,
                         sourceId = sourceId,
+                        objectReferences = context.objectReferences,
                         sourceName = sourceCard.name,
                         controllerId = controllerId
                     )

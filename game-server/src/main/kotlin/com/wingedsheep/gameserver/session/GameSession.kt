@@ -72,6 +72,16 @@ class GameSession(
     // Lock for synchronizing state modifications to prevent lost updates
     private val stateLock = Any()
 
+    /**
+     * Live response freshness, separate from replayable engine routing. Undo starts a new
+     * generation even when it restores an identical engine counter. A recovered session gets
+     * a fresh epoch too; reconnecting to this instance keeps outstanding responses valid.
+     * Read and changed only under [stateLock]. Never stored in engine state or replay inputs.
+     */
+    private var liveInteractionEpoch = UUID.randomUUID().toString()
+
+    private fun liveDecisionId(engineId: String): String = "$liveInteractionEpoch:$engineId"
+
     @Volatile
     private var gameState: GameState? = null
         set(value) {
@@ -799,7 +809,72 @@ class GameSession(
     }
 
     /**
-     * Execute a game action.
+     * Decode the browser's transport envelope. Legacy decision replies carry their origin in
+     * the prefixed ID; ordinary actions must carry an explicit origin. Neither path may borrow
+     * this session's current epoch to authorize a choice made on an unknown timeline.
+     */
+    fun executeClientAction(
+        playerId: EntityId,
+        action: GameAction,
+        messageId: String? = null,
+        interactionEpoch: String? = null,
+    ): ActionResult {
+        val submission = if (action is SubmitDecision) {
+            val wireId = action.response.decisionId
+            val separator = wireId.indexOf(':')
+            if (separator <= 0 || separator == wireId.lastIndex) {
+                return ActionResult.Failure("Decision has no originating interaction")
+            }
+            val embeddedEpoch = wireId.substring(0, separator)
+            if (interactionEpoch != null && interactionEpoch != embeddedEpoch) {
+                return ActionResult.Failure("Decision origin does not match its envelope")
+            }
+            LiveActionSubmission(
+                action.copy(response = action.response.withDecisionId(wireId.substring(separator + 1))),
+                embeddedEpoch,
+                messageId,
+            )
+        } else {
+            LiveActionSubmission(
+                action,
+                interactionEpoch ?: return ActionResult.Failure("Action has no originating interaction"),
+                messageId,
+            )
+        }
+        return executeLiveAction(playerId, submission)
+            ?: ActionResult.Failure("Action is no longer current")
+    }
+
+    /** Decode the asynchronous AI envelope without replacing its captured origin. */
+    fun executeAiAction(
+        playerId: EntityId,
+        action: GameAction,
+        interactionEpoch: String?,
+    ): ActionResult? {
+        val origin = interactionEpoch ?: return null
+        return executeLiveAction(playerId, LiveActionSubmission(action, origin))
+    }
+
+    /**
+     * Shared live ingress for both transports and AI recovery actions. Validate the origin and
+     * current decision before checkpoints, replay, or idempotency bookkeeping can change.
+     * Null is obsolete delivery, not an invalid action: asynchronous callers must discard it
+     * without fallbacks, rejection accounting, or a broadcast.
+     */
+    fun executeLiveAction(playerId: EntityId, submission: LiveActionSubmission): ActionResult? = synchronized(stateLock) {
+        if (!isCurrentInteraction(submission.interactionEpoch)) return null
+        val action = submission.action
+        if (action is SubmitDecision && action.response.decisionId != gameState?.pendingDecision?.id) return null
+        executeAction(playerId, action, submission.messageId)
+    }
+
+    /** Must be checked under [stateLock], alongside the mutation it authorizes. */
+    private fun isCurrentInteraction(interactionEpoch: String?): Boolean =
+        interactionEpoch != null && interactionEpoch == liveInteractionEpoch
+
+    /**
+     * Execute an immediate engine action. Browser submissions use [executeClientAction];
+     * asynchronous AI callbacks use [executeAiAction] to validate their originating generation.
      *
      * Routes the action through the engine's ActionProcessor.
      * Synchronized to prevent lost updates when multiple players act simultaneously.
@@ -923,7 +998,11 @@ class GameSession(
      * Returns either a full [ServerMessage.StateUpdate] (first update or after reconnect)
      * or a [ServerMessage.StateDeltaUpdate] (subsequent updates with only changes).
      */
-    fun createStateUpdate(playerId: EntityId, events: List<GameEvent>): ServerMessage? {
+    fun createStateUpdate(
+        playerId: EntityId,
+        events: List<GameEvent>,
+        useEngineDecisionIds: Boolean = false,
+    ): ServerMessage? = synchronized(stateLock) {
         val state = gameState ?: return null
         val clientState = getClientState(playerId) ?: return null
         val legalActions = getLegalActions(playerId)
@@ -941,7 +1020,9 @@ class GameSession(
         // decision to the controller, not the affected player.
         // Enrich with imageUri from card registry since engine doesn't have access to metadata
         val pendingDecision = state.pendingDecision?.takeIf { state.actorFor(it.playerId) == playerId }?.let {
-            decisionEnricher.enrich(it, state, playerId)
+            val enriched = decisionEnricher.enrich(it, state, playerId)
+            // In-process AI simulates against raw engine state; browser clients echo a live ID.
+            if (useEngineDecisionIds) enriched else enriched.withClientRoutingId(liveDecisionId(it.id))
         }
 
         // Calculate next stop point for the Pass button (only if player has priority,
@@ -984,14 +1065,15 @@ class GameSession(
         lastSentState[playerId] = stateWithLog
         val version = stateVersions.merge(playerId, 1L) { old, inc -> old + inc }!!
 
+        val interactionEpoch = liveInteractionEpoch
         if (previous != null) {
             // Compute delta and send smaller message
             val delta = StateDiffCalculator.computeDelta(previous, stateWithLog)
-            return ServerMessage.StateDeltaUpdate(delta, clientEvents, legalActions, pendingDecision, nextStopPoint, opponentDecisionStatus, stopOverrideInfo, isUndoAvailable(playerId), priorityModeStr, version)
+            return ServerMessage.StateDeltaUpdate(delta, clientEvents, legalActions, pendingDecision, nextStopPoint, opponentDecisionStatus, stopOverrideInfo, isUndoAvailable(playerId), priorityModeStr, version, interactionEpoch)
         }
 
         // First update — send full state
-        return ServerMessage.StateUpdate(stateWithLog, clientEvents, legalActions, pendingDecision, nextStopPoint, opponentDecisionStatus, stopOverrideInfo, isUndoAvailable(playerId), priorityModeStr, version)
+        return ServerMessage.StateUpdate(stateWithLog, clientEvents, legalActions, pendingDecision, nextStopPoint, opponentDecisionStatus, stopOverrideInfo, isUndoAvailable(playerId), priorityModeStr, version, interactionEpoch)
     }
 
     /**
@@ -1188,6 +1270,7 @@ class GameSession(
         }
 
         gameState = checkpoint
+        liveInteractionEpoch = UUID.randomUUID().toString()
         // Roll the replay log back to the actions that produced the restored state, so a later
         // reconstruction replays exactly this history. Yields recorded after the rollback point are
         // dropped too — they were set against actions that no longer exist.
@@ -1479,6 +1562,18 @@ class GameSession(
     }
 
     /**
+     * Finish AI rejection recovery only on its originating timeline. The rejection count and any
+     * resulting concession are atomic with the epoch check; undo may have occurred since the last
+     * failed fallback. Null tells the caller to discard the obsolete recovery without broadcasting.
+     */
+    fun noteAiActionRejected(playerId: EntityId, interactionEpoch: String?): Boolean? = synchronized(stateLock) {
+        if (!isCurrentInteraction(interactionEpoch)) return null
+        val conceded = noteActionRejected(playerId)
+        if (conceded) playerConcedes(playerId)
+        conceded
+    }
+
+    /**
      * Every N actions, fingerprint the live position and keep it with the recording.
      *
      * The input log alone can't tell a faithful re-simulation from a drifted one — both just apply
@@ -1698,7 +1793,7 @@ class GameSession(
      */
     fun injectStateForDevScenario(state: GameState) {
         synchronized(stateLock) {
-            gameState = state
+            gameState = state.initializeObjectIdentities()
             players.clear()
         }
     }
@@ -1734,7 +1829,7 @@ class GameSession(
      */
     fun resetStateForDevScenario(state: GameState) {
         synchronized(stateLock) {
-            gameState = state
+            gameState = state.initializeObjectIdentities()
             undoCheckpoint = null
             gameLogs.clear()
             lastProcessedMessageId.clear()
@@ -1831,7 +1926,7 @@ class GameSession(
         sideboardLists: Map<EntityId, List<String>> = emptyMap()
     ) {
         synchronized(stateLock) {
-            gameState = state
+            gameState = state?.initializeObjectIdentities()
             deckLists.clear()
             deckLists.putAll(decks)
             sideboards.clear()

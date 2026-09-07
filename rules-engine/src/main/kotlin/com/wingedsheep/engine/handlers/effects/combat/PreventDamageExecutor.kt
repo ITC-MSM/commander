@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.handlers.effects.combat
 import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
 
+import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.DeflectDamageSourceChoiceContinuation
 import com.wingedsheep.engine.core.EffectResult
@@ -23,7 +24,6 @@ import com.wingedsheep.sdk.scripting.effects.PreventDamageEffect
 import com.wingedsheep.sdk.scripting.effects.PreventionDirection
 import com.wingedsheep.sdk.scripting.effects.PreventionScope
 import com.wingedsheep.sdk.scripting.effects.PreventionSourceFilter
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -106,13 +106,12 @@ class PreventDamageExecutor(
 
         if (sourceIds.isEmpty()) return EffectResult.success(state)
 
-        val decisionId = UUID.randomUUID().toString()
         val decisionContext = DecisionContext(
             sourceId = context.sourceId,
             sourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name }
         )
 
-        val decision = SelectCardsDecision(
+        val decision = { decisionId: String -> SelectCardsDecision(
             id = decisionId,
             playerId = controllerId,
             prompt = "Choose a source of damage",
@@ -121,21 +120,20 @@ class PreventDamageExecutor(
             minSelections = 1,
             maxSelections = 1,
             useTargetingUI = true
-        )
+        ) }
 
         if (effect.onPrevented != null) {
             // Reaction path (Deflecting Palm, New Way Forward): on prevention, run an arbitrary
             // follow-up effect keyed to the prevented amount (reflect, draw, …).
             val continuation = DeflectDamageSourceChoiceContinuation(
-                decisionId = decisionId,
                 controllerId = controllerId,
                 sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
                 sourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name },
                 onPrevented = effect.onPrevented,
                 preventDamage = effect.preventDamage
             )
-            val newState = state.withPendingDecision(decision).pushContinuation(continuation)
-            return EffectResult.paused(newState, decision)
+            return EffectResult.from(state.suspendForDecision(decision, continuation))
         } else {
             // Prevention-only path: prevent N damage (or all, when amount is null) from chosen source
             //
@@ -156,19 +154,18 @@ class PreventDamageExecutor(
             if (amount != null && amount <= 0) return EffectResult.success(state)
 
             val continuation = PreventDamageFromChosenSourceContinuation(
-                decisionId = decisionId,
                 controllerId = controllerId,
                 targetId = targetId,
                 silenceChosenSource = silenceChosenSource,
                 amount = amount,
                 gainLifeFromColors = effect.gainLifeFromColors.map { it.name }.toSet(),
                 sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
                 sourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name },
                 nextInstanceOnly = effect.nextInstanceOnly,
                 halvePreventedDamage = effect.halvePreventedDamage
             )
-            val newState = state.withPendingDecision(decision).pushContinuation(continuation)
-            return EffectResult.paused(newState, decision)
+            return EffectResult.from(state.suspendForDecision(decision, continuation))
         }
     }
 
@@ -213,7 +210,8 @@ class PreventDamageExecutor(
                 effectSourceId = context.sourceId,
                 effectSourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name },
                 onPrevented = effect.onPrevented,
-                preventDamage = effect.preventDamage
+                preventDamage = effect.preventDamage,
+                objectReferences = context.objectReferences
             )
             return EffectResult.success(newState)
         }

@@ -7,7 +7,6 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.scripting.effects.ChooseCreatureTypeEffect
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -31,8 +30,7 @@ class ChooseCreatureTypePipelineExecutor : EffectExecutor<ChooseCreatureTypeEffe
         val allCreatureTypes = Subtype.ALL_CREATURE_TYPES
         val sourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name }
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = ChooseOptionDecision(
+        val decision = { decisionId: String -> ChooseOptionDecision(
             id = decisionId,
             playerId = controllerId,
             prompt = "Choose a creature type",
@@ -42,32 +40,18 @@ class ChooseCreatureTypePipelineExecutor : EffectExecutor<ChooseCreatureTypeEffe
                 phase = DecisionPhase.RESOLUTION
             ),
             options = allCreatureTypes
-        )
+        ) }
 
         val continuation = ChooseOptionPipelineContinuation(
-            decisionId = decisionId,
             controllerId = controllerId,
             sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
             sourceName = sourceName,
             storeAs = CHOSEN_CREATURE_TYPE_KEY,
             options = allCreatureTypes
         )
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = controllerId,
-                    decisionType = "CHOOSE_OPTION",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 
     companion object {

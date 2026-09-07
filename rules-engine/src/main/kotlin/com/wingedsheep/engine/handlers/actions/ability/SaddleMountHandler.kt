@@ -163,6 +163,7 @@ class SaddleMountHandler(
         // Put the saddle ability on the stack: this permanent becomes saddled until end of turn.
         val abilityOnStack = ActivatedAbilityOnStackComponent(
             sourceId = action.mountId,
+            objectReferences = com.wingedsheep.engine.handlers.ObjectReferenceEnvironment(captured = true, origin = state.objectRef(action.mountId), source = state.objectRef(action.mountId)),
             sourceName = mountCard.name,
             controllerId = action.playerId,
             effect = BecomeSaddledEffect(target = EffectTarget.Self)
@@ -179,9 +180,8 @@ class SaddleMountHandler(
             val triggerResult = triggerProcessor.processTriggers(currentState, triggers)
 
             if (triggerResult.isPaused) {
-                return ExecutionResult.paused(
+                return ExecutionResult.propagatePause(
                     triggerResult.state.withPriority(action.playerId),
-                    triggerResult.pendingDecision!!,
                     allEvents + triggerResult.events
                 )
             }

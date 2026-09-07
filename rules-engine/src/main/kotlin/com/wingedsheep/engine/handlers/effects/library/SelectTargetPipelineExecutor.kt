@@ -8,7 +8,6 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.SelectTargetEffect
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -77,7 +76,6 @@ class SelectTargetPipelineExecutor(
         effect: SelectTargetEffect,
         legalTargets: List<EntityId>
     ): EffectResult {
-        val decisionId = UUID.randomUUID().toString()
         val controllerId = context.controllerId
         val sourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name }
 
@@ -92,7 +90,7 @@ class SelectTargetPipelineExecutor(
             maxTargets = 1
         )
 
-        val decision = ChooseTargetsDecision(
+        val decision = { decisionId: String -> ChooseTargetsDecision(
             id = decisionId,
             playerId = controllerId,
             prompt = effect.description,
@@ -103,31 +101,17 @@ class SelectTargetPipelineExecutor(
             ),
             targetRequirements = listOf(requirementInfo),
             legalTargets = mapOf(0 to legalTargets)
-        )
+        ) }
 
         val continuation = SelectTargetPipelineContinuation(
-            decisionId = decisionId,
             playerId = controllerId,
             sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
             sourceName = sourceName,
             storeAs = effect.storeAs,
             storedCollections = context.pipeline.storedCollections
         )
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = controllerId,
-                    decisionType = "CHOOSE_TARGETS",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 }

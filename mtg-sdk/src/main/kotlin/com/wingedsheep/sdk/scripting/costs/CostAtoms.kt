@@ -53,6 +53,8 @@ fun CostAtom.repeated(times: Int): CostAtom {
         // Revealing the noted type is idempotent — it is already public after the first reveal, and
         // there is no second note to publish — so repeating it is the same single payment.
         is CostAtom.RevealNotedCreatureType -> this
+        // Emptying an already-empty hand is a cost of nothing, so paying it N times is one payment.
+        is CostAtom.DiscardHand -> this
         // Collecting evidence N twice is collecting evidence 2N: CR 601.2f folds the repeated cost
         // into one payment, and one exile of total mana value 2N satisfies that just as two
         // separate exiles of N would. (No printed card repeats it — escalate is the only caller —

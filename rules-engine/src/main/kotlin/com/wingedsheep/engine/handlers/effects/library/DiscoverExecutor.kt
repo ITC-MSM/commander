@@ -141,12 +141,13 @@ class DiscoverExecutor(
                 tail,
                 EffectContext(
                     sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
                     controllerId = controllerId,
                     pipeline = PipelineState.EMPTY.copy(storedCollections = discoveredCollections)
                 )
             )
             return if (thenResult.isPaused) {
-                EffectResult.paused(thenResult.state, thenResult.pendingDecision!!, allEvents + bottomEvents + thenResult.events)
+                EffectResult.propagatePause(thenResult.state, allEvents + bottomEvents + thenResult.events)
             } else {
                 EffectResult.success(thenResult.state, allEvents + bottomEvents + thenResult.events)
             }
@@ -154,23 +155,10 @@ class DiscoverExecutor(
 
         val discoveredName = currentState.getEntity(discoveredCard)
             ?.get<CardComponent>()?.name ?: "the discovered card"
-        val pause = decisionHandler.createYesNoDecision(
-            state = currentState,
-            playerId = controllerId,
-            sourceId = context.sourceId,
-            sourceName = sourceName,
-            prompt = "Cast $discoveredName without paying its mana cost? (Decline to put it into your hand.)",
-            yesText = "Cast for free",
-            noText = "Put into hand",
-            phase = DecisionPhase.RESOLUTION
-        )
-
-        val pendingDecision = pause.pendingDecision
-            ?: error("createYesNoDecision must return a pending decision")
         val continuation = DiscoverMayCastContinuation(
-            decisionId = pendingDecision.id,
             playerId = controllerId,
             sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
             exiledCards = exiledCards.toList(),
             discoveredCardId = discoveredCard,
             storeDiscoveredAs = effect.storeDiscoveredAs,
@@ -180,11 +168,23 @@ class DiscoverExecutor(
             // always non-null.
             thenEffect = CompositeEffect(listOfNotNull(effect.thenEffect, emitDiscovered))
         )
-        val stateWithCont = pause.state.pushContinuation(continuation)
 
-        return EffectResult.paused(
+        val pause = decisionHandler.createYesNoDecision(
+            state = currentState,
+            playerId = controllerId,
+            sourceId = context.sourceId,
+            sourceName = sourceName,
+            prompt = "Cast $discoveredName without paying its mana cost? (Decline to put it into your hand.)",
+            yesText = "Cast for free",
+            noText = "Put into hand",
+            phase = DecisionPhase.RESOLUTION,
+            answer = continuation
+        )
+
+        val stateWithCont = pause.state
+
+        return EffectResult.propagatePause(
             stateWithCont,
-            pendingDecision,
             allEvents + pause.events
         )
     }

@@ -1,0 +1,43 @@
+[
+    {
+        "type": "DecisionSubmittedEvent",
+        "decisionId": "r0",
+        "playerId": "player-1",
+        "description": "(Astral Slide) Chose No"
+    },
+    {
+        "type": "CardsDrawnEvent",
+        "playerId": "player-1",
+        "count": 1,
+        "cardIds": [
+            "card-1005"
+        ],
+        "cardNames": [
+            "Forest"
+        ]
+    },
+    {
+        "type": "ZoneChangeEvent",
+        "entityId": "card-1005",
+        "entityName": "Forest",
+        "fromZone": "Library",
+        "toZone": "Hand",
+        "ownerId": "player-1",
+        "lastKnown": null,
+        "enteredBattlefieldTimestamp": null,
+        "copyOfOriginalName": null,
+        "xValue": null,
+        "wasSacrificed": false,
+        "craftMaterial": false,
+        "oldObject": {
+            "entityId": "card-1005",
+            "generation": 1
+        },
+        "newObject": {
+            "entityId": "card-1005",
+            "generation": 7
+        },
+        "transitionCause": "PRIMARY",
+        "requestedDestination": "Hand"
+    }
+]

@@ -2,7 +2,7 @@
 
 **Set Size:** 312 cards
 **Release Date:** August 2, 2024
-**Implemented:** 119 / 312
+**Implemented:** 120 / 312
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 37    | 0    |
@@ -277,7 +277,7 @@
 - [ ] Swarmyard Massacre
 - [ ] Swiftfoot Boots
 - [ ] Sword of the Squeak
-- [ ] Swords to Plowshares
+- [x] Swords to Plowshares
 - [ ] Tainted Wood
 - [x] Talisman of Impulse
 - [ ] Talisman of Resilience

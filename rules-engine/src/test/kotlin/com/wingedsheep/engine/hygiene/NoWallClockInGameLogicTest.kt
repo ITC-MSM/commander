@@ -22,9 +22,13 @@ import java.io.File
  * Exceptions — files that are allowed to use wall-clock time because they're AI search time
  * budgets, not game logic — must be listed in [ALLOWED_FILES] with a justification comment.
  *
- * Note: this test does NOT guard `System.nanoTime()`. A handful of stack-decision ID generators
- * still use it; those are a separate determinism concern (see `StormCopyEffectExecutor` and
- * siblings) that should be addressed in its own ticket.
+ * The same guard covers the two other ambient sources of engine nondeterminism: `System.nanoTime()`
+ * and `UUID.randomUUID()`. Routing identity (decision, continuation, delayed-trigger and combat-band
+ * correlation tokens) comes from `GameState.newRoutingId()`, which allocates from the serialized
+ * `nextRoutingId` counter so re-executing the same snapshot reproduces the same tokens — a recorded
+ * `SubmitDecision` still addresses the reconstructed prompt. A stray `UUID.randomUUID()` in a
+ * routing position silently breaks replay and MCTS simulation while every scenario test stays green,
+ * so the ban is enforced here rather than by review.
  */
 class NoWallClockInGameLogicTest : FunSpec({
 
@@ -33,6 +37,24 @@ class NoWallClockInGameLogicTest : FunSpec({
             sourceRoot = sourceRoot(),
             pattern = Regex("""System\.currentTimeMillis\s*\(\s*\)""")
         ).filterNot { it.relativePath in ALLOWED_FILES }
+
+        offenders.map { "${it.relativePath}:${it.lineNumber}: ${it.line.trim()}" }.shouldBeEmpty()
+    }
+
+    test("no System.nanoTime() in rules-engine game logic") {
+        val offenders = findWallClockUses(
+            sourceRoot = sourceRoot(),
+            pattern = Regex("""System\.nanoTime\s*\(\s*\)""")
+        ).filterNot { it.relativePath in NANO_TIME_ALLOWED_FILES }
+
+        offenders.map { "${it.relativePath}:${it.lineNumber}: ${it.line.trim()}" }.shouldBeEmpty()
+    }
+
+    test("no UUID.randomUUID() in rules-engine game logic") {
+        val offenders = findWallClockUses(
+            sourceRoot = sourceRoot(),
+            pattern = Regex("""randomUUID\s*\(\s*\)""")
+        )
 
         offenders.map { "${it.relativePath}:${it.lineNumber}: ${it.line.trim()}" }.shouldBeEmpty()
     }
@@ -46,6 +68,15 @@ class NoWallClockInGameLogicTest : FunSpec({
             // AI search deadline: the combat advisor budgets real time for its heuristic
             // exploration. Its output is advisory and not persisted to game state.
             "com/wingedsheep/engine/ai/CombatAdvisor.kt"
+        )
+
+        /**
+         * Files permitted to read the clock for a *seed*. The value lands in `GameState.rng`, so it
+         * is part of the snapshot and replays identically — the ban exists to keep the clock out of
+         * decisions and identity, not out of seeding a game that has none.
+         */
+        private val NANO_TIME_ALLOWED_FILES = setOf(
+            "com/wingedsheep/engine/core/GameInitializer.kt"
         )
 
         private data class WallClockUse(

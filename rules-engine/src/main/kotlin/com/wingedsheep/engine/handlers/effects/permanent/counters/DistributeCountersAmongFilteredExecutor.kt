@@ -1,8 +1,8 @@
 package com.wingedsheep.engine.handlers.effects.permanent.counters
 
+import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.DecisionPhase
-import com.wingedsheep.engine.core.DecisionRequestedEvent
 import com.wingedsheep.engine.core.DistributeCountersContinuation
 import com.wingedsheep.engine.core.DistributeDecision
 import com.wingedsheep.engine.core.EffectResult
@@ -12,7 +12,6 @@ import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.effects.DistributeCountersAmongFilteredEffect
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -52,8 +51,7 @@ class DistributeCountersAmongFilteredExecutor : EffectExecutor<DistributeCounter
         val sourceId = context.sourceId ?: context.controllerId
         val sourceName = state.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Spell"
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = DistributeDecision(
+        val decision = { decisionId: String -> DistributeDecision(
             id = decisionId,
             playerId = context.controllerId,
             prompt = "Distribute ${effect.totalCounters} ${effect.counterType} " +
@@ -68,29 +66,15 @@ class DistributeCountersAmongFilteredExecutor : EffectExecutor<DistributeCounter
             minPerTarget = effect.minPerTarget,
             // All N must be placed (distribute "three counters", not "up to three").
             allowPartial = false
-        )
+        ) }
 
         val continuation = DistributeCountersContinuation(
-            decisionId = decisionId,
             sourceId = sourceId,
             controllerId = context.controllerId,
             counterType = effect.counterType,
             removeFromSource = false
         )
 
-        val newState = state
-            .withPendingDecision(decision)
-            .pushContinuation(continuation)
-
-        val events = listOf(
-            DecisionRequestedEvent(
-                decisionId = decisionId,
-                playerId = context.controllerId,
-                decisionType = "DISTRIBUTE",
-                prompt = decision.prompt
-            )
-        )
-
-        return EffectResult.paused(newState, decision, events)
+        return EffectResult.from(state.suspendForDecision(decision, continuation, eventType = "DISTRIBUTE"))
     }
 }

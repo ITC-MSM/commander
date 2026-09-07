@@ -860,6 +860,9 @@ object Costs {
             random: Boolean = false
         ): PayCost = PayCost.Atom(CostAtom.Discard(count, filter, random))
 
+        /** Discard your entire hand — "unless its controller discards their hand" (Perplex). */
+        val DiscardHand: PayCost = PayCost.Atom(CostAtom.DiscardHand)
+
         /**
          * Sacrifice [count] permanents matching [filter]. The source is a legal choice when it
          * matches — "sacrifice it unless you sacrifice an artifact" on an artifact creature lets

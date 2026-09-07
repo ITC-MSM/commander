@@ -9,7 +9,6 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.scripting.effects.ChooseOptionEffect
 import com.wingedsheep.sdk.scripting.effects.OptionType
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -56,8 +55,7 @@ class ChooseOptionPipelineExecutor(
             OptionType.CARD_NAME -> "Name a card"
         }
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = ChooseOptionDecision(
+        val decision = { decisionId: String -> ChooseOptionDecision(
             id = decisionId,
             playerId = controllerId,
             prompt = prompt,
@@ -67,31 +65,17 @@ class ChooseOptionPipelineExecutor(
                 phase = DecisionPhase.RESOLUTION
             ),
             options = options
-        )
+        ) }
 
         val continuation = ChooseOptionPipelineContinuation(
-            decisionId = decisionId,
             controllerId = controllerId,
             sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
             sourceName = sourceName,
             storeAs = effect.storeAs,
             options = options
         )
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = controllerId,
-                    decisionType = "CHOOSE_OPTION",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 }

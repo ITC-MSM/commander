@@ -8,7 +8,6 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.player.MulliganStateComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
-import java.util.UUID
 
 /**
  * Handles mulligan-related actions during game setup.
@@ -106,15 +105,24 @@ class MulliganHandler(
         for (cardId in hand) {
             newState = newState.removeFromZone(handKey, cardId)
             // Add to bottom of library (end of list, since first() = top)
-            val library = newState.getZone(libraryKey)
-            newState = newState.copy(zones = newState.zones + (libraryKey to library + listOf(cardId)))
+            val oldObjectRef = newState.objectRef(cardId)
+            newState = newState.addToZone(libraryKey, cardId)
+            events.add(ZoneChangeEvent(
+                entityId = cardId,
+                entityName = newState.getEntity(cardId)?.get<CardComponent>()?.name ?: "Unknown",
+                fromZone = Zone.HAND,
+                toZone = Zone.LIBRARY,
+                ownerId = playerId,
+                oldObject = oldObjectRef,
+                newObject = newState.objectRef(cardId)
+            ))
         }
 
         // 2. Shuffle library (clearing any per-card reveals first)
         newState = com.wingedsheep.engine.handlers.effects.library.LibraryRevealUtils
             .clearLibraryReveals(newState, playerId)
         val (shuffledLibrary, shuffledState) = newState.nextRandom { shuffle(newState.getZone(libraryKey)) }
-        newState = shuffledState.copy(zones = shuffledState.zones + (libraryKey to shuffledLibrary))
+        newState = shuffledState.reorderZone(libraryKey, shuffledLibrary)
         events.add(LibraryShuffledEvent(playerId, ShuffleCause.MULLIGAN))
 
         // 3. Update mulligan count
@@ -133,6 +141,7 @@ class MulliganHandler(
                 val cardId = library.first()
                 drawnCardIds.add(cardId)
                 newState = newState.removeFromZone(libraryKey, cardId)
+                val oldObjectRef = newState.objectRef(cardId)
                 newState = newState.addToZone(handKey, cardId)
 
                 events.add(ZoneChangeEvent(
@@ -141,7 +150,9 @@ class MulliganHandler(
                         ?.get<CardComponent>()?.name ?: "Unknown",
                     fromZone = Zone.LIBRARY,
                     toZone = Zone.HAND,
-                    ownerId = playerId
+                    ownerId = playerId,
+                    oldObject = oldObjectRef,
+                    newObject = newState.objectRef(cardId)
                 ))
             }
         }
@@ -217,8 +228,8 @@ class MulliganHandler(
         for (cardId in action.cardIds) {
             newState = newState.removeFromZone(handKey, cardId)
             // Add to bottom of library (end of list, since first() = top)
-            val library = newState.getZone(libraryKey)
-            newState = newState.copy(zones = newState.zones + (libraryKey to library + listOf(cardId)))
+            val oldObjectRef = newState.objectRef(cardId)
+            newState = newState.addToZone(libraryKey, cardId)
 
             events.add(ZoneChangeEvent(
                 entityId = cardId,
@@ -226,7 +237,9 @@ class MulliganHandler(
                     ?.get<CardComponent>()?.name ?: "Unknown",
                 fromZone = Zone.HAND,
                 toZone = Zone.LIBRARY,
-                ownerId = playerId
+                ownerId = playerId,
+                oldObject = oldObjectRef,
+                newObject = newState.objectRef(cardId)
             ))
         }
 
@@ -393,21 +406,9 @@ class MulliganHandler(
         val nextLeyline = getNextLeylineChoice(stateWithLeylineScan)
         if (nextLeyline != null) {
             val (playerId, cardId) = nextLeyline
-            val (decision, continuation) = createLeylineDecision(stateWithLeylineScan, playerId, cardId)
+            val result = createLeylineDecision(stateWithLeylineScan, playerId, cardId)
                 ?: return ExecutionResult.success(stateWithLeylineScan, events)
-            val pausedState = stateWithLeylineScan
-                .pushContinuation(continuation)
-                .withPendingDecision(decision)
-            return ExecutionResult.paused(
-                pausedState,
-                decision,
-                events + DecisionRequestedEvent(
-                    decisionId = decision.id,
-                    playerId = playerId,
-                    decisionType = "YES_NO",
-                    prompt = decision.prompt
-                )
-            )
+            return ExecutionResult.propagatePause(result.state, events + result.events)
         }
 
         val advanceResult = turnManager.advanceStep(stateWithLeylineScan)
@@ -418,16 +419,14 @@ class MulliganHandler(
     }
 
     /**
-     * Build the [YesNoDecision] + [LeylineDecisionContinuation] pair for a specific leyline
-     * card in a player's opening hand. The caller is responsible for pushing the continuation
-     * and setting the pending decision on state.
+     * Suspend for a specific leyline card in a player's opening hand, retaining the operation
+     * that consumes the answer together with the question.
      *
      * Returns null when the card no longer has a [CardComponent] (defensive — shouldn't happen).
      */
-    fun createLeylineDecision(state: GameState, playerId: EntityId, leylineCardId: EntityId): Pair<YesNoDecision, LeylineDecisionContinuation>? {
+    fun createLeylineDecision(state: GameState, playerId: EntityId, leylineCardId: EntityId): ExecutionResult? {
         val cardName = state.getEntity(leylineCardId)?.get<CardComponent>()?.name ?: return null
-        val decisionId = "leyline-${leylineCardId.value}-${UUID.randomUUID()}"
-        val decision = YesNoDecision(
+        val question = { decisionId: String -> YesNoDecision(
             id = decisionId,
             playerId = playerId,
             prompt = "Begin the game with $cardName on the battlefield?",
@@ -439,13 +438,12 @@ class MulliganHandler(
             yesText = "Yes",
             noText = "No",
             hint = "Leyline — If this card is in your opening hand, you may begin the game with it on the battlefield."
-        )
+        ) }
         val continuation = LeylineDecisionContinuation(
-            decisionId = decisionId,
             playerId = playerId,
             leylineCardId = leylineCardId,
             cardName = cardName
         )
-        return decision to continuation
+        return state.suspendForDecision(question, continuation)
     }
 }

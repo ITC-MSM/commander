@@ -643,9 +643,31 @@ from a state-threaded counter (never a UUID), `ReplayReconstructor` rebuilds the
 deltas}` stream the viewer consumes. This is kilobytes per game instead of a masked snapshot + a
 per-frame delta + a full unmasked `GameState` per frame.
 
-Decision ids are minted afresh each run (they are not part of the deterministic state), so a
-recorded `SubmitDecision` is re-bound to the freshly created decision's id during reconstruction;
-the choice payload (entity-id targets/cards) is unchanged, so the outcome is identical.
+Decision IDs now come from the serialized `GameState.nextRoutingId` counter, independently of
+entity allocation and gameplay RNG. Repeating the same execution reproduces those IDs, so current
+`SubmitDecision` records already address the reconstructed decision. Historical recordings used
+random or clock-based IDs; reconstruction retains rebinding for those records while preserving
+the recorded choice payload (entity-id targets/cards). Routing IDs are game-local correlation
+tokens and must not be interpreted as globally unique identifiers or semantic action identity.
+
+Both browser and AI adapters produce `LiveActionSubmission`: a canonical engine action and the
+live `interactionEpoch` from the update that originated the choice. `GameSession.executeLiveAction`
+checks that epoch and any pending-question ID under the same lock as execution, before changing
+undo checkpoints, replay inputs, or message-id bookkeeping. Successful undo rotates the live
+epoch without changing the restored engine checkpoint. A new session instance starts a new epoch.
+
+Every full and delta update captures the epoch under the session lock. Browser decisions retain
+an epoch-prefixed opaque ID; `executeClientAction` decodes it and verifies any explicit envelope
+origin agrees. Other browser actions require the originating `interactionEpoch` in `SubmitAction`.
+The client retains that origin while selecting targets, modes, or combat assignments, and clears
+in-progress interaction state when a replacement epoch arrives. It never stamps an older choice
+with the latest update's epoch. Older clients lacking an origin for ordinary actions fail closed.
+
+In-process AI updates retain raw question IDs for engine simulations. The AI carries the update's
+epoch through thinking and approval delays into its callback. Its adapter and every fallback action
+use the same live acceptance operation. Missing or obsolete AI deliveries are discarded before
+fallbacks, rejection accounting, or broadcasts. Rejection accounting and any resulting concession
+also check the originating epoch atomically. Replay records only canonical engine actions.
 
 #### One store
 

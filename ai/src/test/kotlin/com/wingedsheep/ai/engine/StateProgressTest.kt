@@ -39,6 +39,7 @@ class StateProgressTest : FunSpec({
         // inert action look like progress — the exact misreading the guard exists to avoid.
         withClue("rng") { StateProgress.digest(base.copy(rng = GameRng(0x5EED))) shouldBe here }
         withClue("nextEntityId") { StateProgress.digest(base.copy(nextEntityId = 9_999L)) shouldBe here }
+        withClue("nextRoutingId") { StateProgress.digest(base.copy(nextRoutingId = 1L)) shouldBe here }
         withClue("timestamp") { StateProgress.digest(base.copy(timestamp = 9_999L)) shouldBe here }
 
         // Whose turn it is to speak is not what is true of the board. Being blind to it is what
@@ -134,4 +135,31 @@ class StateProgressTest : FunSpec({
         // going in circles.
         StateProgress.digest(base.copy(turnNumber = base.turnNumber + 1)) shouldNotBe here
     }
+    test("transient stack object allocation and its orphan identity are not progress") {
+        val base = state()
+        val transient = com.wingedsheep.sdk.model.EntityId.generate()
+        val afterResolution = base.withEntity(transient, com.wingedsheep.engine.state.ComponentContainer.EMPTY)
+            .pushToStack(transient).popFromStack().second
+        afterResolution.objectRef(transient) shouldNotBe null
+        afterResolution.nextObjectGeneration shouldNotBe base.nextObjectGeneration
+        StateProgress.digest(afterResolution) shouldBe StateProgress.digest(base)
+    }
+
+    test("a live card round trip remains progress when membership and characteristics are identical") {
+        val base = state()
+        val player = base.turnOrder.first()
+        val library = com.wingedsheep.engine.state.ZoneKey(player, com.wingedsheep.sdk.core.Zone.LIBRARY)
+        val graveyard = com.wingedsheep.engine.state.ZoneKey(player, com.wingedsheep.sdk.core.Zone.GRAVEYARD)
+        val exile = com.wingedsheep.engine.state.ZoneKey(player, com.wingedsheep.sdk.core.Zone.EXILE)
+        val card = base.getZone(library).first()
+        val placed = base.moveToZone(card, library, graveyard)
+        val before = placed.copy(zones = placed.zones + (exile to emptyList()))
+        val after = before.moveToZone(card, graveyard, exile).moveToZone(card, exile, graveyard)
+            .withEntity(card, before.getEntity(card)!!)
+        after.zones shouldBe before.zones
+        after.entities shouldBe before.entities
+        after.objectRef(card) shouldNotBe before.objectRef(card)
+        StateProgress.digest(after) shouldNotBe StateProgress.digest(before)
+    }
+
 })

@@ -1,10 +1,10 @@
 package com.wingedsheep.engine.handlers.effects.player
 
+import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.ChooseEvidenceAmountContinuation
 import com.wingedsheep.engine.core.ChooseNumberDecision
 import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.DecisionPhase
-import com.wingedsheep.engine.core.DecisionRequestedEvent
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
@@ -13,7 +13,6 @@ import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.effects.CollectEvidenceChosenAmountEffect
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -69,8 +68,7 @@ class CollectEvidenceChosenAmountExecutor : EffectExecutor<CollectEvidenceChosen
             )
         }
 
-        val decisionId = UUID.randomUUID().toString()
-        val decision = ChooseNumberDecision(
+        val decision = { decisionId: String -> ChooseNumberDecision(
             id = decisionId,
             playerId = playerId,
             prompt = "Collect evidence X — choose X (0-$maxAmount)",
@@ -81,26 +79,14 @@ class CollectEvidenceChosenAmountExecutor : EffectExecutor<CollectEvidenceChosen
             ),
             minValue = 0,
             maxValue = maxAmount
-        )
+        ) }
 
         val continuation = ChooseEvidenceAmountContinuation(
-            decisionId = decisionId,
             playerId = playerId,
             storeAmountAs = effect.storeAmountAs,
             sourceName = sourceName,
         )
 
-        return EffectResult.paused(
-            state.withPendingDecision(decision).pushContinuation(continuation),
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = playerId,
-                    decisionType = "CHOOSE_NUMBER",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 }

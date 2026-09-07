@@ -7,7 +7,6 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.sdk.scripting.effects.PutOnLibraryPositionOfChoiceEffect
-import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -51,8 +50,8 @@ class PutOnTopOrBottomOfLibraryExecutor : EffectExecutor<PutOnLibraryPositionOfC
         val promptPhrase = positions.joinToString(" or ") {
             it.label.replaceFirstChar { c -> c.lowercase() }
         }
-        val decisionId = UUID.randomUUID().toString()
-        val decision = ChooseOptionDecision(
+
+        val decision = { decisionId: String -> ChooseOptionDecision(
             id = decisionId,
             playerId = ownerId,
             prompt = "Put ${cardComponent.name} on $promptPhrase",
@@ -62,32 +61,18 @@ class PutOnTopOrBottomOfLibraryExecutor : EffectExecutor<PutOnLibraryPositionOfC
                 phase = DecisionPhase.RESOLUTION
             ),
             options = options
-        )
+        ) }
 
         val continuation = PutOnTopOrBottomContinuation(
-            decisionId = decisionId,
             ownerId = ownerId,
             cardId = targetId,
             sourceId = context.sourceId,
+            objectReferences = context.objectReferences,
             sourceName = sourceName,
             options = options,
             positions = positions
         )
 
-        val stateWithDecision = state.withPendingDecision(decision)
-        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
-
-        return EffectResult.paused(
-            stateWithContinuation,
-            decision,
-            listOf(
-                DecisionRequestedEvent(
-                    decisionId = decisionId,
-                    playerId = ownerId,
-                    decisionType = "CHOOSE_OPTION",
-                    prompt = decision.prompt
-                )
-            )
-        )
+        return EffectResult.from(state.suspendForDecision(decision, continuation))
     }
 }
