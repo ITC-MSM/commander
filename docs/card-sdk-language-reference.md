@@ -5085,6 +5085,26 @@ fall back to base data). Use `projected.isCreature(entityId)` rather than `cardC
 
 ---
 
+### Cast-name history filters
+
+`GameObjectFilter.sharesNameWithSpellCastThisTurn()` adds
+`StatePredicate.SharesNameWithSpellCastThisTurn`: the candidate shares at least one name with a spell
+cast by any player this turn. Reads cast-time history, so resolution, countering, and later zone changes
+do not erase eligibility; nameless and face-down spells never match. History resets on turn change.
+Used by **Twinning Glass**, composing hand gathering, an optional `SelectionMode.ChooseSpell` selection, and
+`Effects.CastFromCollectionWithoutPayingCost` for a cast during ability resolution.
+
+`SelectionMode.ChooseSpell` selects zero or one spell from a collection. Unlike a card selection, its
+filter tests each castable face separately: a matching Adventure, Omen, split half, or modal back face
+can qualify without the primary face qualifying. Preparation spells are excluded. The ordinary card
+picker chooses the physical card; if several faces qualify, the existing option picker chooses the
+spell name. The selection carries its face alongside the selected collection through continuations;
+`CastFromCollectionWithoutPayingCost` consumes that choice for targeting, permission, and casting.
+Spell eligibility uses the face filter; card-selection budget restrictions and the legacy
+`matchChosenCreatureType` flag are rejected in this mode. Declining creates no cast permission. The normal cast handler still enforces targets and additional
+costs, and records the chosen face's name in turn history.
+
+
 ## 8. Triggered abilities (`Triggers.*`)
 
 `triggeredAbility { trigger; effect; target?; triggerZone?/triggerZones?; interveningIf?; triggerRestriction?; optional?; elseEffect?; checkOnNextState?; dealsDamageBeforeResolve?; controlledByTriggeringEntityController?; oncePerTurn?; effectOncePerTurn?; triggersOnce? }`.

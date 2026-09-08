@@ -2,7 +2,7 @@
 
 **Set Size:** 286 cards
 **Release Date:** October 12, 2007
-**Implemented:** 279 / 286
+**Implemented:** 280 / 286
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 49    | 43   |
@@ -294,7 +294,7 @@
 - [x] Springleaf Drum
 - [x] Thorn of Amethyst
 - [x] Thousand-Year Elixir
-- [ ] Twinning Glass
+- [x] Twinning Glass
 - [x] Wanderer's Twig
 
 ### Land

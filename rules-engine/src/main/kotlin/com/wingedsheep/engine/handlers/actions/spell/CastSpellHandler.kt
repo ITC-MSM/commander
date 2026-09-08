@@ -3590,7 +3590,10 @@ class CastSpellHandler(
                 castFromZone = stackResolver.findCastFromZone(currentState, action.cardId, action.playerId),
                 // Face-down casts hide the card's identity; a face-up cast records the name so
                 // name predicates ("the first Otter spell other than Alania") can match history.
-                name = if (action.castFaceDown) null else (transformedFace?.name ?: cardComponent.name),
+                name = if (action.castFaceDown) null else (
+                    action.faceIndex?.let { cardDef?.cardFaces?.getOrNull(it)?.name }
+                        ?: transformedFace?.name ?: cardComponent.name
+                ),
             )
             val existing = currentState.spellsCastThisTurnByPlayer[action.playerId] ?: emptyList()
             currentState = currentState.copy(

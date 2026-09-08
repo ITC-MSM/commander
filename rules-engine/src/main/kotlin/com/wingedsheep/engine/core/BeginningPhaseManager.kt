@@ -479,6 +479,8 @@ class BeginningPhaseManager(
         container: ComponentContainer
     ): Boolean = when (predicate) {
         // Graveyard-only predicates; untap filters never see a card with the marker.
+        // Cast history is cleared before the turn's untap step.
+        StatePredicate.SharesNameWithSpellCastThisTurn -> false
         StatePredicate.PutIntoGraveyardThisTurn -> false
         StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn -> false
         // No granter context in untap filtering — granter-relative exclusion is resolution-time only.

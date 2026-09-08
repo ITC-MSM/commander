@@ -34,6 +34,9 @@ data class PipelineState(
     companion object {
         val EMPTY = PipelineState()
 
+        /** Reserved metadata published by ChooseSpell alongside its selected card collection. */
+        fun spellFaceKey(collection: String): String = "$collection:spellFace"
+
         /**
          * Pipeline collection name under which a batch trigger seeds the entities it captured
          * (the matching permanents in a `PermanentsEnteredEvent` batch). Aliases the SDK-side
