@@ -13216,6 +13216,87 @@
     ]
 }
 
+// Spawnbroker
+{
+    "name": "Spawnbroker",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "When this creature enters, you may exchange control of target creature you control and target creature with power less than or equal to that creature's power an opponent controls.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "ExchangeControl",
+                        "target1": {
+                            "type": "BoundVariable",
+                            "name": "creature you control"
+                        },
+                        "target2": {
+                            "type": "BoundVariable",
+                            "name": "opponent's creature with power no greater than your chosen creature"
+                        }
+                    },
+                    "descriptionOverride": "You may exchange control of the two targeted creatures."
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "creature you control"
+                },
+                "additionalTargetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    {
+                                        "type": "PowerAtMostEntity",
+                                        "reference": "Target"
+                                    }
+                                ],
+                                "controllerPredicate": "ControlledByOpponent"
+                            }
+                        },
+                        "id": "opponent's creature with power no greater than your chosen creature"
+                    }
+                ],
+                "descriptionOverride": "You may exchange control of the two targeted creatures."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "65",
+        "rarity": "RARE",
+        "artist": "Wayne England",
+        "flavorText": "\"The trick isn't setting up the bad trade. It's making each side think it got the better deal.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/e/ce1e4aa6-b06d-4b87-9912-a4c403e8d7c6.jpg?1783943680",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "If either target becomes illegal (say, if a creature’s power has changed such that the creature you control now has less power than the other creature), then the exchange won’t happen."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Stasis Cell
 {
     "name": "Stasis Cell",

@@ -2,11 +2,11 @@
 
 **Set Size:** 291 cards
 **Release Date:** October 7, 2005
-**Implemented:** 273 / 291
+**Implemented:** 274 / 291
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 37    | 33   |
-| Blue       | 39    | 35   |
+| Blue       | 39    | 36   |
 | Black      | 37    | 35   |
 | Red        | 39    | 38   |
 | Green      | 37    | 37   |
@@ -85,7 +85,7 @@
 - [ ] Quickchange
 - [x] Remand
 - [x] Snapping Drake
-- [ ] Spawnbroker
+- [x] Spawnbroker
 - [x] Stasis Cell
 - [x] Surveilling Sprite
 - [x] Tattered Drake
