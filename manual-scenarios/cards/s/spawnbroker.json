@@ -1,0 +1,55 @@
+{
+  "player1Name": "Spawnbroker",
+  "player2Name": "Trading partner",
+  "player1": {
+    "lifeTotal": 20,
+    "hand": [
+      "Spawnbroker",
+      "Giant Growth"
+    ],
+    "battlefield": [
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Grizzly Bears"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Island",
+      "Island",
+      "Island"
+    ]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": [],
+    "battlefield": [
+      {
+        "name": "Llanowar Elves"
+      },
+      {
+        "name": "Hill Giant"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Forest",
+      "Forest",
+      "Forest"
+    ]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1
+}

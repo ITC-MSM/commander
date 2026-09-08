@@ -53,6 +53,46 @@ class EffectAndTriggerContinuationResumer(
             return ExecutionResult.error(state, "Expected target selection response for triggered ability")
         }
 
+        continuation.sequentialTargets?.let { prefix ->
+            val selected = response.selectedTargets[0]?.singleOrNull()
+                ?: return ExecutionResult.error(state, "Choose one target")
+            val chosen = prefix + selected
+            if (chosen.size < continuation.targetRequirements.size) {
+                val pipeline = continuation.carriedPipeline
+                val context = com.wingedsheep.engine.handlers.PredicateContext(
+                    controllerId = continuation.controllerId,
+                    sourceId = continuation.sourceId,
+                    triggeringEntityId = continuation.triggeringEntityId,
+                    triggeringPlayerId = continuation.triggeringPlayerId,
+                    xValue = continuation.xValue,
+                    storedCollections = pipeline?.storedCollections ?: emptyMap(),
+                    chosenValues = pipeline?.chosenValues ?: emptyMap(),
+                    storedStringLists = pipeline?.storedStringLists ?: emptyMap(),
+                    storedSubtypeGroups = pipeline?.storedSubtypeGroups ?: emptyMap(),
+                )
+                val legal = com.wingedsheep.engine.handlers.DependentTargetSelection.legalNext(
+                    state, continuation.targetRequirements, chosen, context
+                )
+                return com.wingedsheep.engine.handlers.DecisionHandler().createTargetDecision(
+                    state, continuation.controllerId, continuation.sourceId, continuation.sourceName,
+                    requirements = listOf(TargetRequirementInfo(
+                        index = 0,
+                        description = continuation.targetRequirements[chosen.size].description,
+                        minTargets = 1,
+                        maxTargets = 1,
+                    )),
+                    legalTargets = mapOf(0 to legal),
+                    effectHint = continuation.description,
+                    answer = continuation.copy(sequentialTargets = chosen),
+                )
+            }
+            return resumeTriggeredAbility(
+                state, continuation.copy(sequentialTargets = null),
+                response.copy(selectedTargets = chosen.mapIndexed { index, id -> index to listOf(id) }.toMap()),
+                checkForMore,
+            )
+        }
+
         // Build the chosen-targets list in requirement-slot order, keeping it PARALLEL to the
         // requirements that actually received a target. A declined "up to one" slot (empty list)
         // drops out of BOTH lists together, so a later target never shifts forward into an earlier

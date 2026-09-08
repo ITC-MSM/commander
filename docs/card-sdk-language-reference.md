@@ -2117,6 +2117,13 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   the condition fails — so a pump that wears off, a re-tap, or a re-acquired source never
   re-grabs the creature.
 - `ExchangeControlEffect(target1, target2)` — swap control of two permanents.
+  Triggered abilities with mandatory single-permanent target slots may compare a later target to an
+  earlier one using `EntityReference.Target(index)` (Spawnbroker: `powerAtMostEntity(Target(0))`).
+  The engine asks for these targets sequentially, offers only choices that can complete the remaining
+  slots, and rechecks the relationship against projected characteristics at resolution. The optional
+  exchange remains a resolution-time consent choice. This selection path does not support optional
+  or multiple-object slots.
+
 - `GainControlByRankEffect(metric, target?, direction?, tieBreak?)` — rank the players still in the
   game by a `PlayerRankMetric` and hand the target to whoever sits at one end. Three independent
   axes, so a new card in this family usually needs no new effect: **what** is ranked (`metric` —

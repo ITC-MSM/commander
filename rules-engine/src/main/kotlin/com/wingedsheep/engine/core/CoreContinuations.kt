@@ -59,6 +59,8 @@ data class TriggeredAbilityContinuation(
     val triggeringPlayerId: EntityId? = null,
     val elseEffect: Effect? = null,
     val targetRequirements: List<TargetRequirement> = emptyList(),
+    /** Non-null while dependent targets are being chosen, one requirement at a time. */
+    val sequentialTargets: List<EntityId>? = null,
     val triggerCounterCount: Int? = null,
     val triggerTotalCounterCount: Int? = null,
     val triggerLastKnownCounters: Map<String, Int>? = null,
