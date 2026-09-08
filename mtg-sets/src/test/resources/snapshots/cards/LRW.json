@@ -17118,6 +17118,91 @@
     ]
 }
 
+// Twinning Glass
+{
+    "name": "Twinning Glass",
+    "manaCost": "{4}",
+    "typeLine": "Artifact",
+    "oracleText": "{1}, {T}: You may cast a spell from your hand without paying its mana cost if it has the same name as a spell that was cast this turn.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hand",
+                            "selection": "ChooseSpell",
+                            "filter": {
+                                "cardPredicates": [
+                                    "IsNonland"
+                                ],
+                                "statePredicates": [
+                                    "SharesNameWithSpellCastThisTurn"
+                                ]
+                            },
+                            "storeSelected": "spellToCast",
+                            "prompt": "You may cast a spell with the same name as a spell cast this turn",
+                            "selectedLabel": "Cast for free",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "CastFromCollectionWithoutPayingCost",
+                            "from": "spellToCast"
+                        }
+                    ]
+                },
+                "descriptionOverride": "{1}, {T}: Cast a spell with a name already cast this turn for free"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "264",
+        "rarity": "RARE",
+        "artist": "Franz Vohwinkel",
+        "flavorText": "It takes two to craft a mirror: a practiced metalsmith to silver one side and her own hazy reflection to polish the other.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e0138c42-77ea-45f0-b2ca-cda03f3f50d1.jpg?1783942850",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "Activating Twinning Glass's ability allows you to cast a single card from your hand as it resolves. It doesn't create a continuous effect, and it doesn't let you cast multiple cards for free."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "It doesn't matter who cast the first spell."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "You can't pay any alternative costs (such as those from evoke or morph) when casting the card. On the other hand, if the card has additional costs (such as those from kicker or buyback), you may pay those."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Veteran of the Depths
 {
     "name": "Veteran of the Depths",

@@ -527,6 +527,10 @@ internal class AffectsFilterResolver {
         // that has become tapped for the first time this turn" resolves during projection.
         StatePredicate.BecameTappedOnlyOnceThisTurn ->
             becameTappedOnlyOnceThisTurn(container, state.turnNumber)
+        StatePredicate.SharesNameWithSpellCastThisTurn ->
+            com.wingedsheep.engine.handlers.predicates.sharesNameWithSpellCastThisTurn(
+                state, projectedValues[entityId]?.name ?: container.get<CardComponent>()?.name
+            )
         StatePredicate.WasDealtDamageThisTurn -> container.has<WasDealtDamageThisTurnComponent>()
         // Damage history — plain per-entity state with no source-relative half, so a group static
         // gated on "each creature that dealt damage this turn" resolves during projection and gives

@@ -1564,6 +1564,11 @@ class PredicateEvaluator {
             StatePredicate.BecameTappedOnlyOnceThisTurn ->
                 becameTappedOnlyOnceThisTurn(container, state.turnNumber)
 
+            StatePredicate.SharesNameWithSpellCastThisTurn ->
+                com.wingedsheep.engine.handlers.predicates.sharesNameWithSpellCastThisTurn(
+                    state, projected.getName(entityId) ?: container.get<CardComponent>()?.name
+                )
+
             // Damage state
             StatePredicate.WasDealtDamageThisTurn -> {
                 container.has<WasDealtDamageThisTurnComponent>()
