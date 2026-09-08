@@ -313,7 +313,7 @@ sealed interface AdditionalCost : TextReplaceable<AdditionalCost> {
      *
      *  - [cost] must be a *selection-carrying* cost, i.e. one whose payment lands in its own field:
      *    [Behold], or an [Atom] over [CostAtom.Sacrifice], [CostAtom.Discard], [CostAtom.ExileFrom],
-     *    [CostAtom.TapPermanents], [CostAtom.ReturnToHand]. Costs that are auto-paid with no
+     *    [CostAtom.TapPermanents], [CostAtom.ReturnToHand], [CostAtom.RevealFromHand]. Costs that are auto-paid with no
      *    selection ([CostAtom.PayLife], [CostAtom.Mill]) leave no trace to read the choice from, so
      *    they can't sit on this leg.
      *  - Don't pair it on one card with another additional cost that consumes the *same* payment
@@ -503,6 +503,22 @@ data class AdditionalCostPayment(
     /** Cards chosen via Behold (from battlefield or hand) */
     val beheldCards: List<EntityId> = emptyList(),
 
+    /**
+     * Cards revealed from hand for a [com.wingedsheep.sdk.scripting.costs.CostAtom.RevealFromHand]
+     * cost — "reveal an Elf card from your hand" (Wren's Run Vanquisher).
+     *
+     * Its own channel rather than [beheldCards] because behold is the strictly *wider* action:
+     * CR 701.4a defines "behold a [quality]" as "reveal a [quality] card from your hand **or**
+     * choose a [quality] permanent you control", so a behold payment can be a battlefield
+     * permanent and a reveal payment never can. Sharing the field would let a caster satisfy a
+     * hand-only reveal cost with a permanent, and would make the two indistinguishable on the
+     * [AdditionalCost.OrPay] leg, whose whole disambiguation is which field the client populated.
+     *
+     * The cards stay in hand (CR 701.20b — revealing doesn't move a card), so paying emits a
+     * `CardsRevealedEvent` and changes no zone.
+     */
+    val revealedCards: List<EntityId> = emptyList(),
+
     /** Permanents that were tapped */
     val tappedPermanents: List<EntityId> = emptyList(),
 
@@ -540,6 +556,7 @@ data class AdditionalCostPayment(
                 exiledCards.isEmpty() &&
                 variableCostPermanents.isEmpty() &&
                 beheldCards.isEmpty() &&
+                revealedCards.isEmpty() &&
                 tappedPermanents.isEmpty() &&
                 bouncedPermanents.isEmpty() &&
                 blightTargets.isEmpty() &&

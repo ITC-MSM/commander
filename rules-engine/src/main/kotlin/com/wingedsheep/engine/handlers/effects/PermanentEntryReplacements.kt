@@ -59,6 +59,13 @@ import com.wingedsheep.sdk.scripting.references.Player
  *    just after `enterPermanentOnBattlefield`. [runOnEnterRunEffect] only. Added for Nameless
  *    Race; until then [OnEnterRunEffect] was silently inert on every cast permanent, which went
  *    unnoticed because its only two users were lands (played, not cast).
+ *  - [com.wingedsheep.engine.handlers.continuations.ModalAndCloneContinuationResumer]'s
+ *    `resumeEntersWithChoiceSpell` — the same cast-as-a-spell entry, finished on the *other* side
+ *    of an [EntersWithChoice] pause. [runOnEnterRunEffect] only, and it has to be repeated there
+ *    because that resumer calls `enterPermanentOnBattlefield` itself: a card carrying both
+ *    replacements (Grifter's Blade) otherwise made its choice and then lost the effect that reads
+ *    it. `enterPermanentOnBattlefield` can't own the call — it returns a `(GameState, events)`
+ *    pair, and this replacement may pause.
  *
  * Those omissions are real gaps, not deliberate exclusions. The next one worth closing is
  * [EntersWithChoice] on the move path: a reanimated Shapeshifter or Sorcerous Spyglass currently
@@ -409,7 +416,13 @@ object PermanentEntryReplacements {
                     { id -> SelectCardsDecision(
                         id = id,
                         playerId = controllerId,
-                        prompt = "Choose another creature you control",
+                        // Same wording rule as the spell path: "another" only when the entering
+                        // permanent is itself a creature.
+                        prompt = if (cardComponent.isCreature) {
+                            "Choose another creature you control"
+                        } else {
+                            "Choose a creature you control"
+                        },
                         context = context(),
                         options = creatures,
                         minSelections = 1,

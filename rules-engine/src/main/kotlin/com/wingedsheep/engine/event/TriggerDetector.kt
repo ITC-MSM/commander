@@ -1535,7 +1535,16 @@ class TriggerDetector(
                                         enchantedCreatureLastKnownPower = enchantedPower,
                                         // Never clobber a capture the event itself carries
                                         // (manifest dread's graveyard cards).
-                                        capturedEntityIds = capturedTargets ?: ctx.capturedEntityIds
+                                        capturedEntityIds = capturedTargets ?: ctx.capturedEntityIds,
+                                        // "Whenever a source deals damage to this creature" binds
+                                        // the damage *source*, so "that source's controller …"
+                                        // (Belltower Sphinx) resolves. DamageTriggerDetector owns
+                                        // the same rule for the case where the creature died to
+                                        // that damage; both paths must agree.
+                                        triggeringEntityId =
+                                            if (event is DamageDealtEvent &&
+                                                DamageTriggerDetector.bindsDamageSource(ability)
+                                            ) event.sourceId else ctx.triggeringEntityId
                                     )
                                 }
                             )

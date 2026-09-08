@@ -6,13 +6,28 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
  * Translate an [EffectTarget] to a [Player] reference for use in pipeline effects.
+ *
+ * Deliberately **not** total: an unmapped [EffectTarget] throws rather than falling back to
+ * [Player.You]. The fallback this replaced was a silent one, and it shipped a wrong card —
+ * Mesmeric Orb passed [EffectTarget.ControllerOfTriggeringEntity] and milled the Orb's own
+ * controller on every untap instead of the untapping permanent's. A pipeline keyed to the wrong
+ * player looks identical to a correct one in the golden snapshot, so nothing downstream can catch
+ * it; failing here, at card-construction time, is the only place it *is* catchable.
+ *
+ * Every caller passes a compile-time-known target, so this throws during `CardDiscovery`/snapshot
+ * construction — never mid-game.
  */
 internal fun effectTargetToPlayer(target: EffectTarget): Player = when (target) {
     EffectTarget.Controller -> Player.You
     is EffectTarget.ContextTarget -> Player.ContextPlayer(target.index)
     is EffectTarget.BoundVariable -> Player.ContextPlayer(0)
     is EffectTarget.PlayerRef -> target.player
-    else -> Player.You
+    EffectTarget.ControllerOfTriggeringEntity -> Player.ControllerOfTriggeringEntity
+    else -> error(
+        "No Player reference for EffectTarget $target. Pipeline effects (mill, exileTop, the " +
+            "Hand patterns) are keyed by Player, so a target with no mapping would silently " +
+            "become 'you'. Add the mapping here rather than letting it default."
+    )
 }
 
 /**

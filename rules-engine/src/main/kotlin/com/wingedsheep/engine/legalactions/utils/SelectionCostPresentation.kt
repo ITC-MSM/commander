@@ -185,6 +185,15 @@ object SelectionCostPresentation {
                         exileMaxCount = atom.count,
                     )
                 }
+                // The cards stay in hand (CR 701.20b), so the picker publishes a selection and
+                // moves nothing. Its own pool/count fields rather than behold's: behold also
+                // offers battlefield permanents (CR 701.4a), which can never pay this.
+                is CostAtom.RevealFromHand -> "Reveal" to AdditionalCostData(
+                    description = description,
+                    costType = "RevealCard",
+                    validRevealTargets = candidates,
+                    revealCount = atom.count,
+                )
                 is CostAtom.TapPermanents -> "Tap" to AdditionalCostData(
                     description = description,
                     costType = "TapPermanents",

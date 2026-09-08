@@ -1352,11 +1352,18 @@ class CostHandler {
                 // since the atom's default is `excludeSelf = true`.
                 is CostAtom.VariablePermanents ->
                     com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost.canPay(state, controllerId, atom)
-                // Mana / return-to-hand / reveal / put-counters-on-self / mill are not produced as
+                // "As an additional cost to cast this spell, reveal an Elf card from your hand"
+                // (Wren's Run Vanquisher). Payable while the hand holds enough matching cards; the
+                // cards stay there (CR 701.20b), so paying it takes nothing away.
+                is CostAtom.RevealFromHand ->
+                    findMatchingCardsUnified(
+                        state, state.getZone(ZoneKey(controllerId, Zone.HAND)), atom.filter, controllerId
+                    ).size >= atom.count
+                // Mana / return-to-hand / put-counters-on-self / mill are not produced as
                 // spell additional costs today (put-counters-on-self and reveal-the-noted-type are
                 // inherently ability-scoped — a spell on the stack has no permanent to put the
                 // counters on, nor one carrying a secret note).
-                is CostAtom.Mana, is CostAtom.ReturnToHand, is CostAtom.RevealFromHand,
+                is CostAtom.Mana, is CostAtom.ReturnToHand,
                 is CostAtom.PutCountersOnPermanent,
                 is CostAtom.PutCountersOnSelf, is CostAtom.Mill,
                 is CostAtom.RevealNotedCreatureType,

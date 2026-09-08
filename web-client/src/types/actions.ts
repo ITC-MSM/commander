@@ -59,6 +59,12 @@ export interface AdditionalCostPayment {
   readonly lifePaid?: number
   readonly exiledCards?: readonly EntityId[]
   readonly beheldCards?: readonly EntityId[]
+  /**
+   * Cards revealed from hand for a reveal-from-hand additional cost. They stay in hand
+   * (CR 701.20b); its own field rather than `beheldCards` because behold also accepts a
+   * battlefield permanent (CR 701.4a) and a reveal never does.
+   */
+  readonly revealedCards?: readonly EntityId[]
   readonly tappedPermanents?: readonly EntityId[]
   readonly bouncedPermanents?: readonly EntityId[]
   readonly counterRemovals?: Readonly<Record<EntityId, number>>

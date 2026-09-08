@@ -250,6 +250,66 @@
     ]
 }
 
+// Belltower Sphinx
+{
+    "name": "Belltower Sphinx",
+    "manaCost": "{4}{U}",
+    "typeLine": "Creature — Sphinx",
+    "oracleText": "Flying\nWhenever a source deals damage to this creature, that source's controller mills that many cards.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DamageReceivedEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "ContextProperty",
+                                    "key": "TRIGGER_DAMAGE_AMOUNT"
+                                },
+                                "player": "ControllerOfTriggeringEntity",
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": "ControllerOfTriggeringEntity"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever a source deals damage to this creature, that source's controller mills that many cards."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "38",
+        "rarity": "UNCOMMON",
+        "artist": "Jim Nelson",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/5/452a23a0-62de-4561-b361-9c0de9151129.jpg?1783943691"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Benevolent Ancestor
 {
     "name": "Benevolent Ancestor",
@@ -6598,6 +6658,87 @@
     ]
 }
 
+// Grifter's Blade
+{
+    "name": "Grifter's Blade",
+    "manaCost": "{3}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Flash\nAs this Equipment enters, choose a creature you control it could be attached to. If you do, it enters attached to that creature.\nEquipped creature gets +1/+1.\nEquip {1}",
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithChoice",
+                "choiceType": "CREATURE_ON_BATTLEFIELD"
+            },
+            {
+                "type": "OnEnterRunEffect",
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": "ChosenCreature"
+                }
+            }
+        ]
+    },
+    "equipCost": "{1}",
+    "metadata": {
+        "collectorNumber": "263",
+        "rarity": "UNCOMMON",
+        "artist": "Alan Pollack",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/c/7c411784-fe96-42c0-baaa-36616d2be0b3.jpg?1783943598",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "Grifter's Blade must enter attached to a creature you control, if possible."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If you don't control a creature Grifter's Blade could be attached to, it simply enters unattached."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Grozoth
 {
     "name": "Grozoth",
@@ -8682,6 +8823,94 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Molten Sentry
+{
+    "name": "Molten Sentry",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "As this creature enters, flip a coin. If the coin comes up heads, this creature enters as a 5/2 creature with haste. If it comes up tails, this creature enters as a 2/5 creature with defender.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "OnEnterRunEffect",
+                "effect": {
+                    "type": "FlipCoin",
+                    "wonEffect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SetBaseStats",
+                                "target": "Self",
+                                "power": {
+                                    "type": "Fixed",
+                                    "amount": 5
+                                },
+                                "toughness": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "HASTE",
+                                "target": "Self",
+                                "duration": "Permanent"
+                            }
+                        ]
+                    },
+                    "lostEffect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SetBaseStats",
+                                "target": "Self",
+                                "power": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "toughness": {
+                                    "type": "Fixed",
+                                    "amount": 5
+                                }
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "DEFENDER",
+                                "target": "Self",
+                                "duration": "Permanent"
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "136",
+        "rarity": "RARE",
+        "artist": "Kev Walker",
+        "flavorText": "Some take after their father, Stone, some after their mother, Fire.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/9/a9eb6c92-b385-4ef4-83ac-65a1a23e3d22.jpg?1783943649",
+        "rulings": [
+            {
+                "date": "2005-10-01",
+                "text": "If a creature enters copying Molten Sentry, that creature's controller flips a coin to see what the copy will be."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "If a creature that's already on the battlefield copies Molten Sentry, it becomes a copy of whatever Molten Sentry already is (either a 5/2 creature with haste or a 2/5 creature with defender)."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

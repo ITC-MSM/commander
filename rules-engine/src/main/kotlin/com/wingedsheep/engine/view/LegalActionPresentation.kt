@@ -302,6 +302,9 @@ data class AdditionalCostInfo(
     val exileWeightPerTarget: Map<EntityId, Int> = emptyMap(),
     val validBeholdTargets: List<EntityId> = emptyList(),
     val beholdCount: Int = 0,
+    /** Hand cards that could pay a reveal-from-hand additional cost, and how many to pick. */
+    val validRevealTargets: List<EntityId> = emptyList(),
+    val revealCount: Int = 0,
     val counterRemovalCreatures: List<CounterRemovalCreatureInfo> = emptyList(),
     val validBlightTargets: List<EntityId> = emptyList(),
     val blightAmount: Int = 0,

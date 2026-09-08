@@ -7685,6 +7685,7 @@
                                     "type": "Fixed",
                                     "amount": 1
                                 },
+                                "player": "ControllerOfTriggeringEntity",
                                 "isMill": true
                             },
                             "storeAs": "milled"
@@ -7694,7 +7695,8 @@
                             "from": "milled",
                             "destination": {
                                 "type": "ToZone",
-                                "zone": "Graveyard"
+                                "zone": "Graveyard",
+                                "player": "ControllerOfTriggeringEntity"
                             }
                         }
                     ]

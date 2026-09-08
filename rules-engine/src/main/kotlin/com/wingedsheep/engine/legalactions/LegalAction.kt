@@ -467,6 +467,14 @@ data class AdditionalCostData(
     val exileWeightPerTarget: Map<EntityId, Int> = emptyMap(),
     val validBeholdTargets: List<EntityId> = emptyList(),
     val beholdCount: Int = 0,
+    /**
+     * Cards in the caster's hand that could pay a [com.wingedsheep.sdk.scripting.costs.CostAtom.RevealFromHand]
+     * additional cost, and how many of them to pick. Its own pool rather than
+     * [validBeholdTargets] because behold also offers battlefield permanents (CR 701.4a) and a
+     * reveal never does; the client submits the picks as `additionalCostPayment.revealedCards`.
+     */
+    val validRevealTargets: List<EntityId> = emptyList(),
+    val revealCount: Int = 0,
     val counterRemovalCreatures: List<CounterRemovalCreatureData> = emptyList(),
     val validBlightTargets: List<EntityId> = emptyList(),
     val blightAmount: Int = 0,

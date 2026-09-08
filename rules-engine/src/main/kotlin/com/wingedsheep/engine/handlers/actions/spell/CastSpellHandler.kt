@@ -1780,6 +1780,7 @@ class CastSpellHandler(
                 is CostAtom.TapPermanents -> p.tappedPermanents.isNotEmpty()
                 is CostAtom.ReturnToHand -> p.bouncedPermanents.isNotEmpty()
                 is CostAtom.VariablePermanents -> p.variableCostPermanents.isNotEmpty()
+                is CostAtom.RevealFromHand -> p.revealedCards.isNotEmpty()
                 // Never offered as a spell's additional cost (see CostHandler.canPayAdditionalCost),
                 // so no payment can satisfy it here.
                 is CostAtom.ExileFromGraveyardForTotal -> false
@@ -1987,11 +1988,33 @@ class CastSpellHandler(
                             }
                         }
                     }
-                    // Mana / reveal are not produced as spell additional costs today;
+                    // "Reveal an Elf card from your hand" — the chosen cards must be in the
+                    // caster's hand and match the filter. They stay there (CR 701.20b), so this
+                    // validates a selection rather than a zone change.
+                    is CostAtom.RevealFromHand -> {
+                        val revealed = action.additionalCostPayment?.revealedCards ?: emptyList()
+                        val filterDesc = atom.filter.description
+                        if (revealed.size < atom.count) {
+                            return "You must reveal ${atom.count} $filterDesc from your hand to cast this spell"
+                        }
+                        val hand = state.getZone(ZoneKey(action.playerId, Zone.HAND))
+                        val revealContext = PredicateContext(controllerId = action.playerId)
+                        for (revealedId in revealed) {
+                            val card = state.getEntity(revealedId)?.get<CardComponent>()
+                                ?: return "Revealed card not found: $revealedId"
+                            if (revealedId !in hand) {
+                                return "${card.name} is not in your hand"
+                            }
+                            if (!predicateEvaluator.matches(state, projected, revealedId, atom.filter, revealContext)) {
+                                return "${card.name} doesn't match the required filter: $filterDesc"
+                            }
+                        }
+                    }
+                    // Mana is not produced as a spell additional cost today;
                     // put-counters-on-self is ability-scoped (no permanent to accrue them on);
                     // Mill and ExileFromGraveyardForTotal are activated-ability-only costs, never
                     // spell additional costs (canPayAdditionalCost already reports both unpayable).
-                    is CostAtom.Mana, is CostAtom.RevealFromHand,
+                    is CostAtom.Mana,
                     is CostAtom.PutCountersOnPermanent,
                     is CostAtom.PutCountersOnSelf,
                     is CostAtom.RevealNotedCreatureType,
@@ -2861,15 +2884,33 @@ class CastSpellHandler(
                                 }
                             }
                         }
-                        // PayLife is auto-paid in the loop above; mana / reveal aren't spell additional
-                        // costs; put-counters-on-self is ability-scoped (a spell on the stack has no
+                        // Revealing publishes the cards and moves nothing (CR 701.20b), so paying
+                        // is the event alone — the cards stay in hand and are still castable later.
+                        is CostAtom.RevealFromHand -> {
+                            val revealed = action.additionalCostPayment.revealedCards
+                            if (revealed.isNotEmpty()) {
+                                events.add(
+                                    com.wingedsheep.engine.core.CardsRevealedEvent(
+                                        revealingPlayerId = action.playerId,
+                                        cardIds = revealed,
+                                        cardNames = revealed.map {
+                                            currentState.getEntity(it)?.get<CardComponent>()?.name ?: "Unknown"
+                                        },
+                                        source = currentState.getEntity(action.cardId)
+                                            ?.get<CardComponent>()?.name,
+                                    )
+                                )
+                            }
+                        }
+                        // PayLife is auto-paid in the loop above; mana isn't a spell additional
+                        // cost; put-counters-on-self is ability-scoped (a spell on the stack has no
                         // permanent to accrue them on); Mill is an activated-ability-only cost, never a
                         // spell additional cost (and canPayAdditionalCost reports Mill unpayable, so
                         // this is unreachable).
                         // ExileFromGraveyardForTotal is an activated-ability cost only: it is never
                         // offered as a spell's additional cost (canPayAdditionalCost reports it
                         // unpayable), so this branch is unreachable for the same reason Mill's is.
-                        is CostAtom.PayLife, is CostAtom.Mana, is CostAtom.RevealFromHand,
+                        is CostAtom.PayLife, is CostAtom.Mana,
                         is CostAtom.PutCountersOnPermanent,
                         is CostAtom.PutCountersOnSelf,
                         is CostAtom.RevealNotedCreatureType,
