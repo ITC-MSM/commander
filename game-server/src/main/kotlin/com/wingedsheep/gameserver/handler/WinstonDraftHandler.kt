@@ -152,15 +152,20 @@ class WinstonDraftHandler(
                 knownOpponentCards = knownOpponentCards,
                 unknownOpponentCardCount = unknownOpponentCardCount,
                 lastAction = lastAction,
-                timeRemainingSeconds = lobby.pickTimeRemaining,
+                timeRemainingSeconds = lobby.pickTimeRemaining.takeIf { lobby.hasPickTimer },
                 lastPickedCards = lastPicked
             ))
         }
     }
 
     fun startWinstonTimer(lobby: TournamentLobby) {
-        lobby.pickTimeRemaining = lobby.pickTimeSeconds
         lobby.pickTimerJob?.cancel()
+        // No time limit: never start a job, so the turn is never auto-taken for the player.
+        if (!lobby.hasPickTimer) {
+            lobby.pickTimerJob = null
+            return
+        }
+        lobby.pickTimeRemaining = lobby.pickTimeSeconds
 
         lobby.pickTimerJob = ctx.draftScope.launch {
             var remaining = lobby.pickTimeSeconds

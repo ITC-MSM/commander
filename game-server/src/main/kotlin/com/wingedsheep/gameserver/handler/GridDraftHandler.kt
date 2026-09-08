@@ -161,7 +161,7 @@ class GridDraftHandler(
                     totalPickedByOthers = otherPickCounts,
                     pickedCardsByOthers = otherPickedCards,
                     lastAction = if (lastPickerPlayerId == null || lastPickerPlayerId in sameGroupPlayerIds) lastAction else null,
-                    timeRemainingSeconds = lobby.pickTimeSeconds,
+                    timeRemainingSeconds = lobby.pickTimeSeconds.takeIf { lobby.hasPickTimer },
                     availableSelections = if (playerId == activePlayer) availableSelections else emptyList(),
                     playerOrder = playerOrderNames,
                     currentPickerIndex = group.activePlayerIndex,
@@ -173,8 +173,13 @@ class GridDraftHandler(
     }
 
     fun startGridDraftTimer(lobby: TournamentLobby) {
-        lobby.pickTimeRemaining = lobby.pickTimeSeconds
         lobby.pickTimerJob?.cancel()
+        // No time limit: never start a job, so the pick is never auto-made for the player.
+        if (!lobby.hasPickTimer) {
+            lobby.pickTimerJob = null
+            return
+        }
+        lobby.pickTimeRemaining = lobby.pickTimeSeconds
 
         lobby.pickTimerJob = ctx.draftScope.launch {
             var remaining = lobby.pickTimeSeconds
