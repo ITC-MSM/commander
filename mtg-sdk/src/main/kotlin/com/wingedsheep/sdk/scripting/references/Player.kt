@@ -277,6 +277,29 @@ sealed interface Player {
     }
 
     /**
+     * The controller of the **triggering entity** — the player half of
+     * [com.wingedsheep.sdk.scripting.targets.EffectTarget.ControllerOfTriggeringEntity], for the
+     * places that take a [Player] reference rather than an `EffectTarget`.
+     *
+     * The zone pipelines are exactly those places: `CardSource.TopOfLibrary` and
+     * `CardDestination.ToZone` are keyed by [Player], so "that source's controller **mills** that
+     * many cards" (Belltower Sphinx) and "**that player** exiles the top card" have no way to name
+     * the triggering object's controller without this. [TriggeringPlayer] is not that player: it
+     * reads the trigger context's *player* slot (the player who was dealt damage, who cast the
+     * spell), which is null whenever the thing that triggered the ability was an object.
+     *
+     * Resolution walks the same ladder as the `EffectTarget` form — projected controller, then
+     * `ControllerComponent`, then last-known controller, then owner (CR 608.2h) — so a source that
+     * has already left the stack or battlefield by the time the trigger resolves (a burn spell that
+     * damaged the creature, then finished resolving) still names the right player.
+     */
+    @SerialName("ControllerOfTriggeringEntity")
+    @Serializable
+    data object ControllerOfTriggeringEntity : Player {
+        override val description: String = "that source's controller"
+    }
+
+    /**
      * The controller of the spell or ability that **targeted** the source — the other end of a
      * "becomes the target of a spell or ability" trigger.
      *
@@ -330,5 +353,6 @@ sealed interface Player {
             ControllerOfSource -> "your"
             OwnersOfLinkedExile -> "the exiled card's owner's"
             ControllerOfTargetingSource -> "that spell or ability's controller's"
+            ControllerOfTriggeringEntity -> "that source's controller's"
         }
 }

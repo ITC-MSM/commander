@@ -221,6 +221,14 @@ object TargetResolutionUtils {
             // stack, and [controllerOf] supplies last-known information once it has left.
             Player.ControllerOfTargetingSource -> context.targetingSourceEntityId
                 ?.let { stackObjectController(state, it) ?: controllerOf(state, it) }
+            // "That source's controller", for the pipelines that are keyed by Player rather than
+            // EffectTarget (Belltower Sphinx's mill). Same entity the EffectTarget form reads, and
+            // [controllerOf]'s ladder ends in last-known controller then owner — which is what
+            // makes it work for a burn spell that has already left the stack by resolution
+            // (CR 608.2h). Distinct from [Player.TriggeringPlayer], which reads the context's
+            // *player* slot and is null when the thing that triggered the ability was an object.
+            Player.ControllerOfTriggeringEntity -> context.triggeringEntityId
+                ?.let { controllerOf(state, it) }
             // Multi-player / list-only references have no single resolution here.
             // OwnersOfLinkedExile is resolved by ForEachExecutor.resolvePlayers (a player loop);
             // EachTargetedPlayer by DynamicAmountEvaluator.resolveUnifiedPlayerIds. Collapsing

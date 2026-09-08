@@ -2,16 +2,16 @@
 
 **Set Size:** 291 cards
 **Release Date:** October 7, 2005
-**Implemented:** 265 / 291
+**Implemented:** 268 / 291
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 37    | 33   |
-| Blue       | 39    | 34   |
+| Blue       | 39    | 35   |
 | Black      | 37    | 35   |
-| Red        | 39    | 37   |
+| Red        | 39    | 38   |
 | Green      | 37    | 37   |
-| Multicolor | 64    | 54   |
-| Artifact   | 21    | 16   |
+| Multicolor | 64    | 56   |
+| Artifact   | 21    | 17   |
 | Land       | 17    | 17   |
 
 > Verify status anytime with `scripts/card-status --set RAV` (and `--list`). That command's count is authoritative — keep this file's `Implemented:` line in sync (`just fix-backlog`) as boxes are checked. The set's mechanics are catalogued in [`mechanics.md`](mechanics.md).
@@ -58,7 +58,7 @@
 - [x] Wojek Siren
 
 ### Blue
-- [ ] Belltower Sphinx
+- [x] Belltower Sphinx
 - [x] Cerulean Sphinx
 - [x] Compulsive Research
 - [x] Convolute
@@ -160,7 +160,7 @@
 - [x] Indentured Oaf
 - [x] Instill Furor
 - [x] Mindmoil
-- [ ] Molten Sentry
+- [x] Molten Sentry
 - [x] Ordruun Commando
 - [x] Rain of Embers
 - [x] Reroute
@@ -293,7 +293,7 @@
 - [x] Dimir Signet
 - [x] Glass Golem
 - [x] Golgari Signet
-- [ ] Grifter's Blade
+- [x] Grifter's Blade
 - [x] Junktroller
 - [ ] Leashling
 - [x] Nullstone Gargoyle

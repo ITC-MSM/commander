@@ -3943,7 +3943,15 @@ class StackResolver(
                         SelectCardsDecision(
                             id = decisionId,
                             playerId = controllerId,
-                            prompt = "Choose another creature you control",
+                            // "Another" only reads right when the entering permanent is itself a
+                            // creature (Dauntless Bodyguard). The pool already excludes the
+                            // entering object either way, so an Equipment or enchantment making
+                            // this choice (Grifter's Blade) just says "a creature you control".
+                            prompt = if (cardComponent.isCreature) {
+                                "Choose another creature you control"
+                            } else {
+                                "Choose a creature you control"
+                            },
                             context = DecisionContext(
                                 sourceId = spellId,
                                 sourceName = cardComponent.name,

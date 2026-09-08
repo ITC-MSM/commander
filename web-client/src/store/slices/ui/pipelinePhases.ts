@@ -509,11 +509,13 @@ export function mergeResult(
                     costType === 'CollectEvidence' ||
                     costType === 'ExileForTotal'
                   ? { exiledCards: selectedTargets }
-                  : costType === 'Behold' || costType === 'ChooseEntity'
-                    ? { beheldCards: selectedTargets }
-                    : costType === 'Blight' || costType === 'BlightVariable'
-                      ? { blightTargets: selectedTargets }
-                      : { sacrificedPermanents: selectedTargets }
+                  : costType === 'RevealCard'
+                    ? { revealedCards: selectedTargets }
+                    : costType === 'Behold' || costType === 'ChooseEntity'
+                      ? { beheldCards: selectedTargets }
+                      : costType === 'Blight' || costType === 'BlightVariable'
+                        ? { blightTargets: selectedTargets }
+                        : { sacrificedPermanents: selectedTargets }
         // Spread the existing additionalCostPayment so prior phases' fields
         // (e.g. `blightAmount` from a preceding BlightVariable phase) survive.
         const additionalCostPayment = {
@@ -1020,9 +1022,9 @@ export function enterPhase(
           flags.isSacrificeSelection = true
           break
         case 'RevealCard':
-          validTargets = [...(costInfo.validDiscardTargets ?? [])]
-          minTargets = costInfo.discardCount ?? 1
-          maxTargets = costInfo.discardCount ?? 1
+          validTargets = [...(costInfo.validRevealTargets ?? [])]
+          minTargets = costInfo.revealCount ?? 1
+          maxTargets = costInfo.revealCount ?? 1
           flags.isSacrificeSelection = true
           flags.isRevealSelection = true
           break

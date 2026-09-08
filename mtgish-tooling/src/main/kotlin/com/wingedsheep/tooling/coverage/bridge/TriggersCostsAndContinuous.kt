@@ -315,6 +315,14 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // keeps additional-cost shapes at SCAFFOLD (the cast-time extra-cost area it declines to render).
     supported("AdditionalCastingCost", "cost: additional cost to cast (Costs.additional.*)")
     supported("ExileNumberGraveyardCards", "cost: exile N cards from your graveyard (Costs.additional.ExileFromGraveyardOrPay() / exile-from-graveyard)")
+    // "As an additional cost to cast this spell, reveal an Elf card from your hand or pay {3}" —
+    // Lorwyn's tribal cycle (Wren's Run Vanquisher, Silvergill Adept, Goldmeadow Stalwart, Squeaking
+    // Pie Sneak, Flamekin Bladewhirl), whose IR is
+    // `AdditionalCastingCost(Or(RevealACardOfTypeFromHand, PayMana))`. The engine models it via
+    // Costs.additional.RevealFromHandOrPay(); the bare reveal is Costs.additional.RevealFromHand().
+    // Capability-only, like every other additional-cost leg: the emitter keeps cast-time extra costs
+    // at SCAFFOLD rather than rendering them.
+    supported("RevealACardOfTypeFromHand", "cost: reveal a filtered card from your hand (Costs.additional.RevealFromHand() / RevealFromHandOrPay())")
     // Waterbend {N} (Avatar: The Last Airbender, CR) — a generic-mana cost where each generic may be
     // paid by tapping an untapped artifact/creature you control. On activated abilities this maps to
     // `activatedAbility { cost = Costs.Mana("{N}"); hasWaterbend = true }`. The emitter renders the

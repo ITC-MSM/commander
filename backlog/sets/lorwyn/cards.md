@@ -2,7 +2,7 @@
 
 **Set Size:** 286 cards
 **Release Date:** October 12, 2007
-**Implemented:** 261 / 286
+**Implemented:** 266 / 286
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 49    | 43   |
@@ -36,7 +36,7 @@
 - [x] Galepowder Mage
 - [x] Goldmeadow Dodger
 - [x] Goldmeadow Harrier
-- [ ] Goldmeadow Stalwart
+- [x] Goldmeadow Stalwart
 - [x] Harpoon Sniper
 - [x] Hillcomber Giant
 - [x] Hoofprints of the Stag
@@ -106,7 +106,7 @@
 - [x] Scion of Oona
 - [x] Sentinels of Glen Elendra
 - [x] Shapesharer
-- [ ] Silvergill Adept
+- [x] Silvergill Adept
 - [x] Silvergill Douser
 - [x] Sower of Temptation
 - [x] Spellstutter Sprite
@@ -164,7 +164,7 @@
 - [x] Shriekmaw
 - [x] Skeletal Changeling
 - [x] Spiderwig Boggart
-- [ ] Squeaking Pie Sneak
+- [x] Squeaking Pie Sneak
 - [x] Thieving Sprite
 - [x] Thorntooth Witch
 - [x] Thoughtseize
@@ -189,7 +189,7 @@
 - [x] Crush Underfoot
 - [x] Faultgrinder
 - [x] Fire-Belly Changeling
-- [ ] Flamekin Bladewhirl
+- [x] Flamekin Bladewhirl
 - [x] Flamekin Brawler
 - [x] Flamekin Harbinger
 - [x] Flamekin Spitfire
@@ -271,7 +271,7 @@
 - [x] Woodland Changeling
 - [x] Woodland Guidance
 - [ ] Wren's Run Packmaster
-- [ ] Wren's Run Vanquisher
+- [x] Wren's Run Vanquisher
 
 ### Multicolor
 - [x] Brion Stoutarm

@@ -225,6 +225,8 @@ class CastSpellEnumerator : ActionEnumerator {
             var tapCount = 0
             var beholdTargets = emptyList<EntityId>()
             var beholdCount = 0
+            var revealTargets = emptyList<EntityId>()
+            var revealCount = 0
             var blightOrPayCost: AdditionalCost.BlightOrPay? = null
             var blightCreatures = emptyList<EntityId>()
             var blightVariableCost: AdditionalCost.BlightVariable? = null
@@ -327,7 +329,27 @@ class CastSpellEnumerator : ActionEnumerator {
                             tapTargets = validTapTargets
                             tapCount = atom.count
                         }
-                        // Mana / reveal aren't produced as spell additional costs today.
+                        // "As an additional cost to cast this spell, reveal an Elf card from your
+                        // hand." The cards stay in hand (CR 701.20b) — the caster picks which to
+                        // publish, and nothing moves. The spell itself is on its way to the stack,
+                        // so it is excluded from its own candidate pool.
+                        is CostAtom.RevealFromHand -> {
+                            val predicateContext = PredicateContext(controllerId = playerId)
+                            val validReveals = state.getZone(ZoneKey(playerId, Zone.HAND))
+                                .filter { it != cardId }
+                                .filter {
+                                    atom.filter == com.wingedsheep.sdk.scripting.GameObjectFilter.Any ||
+                                        context.predicateEvaluator.matches(
+                                            state, state.projectedState, it, atom.filter, predicateContext
+                                        )
+                                }
+                            if (validReveals.size < atom.count) {
+                                canPayAdditionalCosts = false
+                            }
+                            revealTargets = validReveals
+                            revealCount = atom.count
+                        }
+                        // Mana isn't produced as a spell additional cost today.
                         else -> {}
                     }
                     is AdditionalCost.SacrificeCreaturesForCostReduction -> {
@@ -707,6 +729,7 @@ class CastSpellEnumerator : ActionEnumerator {
                 bounceTargets, bounceCount,
                 tapTargets, tapCount,
                 beholdTargets, beholdCount,
+                revealTargets, revealCount,
                 blightVariableCost, blightVariableCreatures, blightVariableMaxX,
                 payXLifeCost, payXLifeMaxX,
                 collectEvidenceCost, evidenceTargetWeights,
@@ -2703,6 +2726,8 @@ class CastSpellEnumerator : ActionEnumerator {
         tapCount: Int = 0,
         beholdTargets: List<EntityId> = emptyList(),
         beholdCount: Int = 0,
+        revealTargets: List<EntityId> = emptyList(),
+        revealCount: Int = 0,
         blightVariableCost: AdditionalCost.BlightVariable? = null,
         blightVariableCreatures: List<EntityId> = emptyList(),
         blightVariableMaxX: Int = 0,
@@ -2807,6 +2832,17 @@ class CastSpellEnumerator : ActionEnumerator {
                 costType = "TapPermanents",
                 validTapTargets = tapTargets,
                 tapCount = tapCount
+            )
+        } else if (revealTargets.isNotEmpty()) {
+            val revealCostAtom = additionalCosts.firstNotNullOfOrNull {
+                (it as? AdditionalCost.Atom)?.atom as? CostAtom.RevealFromHand
+            }
+            AdditionalCostData(
+                description = revealCostAtom?.description?.replaceFirstChar { it.uppercase() }
+                    ?: "Reveal a card from your hand",
+                costType = "RevealCard",
+                validRevealTargets = revealTargets,
+                revealCount = revealCount
             )
         } else if (beholdTargets.isNotEmpty()) {
             val flatCosts = additionalCosts.flatMap { if (it is AdditionalCost.Composite) it.steps else listOf(it) }

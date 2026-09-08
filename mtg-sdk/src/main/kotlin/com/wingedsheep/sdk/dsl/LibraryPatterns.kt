@@ -801,13 +801,7 @@ object LibraryPatterns {
         mill(DynamicAmount.Fixed(count), target)
 
     fun mill(count: DynamicAmount, target: EffectTarget = EffectTarget.Controller): CompositeEffect {
-        val player = when (target) {
-            EffectTarget.Controller -> Player.You
-            is EffectTarget.ContextTarget -> Player.ContextPlayer(target.index)
-            is EffectTarget.BoundVariable -> Player.ContextPlayer(0)
-            is EffectTarget.PlayerRef -> target.player
-            else -> Player.You
-        }
+        val player = effectTargetToPlayer(target)
         return CompositeEffect(
             listOf(
                 GatherCardsEffect(
@@ -833,13 +827,7 @@ object LibraryPatterns {
         exileTop(DynamicAmount.Fixed(count), target)
 
     fun exileTop(count: DynamicAmount, target: EffectTarget = EffectTarget.Controller): CompositeEffect {
-        val player = when (target) {
-            EffectTarget.Controller -> Player.You
-            is EffectTarget.ContextTarget -> Player.ContextPlayer(target.index)
-            is EffectTarget.BoundVariable -> Player.ContextPlayer(0)
-            is EffectTarget.PlayerRef -> target.player
-            else -> Player.You
-        }
+        val player = effectTargetToPlayer(target)
         return CompositeEffect(
             listOf(
                 GatherCardsEffect(

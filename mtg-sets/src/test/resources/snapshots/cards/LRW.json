@@ -4996,6 +4996,42 @@
     ]
 }
 
+// Flamekin Bladewhirl
+{
+    "name": "Flamekin Bladewhirl",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Elemental Warrior",
+    "oracleText": "As an additional cost to cast this spell, reveal an Elemental card from your hand or pay {3}.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "additionalCosts": [
+            {
+                "type": "OrPay",
+                "cost": {
+                    "type": "AdditionalAtom",
+                    "atom": {
+                        "type": "AtomRevealFromHand",
+                        "filter": "Elemental"
+                    }
+                },
+                "alternativeManaCost": "{3}"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "165",
+        "rarity": "UNCOMMON",
+        "artist": "Mark Zug",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/b/1b6ea1c8-ca58-4240-adb7-71cd49664414.jpg?1783942876"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Flamekin Brawler
 {
     "name": "Flamekin Brawler",
@@ -6308,6 +6344,42 @@
         "artist": "Steve Prescott",
         "flavorText": "\"It's a proven fact that sling-stones from the dawn side of the riverbank sail the farthest and truest.\"\n—Deagan, cenn of Burrenton",
         "imageUri": "https://cards.scryfall.io/normal/front/b/6/b6a7508c-2815-40eb-92f7-3e66dfb28484.jpg?1783942915"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Goldmeadow Stalwart
+{
+    "name": "Goldmeadow Stalwart",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Kithkin Soldier",
+    "oracleText": "As an additional cost to cast this spell, reveal a Kithkin card from your hand or pay {3}.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "additionalCosts": [
+            {
+                "type": "OrPay",
+                "cost": {
+                    "type": "AdditionalAtom",
+                    "atom": {
+                        "type": "AtomRevealFromHand",
+                        "filter": "Kithkin"
+                    }
+                },
+                "alternativeManaCost": "{3}"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "18",
+        "rarity": "UNCOMMON",
+        "artist": "Wayne Reynolds",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/a/6a7a9110-6aea-460b-91fa-5f8a507160e7.jpg?1783942915"
     },
     "colorIdentityOverride": [
         "WHITE"
@@ -13411,6 +13483,59 @@
     ]
 }
 
+// Silvergill Adept
+{
+    "name": "Silvergill Adept",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Merfolk Wizard",
+    "oracleText": "As an additional cost to cast this spell, reveal a Merfolk card from your hand or pay {3}.\nWhen this creature enters, draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "When this creature enters, draw a card."
+            }
+        ],
+        "additionalCosts": [
+            {
+                "type": "OrPay",
+                "cost": {
+                    "type": "AdditionalAtom",
+                    "atom": {
+                        "type": "AtomRevealFromHand",
+                        "filter": "Merfolk"
+                    }
+                },
+                "alternativeManaCost": "{3}"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "86",
+        "rarity": "UNCOMMON",
+        "artist": "Matt Cavotta",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/e/9e07a38a-2d88-4b01-9634-f24cbc8d96d6.jpg?1783942897"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Silvergill Douser
 {
     "name": "Silvergill Douser",
@@ -14271,6 +14396,45 @@
         "imageUri": "https://cards.scryfall.io/normal/front/f/a/fa8b09d0-fbd2-4441-9d87-02450412e0db.jpg?1562375414"
     },
     "colorIdentityOverride": []
+}
+
+// Squeaking Pie Sneak
+{
+    "name": "Squeaking Pie Sneak",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Goblin Rogue",
+    "oracleText": "As an additional cost to cast this spell, reveal a Goblin card from your hand or pay {3}.\nFear (This creature can't be blocked except by artifact creatures and/or black creatures.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FEAR"
+    ],
+    "script": {
+        "additionalCosts": [
+            {
+                "type": "OrPay",
+                "cost": {
+                    "type": "AdditionalAtom",
+                    "atom": {
+                        "type": "AtomRevealFromHand",
+                        "filter": "Goblin"
+                    }
+                },
+                "alternativeManaCost": "{3}"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "142",
+        "rarity": "UNCOMMON",
+        "artist": "Jeff Miracola",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/7/b7184715-3ed3-4f56-9bf3-ff431cca86be.jpg?1783942883"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
 }
 
 // Stinkdrinker Daredevil
@@ -17027,6 +17191,45 @@
     "colorIdentityOverride": [
         "BLACK",
         "RED"
+    ]
+}
+
+// Wren's Run Vanquisher
+{
+    "name": "Wren's Run Vanquisher",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elf Warrior",
+    "oracleText": "As an additional cost to cast this spell, reveal an Elf card from your hand or pay {3}.\nDeathtouch (Any amount of damage this deals to a creature is enough to destroy it.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "additionalCosts": [
+            {
+                "type": "OrPay",
+                "cost": {
+                    "type": "AdditionalAtom",
+                    "atom": {
+                        "type": "AtomRevealFromHand",
+                        "filter": "Elf"
+                    }
+                },
+                "alternativeManaCost": "{3}"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "245",
+        "rarity": "UNCOMMON",
+        "artist": "Paolo Parente",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/9/f9c411a0-b8dd-4394-852a-a29dbcec953b.jpg?1783942854"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

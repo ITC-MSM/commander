@@ -771,7 +771,8 @@ definitions construct these through the facade, e.g. `Costs.additional.Sacrifice
   cost as a whole is always payable. Which leg was taken is recovered at payment time from **which
   `additionalCostPayment` field the client populated**, so `cost` must be a selection-carrying cost
   — a `Behold`, or an atom cost over `Sacrifice` / `Discard` / `ExileFrom` / `TapPermanents` /
-  `ReturnToHand` — and must not share its field with another additional cost on the same card.
+  `ReturnToHand` / `RevealFromHand` — and must not share its field with another additional cost on
+  the same card.
   `CastSpellHandler.reduceCostAlternatives` then rewrites the whole cost to that plain leg cost (leg
   paid) or drops it (pay path), so validation, payment, LKI snapshots, behold's pipeline storage and
   discard tracking (CR 701.8) reuse the leg's own paths verbatim. `BlightOrPay` stays a separate
@@ -781,6 +782,23 @@ definitions construct these through the facade, e.g. `Costs.additional.Sacrifice
   storeAs = storeAs), …)`; the behold path surfaces as a `costType = "Behold"` cost over one
   candidate pool spanning battlefield *and* hand, and stores the chosen cards under `storeAs` for
   downstream costs/effects exactly as a plain `Behold` does.
+- `Costs.additional.RevealFromHand(filter = Filters.Any, count = 1)` — "as an additional cost to
+  cast this spell, reveal a [filter] card from your hand". `Atom(CostAtom.RevealFromHand(filter,
+  count))`; surfaces as a `costType = "RevealCard"` cost over `validRevealTargets` (the caster's
+  hand, minus the spell being cast) and the picks come back as
+  `additionalCostPayment.revealedCards`. **Paying moves nothing** — CR 701.20b: revealing a card
+  doesn't cause it to leave the zone it's in — so the revealed card is still in hand and still
+  castable afterwards; the payment is a `CardsRevealedEvent` and nothing else. As a *mandatory*
+  cost it fails closed: with no matching card in hand the spell isn't castable at all.
+- `Costs.additional.RevealFromHandOrPay(filter = Filters.Any, alternativeManaCost, count = 1)` —
+  "reveal a [filter] card from your hand or pay {mana}" (Lorwyn's tribal cycle: Wren's Run
+  Vanquisher, Silvergill Adept, Goldmeadow Stalwart, Squeaking Pie Sneak, Flamekin Bladewhirl).
+  `OrPay(RevealFromHand(filter, count), …)`. **Not `BeholdOrPay`**: CR 701.4a defines "behold a
+  [quality]" as "reveal a [quality] card from your hand **or** choose a [quality] permanent you
+  control", so behold's candidate pool also spans the battlefield and would wrongly let a permanent
+  pay a hand-only reveal. That width is also why the reveal has its own `revealedCards` payment
+  field rather than sharing `beheldCards` — on an `OrPay` leg the populated field is the only thing
+  telling the engine which leg the caster took.
 - `Costs.additional.ExileFromGraveyardOrPay(exileCount, alternativeManaCost, filter = Filters.Any)`
   — "exile N cards from your graveyard or pay {mana}" (Soaring Stoneglider: "exile two cards from
   your graveyard or pay {1}{W}"). `OrPay(Atom(CostAtom.ExileFrom(GRAVEYARD, filter, exileCount)), …)`;
@@ -3749,6 +3767,19 @@ A resolving nonpermanent spell retains its stack instance through serialized eff
   target of a spell or ability, that spell or ability's controller gains control of that creature")
   = `GiveControlToTargetPlayerEffect(permanent = EffectTarget.TriggeringEntity, newController =
   EffectTarget.PlayerRef(Player.ControllerOfTargetingSource))`.
+- `Player.ControllerOfTriggeringEntity` — the controller of the **triggering entity**: the `Player`
+  half of `EffectTarget.ControllerOfTriggeringEntity`, for the places keyed by `Player` rather than
+  `EffectTarget`. The zone pipelines are exactly those places — `CardSource.TopOfLibrary` and
+  `CardDestination.ToZone` take a `Player`, so `Patterns.Library.mill` / `.exileTop` cannot name the
+  triggering object's controller without it. Not `Player.TriggeringPlayer`, which reads the trigger
+  context's *player* slot and is null whenever the thing that triggered the ability was an object.
+  Resolves through the same ladder as the `EffectTarget` form (projected controller → controller
+  component → last-known controller → owner, CR 608.2h), so a burn spell that has left the stack by
+  the time the trigger resolves still names its caster. Belltower Sphinx ("whenever a source deals
+  damage to this creature, that source's controller mills that many cards") =
+  `Patterns.Library.mill(DynamicAmount.ContextProperty(TRIGGER_DAMAGE_AMOUNT),
+  EffectTarget.ControllerOfTriggeringEntity)`; Mesmeric Orb is the same shape on
+  `Triggers.becomesUntapped`.
 - `Player.ContextPlayer(i)` / `Player.Candidate` / `Player.Any` — positional target, CR 115
   candidate during target-restriction evaluation, and "a player" matching.
 - `EffectTarget.ContextProperty(key)` — value plumbed into `EffectContext` (damage amount, life gained, blight
