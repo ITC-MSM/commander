@@ -1142,6 +1142,7 @@ internal class CombatDamageManager(
         val currentCount = counters.getCount(counterType)
         newState = newState.updateEntity(targetId) { container ->
             container.with(counters.withRemoved(counterType, amount))
+                .with(WasDealtDamageThisTurnComponent)
         }
 
         // Combat damage that takes a Siege's last defense counter defeats it (CR 310.12b). Arm the

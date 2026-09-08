@@ -125,11 +125,10 @@ class OjerPakpatiqDeepestEpochScenarioTest : ScenarioTestBase() {
 
                 val pakpatiq = game.findPermanent("Ojer Pakpatiq, Deepest Epoch")!!
 
-                repeat(2) { // 6 damage kills the 4/3
-                    game.castSpell(1, "Lightning Bolt", targetId = pakpatiq).error shouldBe null
-                    if (game.getPendingDecision() is SelectManaSourcesDecision) game.submitManaSourcesAutoPay()
-                    game.resolveStack()
-                }
+                // One Bolt kills the 4/3. After it returns as a land, it is no longer a legal Bolt target.
+                game.castSpell(1, "Lightning Bolt", targetId = pakpatiq).error shouldBe null
+                if (game.getPendingDecision() is SelectManaSourcesDecision) game.submitManaSourcesAutoPay()
+                game.resolveStack()
                 var guard = 0
                 while (game.findPermanent("Temple of Cyclical Time") == null && guard++ < 10) game.resolveStack()
 

@@ -13,11 +13,12 @@ import com.wingedsheep.engine.mechanics.targeting.StackObjectTargeting
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
-import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
@@ -45,11 +46,16 @@ class TargetEnumerationUtils(
                 !playerHasHexproof(state, it) && !playerHasProtectionFrom(state, it, sourceId, playerId) &&
                 PlayerTargetRestriction.isSatisfied(state, requirement.restriction, it, playerId, sourceId) }
             is AnyTarget -> {
-                val creatures = findValidPermanentTargets(state, playerId, TargetFilter.Creature, sourceId)
-                val planeswalkers = findValidPermanentTargets(state, playerId, TargetFilter.Planeswalker, sourceId)
+                val projected = state.projectedState
+                val permanents = findValidPermanentTargets(state, playerId, TargetFilter(GameObjectFilter.Any), sourceId)
+                    .filter { projected.isCreature(it) || projected.isPlaneswalker(it) || projected.isBattle(it) }
                 val players = state.turnOrder.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
                     !playerHasHexproofAgainst(state, it, playerId) && !playerHasProtectionFrom(state, it, sourceId, playerId) }
-                (creatures + planeswalkers).distinct() + players
+                val candidates = permanents + players
+                if (requirement.filter == GameObjectFilter.Any) candidates else {
+                    val context = PredicateContext(controllerId = playerId, sourceId = sourceId)
+                    candidates.filter { predicateEvaluator.matches(state, projected, it, requirement.filter, context) }
+                }
             }
             is TargetCreatureOrPlayer -> {
                 val creatures = findValidPermanentTargets(state, playerId, TargetFilter.Creature, sourceId)

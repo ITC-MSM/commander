@@ -3417,6 +3417,21 @@ class StackResolver(
         )
 
         return targets.filterIndexed { index, target ->
+            var baseRequirement = getRequirementForTargetIndex(index, targetRequirements)
+            while (baseRequirement is TargetOther) baseRequirement = baseRequirement.baseRequirement
+            if (baseRequirement is AnyTarget) {
+                val recipient = when (target) {
+                    is ChosenTarget.Player -> target.playerId
+                    is ChosenTarget.Permanent -> target.entityId
+                    else -> return@filterIndexed false
+                }
+                if (target is ChosenTarget.Permanent && !projected.isCreature(recipient) &&
+                    !projected.isPlaneswalker(recipient) && !projected.isBattle(recipient)
+                ) return@filterIndexed false
+                if (!predicateEvaluator.matches(state, projected, recipient, baseRequirement.filter, predicateContext)) {
+                    return@filterIndexed false
+                }
+            }
             when (target) {
                 is ChosenTarget.Player -> {
                     // Player is valid if they exist and haven't lost...

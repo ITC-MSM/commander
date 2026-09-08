@@ -219,9 +219,12 @@ object Targets {
     // =========================================================================
 
     /**
-     * Any target (creature, player, or planeswalker).
+     * Any target (creature, player, planeswalker, or battle).
      */
     val Any: TargetRequirement = AnyTarget()
+
+    /** Any damageable target satisfying [filter], including player candidates. */
+    fun Any(filter: GameObjectFilter): TargetRequirement = AnyTarget(filter = filter)
 
     /**
      * "Any target of an opponent's choice" — a real target of your spell/ability that an

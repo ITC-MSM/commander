@@ -310,7 +310,20 @@ class TargetValidator {
         val error = when (requirement) {
             is TargetPlayer -> validatePlayerTarget(state, target, requirement, casterId, sourceId)
             is TargetOpponent -> validateOpponentTarget(state, target, requirement, casterId, sourceId)
-            is AnyTarget -> validateAnyTarget(state, target, casterId)
+            is AnyTarget -> {
+                val baseError = validateAnyTarget(state, target, casterId)
+                val entityId = when (target) {
+                    is ChosenTarget.Player -> target.playerId
+                    is ChosenTarget.Permanent -> target.entityId
+                    else -> null
+                }
+                if (baseError != null) baseError
+                else if (entityId == null || !predicateEvaluator.matches(
+                        state, state.projectedState, entityId, requirement.filter,
+                        PredicateContext(controllerId = casterId, sourceId = sourceId, xValue = xValue)
+                    )) "Target does not match ${requirement.description}"
+                else null
+            }
             is TargetCreatureOrPlayer -> validateCreatureOrPlayerTarget(state, target, casterId)
             is TargetPermanentOrPlayer ->
                 validatePermanentOrPlayerTarget(state, target, requirement, casterId, sourceId, xValue, chosenPlayerTarget)
@@ -764,7 +777,11 @@ class TargetValidator {
                 else null
             }
             is ChosenTarget.Permanent -> {
-                if (target.entityId !in state.getBattlefield()) "Target not on battlefield" else null
+                val projected = state.projectedState
+                if (target.entityId !in state.getBattlefield()) "Target not on battlefield"
+                else if (!projected.isCreature(target.entityId) && !projected.isPlaneswalker(target.entityId) &&
+                    !projected.isBattle(target.entityId)) "Target must be a creature, player, planeswalker, or battle"
+                else null
             }
             else -> "Invalid target type"
         }

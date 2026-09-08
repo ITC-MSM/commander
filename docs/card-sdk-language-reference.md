@@ -3821,7 +3821,12 @@ A resolving nonpermanent spell retains its stack instance through serialized eff
 
 ### Cast-time (`Targets.*` / `TargetRequirement`)
 
-- `Targets.Any` — any creature, player, or planeswalker.
+- `Targets.Any` — any creature, player, planeswalker, or battle.
+- `Targets.Any(filter)` — the same domain narrowed by a `GameObjectFilter`, applied to both players
+  and permanents at announcement, resolution, and retargeting. For example,
+  `Targets.Any(GameObjectFilter.Any.wasDealtDamageThisTurn())` (Needle Drop) uses damage history,
+  including combat damage and damage dealt through counters. Prevented damage and life loss do not
+  qualify. History survives removing marked damage, but resets on zone changes and turn cleanup.
 - `Targets.AnyChosenByOpponent` — "any target **of an opponent's choice**" (Cuombajj Witches). A real
   target of *your* spell/ability that an **opponent** selects: announced at the same time as your own
   targets, equally respondable, and with legality (hexproof/protection/shroud) measured relative to
