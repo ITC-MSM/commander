@@ -2018,6 +2018,7 @@ class CastSpellHandler(
                     is CostAtom.PutCountersOnPermanent,
                     is CostAtom.PutCountersOnSelf,
                     is CostAtom.RevealNotedCreatureType,
+                    is CostAtom.Unattach,
                     is CostAtom.ExileFromGraveyardForTotal,
                     is CostAtom.ExileTopOfLibrary,
                     is CostAtom.Mill -> {}
@@ -2914,6 +2915,7 @@ class CastSpellHandler(
                         is CostAtom.PutCountersOnPermanent,
                         is CostAtom.PutCountersOnSelf,
                         is CostAtom.RevealNotedCreatureType,
+                        is CostAtom.Unattach,
                         is CostAtom.ExileFromGraveyardForTotal,
                         is CostAtom.ExileTopOfLibrary,
                         is CostAtom.Mill -> {}

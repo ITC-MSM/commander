@@ -460,8 +460,9 @@ object CardLinter {
      * path, and in the wrong context the controller would silently choose the target instead — so
      * catch it at card load rather than mis-resolve:
      *
-     * - `Opponent` ("… of an opponent's choice") — activated abilities only, because routing it
-     *   needs the controller to first pick *which* opponent decides.
+     * - `Opponent` ("… of an opponent's choice") — activated *or* triggered abilities. Both
+     *   announcement paths pin the deciding opponent before raising the target decision (with more
+     *   than one opponent, the controller picks which); nothing else does.
      * - `TriggeringPlayer` / `ControllerOfTriggeringEntity` — triggered abilities only, because
      *   both are read off a trigger context that nothing else has.
      *
@@ -486,13 +487,14 @@ object CardLinter {
                 val chooser = (element["chooser"] as? JsonPrimitive)?.contentOrNull
                 if (type in CHOOSER_BEARING_TARGET_TYPES) {
                     val misplaced = when (chooser) {
-                        "Opponent" -> !withinActivatedAbility
+                        "Opponent" -> !withinActivatedAbility && !withinTriggeredAbility
                         "TriggeringPlayer", "ControllerOfTriggeringEntity" -> !withinTriggeredAbility
                         else -> false
                     }
                     if (misplaced) {
                         val expected =
-                            if (chooser == "Opponent") "an activated ability" else "a triggered ability"
+                            if (chooser == "Opponent") "an activated or triggered ability"
+                            else "a triggered ability"
                         // Name the printed wording, not just the enum: that is what lets an author
                         // recognise the clause they were modelling.
                         val wording = when (chooser) {
@@ -626,7 +628,7 @@ object CardLinter {
             "StoreCardName", "CastFromCollectionWithoutPayingCost", "PlayFromCollectionWithoutPayingCost",
             "CastAnyNumberFromCollectionWithoutPayingCost", "ExileFromStorage",
             "CopyCollectionIntoCollection", "RecordChosenLinkedExile",
-            "PairWithSource",
+            "PairWithSource", "EmitChampionedEvent",
         )) put(type to "from", read(Space.COLLECTION))
         put("ChoosePile" to "pileA", read(Space.COLLECTION))
         put("ChoosePile" to "pileB", read(Space.COLLECTION))

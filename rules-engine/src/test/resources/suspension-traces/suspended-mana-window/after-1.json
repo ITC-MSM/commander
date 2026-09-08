@@ -300,6 +300,7 @@
                     "triggerManaValueOfTriggeringSpell": null,
                     "triggerXValueOfTriggeringSpell": null,
                     "triggerScryCount": null,
+                    "triggerClashWon": null,
                     "triggerDiscardCount": null,
                     "triggerDiscoverValue": null,
                     "triggerExcessDamageAmount": null,

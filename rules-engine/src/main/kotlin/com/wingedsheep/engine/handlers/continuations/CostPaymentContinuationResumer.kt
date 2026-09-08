@@ -96,6 +96,10 @@ class CostPaymentContinuationResumer(
             // selection — never reaches a PayCost prompt.
             is CostAtom.RevealNotedCreatureType ->
                 resumeYesNo(state, continuation, cost, response, checkForMore)
+            // Ability-scoped only (it reads the source's own attachment), and it takes no
+            // selection — never reaches a PayCost prompt.
+            is CostAtom.Unattach ->
+                resumeYesNo(state, continuation, cost, response, checkForMore)
             // VariablePermanents is an activated-ability-only cost, never a PayCost — unreachable here.
             is CostAtom.VariablePermanents ->
                 ExecutionResult.error(state, "VariablePermanents is not a payable cost in this context")

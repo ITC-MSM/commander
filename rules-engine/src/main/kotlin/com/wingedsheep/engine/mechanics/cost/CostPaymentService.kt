@@ -207,6 +207,9 @@ class CostPaymentService(private val services: EngineServices) {
                 // Reading a secret note off the source permanent is activated-ability-only; as a
                 // PayCost there is no such source, so it fails closed like the two below.
                 is CostAtom.RevealNotedCreatureType -> PaymentResult.Unaffordable(state)
+                // Unattaching reads the source's own attachment; a PayCost has no such source, so
+                // it fails closed like its neighbours.
+                is CostAtom.Unattach -> PaymentResult.Unaffordable(state)
                 // VariablePermanents is an activated-ability-only cost, never a PayCost.
                 is CostAtom.VariablePermanents -> PaymentResult.Unaffordable(state)
                 // Likewise ExileFromGraveyardForTotal: canAfford reports it unaffordable as a
@@ -385,6 +388,8 @@ class CostPaymentService(private val services: EngineServices) {
             is CostAtom.RemoveCounters -> performRemoveCounters(state, payerId, atom, sourceId, selected)
             // Likewise activated-ability-only — see the prompt branch above.
             is CostAtom.RevealNotedCreatureType -> CostPaymentExecution(state, emptyList(), success = false)
+            // Likewise activated-ability-only — see the prompt branch above.
+            is CostAtom.Unattach -> CostPaymentExecution(state, emptyList(), success = false)
             // VariablePermanents is an activated-ability-only cost, never a PayCost.
             is CostAtom.VariablePermanents -> CostPaymentExecution(state, emptyList(), success = false)
             // Likewise ExileFromGraveyardForTotal — see the prompt branch above.
@@ -792,6 +797,8 @@ class CostPaymentService(private val services: EngineServices) {
                     is CostAtom.PutCountersOnPermanent -> domain(state, payerId, c, sourceId).isNotEmpty()
                     // Activated-ability cost only (it reads a note on the source permanent).
                     is CostAtom.RevealNotedCreatureType -> false
+                    // Activated-ability cost only (it reads the source's own attachment).
+                    is CostAtom.Unattach -> false
                     is CostAtom.RemoveCounters -> {
                         val needed = when (val c = atom.count) {
                             is com.wingedsheep.sdk.scripting.values.DynamicAmount.Fixed -> c.amount
@@ -878,7 +885,7 @@ class CostPaymentService(private val services: EngineServices) {
                 is CostAtom.Mana, is CostAtom.PayLife, is CostAtom.Mill,
                 is CostAtom.ExileTopOfLibrary,
                 is CostAtom.PutCountersOnSelf, is CostAtom.VariablePermanents,
-                is CostAtom.RevealNotedCreatureType,
+                is CostAtom.RevealNotedCreatureType, is CostAtom.Unattach,
                 is CostAtom.ExileFromGraveyardForTotal -> null
             }
         }

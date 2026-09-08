@@ -687,6 +687,11 @@ class ConditionEvaluator(
                 ifResolution { ctx ->
                     ctx.triggerLastKnownCardTypes.orEmpty().any { it.equals(condition.cardType, ignoreCase = true) }
                 }
+            // CR 701.30d — "if you won" on a "Whenever you clash" trigger. The clash is over by the
+            // time the ability resolves, so the outcome travels as trigger context; a null (this
+            // trigger was not fired by a clash) reads as "did not win".
+            is com.wingedsheep.sdk.scripting.conditions.YouWonTheClash ->
+                ifResolution { it.triggerClashWon == true }
             is TriggeringEntityWasNotPutByThisSource ->
                 ifResolution { evaluateTriggeringEntityWasNotPutByThisSource(state, it) }
             is TriggeringSpellHasSingleTarget -> ifResolution { evaluateTriggeringSpellHasSingleTarget(state, it) }

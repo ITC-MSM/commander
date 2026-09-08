@@ -60,13 +60,13 @@ internal fun BridgeBuilder.zoneMovement() {
     // both libraries, revealed) -> two APNAP-ordered Selects -> MoveCollection(bottom), scored and
     // gated by a Gate.DoAction over SuccessCriterion.CollectionNonEmpty. `ClashOpponent` is the
     // opponent the clash named, read back through Player.ChosenOpponent.
-    //
-    // NOTE the deliberate gap: `_Condition -> Trigger_WonTheClash` — the "…, If you won, …" rider
-    // *inside* a clash trigger's effect (Entangling Trap, Rebellion of the Flamekin) — stays
-    // unmapped, because the clash event's win flag is not yet exposed as a trigger-context value.
-    // Those cards keep blocking on it rather than being silently rendered without the rider.
     composed("Clash", "Patterns.Mechanic.clash -> ChooseOpponentForSource + Gather/Select/MoveCollection, gated by Gate.DoAction", composes = listOf("MoveCollection"))
     supported("ClashOpponent", "player: the opponent this clash named (Player.ChosenOpponent)")
+    // The "…, If you won, …" rider *inside* a clash trigger's effect (Entangling Trap, Rebellion of
+    // the Flamekin), which is a different thing from `Clash`'s own win gate: the clash has already
+    // ended, so the outcome is read off the trigger (ClashedEvent.won -> TriggerContext.clashWon)
+    // rather than out of the clash pipeline's collection.
+    supported("Trigger_WonTheClash", "condition: this trigger's clash was won by its controller (Conditions.YouWonTheClash, CR 701.30d)")
     composed("ManifestDread", "Patterns.Library.manifestDread -> Gather/Select/MoveCollection(face-down MANIFEST)", composes = listOf("MoveCollection"))
 
     // Cloak (CR 701.58) is manifest plus ward {2}, and on our side it is exactly one FaceDownMode

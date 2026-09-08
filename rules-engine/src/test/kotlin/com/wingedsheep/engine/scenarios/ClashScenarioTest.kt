@@ -11,12 +11,14 @@ import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Counters
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -111,8 +113,44 @@ class ClashScenarioTest : FunSpec({
         spell { effect = Patterns.Mechanic.clash(Effects.GainLife(5)) }
     }
 
-    val substrate =
-        listOf(Pebble, Stone, Boulder, ClashForLife, ClashOrElse, ClashInstant, ClashWatcher, ClashWinWatcher)
+    // Entangling Trap's shape: the trigger fires either way and only *part* of the effect is gated
+    // on the outcome. One counter always, a second one only on a win — so the two failure modes
+    // (rider never runs / rider always runs) are told apart by the same number.
+    val ClashRiderWatcher = card("Clash Rider Watcher") {
+        manaCost = "{0}"
+        typeLine = "Creature — Bird"
+        power = 1; toughness = 1
+        triggeredAbility {
+            trigger = Triggers.WheneverYouClash
+            effect = Effects.Composite(
+                Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self),
+                ConditionalEffect(
+                    Conditions.YouWonTheClash,
+                    Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
+                )
+            )
+        }
+    }
+
+    // The same rider on a trigger no clash ever fires, to pin down that "if you won" is false
+    // rather than vacuously true when there is no clash outcome to read.
+    val NonClashRiderWatcher = card("Non Clash Rider Watcher") {
+        manaCost = "{0}"
+        typeLine = "Creature — Bird"
+        power = 1; toughness = 1
+        triggeredAbility {
+            trigger = Triggers.EntersBattlefield
+            effect = ConditionalEffect(
+                Conditions.YouWonTheClash,
+                Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
+            )
+        }
+    }
+
+    val substrate = listOf(
+        Pebble, Stone, Boulder, ClashForLife, ClashOrElse, ClashInstant,
+        ClashWatcher, ClashWinWatcher, ClashRiderWatcher, NonClashRiderWatcher
+    )
 
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
@@ -481,5 +519,109 @@ class ClashScenarioTest : FunSpec({
         driver.resolveStack()
 
         driver.plusOneCounters(theirWatcher) shouldBe 1
+    }
+
+    // ---------------------------------------------------------------------
+    // "If you won" as a rider *inside* a "Whenever you clash" trigger
+    // ---------------------------------------------------------------------
+
+    test("the if-you-won rider runs on a win and is skipped on a loss") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 40))
+        val active = driver.activePlayer!!
+        val opponent = driver.getOpponent(active)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val watcher = driver.putCreatureOnBattlefield(active, "Clash Rider Watcher")
+
+        // Lose: the ungated half runs, the rider does not.
+        driver.putCardOnTopOfLibrary(active, "Clash Pebble")
+        driver.putCardOnTopOfLibrary(opponent, "Clash Boulder")
+        driver.castClash(active, "Clash For Life")
+        driver.answerClashKeepingAll()
+        driver.resolveStack()
+        driver.plusOneCounters(watcher) shouldBe 1
+
+        // Win: both halves run, so this clash is worth two.
+        driver.putCardOnTopOfLibrary(active, "Clash Boulder")
+        driver.putCardOnTopOfLibrary(opponent, "Clash Pebble")
+        driver.castClash(active, "Clash For Life")
+        driver.answerClashKeepingAll()
+        driver.resolveStack()
+        driver.plusOneCounters(watcher) shouldBe 3
+    }
+
+    test("a tie is not a win for the rider — CR 701.30d wins for nobody") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 40))
+        val active = driver.activePlayer!!
+        val opponent = driver.getOpponent(active)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val watcher = driver.putCreatureOnBattlefield(active, "Clash Rider Watcher")
+
+        driver.putCardOnTopOfLibrary(active, "Clash Stone")
+        driver.putCardOnTopOfLibrary(opponent, "Clash Stone")
+        driver.castClash(active, "Clash For Life")
+        driver.answerClashKeepingAll()
+        driver.resolveStack()
+
+        driver.plusOneCounters(watcher) shouldBe 1
+    }
+
+    test("revealing nothing from an empty library is not a win for the rider") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 40))
+        val active = driver.activePlayer!!
+        val opponent = driver.getOpponent(active)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val watcher = driver.putCreatureOnBattlefield(active, "Clash Rider Watcher")
+
+        // The rider's controller has nothing to reveal, so they cannot have the greatest mana
+        // value; the trigger still fires, because they still clashed.
+        driver.emptyLibrary(active)
+        driver.putCardOnTopOfLibrary(opponent, "Clash Pebble")
+        driver.castClash(active, "Clash For Life")
+        driver.answerClashKeepingAll()
+        driver.resolveStack()
+
+        driver.plusOneCounters(watcher) shouldBe 1
+    }
+
+    test("the rider reads the reader's own outcome, not the clasher's") {
+        // The clash the *opponent* started, which the rider's controller wins without lifting a
+        // finger — the Entangling Trap / Sylvan Echoes ruling applied to the rider rather than the
+        // trigger. The clasher's own ClashedEvent says `won = false`; the rider must not see that.
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 40))
+        val active = driver.activePlayer!!
+        val opponent = driver.getOpponent(active)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val theirWatcher = driver.putCreatureOnBattlefield(opponent, "Clash Rider Watcher")
+
+        driver.putCardOnTopOfLibrary(active, "Clash Pebble")
+        driver.putCardOnTopOfLibrary(opponent, "Clash Boulder")
+        driver.castClash(active, "Clash For Life")
+        driver.answerClashKeepingAll()
+        driver.resolveStack()
+
+        driver.plusOneCounters(theirWatcher) shouldBe 2
+    }
+
+    test("the rider is false on a trigger no clash fired") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 40))
+        val active = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val cardId = driver.putCardInHand(active, "Non Clash Rider Watcher")
+        driver.castSpell(active, cardId)
+        driver.bothPass()
+        driver.resolveStack()
+
+        val watcher = checkNotNull(driver.findPermanent(active, "Non Clash Rider Watcher"))
+        driver.plusOneCounters(watcher) shouldBe 0
     }
 })

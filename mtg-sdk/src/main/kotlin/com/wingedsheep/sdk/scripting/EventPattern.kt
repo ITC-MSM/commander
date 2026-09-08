@@ -2807,6 +2807,40 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         override val description: String = "this creature trains"
     }
 
+    /**
+     * When a permanent is championed with this permanent (CR 702.72c) — "a permanent is
+     * 'championed' by another permanent if the latter exiles the former as the direct result of a
+     * champion ability." Mistbind Clique's "When a Faerie is championed with this creature, tap all
+     * lands target player controls."
+     *
+     * Emitted by the champion ability's own resolution (the `then` branch of the gate the
+     * `champion()` helper builds, `com.wingedsheep.sdk.dsl.champion`) and **only when a permanent
+     * was actually exiled** — declining the choice sacrifices the champion instead and fires
+     * nothing, faithful to "as the direct result of a champion ability". Distinct from the raw
+     * [ZoneChangeEvent] the same exile also emits: that fires for any exile, this only for one a
+     * *resolving champion ability* performed (the same Option A distinction as [TrainedEvent]).
+     *
+     * A parameterless [EventPattern] whose subject is the **championing** permanent, selected by
+     * the watching ability's [com.wingedsheep.sdk.scripting.TriggerBinding], exactly like
+     * [TrainedEvent] and [ExploitedEvent]:
+     *  - [com.wingedsheep.sdk.scripting.TriggerBinding.SELF] — "championed with **this** creature"
+     *    (Mistbind Clique). The champion is the ability's own source.
+     *  - [com.wingedsheep.sdk.scripting.TriggerBinding.OTHER] — "championed with another permanent
+     *    you control" (none printed; supported for the next card).
+     *  - [com.wingedsheep.sdk.scripting.TriggerBinding.ANY] — no subject restriction.
+     *
+     * It carries no filter for the *championed* permanent's quality: the champion ability can only
+     * ever exile something matching its own quality, so the printed "a Faerie is championed with
+     * this creature" is already guaranteed by the champion clause above it. A card that needed a
+     * narrower quality than its own champion quality would add the filter then, mirroring
+     * [TrainedEvent]'s deliberately narrow shape.
+     */
+    @SerialName("ChampionedEvent")
+    @Serializable
+    data object ChampionedEvent : EventPattern {
+        override val description: String = "a permanent is championed with this permanent"
+    }
+
     // =========================================================================
     // Combat Damage Batch Triggers
     // =========================================================================

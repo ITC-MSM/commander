@@ -957,6 +957,7 @@ internal class AffectsFilterResolver {
         is CardPredicate.SharesCreatureTypeWith,
         is CardPredicate.SharesCardTypeWith,
         CardPredicate.SharesCardTypeWithLinkedExile,
+        CardPredicate.SharesNameWithLinkedExile,
         is CardPredicate.SharesColorWith,
         is CardPredicate.SharesManaValueWith,
         is CardPredicate.SharesNameWith,

@@ -349,7 +349,10 @@ class CardLinterTest : DescribeSpec({
                 .message shouldContain "opponent's choice"
         }
 
-        it("flags a TargetChooser.Opponent target on a triggered ability") {
+        // Mausoleum Turnkey ("return target creature card of an opponent's choice from your
+        // graveyard to your hand") is the printed triggered use, and the trigger announcement path
+        // now pins the deciding opponent exactly as the activated one does.
+        it("accepts a TargetChooser.Opponent target on a triggered ability (Mausoleum Turnkey)") {
             val card = instant(
                 "Triggered Opponent-Chosen",
                 CardScript(
@@ -363,8 +366,8 @@ class CardLinterTest : DescribeSpec({
                     ),
                 ),
             )
-            val findings = CardLinter.lint(card)
-            findings.filterIsInstance<CardValidationError.UnsupportedOpponentChooser>().shouldHaveSize(1)
+            CardLinter.lint(card).filterIsInstance<CardValidationError.UnsupportedOpponentChooser>()
+                .shouldBeEmpty()
         }
 
         it("accepts a TargetChooser.Opponent target on an activated ability (Cuombajj Witches)") {

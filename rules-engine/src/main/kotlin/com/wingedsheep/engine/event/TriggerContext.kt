@@ -145,6 +145,15 @@ data class TriggerContext(
      */
     val scryCount: Int? = null,
     /**
+     * Whether the clashing player this trigger is about **won** the clash that fired it
+     * (CR 701.30d). Read by [com.wingedsheep.sdk.scripting.conditions.YouWonTheClash] so a
+     * "Whenever you clash, …. If you won, …" rider (Entangling Trap, Rebellion of the Flamekin)
+     * can gate part of its effect on the outcome — the clash is over by the time the ability
+     * resolves, so the result can only travel as trigger context. `null` when the trigger was not
+     * driven by a clash.
+     */
+    val clashWon: Boolean? = null,
+    /**
      * Number of cards discarded in the batch that caused this trigger to fire (CR 603.2c). Read
      * by `ContextPropertyKey.TRIGGER_DISCARD_COUNT` so "Whenever you discard one or more cards,
      * ... that much" payoffs (Magmakin Artillerist) scale with the batch. `null` when the trigger
@@ -297,7 +306,10 @@ data class TriggerContext(
                 // player, so "whenever you clash" resolves "you" to that participant even when
                 // the opponent's spell started the clash.
                 is com.wingedsheep.engine.core.ClashedEvent -> TriggerContext(
-                    triggeringPlayerId = event.playerId
+                    triggeringPlayerId = event.playerId,
+                    // The event is emitted once per clashing player and carries that player's own
+                    // outcome, so "if you won" is this flag verbatim (CR 701.30d).
+                    clashWon = event.won
                 )
                 is com.wingedsheep.engine.core.ScriedEvent -> TriggerContext(
                     triggeringPlayerId = event.playerId,

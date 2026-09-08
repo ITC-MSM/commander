@@ -354,6 +354,15 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         // Gated above, before this `when` — only the chooser is offered the
                         // ability at all — and it takes no enumeration-time selection.
                         is CostAtom.RevealNotedCreatureType -> {}
+                        // "Unattach this Equipment" (Sunforger). No selection — the source detaches
+                        // from whatever it is on — but a *real* affordability gate: the ability is
+                        // not offered while the Equipment is unattached (its own 2020-08-07 ruling).
+                        is CostAtom.Unattach -> {
+                            if (state.getEntity(entityId)
+                                    ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
+                                    ?.targetId == null
+                            ) continue
+                        }
                         // CR 701.17b — a mill cost is unpayable when the library holds fewer cards.
                         // No selection: the milled cards are the top of the library.
                         is CostAtom.Mill -> {
@@ -581,6 +590,16 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                     is CostAtom.DiscardHand -> {}
                                     // See the top-level branch: gated before the `when`.
                                     is CostAtom.RevealNotedCreatureType -> {}
+                                    // See the top-level branch: unpayable while unattached.
+                                    is CostAtom.Unattach -> {
+                                        if (state.getEntity(entityId)
+                                                ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
+                                                ?.targetId == null
+                                        ) {
+                                            costCanBePaid = false
+                                            break
+                                        }
+                                    }
                                     // CR 701.17b — a mill cost is unpayable when the library holds
                                     // fewer cards. No selection: the milled cards are the top.
                                     is CostAtom.Mill -> {

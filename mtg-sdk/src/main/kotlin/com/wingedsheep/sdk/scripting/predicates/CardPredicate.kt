@@ -983,6 +983,27 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
         override val description: String = "that shares a card type with a card exiled with this permanent"
     }
 
+    /**
+     * Matches objects whose **name** equals that of **any** card exiled with the asking ability's
+     * source — "spells with the same name as a card exiled with Circu" (Circu, Dimir Lobotomist).
+     *
+     * The name axis of [SharesCardTypeWithLinkedExile], and the pile-wide form of
+     * [SharesNameWith]`(EntityReference.LinkedExiledCard())`, which reads one index. Circu exiles on
+     * every blue *and* every black spell you cast, so its pile grows without bound and "a card
+     * exiled with Circu" means any of them — an index can't say that.
+     *
+     * Printed names on both sides: a card in exile and a card in a hand/library have no battlefield
+     * projection whose name a Layer-3 effect could have changed, so this is a plain name comparison
+     * (the same reading [SharesCardTypeWithLinkedExile] takes for type lines). An empty pile — or
+     * one whose cards have all since left exile — matches nothing. Fails closed with no source in
+     * context.
+     */
+    @SerialName("SharesNameWithLinkedExile")
+    @Serializable
+    data object SharesNameWithLinkedExile : CardPredicate {
+        override val description: String = "with the same name as a card exiled with this permanent"
+    }
+
     /** Matches objects that share a color with the referenced entity */
     @SerialName("SharesColorWith")
     @Serializable
