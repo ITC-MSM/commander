@@ -236,7 +236,8 @@ function GridDrafter({ gridState, settings }: { gridState: GridDraftState; setti
     setDisplayGridNumber(gridState.gridNumber)
   }, [gridState.grid, gridState.gridNumber, gridState.lastPickedCards, displayGridNumber])
 
-  const timerWarning = gridState.timeRemaining <= 10
+  // An untimed draft (gridState.timeRemaining === null) never warns.
+  const timerWarning = gridState.timeRemaining !== null && gridState.timeRemaining <= 10
   const isMobile = responsive.isMobile
 
   const availableSet = useMemo(
@@ -367,8 +368,9 @@ function GridDrafter({ gridState, settings }: { gridState: GridDraftState; setti
             color: timerWarning ? '#e94560' : 'rgba(255,255,255,0.7)',
             fontVariantNumeric: 'tabular-nums',
             animation: timerWarning ? 'pulse 1s infinite' : undefined,
-          }}>
-            {gridState.timeRemaining}s
+          }}
+          title={gridState.timeRemaining === null ? 'No time limit — take as long as you like' : undefined}>
+            {gridState.timeRemaining === null ? '\u221e' : `${gridState.timeRemaining}s`}
           </div>
 
           {/* Deck remaining */}

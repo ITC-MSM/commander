@@ -28,6 +28,7 @@ import {
   type CardsKind,
 } from './axes'
 import type { GroupId } from './settingsGroups'
+import { pickTimePhrase } from './pickTime'
 
 /** Which server implementation is backing this lobby. */
 export type LobbyKind = 'QUICK' | 'TOURNAMENT'
@@ -500,12 +501,12 @@ function tournamentSubtitle(lobbyState: LobbyState): string {
     const pool = (() => {
       switch (s.format) {
         case 'GRID_DRAFT':
-          return `Grid Draft · ${s.boosterCount} boosters · ${s.pickTimeSeconds}s per pick`
+          return `Grid Draft · ${s.boosterCount} boosters · ${pickTimePhrase(s.pickTimeSeconds, 'pick')}`
         case 'WINSTON_DRAFT':
-          return `Winston Draft · ${distText ?? `${s.boosterCount} boosters`} · ${s.pickTimeSeconds}s per turn`
+          return `Winston Draft · ${distText ?? `${s.boosterCount} boosters`} · ${pickTimePhrase(s.pickTimeSeconds, 'turn')}`
         case 'COMMANDER_DRAFT':
         case 'DRAFT':
-          return `${distText ?? `${s.boosterCount} packs`} · ${s.pickTimeSeconds}s per pick${pick2}`
+          return `${distText ?? `${s.boosterCount} packs`} · ${pickTimePhrase(s.pickTimeSeconds, 'pick')}${pick2}`
         case 'COMMANDER_SEALED':
           return `${distText ?? `${s.boosterCount} packs`}`
         case 'PREMADE_DECKS':

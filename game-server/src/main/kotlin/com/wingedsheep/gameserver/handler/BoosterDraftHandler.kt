@@ -154,7 +154,7 @@ class BoosterDraftHandler(
         // Derive pick number from this player's pool growth since the round started —
         // booster sizes vary by strategy (15-card classic, 13-card Play Booster, 20-card commander).
         val pickNumber = (playerState.cardPool.size - playerState.poolSizeAtRoundStart) / lobby.picksPerRound + 1
-        val timeRemaining = lobby.playerTimeRemaining[playerId] ?: lobby.pickTimeSeconds
+        val timeRemaining = if (lobby.hasPickTimer) lobby.playerTimeRemaining[playerId] ?: lobby.pickTimeSeconds else null
 
         ctx.sender.send(ws, ServerMessage.DraftPackReceived(
             packNumber = lobby.currentPackNumber,
@@ -177,7 +177,7 @@ class BoosterDraftHandler(
                     packNumber = lobby.currentPackNumber,
                     pickNumber = 1,  // Fresh pack round always starts at pick 1
                     cards = pack.map { cardToSealedCardInfo(it) },
-                    timeRemainingSeconds = lobby.pickTimeSeconds,
+                    timeRemainingSeconds = lobby.pickTimeSeconds.takeIf { lobby.hasPickTimer },
                     passDirection = lobby.getPassDirection().name,
                     picksPerRound = minOf(lobby.picksPerRound, pack.size),
                     pickedCards = playerState.cardPool.map { cardToSealedCardInfo(it) },
@@ -219,6 +219,8 @@ class BoosterDraftHandler(
      */
     private fun startPlayerTimer(lobby: TournamentLobby, playerId: EntityId) {
         cancelPlayerTimer(lobby, playerId)
+        // No time limit: never start a job, so the pick is never auto-made for the player.
+        if (!lobby.hasPickTimer) return
         lobby.playerTimeRemaining[playerId] = lobby.pickTimeSeconds
 
         val job = ctx.draftScope.launch {
@@ -276,7 +278,7 @@ class BoosterDraftHandler(
             packNumber = lobby.currentPackNumber,
             pickNumber = pickNumber,
             cards = pack?.map { cardToSealedCardInfo(it) } ?: emptyList(),
-            timeRemainingSeconds = lobby.playerTimeRemaining[identity.playerId] ?: lobby.pickTimeSeconds,
+            timeRemainingSeconds = if (lobby.hasPickTimer) lobby.playerTimeRemaining[identity.playerId] ?: lobby.pickTimeSeconds else null,
             passDirection = lobby.getPassDirection().name,
             picksPerRound = if (pack != null) minOf(lobby.picksPerRound, pack.size) else lobby.picksPerRound,
             pickedCards = playerState.cardPool.map { cardToSealedCardInfo(it) },

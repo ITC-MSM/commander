@@ -57,6 +57,7 @@ import {
   type Selection,
 } from './modeMatrix'
 import type { UnifiedLobbyView } from './lobbyViewModel'
+import { NO_PICK_TIME_LIMIT } from './pickTime'
 
 /**
  * Bumped when the stored shape changes incompatibly. Unknown versions are **dropped on read, never
@@ -403,7 +404,13 @@ function trimSettings(
   }
 
   if (raw.boosterCount !== undefined) out.boosterCount = clampInt(raw.boosterCount, 1, 16, 6)
-  if (raw.pickTimeSeconds !== undefined) out.pickTimeSeconds = clampInt(raw.pickTimeSeconds, 10, 300, 45)
+  // Exactly 0 is the "no time limit" sentinel and survives the clamp; everything else is
+  // pinned to a usable window.
+  if (raw.pickTimeSeconds !== undefined) {
+    out.pickTimeSeconds = raw.pickTimeSeconds === NO_PICK_TIME_LIMIT
+      ? NO_PICK_TIME_LIMIT
+      : clampInt(raw.pickTimeSeconds, 10, 300, 45)
+  }
   if (raw.picksPerRound !== undefined) out.picksPerRound = clampInt(raw.picksPerRound, 1, 2, 1)
   if (raw.gamesPerMatch !== undefined) out.gamesPerMatch = clampInt(raw.gamesPerMatch, 1, 5, 1)
   if (raw.deckSizeMin !== undefined) out.deckSizeMin = clampInt(raw.deckSizeMin, 40, 100, 60)

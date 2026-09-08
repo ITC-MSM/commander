@@ -53,6 +53,7 @@ import {
   tableTopicId,
 } from './axes'
 import type { UnifiedLobbyView } from './lobbyViewModel'
+import { pickTimeChip } from './pickTime'
 
 export type GroupId = 'CARDS' | 'RULES' | 'TABLE' | 'EVENT' | 'LOBBY'
 
@@ -97,7 +98,7 @@ export function groupSummary(id: GroupId, view: UnifiedLobbyView, lobbyState: Lo
         else if (s.setCodes.length > 0) parts.push(s.setNames.join(' + ') || s.setCodes.join(' + '))
         else if (s.format !== 'PREMADE_DECKS') parts.push('no sets yet')
         if (usesBoosters(s.format)) parts.push(`${s.boosterCount} ${countsPacks(s.format) ? 'packs' : 'boosters'}`)
-        if (isAnyDraft(s.format)) parts.push(`${s.pickTimeSeconds}s`)
+        if (isAnyDraft(s.format)) parts.push(pickTimeChip(s.pickTimeSeconds))
         if (s.picksPerRound === 2) parts.push('pick 2')
         if (s.bannedCardNames.length > 0) parts.push(`${s.bannedCardNames.length} banned`)
       }
