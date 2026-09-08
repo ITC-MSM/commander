@@ -113,6 +113,7 @@ function DraftPicker({ draftState, settings }: { draftState: DraftState; setting
 
   // Auto-submit selected cards when timer expires (before server auto-picks first N)
   useEffect(() => {
+    // `timeRemaining === null` is the no-time-limit draft — never auto-submit there.
     if (draftState.timeRemaining === 0 && draftState.currentPack.length > 0) {
       // Fill remaining slots with unselected cards from the pack
       const picks = [...selectedCards]
@@ -130,8 +131,8 @@ function DraftPicker({ draftState, settings }: { draftState: DraftState; setting
     }
   }, [draftState.timeRemaining, draftState.currentPack, selectedCards, picksRequired, makePick])
 
-  // Timer warning threshold
-  const timerWarning = draftState.timeRemaining <= 10
+  // Timer warning threshold. An untimed draft never warns.
+  const timerWarning = draftState.timeRemaining !== null && draftState.timeRemaining <= 10
 
   // Group picked cards by color for sidebar, with counts for duplicates
   const pickedByColor = useMemo(() => {
@@ -689,7 +690,8 @@ function PackStackIcon({ count }: { count: number }) {
   )
 }
 
-function Timer({ seconds, warning }: { seconds: number; warning: boolean }) {
+/** The pick clock. `seconds === null` is an untimed draft, shown as an infinity badge. */
+function Timer({ seconds, warning }: { seconds: number | null; warning: boolean }) {
   const [pulse, setPulse] = useState(false)
 
   useEffect(() => {
@@ -722,8 +724,9 @@ function Timer({ seconds, warning }: { seconds: number; warning: boolean }) {
         textAlign: 'center',
         transition: 'background-color 0.2s',
       }}
+      title={seconds === null ? 'No time limit — take as long as you like' : undefined}
     >
-      {formatTime(seconds)}
+      {seconds === null ? '\u221e' : formatTime(seconds)}
     </div>
   )
 }

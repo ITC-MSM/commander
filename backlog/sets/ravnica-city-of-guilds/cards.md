@@ -2,7 +2,7 @@
 
 **Set Size:** 291 cards
 **Release Date:** October 7, 2005
-**Implemented:** 274 / 291
+**Implemented:** 275 / 291
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 37    | 33   |
@@ -11,7 +11,7 @@
 | Red        | 39    | 38   |
 | Green      | 37    | 37   |
 | Multicolor | 64    | 57   |
-| Artifact   | 21    | 17   |
+| Artifact   | 21    | 18   |
 | Land       | 17    | 17   |
 
 > Verify status anytime with `scripts/card-status --set RAV` (and `--list`). That command's count is authoritative — keep this file's `Implemented:` line in sync (`just fix-backlog`) as boxes are checked. The set's mechanics are catalogued in [`mechanics.md`](mechanics.md).
@@ -288,7 +288,7 @@
 - [x] Boros Signet
 - [x] Bottled Cloister
 - [x] Cloudstone Curio
-- [ ] Crown of Convergence
+- [x] Crown of Convergence
 - [x] Cyclopean Snare
 - [x] Dimir Signet
 - [x] Glass Golem

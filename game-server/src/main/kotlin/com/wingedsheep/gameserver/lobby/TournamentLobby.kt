@@ -300,7 +300,7 @@ class TournamentLobby(
     var boosterCount: Int = 6,        // Sealed: boosters in pool, Draft: packs per player (usually 3)
     var boosterDistribution: Map<String, Int> = emptyMap(),  // Per-set booster counts (e.g., {"ONS": 2, "LGN": 2, "SCG": 2})
     var maxPlayers: Int = 8,
-    var pickTimeSeconds: Int = 45,    // Draft only
+    var pickTimeSeconds: Int = 45,    // Draft only; 0 = no time limit (see [hasPickTimer])
     var picksPerRound: Int = 1,       // Draft only: cards to pick each round (1 or 2); 2 is the default for new Draft / Commander Draft lobbies (see LobbyHandler.handleCreateTournamentLobby)
     var gamesPerMatch: Int = 3,
     var isPublic: Boolean = false,
@@ -739,6 +739,15 @@ class TournamentLobby(
     /** Seconds remaining on current pick timer (used by Winston/Grid draft) */
     @Volatile
     var pickTimeRemaining: Int = 0
+
+    /**
+     * Whether this draft runs a pick timer at all. A [pickTimeSeconds] of `0` means "no time
+     * limit": no timer job is started and no auto-pick ever fires, so players take as long as
+     * they like. Wire messages carry `null` rather than a second count in that case, so the
+     * client can't read an unlimited pick as "0 seconds left".
+     */
+    val hasPickTimer: Boolean
+        get() = pickTimeSeconds > 0
 
     /** Per-player timer jobs for booster draft (async pack passing). */
     val playerTimerJobs: ConcurrentHashMap<EntityId, Job> = ConcurrentHashMap()
@@ -2116,6 +2125,23 @@ class TournamentLobby(
     }
 
     companion object {
+        /**
+         * Sentinel [pickTimeSeconds] value meaning "no time limit": the draft runs no pick timer
+         * at all, so nothing is ever auto-picked and players take as long as they like. Kept as a
+         * value of the existing field rather than a separate flag so persistence, the lobby
+         * settings message and the recipe format all carry it for free.
+         */
+        const val NO_PICK_TIME_LIMIT = 0
+
+        /**
+         * Clamp a client-supplied pick time. Exactly [NO_PICK_TIME_LIMIT] is the untimed setting
+         * and survives untouched - clamping it up to the floor would silently re-arm the timer.
+         * Every other value is pinned into a usable window so a client can't ask for a one-second
+         * or week-long timer.
+         */
+        fun clampPickTimeSeconds(requested: Int, max: Int): Int =
+            if (requested == NO_PICK_TIME_LIMIT) NO_PICK_TIME_LIMIT else requested.coerceIn(15, max)
+
         /**
          * Sentinel set code for a deferred "Random Set" pick. A host can add one or more random
          * slots to a lobby's pool; each stays hidden (displayed as [RANDOM_SET_NAME]) until the

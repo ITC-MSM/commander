@@ -1253,7 +1253,7 @@ data class CraftedFromExiledComponent(
 ) : Component
 
 /**
- * Marks a permanent as having been dealt damage this turn.
+ * Marks a permanent or player as having been dealt damage this turn.
  * Cleared at end of turn by CleanupPhaseManager.
  * Used for StatePredicate.WasDealtDamageThisTurn.
  */

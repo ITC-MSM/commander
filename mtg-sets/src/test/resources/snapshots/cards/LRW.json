@@ -12170,6 +12170,59 @@
     ]
 }
 
+// Needle Drop
+{
+    "name": "Needle Drop",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Needle Drop deals 1 damage to any target that was dealt damage this turn.\nDraw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target that was dealt damage this turn"
+                    }
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "AnyTarget",
+                "id": "target that was dealt damage this turn",
+                "filter": {
+                    "statePredicates": [
+                        "WasDealtDamageThisTurn"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "186",
+        "artist": "Greg Staples",
+        "flavorText": "\"First it was plovers and mulldrifters. Now it's knitting needles the size of javelins.\"\n—Calydd, kithkin farmer",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/3/d3f89bcf-46f8-4598-a949-7f10134606aa.jpg?1783942871"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Nettlevine Blight
 {
     "name": "Nettlevine Blight",

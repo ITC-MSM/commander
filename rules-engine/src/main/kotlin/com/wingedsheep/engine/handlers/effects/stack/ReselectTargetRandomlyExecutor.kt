@@ -6,7 +6,9 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
+import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.state.components.stack.TargetsComponent
@@ -29,6 +31,7 @@ class ReselectTargetRandomlyExecutor : EffectExecutor<ReselectTargetRandomlyEffe
     override val effectType: KClass<ReselectTargetRandomlyEffect> = ReselectTargetRandomlyEffect::class
 
     private val predicateEvaluator = PredicateEvaluator()
+    private val targetFinder = TargetFinder()
 
     override fun execute(
         state: GameState,
@@ -55,7 +58,10 @@ class ReselectTargetRandomlyExecutor : EffectExecutor<ReselectTargetRandomlyEffe
         val targetRequirements = targetsComponent.targetRequirements
 
         // 3. Find all legal targets
-        val legalTargets = findLegalTargets(state, currentTarget, targetRequirements, context.controllerId)
+        val spellController = stackEntity.get<ControllerComponent>()?.playerId ?: context.controllerId
+        val legalTargets = findLegalTargets(
+            state, currentTarget, targetRequirements, spellController, triggeringEntityId
+        )
 
         if (legalTargets.isEmpty()) {
             // No legal targets at all — keep current target
@@ -112,18 +118,15 @@ class ReselectTargetRandomlyExecutor : EffectExecutor<ReselectTargetRandomlyEffe
         state: GameState,
         currentTarget: ChosenTarget,
         targetRequirements: List<TargetRequirement>,
-        controllerId: EntityId
+        controllerId: EntityId,
+        sourceId: EntityId
     ): List<EntityId> {
         val projected = state.projectedState
         val requirement = targetRequirements.firstOrNull()
 
         return when {
             requirement is AnyTarget -> {
-                val permanents = state.getBattlefield().filter { entityId ->
-                    projected.hasType(entityId, "CREATURE") || projected.hasType(entityId, "PLANESWALKER")
-                }
-                val players = state.turnOrder.filter { state.hasEntity(it) }
-                permanents + players
+                targetFinder.findLegalTargets(state, requirement, controllerId, sourceId)
             }
 
             requirement is TargetCreatureOrPlayer -> {

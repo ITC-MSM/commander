@@ -22,6 +22,13 @@ sealed interface EntityReference {
         override val description: String = "it"
     }
 
+    /** The current top card of a player's library; absent when that library is empty. */
+    @SerialName("LibraryTop")
+    @Serializable
+    data class LibraryTop(val player: Player = Player.You) : EntityReference {
+        override val description: String = "the top card of ${player.possessive} library"
+    }
+
     /** A cast-time target by index. */
     @SerialName("Target")
     @Serializable

@@ -593,7 +593,8 @@ sealed interface ServerMessage {
         val packNumber: Int,           // 1, 2, or 3
         val pickNumber: Int,           // 1-15
         val cards: List<SealedCardInfo>,
-        val timeRemainingSeconds: Int,
+        /** Seconds left to pick, or `null` when the draft has no time limit. */
+        val timeRemainingSeconds: Int?,
         val passDirection: String,     // "LEFT" or "RIGHT"
         val picksPerRound: Int = 1,    // Cards to pick this round (1 or 2)
         val pickedCards: List<SealedCardInfo> = emptyList(),  // Cards already picked (for reconnect)
@@ -668,8 +669,8 @@ sealed interface ServerMessage {
         val unknownOpponentCardCount: Int = 0,
         /** Description of the last action */
         val lastAction: String? = null,
-        /** Seconds remaining on the turn timer */
-        val timeRemainingSeconds: Int = 0,
+        /** Seconds remaining on the turn timer, or `null` when there is no time limit. */
+        val timeRemainingSeconds: Int? = 0,
         /** Cards from the last opponent pick (empty if no pick yet or it was your pick) */
         val lastPickedCards: List<SealedCardInfo> = emptyList()
     ) : ServerMessage
@@ -695,7 +696,8 @@ sealed interface ServerMessage {
         /** Other players' picked cards: playerName -> cards */
         val pickedCardsByOthers: Map<String, List<SealedCardInfo>> = emptyMap(),
         val lastAction: String?,
-        val timeRemainingSeconds: Int,
+        /** Seconds left to pick, or `null` when the draft has no time limit. */
+        val timeRemainingSeconds: Int?,
         /** Available row/column selections (e.g., ["ROW_0", "COL_1"]) */
         val availableSelections: List<String>,
         /** Player names in pick order */

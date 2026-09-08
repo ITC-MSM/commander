@@ -1,0 +1,68 @@
+{
+  "player1Name": "Crown controller",
+  "player2Name": "Opponent",
+  "player1": {
+    "lifeTotal": 20,
+    "hand": [],
+    "battlefield": [
+      {
+        "name": "Crown of Convergence"
+      },
+      {
+        "name": "Watchwolf"
+      },
+      {
+        "name": "Courier Hawk"
+      },
+      {
+        "name": "Glass Golem"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Plains"
+      },
+      {
+        "name": "Plains"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Watchwolf",
+      "Glass Golem",
+      "Giant Growth",
+      "Courier Hawk",
+      "Forest"
+    ]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": [
+      "Disenchant"
+    ],
+    "battlefield": [
+      {
+        "name": "Watchwolf"
+      },
+      {
+        "name": "Plains"
+      },
+      {
+        "name": "Plains"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Forest",
+      "Forest",
+      "Forest"
+    ]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1
+}

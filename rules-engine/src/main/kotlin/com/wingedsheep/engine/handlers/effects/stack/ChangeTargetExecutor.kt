@@ -8,7 +8,9 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
+import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.state.components.stack.TargetsComponent
@@ -35,6 +37,7 @@ class ChangeTargetExecutor : EffectExecutor<ChangeTargetEffect> {
 
     private val decisionHandler = DecisionHandler()
     private val predicateEvaluator = PredicateEvaluator()
+    private val targetFinder = TargetFinder()
 
     override fun execute(
         state: GameState,
@@ -71,7 +74,10 @@ class ChangeTargetExecutor : EffectExecutor<ChangeTargetEffect> {
         }
 
         // 3. Find all legal new targets based on target requirements
-        var legalNewTargets = findLegalNewTargets(state, currentTarget, targetRequirements, context.controllerId)
+        val spellController = stackEntity.get<ControllerComponent>()?.playerId ?: context.controllerId
+        var legalNewTargets = findLegalNewTargets(
+            state, currentTarget, targetRequirements, spellController, targetSpell.spellEntityId
+        )
 
         // "The new target must be a player" (Reflecting Mirror) — narrowed *after* the spell's own
         // requirement, so the redirect can never make an otherwise-illegal choice legal.
@@ -119,7 +125,8 @@ class ChangeTargetExecutor : EffectExecutor<ChangeTargetEffect> {
         state: GameState,
         currentTarget: ChosenTarget,
         targetRequirements: List<TargetRequirement>,
-        controllerId: EntityId
+        controllerId: EntityId,
+        sourceId: EntityId
     ): List<EntityId> {
         val projected = state.projectedState
         val currentTargetId = getTargetEntityId(currentTarget)
@@ -130,11 +137,7 @@ class ChangeTargetExecutor : EffectExecutor<ChangeTargetEffect> {
         return when {
             // AnyTarget: creatures/planeswalkers on battlefield + players
             requirement is AnyTarget -> {
-                val permanents = state.getBattlefield().filter { entityId ->
-                    projected.hasType(entityId, "CREATURE") || projected.hasType(entityId, "PLANESWALKER")
-                }
-                val players = state.turnOrder.filter { state.hasEntity(it) }
-                (permanents + players).filter { it != currentTargetId }
+                targetFinder.findLegalTargets(state, requirement, controllerId, sourceId).filter { it != currentTargetId }
             }
 
             // TargetCreatureOrPlayer: creatures on battlefield + players
