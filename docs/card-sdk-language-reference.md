@@ -1223,9 +1223,10 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   `MoveCollectionEffect.addCounterType`.
 - `ExileAndGrantOwnerPlayPermission(target, until?)` — exile + owner may play it (Garth-style).
 - `ExileOpponentsGraveyards()` — exile every card in each opponent's graveyard.
+- `MoveUntilSourceLeaves(target, destination)` — move an object to a non-battlefield, non-stack zone and return it to its previous zone immediately when the source's battlefield visit ends. The return does not use the stack and survives loss of the source's abilities. An exile also populates the ordinary linked-exile pile for client display and linked abilities. Returning permanents enter under their owner's control; tokens and objects that have since left the destination do not return. If the source has already left (including leaving and returning), the initial move does nothing. Ossification uses `Effects.MoveUntilSourceLeaves(victim, Zone.EXILE)` with no leaves trigger.
 - `ExileUntilLeaves(target)` — linked exile; the exiled card returns when the source leaves the battlefield (pair with `ReturnLinkedExile*` on the source's `LeavesBattlefield` trigger). The target is normally a **battlefield** permanent (O-Ring: Liminal Hold, Driftgloom Coyote), but a **graveyard card** is also legal — the executor moves the target to exile from whichever of those two zones it is in, so a cross-zone union `target(...)` ("creature on the battlefield **or** creature card from a graveyard") works directly (Savior of Ollenbock). Other zones are ignored.
 - `ExileWithAurasNotingCounters(target = ContextTarget(0))` / `ReturnNotedExileTappedWithAuras()` — the state-preserving "blink that remembers counters and Auras" pair (Tawnos's Coffin). The exile half exiles the target creature **and all Auras attached to it** (all linked to the source via `LinkedExileComponent`) and records the creature's identity + its `kind→count` counter snapshot on the source via `NotedExileComponent` (captures the Auras *before* exiling the creature, so the unattached-Aura SBA can't pre-empt them). The return half (a no-op when nothing is noted, so it's safe to fire from **both** a `LeavesBattlefield` and a `BecomesUntapped` trigger — whichever fires first returns the cards) returns the noted creature **tapped under its owner's control** with the noted counters restored, then returns the linked Auras attached to it; Auras that can't legally re-attach go to their owners' graveyards via the CR 704.5m unattached-Aura SBA (the "If you don't …" fallback). `NotedExileComponent` is preserved across the source's own zone change (like `LinkedExileComponent`) so the leaves-the-battlefield return still reads it, and stripped on battlefield re-entry (Rule 400.7).
-- `ExileLinkedToSource(target)` — exile a target **permanently** and record it in the source's linked-exile pile (`LinkedExileComponent`). Unlike `ExileUntilLeaves` there's no automatic return — the link just lets later abilities reference the exiled card (Territory Forge's "this permanent has all activated abilities of the exiled card").
+- `ExileLinkedToSource(target)` — exile a target **permanently** and record it in the source's linked-exile pile (`LinkedExileComponent`). Unlike `MoveUntilSourceLeaves` there's no automatic return — the link just lets later abilities reference the exiled card (Territory Forge's "this permanent has all activated abilities of the exiled card").
 - `RecordChosenLinkedExile(from)` — stamp the source's `ChosenLinkedExileComponent` with the first card in the pipeline collection `from` (its "last chosen card"). Pair after a `SelectFromCollection` over `CardSource.FromLinkedExile()` so a `HasAbilitiesOfChosenLinkedExiledCard` static ability grants the source that card's activated and triggered abilities (Koh, the Face Stealer's "Pay 1 life: Choose a creature card exiled with Koh").
 - `ExileGroupAndLink(filter, storeAs?)` — exile all matching permanents into source's linked exile pile.
 - `ExileFromTopRepeating(count, repeatCondition)` — keep exiling top cards while a condition holds.
@@ -2116,6 +2117,13 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   the condition fails — so a pump that wears off, a re-tap, or a re-acquired source never
   re-grabs the creature.
 - `ExchangeControlEffect(target1, target2)` — swap control of two permanents.
+  Triggered abilities with mandatory single-permanent target slots may compare a later target to an
+  earlier one using `EntityReference.Target(index)` (Spawnbroker: `powerAtMostEntity(Target(0))`).
+  The engine asks for these targets sequentially, offers only choices that can complete the remaining
+  slots, and rechecks the relationship against projected characteristics at resolution. The optional
+  exchange remains a resolution-time consent choice. This selection path does not support optional
+  or multiple-object slots.
+
 - `GainControlByRankEffect(metric, target?, direction?, tieBreak?)` — rank the players still in the
   game by a `PlayerRankMetric` and hand the target to whoever sits at one end. Three independent
   axes, so a new card in this family usually needs no new effect: **what** is ranked (`metric` —
@@ -5084,6 +5092,26 @@ fall back to base data). Use `projected.isCreature(entityId)` rather than `cardC
 
 ---
 
+### Cast-name history filters
+
+`GameObjectFilter.sharesNameWithSpellCastThisTurn()` adds
+`StatePredicate.SharesNameWithSpellCastThisTurn`: the candidate shares at least one name with a spell
+cast by any player this turn. Reads cast-time history, so resolution, countering, and later zone changes
+do not erase eligibility; nameless and face-down spells never match. History resets on turn change.
+Used by **Twinning Glass**, composing hand gathering, an optional `SelectionMode.ChooseSpell` selection, and
+`Effects.CastFromCollectionWithoutPayingCost` for a cast during ability resolution.
+
+`SelectionMode.ChooseSpell` selects zero or one spell from a collection. Unlike a card selection, its
+filter tests each castable face separately: a matching Adventure, Omen, split half, or modal back face
+can qualify without the primary face qualifying. Preparation spells are excluded. The ordinary card
+picker chooses the physical card; if several faces qualify, the existing option picker chooses the
+spell name. The selection carries its face alongside the selected collection through continuations;
+`CastFromCollectionWithoutPayingCost` consumes that choice for targeting, permission, and casting.
+Spell eligibility uses the face filter; card-selection budget restrictions and the legacy
+`matchChosenCreatureType` flag are rejected in this mode. Declining creates no cast permission. The normal cast handler still enforces targets and additional
+costs, and records the chosen face's name in turn history.
+
+
 ## 8. Triggered abilities (`Triggers.*`)
 
 `triggeredAbility { trigger; effect; target?; triggerZone?/triggerZones?; interveningIf?; triggerRestriction?; optional?; elseEffect?; checkOnNextState?; dealsDamageBeforeResolve?; controlledByTriggeringEntityController?; oncePerTurn?; effectOncePerTurn?; triggersOnce? }`.
@@ -5124,6 +5152,13 @@ Getting the choice wrong is silent in both directions — an "if" filed as a res
 abilities that should do nothing, a "while" filed as an "if" fizzles abilities that should resolve —
 so `InterveningIfClassificationTest` re-derives the reading from each card's own Oracle text and
 fails the build on a mismatch, over the population where the pairing is unambiguous.
+
+A self-bound `EventPattern.ZoneChangeEvent(to = Zone.GRAVEYARD)` with
+`triggerZone = Zone.GRAVEYARD` models "put into a graveyard from anywhere" (Dread).
+It checks the card after the move, including a battlefield departure that restores abilities
+removed by Lignify. Explicit `from = Zone.BATTLEFIELD` triggers still use the departure snapshot.
+For "shuffle it into its owner's library", compose a graveyard-gated `Effects.Move` to the library
+with `ShuffleLibraryEffect()` so the owner still shuffles if the card has left the graveyard.
 
 **`triggerZones` — which zones the trigger condition functions in (CR 113.6b).** Defaults to
 `setOf(Zone.BATTLEFIELD)`, which CR 113.6 makes the rule for a permanent card's abilities. It is a
@@ -8476,6 +8511,12 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 - `loyaltyAbility(+N) { ... }` — add loyalty + effect.
 - `loyaltyAbility(-N) { ... }` — remove loyalty + effect.
 - `loyaltyAbility(0) { ... }` — 0-loyalty ability.
+- `loyaltyAbilityX { ... }` — a −X loyalty cost (`AbilityCost.LoyaltyX`). The player chooses
+  X from zero through the source's current loyalty when activating; payment removes that many
+  loyalty counters and the effect reads the locked-in choice with `DynamicAmount.XValue`.
+  Uses the ordinary server X picker and the same sorcery-speed / per-turn loyalty restrictions
+  as fixed costs. Spending all loyalty is legal; the ability still resolves after its source leaves.
+  The client ability menu receives `loyaltyX = true` and renders −X. Chandra Nalaar uses this shape.
 
 ---
 
@@ -11046,6 +11087,13 @@ something other than the source.
   (`ManaCost.coloredSymbolCount`), so they agree symbol-for-symbol and differ only in scope.
   Being `Triggering`-scoped, it is rejected by `SetBaseStatsEffect(reevaluateContinuously = true)`
   like every other context-scoped amount; read off `EntityReference.Source` it is projector-safe.
+- `DynamicAmount.EntityProperty(entity, EntityNumericProperty.DamageDealtThisTurn)` — actual damage
+  dealt by a battlefield permanent or resolving spell this turn, including combat and noncombat
+  damage to any recipient. The tally is bound to the source’s object identity. Prevention
+  and damage replacement effects modify the tally; damage replaced entirely with counters contributes
+  zero. Turn changes make the value read zero and zone changes clear it. For “damage dealt this way”,
+  store the value before the damage and subtract it afterward (Brightflame). The stored baseline and
+  damage history survive resolution decisions, including optional damage redirection.
 - `EntityProperty(entity, EntityNumericProperty.ExcessMarkedDamage)` — the excess damage (CR 120.4a)
   marked on a creature: `max(0, marked − toughness)`, read from post-damage state. Amount-valued twin of
   the `TargetMarkedDamageExceedsToughness` condition. Read it AFTER a deal-damage step in the same

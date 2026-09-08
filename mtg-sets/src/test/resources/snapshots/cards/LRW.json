@@ -2583,6 +2583,156 @@
     ]
 }
 
+// Chandra Nalaar
+{
+    "name": "Chandra Nalaar",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Legendary Planeswalker — Chandra",
+    "oracleText": "+1: Chandra Nalaar deals 1 damage to target player or planeswalker.\n−X: Chandra Nalaar deals X damage to target creature.\n−8: Chandra Nalaar deals 10 damage to target player or planeswalker and each creature that player or that planeswalker's controller controls.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target player or planeswalker"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayerOrPlaneswalker",
+                        "id": "target player or planeswalker"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostLoyaltyX",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": "XValue",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -8
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 10
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target player or planeswalker"
+                            }
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": {
+                                        "anyOf": [
+                                            {
+                                                "cardPredicates": [
+                                                    "IsCreature"
+                                                ],
+                                                "controllerPredicate": {
+                                                    "type": "ControlledByReferencedPlayer",
+                                                    "target": {
+                                                        "type": "BoundVariable",
+                                                        "name": "target player or planeswalker"
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "cardPredicates": [
+                                                    "IsCreature"
+                                                ],
+                                                "controllerPredicate": {
+                                                    "type": "ControlledByReferencedPlayer",
+                                                    "target": "TargetController"
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    "excludeTarget": true
+                                }
+                            },
+                            "body": {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 10
+                                },
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayerOrPlaneswalker",
+                        "id": "target player or planeswalker"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "159",
+        "rarity": "RARE",
+        "artist": "Aleksi Briclot",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/317e7ab7-7639-4877-aae2-3746563f2ec9.jpg?1783942878",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "To activate the second ability, you choose a value of X equal to or less than the number of loyalty counters on Chandra Nalaar. You may choose 0. You can’t choose a negative number."
+            }
+        ]
+    },
+    "startingLoyalty": 6,
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Changeling Berserker
 {
     "name": "Changeling Berserker",
@@ -4010,6 +4160,89 @@
         "WHITE",
         "BLACK",
         "GREEN"
+    ]
+}
+
+// Dread
+{
+    "name": "Dread",
+    "manaCost": "{3}{B}{B}{B}",
+    "typeLine": "Creature — Elemental Incarnation",
+    "oracleText": "Fear (This creature can't be blocked except by artifact creatures and/or black creatures.)\nWhenever a creature deals damage to you, destroy it.\nWhen Dread is put into a graveyard from anywhere, shuffle it into its owner's library.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "FEAR"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "recipient": "You",
+                    "sourceFilter": "creature"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "TriggeringEntity",
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Library",
+                            "fromZone": "Graveyard"
+                        },
+                        "ShuffleLibrary"
+                    ]
+                },
+                "activeZones": [
+                    "Graveyard"
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "107",
+        "rarity": "RARE",
+        "artist": "Matt Cavotta",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/b/9b608658-9150-439b-b0a0-4a994722b95c.jpg?1783942892",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "The last ability triggers when the Incarnation is put into its owner’s graveyard from any zone, not just from on the battlefield."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "Although this ability triggers when the Incarnation is put into a graveyard from the battlefield, it doesn’t *specifically* trigger on leaving the battlefield, so it doesn’t behave like other leaves-the-battlefield abilities. The ability will trigger from the graveyard."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If the Incarnation had lost this ability while on the battlefield (due to Lignify, for example) and then was destroyed, the ability would still trigger and it would get shuffled into its owner’s library. However, if the Incarnation lost this ability when it was put into the graveyard (due to Yixlid Jailer, for example), the ability wouldn’t trigger and the Incarnation would remain in the graveyard."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "If the Incarnation is removed from the graveyard after the ability triggers but before it resolves, it will remain in its new zone when its owner shuffles their library. Similarly, if a replacement effect has the Incarnation move to a different zone instead of being put into the graveyard, the ability won’t trigger at all."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -16883,6 +17116,91 @@
     "colorIdentityOverride": [
         "BLUE"
     ]
+}
+
+// Twinning Glass
+{
+    "name": "Twinning Glass",
+    "manaCost": "{4}",
+    "typeLine": "Artifact",
+    "oracleText": "{1}, {T}: You may cast a spell from your hand without paying its mana cost if it has the same name as a spell that was cast this turn.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hand",
+                            "selection": "ChooseSpell",
+                            "filter": {
+                                "cardPredicates": [
+                                    "IsNonland"
+                                ],
+                                "statePredicates": [
+                                    "SharesNameWithSpellCastThisTurn"
+                                ]
+                            },
+                            "storeSelected": "spellToCast",
+                            "prompt": "You may cast a spell with the same name as a spell cast this turn",
+                            "selectedLabel": "Cast for free",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "CastFromCollectionWithoutPayingCost",
+                            "from": "spellToCast"
+                        }
+                    ]
+                },
+                "descriptionOverride": "{1}, {T}: Cast a spell with a name already cast this turn for free"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "264",
+        "rarity": "RARE",
+        "artist": "Franz Vohwinkel",
+        "flavorText": "It takes two to craft a mirror: a practiced metalsmith to silver one side and her own hazy reflection to polish the other.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e0138c42-77ea-45f0-b2ca-cda03f3f50d1.jpg?1783942850",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "Activating Twinning Glass's ability allows you to cast a single card from your hand as it resolves. It doesn't create a continuous effect, and it doesn't let you cast multiple cards for free."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "It doesn't matter who cast the first spell."
+            },
+            {
+                "date": "2007-10-01",
+                "text": "You can't pay any alternative costs (such as those from evoke or morph) when casting the card. On the other hand, if the card has additional costs (such as those from kicker or buyback), you may pay those."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Veteran of the Depths

@@ -249,6 +249,11 @@ object CardIntentAnalyzer {
             else -> removalTags(effect.target)
         }
 
+        is MoveUntilSourceLeavesEffect -> when {
+            !hitsAnotherPermanent(effect.target, insideIteration) -> emptySet()
+            effect.destination == Zone.EXILE -> removalTags(effect.target) + IntentTag.EXILE_REMOVAL
+            else -> removalTags(effect.target)
+        }
         is ExileUntilLeavesEffect -> setOf(IntentTag.REMOVAL, IntentTag.EXILE_REMOVAL)
         is PhaseOutUntilLeavesEffect -> setOf(IntentTag.REMOVAL)
         is ForceSacrificeEffect -> setOf(IntentTag.REMOVAL)

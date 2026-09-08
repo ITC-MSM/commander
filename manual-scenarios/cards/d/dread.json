@@ -1,0 +1,85 @@
+{
+  "player1Name": "Dread",
+  "player2Name": "Opponent",
+  "player1": {
+    "lifeTotal": 20,
+    "hand": [
+      "Dread",
+      "Lignify",
+      "Terminate"
+    ],
+    "battlefield": [
+      {
+        "name": "Dread"
+      },
+      {
+        "name": "Prodigal Sorcerer"
+      },
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Mountain"
+      },
+      {
+        "name": "Mountain"
+      }
+    ],
+    "library": [
+      "Swamp",
+      "Swamp",
+      "Swamp",
+      "Swamp"
+    ]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": [
+      "Cremate"
+    ],
+    "battlefield": [
+      {
+        "name": "Grizzly Bears"
+      },
+      {
+        "name": "Llanowar Elves"
+      },
+      {
+        "name": "Ornithopter"
+      },
+      {
+        "name": "Swamp"
+      }
+    ],
+    "library": [
+      "Forest",
+      "Forest",
+      "Forest",
+      "Forest"
+    ]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1
+}

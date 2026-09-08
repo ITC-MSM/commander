@@ -7,6 +7,8 @@ import com.wingedsheep.engine.core.AbilityActivatedEvent
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.suspendForDecision
 import com.wingedsheep.engine.core.GameEvent
+import com.wingedsheep.engine.state.components.battlefield.CountersComponent
+import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.engine.core.LoyaltyChangedEvent
 import com.wingedsheep.engine.core.ManaAddedEvent
 import com.wingedsheep.engine.core.PaymentStrategy
@@ -702,6 +704,12 @@ class ActivateAbilityHandler(
         val abilityLookup = lookupActivatedAbility(state, action.sourceId, action.abilityId)
             ?: return ExecutionResult.error(state, "Ability not found")
         val ability = abilityLookup.ability
+        if (ability.cost == AbilityCost.LoyaltyX && action.xValue != null) {
+            val loyalty = container.get<CountersComponent>()?.getCount(CounterType.LOYALTY) ?: 0
+            if (action.xValue !in 0..loyalty) {
+                return ExecutionResult.error(state, "X must be between 0 and $loyalty")
+            }
+        }
         val staticGranterId = abilityLookup.staticGranterId
         val abilityIdentity = abilityLookup.definitionIdentity
 
@@ -840,9 +848,11 @@ class ActivateAbilityHandler(
         // gets to choose X. The engine-direct path (xValue pre-filled) skips this.
         // -------------------------------------------------------------------
         val manaXCost = extractManaCost(effectiveCost)
-        if (manaXCost?.hasX == true && action.xValue == null && tapXCost == null) {
-            val fixedMana = manaXCost.cmc // the non-X portion ({X} alone is 0; {1}{X} is 1)
-            val maxX = (manaSolver.getAvailableManaCount(state, action.playerId) - fixedMana).coerceAtLeast(0)
+        if ((manaXCost?.hasX == true || effectiveCost == AbilityCost.LoyaltyX) && action.xValue == null && tapXCost == null) {
+            val fixedMana = manaXCost?.cmc ?: 0 // the non-X portion ({X} alone is 0; {1}{X} is 1)
+            val maxX = if (effectiveCost == AbilityCost.LoyaltyX) {
+                container.get<CountersComponent>()?.getCount(CounterType.LOYALTY) ?: 0
+            } else (manaSolver.getAvailableManaCount(state, action.playerId) - fixedMana).coerceAtLeast(0)
             // "X can't be 0" abilities (Gogo, Master of Mimicry) set a minimum; clamp it to what the
             // player can actually pay so the decision bounds stay valid.
             val minX = ability.minimumXValue.coerceAtMost(maxX)
@@ -1558,6 +1568,8 @@ class ActivateAbilityHandler(
         val abilityCost = ability.cost
         if (abilityCost is AbilityCost.Loyalty) {
             events.add(LoyaltyChangedEvent(action.sourceId, sourceName, abilityCost.change))
+        } else if (abilityCost == AbilityCost.LoyaltyX) {
+            events.add(LoyaltyChangedEvent(action.sourceId, sourceName, -xValue))
         }
 
         // Snapshot of the activation's cost-side events (cost payment + the {T}/tap/loyalty events

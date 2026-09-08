@@ -166,11 +166,8 @@ internal fun BridgeBuilder.zoneMovement() {
     // MoveToZone(fromZone = GRAVEYARD), which skips the move when the card has since left the graveyard
     // (by then it's a new object, CR 400.7).
     supported("CardInGraveyards", "exilable selector: a card in a graveyard (MoveToZone fromZone = GRAVEYARD; Trigger_ThatGraveyardCard -> EffectTarget.TriggeringEntity)")
-    // "exile target <permanent> until this <permanent> leaves the battlefield" — the Banishing Light
-    // O-Ring shape (Mystical Tether, Lassoed by the Law). Maps to the ExileUntilLeaves effect paired
-    // with a synthesized leaves-battlefield ReturnLinkedExile trigger; only the
-    // `UntilPermanentLeavesBattlefield ThisPermanent` expiration renders exactly (anything else scaffolds).
-    effect("ExilePermanentUntil", "ExileUntilLeaves")
+    // A one-shot return at source departure; only the ThisPermanent expiration renders.
+    effect("ExilePermanentUntil", "MoveUntilSourceLeaves")
     // "Exile the top card of your library" — the impulse-draw exile half (Irascible Wolverine, Alania's
     // Pathmaker). Gather(top of library) + MoveCollection -> exile; paired with a MayPlayExiledCard grant.
     composed("ExileTopCardOfLibrary", "Gather(top of library) + MoveCollection -> exile (impulse)", composes = listOf("MoveCollection"))

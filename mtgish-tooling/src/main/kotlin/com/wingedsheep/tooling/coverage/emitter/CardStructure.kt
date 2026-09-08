@@ -1719,35 +1719,6 @@ private val KEYWORD_COUNTER_CONSTANT = mapOf(
     "ReachCounter" to "REACH",
 )
 
-/**
- * True when the card carries an `ExilePermanentUntil … UntilPermanentLeavesBattlefield(ThisPermanent)`
- * action — the Banishing Light / O-Ring shape (Mystical Tether, Lassoed by the Law). mtgish encodes
- * only the ETB exile half; the linked return is implicit in the expiration, so the emitter synthesizes
- * the matching leaves-battlefield trigger (see [linkedExileReturnTrigger]).
- */
-internal fun hasLinkedExileUntilLeaves(card: JsonObject): Boolean {
-    val nodes = (card as JsonElement?).nodesTagged("ExilePermanentUntil")
-    return nodes.any { node ->
-        val a = node["args"].asArr ?: return@any false
-        val expiration = a.getOrNull(1) as? JsonObject ?: return@any false
-        expiration.strField("_Expiration") == "UntilPermanentLeavesBattlefield" &&
-            jsonContains(expiration, "_Permanent", "ThisPermanent")
-    }
-}
-
-/**
- * The synthesized "when this leaves the battlefield, return the linked exiled card" trigger that pairs
- * with an `Effects.ExileUntilLeaves` exile (Banishing Light shape). mtgish carries no explicit rule for
- * the return — it's implied by the `UntilPermanentLeavesBattlefield` expiration — so the emitter appends
- * this fixed block once per card (guarded by [hasLinkedExileUntilLeaves]).
- */
-internal fun linkedExileReturnTrigger(): List<Stmt> = listOf(
-    Sub(Block("triggeredAbility", listOf(
-        Assign("trigger", Lit("Triggers.LeavesBattlefield")),
-        Assign("effect", call("Effects.ReturnLinkedExileUnderOwnersControl")),
-    ))),
-)
-
 private val TRIGGER_SPEC = mapOf(
     "WhenAPermanentEntersTheBattlefield" to "Triggers.EntersBattlefield",
     "WhenAPermanentDies" to "Triggers.Dies",

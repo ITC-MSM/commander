@@ -1,0 +1,65 @@
+{
+  "player1Name": "Chandra",
+  "player2Name": "Opponent",
+  "player1": {
+    "lifeTotal": 20,
+    "hand": [
+      "Chandra Nalaar"
+    ],
+    "battlefield": [
+      {
+        "name": "Chandra Nalaar",
+        "counters": {
+          "LOYALTY": 8
+        }
+      },
+      {
+        "name": "Mountain"
+      },
+      {
+        "name": "Mountain"
+      },
+      {
+        "name": "Mountain"
+      },
+      {
+        "name": "Mountain"
+      },
+      {
+        "name": "Mountain"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Mountain",
+      "Mountain",
+      "Mountain",
+      "Mountain"
+    ]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": [],
+    "battlefield": [
+      {
+        "name": "Jace Beleren",
+        "counters": {
+          "LOYALTY": 3
+        }
+      },
+      {
+        "name": "Grizzly Bears"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Island",
+      "Island",
+      "Island",
+      "Island"
+    ]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1
+}

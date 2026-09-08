@@ -645,3 +645,21 @@ data class MoveTrackedBattlefieldObjectEffect(
     override val description: String =
         "Move ${target.description} to its owner's ${destination.displayName}"
 }
+
+/**
+ * Move an object out of its zone until this source leaves the battlefield. The return is a
+ * one-shot effect, not a triggered ability: it happens immediately, even during resolution.
+ * Both the source's battlefield visit and the moved object's destination visit are remembered.
+ */
+@SerialName("MoveUntilSourceLeaves")
+@Serializable
+data class MoveUntilSourceLeavesEffect(
+    val target: EffectTarget,
+    val destination: Zone
+) : Effect {
+    init {
+        require(destination != Zone.BATTLEFIELD && destination != Zone.STACK)
+    }
+    override val description: String =
+        "Move ${target.description} to ${destination.name.lowercase()} until this permanent leaves the battlefield"
+}

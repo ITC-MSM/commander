@@ -46,6 +46,7 @@ export interface ActionOption {
    * When present, the button renders a mana-font loyalty icon instead of a text prefix.
    */
   loyaltyChange?: number
+  loyaltyX?: boolean
   /**
    * For the impending cast option (CR 702.176): the number of time counters the permanent enters
    * with. When present, the button renders a time-counter glyph + count to mark the option as
@@ -543,6 +544,7 @@ export function buildActionOptions(
         action: match ?? null,
         actionType: 'activate',
         loyaltyChange: pw.loyaltyChange,
+        loyaltyX: pw.loyaltyX ?? false,
       })
     })
   }

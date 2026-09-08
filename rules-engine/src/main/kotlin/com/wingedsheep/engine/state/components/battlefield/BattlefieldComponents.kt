@@ -1296,6 +1296,14 @@ data object DamageUnpreventableThisTurnComponent : Component
 @Serializable
 data class HasDealtDamageComponent(val lastDealtDamageTurn: Int) : Component
 
+/** Actual damage total, scoped to a turn and object incarnation, including resolving spells. */
+@Serializable
+data class DamageDealtThisTurnComponent(
+    val turnNumber: Int,
+    val amount: Int,
+    val sourceObject: com.wingedsheep.engine.state.ObjectRef
+) : Component
+
 /**
  * The players and planeswalkers this permanent has dealt damage to **this game** — the memory
  * behind The Fallen ("this creature deals 1 damage to each opponent and planeswalker it has dealt

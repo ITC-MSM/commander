@@ -422,15 +422,6 @@ object Emitter {
             body.addAll(block)
         }
 
-        // Banishing Light / O-Ring: an `ExilePermanentUntil … UntilPermanentLeavesBattlefield` action
-        // (rendered above as `Effects.ExileUntilLeaves`) needs the paired "when this leaves, return the
-        // linked exiled card" trigger, which mtgish leaves implicit in the expiration. Synthesize it once
-        // here so the exile is reversible exactly as the hand-authored card wires it.
-        if (hasLinkedExileUntilLeaves(card)) {
-            body.addAll(linkedExileReturnTrigger())
-            parts++
-        }
-
         if (!permanent && !jsonContains(card["Rules"], "_Rule", "SpellActions") &&
             !jsonContains(card["Rules"], "_Rule", "SpellActions_Spree")
         ) {

@@ -52,6 +52,9 @@ data class GameState(
     /** Exile piles of departed battlefield visits, keyed by their unique entry timestamp. */
     val departedLinkedExile: Map<Long, List<EntityId>> = emptyMap(),
 
+    /** Outstanding zone-return one-shot effects, independent of the source's current abilities. */
+    val zoneReturns: List<ZoneReturn> = emptyList(),
+
     /**
      * Current turn number, counting **player turns** — every turn the game begins gets its own
      * number, including extra turns (CR 500.7) and every seat's turn in a multiplayer pod. Starts

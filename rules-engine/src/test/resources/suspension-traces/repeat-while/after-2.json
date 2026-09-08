@@ -107,6 +107,7 @@
         []
     ],
     "departedLinkedExile": {},
+    "zoneReturns": [],
     "turnNumber": 1,
     "activePlayerId": "player-1",
     "phase": "PRECOMBAT_MAIN",

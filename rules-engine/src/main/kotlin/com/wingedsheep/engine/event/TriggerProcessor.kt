@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.event
 
+import com.wingedsheep.engine.handlers.DependentTargetSelection
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.TargetFinder
@@ -328,6 +329,12 @@ class TriggerProcessor(
 
         val targetRequirement = ability.targetRequirement
 
+        // Dependent target slots must be announced together before the ability goes on the
+        // stack. Preserve any consent gate for resolution, after opponents can respond.
+        if (targetRequirement != null && DependentTargetSelection.isRequired(ability.allTargetRequirements)) {
+            return processTargetedTrigger(currentState, trigger, targetRequirement)
+        }
+
         // If the effect is a MayPayManaEffect AND has targets, ask payment first, then targets.
         // This reverses the old flow where targets were chosen before the pay question.
         if (targetRequirement != null && ability.effect.asOptionalManaPayment() != null) {
@@ -627,10 +634,27 @@ class TriggerProcessor(
         // the ability triggers. Only TargetObject carries dynamicMaxCount today.
         val allRequirements = ability.allTargetRequirements.map { snapshotDynamicCount(state, trigger, it) }
 
+        val sequential = DependentTargetSelection.isRequired(allRequirements)
+        val targetingContext = com.wingedsheep.engine.handlers.PredicateContext(
+            controllerId = trigger.controllerId,
+            sourceId = trigger.sourceId,
+            triggeringEntityId = trigger.triggerContext.triggeringEntityId,
+            triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+            xValue = trigger.triggerContext.xValue,
+            storedCollections = trigger.carriedPipeline?.storedCollections ?: emptyMap(),
+            chosenValues = trigger.carriedPipeline?.chosenValues ?: emptyMap(),
+            storedStringLists = trigger.carriedPipeline?.storedStringLists ?: emptyMap(),
+            storedSubtypeGroups = trigger.carriedPipeline?.storedSubtypeGroups ?: emptyMap(),
+        )
+        val visibleRequirements = if (sequential) allRequirements.take(1) else allRequirements
         // Find legal targets for each requirement
         val allLegalTargets = mutableMapOf<Int, List<EntityId>>()
-        for ((index, req) in allRequirements.withIndex()) {
-            val legalTargets = targetFinder.findLegalTargets(
+        for ((index, req) in visibleRequirements.withIndex()) {
+            val legalTargets = if (sequential) {
+                DependentTargetSelection.legalNext(
+                    state, allRequirements, emptyList(), targetingContext
+                )
+            } else targetFinder.findLegalTargets(
                 state = state,
                 requirement = req,
                 controllerId = trigger.controllerId,
@@ -639,25 +663,14 @@ class TriggerProcessor(
                 // Carry the triggering player so "target … that player controls" filters
                 // (ControllerPredicate.ControlledByReferencedPlayer over Player.TriggeringPlayer)
                 // resolve at legality time — Fear of Burning Alive's delirium payoff.
-                pipelineContext = com.wingedsheep.engine.handlers.PredicateContext(
-                    controllerId = trigger.controllerId,
-                    triggeringEntityId = trigger.triggerContext.triggeringEntityId,
-                    triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
-                    // See the note on the other findLegalTargets call sites: an X-relative target
-                    // filter needs the triggering event's X bound to match anything.
-                    xValue = trigger.triggerContext.xValue,
-                    storedCollections = trigger.carriedPipeline?.storedCollections ?: emptyMap(),
-                    chosenValues = trigger.carriedPipeline?.chosenValues ?: emptyMap(),
-                    storedStringLists = trigger.carriedPipeline?.storedStringLists ?: emptyMap(),
-                    storedSubtypeGroups = trigger.carriedPipeline?.storedSubtypeGroups ?: emptyMap(),
-                ),
+                pipelineContext = targetingContext,
             )
             allLegalTargets[index] = legalTargets
         }
 
         // If no legal targets exist for any required requirement, the ability is not put on the stack
         // (Rule 603.3d). This applies regardless of whether the ability is optional ("you may").
-        for ((index, req) in allRequirements.withIndex()) {
+        for ((index, req) in visibleRequirements.withIndex()) {
             val legalTargets = allLegalTargets[index] ?: emptyList()
             if (legalTargets.isEmpty() && req.effectiveMinCount > 0) {
                 // The else branch is in one of two places, and both are the same printed clause.
@@ -720,7 +733,7 @@ class TriggerProcessor(
         // from the stack when there is no legal one (the loop above) rather than resolve targetless.
         // Consent is now a gate on the effect, answered on its own — either before this method runs
         // (`processMayThenTargetTrigger`) or as the ability resolves.
-        val requirementInfos = allRequirements.mapIndexed { index, req ->
+        val requirementInfos = visibleRequirements.mapIndexed { index, req ->
             // "Any number of target ..." (unlimited) caps at however many legal targets exist,
             // mirroring the cast-time path (TargetEnumerationUtils). Using req.count (always 1
             // for an unlimited requirement) would wrongly clamp the decision to a single target.
@@ -805,6 +818,7 @@ class TriggerProcessor(
                 triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
                 elseEffect = ability.elseEffect,
                 targetRequirements = allRequirements,
+                sequentialTargets = if (sequential) emptyList() else null,
                 triggerCounterCount = trigger.triggerContext.counterCount,
                 triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
                 triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,

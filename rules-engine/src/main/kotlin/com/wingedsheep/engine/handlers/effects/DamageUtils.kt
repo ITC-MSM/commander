@@ -33,6 +33,7 @@ import com.wingedsheep.engine.state.components.battlefield.DamageSourceLki
 import com.wingedsheep.engine.state.components.battlefield.DamagedBySourcesThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageUnpreventableThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.HasDealtDamageComponent
+import com.wingedsheep.engine.state.components.battlefield.DamageDealtThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.WasDealtDamageThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSourceComponent
 import com.wingedsheep.engine.state.components.stack.SpellGrantedKeywordsComponent
@@ -518,15 +519,7 @@ object DamageUtils {
             }
         }
 
-        // Mark source as having dealt damage. Sits below every recipient branch (player /
-        // planeswalker / battle / creature, wither included), so one stamp covers all noncombat damage
-        // — the effect executors, fight, and the combat continuation resumer all reach here. The turn
-        // stamp is what `StatePredicate.HasDealtDamage(thisTurnOnly = true)` reads.
-        if (sourceId != null && sourceId in newState.getBattlefield()) {
-            newState = newState.updateEntity(sourceId) { container ->
-                container.with(HasDealtDamageComponent(newState.turnNumber))
-            }
-        }
+        newState = trackDamageDealt(newState, sourceId, effectiveAmount)
         // Record the source on its controller's per-turn set of damage sources. Unlike the stamp
         // above this is not battlefield-only: a resolving burn spell is a source that dealt damage
         // just as much as a creature is (Case of the Burning Masks).
@@ -996,6 +989,25 @@ object DamageUtils {
             container.with(existing.with(counterType, placedByController))
         }
         return newState to first
+    }
+
+    /** Record actual damage for a battlefield source or a resolving spell, bound to its object identity. */
+    fun trackDamageDealt(state: GameState, sourceId: EntityId?, amount: Int): GameState {
+        if (sourceId == null || amount <= 0) return state
+        // An ability can deal damage using a source that has already left. Do not stamp the
+        // new card in its owner's graveyard with the old battlefield object's damage history.
+        val onBattlefield = sourceId in state.getBattlefield()
+        if (!onBattlefield && sourceId !in state.stack) return state
+        val sourceObject = state.objectRef(sourceId) ?: return state
+        return state.updateEntity(sourceId) { container ->
+            val previous = container.get<DamageDealtThisTurnComponent>()
+            val priorAmount = previous?.takeIf {
+                it.turnNumber == state.turnNumber && it.sourceObject == sourceObject
+            }?.amount ?: 0
+            val updated = container.with(DamageDealtThisTurnComponent(state.turnNumber, priorAmount + amount, sourceObject))
+            // Preserve the existing permanent-only lifetime marker's semantics.
+            if (onBattlefield) updated.with(HasDealtDamageComponent(state.turnNumber)) else updated
+        }
     }
 
     /**

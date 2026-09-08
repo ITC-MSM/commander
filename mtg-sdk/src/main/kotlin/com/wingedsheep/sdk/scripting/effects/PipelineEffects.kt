@@ -441,6 +441,13 @@ sealed interface CardDestination {
 sealed interface SelectionMode {
     val description: String
 
+    /** Choose at most one spell, testing the filter against the face that will be cast. */
+    @SerialName("ChooseSpell")
+    @Serializable
+    data object ChooseSpell : SelectionMode {
+        override val description: String = "choose up to one spell"
+    }
+
     /**
      * Player must choose exactly N cards.
      *

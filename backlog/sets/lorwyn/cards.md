@@ -2,7 +2,7 @@
 
 **Set Size:** 286 cards
 **Release Date:** October 12, 2007
-**Implemented:** 277 / 286
+**Implemented:** 280 / 286
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 49    | 43   |
@@ -129,7 +129,7 @@
 - [x] Boggart Mob
 - [ ] Cairn Wanderer
 - [x] Colfenor's Plans
-- [ ] Dread
+- [x] Dread
 - [x] Dreamspoiler Witches
 - [x] Exiled Boggart
 - [x] Eyeblight's Ending
@@ -183,7 +183,7 @@
 - [x] Boggart Sprite-Chaser
 - [x] Caterwauling Boggart
 - [x] Ceaseless Searblades
-- [ ] Chandra Nalaar
+- [x] Chandra Nalaar
 - [x] Changeling Berserker
 - [x] Consuming Bonfire
 - [x] Crush Underfoot
@@ -294,7 +294,7 @@
 - [x] Springleaf Drum
 - [x] Thorn of Amethyst
 - [x] Thousand-Year Elixir
-- [ ] Twinning Glass
+- [x] Twinning Glass
 - [x] Wanderer's Twig
 
 ### Land

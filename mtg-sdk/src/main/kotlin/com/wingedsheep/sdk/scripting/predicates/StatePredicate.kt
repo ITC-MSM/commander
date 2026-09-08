@@ -360,6 +360,13 @@ sealed interface StatePredicate {
     // Damage History (History)
     // =============================================================================
 
+    /** Shares a name with a spell cast by any player during the current turn. */
+    @SerialName("SharesNameWithSpellCastThisTurn")
+    @Serializable
+    data object SharesNameWithSpellCastThisTurn : History {
+        override val description: String = "with the same name as a spell cast this turn"
+    }
+
     /** Has been dealt damage this turn */
     @SerialName("WasDealtDamageThisTurn")
     @Serializable

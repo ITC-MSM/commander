@@ -35,15 +35,16 @@ class LegacySuspensionMigrationTest : ScenarioTestBase() {
                     "fba4b704cb213843a1420809e0cf6aee656045c9"
                 manifest.getValue("verified") shouldBe JsonPrimitive(true)
                 var state = json.decodeFromString<GameState>(original.toString())
+                state.zoneReturns shouldBe emptyList()
                 state.nextRoutingId shouldBe original.getValue("nextRoutingId").jsonPrimitive.content.toLong()
                 state.pendingDecision shouldBe json.decodeFromString<PendingDecision>(original.getValue("pendingDecision").toString())
 
                 // The reader changes only suspension representation. Entity state, RNG, counters,
                 // permissions, and all other saved fields are retained exactly on initial load.
-                // Object identity postdates these captures, so decoding supplies its defaults;
-                // dropping those two keys keeps the comparison about what the reader touches.
+                // Object identity and zone returns postdate these captures. Compare the saved
+                // fields after checking that the new return bookkeeping starts empty.
                 val encoded = encodeState(state)
-                JsonObject(encoded - "continuationStack" - OBJECT_IDENTITY_FIELDS) shouldBe
+                JsonObject(encoded - "continuationStack" - POST_CAPTURE_FIELDS) shouldBe
                     JsonObject(original - "continuationStack" - "pendingDecision")
                 assertCurrentRoundTrip(state)
 
@@ -81,10 +82,11 @@ class LegacySuspensionMigrationTest : ScenarioTestBase() {
             oldDraw.containsKey("decisionId") shouldBe false
 
             val state = json.decodeFromString<GameState>(original.toString())
+            state.zoneReturns shouldBe emptyList()
             state.nextRoutingId shouldBe original.getValue("nextRoutingId").jsonPrimitive.content.toLong()
             state.pendingDecision shouldBe json.decodeFromString<PendingDecision>(original.getValue("pendingDecision").toString())
             val compact = compactJson.parseToJsonElement(compactJson.encodeToString(state)).jsonObject
-            JsonObject(compact - "continuationStack" - OBJECT_IDENTITY_FIELDS) shouldBe
+            JsonObject(compact - "continuationStack" - POST_CAPTURE_FIELDS) shouldBe
                 JsonObject(original - "continuationStack" - "pendingDecision")
             assertCurrentRoundTrip(state)
 
@@ -148,6 +150,7 @@ class LegacySuspensionMigrationTest : ScenarioTestBase() {
         test("legacy combat question is retained once and the duplicate answer shape is removed") {
             val original = legacyCombatState()
             val state = json.decodeFromString<GameState>(original.toString())
+            state.zoneReturns shouldBe emptyList()
             state.nextRoutingId shouldBe original.getValue("nextRoutingId").jsonPrimitive.content.toLong()
             val suspension = encodedStack(state).last().jsonObject
             suspension.getValue("question") shouldBe json.parseToJsonElement(
@@ -299,7 +302,7 @@ class LegacySuspensionMigrationTest : ScenarioTestBase() {
     companion object {
         private const val CORE = "com.wingedsheep.engine.core."
 
-        /** Added by object identity, which postdates every captured legacy snapshot. */
-        private val OBJECT_IDENTITY_FIELDS = setOf("objectIdentities", "nextObjectGeneration")
+        /** Fields introduced after these captures; decoding supplies their defaults. */
+        private val POST_CAPTURE_FIELDS = setOf("objectIdentities", "nextObjectGeneration", "zoneReturns")
     }
 }

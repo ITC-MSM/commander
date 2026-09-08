@@ -2130,6 +2130,12 @@ class TriggerMatcher(
         /** The permanent whose triggered ability is being gated — the "source" of `createdBySource()`. */
         sourceId: EntityId
     ): Boolean = when (predicate) {
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.SharesNameWithSpellCastThisTurn -> {
+            if (event.fromZone == Zone.BATTLEFIELD)
+                com.wingedsheep.engine.handlers.predicates.sharesNameWithSpellCastThisTurn(state, event.lastKnown?.name)
+            else matchesStatePredicateForTrigger(predicate, state, event.entityId)
+        }
+
         // "the token" — this source's own token, not any token (Dance of Many, Tetravus). A token is
         // swept out of existence before this gate runs (CR 704.5d), so the creator stamp is read
         // from the event's last-known info, with a live read for a permanent that is still around
@@ -2247,6 +2253,12 @@ class TriggerMatcher(
         state: GameState,
         entityId: EntityId
     ): Boolean = when (predicate) {
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.SharesNameWithSpellCastThisTurn ->
+            com.wingedsheep.engine.handlers.predicates.sharesNameWithSpellCastThisTurn(
+                state, state.projectedState.getName(entityId)
+                    ?: state.getEntity(entityId)?.get<CardComponent>()?.name
+            )
+
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsFaceDown -> {
             val entity = state.getEntity(entityId) ?: return false
             entity.has<FaceDownComponent>()

@@ -755,6 +755,8 @@ data class ClientPlaneswalkerAbility(
     val abilityId: String,
     /** Signed loyalty change (e.g., +1, -2, -8). */
     val loyaltyChange: Int,
+    /** True for a −X cost; the chosen X is supplied through the ordinary X picker. */
+    val loyaltyX: Boolean = false,
     /** Ability text (e.g., "Create a 1/1 green and white Kithkin creature token"). */
     val description: String
 )

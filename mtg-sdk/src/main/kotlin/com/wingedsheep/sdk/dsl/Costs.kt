@@ -444,6 +444,9 @@ object Costs {
     fun Loyalty(change: Int): AbilityCost =
         AbilityCost.Loyalty(change)
 
+    /** Remove the chosen X loyalty counters from the source (−X). */
+    val LoyaltyX: AbilityCost = AbilityCost.LoyaltyX
+
     // =========================================================================
     // Tap Permanents Costs
     // =========================================================================
