@@ -703,6 +703,13 @@ class TriggerProcessor(
             }
         }
 
+        // "… of an opponent's choice" (Mausoleum Turnkey): settle *which* opponent answers the
+        // decision below before raising it. Deliberately after the fizzle loop and the auto-select
+        // shortcut, so a trigger with no legal target or exactly one never bothers anybody with the
+        // question — the same order the activated-ability path takes.
+        pinOpponentTargetChooserOrPause(state, trigger, allRequirements, targetRequirement)
+            ?.let { return it }
+
         // Create target requirement infos for the decision.
         //
         // A slot's minimum is the *requirement's* — "up to one" allows zero, "target creature" does
@@ -760,6 +767,7 @@ class TriggerProcessor(
                 triggerDiedBatchTotalPower = trigger.triggerContext.diedBatchTotalPower,
                 triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
                 triggerScryCount = trigger.triggerContext.scryCount,
+                triggerClashWon = trigger.triggerContext.clashWon,
                 triggerDiscardCount = trigger.triggerContext.discardedCardCount,
                 triggerDiscoverValue = trigger.triggerContext.discoverValue,
                 triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
@@ -812,6 +820,7 @@ class TriggerProcessor(
                 triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
                 enchantedCreatureLastKnownPower = trigger.triggerContext.enchantedCreatureLastKnownPower,
                 triggerScryCount = trigger.triggerContext.scryCount,
+                triggerClashWon = trigger.triggerContext.clashWon,
                 triggerDiscardCount = trigger.triggerContext.discardedCardCount,
                 triggerDiscoverValue = trigger.triggerContext.discoverValue,
                 triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
@@ -888,6 +897,7 @@ class TriggerProcessor(
             triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
             enchantedCreatureLastKnownPower = trigger.triggerContext.enchantedCreatureLastKnownPower,
             triggerScryCount = trigger.triggerContext.scryCount,
+            triggerClashWon = trigger.triggerContext.clashWon,
             triggerDiscardCount = trigger.triggerContext.discardedCardCount,
             triggerDiscoverValue = trigger.triggerContext.discoverValue,
             triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
@@ -1397,11 +1407,83 @@ class TriggerProcessor(
      *
      * Choosers are read from the *whole* requirement list and must agree — no printed card splits
      * one trigger's targets between two deciders, and honoring only the first requirement's chooser
-     * would silently hand the rest to the wrong player. [TargetChooser.Opponent] is deliberately
-     * not handled here: it needs the controller to first pick *which* opponent decides, which is
-     * the activated-ability path's `pauseForOpponentTargetChooser`, and `CardLinter` already
-     * refuses it on a triggered ability.
+     * would silently hand the rest to the wrong player.
+     *
+     * [TargetChooser.Opponent] reads the opponent [PendingTrigger.opponentTargetChooserId] pinned
+     * by [pinOpponentTargetChooserOrPause], which runs just before the target decision is raised.
+     * It cannot be resolved here, because with three or more players *which* opponent decides is
+     * itself a choice the controller makes (the same reading the activated-ability path's
+     * `pauseForOpponentTargetChooser` takes). An unpinned trigger falls back to the controller,
+     * which is what a trigger with no opponent at all gets.
      */
+    /**
+     * Settle which opponent answers a trigger's "… of an opponent's choice" target decision
+     * (Mausoleum Turnkey: "return target creature card of an opponent's choice from your graveyard
+     * to your hand").
+     *
+     * Returns null when there is nothing to settle — no requirement carries
+     * [TargetChooser.Opponent], the decider is already pinned, or the controller has no opponents
+     * left (in which case [resolveTargetChooser] falls back to the controller, since a target was
+     * already found legal and somebody has to pick it).
+     *
+     * Otherwise it re-enters [processTargetedTrigger] with the decider pinned onto the trigger.
+     * With exactly one opponent that is immediate; with two or more, *which* opponent decides is
+     * the controller's own choice — the same reading the activated-ability path takes in
+     * `ActivateAbilityHandler.pauseForOpponentTargetChooser` — so this pauses for a
+     * [com.wingedsheep.engine.core.ChooseOptionDecision] first and the resumer re-enters with the
+     * answer.
+     *
+     * Re-entering rather than threading a local decider is what keeps [resolveTargetChooser] the
+     * single place that answers "who picks": the pinned id rides on the trigger, so the resumed
+     * path and the direct path reach the decision through exactly the same code.
+     */
+    private fun pinOpponentTargetChooserOrPause(
+        state: GameState,
+        trigger: PendingTrigger,
+        allRequirements: List<TargetRequirement>,
+        targetRequirement: TargetRequirement
+    ): ExecutionResult? {
+        if (trigger.opponentTargetChooserId != null) return null
+        if (allRequirements.none { it.chooser == TargetChooser.Opponent }) return null
+
+        val opponentIds = state.getOpponents(trigger.controllerId).filter { state.hasEntity(it) }
+        if (opponentIds.isEmpty()) return null
+
+        if (opponentIds.size == 1) {
+            return processTargetedTrigger(
+                state,
+                trigger.copy(opponentTargetChooserId = opponentIds.single()),
+                targetRequirement
+            )
+        }
+
+        val opponentNames = opponentIds.map { opponentId ->
+            state.getEntity(opponentId)
+                ?.get<com.wingedsheep.engine.state.components.identity.PlayerComponent>()?.name
+                ?: "Player ${opponentId.value}"
+        }
+        return state.suspendForDecision(
+            question = { decisionId ->
+                com.wingedsheep.engine.core.ChooseOptionDecision(
+                    id = decisionId,
+                    playerId = trigger.controllerId,
+                    prompt = "Choose an opponent to choose a target for ${trigger.sourceName}",
+                    context = com.wingedsheep.engine.core.DecisionContext(
+                        sourceId = trigger.sourceId,
+                        sourceName = trigger.sourceName,
+                        phase = DecisionPhase.RESOLUTION
+                    ),
+                    options = opponentNames
+                )
+            },
+            answer = com.wingedsheep.engine.core.TriggerOpponentChooserContinuation(
+                trigger = trigger,
+                targetRequirement = targetRequirement,
+                opponentIds = opponentIds
+            )
+        )
+    }
+
     private fun resolveTargetChooser(
         state: GameState,
         trigger: PendingTrigger,
@@ -1411,7 +1493,10 @@ class TriggerProcessor(
         val choosers = requirements.map { it.chooser }.distinct()
         val chooser = choosers.singleOrNull() ?: return controller
         return when (chooser) {
-            TargetChooser.Controller, TargetChooser.Opponent -> controller
+            TargetChooser.Controller -> controller
+            // "… of an opponent's choice" (Mausoleum Turnkey). Pinned before the decision is
+            // raised; see the note above for why it cannot be computed from the trigger alone.
+            TargetChooser.Opponent -> trigger.opponentTargetChooserId ?: controller
             TargetChooser.TriggeringPlayer ->
                 trigger.triggerContext.triggeringPlayerId
                     ?: trigger.triggerContext.triggeringEntityId
@@ -1470,6 +1555,7 @@ class TriggerProcessor(
                         // cards looked at while scrying" (ContextPropertyKey.TRIGGER_SCRY_COUNT).
                         // Without this the cap resolves to 0 and the player can pick no targets.
                         triggerScryCount = trigger.triggerContext.scryCount,
+                        triggerClashWon = trigger.triggerContext.clashWon,
                         triggerDiscardCount = trigger.triggerContext.discardedCardCount,
                         triggerDiscoverValue = trigger.triggerContext.discoverValue,
                         triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
@@ -1533,6 +1619,7 @@ class TriggerProcessor(
                 triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell,
                 triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
                 triggerScryCount = trigger.triggerContext.scryCount,
+                triggerClashWon = trigger.triggerContext.clashWon,
                 triggerDiscardCount = trigger.triggerContext.discardedCardCount,
                 triggerDiscoverValue = trigger.triggerContext.discoverValue,
                 triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,

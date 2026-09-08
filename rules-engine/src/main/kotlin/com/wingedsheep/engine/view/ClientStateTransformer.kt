@@ -1919,6 +1919,7 @@ class ClientStateTransformer(
         triggerLastKnownToughness = triggered.lastKnownToughness,
         triggerDiedBatchTotalPower = triggered.diedBatchTotalPower,
         triggerScryCount = triggered.triggerScryCount,
+        triggerClashWon = triggered.triggerClashWon,
         triggerDiscardCount = triggered.triggerDiscardCount,
         triggerDiscoverValue = triggered.triggerDiscoverValue,
         triggerExcessDamageAmount = triggered.triggerExcessDamageAmount,

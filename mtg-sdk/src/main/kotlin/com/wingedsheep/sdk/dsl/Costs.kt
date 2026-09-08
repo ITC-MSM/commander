@@ -257,6 +257,13 @@ object Costs {
      */
     val RevealNotedCreatureType: AbilityCost = AbilityCost.Atom(CostAtom.RevealNotedCreatureType)
 
+    /**
+     * "Unattach this Equipment" (Sunforger) — detach the source from the permanent it is attached
+     * to, without moving zones (CR 701.3d). Only payable while it *is* attached, which is the whole
+     * of Sunforger's first ruling. See [CostAtom.Unattach].
+     */
+    val Unattach: AbilityCost = AbilityCost.Atom(CostAtom.Unattach)
+
     // =========================================================================
     // Exile Costs
     // =========================================================================

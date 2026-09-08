@@ -648,6 +648,27 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
         override val description: String get() = "reveal the creature type you chose"
     }
 
+    /**
+     * Unattach the ability's source from the permanent it is attached to (CR 701.3d) — "Unattach
+     * this Equipment" (Sunforger). The cost twin of
+     * [com.wingedsheep.sdk.scripting.effects.UnattachEquipmentEffect]: the *effect* has existed for
+     * a while (Stolen Uniform's rider), the *cost* had not.
+     *
+     * Payable only while the source is actually attached to something, per Sunforger's own ruling
+     * ("You can't pay the cost of unattaching Sunforger unless Sunforger is attached to a
+     * creature") — which is what makes this a real cost rather than a free rider. It moves nothing
+     * between zones, so unlike sacrifice there is no last-known-information question, and unlike a
+     * tap cost there is nothing to restore.
+     *
+     * Ability-scoped: a spell on the stack is not attached to anything, so this is never a spell
+     * additional cost or a "unless you …" [com.wingedsheep.sdk.scripting.PayCost].
+     */
+    @SerialName("AtomUnattach")
+    @Serializable
+    data object Unattach : CostAtom {
+        override val description: String get() = "unattach this Equipment"
+    }
+
     /** Reveal [count] cards matching [filter] from your hand (the cards stay in hand). */
     @SerialName("AtomRevealFromHand")
     @Serializable

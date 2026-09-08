@@ -43,7 +43,21 @@ data class PendingTrigger(
      * reflexive ability, threaded onto [com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent]
      * when this pending trigger is placed on the stack. Null for ordinary triggered abilities.
      */
-    val carriedPipeline: com.wingedsheep.engine.handlers.PipelineState? = null
+    val carriedPipeline: com.wingedsheep.engine.handlers.PipelineState? = null,
+    /**
+     * Which opponent answers this trigger's target decision, when a requirement carries
+     * [com.wingedsheep.sdk.scripting.targets.TargetChooser.Opponent] ("target creature card of an
+     * opponent's choice" — Mausoleum Turnkey).
+     *
+     * Pinned by `TriggerProcessor` once the deciding opponent is known — immediately in a
+     * two-player game, and after the controller picks one in multiplayer — and read back by
+     * `resolveTargetChooser`. It has to live on the trigger rather than be recomputed, because the
+     * multiplayer pick is a decision of its own and the resumer re-enters target selection with
+     * nothing else to carry the answer.
+     *
+     * Null on every other trigger, which is every trigger without an opponent chooser.
+     */
+    val opponentTargetChooserId: EntityId? = null
 )
 
 /**

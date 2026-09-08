@@ -2201,6 +2201,21 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.TriggeringEntityHadCardType(cardType)
 
     /**
+     * "**If you won**" — the partial rider on a "Whenever you clash" trigger (CR 701.30d). True when
+     * the clash that fired this trigger was won by the ability's controller; false on a tie, an
+     * empty library, and for any trigger a clash didn't fire.
+     *
+     * Use it for the cards that act either way and only *part* of the effect depends on the
+     * outcome — Entangling Trap taps a creature on every clash and only keeps it tapped on a win.
+     * When the *whole* ability is conditional, use [Triggers.WheneverYouClashAndWin] instead so no
+     * ability goes on the stack at all; when the card performs the clash itself, use
+     * `MechanicPatterns.clash(ifYouWin = …)`, which reads the win off the clash's own pipeline
+     * collection rather than out of trigger context.
+     */
+    val YouWonTheClash: ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.YouWonTheClash
+
+    /**
      * "…**if it's the first time that creature has become tapped this turn**" — the triggering
      * permanent has become tapped exactly once so far this turn (Captain America, Living Legend).
      * `EntityMatches(TriggeringEntity, Any.becameTappedOnlyOnceThisTurn())`.

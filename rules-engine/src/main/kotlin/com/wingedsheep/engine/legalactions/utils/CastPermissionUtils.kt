@@ -348,9 +348,15 @@ class CastPermissionUtils(
                     if (!conditionEvaluator.evaluate(state, condition, ctx)) continue
                 }
                 // Match the spell filter against the card being cast (card predicates apply in any zone).
+                //
+                // `sourceId` is the *granting* permanent, not the spell: a source-relative predicate
+                // in a continuous cast prohibition can only mean "relative to the permanent printing
+                // it". Circu, Dimir Lobotomist's "spells with the same name as a card exiled with
+                // Circu" needs it — CardPredicate.SharesNameWithLinkedExile reads the pile hanging
+                // off this permanent and fails closed without a source.
                 if (predicateEvaluator.matches(
                         state, projected, spellCardId, sa.spellFilter,
-                        PredicateContext(controllerId = castingPlayerId)
+                        PredicateContext(controllerId = castingPlayerId, sourceId = permanentId)
                     )
                 ) {
                     return true

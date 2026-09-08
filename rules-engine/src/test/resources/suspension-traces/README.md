@@ -31,3 +31,10 @@ HAND->STACK cast plus the stack-origin on the graveyard move in `free-cast-targe
 `nested-may`, `repeat-while` and `suspended-mana-window` event lists still match the
 original parent capture byte for byte, which is what shows the suspension change itself
 did not alter behaviour.
+
+Schema-refreshed on 2026-09-08 when a `triggerClashWon` slot (CR 701.30d, the "if you won"
+rider on a "Whenever you clash" trigger) joined the triggered-ability stack component, the
+effect continuation, and `EffectContext`. Because these files are encoded with
+`encodeDefaults = true`, a new field appears in every object that carries it; the only edit
+was adding `"triggerClashWon": null` — the field's default — alongside each existing
+`triggerScryCount`. No state, action, or event payload changed, and no gameplay was rerun.

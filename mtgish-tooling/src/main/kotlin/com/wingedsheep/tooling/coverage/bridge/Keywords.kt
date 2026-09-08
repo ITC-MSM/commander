@@ -49,6 +49,17 @@ internal fun BridgeBuilder.keywords() {
     // cost was paid, …" trigger; on an instant/sorcery it's `Patterns.Mechanic.giftSpell(…)`. The emitter
     // declines (SCAFFOLD): which GiftKind is listed, and how the card's *other* text branches on
     // `Conditions.GiftWasPromised`, is a per-card read.
+    // Champion an [object] (CR 702.72, Lorwyn) — a PARAMETERIZED keyword: the IR carries the quality
+    // as the rule's `_Permanents` argument (`IsCreatureType: Goblin` for Boggart Mob, `IsCreature` for
+    // the three Changelings), so `supported` rather than a bare `keyword`. `Keyword.CHAMPION` exists but
+    // stamping it alone would print the word and drop the whole mechanic — the two linked triggered
+    // abilities (CR 702.72b / 607.2k) that the `champion(Subtype)` / `champion(filter, description)` /
+    // `championCreature()` CardBuilder helpers compose. Emitter declines (SCAFFOLD): turning an arbitrary
+    // `_Permanents` node into the right helper overload is a per-card read, and the reminder text the
+    // helper writes carries the printed quality noun with its article. The nine hand-authored Lorwyn
+    // champions and `ChampionKeywordTest` are ground truth. See the Champion keyword entry in
+    // card-sdk-language-reference.md.
+    supported("Champion", "keyword ability: Champion an [object] -> champion(Subtype) / champion(filter, description) / championCreature() (CR 702.72)")
     supported("Gift", "keyword ability: Gift a [something] -> gift(GiftKind.…) on permanents / Patterns.Mechanic.giftSpell on instants & sorceries (CR 702.174)")
     // Bargain (CR 702.166, Wilds of Eldraine) — "You may sacrifice an artifact, enchantment, or token
     // as you cast this spell." `composed`, not a bare `keyword`: `Keyword.BARGAIN` exists, but stamping

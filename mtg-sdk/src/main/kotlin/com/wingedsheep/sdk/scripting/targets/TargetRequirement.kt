@@ -82,9 +82,9 @@ sealed interface TargetRequirement : TextReplaceable<TargetRequirement> {
     /**
      * Who selects this requirement's target(s). Defaults to [TargetChooser.Controller]; set to
      * [TargetChooser.Opponent] for "… of an opponent's choice" wording. See [TargetChooser].
-     * Currently honored at announcement for activated abilities (the only printed use, Cuombajj
-     * Witches); a requirement whose chooser is an opponent should appear after the
-     * controller-chosen requirements in a script.
+     * Honored at announcement by the activated-ability path (Cuombajj Witches) and the
+     * triggered-ability path (Mausoleum Turnkey); a requirement whose chooser is an opponent should
+     * appear after the controller-chosen requirements in a script.
      */
     val chooser: TargetChooser get() = TargetChooser.Controller
     /**

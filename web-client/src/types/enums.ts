@@ -197,6 +197,10 @@ export enum Keyword {
   PROWESS = 'PROWESS',
   FLURRY = 'FLURRY',
   CHANGELING = 'CHANGELING',
+  // Enters/leaves ability pair (Lorwyn, CR 702.72). Deliberately absent from
+  // displayableKeywords: "Champion" alone loses the quality that makes it readable
+  // ("Champion a Goblin"), which the card's two ability lines already spell out.
+  CHAMPION = 'CHAMPION',
   DEVOID = 'DEVOID',
   CRAFT = 'CRAFT',
   // Cost reduction
@@ -297,6 +301,7 @@ export const KeywordDisplayNames: Record<Keyword, string> = {
   [Keyword.PROWESS]: 'Prowess',
   [Keyword.FLURRY]: 'Flurry',
   [Keyword.CHANGELING]: 'Changeling',
+  [Keyword.CHAMPION]: 'Champion',
   [Keyword.DEVOID]: 'Devoid',
   [Keyword.CRAFT]: 'Craft',
   [Keyword.CONVOKE]: 'Convoke',

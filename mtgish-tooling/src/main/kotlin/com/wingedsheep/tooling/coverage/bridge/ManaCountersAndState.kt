@@ -156,6 +156,12 @@ internal fun BridgeBuilder.manaCountersAndState() {
 
     effect("EachPermanentDoesntUntapDuringControllersNextUntap", "SkipUntap",
         "Exhaustion: target player's creatures+lands don't untap next untap step")
+    // The *single-permanent* sibling is a different primitive, not a narrower SkipUntap: SkipUntap is
+    // player-scoped ("that player's creatures and lands"), so one creature not untapping is a granted
+    // AbilityFlag.DOESNT_UNTAP bounded to Duration.UntilAfterAffectedControllersNextUntap
+    // (Crippling Chill, and Entangling Trap's win rider).
+    effect("PermanentDoesntUntapDuringControllersNextUntap", "GrantKeyword",
+        "Crippling Chill: one permanent doesn't untap next untap step -> GrantKeyword(DOESNT_UNTAP, UntilAfterAffectedControllersNextUntap)")
     effect("SkipAllCombatPhasesTheirNextTurn", "SkipCombatPhases",
         "False Peace: target skips all combat phases of their next turn")
 

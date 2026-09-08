@@ -2,7 +2,7 @@
 
 **Set Size:** 286 cards
 **Release Date:** October 12, 2007
-**Implemented:** 266 / 286
+**Implemented:** 277 / 286
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 49    | 43   |
@@ -27,11 +27,11 @@
 - [x] Brigid, Hero of Kinsbaile
 - [x] Burrenton Forge-Tender
 - [x] Cenn's Heir
-- [ ] Changeling Hero
+- [x] Changeling Hero
 - [x] Cloudgoat Ranger
 - [x] Crib Swap
 - [x] Dawnfluke
-- [ ] Entangling Trap
+- [x] Entangling Trap
 - [x] Favor of the Mighty
 - [x] Galepowder Mage
 - [x] Goldmeadow Dodger
@@ -62,7 +62,7 @@
 - [x] Springjack Knight
 - [x] Summon the School
 - [x] Surge of Thoughtweft
-- [ ] Thoughtweft Trio
+- [x] Thoughtweft Trio
 - [x] Triclopean Sight
 - [x] Veteran of the Depths
 - [x] Wellgabber Apothecary
@@ -95,7 +95,7 @@
 - [x] Merrow Commerce
 - [x] Merrow Harbinger
 - [x] Merrow Reejerey
-- [ ] Mistbind Clique
+- [x] Mistbind Clique
 - [x] Mulldrifter
 - [x] Paperfin Rascal
 - [x] Pestermite
@@ -115,7 +115,7 @@
 - [x] Surgespanner
 - [x] Tideshaper Mystic
 - [x] Turtleshell Changeling
-- [ ] Wanderwine Prophets
+- [x] Wanderwine Prophets
 - [x] Whirlpool Whelm
 - [x] Wings of Velis Vel
 - [x] Zephyr Net
@@ -126,7 +126,7 @@
 - [x] Boggart Birth Rite
 - [x] Boggart Harbinger
 - [x] Boggart Loggers
-- [ ] Boggart Mob
+- [x] Boggart Mob
 - [ ] Cairn Wanderer
 - [x] Colfenor's Plans
 - [ ] Dread
@@ -184,7 +184,7 @@
 - [x] Caterwauling Boggart
 - [x] Ceaseless Searblades
 - [ ] Chandra Nalaar
-- [ ] Changeling Berserker
+- [x] Changeling Berserker
 - [x] Consuming Bonfire
 - [x] Crush Underfoot
 - [x] Faultgrinder
@@ -211,8 +211,8 @@
 - [x] Lowland Oaf
 - [x] Mudbutton Torchrunner
 - [ ] Needle Drop
-- [ ] Nova Chaser
-- [ ] Rebellion of the Flamekin
+- [x] Nova Chaser
+- [x] Rebellion of the Flamekin
 - [x] Smokebraider
 - [x] Soulbright Flamekin
 - [x] Stinkdrinker Daredevil
@@ -226,7 +226,7 @@
 - [x] Battlewand Oak
 - [x] Bog-Strider Ash
 - [x] Briarhorn
-- [ ] Changeling Titan
+- [x] Changeling Titan
 - [x] Cloudcrown Oak
 - [x] Cloudthresher
 - [x] Dauntless Dourbark
@@ -270,7 +270,7 @@
 - [x] Warren-Scourge Elf
 - [x] Woodland Changeling
 - [x] Woodland Guidance
-- [ ] Wren's Run Packmaster
+- [x] Wren's Run Packmaster
 - [x] Wren's Run Vanquisher
 
 ### Multicolor

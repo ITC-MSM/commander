@@ -586,6 +586,35 @@ enum class Keyword(val displayName: String) {
     EXPLOIT("Exploit"),
 
     /**
+     * Champion (CR 702.72, Lorwyn). "Champion an [object]" represents **two linked triggered
+     * abilities** (CR 702.72b, 607.2k): "When this permanent enters, sacrifice it unless you exile
+     * another [object] you control" and "When this permanent leaves the battlefield, return the
+     * exiled card to the battlefield under its owner's control." A permanent is *championed* by
+     * another permanent when the latter exiles it as the direct result of a champion ability
+     * (CR 702.72c).
+     *
+     * The keyword itself is display-only; the quality and the behavior are composed by the
+     * `champion(...)` DSL helper on [com.wingedsheep.sdk.dsl.CardBuilder]:
+     *
+     *  - the enters half is a Gather → Select → Move pipeline (choose, don't target — the printed
+     *    text says "exile another [object] you control", with no "target") whose move carries
+     *    `linkToSource`, wrapped in a [com.wingedsheep.sdk.scripting.effects.Gate.DoAction] whose
+     *    `otherwise` is [com.wingedsheep.sdk.scripting.effects.SacrificeSelfEffect] — the "unless";
+     *  - the leaves half is an ordinary leaves-the-battlefield trigger running
+     *    [com.wingedsheep.sdk.dsl.Effects.ReturnLinkedExileUnderOwnersControl], which reads the
+     *    linked-exile pile of the *originating battlefield visit*, so a source that leaves and
+     *    returns never returns the other visit's card;
+     *  - the `then` branch emits an observable
+     *    [com.wingedsheep.sdk.scripting.EventPattern.ChampionedEvent] so the "when a [quality] is
+     *    championed with this creature" payoff (Mistbind Clique) can react.
+     *
+     * The two halves are separate triggers, not an "exile until" replacement, which reproduces the
+     * printed interaction: a champion that leaves before its enters trigger resolves has already
+     * run its leaves trigger against an empty pile, and then exiles a permanent that never returns.
+     */
+    CHAMPION("Champion"),
+
+    /**
      * Training (CR 702.149, Innistrad: Midnight Hunt). A triggered attack ability:
      * "Whenever this creature and at least one other creature with power greater than this
      * creature's power attack, put a +1/+1 counter on this creature" (CR 702.149a). Multiple

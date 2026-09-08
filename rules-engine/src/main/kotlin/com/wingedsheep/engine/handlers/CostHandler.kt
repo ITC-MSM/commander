@@ -669,6 +669,13 @@ class CostHandler {
             state.getEntity(sourceId)
                 ?.get<com.wingedsheep.engine.state.components.battlefield.NotedCreatureTypesComponent>()
                 ?.let { it.secretTo == controllerId && it.types.isNotEmpty() } == true
+        // "You can't pay the cost of unattaching Sunforger unless Sunforger is attached to a
+        // creature" — its own 2020-08-07 ruling, and the reason this is a real affordability gate
+        // rather than a free rider.
+        is CostAtom.Unattach ->
+            state.getEntity(sourceId)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
+                ?.targetId != null
         // Adding counters takes nothing away, so there is never a reason it can't be paid — this
         // is what keeps Mazemind Tome activatable on the very activation that exiles it.
         is CostAtom.PutCountersOnSelf -> true
@@ -829,6 +836,16 @@ class CostHandler {
             // is a no-op success kept for atom exhaustiveness (the PayCost reveal path emits the
             // CardsRevealedEvent through CostPaymentService).
             CostPaymentResult.success(state, manaPool)
+        is CostAtom.Unattach -> {
+            // The shared chokepoint clears both ends of the link and reports the
+            // PermanentUnattachedEvent, so a "becomes unattached" trigger sees this payment exactly
+            // as it sees the UnattachEquipmentEffect. It no-ops when nothing is attached; the gate
+            // above already established that something is, so that only happens if the host left
+            // between the two checks — in which case the cost is paid by there being nothing owed.
+            val (unattached, events) = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+                .unattachEmittingEvent(state, sourceId)
+            CostPaymentResult.success(unattached, manaPool, events)
+        }
         is CostAtom.RevealNotedCreatureType -> {
             // Publishing the note is the whole payment: the types stay where they are and simply
             // stop being secret (CR 702.106c's "doing so will reveal the chosen name"). The
@@ -1367,6 +1384,8 @@ class CostHandler {
                 is CostAtom.PutCountersOnPermanent,
                 is CostAtom.PutCountersOnSelf, is CostAtom.Mill,
                 is CostAtom.RevealNotedCreatureType,
+                // A spell on the stack is attached to nothing, so unattaching is ability-only too.
+                is CostAtom.Unattach,
                 is CostAtom.ExileTopOfLibrary -> false
             }
             is AdditionalCost.PayLifePerTarget -> {

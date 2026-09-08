@@ -1644,6 +1644,37 @@ data class TrainedEvent(
     val sourceName: String
 ) : GameEvent
 
+/**
+ * A permanent was championed (CR 702.72c): a resolving champion ability exiled it as the direct
+ * result of that ability. Emitted by `EmitChampionedEventExecutor` — the `then` branch of the gate
+ * the `champion()` helper builds (`com.wingedsheep.sdk.dsl.champion`) — and therefore **only when a
+ * permanent actually reached exile**; declining the choice sacrifices the champion instead and fires
+ * nothing. Drives "When a [quality] is championed with this creature" payoffs
+ * ([com.wingedsheep.sdk.scripting.EventPattern.ChampionedEvent], i.e. Mistbind Clique).
+ *
+ * Distinct from the [ZoneChangeEvent] the same exile also emits for generic "whenever a permanent is
+ * exiled" watchers: this marks that the exile came from a *resolving champion ability* specifically,
+ * which is what CR 702.72c defines "championed" to mean. A permanent exiled by any other effect —
+ * including another linked-exile ability on the same source — is not championed.
+ *
+ * @property championId The permanent that did the championing (the trigger's subject; selected by
+ *   the watching ability's `TriggerBinding` — SELF for "championed with this creature"). This is the
+ *   champion ability's source.
+ * @property championControllerId The champion's controller at champion time.
+ * @property championedId The permanent that was championed — still a live entity, in exile.
+ * @property championedName The championed permanent's name (for display / logging).
+ * @property sourceName The champion's name (for display / logging).
+ */
+@Serializable
+@SerialName("ChampionedEvent")
+data class ChampionedEvent(
+    val championId: EntityId,
+    val championControllerId: EntityId,
+    val championedId: EntityId,
+    val championedName: String,
+    val sourceName: String
+) : GameEvent
+
 // =============================================================================
 // Class Level Events
 // =============================================================================

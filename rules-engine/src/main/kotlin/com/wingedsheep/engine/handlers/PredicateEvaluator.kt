@@ -900,6 +900,23 @@ class PredicateEvaluator {
                 entityTypes.any { it in exiledTypes }
             }
 
+            // "with the same name as a card exiled with this permanent" (Circu, Dimir Lobotomist).
+            // The name axis of the branch above, and pile-wide for the same reason: Circu keeps
+            // exiling on every blue and every black spell, so no single index names "a card exiled
+            // with Circu". Printed names on both sides — a card in exile and a card in a hand or
+            // library have no battlefield projection a Layer-3 rename could have touched. Fails
+            // closed with no source in context.
+            CardPredicate.SharesNameWithLinkedExile -> {
+                val sourceId = context?.sourceId ?: return false
+                val exiledNames = com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExileLookup
+                    .exiledCards(state, sourceId)
+                    .mapNotNull { state.getEntity(it)?.get<CardComponent>()?.name?.takeIf { n -> n.isNotBlank() } }
+                    .toSet()
+                if (exiledNames.isEmpty()) return false
+                val entityName = projected.getName(entityId)?.takeIf { it.isNotBlank() } ?: card.name
+                entityName.isNotBlank() && entityName in exiledNames
+            }
+
             is CardPredicate.SharesNameWith -> {
                 val referenceId = resolveEntityReference(state, predicate.entity, context) ?: return false
                 // Projected first so a renamed permanent (Layer 3, CR 613.1c) compares under its
@@ -2149,6 +2166,7 @@ class PredicateEvaluator {
             is CardPredicate.SharesCreatureTypeWith,
             is CardPredicate.SharesCardTypeWith,
             CardPredicate.SharesCardTypeWithLinkedExile,
+            CardPredicate.SharesNameWithLinkedExile,
             is CardPredicate.SharesColorWith,
             is CardPredicate.SharesManaValueWith,
             is CardPredicate.SharesNameWith,

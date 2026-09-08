@@ -355,6 +355,13 @@ data class EffectContext(
      */
     val triggerScryCount: Int? = null,
     /**
+     * Whether the clash that fired this trigger was won by its controller (CR 701.30d). Read by
+     * [com.wingedsheep.sdk.scripting.conditions.YouWonTheClash] as the "if you won" rider on a
+     * "Whenever you clash" ability (Entangling Trap, Rebellion of the Flamekin). `null` when the
+     * trigger was not driven by a clash, which reads as "did not win".
+     */
+    val triggerClashWon: Boolean? = null,
+    /**
      * Number of cards discarded in the batch that fired this trigger (CR 603.2c). Read by
      * `ContextPropertyKey.TRIGGER_DISCARD_COUNT` (Magmakin Artillerist).
      */
@@ -623,6 +630,7 @@ data class EffectContext(
             enchantedCreatureLastKnownPower = ability.enchantedCreatureLastKnownPower,
             triggerModesChosenCount = ability.triggerModesChosenCount,
             triggerScryCount = ability.triggerScryCount,
+            triggerClashWon = ability.triggerClashWon,
             triggerDiscardCount = ability.triggerDiscardCount,
             triggerDiscoverValue = ability.triggerDiscoverValue,
             triggerExcessDamageAmount = ability.triggerExcessDamageAmount,

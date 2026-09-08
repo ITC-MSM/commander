@@ -492,6 +492,7 @@ class ReflexiveTriggerEffectExecutor(
                     xValueOfTriggeringSpell = effectContext.triggerXValueOfTriggeringSpell,
                     enchantedCreatureLastKnownPower = effectContext.enchantedCreatureLastKnownPower,
                     scryCount = effectContext.triggerScryCount,
+                    clashWon = effectContext.triggerClashWon,
                     discardedCardCount = effectContext.triggerDiscardCount,
                     discoverValue = effectContext.triggerDiscoverValue,
                     excessDamageAmount = effectContext.triggerExcessDamageAmount,

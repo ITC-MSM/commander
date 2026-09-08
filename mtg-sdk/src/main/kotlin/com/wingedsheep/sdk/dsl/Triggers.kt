@@ -1555,6 +1555,23 @@ object Triggers {
         binding = binding
     )
 
+    /**
+     * "When a [quality] is championed with this creature" (CR 702.72c) — Mistbind Clique. Fires
+     * when a resolving champion ability on this permanent exiles a permanent; declining the choice
+     * champions nothing and fires nothing. Keyed on [EventPattern.ChampionedEvent], whose subject
+     * is the *championing* permanent, so [TriggerBinding.SELF] means "with **this** creature".
+     *
+     * The quality is not restated on the trigger: a champion ability can only ever exile something
+     * matching its own quality, so "a Faerie is championed with this creature" is already guaranteed
+     * by the `champion(Subtype.FAERIE)` clause above it. [TriggerBinding.OTHER] ("championed with
+     * another permanent you control") and [TriggerBinding.ANY] are supported for the next card; only
+     * the SELF form is printed.
+     */
+    fun championedWith(binding: TriggerBinding = TriggerBinding.SELF): TriggerSpec = TriggerSpec(
+        event = ChampionedEvent,
+        binding = binding
+    )
+
     // =========================================================================
     // Damage Received (incoming)
     // =========================================================================

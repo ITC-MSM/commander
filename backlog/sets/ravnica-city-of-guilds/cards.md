@@ -2,7 +2,7 @@
 
 **Set Size:** 291 cards
 **Release Date:** October 7, 2005
-**Implemented:** 268 / 291
+**Implemented:** 271 / 291
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 37    | 33   |
@@ -116,7 +116,7 @@
 - [x] Infectious Host
 - [x] Keening Banshee
 - [x] Last Gasp
-- [ ] Mausoleum Turnkey
+- [x] Mausoleum Turnkey
 - [x] Moonlight Bargain
 - [x] Mortipede
 - [x] Necromantic Thirst
@@ -227,7 +227,7 @@
 - [ ] Brightflame
 - [x] Centaur Safeguard
 - [ ] Chorus of the Conclave
-- [ ] Circu, Dimir Lobotomist
+- [x] Circu, Dimir Lobotomist
 - [x] Clutch of the Undercity
 - [x] Congregation at Dawn
 - [x] Consult the Necrosages
@@ -302,7 +302,7 @@
 - [x] Plague Boiler
 - [x] Selesnya Signet
 - [ ] Spectral Searchlight
-- [ ] Sunforger
+- [x] Sunforger
 - [x] Terrarion
 - [x] Voyager Staff
 

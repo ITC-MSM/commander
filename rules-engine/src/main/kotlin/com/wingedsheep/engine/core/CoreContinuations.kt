@@ -78,6 +78,10 @@ data class TriggeredAbilityContinuation(
     val enchantedCreatureLastKnownPower: Int? = null,
     /** Cards looked at by the scry that fired this trigger (CR 701.22). Null for non-scry triggers. */
     val triggerScryCount: Int? = null,
+    /** Whether this trigger's controller won the clash that fired it (CR 701.30d). Read via
+     *  `Conditions.YouWonTheClash` (Rebellion of the Flamekin, whose {1} gate pauses first). Null
+     *  for non-clash triggers. */
+    val triggerClashWon: Boolean? = null,
     /** Cards discarded in the batch that fired this trigger (CR 603.2c). Read via
      *  `ContextPropertyKey.TRIGGER_DISCARD_COUNT` (Magmakin Artillerist). Null for non-discard triggers. */
     val triggerDiscardCount: Int? = null,
@@ -345,6 +349,30 @@ data class BeholdContinuation(
 data class MayTriggerContinuation(
     val trigger: PendingTrigger,
     val targetRequirement: TargetRequirement
+) : AnswerContinuation
+
+/**
+ * Resume a triggered ability after its controller picks *which* opponent chooses its
+ * "… of an opponent's choice" target (Mausoleum Turnkey: "return target creature card of an
+ * opponent's choice from your graveyard to your hand").
+ *
+ * The multiplayer-only half of the flow: with a single opponent `TriggerProcessor` pins the decider
+ * outright and never raises this frame, exactly as `ActivateAbilityHandler` does for the activated
+ * twin ([ActivateAbilityOpponentChooserContinuation]). The resumer pins the chosen opponent onto
+ * the trigger and re-enters target selection, so the target decision itself is raised by the one
+ * ordinary code path.
+ *
+ * @property trigger The pending trigger, still unpinned.
+ * @property targetRequirement The trigger's primary target requirement, as `processTargetedTrigger`
+ *   takes it.
+ * @property opponentIds The opponents offered, in the order their names were listed — the response
+ *   is an index into this list.
+ */
+@Serializable
+data class TriggerOpponentChooserContinuation(
+    val trigger: PendingTrigger,
+    val targetRequirement: TargetRequirement,
+    val opponentIds: List<EntityId>
 ) : AnswerContinuation
 
 /**

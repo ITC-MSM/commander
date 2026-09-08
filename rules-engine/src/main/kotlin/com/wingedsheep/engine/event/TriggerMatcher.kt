@@ -710,6 +710,17 @@ class TriggerMatcher(
                 if (binding == TriggerBinding.OTHER && event.trainedId == sourceId) return false
                 true
             }
+            is EventPattern.ChampionedEvent -> {
+                if (event !is com.wingedsheep.engine.core.ChampionedEvent) return false
+                // "When a Faerie is championed with THIS creature" (Mistbind Clique): SELF binding
+                // restricts to the ability's own source — the *championing* permanent, not the one
+                // that was exiled. OTHER would be "championed with another permanent you control";
+                // ANY has no restriction. The emit already gates on a permanent actually reaching
+                // exile (CR 702.72c), so any ChampionedEvent reaching here is a genuine champion.
+                if (binding == TriggerBinding.SELF && event.championId != sourceId) return false
+                if (binding == TriggerBinding.OTHER && event.championId == sourceId) return false
+                true
+            }
             is EventPattern.BendPerformedEvent -> {
                 event is com.wingedsheep.engine.core.BendPerformedEvent &&
                     event.bendType in trigger.types &&
@@ -2049,6 +2060,7 @@ class TriggerMatcher(
                 triggerLastKnownToughness = trigger.triggerContext.lastKnownToughness,
                 triggerDiedBatchTotalPower = trigger.triggerContext.diedBatchTotalPower,
                 triggerScryCount = trigger.triggerContext.scryCount,
+                triggerClashWon = trigger.triggerContext.clashWon,
                 triggerDiscardCount = trigger.triggerContext.discardedCardCount,
                 triggerDiscoverValue = trigger.triggerContext.discoverValue,
                 triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,

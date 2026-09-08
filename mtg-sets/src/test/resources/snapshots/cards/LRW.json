@@ -1679,6 +1679,162 @@
     ]
 }
 
+// Boggart Mob
+{
+    "name": "Boggart Mob",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Goblin Warrior",
+    "oracleText": "Champion a Goblin (When this enters, sacrifice it unless you exile another Goblin you control. When this leaves the battlefield, that card returns to the battlefield.)\nWhenever a Goblin you control deals combat damage to a player, you may create a 1/1 black Goblin Rogue creature token.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "CHAMPION"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "BattlefieldMatching",
+                                        "filter": {
+                                            "cardPredicates": [
+                                                "IsPermanent",
+                                                {
+                                                    "type": "HasSubtype",
+                                                    "subtype": "Goblin"
+                                                }
+                                            ],
+                                            "statePredicates": [
+                                                {
+                                                    "type": "StateNot",
+                                                    "predicate": "IsSource"
+                                                }
+                                            ]
+                                        },
+                                        "player": "You"
+                                    },
+                                    "storeAs": "championCandidates"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "championCandidates",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "championChoice",
+                                    "prompt": "Exile another a Goblin you control, or choose nothing to sacrifice this permanent",
+                                    "selectedLabel": "Exile",
+                                    "useTargetingUI": true
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "championChoice",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Exile"
+                                    },
+                                    "linkToSource": true,
+                                    "storeMovedAs": "championedCards"
+                                }
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "championedCards"
+                        }
+                    },
+                    "then": "EmitChampionedEvent",
+                    "otherwise": "SacrificeSelf"
+                },
+                "descriptionOverride": "Champion a Goblin (When this enters, sacrifice it unless you exile another a Goblin you control. When this leaves the battlefield, that card returns to the battlefield.)"
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this permanent leaves the battlefield, return the exiled card to the battlefield under its owner's control."
+            },
+            {
+                "id": "ability_3",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer",
+                    "sourceFilter": "permanent Goblin ctrl:you"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "CreateToken",
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "BLACK"
+                        ],
+                        "creatureTypes": [
+                            "Goblin",
+                            "Rogue"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/f/4/f44d5271-5d10-46b2-9ba2-5788d99de2e6.jpg?1783942839"
+                    }
+                },
+                "descriptionOverride": "Whenever a Goblin you control deals combat damage to a player, you may create a 1/1 black Goblin Rogue creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "104",
+        "rarity": "RARE",
+        "artist": "Thomas Denmark",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/6/a61990de-0daf-4340-8e6b-c49852d46980.jpg?1783942893"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Boggart Shenanigans
 {
     "name": "Boggart Shenanigans",
@@ -2424,6 +2580,383 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Changeling Berserker
+{
+    "name": "Changeling Berserker",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\nHaste\nChampion a creature (When this enters, sacrifice it unless you exile another creature you control. When this leaves the battlefield, that card returns to the battlefield.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 3
+    },
+    "keywords": [
+        "CHANGELING",
+        "HASTE",
+        "CHAMPION"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "BattlefieldMatching",
+                                        "filter": {
+                                            "cardPredicates": [
+                                                "IsCreature"
+                                            ],
+                                            "statePredicates": [
+                                                {
+                                                    "type": "StateNot",
+                                                    "predicate": "IsSource"
+                                                }
+                                            ]
+                                        },
+                                        "player": "You"
+                                    },
+                                    "storeAs": "championCandidates"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "championCandidates",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "championChoice",
+                                    "prompt": "Exile another a creature you control, or choose nothing to sacrifice this permanent",
+                                    "selectedLabel": "Exile",
+                                    "useTargetingUI": true
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "championChoice",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Exile"
+                                    },
+                                    "linkToSource": true,
+                                    "storeMovedAs": "championedCards"
+                                }
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "championedCards"
+                        }
+                    },
+                    "then": "EmitChampionedEvent",
+                    "otherwise": "SacrificeSelf"
+                },
+                "descriptionOverride": "Champion a creature (When this enters, sacrifice it unless you exile another a creature you control. When this leaves the battlefield, that card returns to the battlefield.)"
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this permanent leaves the battlefield, return the exiled card to the battlefield under its owner's control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "160",
+        "rarity": "UNCOMMON",
+        "artist": "Warren Mahy",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/f/9f2e8f24-2ee1-4516-bf60-7fe6a0c4baec.jpg?1783942877"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Changeling Hero
+{
+    "name": "Changeling Hero",
+    "manaCost": "{4}{W}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\nChampion a creature (When this enters, sacrifice it unless you exile another creature you control. When this leaves the battlefield, that card returns to the battlefield.)\nLifelink (Damage dealt by this creature also causes you to gain that much life.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "CHANGELING",
+        "LIFELINK",
+        "CHAMPION"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "BattlefieldMatching",
+                                        "filter": {
+                                            "cardPredicates": [
+                                                "IsCreature"
+                                            ],
+                                            "statePredicates": [
+                                                {
+                                                    "type": "StateNot",
+                                                    "predicate": "IsSource"
+                                                }
+                                            ]
+                                        },
+                                        "player": "You"
+                                    },
+                                    "storeAs": "championCandidates"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "championCandidates",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "championChoice",
+                                    "prompt": "Exile another a creature you control, or choose nothing to sacrifice this permanent",
+                                    "selectedLabel": "Exile",
+                                    "useTargetingUI": true
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "championChoice",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Exile"
+                                    },
+                                    "linkToSource": true,
+                                    "storeMovedAs": "championedCards"
+                                }
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "championedCards"
+                        }
+                    },
+                    "then": "EmitChampionedEvent",
+                    "otherwise": "SacrificeSelf"
+                },
+                "descriptionOverride": "Champion a creature (When this enters, sacrifice it unless you exile another a creature you control. When this leaves the battlefield, that card returns to the battlefield.)"
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this permanent leaves the battlefield, return the exiled card to the battlefield under its owner's control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "9",
+        "rarity": "UNCOMMON",
+        "artist": "Jeff Miracola",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/4/24f0c586-a1a5-4907-801a-7815c4dceb39.jpg?1783942917"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Changeling Titan
+{
+    "name": "Changeling Titan",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\nChampion a creature (When this enters, sacrifice it unless you exile another creature you control. When this leaves the battlefield, that card returns to the battlefield.)",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 7
+    },
+    "keywords": [
+        "CHANGELING",
+        "CHAMPION"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "BattlefieldMatching",
+                                        "filter": {
+                                            "cardPredicates": [
+                                                "IsCreature"
+                                            ],
+                                            "statePredicates": [
+                                                {
+                                                    "type": "StateNot",
+                                                    "predicate": "IsSource"
+                                                }
+                                            ]
+                                        },
+                                        "player": "You"
+                                    },
+                                    "storeAs": "championCandidates"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "championCandidates",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "championChoice",
+                                    "prompt": "Exile another a creature you control, or choose nothing to sacrifice this permanent",
+                                    "selectedLabel": "Exile",
+                                    "useTargetingUI": true
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "championChoice",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Exile"
+                                    },
+                                    "linkToSource": true,
+                                    "storeMovedAs": "championedCards"
+                                }
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "championedCards"
+                        }
+                    },
+                    "then": "EmitChampionedEvent",
+                    "otherwise": "SacrificeSelf"
+                },
+                "descriptionOverride": "Champion a creature (When this enters, sacrifice it unless you exile another a creature you control. When this leaves the battlefield, that card returns to the battlefield.)"
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this permanent leaves the battlefield, return the exiled card to the battlefield under its owner's control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "200",
+        "rarity": "UNCOMMON",
+        "artist": "Jesper Ejsing",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/d/2d5b9719-2861-477e-bb78-225fd03d7bbc.jpg?1783942866"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -3964,6 +4497,68 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Entangling Trap
+{
+    "name": "Entangling Trap",
+    "manaCost": "{1}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever you clash, tap target creature an opponent controls. If you won, that creature doesn't untap during its controller's next untap step. (This ability triggers after the clash ends.)",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "ClashedEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature an opponent controls"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": "YouWonTheClash"
+                            },
+                            "then": {
+                                "type": "GrantKeyword",
+                                "keyword": "DOESNT_UNTAP",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature an opponent controls"
+                                },
+                                "duration": "UntilAfterAffectedControllersNextUntap"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target creature an opponent controls"
+                },
+                "descriptionOverride": "tap target creature an opponent controls. If you won, that creature doesn't untap during its controller's next untap step."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "13",
+        "rarity": "UNCOMMON",
+        "artist": "Warren Mahy",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0d1cec6f-5308-4bff-b19a-df9e3325bb06.jpg?1783942915"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -10367,6 +10962,173 @@
     ]
 }
 
+// Mistbind Clique
+{
+    "name": "Mistbind Clique",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flash\nFlying\nChampion a Faerie (When this enters, sacrifice it unless you exile another Faerie you control. When this leaves the battlefield, that card returns to the battlefield.)\nWhen a Faerie is championed with this creature, tap all lands target player controls.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING",
+        "CHAMPION"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "BattlefieldMatching",
+                                        "filter": {
+                                            "cardPredicates": [
+                                                "IsPermanent",
+                                                {
+                                                    "type": "HasSubtype",
+                                                    "subtype": "Faerie"
+                                                }
+                                            ],
+                                            "statePredicates": [
+                                                {
+                                                    "type": "StateNot",
+                                                    "predicate": "IsSource"
+                                                }
+                                            ]
+                                        },
+                                        "player": "You"
+                                    },
+                                    "storeAs": "championCandidates"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "championCandidates",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "championChoice",
+                                    "prompt": "Exile another a Faerie you control, or choose nothing to sacrifice this permanent",
+                                    "selectedLabel": "Exile",
+                                    "useTargetingUI": true
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "championChoice",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Exile"
+                                    },
+                                    "linkToSource": true,
+                                    "storeMovedAs": "championedCards"
+                                }
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "championedCards"
+                        }
+                    },
+                    "then": "EmitChampionedEvent",
+                    "otherwise": "SacrificeSelf"
+                },
+                "descriptionOverride": "Champion a Faerie (When this enters, sacrifice it unless you exile another a Faerie you control. When this leaves the battlefield, that card returns to the battlefield.)"
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this permanent leaves the battlefield, return the exiled card to the battlefield under its owner's control."
+            },
+            {
+                "id": "ability_3",
+                "trigger": "ChampionedEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsLand"
+                                    ],
+                                    "controllerPredicate": {
+                                        "type": "ControlledByReferencedPlayer",
+                                        "target": {
+                                            "type": "BoundVariable",
+                                            "name": "target player"
+                                        }
+                                    }
+                                }
+                            },
+                            "storeAs": "mistbindClique_lands"
+                        },
+                        {
+                            "type": "TapUntapCollection",
+                            "collectionName": "mistbindClique_lands"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target player"
+                },
+                "descriptionOverride": "When a Faerie is championed with this creature, tap all lands target player controls."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "75",
+        "rarity": "RARE",
+        "artist": "Ben Thompson",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/f/cfc421e2-0dd4-4bdf-b5f5-a60c4b0df63b.jpg?1783942900"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Moonglove Extract
 {
     "name": "Moonglove Extract",
@@ -11289,6 +12051,135 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Nova Chaser
+{
+    "name": "Nova Chaser",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Elemental Warrior",
+    "oracleText": "Trample\nChampion an Elemental (When this enters, sacrifice it unless you exile another Elemental you control. When this leaves the battlefield, that card returns to the battlefield.)",
+    "creatureStats": {
+        "power": 10,
+        "toughness": 2
+    },
+    "keywords": [
+        "TRAMPLE",
+        "CHAMPION"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "BattlefieldMatching",
+                                        "filter": {
+                                            "cardPredicates": [
+                                                "IsPermanent",
+                                                {
+                                                    "type": "HasSubtype",
+                                                    "subtype": "Elemental"
+                                                }
+                                            ],
+                                            "statePredicates": [
+                                                {
+                                                    "type": "StateNot",
+                                                    "predicate": "IsSource"
+                                                }
+                                            ]
+                                        },
+                                        "player": "You"
+                                    },
+                                    "storeAs": "championCandidates"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "championCandidates",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "championChoice",
+                                    "prompt": "Exile another an Elemental you control, or choose nothing to sacrifice this permanent",
+                                    "selectedLabel": "Exile",
+                                    "useTargetingUI": true
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "championChoice",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Exile"
+                                    },
+                                    "linkToSource": true,
+                                    "storeMovedAs": "championedCards"
+                                }
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "championedCards"
+                        }
+                    },
+                    "then": "EmitChampionedEvent",
+                    "otherwise": "SacrificeSelf"
+                },
+                "descriptionOverride": "Champion an Elemental (When this enters, sacrifice it unless you exile another an Elemental you control. When this leaves the battlefield, that card returns to the battlefield.)"
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this permanent leaves the battlefield, return the exiled card to the battlefield under its owner's control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "187",
+        "rarity": "RARE",
+        "artist": "Dan Murayama Scott",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/7/07f97507-abbe-4c8b-9683-f044e38f8d4b.jpg?1783942870"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -12286,6 +13177,76 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Rebellion of the Flamekin
+{
+    "name": "Rebellion of the Flamekin",
+    "manaCost": "{3}{R}",
+    "typeLine": "Kindred Enchantment — Elemental",
+    "oracleText": "Whenever you clash, you may pay {1}. If you do, create a 3/1 red Elemental Shaman creature token. If you won, that token gains haste until end of turn. (This ability triggers after the clash ends.)",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "ClashedEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{1}"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "CreateToken",
+                                "power": 3,
+                                "toughness": 1,
+                                "colors": [
+                                    "RED"
+                                ],
+                                "creatureTypes": [
+                                    "Elemental",
+                                    "Shaman"
+                                ],
+                                "imageUri": "https://cards.scryfall.io/normal/front/a/2/a280aee2-e15a-4625-b429-4032eae08a41.jpg?1783942839"
+                            },
+                            {
+                                "type": "Gated",
+                                "gate": {
+                                    "type": "Gate.WhenCondition",
+                                    "condition": "YouWonTheClash"
+                                },
+                                "then": {
+                                    "type": "GrantKeyword",
+                                    "keyword": "HASTE",
+                                    "target": {
+                                        "type": "PipelineTarget",
+                                        "collectionName": "createdTokens"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "you may pay {1}. If you do, create a 3/1 red Elemental Shaman creature token. If you won, that token gains haste until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "188",
+        "rarity": "UNCOMMON",
+        "artist": "Dan Dos Santos",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/b/abd2c8cb-4852-4bde-b2cf-72ceb9b0dd3e.jpg?1783942871"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -15371,6 +16332,139 @@
     ]
 }
 
+// Thoughtweft Trio
+{
+    "name": "Thoughtweft Trio",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Creature — Kithkin Soldier",
+    "oracleText": "First strike, vigilance\nChampion a Kithkin (When this enters, sacrifice it unless you exile another Kithkin you control. When this leaves the battlefield, that card returns to the battlefield.)\nThis creature can block any number of creatures.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FIRST_STRIKE",
+        "VIGILANCE",
+        "CHAMPION"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "BattlefieldMatching",
+                                        "filter": {
+                                            "cardPredicates": [
+                                                "IsPermanent",
+                                                {
+                                                    "type": "HasSubtype",
+                                                    "subtype": "Kithkin"
+                                                }
+                                            ],
+                                            "statePredicates": [
+                                                {
+                                                    "type": "StateNot",
+                                                    "predicate": "IsSource"
+                                                }
+                                            ]
+                                        },
+                                        "player": "You"
+                                    },
+                                    "storeAs": "championCandidates"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "championCandidates",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "championChoice",
+                                    "prompt": "Exile another a Kithkin you control, or choose nothing to sacrifice this permanent",
+                                    "selectedLabel": "Exile",
+                                    "useTargetingUI": true
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "championChoice",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Exile"
+                                    },
+                                    "linkToSource": true,
+                                    "storeMovedAs": "championedCards"
+                                }
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "championedCards"
+                        }
+                    },
+                    "then": "EmitChampionedEvent",
+                    "otherwise": "SacrificeSelf"
+                },
+                "descriptionOverride": "Champion a Kithkin (When this enters, sacrifice it unless you exile another a Kithkin you control. When this leaves the battlefield, that card returns to the battlefield.)"
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this permanent leaves the battlefield, return the exiled card to the battlefield under its owner's control."
+            }
+        ],
+        "staticAbilities": [
+            "CanBlockAnyNumber"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "44",
+        "rarity": "RARE",
+        "artist": "Wayne Reynolds",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/e/9e48d34d-063c-4703-870b-4a22d5774c89.jpg?1783942908"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Thousand-Year Elixir
 {
     "name": "Thousand-Year Elixir",
@@ -16286,6 +17380,159 @@
     ]
 }
 
+// Wanderwine Prophets
+{
+    "name": "Wanderwine Prophets",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Creature — Merfolk Wizard",
+    "oracleText": "Champion a Merfolk (When this enters, sacrifice it unless you exile another Merfolk you control. When this leaves the battlefield, that card returns to the battlefield.)\nWhenever this creature deals combat damage to a player, you may sacrifice a Merfolk. If you do, take an extra turn after this one.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "CHAMPION"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "BattlefieldMatching",
+                                        "filter": {
+                                            "cardPredicates": [
+                                                "IsPermanent",
+                                                {
+                                                    "type": "HasSubtype",
+                                                    "subtype": "Merfolk"
+                                                }
+                                            ],
+                                            "statePredicates": [
+                                                {
+                                                    "type": "StateNot",
+                                                    "predicate": "IsSource"
+                                                }
+                                            ]
+                                        },
+                                        "player": "You"
+                                    },
+                                    "storeAs": "championCandidates"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "championCandidates",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "championChoice",
+                                    "prompt": "Exile another a Merfolk you control, or choose nothing to sacrifice this permanent",
+                                    "selectedLabel": "Exile",
+                                    "useTargetingUI": true
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "championChoice",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Exile"
+                                    },
+                                    "linkToSource": true,
+                                    "storeMovedAs": "championedCards"
+                                }
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "championedCards"
+                        }
+                    },
+                    "then": "EmitChampionedEvent",
+                    "otherwise": "SacrificeSelf"
+                },
+                "descriptionOverride": "Champion a Merfolk (When this enters, sacrifice it unless you exile another a Merfolk you control. When this leaves the battlefield, that card returns to the battlefield.)"
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this permanent leaves the battlefield, return the exiled card to the battlefield under its owner's control."
+            },
+            {
+                "id": "ability_3",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.DoAction",
+                            "action": {
+                                "type": "Sacrifice",
+                                "filter": "permanent Merfolk"
+                            },
+                            "successCriterion": "SuccessCriterion.PermanentsSacrificed"
+                        },
+                        "then": "TakeExtraTurn"
+                    }
+                },
+                "descriptionOverride": "Whenever this creature deals combat damage to a player, you may sacrifice a Merfolk. If you do, take an extra turn after this one."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "95",
+        "rarity": "RARE",
+        "artist": "Alex Horley-Orlandelli",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/c/6cdbb6ff-c945-4dd6-aba6-4fd4b77824c0.jpg?1783942895"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Warren Pilferers
 {
     "name": "Warren Pilferers",
@@ -17191,6 +18438,178 @@
     "colorIdentityOverride": [
         "BLACK",
         "RED"
+    ]
+}
+
+// Wren's Run Packmaster
+{
+    "name": "Wren's Run Packmaster",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Elf Warrior",
+    "oracleText": "Champion an Elf (When this creature enters, sacrifice it unless you exile another Elf you control. When this creature leaves the battlefield, that card returns to the battlefield.)\n{2}{G}: Create a 2/2 green Wolf creature token.\nWolves you control have deathtouch.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "CHAMPION"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "BattlefieldMatching",
+                                        "filter": {
+                                            "cardPredicates": [
+                                                "IsPermanent",
+                                                {
+                                                    "type": "HasSubtype",
+                                                    "subtype": "Elf"
+                                                }
+                                            ],
+                                            "statePredicates": [
+                                                {
+                                                    "type": "StateNot",
+                                                    "predicate": "IsSource"
+                                                }
+                                            ]
+                                        },
+                                        "player": "You"
+                                    },
+                                    "storeAs": "championCandidates"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "championCandidates",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "championChoice",
+                                    "prompt": "Exile another an Elf you control, or choose nothing to sacrifice this permanent",
+                                    "selectedLabel": "Exile",
+                                    "useTargetingUI": true
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "championChoice",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Exile"
+                                    },
+                                    "linkToSource": true,
+                                    "storeMovedAs": "championedCards"
+                                }
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "championedCards"
+                        }
+                    },
+                    "then": "EmitChampionedEvent",
+                    "otherwise": "SacrificeSelf"
+                },
+                "descriptionOverride": "Champion an Elf (When this enters, sacrifice it unless you exile another an Elf you control. When this leaves the battlefield, that card returns to the battlefield.)"
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this permanent leaves the battlefield, return the exiled card to the battlefield under its owner's control."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Wolf"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/0/2/02a80dc2-0811-4df0-95f1-dd80ce9e24de.jpg?1783942837"
+                },
+                "descriptionOverride": "Create a 2/2 green Wolf creature token."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "DEATHTOUCH",
+                "filter": {
+                    "baseFilter": "permanent Wolf ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "244",
+        "rarity": "RARE",
+        "artist": "Mark Zug",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/e/3e97f29a-1551-4e75-80e8-2dd31cb6c0db.jpg?1783942855",
+        "rulings": [
+            {
+                "date": "2007-10-01",
+                "text": "Wren's Run Packmaster gives deathtouch to all Wolf permanents you control, not just the tokens it creates."
+            },
+            {
+                "date": "2009-10-01",
+                "text": "A Wolf's deathtouch ability will apply if both Wren's Run Packmaster and that Wolf are on the battlefield at the time the Wolf deals damage. The creature dealt damage by the Wolf will be destroyed the next time state-based actions are checked, even if the Wolf or Wren's Run Packmaster leaves the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

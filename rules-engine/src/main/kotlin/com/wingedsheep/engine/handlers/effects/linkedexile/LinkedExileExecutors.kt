@@ -10,6 +10,7 @@ import com.wingedsheep.engine.handlers.effects.ExecutorModule
  */
 class LinkedExileExecutors : ExecutorModule {
     override fun executors(): List<EffectExecutor<*>> = listOf(
+        EmitChampionedEventExecutor(),
         ExileUntilLeavesExecutor(),
         ExileWithAurasNotingCountersExecutor(),
         MarkExileOnDeathExecutor(),

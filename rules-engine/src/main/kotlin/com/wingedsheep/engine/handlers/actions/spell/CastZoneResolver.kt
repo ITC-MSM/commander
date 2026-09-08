@@ -999,6 +999,18 @@ class CastZoneResolver(
                         card.typeLine.cardTypes.any { it in exiledTypes }
                     }
                 }
+                // "with the same name as a card exiled with this permanent" (Circu, Dimir
+                // Lobotomist). Judged here for the same reason as the card-type branch above: the
+                // pile hangs off the granting permanent, which every caller supplying a source has
+                // in hand. Printed names on both sides.
+                CardPredicate.SharesNameWithLinkedExile -> {
+                    val source = grantingSourceId
+                    if (state == null || source == null || card.name.isBlank()) false else {
+                        com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExileLookup
+                            .exiledCards(state, source)
+                            .any { state.getEntity(it)?.get<CardComponent>()?.name == card.name }
+                    }
+                }
                 is CardPredicate.IsToken,
                 is CardPredicate.IsNontoken,
                 is CardPredicate.HasChosenColor,
