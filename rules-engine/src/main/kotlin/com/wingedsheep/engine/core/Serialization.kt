@@ -491,6 +491,7 @@ val engineSerializersModule = SerializersModule {
         subclass(WasDealtDamageThisTurnComponent::class)
         subclass(DamageUnpreventableThisTurnComponent::class)
         subclass(HasDealtDamageComponent::class)
+        subclass(DamageDealtThisTurnComponent::class)
         subclass(HasBecomeTappedComponent::class)
         subclass(HasDealtCombatDamageToPlayerComponent::class)
         subclass(DealtCombatDamageToPlayersThisTurnComponent::class)

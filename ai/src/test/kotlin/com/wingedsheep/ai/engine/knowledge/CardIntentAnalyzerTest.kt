@@ -78,6 +78,14 @@ class CardIntentAnalyzerTest : ScenarioTestBase() {
             intent.staticPriorValue shouldBeGreaterThan 2.7
         }
 
+        test("an Aura with an immediate zone return is exile removal") {
+            val intent = intentOf("Ossification")
+            intent.tags shouldContain IntentTag.REMOVAL
+            intent.tags shouldContain IntentTag.EXILE_REMOVAL
+            intent.repeatable shouldBe false
+            intent.affectsOpponent shouldBe true
+        }
+
         test("an instant that destroys is instant-speed removal, and not a combat trick") {
             val intent = intentOf("Disenchant")
             intent.tags shouldContain IntentTag.REMOVAL

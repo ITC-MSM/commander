@@ -2671,7 +2671,7 @@ class StackResolver(
         // targets it carries are the stored ones — legality is 608.2b's business, not the context's.
         val resolvedTargets2 = targetsComponent?.targets ?: emptyList()
         val targetReqs = targetsComponent?.targetRequirements ?: emptyList()
-        val context = EffectContext.forTriggeredAbility(
+        var context = EffectContext.forTriggeredAbility(
             abilityComponent,
             targets = resolvedTargets2,
             targetRequirements = targetReqs
@@ -2736,6 +2736,15 @@ class StackResolver(
                     )
                 )
             }
+            val aligned = buildAlignedValidated(targetsComponent.targets, validTargets)
+            context = context.copy(
+                targets = validTargets,
+                alignedTargets = aligned,
+                pipeline = context.pipeline.copy(
+                    namedTargets = EffectContext.buildNamedTargets(targetReqs, aligned) +
+                        (abilityComponent.carriedPipeline?.namedTargets ?: emptyMap()),
+                ),
+            )
         }
 
         // Execute the effect
@@ -3404,6 +3413,7 @@ class StackResolver(
             triggeringEntityId = triggeringEntityId,
             triggeringPlayerId = triggeringPlayerId,
             storedCollections = storedCollections,
+            targets = targets,
         )
 
         return targets.filterIndexed { index, target ->

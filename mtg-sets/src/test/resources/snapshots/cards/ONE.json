@@ -1045,6 +1045,70 @@
     ]
 }
 
+// Ossification
+{
+    "name": "Ossification",
+    "manaCost": "{1}{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant basic land you control\nWhen this Aura enters, exile target creature or planeswalker an opponent controls until this Aura leaves the battlefield.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveUntilSourceLeaves",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature or planeswalker an opponent controls"
+                    },
+                    "destination": "Exile"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature|planeswalker ctrl:opponent"
+                    },
+                    "id": "creature or planeswalker an opponent controls"
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "basicland ctrl:you"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "26",
+        "rarity": "UNCOMMON",
+        "artist": "Nino Vecia",
+        "flavorText": "Only Elesh Norn's most loyal servants are granted the honor of becoming part of her throne.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0da03224-c1af-438f-96c2-b0e41e1070b7.jpg?1783918077",
+        "rulings": [
+            {
+                "date": "2023-02-04",
+                "text": "If Ossification leaves the battlefield before its triggered ability resolves, the target permanent won't be exiled."
+            },
+            {
+                "date": "2023-02-04",
+                "text": "Auras attached to the exiled permanent will be put into their owners' graveyards. Any Equipment will become unattached and remain on the battlefield. Any counters on the exiled permanent will cease to exist. When the card returns to the battlefield, it will be a new object with no connection to the card that was exiled."
+            },
+            {
+                "date": "2023-02-04",
+                "text": "If a token is exiled this way, it will cease to exist and won't return to the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Ovika, Enigma Goliath
 {
     "name": "Ovika, Enigma Goliath",

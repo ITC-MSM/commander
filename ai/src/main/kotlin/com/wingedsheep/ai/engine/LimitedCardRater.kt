@@ -277,6 +277,12 @@ object LimitedCardRater {
                 effect.destination == Zone.LIBRARY -> 1.0  // tuck
                 else -> 0.3
             }
+            is MoveUntilSourceLeavesEffect -> when (effect.destination) {
+                Zone.EXILE -> 1.4
+                Zone.HAND -> 0.8
+                Zone.LIBRARY -> 1.0
+                else -> 0.3
+            }
             is ExileUntilLeavesEffect -> 1.4               // O-Ring removal
             is ForceSacrificeEffect -> 1.2                  // edict
             is PutOnLibraryPositionOfChoiceEffect -> 1.0    // tuck

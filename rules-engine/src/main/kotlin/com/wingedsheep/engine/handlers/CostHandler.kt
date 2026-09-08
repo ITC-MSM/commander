@@ -211,6 +211,7 @@ class CostHandler {
             is AbilityCost.Composite -> {
                 cost.costs.all { canPayAbilityCost(state, it, sourceId, controllerId, manaPool, abilityContext, granterId) }
             }
+            AbilityCost.LoyaltyX -> true // X = 0 is always payable; the chosen X is checked at payment.
             is AbilityCost.Loyalty -> {
                 // Check if we have enough loyalty to pay the cost
                 // Positive changes (like +1) can always be paid
@@ -550,6 +551,16 @@ class CostHandler {
                     allEvents.addAll(result.events)
                 }
                 CostPaymentResult.success(currentState, currentPool, allEvents)
+            }
+            AbilityCost.LoyaltyX -> {
+                val loyalty = state.getEntity(sourceId)?.get<CountersComponent>()
+                    ?.getCount(CounterType.LOYALTY) ?: 0
+                if (choices.xValue < 0 || choices.xValue > loyalty) {
+                    CostPaymentResult.failure("Not enough loyalty to pay X")
+                } else {
+                    payAbilityCost(state, AbilityCost.Loyalty(-choices.xValue), sourceId,
+                        controllerId, manaPool, choices, abilityContext)
+                }
             }
             is AbilityCost.Loyalty -> {
                 // Adjust loyalty counters based on the cost change

@@ -12,6 +12,7 @@ class LinkedExileExecutors : ExecutorModule {
     override fun executors(): List<EffectExecutor<*>> = listOf(
         EmitChampionedEventExecutor(),
         ExileUntilLeavesExecutor(),
+        MoveUntilSourceLeavesExecutor(),
         ExileWithAurasNotingCountersExecutor(),
         MarkExileOnDeathExecutor(),
         MarkExileControllerGraveyardOnDeathExecutor(),

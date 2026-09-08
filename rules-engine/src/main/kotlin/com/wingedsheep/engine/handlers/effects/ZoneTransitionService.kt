@@ -1020,6 +1020,11 @@ object ZoneTransitionService {
             }
         }
 
+        val immediateReturns = ZoneReturnService.returnDepartedSources(newState)
+        newState = immediateReturns.state
+        events.addAll(immediateReturns.events)
+        transitions.addAll(immediateReturns.transitions)
+
         // 9. Apply redirect additional effects if any
         if (redirectResult.additionalEffect != null) {
             val (updatedState, extraEvents) = ZoneMovementUtils.applyReplacementAdditionalEffect(

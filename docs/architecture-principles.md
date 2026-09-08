@@ -546,12 +546,20 @@ such history was recovered by resolving the entity's latest visit.
 
 `ZoneChangeEvent.oldObject` and `.newObject` are captured at the actual movement before later effects
 can move the entity again. `ZoneTransitionService` returns individual `ZoneTransitionOutcome` values
-with requested/actual destination and `PRIMARY` versus `REPLACEMENT_ADDITIONAL` attribution. A
-replacement's extra token entry or move cannot stand in for the requested move. Prevented moves and
+with requested/actual destination and `PRIMARY`, `REPLACEMENT_ADDITIONAL`, or `DURATION_RETURN`
+attribution. A replacement's extra move or a duration's return cannot stand in for the requested move. Prevented moves and
 same-zone reordering produce no transition outcome. Last-known characteristics remain separate from
 actionable references: invalidating a live object does not erase the event's last-known information.
 These fields are internal engine data; client event mapping continues to expose the existing game
 log shape.
+
+Zone moves with a source-departure duration store `ZoneReturn` records in `GameState.zoneReturns`.
+Each record identifies the source's battlefield visit, the moved object's destination visit, and its
+previous zone. `ZoneReturnService` consumes expired records inside the zone-transition pipeline,
+before the next instruction can execute, and also after a player's objects leave the game. These
+returns emit ordinary movement events without creating a stack object. Phasing keeps the source's
+identity; a blink ends the duration. The record survives removal of the source's abilities and cannot
+retrieve a later incarnation of the moved card.
 
 Triggered abilities detected before state-based actions carry their origin references into
 `StateBasedActionChecker` as a transient `pendingTriggerSources` set. This lets a zero-defense Siege

@@ -286,7 +286,7 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // Planeswalker loyalty cost (CR 606) — the +N / -N ability activation cost. The engine models it
     // via `loyaltyAbility(loyaltyChange) { }` with `startingLoyalty`. Oko, the Ringleader. The emitter
     // declines the whole loyalty-ability envelope (Activated) -> SCAFFOLD, so this is capability-only.
-    supported("Loyalty", "cost: planeswalker loyalty +N/-N (loyaltyAbility(change) { })")
+    supported("Loyalty", "cost: planeswalker loyalty +N/-N/-X (loyaltyAbility(change) / loyaltyAbilityX)")
     supported("SacrificeAPermanent", "cost: sacrifice")
     supported("SacrificeNumberPermanents", "cost: sacrifice N")
     // Variable-count permanent costs — "exile/sacrifice **one or more** [filter] you control" as an

@@ -396,12 +396,63 @@ class LibraryAndZoneContinuationResumer(
         return checkForMore(newState, events)
     }
 
+    private fun resumeSpellSelection(
+        state: GameState,
+        continuation: SelectFromCollectionContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        val selected = continuation.selectedSpellCard ?: (response as? CardsSelectedResponse)?.selectedCards?.singleOrNull()
+        if (selected == null) {
+            if (response !is CardsSelectedResponse || response.selectedCards.isNotEmpty())
+                return ExecutionResult.error(state, "Choose at most one spell")
+            val collections = mutableMapOf(continuation.storeSelected to emptyList<EntityId>())
+            continuation.storeRemainder?.let { collections[it] = continuation.allCards }
+            return checkForMore(exposeCollectionsToNextFrame(state, collections), emptyList())
+        }
+        val faces = continuation.spellFaces?.get(selected)
+            ?: return ExecutionResult.error(state, "That card has no matching spell face")
+        val chosenFace = if (continuation.selectedSpellCard != null) {
+            val index = (response as? OptionChosenResponse)?.optionIndex
+                ?: return ExecutionResult.error(state, "Expected a spell face choice")
+            faces.getOrNull(index) ?: return ExecutionResult.error(state, "Invalid spell face")
+        } else if (faces.size == 1) faces.single() else {
+            val card = state.getEntity(selected)?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()
+                ?: return ExecutionResult.error(state, "Selected card is missing")
+            val definition = services.cardRegistry.getCard(card.cardDefinitionId)
+            return state.suspendForDecision(
+                { id -> ChooseOptionDecision(
+                    id = id, playerId = continuation.playerId, prompt = "Choose which spell to cast",
+                    context = DecisionContext(sourceId = continuation.sourceId, sourceName = continuation.sourceName, phase = DecisionPhase.RESOLUTION),
+                    options = faces.map {
+                        when (it) {
+                            -1 -> card.name
+                            -2 -> definition!!.backFace!!.name
+                            else -> definition!!.cardFaces[it].name
+                        }
+                    },
+                    optionCardIds = faces.indices.associateWith { listOf(selected) }
+                ) },
+                continuation.copy(selectedSpellCard = selected)
+            )
+        }
+        val collections = mutableMapOf(continuation.storeSelected to listOf(selected))
+        continuation.storeRemainder?.let { collections[it] = continuation.allCards - selected }
+        return checkForMore(exposeCollectionsToNextFrame(
+            state, collections,
+            numbers = mapOf(com.wingedsheep.engine.handlers.PipelineState.spellFaceKey(continuation.storeSelected) to chosenFace)
+        ), emptyList())
+    }
+
     fun resumeSelectFromCollection(
         state: GameState,
         continuation: SelectFromCollectionContinuation,
         response: DecisionResponse,
         checkForMore: CheckForMore
     ): ExecutionResult {
+        if (continuation.spellFaces != null) {
+            return resumeSpellSelection(state, continuation, response, checkForMore)
+        }
         if (response !is CardsSelectedResponse) {
             return ExecutionResult.error(state, "Expected card selection response for SelectFromCollection")
         }
@@ -1142,7 +1193,7 @@ class LibraryAndZoneContinuationResumer(
         val stateForCast = state.copy(priorityPlayerId = continuation.casterId)
         val castResult = castSpellHandler.execute(
             stateForCast,
-            CastSpell(continuation.casterId, continuation.cardId, chosenTargets),
+            CastSpell(continuation.casterId, continuation.cardId, chosenTargets, faceIndex = continuation.faceIndex),
         )
 
         if (castResult.error != null) {

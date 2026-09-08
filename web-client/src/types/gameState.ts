@@ -625,6 +625,7 @@ export interface ClientPlaneswalkerAbility {
   readonly abilityId: string
   /** Signed loyalty change (+1, -2, -8, etc.). */
   readonly loyaltyChange: number
+  readonly loyaltyX?: boolean
   /** Ability text. */
   readonly description: string
 }

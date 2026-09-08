@@ -54,6 +54,13 @@ internal fun BridgeBuilder.damageLifeAndCards() {
     composed("PreventDamage", "PreventDamageShield (prevent damage to recipient)",
         composes = listOf("PreventDamageShield"))
     composed("GainLifeForEach", "GainLife + DynamicAmount", composes = listOf("GainLife"))
+    // Requires a before/after baseline around the matching damage action. The emitter leaves
+    // this amount unresolved until it can bind that action's scope, rather than using printed X.
+    composed(
+        "TheAmountOfDamageDealtThisWay",
+        "StoreNumber + Subtract(EntityProperty(source, DamageDealtThisTurn), baseline)",
+        composes = listOf("StoreNumber", "EntityProperty", "Subtract")
+    )
     effect("GainLife", "GainLife")
     effect("LoseLife", "LoseLife")
 

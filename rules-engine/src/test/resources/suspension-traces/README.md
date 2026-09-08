@@ -38,3 +38,7 @@ effect continuation, and `EffectContext`. Because these files are encoded with
 `encodeDefaults = true`, a new field appears in every object that carries it; the only edit
 was adding `"triggerClashWon": null` — the field's default — alongside each existing
 `triggerScryCount`. No state, action, or event payload changed, and no gameplay was rerun.
+
+Schema-refreshed for immediate zone returns: current state captures now include the empty
+`zoneReturns` list alongside `departedLinkedExile`. Actions and events are unchanged; none
+of these suspension traces has an outstanding zone-return effect.

@@ -634,6 +634,7 @@ class CostEnumerationUtils(
             cost is AbilityCost.Atom &&
                 (cost.atom as? CostAtom.RemoveCounters)?.count is DynamicAmount.XValue
         return when (abilityCost) {
+            AbilityCost.LoyaltyX -> true
             is AbilityCost.TapXPermanents -> true
             is AbilityCost.Atom -> isXCounterRemoval(abilityCost)
             is AbilityCost.Composite -> abilityCost.costs.any {
@@ -666,6 +667,12 @@ class CostEnumerationUtils(
             ((availableSources - fixedCost).coerceAtLeast(0)) / xSymbols
         } else {
             Int.MAX_VALUE
+        }
+
+        if (abilityCost == AbilityCost.LoyaltyX) {
+            val loyalty = sourceId?.let { state.getEntity(it)?.get<CountersComponent>() }
+                ?.getCount(com.wingedsheep.sdk.core.CounterType.LOYALTY) ?: 0
+            maxX = minOf(maxX, loyalty)
         }
 
         // Cap by the graveyard cards an ExileXFromGraveyard cost could actually exile. The cap must

@@ -1511,14 +1511,18 @@ class ClientStateTransformer(
         val oracleDescriptions = parseOracleLoyaltyLines(cardDef.oracleText)
             .mapValues { (_, lines) -> ArrayDeque(lines) }
         return abilities.mapNotNull { ability ->
+            val loyaltyX = ability.cost == com.wingedsheep.sdk.scripting.AbilityCost.LoyaltyX
             val loyalty = (ability.cost as? com.wingedsheep.sdk.scripting.AbilityCost.Loyalty)?.change
-                ?: return@mapNotNull null
-            val description = oracleDescriptions[loyalty]?.removeFirstOrNull()
+                ?: if (loyaltyX) 0 else return@mapNotNull null
+            val description = (if (loyaltyX) cardDef.oracleText.lines()
+                .firstOrNull { it.startsWith("−X:") || it.startsWith("-X:") }
+                ?.substringAfter(":")?.trim() else oracleDescriptions[loyalty]?.removeFirstOrNull())
                 ?: ability.descriptionOverride
                 ?: effectDisplayText(ability.effect, "this planeswalker")
             ClientPlaneswalkerAbility(
                 abilityId = ability.id.value,
                 loyaltyChange = loyalty,
+                loyaltyX = loyaltyX,
                 description = description
             )
         }

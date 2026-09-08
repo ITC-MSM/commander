@@ -603,6 +603,13 @@ sealed interface AbilityCost : TextReplaceable<AbilityCost> {
         override val description: String = if (change >= 0) "+$change" else "$change"
     }
 
+    /** A variable negative loyalty cost (−X), chosen when the ability is activated. */
+    @SerialName("CostLoyaltyX")
+    @Serializable
+    data object LoyaltyX : AbilityCost {
+        override val description: String = "−X"
+    }
+
     /**
      * Forage: exile three cards from your graveyard or sacrifice a Food.
      * Used as an activated ability cost for Bloomburrow cards.

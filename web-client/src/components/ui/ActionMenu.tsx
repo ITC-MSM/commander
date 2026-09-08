@@ -174,13 +174,15 @@ export function ActionMenu() {
  *
  * Magnitude > 20 falls back to the plain chevron (mana-font ships variants up to 20).
  */
-function LoyaltyIcon({ change }: { change: number }) {
+function LoyaltyIcon({ change, variable = false }: { change: number; variable?: boolean }) {
   const magnitude = Math.abs(change)
-  const direction = change > 0 ? 'up' : change < 0 ? 'down' : 'zero'
+  const direction = variable ? 'down' : change > 0 ? 'up' : change < 0 ? 'down' : 'zero'
   // mana-font ships ms-loyalty-{0..20,25} digit overlays; combine with the direction class
   // so 0-cost abilities render the neutral marker with a "0" inside, matching ±N styling.
   const hasNumberVariant = (direction === 'zero' && magnitude === 0) || (magnitude >= 1 && magnitude <= 20)
-  const className = hasNumberVariant
+  const className = variable
+    ? 'ms ms-loyalty-down ms-loyalty-x'
+    : hasNumberVariant
     ? `ms ms-loyalty-${direction} ms-loyalty-${magnitude}`
     : `ms ms-loyalty-${direction}`
   return (
@@ -294,7 +296,7 @@ function ActionOptionButton({
       >
         <span className={styles.actionButtonLeading}>
           {option.loyaltyChange !== undefined && (
-            <LoyaltyIcon change={option.loyaltyChange} />
+            <LoyaltyIcon change={option.loyaltyChange} variable={option.loyaltyX ?? false} />
           )}
           {option.impendingTime !== undefined && (
             <ImpendingTimeIcon time={option.impendingTime} />

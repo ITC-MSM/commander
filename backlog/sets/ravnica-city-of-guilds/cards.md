@@ -2,15 +2,15 @@
 
 **Set Size:** 291 cards
 **Release Date:** October 7, 2005
-**Implemented:** 271 / 291
+**Implemented:** 274 / 291
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 37    | 33   |
-| Blue       | 39    | 35   |
+| Blue       | 39    | 36   |
 | Black      | 37    | 35   |
 | Red        | 39    | 38   |
 | Green      | 37    | 37   |
-| Multicolor | 64    | 56   |
+| Multicolor | 64    | 57   |
 | Artifact   | 21    | 17   |
 | Land       | 17    | 17   |
 
@@ -85,7 +85,7 @@
 - [ ] Quickchange
 - [x] Remand
 - [x] Snapping Drake
-- [ ] Spawnbroker
+- [x] Spawnbroker
 - [x] Stasis Cell
 - [x] Surveilling Sprite
 - [x] Tattered Drake
@@ -224,7 +224,7 @@
 - [x] Boros Guildmage
 - [x] Boros Recruit
 - [x] Boros Swiftblade
-- [ ] Brightflame
+- [x] Brightflame
 - [x] Centaur Safeguard
 - [ ] Chorus of the Conclave
 - [x] Circu, Dimir Lobotomist
@@ -252,7 +252,7 @@
 - [x] Loxodon Hierarch
 - [x] Lurking Informant
 - [ ] Master Warcraft
-- [ ] Mindleech Mass
+- [x] Mindleech Mass
 - [x] Moroii
 - [x] Perplex
 - [x] Phytohydra

@@ -98,6 +98,7 @@ val AllFatesScroll = card("All-Fates Scroll") {
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
 import com.wingedsheep.sdk.core.Subtype
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
@@ -131,7 +132,7 @@ val AllFatesStalker = card("All-Fates Stalker") {
                 filter = TargetFilter(GameObjectFilter.Creature.notSubtype(Subtype.ASSASSIN))
             )
         )
-        effect = Effects.ExileUntilLeaves(t)
+        effect = Effects.MoveUntilSourceLeaves(t, Zone.EXILE)
     }
     // STRUCTURE needs human wiring: Warp
     metadata {
@@ -541,6 +542,7 @@ val AuxiliaryBoosters = card("Auxiliary Boosters") {
 
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
@@ -563,11 +565,7 @@ val BanishingLight = card("Banishing Light") {
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
         val t = target("target", TargetPermanent(filter = TargetFilter.NonlandPermanentOpponentControls))
-        effect = Effects.ExileUntilLeaves(t)
-    }
-    triggeredAbility {
-        trigger = Triggers.LeavesBattlefield
-        effect = Effects.ReturnLinkedExileUnderOwnersControl()
+        effect = Effects.MoveUntilSourceLeaves(t, Zone.EXILE)
     }
     metadata {
         rarity = Rarity.COMMON

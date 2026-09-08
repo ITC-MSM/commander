@@ -71,6 +71,11 @@ class CastFromCollectionWithoutPayingCostExecutor(
         val cards: List<EntityId> = context.pipeline.storedCollections[effect.from].orEmpty()
         if (cards.isEmpty()) return EffectResult.success(state)
         val cardId = cards.first()
+        val chosenFace = context.pipeline.storedNumbers[
+            com.wingedsheep.engine.handlers.PipelineState.spellFaceKey(effect.from)
+        ]
+        val faceIndex = chosenFace?.takeIf { it >= 0 }
+        val castTransformed = effect.castTransformed || chosenFace == -2
         // `Chooser.Controller` (the default) is `context.controllerId`; the only other value a
         // printed card needs is `SourceController`, which survives the per-iteration controller
         // swap `ForEachPlayerEffect` performs (Jetsam casts from each opponent's graveyard, but
@@ -86,7 +91,7 @@ class CastFromCollectionWithoutPayingCostExecutor(
         // or a single-faced card that became a copy of a transforming one — simply isn't cast, and
         // per the CR 310.12b ruling it stays where it is (in exile, for the Siege defeat trigger)
         // rather than being cast front face up.
-        if (effect.castTransformed && !hasBackFace(state, cardId)) {
+        if (castTransformed && !hasBackFace(state, cardId)) {
             return EffectResult.success(state)
         }
 
@@ -94,7 +99,8 @@ class CastFromCollectionWithoutPayingCostExecutor(
         // would follow the card out of exile and stay live until end-of-turn cleanup.
         val prep = prepareTargetSelection(
             state, cardId, controllerId, cardRegistry, targetFinder, effect.storeCastTo,
-            castTransformed = effect.castTransformed,
+            castTransformed = castTransformed,
+            faceIndex = faceIndex,
         )
         if (prep is TargetPrep.NoLegalTargets) {
             // CR 601.2c — if no legal targets exist for a required slot, the cast can't
@@ -111,8 +117,9 @@ class CastFromCollectionWithoutPayingCostExecutor(
             controllerId = controllerId,
             sourceId = context.sourceId,
             withoutPayingCost = !effect.payManaCost,
-            castTransformed = effect.castTransformed,
+            castTransformed = castTransformed,
             insteadOfGraveyard = effect.insteadOfGraveyard,
+            faceIndex = faceIndex,
         )
 
         if (prep is TargetPrep.NeedsTargets) {
@@ -123,7 +130,7 @@ class CastFromCollectionWithoutPayingCostExecutor(
         }
 
         // No targets needed (or modal — CastSpellHandler will handle per-mode targets).
-        return invokeCast(newState, controllerId, cardId, permId, emptyList(), effect.storeCastTo)
+        return invokeCast(newState, controllerId, cardId, permId, emptyList(), effect.storeCastTo, faceIndex)
     }
 
     /** True when [cardId]'s definition has a back face to be cast transformed as. */
@@ -139,11 +146,12 @@ class CastFromCollectionWithoutPayingCostExecutor(
         grantedPermissionId: EntityId,
         targets: List<com.wingedsheep.engine.state.components.stack.ChosenTarget>,
         storeCastTo: String?,
+        faceIndex: Int?,
     ): EffectResult {
         val stateForCast = state.copy(priorityPlayerId = casterId)
         val castResult = castSpellHandlerProvider().execute(
             stateForCast,
-            CastSpell(casterId, cardId, targets),
+            CastSpell(casterId, cardId, targets, faceIndex = faceIndex),
         )
 
         if (castResult.error != null) {
@@ -210,6 +218,7 @@ class CastFromCollectionWithoutPayingCostExecutor(
             withoutPayingCost: Boolean = true,
             castTransformed: Boolean = false,
             insteadOfGraveyard: AfterResolveDestination? = null,
+            faceIndex: Int? = null,
         ): Pair<EntityId, GameState> {
             var stamped = if (!withoutPayingCost) state else state.updateEntity(cardId) { container ->
                 container.with(PlayWithoutPayingCostComponent(controllerId = controllerId))
@@ -231,6 +240,7 @@ class CastFromCollectionWithoutPayingCostExecutor(
                     controllerId = controllerId,
                     sourceId = sourceId,
                     castTransformed = castTransformed,
+                    castFaceIndex = faceIndex,
                     timestamp = stateWithPerm.timestamp,
                 )
             )
@@ -277,14 +287,17 @@ class CastFromCollectionWithoutPayingCostExecutor(
             targetFinder: TargetFinder,
             storeCastTo: String? = null,
             castTransformed: Boolean = false,
+            faceIndex: Int? = null,
         ): TargetPrep {
             val cardComponent = state.getEntity(cardId)?.get<CardComponent>()
             val printedDef = cardComponent?.let { cardRegistry.getCard(it.cardDefinitionId) }
             val cardDef = if (castTransformed) printedDef?.backFace ?: printedDef else printedDef
-            val isModalSpell = cardDef?.script?.spellEffect is ModalEffect
+            val selectedFace = faceIndex?.let { printedDef?.cardFaces?.getOrNull(it) }
+            val script = selectedFace?.script ?: cardDef?.script
+            val isModalSpell = script?.spellEffect is ModalEffect
             val targetRequirements = buildList {
-                addAll(cardDef?.script?.targetRequirements.orEmpty())
-                cardDef?.script?.auraTarget?.let { add(it) }
+                addAll(script?.targetRequirements.orEmpty())
+                script?.auraTarget?.let { add(it) }
             }
             if (isModalSpell || targetRequirements.isEmpty()) {
                 return TargetPrep.NotNeeded
@@ -315,7 +328,7 @@ class CastFromCollectionWithoutPayingCostExecutor(
 
             // Name the face being cast — a transformed cast prompts for "Deluge of the Dead",
             // not for the front face the player exiled.
-            val cardName = (if (castTransformed) cardDef?.name else null) ?: cardComponent?.name ?: "spell"
+            val cardName = selectedFace?.name ?: (if (castTransformed) cardDef?.name else null) ?: cardComponent?.name ?: "spell"
             val question = { decisionId: String -> ChooseTargetsDecision(
                 id = decisionId,
                 playerId = casterId,
@@ -333,6 +346,7 @@ class CastFromCollectionWithoutPayingCostExecutor(
                 cardId = cardId,
                 casterId = casterId,
                 storeCastTo = storeCastTo,
+                faceIndex = faceIndex,
             )
             return TargetPrep.NeedsTargets(question, continuation)
         }

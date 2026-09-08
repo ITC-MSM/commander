@@ -140,9 +140,11 @@ object PlayerLeavesGameProcessor {
         // 8. Mark the leave processing done so the SBA loop never re-applies it.
         s = s.updateEntity(leaver) { it.with(PlayerLeftGameComponent) }
 
+        // Leaving the game ends zone-return durations without producing a return trigger.
+        val returns = com.wingedsheep.engine.handlers.effects.ZoneReturnService.returnDepartedSources(s)
         return ExecutionResult.success(
-            s,
-            listOf(PlayerLeftGameEvent(leaver, reason, toRemove.size))
+            returns.state,
+            listOf(PlayerLeftGameEvent(leaver, reason, toRemove.size)) + returns.events
         )
     }
 

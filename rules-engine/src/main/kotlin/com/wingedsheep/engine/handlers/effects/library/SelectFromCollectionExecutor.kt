@@ -69,6 +69,25 @@ class SelectFromCollectionExecutor(
             return EffectResult.success(state).copy(updatedCollections = collections)
         }
 
+        if (effect.selection == SelectionMode.ChooseSpell) {
+            require(effect.restrictions.isEmpty() && !effect.matchChosenCreatureType) {
+                "ChooseSpell expresses eligibility through its face filter, not card-selection restrictions"
+            }
+            val faces = spellFaces(state, cards, effect, context)
+            val chooser = when (val outcome = ChooserResolution.resolve(state, effect.chooser, context, cards)) {
+                is ChooserResolution.Outcome.Resolved -> outcome.playerId
+                is ChooserResolution.Outcome.NeedsOpponentPick -> return ChooserResolution.pauseForOpponentPick(
+                    state, outcome.opponents, effect, context, prompt = "Choose which opponent chooses the spell"
+                )
+                is ChooserResolution.Outcome.Unresolvable -> return EffectResult.error(state, outcome.reason)
+            }
+            return createDecision(
+                state, context, effect, faces.keys.toList(), 0, minOf(1, faces.size), decidingPlayerId = chooser,
+                allCards = cards, nonSelectableCards = if (effect.showAllCards) cards - faces.keys else emptyList(),
+                spellFaces = faces
+            )
+        }
+
         // Apply filter to narrow selectable cards (e.g., "creature card" for Animal Magnetism)
         var eligibleCards = if (effect.filter != GameObjectFilter.Any) {
             val predicateContext = PredicateContext.fromEffectContext(context)
@@ -138,6 +157,7 @@ class SelectFromCollectionExecutor(
         val restrictionCeiling = restrictionCeiling(effect.restrictions, state, context, eligibleCards, controllerPermanentColors)
 
         return when (val selection = effect.selection) {
+            SelectionMode.ChooseSpell -> error("Spell selection is handled before card filtering")
             is SelectionMode.All -> {
                 // Auto-select all eligible, no decision needed
                 val collections = mutableMapOf(effect.storeSelected to eligibleCards)
@@ -396,6 +416,41 @@ class SelectFromCollectionExecutor(
         return ceiling
     }
 
+    private fun spellFaces(
+        state: GameState, cards: List<EntityId>, effect: SelectFromCollectionEffect, context: EffectContext
+    ): Map<EntityId, List<Int>> = buildMap {
+        val predicateContext = PredicateContext.fromEffectContext(context)
+        for (id in cards) {
+            if (id in state.getBattlefield()) continue
+            val card = state.getEntity(id)?.get<CardComponent>() ?: continue
+            val definition = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+            val faces = buildList {
+                // A split card's combined characteristics are not a castable face.
+                if (!definition.isSplit) add(-1 to card)
+                if (definition.layout == com.wingedsheep.sdk.model.CardLayout.MODAL_DFC) {
+                    definition.backFace?.let { face ->
+                        add(-2 to card.copy(
+                            name = face.name, typeLine = face.typeLine, manaCost = face.manaCost,
+                            oracleText = face.oracleText, baseStats = face.creatureStats,
+                            baseKeywords = face.keywords, colors = face.colors
+                        ))
+                    }
+                }
+                if (!definition.isPreparation) definition.cardFaces.forEachIndexed { index, face ->
+                    add(index to card.copy(
+                        name = face.name, typeLine = face.typeLine, manaCost = face.manaCost,
+                        oracleText = face.oracleText, baseKeywords = face.keywords, colors = face.manaCost.colors
+                    ))
+                }
+            }.filter { (_, face) -> !face.typeLine.isLand }.filter { (_, face) ->
+                val candidateState = if (face === card) state else state.updateEntity(id) { it.with(face) }
+                // The candidate is outside the battlefield; its face overlay changes no projected permanent.
+                predicateEvaluator.matches(candidateState, state.projectedState, id, effect.filter, predicateContext)
+            }.map { it.first }
+            if (faces.isNotEmpty()) put(id, faces)
+        }
+    }
+
     /**
      * @param cards The cards presented as selectable options in the decision
      * @param allCards The full collection for remainder computation (defaults to [cards]).
@@ -413,7 +468,8 @@ class SelectFromCollectionExecutor(
         allCards: List<EntityId> = cards,
         nonSelectableCards: List<EntityId> = emptyList(),
         controllerPermanentColors: Set<com.wingedsheep.sdk.core.Color>? = null,
-        conditionalMinimums: List<ConditionalSelectionMinimum> = emptyList()
+        conditionalMinimums: List<ConditionalSelectionMinimum> = emptyList(),
+        spellFaces: Map<EntityId, List<Int>>? = null
     ): EffectResult {
         val playerId = decidingPlayerId ?: context.controllerId
         val sourceName = context.sourceId?.let { sourceId ->
@@ -495,7 +551,8 @@ class SelectFromCollectionExecutor(
             storeSelected = effect.storeSelected,
             storeRemainder = effect.storeRemainder,
             storedCollections = context.pipeline.storedCollections,
-            restrictions = effect.restrictions
+            restrictions = effect.restrictions,
+            spellFaces = spellFaces
         )
 
         return EffectResult.from(state.suspendForDecision(decision, continuation))

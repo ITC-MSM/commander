@@ -949,11 +949,11 @@ object Effects {
      */
     fun ExileOpponentsGraveyards(): Effect = ExileOpponentsGraveyardsEffect
 
-    /**
-     * Exile a target until this permanent leaves the battlefield.
-     * Exiles the target and links it to the source permanent via LinkedExileComponent.
-     * Used with a LeavesBattlefield trigger + ReturnLinkedExile() for the return.
-     */
+    /** Move out of a zone and return immediately when this source leaves, without a return trigger. */
+    fun MoveUntilSourceLeaves(target: EffectTarget, destination: Zone): Effect =
+        com.wingedsheep.sdk.scripting.effects.MoveUntilSourceLeavesEffect(target, destination)
+
+    /** Exile and link to this source; a separate printed return ability must retrieve the card. */
     fun ExileUntilLeaves(target: EffectTarget): Effect =
         ExileUntilLeavesEffect(target)
 
@@ -978,7 +978,7 @@ object Effects {
 
     /**
      * Exile a target permanently and link it to the source permanent via
-     * `LinkedExileComponent` (the source's linked-exile pile). Unlike [ExileUntilLeaves]
+     * `LinkedExileComponent` (the source's linked-exile pile). Unlike [MoveUntilSourceLeaves]
      * there is no automatic return — the link only records which card the source exiled, so
      * later abilities can reference it (e.g. Territory Forge's "this permanent has all
      * activated abilities of the exiled card").

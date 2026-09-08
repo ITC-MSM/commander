@@ -16,6 +16,16 @@ import kotlinx.serialization.Serializable
 sealed interface EntityNumericProperty {
     val description: String
 
+    /** Actual damage dealt by this object this turn, after prevention and replacement effects.
+     * For battlefield permanents and resolving spells; includes damage to any recipient.
+     * Zone changes reset the history. Damage from a departed source does not mark its new object.
+     */
+    @SerialName("DamageDealtThisTurn")
+    @Serializable
+    data object DamageDealtThisTurn : EntityNumericProperty {
+        override val description: String = "damage dealt this turn"
+    }
+
     @SerialName("Power")
     @Serializable
     data object Power : EntityNumericProperty {

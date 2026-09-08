@@ -1385,6 +1385,11 @@ class DynamicAmountEvaluator(
                 entity.get<CardComponent>()?.manaCost?.coloredSymbolCount(property.colors.toSet()) ?: 0
             }
 
+            is EntityNumericProperty.DamageDealtThisTurn -> state.getEntity(entityId)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.DamageDealtThisTurnComponent>()
+                ?.takeIf { it.turnNumber == state.turnNumber && it.sourceObject == state.objectRef(entityId) }
+                ?.amount ?: 0
+
             // Excess damage (CR 120.4a) marked on the creature: max(0, marked − toughness).
             // Amount-valued twin of the TargetMarkedDamageExceedsToughness condition — read it after
             // a deal-damage step in the same composite (Hell to Pay's "excess damage dealt this

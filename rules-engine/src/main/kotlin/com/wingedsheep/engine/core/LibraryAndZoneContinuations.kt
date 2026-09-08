@@ -29,6 +29,11 @@ data class SelectFromCollectionContinuation(
     val storeSelected: String,
     val storeRemainder: String?,
     val storedCollections: Map<String, List<EntityId>> = emptyMap(),
+    /** Castable face indices (-1 is primary, -2 is a modal permanent back) for a spell selection. */
+    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+    val spellFaces: Map<EntityId, List<Int>>? = null,
+    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+    val selectedSpellCard: EntityId? = null,
     /**
      * Restrictions that tightened the selection bounds. The resumer uses these
      * to normalize the player's response: e.g. [SelectionRestriction.OnePerCardType]
@@ -373,6 +378,8 @@ data class CastFromCollectionTargetsContinuation(
     val storeCastTo: String? = null,
     val grantedPermissionId: EntityId? = null,
     val onCastFailure: FreeCastFallback = FreeCastFallback.LEAVE,
+    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
+    val faceIndex: Int? = null,
 ) : AnswerContinuation
 
 /**

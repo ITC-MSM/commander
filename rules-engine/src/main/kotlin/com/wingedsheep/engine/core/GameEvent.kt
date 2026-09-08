@@ -85,7 +85,7 @@ data class ZoneChangeEvent(
 ) : GameEvent
 
 @Serializable
-enum class ZoneTransitionCause { PRIMARY, REPLACEMENT_ADDITIONAL }
+enum class ZoneTransitionCause { PRIMARY, REPLACEMENT_ADDITIONAL, DURATION_RETURN }
 
 // =============================================================================
 // Life Events

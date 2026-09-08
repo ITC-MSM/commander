@@ -588,6 +588,13 @@ class CardBuilder(private val name: String) {
         activatedAbilities.add(builder.build())
     }
 
+    /** A −X loyalty ability. X is chosen at activation and may be zero. */
+    fun loyaltyAbilityX(init: LoyaltyAbilityBuilder.() -> Unit) {
+        val builder = LoyaltyAbilityBuilder(AbilityCost.LoyaltyX)
+        builder.init()
+        activatedAbilities.add(builder.build())
+    }
+
     // =========================================================================
     // Equipment
     // =========================================================================
@@ -1890,7 +1897,8 @@ class StaticAbilityBuilder {
 // =============================================================================
 
 @CardDsl
-class LoyaltyAbilityBuilder(private val loyaltyChange: Int) {
+class LoyaltyAbilityBuilder(private val loyaltyCost: AbilityCost) {
+    constructor(loyaltyChange: Int) : this(AbilityCost.Loyalty(loyaltyChange))
     var effect: Effect? = null
     var target: TargetRequirement? = null
     var description: String? = null
@@ -1913,7 +1921,7 @@ class LoyaltyAbilityBuilder(private val loyaltyChange: Int) {
         }
         return ActivatedAbility(
             id = AbilityId.generate(),
-            cost = AbilityCost.Loyalty(loyaltyChange),
+            cost = loyaltyCost,
             effect = effect!!,
             targetRequirements = targetReqs,
             isPlaneswalkerAbility = true,

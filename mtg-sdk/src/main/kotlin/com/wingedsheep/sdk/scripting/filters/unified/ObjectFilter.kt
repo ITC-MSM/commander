@@ -949,6 +949,11 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.WasDealtDamageThisTurn
     )
 
+    /** Matches names recorded when a spell was cast this turn, regardless of its caster or current zone. */
+    fun sharesNameWithSpellCastThisTurn() = copy(
+        statePredicates = statePredicates + StatePredicate.SharesNameWithSpellCastThisTurn
+    )
+
     /**
      * Must have **dealt** damage this turn — the active voice, and the mirror of
      * [wasDealtDamageThisTurn]. Combat and noncombat damage both count, to any recipient. Used by
