@@ -2,7 +2,7 @@
 
 **Set Size:** 286 cards
 **Release Date:** October 12, 2007
-**Implemented:** 280 / 286
+**Implemented:** 281 / 286
 | Section    | Total | Done |
 |------------|-------|------|
 | White      | 49    | 43   |
@@ -210,7 +210,7 @@
 - [x] Lash Out
 - [x] Lowland Oaf
 - [x] Mudbutton Torchrunner
-- [ ] Needle Drop
+- [x] Needle Drop
 - [x] Nova Chaser
 - [x] Rebellion of the Flamekin
 - [x] Smokebraider

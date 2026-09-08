@@ -2221,10 +2221,10 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       {!spectatorMode && <ActionMenu />}
 
       {/* Targeting overlay for spell/ability target selection */}
-      {!spectatorMode && <TargetingOverlay key={interactionEpoch} />}
+      {!spectatorMode && <TargetingOverlay key={`targeting:${interactionEpoch}`} />}
 
       {/* Mana color selection overlay */}
-      {!spectatorMode && <ManaColorSelectionOverlay key={interactionEpoch} />}
+      {!spectatorMode && <ManaColorSelectionOverlay key={`mana-color:${interactionEpoch}`} />}
 
       {/* Combat arrows for blocker assignments - rendered by SpectatorGameBoard in spectator mode to avoid stacking context issues */}
       {!spectatorMode && <CombatArrows />}

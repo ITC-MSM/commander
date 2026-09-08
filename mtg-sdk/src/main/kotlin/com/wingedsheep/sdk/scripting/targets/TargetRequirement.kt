@@ -244,7 +244,7 @@ fun TargetPermanent(
 // =============================================================================
 
 /**
- * "Any target" - can target any creature, player, or planeswalker.
+ * "Any target" - can target any creature, player, planeswalker, or battle.
  */
 @SerialName("AnyTarget")
 @Serializable
@@ -254,11 +254,19 @@ data class AnyTarget(
     override val optional: Boolean = false,
     override val id: String? = null,
     override val chooser: TargetChooser = TargetChooser.Controller,
-    private val descriptionOverride: String? = null
+    private val descriptionOverride: String? = null,
+    /** Additional predicates shared by permanent and player candidates. */
+    val filter: GameObjectFilter = GameObjectFilter.Any
 ) : TargetRequirement {
+    override fun applyTextReplacement(replacer: TextReplacer): TargetRequirement {
+        val replaced = filter.applyTextReplacement(replacer)
+        return if (replaced !== filter) copy(filter = replaced) else this
+    }
+
     override val description: String = descriptionOverride
         ?: buildString {
             append(if (count == 1) "any target" else "$count targets")
+            if (filter != GameObjectFilter.Any) append(" that ${filter.description}")
             if (chooser == TargetChooser.Opponent) append(" of an opponent's choice")
         }
 }

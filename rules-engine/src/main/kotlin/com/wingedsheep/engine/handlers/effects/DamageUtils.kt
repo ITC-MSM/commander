@@ -503,10 +503,6 @@ object DamageUtils {
                     ))
                 }
             }
-            // Mark creature as having been dealt damage this turn
-            newState = newState.updateEntity(targetId) { container ->
-                container.with(WasDealtDamageThisTurnComponent)
-            }
             // Track damage source for "creature dealt damage by this dies" triggers
             if (sourceId != null) {
                 newState = trackDamageDealtToCreature(newState, sourceId, targetId)
@@ -519,6 +515,7 @@ object DamageUtils {
             }
         }
 
+        newState = newState.updateEntity(targetId) { it.with(WasDealtDamageThisTurnComponent) }
         newState = trackDamageDealt(newState, sourceId, effectiveAmount)
         // Record the source on its controller's per-turn set of damage sources. Unlike the stamp
         // above this is not battlefield-only: a resolving burn spell is a source that dealt damage
@@ -665,6 +662,7 @@ object DamageUtils {
             val existingLifeLost = container.get<com.wingedsheep.engine.state.components.player.LifeLostAmountThisTurnComponent>()
                 ?: com.wingedsheep.engine.state.components.player.LifeLostAmountThisTurnComponent()
             var updated = container.with(com.wingedsheep.engine.state.components.player.DamageReceivedThisTurnComponent(existing.amount + amount))
+                .with(WasDealtDamageThisTurnComponent)
                 .with(com.wingedsheep.engine.state.components.player.LifeLostThisTurnComponent)
                 .with(
                     com.wingedsheep.engine.state.components.player.LifeLostAmountThisTurnComponent(
