@@ -59,7 +59,8 @@ class MoveToZoneEffectExecutor(
     ): EffectResult {
         val targetId = context.resolveTarget(effect.target, state)
             ?: return if (effect.target == com.wingedsheep.sdk.scripting.targets.EffectTarget.Self ||
-                effect.target == com.wingedsheep.sdk.scripting.targets.EffectTarget.TriggeringEntity) {
+                effect.target == com.wingedsheep.sdk.scripting.targets.EffectTarget.TriggeringEntity ||
+                effect.target is com.wingedsheep.sdk.scripting.targets.EffectTarget.LibraryTop) {
                 EffectResult.success(state)
             } else EffectResult.error(state, "No valid target for move to zone")
 

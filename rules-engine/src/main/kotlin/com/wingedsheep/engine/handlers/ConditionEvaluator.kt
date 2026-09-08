@@ -856,6 +856,21 @@ class ConditionEvaluator(
             (ctx as? Resolution)?.let {
                 evaluateDiscardedCardFilterMatch(state, condition.filter, entity.index, it.effectContext)
             } ?: false
+        is EffectTarget.LibraryTop -> {
+            val controllerId = ctx.controllerId
+            val context = when (ctx) {
+                is Resolution -> ctx.effectContext
+                is Projection -> controllerId?.let { EffectContext(controllerId = it, sourceId = ctx.sourceId) }
+            }
+            context?.let {
+                val projected = ctx.projectedStateFor(state)
+                val cardId = com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+                    .resolveLibraryTop(entity.player, it, state, projected)
+                cardId != null && PredicateEvaluator().matches(
+                    state, projected, cardId, condition.filter, PredicateContext.fromEffectContext(it)
+                )
+            } ?: false
+        }
         is EffectTarget.LinkedExiledCard ->
             evaluateLinkedExiledCardFilterMatch(state, condition.filter, entity.index, ctx)
         else -> false

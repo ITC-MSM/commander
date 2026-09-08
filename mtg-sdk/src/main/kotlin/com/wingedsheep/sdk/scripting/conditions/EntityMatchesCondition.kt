@@ -38,6 +38,7 @@ import kotlinx.serialization.Serializable
  * - [EffectTarget.DiscardedAsCost] — a card discarded to pay this spell's additional discard cost;
  *   **resolution-only**, matched against that card's graveyard characteristics (CR 608.2), where it
  *   lives by the time the spell resolves (Grab the Prize, via `Conditions.DiscardedCardMatches`).
+ * - [EffectTarget.LibraryTop] — the current library top; dual-mode, false for an empty library.
  * - [EffectTarget.LinkedExiledCard] — a card exiled with the source (its imprint / "exiled with
  *   this" pile); **dual-mode**, matched against that card's printed characteristics in exile. This
  *   is what lets a [com.wingedsheep.sdk.scripting.ConditionalStaticAbility] be gated on the

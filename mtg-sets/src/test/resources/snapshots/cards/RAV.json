@@ -2926,6 +2926,90 @@
     ]
 }
 
+// Crown of Convergence
+{
+    "name": "Crown of Convergence",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Play with the top card of your library revealed.\nAs long as the top card of your library is a creature card, creatures you control that share a color with that card get +1/+1.\n{G}{W}: Put the top card of your library on the bottom of your library.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{G}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "LibraryTop",
+                    "destination": "Library",
+                    "placement": "Bottom"
+                }
+            }
+        ],
+        "staticAbilities": [
+            "RevealTopOfLibrary",
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 1,
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsCreature",
+                                {
+                                    "type": "SharesColorWith",
+                                    "entity": "LibraryTop"
+                                }
+                            ],
+                            "controllerPredicate": "ControlledByYou"
+                        }
+                    }
+                },
+                "condition": {
+                    "type": "EntityMatches",
+                    "entity": "LibraryTop",
+                    "filter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "258",
+        "rarity": "RARE",
+        "artist": "Jen Page",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c1b9f8c8-2927-4746-a540-dd3853b9a00e.jpg?1783943600",
+        "rulings": [
+            {
+                "date": "2013-04-15",
+                "text": "The top card of your library isn't in your hand, so you can't suspend it, cycle it, discard it, or activate any of its activated abilities."
+            },
+            {
+                "date": "2013-04-15",
+                "text": "If the top card of your library changes while you're casting a spell, playing a land, or activating an ability, the new top card won't be revealed until you finish doing so."
+            },
+            {
+                "date": "2013-04-15",
+                "text": "When playing with the top card of your library revealed, if an effect tells you to draw several cards, reveal each one before you draw it."
+            },
+            {
+                "date": "2005-10-01",
+                "text": "A colorless creature on top of your library never gives a bonus, and a colorless creature on the battlefield never gets a bonus."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
 // Cyclopean Snare
 {
     "name": "Cyclopean Snare",

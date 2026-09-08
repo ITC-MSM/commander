@@ -47,6 +47,7 @@ fun lkiPolicyFor(reference: EntityReference): LkiPolicy = when (reference) {
     // characteristics are the printed ones. There is nothing to snapshot, and asking for a snapshot
     // would be wrong: the read must fall through to base characteristics, which is what LIVE_ONLY
     // does. The reference itself already resolves to null once the card leaves exile.
+    is EntityReference.LibraryTop,
     is EntityReference.LinkedExiledCard,
     -> LkiPolicy.LIVE_ONLY
 }

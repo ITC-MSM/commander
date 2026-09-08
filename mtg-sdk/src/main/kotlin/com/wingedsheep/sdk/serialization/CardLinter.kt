@@ -1218,6 +1218,7 @@ object CardLinter {
         "ContextTarget",
         "TriggeringEntity",
         "DiscardedAsCost",
+        "LibraryTop",
         "LinkedExiledCard",
     )
 
