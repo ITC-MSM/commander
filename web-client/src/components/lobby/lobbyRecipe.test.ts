@@ -217,6 +217,13 @@ describe('validateRecipe', () => {
     expect(out?.recipe.settings.gamesPerMatch).toBe(5)
   })
 
+  it('lets a pick time of exactly 0 through as the no-time-limit setting', () => {
+    // 0 is a sentinel, not an out-of-range duration: clamping it up to 10s would silently
+    // re-arm the pick timer on an untimed draft.
+    const out = validateRecipe({ ...base, settings: { pickTimeSeconds: 0 } }, ctx)
+    expect(out?.recipe.settings.pickTimeSeconds).toBe(0)
+  })
+
   it('discards settings of the wrong type rather than forwarding them', () => {
     const out = validateRecipe({
       ...base,

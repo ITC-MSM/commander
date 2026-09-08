@@ -14,6 +14,13 @@ import kotlinx.serialization.Serializable
 sealed interface EffectTarget {
     val description: String
 
+    /** The current top card of a player's library; absent when that library is empty. */
+    @SerialName("LibraryTop")
+    @Serializable
+    data class LibraryTop(val player: Player = Player.You) : EffectTarget {
+        override val description: String = "the top card of ${player.possessive} library"
+    }
+
     /** The controller of the source ability */
     @SerialName("Controller")
     @Serializable

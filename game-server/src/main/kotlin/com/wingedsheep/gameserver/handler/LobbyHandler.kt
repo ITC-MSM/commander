@@ -725,7 +725,7 @@ class LobbyHandler(
             boosterCount = boosterCount,
             boosterDistribution = TournamentLobby.calculateDefaultDistribution(codes, boosterCount),
             maxPlayers = maxPlayers,
-            pickTimeSeconds = message.pickTimeSeconds.coerceIn(15, 120),
+            pickTimeSeconds = TournamentLobby.clampPickTimeSeconds(message.pickTimeSeconds, 120),
             picksPerRound = initialPicksPerRound,
             isPublic = message.isPublic,
             // Commander formats enable Chaos boosters by default — 20-card commander packs
@@ -2617,7 +2617,7 @@ class LobbyHandler(
             }
         }
         message.gamesPerMatch?.let { lobby.gamesPerMatch = it.coerceIn(1, 5) }
-        message.pickTimeSeconds?.let { lobby.pickTimeSeconds = it.coerceIn(15, 180) }
+        message.pickTimeSeconds?.let { lobby.pickTimeSeconds = TournamentLobby.clampPickTimeSeconds(it, 180) }
         message.picksPerRound?.let { lobby.picksPerRound = it.coerceIn(1, 2) }
         message.isPublic?.let { lobby.isPublic = it }
 

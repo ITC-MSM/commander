@@ -103,7 +103,14 @@ class TargetFinder(
         return when (requirement) {
             is TargetPlayer -> findPlayerTargets(state, requirement, controllerId, sourceId)
             is TargetOpponent -> findOpponentTargets(state, requirement, controllerId, sourceId)
-            is AnyTarget -> findAnyTargets(state, controllerId, sourceId, targetingSourceType)
+            is AnyTarget -> {
+                val candidates = findAnyTargets(state, controllerId, sourceId, targetingSourceType)
+                if (requirement.filter == GameObjectFilter.Any) candidates else {
+                    val projected = state.projectedState
+                    val context = targetingContext(controllerId, sourceId, triggeringEntityId = triggeringEntityId, pipelineContext = pipelineContext)
+                    candidates.filter { predicateEvaluator.matches(state, projected, it, requirement.filter, context) }
+                }
+            }
             is TargetCreatureOrPlayer -> findCreatureOrPlayerTargets(state, controllerId, sourceId, targetingSourceType, pipelineContext)
             is TargetPermanentOrPlayer -> findPermanentOrPlayerTargets(state, requirement, controllerId, sourceId, targetingSourceType, pipelineContext)
             is TargetOpponentOrPlaneswalker -> findOpponentOrPlaneswalkerTargets(state, controllerId, sourceId, targetingSourceType)

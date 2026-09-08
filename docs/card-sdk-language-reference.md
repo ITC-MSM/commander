@@ -3821,7 +3821,12 @@ A resolving nonpermanent spell retains its stack instance through serialized eff
 
 ### Cast-time (`Targets.*` / `TargetRequirement`)
 
-- `Targets.Any` — any creature, player, or planeswalker.
+- `Targets.Any` — any creature, player, planeswalker, or battle.
+- `Targets.Any(filter)` — the same domain narrowed by a `GameObjectFilter`, applied to both players
+  and permanents at announcement, resolution, and retargeting. For example,
+  `Targets.Any(GameObjectFilter.Any.wasDealtDamageThisTurn())` (Needle Drop) uses damage history,
+  including combat damage and damage dealt through counters. Prevented damage and life loss do not
+  qualify. History survives removing marked damage, but resets on zone changes and turn cleanup.
 - `Targets.AnyChosenByOpponent` — "any target **of an opponent's choice**" (Cuombajj Witches). A real
   target of *your* spell/ability that an **opponent** selects: announced at the same time as your own
   targets, equally respondable, and with legality (hexproof/protection/shroud) measured relative to
@@ -13470,3 +13475,24 @@ resolution executor is introduced. The existing Yes/No decision belongs to the
 drawing player, and its source identifies the public graveyard card. The client
 keyword label is `DREDGE`. The mtgish emitter preserves the numeric argument through
 `KeywordAbility.dredge(N)`; unsupported numeric shapes remain scaffolded.
+
+### Live library-top references
+
+`EntityReference.LibraryTop(player = Player.You)` reads the current top card of the named
+player's library for relational filters and dynamic amounts. `EffectTarget.LibraryTop(player)`
+is the matching effect/condition target: compose `Conditions.EntityMatches` with any card filter,
+or pass it to an ordinary zone-moving effect. Both resolve at evaluation time and return no entity
+for an empty library; they never use last-known information or reveal the card by themselves.
+Single-player `Player` references use the normal player resolver; group references resolve to no entity.
+During filter and condition projection, the source controller comes from the intermediate projection.
+
+Crown of Convergence combines `RevealTopOfLibrary`, a creature-card condition, `ModifyStats` with
+`sharingColorWith(EntityReference.LibraryTop())`, and `PutOnBottomOfLibrary`. The bonus follows
+changes to the top card, control, and projected creature colors, and never grants more than +1/+1
+for sharing multiple colors. A colorless card shares no colors.
+
+Continuous group filters also support `SharesColorWith(reference)`, including inside `And`, `Or`,
+and `Not`. They delegate that relational comparison to the shared predicate evaluator with an
+intermediate projection, preserving colorless results instead of falling back to printed colors.
+Public library-reveal statics follow projected control, so stealing a reveal source switches which
+player's top card is visible.

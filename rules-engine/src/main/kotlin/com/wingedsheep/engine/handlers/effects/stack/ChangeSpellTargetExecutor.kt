@@ -5,7 +5,9 @@ import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.state.components.stack.TargetsComponent
@@ -30,6 +32,7 @@ class ChangeSpellTargetExecutor : EffectExecutor<ChangeSpellTargetEffect> {
     override val effectType: KClass<ChangeSpellTargetEffect> = ChangeSpellTargetEffect::class
 
     private val decisionHandler = DecisionHandler()
+    private val targetFinder = TargetFinder()
 
     override fun execute(
         state: GameState,
@@ -74,10 +77,15 @@ class ChangeSpellTargetExecutor : EffectExecutor<ChangeSpellTargetEffect> {
 
         // 5. Find all other creatures on the battlefield as legal new targets
         val currentTargetId = singleTarget.entityId
-        val otherCreatures = state.getBattlefield()
-            .filter { entityId ->
-                entityId != currentTargetId && projected.hasType(entityId, "CREATURE")
-            }
+        val requirement = targetsComponent?.targetRequirements?.singleOrNull()
+        val spellController = spellEntity.get<ControllerComponent>()
+            ?.playerId ?: context.controllerId
+        val candidates = requirement?.let {
+            targetFinder.findLegalTargets(state, it, spellController, targetSpell.spellEntityId)
+        } ?: state.getBattlefield()
+        val otherCreatures = candidates.filter { entityId ->
+            entityId != currentTargetId && projected.isCreature(entityId)
+        }
 
         if (otherCreatures.isEmpty()) {
             // No other creatures to redirect to

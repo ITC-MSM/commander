@@ -21,6 +21,7 @@ import { SettingsLabel } from '../ui/SettingsLabel'
 import { COMMANDER_PRESETS, effectiveCommanderPreset } from './axes'
 import type { UnifiedLobbyView } from './lobbyViewModel'
 import type { GroupId } from './settingsGroups'
+import { PICK_TIME_OPTIONS, pickTimeLabel } from './pickTime'
 import styles from '../ui/GameUI.module.css'
 
 /**
@@ -363,13 +364,13 @@ export function TournamentLobbySettings({
       {/* Draft timing and pick size. */}
       {group === 'CARDS' && isAnyDraft && (
         <div className={styles.settingsRow}>
-          <span className={styles.settingsLabel}>{isWinston ? 'Turn timer (seconds)' : 'Pick timer (seconds)'}</span>
+          <span className={styles.settingsLabel}>{isWinston ? 'Turn timer' : 'Pick timer'}</span>
           <select
             value={s.pickTimeSeconds}
             onChange={(e) => updateLobbySettings({ pickTimeSeconds: Number(e.target.value) })}
             className={styles.settingsSelect}
           >
-            {[30, 45, 60, 90, 120].map((n) => <option key={n} value={n}>{n}s</option>)}
+            {PICK_TIME_OPTIONS.map((n) => <option key={n} value={n}>{pickTimeLabel(n)}</option>)}
           </select>
         </div>
       )}
