@@ -56,6 +56,9 @@ object TargetResolutionUtils {
      * that need to look up attachment relationships).
      */
     fun resolveTarget(effectTarget: EffectTarget, context: EffectContext, state: GameState): EntityId? {
+        if (effectTarget is EffectTarget.LibraryTop) {
+            return resolveLibraryTop(effectTarget.player, context, state)
+        }
         if (effectTarget == EffectTarget.Self && !context.objectReferences.isSelfCurrent(state)) return null
         if (effectTarget == EffectTarget.TriggeringEntity && context.triggeringEntityId !in state.turnOrder &&
             !context.objectReferences.isCurrent(context.objectReferences.triggering, state)) return null
@@ -427,6 +430,8 @@ object TargetResolutionUtils {
      */
     fun resolveEntityReference(ref: EntityReference, context: EffectContext, state: GameState): EntityId? =
         when (ref) {
+            is EntityReference.LibraryTop ->
+                resolveLibraryTop(ref.player, context, state)
             is EntityReference.Source -> context.sourceId
             is EntityReference.EnchantedCreature ->
                 context.sourceId?.let { state.getEntity(it)?.get<AttachedToComponent>()?.targetId }
@@ -462,6 +467,19 @@ object TargetResolutionUtils {
                 com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExileLookup
                     .exiledCard(state, context.sourceId, ref.index)
         }
+
+    /** Library membership is read live, without revealing the card or retaining an old top. */
+    fun resolveLibraryTop(
+        player: Player,
+        context: EffectContext,
+        state: GameState,
+        projected: com.wingedsheep.engine.mechanics.layers.ProjectedState? = null
+    ): EntityId? {
+        val playerId = if (player == Player.ControllerOfSource && projected != null) {
+            context.sourceId?.let { projected.getController(it) } ?: context.controllerId
+        } else resolvePlayerRef(player, context, state)
+        return playerId?.takeIf { it in state.turnOrder }?.let { state.getLibrary(it).firstOrNull() }
+    }
 
     /**
      * Convert a ChosenTarget to an EntityId.
