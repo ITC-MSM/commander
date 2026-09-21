@@ -9,8 +9,11 @@ import com.wingedsheep.gym.contract.ActionRegistry
 import com.wingedsheep.gym.contract.ObservationBuilder
 import com.wingedsheep.gym.contract.ObservationResult
 import com.wingedsheep.gym.contract.ResolvedAction
+import com.wingedsheep.gym.contract.StateDigest
+import com.wingedsheep.gym.contract.TrainingObservation
 import com.wingedsheep.gym.service.SnapshotCodec
 import com.wingedsheep.gym.service.SnapshotHandle
+import com.wingedsheep.sdk.model.EntityId
 
 /**
  * [GymEnv] adapter over a [GameEnvironment] — a game of Magic.
@@ -31,10 +34,21 @@ class GameGymEnv(
     @Volatile
     private var registry: ActionRegistry = ActionRegistry.EMPTY
 
+    private var observedDecisionId: String? = null
+
     override val isTerminal: Boolean get() = environment.state.gameOver
 
     override fun observe(revealAll: Boolean?): ObservationResult =
         build(revealAll ?: defaultRevealAll)
+
+    /** Observe the current state from one named seat without enabling debug visibility. */
+    fun observeForPlayer(
+        playerId: EntityId,
+        revealAll: Boolean? = null
+    ): ObservationResult {
+        require(playerId in environment.playerIds) { "Player $playerId is not seated in this env" }
+        return build(revealAll ?: defaultRevealAll, playerId)
+    }
 
     override fun step(actionId: Int, params: ActionParams): ObservationResult {
         executeResolved(registry.resolve(actionId), actionId, params)
@@ -57,6 +71,9 @@ class GameGymEnv(
     fun submitDecision(response: DecisionResponse): ObservationResult {
         val pending = environment.state.pendingDecision
             ?: throw IllegalStateException("Env is not paused on a decision")
+        require(observedDecisionId == pending.id) {
+            "Observe the deciding player before submitting this decision"
+        }
         check(response.decisionId == pending.id) {
             "Decision ID mismatch: response=${response.decisionId}, pending=${pending.id}"
         }
@@ -75,13 +92,37 @@ class GameGymEnv(
 
     // --- internals -----------------------------------------------------------
 
-    private fun build(revealAll: Boolean): ObservationResult {
-        val perspective = environment.playerIds.getOrNull(perspectivePlayerIndex)
+    private fun build(
+        revealAll: Boolean,
+        requestedPerspective: EntityId? = null
+    ): ObservationResult {
+        val perspective = requestedPerspective
+            ?: environment.playerIds.getOrNull(perspectivePlayerIndex)
             ?: throw IllegalStateException("Env has no player at index $perspectivePlayerIndex")
         val result = observationBuilder.build(
             environment.state, perspective, environment.legalActions(), revealAll
         )
+
+        // A non-acting perspective must not receive another seat's pending decision or legal-action
+        // surface: action descriptions can themselves reveal hidden cards or choices. Callers that
+        // control several seats request the current actor explicitly through observeForPlayer.
+        val seatOwnsAction = environment.agentToAct == null || environment.agentToAct == perspective
+        if (!revealAll && !seatOwnsAction) {
+            val observation = result.observation as? TrainingObservation
+                ?: throw IllegalStateException("GameGymEnv expected a TrainingObservation")
+            val sanitized = observation.copy(
+                pendingDecision = null,
+                legalActions = emptyList(),
+                stateDigest = ""
+            )
+            val safeObservation = sanitized.copy(stateDigest = StateDigest.compute(sanitized))
+            registry = ActionRegistry.EMPTY
+            observedDecisionId = null
+            return ObservationResult(safeObservation, ActionRegistry.EMPTY)
+        }
+
         registry = result.registry
+        observedDecisionId = environment.state.pendingDecision?.id
         return result
     }
 

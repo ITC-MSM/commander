@@ -89,6 +89,12 @@ object Targets {
     val BlockingCreature: TargetRequirement = TargetCreature(filter = TargetFilter.BlockingCreature)
 
     /**
+     * Target blocked creature (Smite) — an attacker with blocked status, even after its blockers
+     * leave combat. Leaving combat or an explicit unblock effect ends that status (CR 509.1h).
+     */
+    val BlockedCreature: TargetRequirement = TargetCreature(filter = TargetFilter.BlockedCreature)
+
+    /**
      * Target tapped creature.
      */
     val TappedCreature: TargetRequirement = TargetCreature(filter = TargetFilter.TappedCreature)
@@ -503,6 +509,7 @@ object Targets {
         val untappedCreature: TargetFilter = TargetFilter.UntappedCreature
         val attackingCreature: TargetFilter = TargetFilter.AttackingCreature
         val blockingCreature: TargetFilter = TargetFilter.BlockingCreature
+        val blockedCreature: TargetFilter = TargetFilter.BlockedCreature
         val attackingOrBlockingCreature: TargetFilter = TargetFilter.AttackingOrBlockingCreature
 
         // Battlefield permanent targets

@@ -14,6 +14,7 @@ import com.wingedsheep.gym.server.dto.RestoreBody
 import com.wingedsheep.gym.server.dto.StepBatchItem
 import com.wingedsheep.gym.server.dto.StepBatchResult
 import com.wingedsheep.gym.server.dto.StepBody
+import com.wingedsheep.sdk.model.EntityId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
@@ -228,14 +229,25 @@ class EnvController(
 
     @Operation(
         summary = "Observe an env without advancing",
-        description = "Pass `revealAll=true` only for debug tooling — never for real self-play, since it leaks opponent hand and libraries."
+        description = """
+            Pass `perspectivePlayerId` to obtain one seated player's normal information set.
+            When another seat must act, a masked observation exposes neither that seat's pending
+            decision nor its legal-action surface. Multi-seat callers should read `agentToAct`,
+            then observe that player before choosing. Pass `revealAll=true` only for debug tooling —
+            never for real self-play, since it leaks opponent hand and libraries.
+        """
     )
     @GetMapping("/{id}")
     fun observe(
         @PathVariable id: String,
-        @RequestParam(required = false) revealAll: Boolean?
+        @RequestParam(required = false) revealAll: Boolean?,
+        @RequestParam(required = false) perspectivePlayerId: String?
     ): Observation =
-        multiEnvService.observe(EnvId(id), revealAll).observation
+        multiEnvService.observe(
+            EnvId(id),
+            revealAll,
+            perspectivePlayerId?.let(::EntityId)
+        ).observation
 
     // =========================================================================
     // Stepping

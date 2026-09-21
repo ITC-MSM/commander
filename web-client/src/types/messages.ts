@@ -1407,7 +1407,7 @@ export interface AvailableSet {
   readonly name: string
   /**
    * True when the set isn't fully implemented for sealed/draft (not sealed-supported, or flagged
-   * incomplete). The lobby set picker hides partial sets behind a default-off toggle.
+   * incomplete). The lobby set picker hides partial sets while browsing by default; search includes them.
    */
   readonly partial?: boolean
   /**
