@@ -57,6 +57,12 @@ class AiWebSocketSession(
     private val onMulliganTake: (EntityId) -> Unit,
     private val onBottomCards: (EntityId, List<EntityId>) -> Unit,
     /**
+     * Built-in AI controllers retain legacy game-server strategic recovery. External controller
+     * providers set this false so the server never chooses an action on their behalf, either when
+     * transport state is unsynchronized or after the controller's own response is rejected.
+     */
+    internal val allowActionsOnlyFallback: Boolean = true,
+    /**
      * Local testing mode: the last word on what this seat submits. Given the move the AI chose, it
      * may hold the decision until a human approves it and may hand back a different move entirely
      * (see [AiInsightService]). Null in normal play, where the AI's own pick goes straight through.
@@ -119,7 +125,7 @@ class AiWebSocketSession(
         }
     }
 
-    private suspend fun handleServerMessage(message: ServerMessage) {
+    internal suspend fun handleServerMessage(message: ServerMessage) {
         when (message) {
             is ServerMessage.StateUpdate -> {
                 logger.info("AI received StateUpdate: phase={}, step={}, priority={}, legalActions={}, pendingDecision={}",
@@ -146,6 +152,12 @@ class AiWebSocketSession(
                 if (updatedState != null && (message.legalActions.isNotEmpty() || message.pendingDecision != null)) {
                     handleStateUpdate(updatedState, message.legalActions, message.pendingDecision, message.interactionEpoch)
                 } else if (message.legalActions.isNotEmpty() || message.pendingDecision != null) {
+                    if (!allowActionsOnlyFallback) {
+                        throw IllegalStateException(
+                            "External AI seat ${aiPlayerId.value} received an actionable state delta before a full state; " +
+                                "refusing server-side strategic fallback"
+                        )
+                    }
                     logger.warn("AI received delta update but has no cached state — falling back to heuristics")
                     handleActionsOnlyFallback(message.legalActions, message.pendingDecision, message.interactionEpoch)
                 }

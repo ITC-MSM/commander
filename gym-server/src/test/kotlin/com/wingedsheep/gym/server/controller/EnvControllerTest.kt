@@ -174,6 +174,33 @@ class EnvControllerTest : FunSpec() {
             get("/envs/${created.envId.value}").statusCode() shouldBe 404
         }
 
+        test("explicit seat observation masks actions and rejects unknown players over HTTP") {
+            val created = json.decodeFromString<CreateEnvResponse>(
+                postJson("/envs", json.encodeToString(twoPlayerConfig())).body()
+            )
+            try {
+                val opening = created.observation as TrainingObservation
+                val other = opening.players.first { it.id != opening.agentToAct }.id
+                val path = "/envs/${created.envId.value}"
+                val response = get("$path?perspectivePlayerId=${other.value}")
+                response.statusCode() shouldBe 200
+                val masked = json.decodeFromString<TrainingObservation>(response.body())
+                masked.perspectivePlayerId shouldBe other
+                masked.legalActions shouldBe emptyList()
+                postJson("$path/step", json.encodeToString(StepBody(0))).statusCode() shouldBe 400
+                get("$path?perspectivePlayerId=not-seated").statusCode() shouldBe 400
+
+                val actor = get("$path?perspectivePlayerId=${opening.agentToAct!!.value}")
+                actor.statusCode() shouldBe 200
+                val acting = json.decodeFromString<TrainingObservation>(actor.body())
+                acting.legalActions.shouldNotBeEmpty()
+                postJson("$path/step", json.encodeToString(StepBody(acting.legalActions.first().actionId)))
+                    .statusCode() shouldBe 200
+            } finally {
+                deleteJson("/envs", json.encodeToString(DisposeBody(listOf(created.envId))))
+            }
+        }
+
         test("POST /envs with an unknown set code surfaces 400") {
             val bogus = EnvConfig(
                 players = listOf(

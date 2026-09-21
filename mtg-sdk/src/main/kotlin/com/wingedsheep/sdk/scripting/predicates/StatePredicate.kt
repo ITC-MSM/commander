@@ -160,14 +160,14 @@ sealed interface StatePredicate {
         override val description: String = "blocking"
     }
 
-    /** Creature that is being blocked (has at least one blocker) */
+    /** Attacker with blocked status, even after all its blockers leave combat */
     @SerialName("IsBlocked")
     @Serializable
     data object IsBlocked : Entity {
         override val description: String = "blocked"
     }
 
-    /** Creature that is attacking and has no blockers */
+    /** Attacker with unblocked status after blockers are declared */
     @SerialName("IsUnblocked")
     @Serializable
     data object IsUnblocked : Entity {

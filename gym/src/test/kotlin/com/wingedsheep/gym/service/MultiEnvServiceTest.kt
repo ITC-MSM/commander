@@ -235,9 +235,13 @@ class MultiEnvServiceTest : FunSpec({
         val handle = svc.snapshot(envId)
         val openingDigest = opening.observation.stateDigest
 
-        // Advance a few steps so the restore has something to undo.
+        // Advance a few steps, always through the current actor's own masked view,
+        // so the restore has something to undo without borrowing another seat's action surface.
         repeat(3) {
-            val actionId = svc.observe(envId).observation.legalActions.first().actionId
+            val neutral = svc.observe(envId).observation.asGame
+            val actor = neutral.agentToAct.shouldNotBeNull()
+            val acting = svc.observe(envId, perspectivePlayerId = actor).observation
+            val actionId = acting.legalActions.first().actionId
             svc.step(StepRequest(envId, actionId))
         }
         svc.observe(envId).observation.stateDigest shouldNotBe openingDigest

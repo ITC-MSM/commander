@@ -1020,6 +1020,20 @@ data class GameObjectFilter(
     )
 
     /**
+     * Must be an attacker with blocked status, even after its last blocker leaves combat.
+     * Leaving combat or an explicit unblock effect ends that status (CR 509.1h).
+     * See [StatePredicate.IsBlocked].
+     */
+    fun blocked() = copy(
+        statePredicates = statePredicates + StatePredicate.IsBlocked
+    )
+
+    /** Must be an attacker with unblocked status after blockers are declared. See [StatePredicate.IsUnblocked]. */
+    fun unblocked() = copy(
+        statePredicates = statePredicates + StatePredicate.IsUnblocked
+    )
+
+    /**
      * Must be blocking the effect's source (CR 509). Source-relative; only matches the source's
      * own blockers. "Whenever this becomes blocked, it deals N damage to each creature blocking it."
      */

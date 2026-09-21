@@ -20,6 +20,16 @@ class GameBeansConfigBoosterPoolTest : FunSpec({
     val setCoverageService = SetCoverageService()
     val boosterGenerator = config.boosterGenerator(cardRegistry, setCoverageService)
 
+    test("Reality Fracture is selectable as a partial set and generates a nonempty pack") {
+        val fra = boosterGenerator.availableSets["FRA"].shouldNotBeNull()
+        fra.setName shouldBe "Reality Fracture"
+        fra.fullyImplemented shouldBe false
+        fra.cards.map { it.name } shouldContain "Rank Rat"
+        fra.cards.map { it.name } shouldContain "Unsummon"
+        fra.cards.all { it.metadata.inBooster } shouldBe true
+        boosterGenerator.generateBooster("FRA").size shouldBeGreaterThan 0
+    }
+
     test("Eighth Edition appears as a selectable set") {
         boosterGenerator.availableSets shouldContainKey "8ED"
     }

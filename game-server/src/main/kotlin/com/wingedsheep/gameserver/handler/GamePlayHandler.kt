@@ -1326,6 +1326,17 @@ class GamePlayHandler(
                     broadcastStateUpdate(gameSession, result.events)
                 }
                 is GameSession.ActionResult.Failure -> {
+                    val aiSession = gameSession.getPlayerSession(aiPlayerId)?.webSocketSession as? AiWebSocketSession
+                    if (aiSession?.allowActionsOnlyFallback == false) {
+                        logger.error(
+                            "External AI action failed for seat {} in game {}: {} — refusing server-side strategic fallback",
+                            aiPlayerId.value,
+                            gameSession.sessionId,
+                            result.reason,
+                        )
+                        return
+                    }
+
                     // The chosen action was rejected (e.g. an illegal block the AI's combat model
                     // didn't foresee, like Ring-bearer "can't be blocked by greater power"). Try a
                     // sequence of step-appropriate, always-legal fallbacks so the game can't get

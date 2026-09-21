@@ -19,6 +19,7 @@
 import { useState } from 'react'
 import type { AvailableSet } from '@/types/messages'
 import { SetIcon } from './SetIcon'
+import { visiblePickerSets } from './setPickerSets'
 import styles from './GameUI.module.css'
 
 export interface SetPickerModalProps {
@@ -97,30 +98,13 @@ export function SetPickerModal({
   const isSingle = mode === 'single'
   const isSelected = (code: string) => selectedCodes.includes(code)
 
-  // Picker visibility rules (an already-selected set always stays visible so it can be changed):
-  //  - partial sets are hidden unless the toggle is flipped, and
-  //  - sets with fewer than `minCards` implemented cards are pruned (kills the long tail of
-  //    near-empty sets you'd otherwise see once partial sets are shown).
   const partialSetCount = sets.filter((s) => s.partial).length
-  const pickerSets = sets.filter((s) => {
-    // Single mode picks exactly one set, and an extension set can't be played on its own.
-    if (isSingle && s.extensionSet) return false
-    if (isSelected(s.code)) return true
-    if (s.partial && !showPartialSets) return false
-    if (s.extensionSet) return true // full bonus sheets stay visible despite a thin card count
-    if ((s.implementedCount ?? 0) < minCards) return false
-    return true
+  const pickerSets = visiblePickerSets(sets, selectedCodes, {
+    search: '', single: isSingle, showPartial: showPartialSets, minCards,
   })
-
-  // Searchable inside the modal — match on set name or code, like the deckbuilder picker.
-  const searchNeedle = search.trim().toLowerCase()
-  const filteredPickerSets = searchNeedle
-    ? pickerSets.filter(
-        (s) =>
-          s.name.toLowerCase().includes(searchNeedle) ||
-          s.code.toLowerCase().includes(searchNeedle),
-      )
-    : pickerSets
+  const filteredPickerSets = visiblePickerSets(sets, selectedCodes, {
+    search, single: isSingle, showPartial: showPartialSets, minCards,
+  })
 
   const handlePick = (code: string) => {
     onToggleSet(code)
@@ -296,6 +280,7 @@ export function SetPickerModal({
           <p className={styles.setPickerNote}>
             Sets tagged <span className={styles.setPartialBadge}>partial</span> aren't fully
             implemented — their boosters draw from a reduced pool of the cards that exist.
+            {' '}Search includes partial sets and sets below the minimum card count.
             {!isSingle && pickerSets.some((s) => s.extensionSet) && (
               <>
                 {' '}Sets tagged <span className={styles.setExtensionBadge}>extension</span> are

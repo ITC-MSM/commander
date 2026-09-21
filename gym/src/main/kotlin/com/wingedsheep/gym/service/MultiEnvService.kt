@@ -58,9 +58,10 @@ class MultiEnvService(
         val env = GameEnvironment.create(cardRegistry)
         env.reset(gameConfig)
         val gymEnv = GameGymEnv(env, config.perspectivePlayerIndex, config.revealAll)
+        val observation = gymEnv.observe()
         val envId = EnvId.generate()
         envs[envId] = gymEnv
-        return CreatedEnv(envId, gymEnv.observe())
+        return CreatedEnv(envId, observation)
     }
 
     /**
@@ -74,9 +75,10 @@ class MultiEnvService(
             basics = sealed.basics,
             targetSize = config.targetSize
         )
+        val observation = env.observe()
         val envId = EnvId.generate()
         envs[envId] = env
-        return CreatedEnv(envId, env.observe())
+        return CreatedEnv(envId, observation)
     }
 
     /** Reset an existing game env while keeping the same [EnvId]. */
@@ -95,8 +97,21 @@ class MultiEnvService(
     // =========================================================================
 
     /** Get the current observation without advancing state. */
-    fun observe(envId: EnvId, revealAll: Boolean? = null): ObservationResult =
-        requireEnv(envId).observe(revealAll)
+    fun observe(
+        envId: EnvId,
+        revealAll: Boolean? = null,
+        perspectivePlayerId: EntityId? = null
+    ): ObservationResult {
+        val env = requireEnv(envId)
+        return if (perspectivePlayerId == null) {
+            env.observe(revealAll)
+        } else {
+            (env as? GameGymEnv
+                ?: throw IllegalStateException(
+                    "Env $envId is not a game env; player perspective is not supported"
+                )).observeForPlayer(perspectivePlayerId, revealAll)
+        }
+    }
 
     /**
      * Advance a single env by the given [StepRequest.actionId]. The ID must
@@ -141,6 +156,11 @@ class MultiEnvService(
     fun restore(envId: EnvId, handle: SnapshotHandle): ObservationResult =
         requireGameEnv(envId).restore(snapshotCodec, handle)
 
+    /** Release a snapshot slot so long-lived trainers do not retain old game states indefinitely. */
+    fun disposeSnapshot(handle: SnapshotHandle) {
+        snapshotCodec.dispose(handle)
+    }
+
     // =========================================================================
     // Internals
     // =========================================================================
@@ -157,7 +177,8 @@ class MultiEnvService(
         startingHandSize = startingHandSize,
         skipMulligans = skipMulligans,
         useHandSmoother = useHandSmoother,
-        startingPlayerIndex = startingPlayerIndex
+        startingPlayerIndex = startingPlayerIndex,
+        seed = seed
     )
 
     private fun requireEnv(envId: EnvId): GymEnv =

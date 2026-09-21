@@ -258,6 +258,7 @@ class AiGameManager(
         onMulliganKeep = onMulliganKeep,
         onMulliganTake = onMulliganTake,
         onBottomCards = onBottomCards,
+        allowActionsOnlyFallback = controller is EngineAiPlayerController || controller is LlmAiPlayerController,
         actionGate = gameSession?.let { aiInsightService.gateFor(it.sessionId) },
     )
 
@@ -575,6 +576,11 @@ class AiGameManager(
             )
             sessionRegistry.setPlayerSession(newSession.id, playerSession)
         }
+
+        // The transport delta cache belongs to the previous virtual session. A replacement
+        // AiWebSocketSession has no synchronized ClientGameState yet, so force its first update
+        // to be a full masked StateUpdate rather than a delta based on stale transport history.
+        gameSession.clearLastSentState(aiPlayerId)
 
         trackSession(gameSession.sessionId, aiPlayerId, newSession)
         logger.info("Wired AI {} for game {} [mode={}]", aiPlayerId.value, gameSession.sessionId, aiProperties.mode)

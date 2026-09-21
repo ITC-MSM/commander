@@ -25,6 +25,17 @@ class SetCoverageServiceTest : FunSpec({
     val service = SetCoverageService()
     val coverage = service.coverage()
 
+    test("Reality Fracture has a complete denominator and live implementation progress") {
+        val fra = coverage.find { it.code == "FRA" }.shouldNotBeNull()
+        fra.name shouldBe "Reality Fracture"
+        fra.total shouldBe 285
+        fra.implemented shouldBeGreaterThanOrEqualTo 30
+        val cards = service.detail("FRA").shouldNotBeNull().draft
+        cards.size shouldBe 285
+        cards.first { it.name == "Rank Rat" }.implemented shouldBe true
+        service.limitedCardNames("FRA").shouldNotBeNull() shouldContain "Cast Away Doubt"
+    }
+
     test("reports coverage for the catalogued sets") {
         coverage.shouldNotBeEmpty()
         coverage.map { it.code }.toSet().size shouldBe coverage.size // codes are unique
