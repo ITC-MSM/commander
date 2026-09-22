@@ -642,16 +642,14 @@ class CostCalculator(
         filter: GameObjectFilter,
         property: EntityNumericProperty
     ): Int {
-        val projectedState = state.projectedState
+        val projected = state.projectedState
+        val context = PredicateContext(controllerId = playerId)
         var maxValue = 0
-        for (entityId in state.getBattlefield(playerId)) {
+        for (entityId in state.controlledBattlefield(playerId)) {
+            if (!predicateEvaluator.matches(state, projected, entityId, filter, context)) continue
             val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
             val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            val matches = filter.cardPredicates.all { predicate ->
-                matchesBattlefieldPredicate(entityId, cardDef, predicate, projectedState)
-            }
-            if (!matches) continue
-            val value = numericProperty(projectedState, entityId, card, cardDef, property)
+            val value = numericProperty(projected, entityId, card, cardDef, property)
             if (value > maxValue) maxValue = value
         }
         return maxValue
@@ -973,13 +971,10 @@ class CostCalculator(
      * Uses projected state for type/subtype matching to account for continuous effects.
      */
     private fun controlsMatchingPermanent(state: GameState, playerId: EntityId, filter: GameObjectFilter): Boolean {
-        val projectedState = state.projectedState
-        return state.getBattlefield(playerId).any { entityId ->
-            val card = state.getEntity(entityId)?.get<CardComponent>() ?: return@any false
-            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: return@any false
-            filter.cardPredicates.all { predicate ->
-                matchesBattlefieldPredicate(entityId, cardDef, predicate, projectedState)
-            }
+        val projected = state.projectedState
+        val context = PredicateContext(controllerId = playerId)
+        return state.controlledBattlefield(playerId).any { entityId ->
+            predicateEvaluator.matches(state, projected, entityId, filter, context)
         }
     }
 
@@ -1035,27 +1030,6 @@ class CostCalculator(
     }
 
     /**
-     * Match a battlefield permanent against a card predicate.
-     * Uses projected state when available for type/subtype checks.
-     */
-    private fun matchesBattlefieldPredicate(
-        entityId: EntityId,
-        cardDef: CardDefinition,
-        predicate: CardPredicate,
-        projectedState: com.wingedsheep.engine.mechanics.layers.ProjectedState?
-    ): Boolean {
-        return when (predicate) {
-            is CardPredicate.IsCreature -> projectedState?.isCreature(entityId) ?: cardDef.typeLine.isCreature
-            is CardPredicate.IsArtifact -> projectedState?.hasType(entityId, "ARTIFACT") ?: cardDef.typeLine.isArtifact
-            is CardPredicate.IsEnchantment -> projectedState?.hasType(entityId, "ENCHANTMENT") ?: cardDef.typeLine.isEnchantment
-            is CardPredicate.IsLand -> projectedState?.hasType(entityId, "LAND") ?: cardDef.typeLine.isLand
-            is CardPredicate.IsPermanent -> cardDef.typeLine.isPermanent
-            is CardPredicate.HasSubtype -> projectedState?.hasSubtype(entityId, predicate.subtype.value) ?: (predicate.subtype in cardDef.typeLine.subtypes)
-            else -> false
-        }
-    }
-
-    /**
      * Count permanents matching a filter that have a specific counter type.
      * Uses projected state for type/subtype checks.
      */
@@ -1065,18 +1039,14 @@ class CostCalculator(
         filter: GameObjectFilter,
         counterType: String
     ): Int {
-        val projectedState = state.projectedState
+        val projected = state.projectedState
+        val context = PredicateContext(controllerId = playerId)
         val ct = CounterType.entries.find { it.name.equals(counterType, ignoreCase = true) }
             ?: return 0
-        return state.getBattlefield(playerId).count { entityId ->
-            val container = state.getEntity(entityId) ?: return@count false
-            val card = container.get<CardComponent>() ?: return@count false
-            val counters = container.get<CountersComponent>()
+        return state.controlledBattlefield(playerId).count { entityId ->
+            val counters = state.getEntity(entityId)?.get<CountersComponent>()
             if ((counters?.getCount(ct) ?: 0) <= 0) return@count false
-            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: return@count false
-            filter.cardPredicates.all { predicate ->
-                matchesBattlefieldPredicate(entityId, cardDef, predicate, projectedState)
-            }
+            predicateEvaluator.matches(state, projected, entityId, filter, context)
         }
     }
 
@@ -1107,15 +1077,13 @@ class CostCalculator(
         playerId: EntityId,
         filter: GameObjectFilter
     ): Int {
-        val projectedState = state.projectedState
+        val projected = state.projectedState
+        val context = PredicateContext(controllerId = playerId)
         val names = mutableSetOf<String>()
-        for (entityId in state.getBattlefield(playerId)) {
+        for (entityId in state.controlledBattlefield(playerId)) {
+            if (!predicateEvaluator.matches(state, projected, entityId, filter, context)) continue
             val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
-            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            val matches = filter.cardPredicates.all { predicate ->
-                matchesBattlefieldPredicate(entityId, cardDef, predicate, projectedState)
-            }
-            if (matches) names.add(card.name)
+            names.add(card.name)
         }
         return names.size
     }

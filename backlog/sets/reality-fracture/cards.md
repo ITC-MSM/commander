@@ -2,11 +2,10 @@
 
 **Set Size:** 285 cards
 **Release Date:** October 2, 2026
-**Implemented:** 68 / 285
-
+**Implemented:** 100 / 285
 | Section    | Total | Done |
 |------------|-------|------|
-| Extras     | 285   | 68   |
+| Extras     | 285   | 78   |
 
 > Verify status anytime with `scripts/card-status --set FRA` (and `--list`). That command's count is authoritative — keep this file's `Implemented:` line in sync (`just fix-backlog`) as boxes are checked. The set's mechanics are catalogued in [`mechanics.md`](mechanics.md).
 
@@ -24,13 +23,13 @@
 - [ ] Ajani's Anguish
 - [x] Apex Witchstalker
 - [ ] Arcane Amphisbaena
-- [ ] Archive Arbiter
+- [x] Archive Arbiter
 - [x] Arni, Humble Scribe
 - [ ] Arni, Renowned Champion
 - [x] Artifist Acumen
 - [ ] Avatar of Burgeoning Echoes
 - [ ] Awaken the Inferno
-- [ ] Bestial Incursion
+- [x] Bestial Incursion
 - [x] Blazing Crescendo
 - [x] Blessed Ghoul
 - [ ] Bloodline Recollector
@@ -44,7 +43,7 @@
 - [x] Chandra's Emberling
 - [ ] Chandra, Chill of Compliance
 - [ ] Chandra, Torch of Defiance
-- [ ] Charge the Sanctum
+- [x] Charge the Sanctum
 - [ ] Clash of Elements
 - [ ] Codie, Ravenous Codex
 - [ ] Command the Stage
@@ -64,10 +63,10 @@
 - [x] Deserted Beach
 - [ ] Desperate Futurescribe
 - [ ] Diviner of Victory
-- [ ] Divining Duelist
+- [x] Divining Duelist
 - [ ] Draconic Visitor
 - [x] Eardrum Rattler
-- [ ] Edgar, Ancient Bloodlord
+- [x] Edgar, Ancient Bloodlord
 - [ ] Edgar, Moonlit Sovereign
 - [ ] Emergency Phytomedic
 - [ ] Emrakul, the Exigent Doom
@@ -112,7 +111,7 @@
 - [ ] Hapatra, the Desert Fang
 - [ ] Hapatra, the Desert Frost
 - [x] Haunted Ridge
-- [ ] Heartstring Puller
+- [x] Heartstring Puller
 - [ ] Heartwood Crafter
 - [ ] Hexhaven Battalion
 - [ ] Hexhaven Dueling Arena
@@ -129,28 +128,28 @@
 - [ ] Jace's Machinations
 - [ ] Jace, Reality Sculptor
 - [ ] Jiang Yanggu, Alone
-- [ ] Jiang Yanggu, Never Alone
+- [x] Jiang Yanggu, Never Alone
 - [ ] Karn, Argent Defender
 - [ ] Karn, Gilded Guardian
 - [ ] Keeper of the Quiet Hour
 - [ ] Kindred Judgment
-- [ ] Kiora of Fire and Ashes
+- [x] Kiora of Fire and Ashes
 - [ ] Kiora of Salt and Sand
 - [x] Konstrari Annex
-- [ ] Konstrari Charm
+- [x] Konstrari Charm
 - [ ] Konstrari Improviser
-- [ ] Koth of the Homestead
-- [ ] Koth, the Geomancer
+- [x] Koth of the Homestead
+- [x] Koth, the Geomancer
 - [ ] Kwia Vigorbloom
 - [x] Last Gasp
 - [ ] Lich's Relic
-- [ ] Liliana the Faultless
+- [x] Liliana the Faultless
 - [ ] Liliana the Repentant
 - [x] Living Library
 - [ ] Loot, the Anomaly
 - [ ] Loot, the Nexus
 - [x] Loyal Tutor
-- [ ] Lyra, Archangel of Dawn
+- [x] Lyra, Archangel of Dawn
 - [ ] Lyra, Tolarian Archangel
 - [ ] Mabel, Bitter Recluse
 - [ ] Mabel, Valley Hero
@@ -158,7 +157,7 @@
 - [x] Marwyn, the Preserver
 - [ ] Massacre Girl, Most Wanted
 - [ ] Master of Barbs
-- [ ] Medic's Kitesail
+- [x] Medic's Kitesail
 - [x] Memory Trap
 - [x] Meticulous Commons
 - [ ] Mind Meanderer
@@ -174,7 +173,7 @@
 - [ ] Paradox Shaper
 - [x] Perfected Theory
 - [ ] Pia, Aether Ascetic
-- [ ] Pia, Determined Rebuilder
+- [x] Pia, Determined Rebuilder
 - [x] Plains
 - [ ] Plan for All Outcomes
 - [ ] Pompous Battlemage
@@ -184,7 +183,7 @@
 - [ ] Proctor of Potential
 - [ ] Proft, Consulting Detective
 - [ ] Proft, Sinister Mastermind
-- [ ] Prophesied End
+- [x] Prophesied End
 - [ ] Protege's Awakening
 - [ ] Prudent Fateseer
 - [ ] Puppet Crafting
@@ -194,7 +193,7 @@
 - [ ] Recursive Recruitment
 - [x] Refute Destiny
 - [ ] Repurposed Enforcer
-- [ ] Rescue Girl, First Responder
+- [x] Rescue Girl, First Responder
 - [x] Restore with Empathy
 - [x] Return to the Light Realms
 - [ ] Rewrite Regrets
@@ -205,7 +204,7 @@
 - [ ] Ruric Thar, Biomagus
 - [ ] Ruric Thar, Magecrusher
 - [ ] Saheeli, Consul of Oversight
-- [ ] Saheeli, Jewel of Avishkar
+- [x] Saheeli, Jewel of Avishkar
 - [x] Samut, Hazoret's Champion
 - [ ] Samut, Tyrant of Naktamun
 - [ ] Sanctum Lurker
@@ -215,9 +214,9 @@
 - [x] Shatterwing Pegasus
 - [x] Shipwreck Marsh
 - [ ] Silence the Echo
-- [ ] Simulacrum Shaper
+- [x] Simulacrum Shaper
 - [x] Skilled Battlecarver
-- [ ] Solarium Sentry
+- [x] Solarium Sentry
 - [ ] Solitary Cell
 - [ ] Solve for Disappointment
 - [ ] Something Worth Saving
@@ -225,10 +224,10 @@
 - [ ] Sphinx's Approach
 - [x] Stingcaster Mage
 - [x] Stingerquill Annex
-- [ ] Stingerquill Charm
+- [x] Stingerquill Charm
 - [ ] Stingerquill Voxmancer
 - [ ] Stinging Vitriol
-- [ ] Sureshot Sower
+- [x] Sureshot Sower
 - [x] Surgical Precision
 - [ ] Surveillance Phantasm
 - [x] Swamp
@@ -244,23 +243,23 @@
 - [ ] Teyo, Diamondblade Mage
 - [ ] Teyo, Lightshield Expert
 - [ ] Thalia, the Survivor
-- [ ] The Echoverse Fulcrum
+- [x] The Echoverse Fulcrum
 - [ ] The Theorist, Jace Beleren
 - [x] Theoretical Necromancer
 - [ ] Theorist's Proxy
 - [ ] Theorist's Sanctum
 - [x] Theorix Annex
-- [ ] Theorix Charm
+- [x] Theorix Charm
 - [ ] Theorix Metamage
-- [ ] Tinybones, Pocket Nuisance
-- [ ] Titanbones, Towering Heart
+- [x] Tinybones, Pocket Nuisance
+- [x] Titanbones, Towering Heart
 - [ ] Tomik, Izzet Sparkmage
 - [ ] Tomik, Orzhov Lawmage
 - [x] Transformative Commons
 - [ ] Traxos, Academy Guardian
 - [ ] Traxos, Scourge Eternal
 - [ ] Twinned Vision
-- [ ] Twisted Fates
+- [x] Twisted Fates
 - [ ] Uldaros Theorix
 - [x] Undulating Witness
 - [x] Unflinching Hortimancer
@@ -268,10 +267,10 @@
 - [ ] Variable Chaser
 - [ ] Verdant Kraken
 - [x] Vigorbloom Annex
-- [ ] Vigorbloom Charm
+- [x] Vigorbloom Charm
 - [ ] Vigorbloom Vanguard
 - [ ] Vindictive Triumph
-- [ ] Vinelasher Adept
+- [x] Vinelasher Adept
 - [ ] Violent Echoes
 - [ ] Void Extrapolator
 - [ ] Vraska's Final Mercy
@@ -292,10 +291,10 @@
 - [x] Winter, Team Player
 - [ ] Winter, Tormented Loner
 - [ ] Woodwork Prodigy
-- [ ] Wrath of the Bloodmane
-- [ ] Wrecking Gecko
+- [x] Wrath of the Bloodmane
+- [x] Wrecking Gecko
 - [x] Yargle, Glutton of Urborg
-- [ ] Yargle, Goliath of Otaria
+- [x] Yargle, Goliath of Otaria
 - [ ] Yoshimaru, Beloved Companion
 - [ ] Yoshimaru, Scrappy Stray
 - [x] Your Fate Ends Here
