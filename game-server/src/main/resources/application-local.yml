@@ -1,5 +1,5 @@
 # Local development overrides — activated via spring.profiles.active=local
-# Defaults to Ollama for AI. Start with: just ollama-up && just ollama-pull qwen3.6-plus
+# AI defaults to the built-in engine. Set GAME_AI_MODE=jev for the OpenRouter Jev opponent.
 
 game:
   debug-mode: true
@@ -9,12 +9,17 @@ game:
       EOE: true
       ECL: true
   ai:
-    mode: engine
+    mode: ${GAME_AI_MODE:engine}
     base-url: ${GAME_AI_BASE_URL:http://localhost:11434/v1}
-    api-key: ${GAME_AI_API_KEY:ollama}
+    api-key: ${GAME_AI_API_KEY:${OPENROUTER_API_KEY:ollama}}
     model: ${GAME_AI_MODEL:qwen/qwen3.6-plus:free}
     timeout-ms: ${GAME_AI_TIMEOUT_MS:120000}
     # Always build AI sealed decks with the deterministic heuristic builder (skips the LLM).
     heuristic-deckbuilding: ${GAME_AI_HEURISTIC_DECKBUILDING:true}
     # Browse what the AI considered, and export a position + its ratings, while playing against it.
     insight-enabled: ${GAME_AI_INSIGHT_ENABLED:true}
+    # Jev uses the shared OpenRouter key with its own Decisions API endpoint.
+    jev:
+      endpoint: ${GAME_AI_JEV_ENDPOINT:https://openrouter.ai/api/alpha/decisions}
+      model: ${GAME_AI_JEV_MODEL:typesafe/jev-1.13}
+      timeout-ms: ${GAME_AI_JEV_TIMEOUT_MS:30000}

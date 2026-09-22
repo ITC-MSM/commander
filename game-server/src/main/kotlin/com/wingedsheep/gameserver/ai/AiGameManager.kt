@@ -1,6 +1,7 @@
 package com.wingedsheep.gameserver.ai
 
 import com.wingedsheep.ai.AiPlayerController
+import com.wingedsheep.ai.jev.JevAiPlayerController
 import com.wingedsheep.ai.engine.EngineAiPlayerController
 import com.wingedsheep.ai.llm.LlmAiPlayerController
 import com.wingedsheep.ai.llm.LlmClient
@@ -258,7 +259,7 @@ class AiGameManager(
         onMulliganKeep = onMulliganKeep,
         onMulliganTake = onMulliganTake,
         onBottomCards = onBottomCards,
-        allowActionsOnlyFallback = controller is EngineAiPlayerController || controller is LlmAiPlayerController,
+        allowActionsOnlyFallback = controller is EngineAiPlayerController || controller is LlmAiPlayerController || controller is JevAiPlayerController,
         actionGate = gameSession?.let { aiInsightService.gateFor(it.sessionId) },
     )
 
@@ -343,7 +344,7 @@ class AiGameManager(
         require(isEnabled) { "AI is not enabled. Set game.ai.enabled=true." }
 
         val aiPlayerId = EntityId("ai-${UUID.randomUUID().toString().take(8)}")
-        val aiName = randomAiName()
+        val aiName = randomAiName() + if (gameProperties.ai.mode.trim().equals("jev", ignoreCase = true)) " (Jev)" else ""
 
         val controller = createController(aiPlayerId, gameSession)
 
@@ -457,7 +458,8 @@ class AiGameManager(
 
         val effectiveModel = modelOverride ?: if (gameProperties.ai.isLlmMode) gameProperties.ai.model else null
         val modelSuffix = effectiveModel?.substringAfterLast('/')?.let { " ($it)" } ?: ""
-        val aiName = randomAiName() + modelSuffix
+        val suffix = if (gameProperties.ai.mode.trim().equals("jev", ignoreCase = true) && modelOverride == null) " (Jev)" else modelSuffix
+        val aiName = randomAiName() + suffix
         val identity = PlayerIdentity(
             token = "ai-token-${UUID.randomUUID().toString().take(8)}",
             playerId = aiPlayerId,

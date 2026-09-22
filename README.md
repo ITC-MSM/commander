@@ -102,8 +102,8 @@ Copy `.env.example` to `.env` to configure:
 | `REDIS_HOST` | `localhost` | Redis host |
 | `REDIS_PORT` | `6379` | Redis port |
 | `GAME_AI_ENABLED` | `true` | Enable AI opponent |
-| `GAME_AI_MODE` | `engine` | AI mode: `engine` (built-in), `llm` (requires API key), or the mode of a registered `AiControllerProvider`. An unrecognised value fails startup. |
-| `OPENROUTER_API_KEY` | | OpenRouter API key (only needed for `llm` mode) |
+| `GAME_AI_MODE` | `engine` | AI mode: `engine` (built-in), `llm` (requires API key), `jev` (local profile), or the mode of a registered `AiControllerProvider`. An unrecognised value fails startup. |
+| `OPENROUTER_API_KEY` | | Shared OpenRouter API key for `llm` and `jev` modes |
 | `GAME_AI_MODEL` | `google/gemini-3.1-flash-lite-preview` | LLM model (only for `llm` mode) |
 
 ## Tech Stack
@@ -141,7 +141,7 @@ rematch without rebuilding the lobby.
 
 ### AI Opponent
 
-Play against an AI opponent. Two modes are available:
+Play against an AI opponent using the built-in engine, a chat model, or Jev (local development).
 
 #### Engine AI (default)
 
@@ -175,12 +175,50 @@ OPENROUTER_API_KEY=sk-or-v1-your-key-here
 
 The LLM AI receives the same masked game state as a human player and responds through the standard game protocol. When the LLM fails to respond or returns an unparseable answer, it falls back to heuristic play.
 
+#### Jev (local development)
+
+Jev makes structured choices through [OpenRouter's Decisions API](https://openrouter.ai/docs/guides/community/jev-tutorial).
+Add these to your `.env`, then run `just dev` (which activates the `local` Spring profile):
+
+```bash
+GAME_AI_ENABLED=true
+GAME_AI_MODE=jev
+OPENROUTER_API_KEY=your-openrouter-key
+```
+
+Choose **Just me**, pick a deck source, and start playing (or use **Add AI** in a lobby); the opponent's name ends in **(Jev)**.
+No Ollama or TypeSafe account is needed. The default model is `typesafe/jev-1.13`.
+Jev shares `OPENROUTER_API_KEY` with OpenRouter chat models and has its own endpoint, so local Ollama defaults cannot redirect its requests.
+Do not put Jev in `GAME_AI_MODEL`: that setting uses the chat-completions protocol.
+
+Jev chooses plays, targets, X, modes, attackers, blockers, damage assignments, card selections,
+ordering, piles, additional/alternative payments, mulligans, bottom cards, and draft picks.
+Ordinary mana payment can use the engine solver when Jev selects auto-pay. Sealed deck construction
+uses the existing heuristic builder. All gameplay choices use typed options from server metadata;
+the engine previews the completed action and supplies validation feedback for one correction.
+The engine AI is used only after a failed request, exhausted budget, or invalid corrected move;
+server logs explicitly report fallback. Jev receives the player's masked view, permitted decision
+metadata and known decklist. The provider rebuilds a masked view even when local debug mode reveals
+both hands on screen; debug event logs are excluded from requests.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GAME_AI_JEV_MODEL` | `typesafe/jev-1.13` | Decisions model |
+| `GAME_AI_JEV_ENDPOINT` | `https://openrouter.ai/api/alpha/decisions` | Decisions endpoint (also useful for a local mock) |
+| `GAME_AI_JEV_TIMEOUT_MS` | `30000` | Total budget per decision, including follow-up choices and correction; max 120000 |
+
+The adapter caps each decision at 64 API calls and each request at 28 KB to stay conservatively
+within the model context window. Choices with more than 255 options use hierarchical selection;
+they are not silently truncated. Very large positions can hit the budget and fall back. This is an
+experimental opponent, not a claim of competitive playing strength. Calls are billed by OpenRouter.
+The `jev` provider is registered only under the `local` profile; other profiles reject that mode.
+
 #### Configuration reference
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `GAME_AI_ENABLED` | `true` | Enable the AI opponent feature |
-| `GAME_AI_MODE` | `llm` | `engine` — built-in AI (no API key needed); `llm` — LLM-powered AI; or the mode of an `AiControllerProvider` bean supplied by another build. An unrecognised value fails startup. |
+| `GAME_AI_MODE` | `engine` | `engine` — built-in AI (no API key needed); `llm` — LLM-powered AI; `jev` — local Jev opponent; or the mode of an `AiControllerProvider` bean supplied by another build. An unrecognised value fails startup. |
 | `GAME_AI_BASE_URL` | `https://openrouter.ai/api/v1` | LLM API endpoint (LLM mode only) |
 | `GAME_AI_API_KEY` | | API key for LLM provider (LLM mode only) |
 | `GAME_AI_MODEL` | `google/gemini-3.1-flash-lite-preview` | LLM model name (LLM mode only) |

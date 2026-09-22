@@ -53,7 +53,7 @@ import type { DeckPickerTab } from '../ui/DeckPicker'
 
 /** Who fills the seats. */
 export type Roster =
-  /** You and the built-in AI. */
+  /** You and an AI opponent. */
   | 'SOLO'
   /** One human opponent, reached with an invite code. */
   | 'FRIEND'
@@ -108,7 +108,7 @@ export function rosterLabel(roster: Roster): string {
 
 export function rosterCaption(roster: Roster): string {
   switch (roster) {
-    case 'SOLO': return 'You and the built-in AI. Nobody else has to show up.'
+    case 'SOLO': return 'You and an AI opponent. Nobody else has to show up.'
     case 'FRIEND': return 'One opponent. You get an invite code to share.'
     case 'GROUP': return 'Three to eight players, at one table or in a bracket.'
   }

@@ -414,7 +414,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     section: 'modes',
     title: 'Just me',
     summary:
-      'You and the built-in AI. Nobody else has to show up, and the game starts as soon as you have picked a deck.',
+      'You and an AI opponent. Nobody else has to show up, and the game starts as soon as you have picked a deck.',
     body: [
       { kind: 'p', text: 'At 1v1 the AI can play any of the card sources — your own deck, a rolled pool, or Momir Basic.' },
       { kind: 'p', text: 'Every table is open too: the lobby starts with a useful AI roster — four players for a shared table, six for a limited round robin, and four for a brought-deck round robin. You can add or remove AI seats in the lobby without making the maximum capacity the default.' },
