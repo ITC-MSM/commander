@@ -2,11 +2,11 @@
 
 **Set Size:** 285 cards
 **Release Date:** October 2, 2026
-**Implemented:** 30 / 285
+**Implemented:** 38 / 285
 
 | Section    | Total | Done |
 |------------|-------|------|
-| Extras     | 285   | 30   |
+| Extras     | 285   | 38   |
 
 > Verify status anytime with `scripts/card-status --set FRA` (and `--list`). That command's count is authoritative — keep this file's `Implemented:` line in sync (`just fix-backlog`) as boxes are checked. The set's mechanics are catalogued in [`mechanics.md`](mechanics.md).
 
@@ -32,7 +32,7 @@
 - [ ] Awaken the Inferno
 - [ ] Bestial Incursion
 - [x] Blazing Crescendo
-- [ ] Blessed Ghoul
+- [x] Blessed Ghoul
 - [ ] Bloodline Recollector
 - [ ] Bloombrute
 - [ ] Blossom-Blessed Angel
@@ -74,7 +74,7 @@
 - [ ] Enlightened Confidant
 - [ ] Entrust the Spark
 - [ ] Essence Burn
-- [ ] Extended Absence
+- [x] Extended Absence
 - [ ] Extrapolate the Impossible
 - [ ] Eye of Jace
 - [ ] Face Yourself
@@ -96,7 +96,7 @@
 - [ ] Gardenize
 - [ ] Garruk, Curse Breaker
 - [ ] Garruk, Veiled Butcher
-- [ ] Geist of Saint Thalia
+- [x] Geist of Saint Thalia
 - [ ] Generous Revival
 - [ ] Germinate Recruits
 - [ ] Ghalta the Immovable
@@ -104,7 +104,7 @@
 - [ ] Gideon the Oathless
 - [ ] Gideon's Memorial
 - [ ] Graft Surgeon
-- [ ] Greenhouse Propagator
+- [x] Greenhouse Propagator
 - [ ] Grim Repriser
 - [ ] Guiding Hydra
 - [ ] Hall of Echoes
@@ -149,7 +149,7 @@
 - [ ] Living Library
 - [ ] Loot, the Anomaly
 - [ ] Loot, the Nexus
-- [ ] Loyal Tutor
+- [x] Loyal Tutor
 - [ ] Lyra, Archangel of Dawn
 - [ ] Lyra, Tolarian Archangel
 - [ ] Mabel, Bitter Recluse
@@ -178,7 +178,7 @@
 - [x] Plains
 - [ ] Plan for All Outcomes
 - [ ] Pompous Battlemage
-- [ ] Precise Redaction
+- [x] Precise Redaction
 - [ ] Predictive Preparations
 - [ ] Primal Witchstalker
 - [ ] Proctor of Potential
@@ -195,7 +195,7 @@
 - [ ] Refute Destiny
 - [ ] Repurposed Enforcer
 - [ ] Rescue Girl, First Responder
-- [ ] Restore with Empathy
+- [x] Restore with Empathy
 - [ ] Return to the Light Realms
 - [ ] Rewrite Regrets
 - [ ] Rise of the Deathbringer
@@ -238,7 +238,7 @@
 - [ ] Tenured Tethermage
 - [ ] Terminal Criticism
 - [ ] Tether Technician
-- [ ] Tethermage's Advantage
+- [x] Tethermage's Advantage
 - [x] Tetsuko Umezawa, Fugitive
 - [ ] Tetsuko Umezawa, Pursuer
 - [ ] Teyo, Diamondblade Mage
