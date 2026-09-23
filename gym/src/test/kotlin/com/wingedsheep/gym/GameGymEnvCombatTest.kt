@@ -4,8 +4,8 @@ import com.wingedsheep.engine.core.DeclareBlockers
 import com.wingedsheep.engine.core.GameConfig
 import com.wingedsheep.engine.core.PlayerConfig
 import com.wingedsheep.engine.registry.CardRegistry
-import com.wingedsheep.gym.contract.ActionParameterizer
-import com.wingedsheep.gym.contract.ActionParams
+import com.wingedsheep.engine.core.ActionParameterizer
+import com.wingedsheep.engine.core.ActionParams
 import com.wingedsheep.gym.contract.LegalActionView
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.gym.contract.TrainingObservation

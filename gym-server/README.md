@@ -24,7 +24,9 @@ the transport in its own module means:
 
 ## Endpoints
 
-Default port **8081** so it coexists with the game server on 8080.
+Default port **8081** so it coexists with the game server on 8080. The server binds to
+**127.0.0.1** by default because it is unauthenticated; set `GYM_SERVER_BIND_ADDRESS=0.0.0.0`
+(e.g. in a container) to listen on every interface.
 
 | Method & path | Wraps | Body / query |
 |---|---|---|
@@ -44,6 +46,8 @@ Default port **8081** so it coexists with the game server on 8080.
 | `DELETE /snapshots/batch` | `disposeSnapshot` for each handle | `[SnapshotHandle, ...]` |
 | `GET /schema-hash` | constant | returns `{ schemaHash }` for drift-check |
 | `GET /health` | constant | returns `{ status: "ok" }` |
+| `GET /status` | constant | returns `{ status, service, schemaHash, buildRevision }` — see below |
+| `GET /actuator/metrics/http.server.requests` | Spring Actuator | request count / timing — see below |
 
 ### Multi-seat observations and lifecycle
 
@@ -131,20 +135,39 @@ become invalid. This matches the `:gym` contract — see its README
 for the rationale — and the test suite exercises the failure mode so a
 trainer that holds onto stale IDs fails loudly (400).
 
-### No authentication, no TTLs, no metrics
+### Build identity and request metrics
+
+`GET /status` adds the running build to what `/schema-hash` reports, so a long-running or remote
+trainer can tell "the service is up" from "this is the engine build I meant to exercise". The
+revision comes from `ARGENTUM_BUILD_REVISION` (or `argentum.build-revision`) and reads `unknown`
+when the deployment doesn't supply one — the server never guesses.
+
+Spring Actuator exposes the standard Micrometer HTTP metrics (`health` and `metrics` endpoints
+only), on the same listener as the gym API:
+
+```bash
+curl localhost:8081/actuator/metrics/http.server.requests
+curl 'localhost:8081/actuator/metrics/http.server.requests?tag=method:POST&tag=uri:/envs/{id}/step'
+```
+
+`COUNT`, `TOTAL_TIME` and `MAX`, split by the method/uri/status/outcome tags, separate server-side
+lifecycle cost and failures from trainer/model time. The counters are process-local and reset on
+restart.
+
+### No authentication, no TTLs
 
 Deliberately out of scope for the current scaffold, flagged in
 `GymServerApplication.kt`:
 
-- **Auth.** Bind to localhost until you add a bearer-token filter or
-  network ACL.
+- **Auth.** Keep the default loopback bind until you add a bearer-token
+  filter or network ACL.
 - **Env lifetime / TTLs.** A crashed trainer leaks envs forever — the
   natural next step is a reaper thread + heartbeat header.
 - **Byte-based snapshots.** `SnapshotHandle.Slot` is in-process only;
   the sealed interface has room for a `Bytes` variant once cross-process
   MCTS workers become a thing.
-- **Metrics / structured logs.** Add Prometheus or similar at the Spring
-  level when you need them.
+- **Structured logs / Prometheus.** Request metrics are available through
+  Actuator (above); a Prometheus registry is a dependency away when needed.
 
 ### Set catalogue is configurable
 

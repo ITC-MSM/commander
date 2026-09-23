@@ -43,16 +43,21 @@ const offered: LegalActionInfo = {
   autoTapPreview: [MANA],
 }
 
-function receive(epoch: string, delta = false, pendingDecision?: PendingDecision): void {
+function receive(
+  epoch: string,
+  delta = false,
+  pendingDecision?: PendingDecision,
+  legalActions: readonly LegalActionInfo[] = [offered],
+): void {
   if (delta) {
     const message: StateDeltaUpdateMessage = {
-      type: 'stateDeltaUpdate', delta: { players: [] }, events: [], legalActions: [offered], interactionEpoch: epoch,
+      type: 'stateDeltaUpdate', delta: { players: [] }, events: [], legalActions, interactionEpoch: epoch,
       ...(pendingDecision ? { pendingDecision } : {}),
     }
     handlers.onStateDeltaUpdate(message)
   } else {
     const message: StateUpdateMessage = {
-      type: 'stateUpdate', state: position, events: [], legalActions: [offered], interactionEpoch: epoch,
+      type: 'stateUpdate', state: position, events: [], legalActions, interactionEpoch: epoch,
       ...(pendingDecision ? { pendingDecision } : {}),
     }
     handlers.onStateUpdate(message)
@@ -337,4 +342,22 @@ describe('browser live action origins', () => {
     }
   })
 
+
+  it('drops a half-built action once a same-timeline update stops offering it', () => {
+    useGameStore.getState().startPipeline(useGameStore.getState().legalActions[0]!)
+    useGameStore.getState().addTarget(TARGET)
+    const targeting = useGameStore.getState().targetingState
+    expect(targeting?.selectedTargets).toEqual([TARGET])
+
+    // Still offered: an unrelated delta leaves the picks alone.
+    receive('original', true)
+    expect(useGameStore.getState().targetingState).toBe(targeting)
+
+    // The game moved on (priority passed, the stack resolved) without undo: the epoch is the
+    // same, but the spell is no longer castable, so its banner must not outlive it.
+    receive('original', true, undefined, [])
+    expect(useGameStore.getState().pipelineState).toBeNull()
+    expect(useGameStore.getState().targetingState).toBeNull()
+    expect(send).not.toHaveBeenCalled()
+  })
 })

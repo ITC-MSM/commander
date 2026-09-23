@@ -1,8 +1,10 @@
 package com.wingedsheep.ai.engine
 
 import com.wingedsheep.engine.state.components.battlefield.HasBecomeTappedComponent
+import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.battlefield.TargetedByControllerThisTurnComponent
 import com.wingedsheep.engine.state.components.player.EquipActivationsThisTurnComponent
+import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.DayNight
@@ -124,6 +126,31 @@ class StateProgressTest : FunSpec({
         withClue("spending the turn's first equip is a change") { once shouldNotBe none }
         withClue("a second equip activation is not") { StateProgress.digest(withEquips(2)) shouldBe once }
         withClue("nor a third") { StateProgress.digest(withEquips(3)) shouldBe once }
+    }
+
+    test("mana spent is not a change, but a tapped creature is") {
+        // A paid no-op always leaves its payment behind: a tapped land, maybe mana left floating.
+        // Reading those let the AI re-equip Well-Worn Spatula to the creature already wearing it
+        // until its lands ran out, every repetition hashing as a fresh position.
+        val driver = GameTestDriver().apply {
+            registerCards(TestCards.all)
+            initMirrorMatch(deck = Deck.of("Forest" to 40), skipMulligans = true, startingPlayer = 0)
+        }
+        val you = driver.state.turnOrder[0]
+        val forest = driver.putLandOnBattlefield(you, "Forest")
+        val bears = driver.putCreatureOnBattlefield(you, "Grizzly Bears")
+        val base = driver.state
+        val here = StateProgress.digest(base)
+
+        withClue("a tapped land") {
+            StateProgress.digest(base.updateEntity(forest) { it.with(TappedComponent) }) shouldBe here
+        }
+        withClue("mana floating in the pool") {
+            StateProgress.digest(base.updateEntity(you) { it.with(ManaPoolComponent(green = 1)) }) shouldBe here
+        }
+        withClue("a tapped creature can no longer block, so it is still a game fact") {
+            StateProgress.digest(base.updateEntity(bears) { it.with(TappedComponent) }) shouldNotBe here
+        }
     }
 
     test("turn and step are part of the position, so a digest can only recur inside one window") {

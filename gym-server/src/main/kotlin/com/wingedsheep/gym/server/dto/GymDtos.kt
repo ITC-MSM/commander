@@ -1,6 +1,6 @@
 package com.wingedsheep.gym.server.dto
 
-import com.wingedsheep.gym.contract.ActionParams
+import com.wingedsheep.engine.core.ActionParams
 import com.wingedsheep.gym.contract.Observation
 import com.wingedsheep.gym.service.EnvId
 import com.wingedsheep.gym.service.SnapshotHandle
@@ -60,6 +60,14 @@ data class SchemaHashResponse(val schemaHash: String)
 
 @Serializable
 data class HealthResponse(val status: String = "ok")
+
+@Serializable
+data class ServiceStatusResponse(
+    val status: String = "ok",
+    val service: String,
+    val schemaHash: String,
+    val buildRevision: String
+)
 
 /** Shared error envelope for `@ExceptionHandler` responses. */
 @Serializable

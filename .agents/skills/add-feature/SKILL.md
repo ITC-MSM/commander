@@ -69,7 +69,7 @@ filters/amounts, name-the-mechanic), then put it in the right place —
 every kind of vocabulary, plus the five layers a counter type spans.
 
 **Before adding a `Condition` subtype, answer three placement questions** — the hierarchy re-bloats with
-one-offs otherwise (`backlog/sdk-analysis-2026-06-revised.md` §2.3):
+one-offs otherwise:
 
 1. **"Does X match a filter?"** → that's `Conditions.EntityMatches(entity, filter)` or one of its
    `SourceMatches` / `EnchantedPermanentMatches` / `TargetMatchesFilter` / `TriggeringSpellMatches`

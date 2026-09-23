@@ -2,7 +2,7 @@
 
 **Set Size:** 285 cards
 **Release Date:** October 2, 2026
-**Implemented:** 145 / 285
+**Implemented:** 146 / 285
 | Section    | Total | Done |
 |------------|-------|------|
 | Extras     | 285   | 78   |
@@ -32,7 +32,7 @@
 - [x] Bestial Incursion
 - [x] Blazing Crescendo
 - [x] Blessed Ghoul
-- [ ] Bloodline Recollector
+- [x] Bloodline Recollector
 - [x] Bloombrute
 - [ ] Blossom-Blessed Angel
 - [ ] Break Under Pressure

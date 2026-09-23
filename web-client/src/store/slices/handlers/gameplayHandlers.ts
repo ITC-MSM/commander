@@ -9,6 +9,7 @@ import { trackEvent, setInGame } from '@/utils/analytics.ts'
 import { applyStateDelta } from '@/network/deltaApplicator.ts'
 import { getWebSocket, clearLobbyId, requestReauth } from '../shared'
 import { keepAttackerPreview, keepBlockerPreview } from './combatPreview'
+import { CLEARED_PIPELINE_SELECTIONS, isActionStillOffered } from '../ui/pipelineSlice'
 import type { SetState, GetState } from './types'
 import type {
   LogEntry,
@@ -17,6 +18,7 @@ import type {
   RevealAnimation,
   CoinFlipAnimation,
   TargetReselectedAnimation,
+  GameStore,
 } from '../types'
 
 /**
@@ -211,6 +213,24 @@ const CLEARED_ACTION_SELECTIONS = {
   opponentAttackerTargets: null,
   opponentBlockerAssignments: null,
 } as const
+
+/**
+ * A cast or activation the player is still building client-side that the game has moved past.
+ *
+ * The interaction epoch only changes when undo replaces the timeline, so a same-epoch update keeps
+ * a half-built action — which is right while the server is still offering it (a delta that doesn't
+ * touch it). But the game can move on underneath a pipeline: a card clicked from the previous
+ * update's actions just after passing priority, or a response that resolves while the player is
+ * still picking. Once the server stops offering the action, its targeting banner and phase
+ * pickers are answering nothing, and they would otherwise stay on screen until a reload.
+ */
+function isPipelineOutpaced(
+  state: { pipelineState: GameStore['pipelineState']; targetingState: GameStore['targetingState'] },
+  legalActions: readonly LegalActionInfo[],
+): boolean {
+  if (state.pipelineState == null) return state.targetingState != null
+  return !isActionStillOffered(state.pipelineState.actionInfo.action, legalActions)
+}
 
 /**
  * The transient animation queues, emptied together. Every one of these layers sits far above the
@@ -658,7 +678,9 @@ function processStateUpdate(
     )
       ? state.opponentBlockerAssignments
       : null,
-    ...(state.interactionEpoch !== (msg.interactionEpoch ?? null) ? CLEARED_ACTION_SELECTIONS : {}),
+    ...(state.interactionEpoch !== (msg.interactionEpoch ?? null)
+      ? CLEARED_ACTION_SELECTIONS
+      : isPipelineOutpaced(state, msg.legalActions) ? CLEARED_PIPELINE_SELECTIONS : {}),
   }))
 
   // Auto-initialize inline distribute state for DistributeDecision

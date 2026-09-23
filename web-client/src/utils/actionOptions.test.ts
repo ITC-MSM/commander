@@ -188,6 +188,30 @@ describe('buildActionOptions — modal double-faced lands', () => {
   })
 })
 
+describe('buildActionOptions — casting a single face', () => {
+  it('a prepare-spell copy is labelled and priced by the face it casts, not by the creature', () => {
+    // The exiled copy of Bloodline Recollector casts its prepare spell (faceIndex 0). The server
+    // names and prices that face; the card itself still reads as the {1}{B} creature.
+    const options = buildActionOptions(
+      card('{1}{B}', { name: 'Bloodline Recollector' } as Partial<ClientCard>),
+      [action({
+        action: { type: 'CastSpell', faceIndex: 0 },
+        description: 'Cast Ancestral Craving',
+        manaCostString: '{B}',
+      })],
+    )
+    expect(options.map((o) => [o.label, o.manaCost])).toEqual([['Cast Ancestral Craving', '{B}']])
+  })
+
+  it('an ordinary cast still reads "Cast <card name>"', () => {
+    const options = buildActionOptions(
+      card('{1}{B}', { name: 'Leech Collector' } as Partial<ClientCard>),
+      [action({ action: { type: 'CastSpell', faceIndex: null }, description: 'Cast Leech Collector' })],
+    )
+    expect(options.map((o) => o.label)).toEqual(['Cast Leech Collector'])
+  })
+})
+
 describe('playLadderOptions', () => {
   it('lists cycling alongside the cast, even though cycling stays out of the range', () => {
     const options = buildActionOptions(card('{5}{W}'), [
