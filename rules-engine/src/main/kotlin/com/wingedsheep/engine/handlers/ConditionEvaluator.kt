@@ -51,6 +51,21 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.*
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.conditions.APlayerControlsMostOfSubtype
+import com.wingedsheep.sdk.scripting.conditions.AnOpponentLifeAtMost
+import com.wingedsheep.sdk.scripting.conditions.IsDay
+import com.wingedsheep.sdk.scripting.conditions.IsNight
+import com.wingedsheep.sdk.scripting.conditions.PermanentEnteredFaceDownThisTurn
+import com.wingedsheep.sdk.scripting.conditions.PlayerActivatedExhaustAbilitiesThisTurn
+import com.wingedsheep.sdk.scripting.conditions.PlayerAttackedPlayerThisTurn
+import com.wingedsheep.sdk.scripting.conditions.PlayerDrewCardsThisTurn
+import com.wingedsheep.sdk.scripting.conditions.PlayerPlayedLandThisTurn
+import com.wingedsheep.sdk.scripting.conditions.PlayerTurnedPermanentFaceUpThisTurn
+import com.wingedsheep.sdk.scripting.conditions.PutCounterKindOnCreatureThisTurn
+import com.wingedsheep.sdk.scripting.conditions.TriggeringEntityHadCardType
+import com.wingedsheep.sdk.scripting.conditions.TriggeringEntityHadSubtype
+import com.wingedsheep.sdk.scripting.conditions.TriggeringSpellCastWithoutPayingMana
+import com.wingedsheep.sdk.scripting.conditions.TriggeringSpellManaSpentAtLeast
+import com.wingedsheep.sdk.scripting.conditions.YouWonTheClash
 import com.wingedsheep.sdk.scripting.conditions.YouControlMostOfChosenType
 import com.wingedsheep.sdk.scripting.conditions.AllConditions
 import com.wingedsheep.sdk.scripting.conditions.AnyCondition
@@ -261,7 +276,112 @@ class ConditionEvaluator(
                 operator = if (condition.negate) ComparisonOperator.LTE else ComparisonOperator.GTE
             )
 
-            else -> null
+            // Not a count, so there is nothing to show. A new condition that counts toward a
+            // threshold belongs above, reusing the counting code its boolean branch runs.
+            is APlayerControlsMostOfSubtype,
+            is APlayerLifeAtMost,
+            is AllConditions,
+            is AnOpponentLifeAtMost,
+            is AnotherPermanentWithSameNameAsTarget,
+            is AnyCondition,
+            AnyEnteredOrWasCastFromExile,
+            is AnyPlayerDealtCombatDamageThisTurnAtLeast,
+            BlightWasPaid,
+            is CastChoiceIs,
+            is CastChoiceMade,
+            is CastTimeFlagSet,
+            is CollectionContainsMatch,
+            is CollectionSharesCardType,
+            is ColorIsMostCommon,
+            ControlledCreatureDiedThisTurnCondition,
+            is ControllerTurnsTakenAtMost,
+            CreatureDiedThisTurnCondition,
+            is CreatureWithSubtypeDiedThisTurn,
+            is EachPlayerLifeAtMost,
+            is EnchantedCreatureHasSubtype,
+            EnchantedCreatureIsLegendary,
+            is EntityMatches,
+            is ExiledAsCostHadSubtype,
+            IsDay,
+            IsFirstCombatPhaseOfTurn,
+            IsFirstEndStepOfTurn,
+            IsFirstSpellPaidWithTreasureManaCastThisTurn,
+            is IsInPhase,
+            is IsInStep,
+            IsNight,
+            IsNotYourTurn,
+            is IsPlayersTurn,
+            IsYourTurn,
+            is ManaSpentToCastIncludes,
+            MayhemCostWasPaid,
+            NoManaSpentToCast,
+            NoManaSpentToCastEntered,
+            is NotCondition,
+            is NumberMatches,
+            OpponentSpellOnStack,
+            is PermanentEnteredFaceDownThisTurn,
+            is PermanentLeftBattlefieldThisTurn,
+            is PermanentTypeEnteredBattlefieldThisTurn,
+            is PlayerActivatedExhaustAbilitiesThisTurn,
+            is PlayerAttackedPlayerThisTurn,
+            is PlayerCommittedCrimeThisTurn,
+            is PlayerControlsMostPermanents,
+            is PlayerDrewCardsThisTurn,
+            is PlayerHasCitysBlessing,
+            is PlayerHasEnduringStory,
+            is PlayerHasMostLife,
+            is PlayerPlayedLandThisTurn,
+            is PlayerTurnedPermanentFaceUpThisTurn,
+            is PutCounterKindOnCreatureThisTurn,
+            is RingHasTemptedPlayerAtLeast,
+            is SacrificedPermanentHadSubtype,
+            SacrificedPermanentWasLegendary,
+            SacrificedPermanentWasSuspected,
+            SneakCostWasPaid,
+            is SourceAbilityResolvedNTimesThisTurn,
+            SourceCastForImpending,
+            is SourceChosenModeIs,
+            SourceForetoldOnPriorTurn,
+            is SourceInZone,
+            is SourceIsBlockingOrBlockedBySubtype,
+            SourceIsModified,
+            SourceIsRingBearer,
+            SourcePlottedOnPriorTurn,
+            SourceReturnedAsEnchantment,
+            is TargetIsCreatureCard,
+            is TargetIsPlayer,
+            is TargetIsSource,
+            is TargetIsSpellOnStack,
+            is TargetIsTapped,
+            is TargetMarkedDamageExceedsToughness,
+            is TargetSharesMostCommonColor,
+            is ThisAbilityActivatedThisTurnAtLeast,
+            TriggeringEntityEnteredOrWasCastFromGraveyard,
+            is TriggeringEntityHadCardType,
+            TriggeringEntityHadCounters,
+            TriggeringEntityHadMinusOneMinusOneCounter,
+            is TriggeringEntityHadSubtype,
+            TriggeringEntityWasCast,
+            TriggeringEntityWasHistoric,
+            TriggeringEntityWasNotPutByThisSource,
+            is TriggeringPlayerIs,
+            TriggeringSpellCastWithoutPayingMana,
+            TriggeringSpellHasSingleTarget,
+            is TriggeringSpellManaSpentAtLeast,
+            VoidCondition,
+            WasCast,
+            WasCastFromHand,
+            is WasCastFromZone,
+            WasKicked,
+            WaterbendWasPaid,
+            WebSlungCostWasPaid,
+            YouChoseOtherCreatureAsRingBearer,
+            is YouControlMostOfChosenType,
+            YouControlSource,
+            YouDiscardedThisCardThisTurn,
+            YouSacrificedPermanentThisWay,
+            YouWereAttackedThisStep,
+            YouWonTheClash -> null
         }
     }
 
@@ -798,7 +918,8 @@ class ConditionEvaluator(
      *
      * Other entity roles are unsupported: the `CardLinter` rejects them at card load
      * (`UnsupportedEntityMatchesRole` — its supported-role set must extend in lockstep with this
-     * dispatch), and the `else` here is the defense-in-depth backstop, not a contract.
+     * dispatch), and the explicit `false` branch here is the defense-in-depth backstop, not a
+     * contract.
      */
     private fun evaluateEntityMatches(
         state: GameState,
@@ -873,7 +994,24 @@ class ConditionEvaluator(
         }
         is EffectTarget.LinkedExiledCard ->
             evaluateLinkedExiledCardFilterMatch(state, condition.filter, entity.index, ctx)
-        else -> false
+        // Unsupported roles; the CardLinter rejects them at load. Listed rather than folded into
+        // an `else` so that a new EffectTarget has to be placed on one side or the other.
+        EffectTarget.AttachedToTriggeringPermanent,
+        is EffectTarget.BoundVariable,
+        EffectTarget.ChosenCreature,
+        EffectTarget.Controller,
+        EffectTarget.ControllerOfDamageSource,
+        is EffectTarget.ControllerOfPipelineTarget,
+        EffectTarget.ControllerOfTriggeringEntity,
+        EffectTarget.EachDamagedBySourceThisGame,
+        is EffectTarget.FilteredTarget,
+        EffectTarget.GrantingSource,
+        is EffectTarget.GroupRef,
+        is EffectTarget.PipelineTarget,
+        is EffectTarget.PlayerRef,
+        is EffectTarget.SpecificEntity,
+        is EffectTarget.TappedAsCost,
+        EffectTarget.TargetController -> false
     }
 
     /**

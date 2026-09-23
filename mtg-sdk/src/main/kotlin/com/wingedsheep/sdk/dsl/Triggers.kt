@@ -1817,9 +1817,11 @@ object Triggers {
     /**
      * Whenever any player taps a land for mana. (ANY binding.)
      *
-     * Backs the "Whenever a player taps a land for mana" family (Overabundance, Mana Flare,
-     * Heartbeat of Spring). For "an opponent" / "you" variants or a land-type restriction, use
-     * [landTappedForMana].
+     * **Not wired in the engine yet** — no card uses it, and a trigger authored with it never
+     * fires (see `TriggerIndex`). A mana-adding version (Mana Flare, Heartbeat of Spring) is a
+     * triggered mana ability that resolves off the stack (CR 605.1b); author it as
+     * `AdditionalManaOnSourceTap`, as Groundchuck & Dirtbag does. For "an opponent" / "you"
+     * variants or a land-type restriction, see [landTappedForMana].
      */
     val AnyPlayerTapsLandForMana: TriggerSpec = TriggerSpec(
         event = LandTappedForMana(player = Player.Each),
@@ -1827,7 +1829,8 @@ object Triggers {
     )
 
     /**
-     * "Whenever <player> taps a <landFilter> for mana" factory.
+     * "Whenever <player> taps a <landFilter> for mana" factory. Not wired in the engine yet; see
+     * [AnyPlayerTapsLandForMana].
      */
     fun landTappedForMana(
         player: Player = Player.Each,

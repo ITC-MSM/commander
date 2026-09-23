@@ -48,6 +48,22 @@ sealed interface StatePredicate {
     }
 
     // =============================================================================
+    // Prepared (Entity)
+    // =============================================================================
+
+    /**
+     * The permanent is prepared (Secrets of Strixhaven prepare): it has a castable copy of its
+     * prepare spell in exile. Only a permanent with a prepare spell can be prepared, so this is
+     * false for everything else. Negate with [Not] for "if this creature isn't prepared"
+     * (Woodwork Prodigy, Paradox Shaper).
+     */
+    @SerialName("IsPrepared")
+    @Serializable
+    data object IsPrepared : Entity {
+        override val description: String = "prepared"
+    }
+
+    // =============================================================================
     // Zone (Entity)
     // =============================================================================
 

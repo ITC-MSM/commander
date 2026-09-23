@@ -283,8 +283,49 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
         is DynamicAmount.Multiply -> readsPipeline(amount.amount)
         is DynamicAmount.IfPositive -> readsPipeline(amount.amount)
         is DynamicAmount.Power -> readsPipeline(amount.exponent)
+        is DynamicAmount.Divide -> readsPipeline(amount.numerator) || readsPipeline(amount.denominator)
         is DynamicAmount.Conditional -> readsPipeline(amount.ifTrue) || readsPipeline(amount.ifFalse)
-        else -> false
+        is DynamicAmount.GreatestAmongPlayers -> readsPipeline(amount.inner)
+
+        // Leaves that read game state or the resolution context, never a pipeline slot. A new
+        // leaf that reads a stored collection or number belongs in the `true` group above.
+        is DynamicAmount.AggregateBattlefield,
+        is DynamicAmount.AggregateZone,
+        is DynamicAmount.CastChoice,
+        DynamicAmount.CastX,
+        is DynamicAmount.ContextProperty,
+        is DynamicAmount.Count,
+        is DynamicAmount.CountPlayersWith,
+        DynamicAmount.CraftedMaterialsColorCount,
+        DynamicAmount.CraftedMaterialsTotalManaValue,
+        DynamicAmount.CraftedMaterialsTotalPower,
+        DynamicAmount.CreaturesThatCrewedOrSaddledThisTurn,
+        is DynamicAmount.DevotionTo,
+        DynamicAmount.DistinctColorsManaSpent,
+        is DynamicAmount.EntityProperty,
+        is DynamicAmount.Fixed,
+        is DynamicAmount.LargestSharedCreatureTypeCount,
+        DynamicAmount.LastKnownDamageDealtToSource,
+        is DynamicAmount.LastKnownSourceCounters,
+        is DynamicAmount.LifeTotal,
+        is DynamicAmount.ManaSpentFromSubtype,
+        is DynamicAmount.ManaSpentOnX,
+        DynamicAmount.PermanentsSacrificedThisWay,
+        is DynamicAmount.PlayerCount,
+        is DynamicAmount.PlayerCounterCount,
+        is DynamicAmount.Speed,
+        DynamicAmount.SpellsCastLastTurn,
+        is DynamicAmount.SpellsCastThisTurn,
+        is DynamicAmount.StartingLifeTotal,
+        DynamicAmount.StationCharge,
+        is DynamicAmount.SubtypeEnteredUnderControlThisTurn,
+        DynamicAmount.TotalManaSpent,
+        DynamicAmount.TotalPowerSacrificedThisWay,
+        is DynamicAmount.TurnTracking,
+        is DynamicAmount.UnlockedDoors,
+        is DynamicAmount.UnspentMana,
+        DynamicAmount.XValue,
+        DynamicAmount.YourLifeTotal -> false
     }
 
     /**

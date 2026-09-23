@@ -2949,6 +2949,17 @@ object Effects {
         CreatePredefinedTokenEffect("Shard", count, controller)
 
     /**
+     * Create Heartwood artifact tokens (Reality Fracture).
+     * A red and green "Artifact — Heartwood" with "{T}: Add {R} or {G}."
+     *
+     * @param count Number of tokens to create
+     * @param tapped Whether the tokens enter the battlefield tapped
+     * @param controller Who controls the tokens (null = spell controller)
+     */
+    fun CreateHeartwood(count: Int = 1, tapped: Boolean = false, controller: EffectTarget? = null): Effect =
+        CreatePredefinedTokenEffect("Heartwood", count, controller, tapped)
+
+    /**
      * Create Mutavault land tokens.
      * "{T}: Add {C}."
      * "{1}: This token becomes a 2/2 creature with all creature types until end of turn.

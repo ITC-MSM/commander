@@ -132,7 +132,7 @@ Cards: Chandra's Emberling; Craterclaw Colossus; Darklight Phoenix; Frostbite Py
 
 Create red and green artifact tokens with a tap ability producing red or green mana.
 
-**Engine support:** `Effects.CreateToken`, token colors/types, and activated mana abilities. Heartwood Crafter’s restricted mana is a separate investigation.
+**Engine support:** `Effects.CreateHeartwood(count?, tapped?, controller?)` over the predefined `Heartwood` token (red and green `Artifact — Heartwood`, `{T}: Add {R} or {G}`). Heartwood Crafter’s restricted mana (“can’t be spent to cast spells from your hand”) is a separate investigation.
 
 Cards: Aerid Konstrari; Heartwood Crafter; Hungering Puppetbeast; Konstrari Improviser; Tenured Tethermage; Woodwork Prodigy
 
@@ -317,7 +317,7 @@ Cards: Tam, the Possibility
 These are review targets, not declarations that new effect types are necessary. Prefer existing compositions and add behavioral tests for any new engine vocabulary.
 
 - **Samut, Tyrant of Naktamun:** split second and granting it to controlled instant/sorcery spells are absent from the keyword vocabulary.
-- **Sanctum Lurker:** exception to the zero-loyalty state-based action, plus granted loyalty ability.
+- **Sanctum Lurker:** done — `GrantKeyword(AbilityFlag.SURVIVES_ZERO_LOYALTY.name, …)` exempts planeswalkers from CR 704.5i; the +2 is a `grantedLoyaltyAbility`.
 - **Loot, the Anomaly:** treating negative power as positive for combat damage. **Loot, the Nexus:** distinct-power aggregation already exists; use it rather than adding another amount type.
 - **Ruric Thar, Magecrusher:** lifetime history of combat damage, including damage to nonplayers. A damage-to-player predicate is insufficient.
 - **Ruric Thar, Biomagus:** two independent prowess instances must survive representation and both trigger.

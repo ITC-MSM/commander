@@ -41,7 +41,19 @@ The execution is not yet elegant, for two reasons:
 
 ---
 
-## 1. Fail-closed dispatch, enforced by tests — [HIGH, cheap]
+## 1. ✅ Fail-closed dispatch, enforced by tests — [HIGH, cheap] — DONE
+
+> **Done (2026-09-23).** Every dispatch site listed below is now an exhaustive `when` with no
+> `else`. `ContinuationResumerCoverageTest` and `KeywordClientMirrorTest` guard the resumers and
+> the client keyword mirror. `EventPattern` → `TriggerMatcher` was already exhaustive at compile
+> time, so it needed no test. The work surfaced three live bugs:
+> - eerie's "whenever you fully unlock a Room" never fired;
+> - `readsPipeline` skipped `Divide`;
+> - both amount walks skipped `GreatestAmongPlayers`.
+>
+> It also found 28 keywords missing from `enums.ts`. `LandTappedForMana` is still unwired on
+> purpose, and that is now stated in its branch and in the docs. Out of scope: other `else`
+> branches over sealed types outside these sites.
 
 **Problem.** Effects are guarded; the other sealed hierarchies are dispatched through large `when`
 blocks with catch-all `else` branches. That means a new subtype compiles and then silently does
@@ -327,7 +339,7 @@ other "target" Oracle text scripted without a target requirement. That can becom
 ## Suggested order
 
 1. **Cheap, high leverage (weeks):**
-   - §1 fail-closed dispatch and its coverage tests;
+   - ~~§1 fail-closed dispatch and its coverage tests~~ (done);
    - remove the global singletons and the ad-hoc `StackResolver`s;
    - delete the `ContextTarget(0)` defaults;
    - the single `settle()` boundary from §2.

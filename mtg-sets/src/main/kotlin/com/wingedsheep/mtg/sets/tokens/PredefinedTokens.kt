@@ -1,5 +1,6 @@
 package com.wingedsheep.mtg.sets.tokens
 
+import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Counters
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.Conditions
@@ -964,6 +965,34 @@ object PredefinedTokens {
     }
 
     /**
+     * Heartwood — the red and green artifact token of Reality Fracture:
+     * "{T}: Add {R} or {G}." Its colors come from its color indicator (CR 204), carried as
+     * [colorIdentity], the same way the blue [Jace] token's are.
+     */
+    val Heartwood = card("Heartwood") {
+        typeLine = "Artifact — Heartwood"
+        colorIdentity = "RG"
+        oracleText = "{T}: Add {R} or {G}."
+
+        activatedAbility {
+            cost = Costs.Tap
+            effect = Effects.AddMana(Color.RED)
+            manaAbility = true
+        }
+
+        activatedAbility {
+            cost = Costs.Tap
+            effect = Effects.AddMana(Color.GREEN)
+            manaAbility = true
+        }
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/e/b/eb4bf635-04d7-4994-9f70-4ff573a767e7.jpg?1789966278"
+            artist = "Tianxing Xu"
+        }
+    }
+
+    /**
      * All predefined token definitions.
      * Register these in the CardRegistry so token abilities are resolved.
      */
@@ -1003,6 +1032,7 @@ object PredefinedTokens {
         Galactus,
         SturdyShield,
         Axe,
-        Jace
+        Jace,
+        Heartwood
     )
 }

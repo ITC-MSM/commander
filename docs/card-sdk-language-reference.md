@@ -1985,6 +1985,8 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   colorless artifact with "When this token enters, it deals 2 damage to any target." and "{T}: Add
   one mana of any color." Roxanne creates them `tapped = true`.
 - `CreateMutavault(count?, tapped?, controller?)` — Mutavault tokens.
+- `CreateHeartwood(count?, tapped?, controller?)` — Heartwood tokens (Reality Fracture): a red and
+  green "Artifact — Heartwood" with "{T}: Add {R} or {G}."
 - `CreateEverywhere(count?, tapped?, controller?)` — Everywhere land tokens (Overlord of the Hauntwoods):
   a colorless land token with all five basic land subtypes (Plains/Island/Swamp/Mountain/Forest) that
   taps for any color — i.e. the mana ability of each basic land type, without the basic supertype. The
@@ -4599,6 +4601,9 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   projection / trigger matching / cost calculation report `false` (no X context). Underlying
   predicate: `CardPredicate.PowerAtLeastX`.
 - `.tapped()` / `.untapped()` — tap state.
+- `.prepared()` — `StatePredicate.IsPrepared`: the permanent is prepared (Secrets of Strixhaven
+  prepare — its `PreparedComponent` names a castable exile copy of its prepare spell). Only a card
+  with a prepare spell can be prepared, so it matches nothing else.
 - `.withCounter(type)` / `.withoutCounter(type)` / `.withAnyCounter()` / `.withoutCounters()` — counter presence: a specific kind,
   absence of one specific kind while permitting others, any kind, or no counters at all. The named
   negative form models clauses such as Oblivion Stone's “without a fate counter on it.”
@@ -6075,11 +6080,12 @@ Triggers.youCastSpell(
   direction (`null` = either).
 - `YouCycleThis` — you cycle source.
 - `AnyPlayerCycles` — anyone cycles.
-- `AnyPlayerTapsLandForMana` — whenever any player taps a land for mana. Use
-  `landTappedForMana(player, landFilter, binding)` for "an opponent"/"you" variants or a land-type
-  restriction. Fires on the manual mana-ability path only (auto-pay adds mana via the solver without
-  emitting the event). Backs the "whenever a player taps a land for mana" family (Mana Flare, Heartbeat
-  of Spring); the inline-static cards (Overabundance, Pulse) use the mana statics in §9 instead.
+- `AnyPlayerTapsLandForMana` / `landTappedForMana(player, landFilter, binding)` — **not wired: a
+  trigger authored with these never fires.** `TriggerIndex` gives the pattern no category, because
+  the engine event is emitted on the manual mana-ability path only (auto-pay adds mana via the solver
+  without it), so indexing it would fire inconsistently. No card uses it. The mana-adding family
+  (Mana Flare, Heartbeat of Spring, Groundchuck & Dirtbag) is a triggered mana ability (CR 605.1b)
+  and uses `AdditionalManaOnSourceTap` or the other mana statics in §9.
 - `YouCommitCrime` — MKM crime mechanic.
 - `YouGiveAGift` — Gift mechanic.
 - `WheneverYouForage` — Bloomburrow forage (CR 701.59a). Observes **any** forage by the player, in any
@@ -6921,6 +6927,10 @@ staticAbility {
   not the player a per-player iteration is currently bound to, so a `ForEachPlayer` wrapper (Killing
   Wave) still reports the caster. Only sacrifices are covered — lethal damage, 0 toughness, the legend
   rule and destruction are untouched.
+- `GrantKeyword(AbilityFlag.SURVIVES_ZERO_LOYALTY.name, filter)` — matching planeswalkers aren't put
+  into their owners' graveyards for having 0 loyalty: `PlaneswalkerLoyaltyCheck` skips them (CR 704.5i).
+  Only that state-based action — destruction, sacrifice and the legend rule still apply, and one that
+  loses the flag at 0 loyalty goes to the graveyard at the next SBA check. (Sanctum Lurker)
 - `GrantKeyword(AbilityFlag.CANT_BE_ENCHANTED.name, filter)` — matching permanents can't be enchanted
   (CR 303.4): an Aura can't legally target them. Honored in `TargetValidator` at Aura-cast/activation
   target legality (only the targeting step — effects that move/attach an Aura without targeting are not
@@ -10226,6 +10236,9 @@ that works in both resolution and static-ability (projection) contexts.
   strike as long as it's blocking or blocked by a Goblin or Orc."
 - `SourceIsTapped` — source is tapped.
 - `SourceIsUntapped` — source is untapped.
+- `SourceIsPrepared` — source is prepared (`SourceMatches(Any.prepared())`). `Not(SourceIsPrepared)`
+  is the intervening-if of "At the beginning of your upkeep, if this creature isn't prepared, it
+  becomes prepared" (Woodwork Prodigy, Paradox Shaper).
 - `SourceEnteredThisTurn` — source entered the battlefield this turn.
 - `SourceIsSaddled` — source is saddled (CR 702.171b). Gates Mount payoffs on "while saddled" /
   "as long as it's saddled"; evaluates identically at resolution and during projection.

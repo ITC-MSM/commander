@@ -7,10 +7,14 @@ import com.wingedsheep.engine.mechanics.sba.StateBasedActionCheck
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.CounterType
 
 /**
  * 704.5i - A planeswalker with 0 loyalty is put into its owner's graveyard.
+ *
+ * A planeswalker with the projected [AbilityFlag.SURVIVES_ZERO_LOYALTY] flag (Sanctum Lurker) is
+ * exempt from this one check.
  */
 class PlaneswalkerLoyaltyCheck : StateBasedActionCheck {
     override val name = "704.5i Planeswalker Loyalty"
@@ -26,6 +30,7 @@ class PlaneswalkerLoyaltyCheck : StateBasedActionCheck {
             val cardComponent = container.get<CardComponent>() ?: continue
 
             if (!projected.isPlaneswalker(entityId)) continue
+            if (projected.hasKeyword(entityId, AbilityFlag.SURVIVES_ZERO_LOYALTY)) continue
 
             val counters = container.get<CountersComponent>()
             val loyalty = counters?.getCount(CounterType.LOYALTY) ?: 0

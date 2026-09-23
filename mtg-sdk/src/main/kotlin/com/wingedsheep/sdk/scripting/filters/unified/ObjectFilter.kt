@@ -796,6 +796,11 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.IsUntapped
     )
 
+    /** Must be prepared (Secrets of Strixhaven prepare). */
+    fun prepared() = copy(
+        statePredicates = statePredicates + StatePredicate.IsPrepared
+    )
+
     /** Must be a Room with at least one locked door (CR 709.5c). */
     fun hasLockedDoor() = copy(
         statePredicates = statePredicates + StatePredicate.HasLockedDoor
