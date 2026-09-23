@@ -12,6 +12,7 @@ import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
+import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.player.EquipActivationsThisTurnComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.support.GameTestDriver
@@ -46,6 +47,15 @@ class LoopingActionAiTest : FunSpec({
 
     /** Prefers standing still: any leaf still in [step] beats one where the game has moved on. */
     fun stepPreferring(step: Step) = BoardEvaluator { state, _, _ -> if (state.step == step) 0.0 else -100.0 }
+
+    /**
+     * Prefers keeping priority: passing it hands the window to the opponent, which this scores as a
+     * loss. On the AI's own main phase that is the bias that makes *any* resolved activation look
+     * better than passing — `stepPreferring` can't model it there, since passing doesn't leave the
+     * step until the opponent passes too.
+     */
+    fun holdingPriority(player: EntityId) =
+        BoardEvaluator { state, _, _ -> if (state.priorityPlayerId == player) 0.0 else -100.0 }
 
     fun registry(): CardRegistry = CardRegistry().apply { register(TestCards.all) }
 
@@ -234,7 +244,93 @@ class LoopingActionAiTest : FunSpec({
         val strategist = strategistFor(registry, Step.PRECOMBAT_MAIN)
         chooseFor(strategist, registry, driver.state, ai).actionType shouldBe "PassPriority"
     }
+
+    /**
+     * The AI's own main phase with [spatulaHolders] creatures, a Well-Worn Spatula on the first of
+     * them, [lands] untapped Forests and empty hands — so pass and Equip are the only candidates.
+     */
+    fun paidEquipBoard(lands: Int, spatulaHolders: Int): PaidEquipBoard {
+        val cards = TestCards.all + WellWornSpatula
+        val registry = CardRegistry().apply { register(cards) }
+        val driver = GameTestDriver()
+        driver.registerCards(cards)
+        driver.initMirrorMatch(deck = Deck.of("Forest" to 40), skipMulligans = true, startingPlayer = 0)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        val ai = driver.activePlayer!!
+        driver.replaceState(
+            driver.state.copy(
+                zones = driver.state.zones.mapValues { (key, contents) ->
+                    if (key.zoneType == Zone.HAND) emptyList() else contents
+                }
+            )
+        )
+        val creatures = List(spatulaHolders) { driver.putCreatureOnBattlefield(ai, "Grizzly Bears") }
+        val forests = List(lands) { driver.putLandOnBattlefield(ai, "Forest") }
+        val spatula = driver.putPermanentOnBattlefield(ai, "Well-Worn Spatula")
+        val equipId = WellWornSpatula.activatedAbilities.first().id
+        val board = PaidEquipBoard(registry, driver, ai, spatula, equipId, creatures)
+        // Attach it for real, then hand the mana back, so the board starts fully untapped.
+        driver.submitSuccess(board.equip(creatures.first()))
+        driver.bothPass()
+        driver.state.getEntity(spatula)?.get<AttachedToComponent>()?.targetId shouldBe creatures.first()
+        forests.forEach(driver::untapPermanent)
+        return board
+    }
+
+    test("the AI does not pay to re-equip the creature the Equipment is already attached to") {
+        // Reported again after the free case above was fixed: with Equip {1} paid in full, the AI
+        // spent every land it had re-attaching Well-Worn Spatula to the creature already wearing
+        // it. Paying tapped a Forest, so each repetition *did* change the position — just not in
+        // any way that was worth a mana. Spent mana is not progress.
+        val board = paidEquipBoard(lands = 3, spatulaHolders = 1)
+        val simulator = GameSimulator(board.registry)
+        val here = StateProgress.digest(board.driver.state)
+
+        val again = simulator.simulate(board.driver.state, board.equip(board.creatures.first())).state
+        withClue("the re-equip was paid for") {
+            again.getBattlefield().count { again.getEntity(it)?.has<TappedComponent>() == true } shouldBe 1
+        }
+        withClue("and paying for it is the only thing it did") {
+            StateProgress.digest(again) shouldBe here
+        }
+
+        val strategist = Strategist(simulator, holdingPriority(board.ai), budgetPolicy = LegacyBudgetPolicy)
+        chooseFor(strategist, board.registry, board.driver.state, board.ai).actionType shouldBe "PassPriority"
+    }
+
+    test("the AI does not pay to shuttle an Equipment back and forth between two creatures") {
+        // The same waste one step longer: moving the Spatula to the other Bears and back leaves
+        // the board where it started, less two mana.
+        val board = paidEquipBoard(lands = 4, spatulaHolders = 2)
+        val simulator = GameSimulator(board.registry)
+        val strategist = Strategist(simulator, holdingPriority(board.ai), budgetPolicy = LegacyBudgetPolicy)
+
+        var state = board.driver.state
+        val moves = mutableListOf<EntityId>()
+        for (attempt in 1..4) {
+            val choice = chooseFor(strategist, board.registry, state, board.ai)
+            if (choice.actionType == "PassPriority") break
+            val action = choice.action as ActivateAbility
+            moves += (action.targets.single() as ChosenTarget.Permanent).entityId
+            state = simulator.simulate(state, action).state
+        }
+        withClue("equip targets, in order: $moves — moving it once is the evaluator's call, moving it back never is") {
+            (moves.size <= 1) shouldBe true
+        }
+    }
 })
+
+private data class PaidEquipBoard(
+    val registry: CardRegistry,
+    val driver: GameTestDriver,
+    val ai: EntityId,
+    val spatula: EntityId,
+    val equipId: com.wingedsheep.sdk.scripting.AbilityId,
+    val creatures: List<EntityId>,
+) {
+    fun equip(target: EntityId) =
+        ActivateAbility(ai, spatula, equipId, targets = listOf(ChosenTarget.Permanent(target)))
+}
 
 /**
  * Pins every decision to one [BudgetTier], so a test can say which allowances it is exercising

@@ -1,10 +1,5 @@
-package com.wingedsheep.gym.contract
+package com.wingedsheep.engine.core
 
-import com.wingedsheep.engine.core.ActivateAbility
-import com.wingedsheep.engine.core.CastSpell
-import com.wingedsheep.engine.core.DeclareAttackers
-import com.wingedsheep.engine.core.DeclareBlockers
-import com.wingedsheep.engine.core.GameAction
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.model.EntityId
@@ -17,18 +12,17 @@ import kotlinx.serialization.Serializable
  * produced, and for several action types that `GameAction` is a *template*, not a complete move:
  * `DeclareAttackers` is enumerated with an empty attacker map (the enumerator advertises the
  * candidates in `validAttackers` / `validAttackTargets` and leaves the choice to the player), and
- * the same is true of `DeclareBlockers`, of a spell's targets, and of X. Stepping such an action
+ * the same is true of `DeclareBlockers`, of a spell's targets, and of X. Submitting such an action
  * with nothing attached is a legal move — it just means "attack with nobody", "block with nobody",
- * "no targets" — which is why the gap was silent: combat was unreachable over the HTTP API while
- * every request returned 200.
+ * "no targets" — so a host that forgets to complete the template fails silently.
  *
- * These params are how a caller completes the template. They are validated by the engine like any
- * other action: an illegal attacker assignment is rejected rather than quietly dropped (see
- * [com.wingedsheep.gym.GameGymEnv.step]).
+ * These params are how any host that consumes legal-action templates (the Gym, an AI controller)
+ * completes one. The completed action is then validated by the engine like any other: an illegal
+ * attacker assignment is rejected rather than quietly dropped.
  *
  * Not expressible here, deliberately — each has its own channel:
- * - Complex decisions (target-selection pauses, damage assignment, ordering, …) → `POST
- *   /envs/{id}/decision` with a typed `DecisionResponse`.
+ * - Complex decisions (target-selection pauses, damage assignment, ordering, …) → a
+ *   [SubmitDecision] carrying a typed [DecisionResponse].
  * - Attacking bands (CR 702.22), alternative/additional cost payments, convoke/delve/improvise
  *   selections. A step carrying params for an action that can't use them is rejected with a
  *   message naming the action, never ignored.
@@ -68,7 +62,7 @@ data class ActionParams(
  * Folds [ActionParams] into the template `GameAction` an action ID resolved to.
  *
  * Pure — it builds the action the engine will then validate; it does not check legality itself.
- * Anything it cannot express is an [IllegalArgumentException] (→ HTTP 400) rather than a silently
+ * Anything it cannot express is an [IllegalArgumentException] rather than a silently
  * dropped choice, which is the failure mode this whole type exists to remove.
  */
 object ActionParameterizer {
@@ -116,11 +110,11 @@ object ActionParameterizer {
      * sends ids because that is all the observation exposes; which variant an id means is a fact
      * about the game state, not about the request.
      *
-     * `internal` rather than private so the zone dispatch can be asserted directly — it is the only
-     * part of this object that reads live state, and driving a game to each of the four zones just
-     * to reach it would test the driver, not the dispatch.
+     * Public so the zone dispatch can be asserted directly — it is the only part of this object that
+     * reads live state, and driving a game to each of the four zones just to reach it would test the
+     * driver, not the dispatch.
      */
-    internal fun resolveTarget(id: EntityId, state: GameState): ChosenTarget = when {
+    fun resolveTarget(id: EntityId, state: GameState): ChosenTarget = when {
         id in state.turnOrder -> ChosenTarget.Player(id)
         id in state.stack -> ChosenTarget.Spell(id)
         id in state.getBattlefield() -> ChosenTarget.Permanent(id)

@@ -16,6 +16,7 @@ dependencies {
 
     implementation(libs.bundles.kotlinxEcosystem)
     implementation(libs.springBootStarterWeb)
+    implementation(libs.springBootStarterActuator)
     implementation(libs.springdocOpenapi)
     implementation(kotlin("reflect"))
 
@@ -23,4 +24,10 @@ dependencies {
     testImplementation(libs.kotestRunner)
     testImplementation(libs.kotestAssertions)
     testImplementation(libs.kotestExtensionsSpring)
+}
+
+// Pin the entry point rather than relying on main-class discovery; this one setting feeds
+// bootRun, bootJar and resolveMainClassName alike.
+springBoot {
+    mainClass.set("com.wingedsheep.gym.server.GymServerApplicationKt")
 }

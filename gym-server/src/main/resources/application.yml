@@ -1,4 +1,7 @@
 server:
+  # Loopback by default: the gym API is unauthenticated. Set
+  # GYM_SERVER_BIND_ADDRESS=0.0.0.0 (e.g. inside a container) to expose it.
+  address: ${GYM_SERVER_BIND_ADDRESS:127.0.0.1}
   # Distinct port from game-server (8080) so both can run side-by-side
   # during development.
   port: 8081
@@ -6,6 +9,18 @@ server:
 spring:
   application:
     name: argentum-gym-server
+
+argentum:
+  build-revision: ${ARGENTUM_BUILD_REVISION:unknown}
+
+# Standard Spring/Micrometer request metrics make persistent-host qualification
+# measurable without changing the Gym contract. Management endpoints share the
+# Gym HTTP listener and should use the same deployment/network protection.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
 
 # Swagger UI is enabled by default here because the gym server is a
 # development/training tool. Disable in any deployment where the

@@ -1,6 +1,6 @@
 package com.wingedsheep.gym.service
 
-import com.wingedsheep.gym.contract.ActionParams
+import com.wingedsheep.engine.core.ActionParams
 import com.wingedsheep.sdk.model.EntityId
 import kotlinx.serialization.Serializable
 

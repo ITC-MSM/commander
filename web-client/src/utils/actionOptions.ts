@@ -394,10 +394,13 @@ export function buildActionOptions(
   } else if (castAction) {
     // 1c. Normal cast (for non-land, non-modal cards). When the *only* offered cast is an
     // alternative-cost one (emerge with the hard cast unaffordable), the server's description names
-    // the mechanic — "Cast X" would hide that the cast eats a creature.
+    // the mechanic — "Cast X" would hide that the cast eats a creature. Likewise a cast of one
+    // specific face (a prepare-spell copy in exile, an adventure-only permission) is named by the
+    // server after that face: "Cast Bloodline Recollector" would hide that it casts Ancestral Craving.
+    const castFaceIndex = (castAction.action as { faceIndex?: number | null }).faceIndex
     options.push({
       key: 'cast',
-      label: castAction.actionType === 'CastWithAlternativeCost'
+      label: castAction.actionType === 'CastWithAlternativeCost' || castFaceIndex != null
         ? castAction.description
         : `Cast ${cardInfo.name}`,
       ...costFieldsFor(castAction, cardInfo.manaCost),

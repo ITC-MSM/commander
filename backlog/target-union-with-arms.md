@@ -1,8 +1,7 @@
 # Scoping: a composable mixed target — `TargetUnion` of typed arms
 
 **Status:** Proposed — not started. **Owner:** TBD. **Related:**
-[`sdk-language-design.md`](sdk-language-design.md) §1 (unify the predicate languages),
-[`sdk-architecture-review.md`](sdk-architecture-review.md).
+[`engine-sdk-architecture-review.md`](engine-sdk-architecture-review.md) §5 (collapse the parallel filter and entity-reference types).
 
 > **TL;DR.** "Target creature or player", "any target", "target opponent or planeswalker", and the
 > not-yet-expressible "target player with 10 or less life" are all the *same shape*: a target that is a

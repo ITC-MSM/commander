@@ -1,6 +1,6 @@
 package com.wingedsheep.gym
 
-import com.wingedsheep.gym.contract.ActionParams
+import com.wingedsheep.engine.core.ActionParams
 import com.wingedsheep.gym.contract.ObservationResult
 
 /**

@@ -5,9 +5,11 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedEverComponent
 import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.HasBecomeTappedComponent
+import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.battlefield.TargetedByControllerThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.TimestampComponent
 import com.wingedsheep.engine.state.components.player.EquipActivationsThisTurnComponent
+import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.model.GameRng
@@ -35,6 +37,13 @@ import com.wingedsheep.sdk.model.GameRng
  * have "resulted in the same game state being reached multiple times" to make a *different* game
  * choice, and its example turns on the very thing [IGNORED_COMPONENTS] does — the loop repeats a
  * position when "nothing in the game cares how many times an ability has been activated."
+ *
+ * The position is read **net of mana spent**, which is the third shape. An action that costs mana
+ * always changes *something* — a land is now tapped — so a paid no-op never repeats a position
+ * exactly, and neither does a paid cycle. The AI spent every land it had re-equipping Well-Worn
+ * Spatula to the creature already wearing it, and moving Equipment back and forth is the same
+ * waste one step longer. Mana is the resource an action is paid *with*, not something it achieves,
+ * so [digest] does not count it; see [manaSourcesOf].
  *
  * [Strategist] is the consumer: it drops any candidate whose leaf repeats a position it has already
  * acted from.
@@ -75,16 +84,17 @@ object StateProgress {
         // never digests.
         h = h.mix(state.continuationStack.size)
 
+        val manaSources = manaSourcesOf(state)
         var objects = 0L
         for ((key, contents) in state.zones) {
             // A library's order and object generations are carried by [normalized]. Its 60
             // cards have no components a game action touches without also moving them somewhere
             // this digest reads in full.
             if (key.zoneType == Zone.LIBRARY) continue
-            for (entityId in contents) objects += objectHash(state, entityId)
+            for (entityId in contents) objects += objectHash(state, entityId, entityId in manaSources)
         }
-        for (entityId in state.stack) objects += objectHash(state, entityId)
-        for (playerId in state.turnOrder) objects += objectHash(state, playerId)
+        for (entityId in state.stack) objects += objectHash(state, entityId, spentMana = false)
+        for (playerId in state.turnOrder) objects += objectHash(state, playerId, spentMana = false)
         return h.mix(objects)
     }
 
@@ -139,16 +149,49 @@ object StateProgress {
      *
      * The entity id is mixed with the component hash rather than added alongside it, so two objects
      * in the same zone trading component sets is a change rather than the same sum.
+     *
+     * [spentMana] marks one of the permanents [manaSourcesOf] picked out, whose tapped state is
+     * not read.
      */
-    private fun objectHash(state: GameState, entityId: EntityId): Long {
+    private fun objectHash(state: GameState, entityId: EntityId, spentMana: Boolean): Long {
         val container = state.getEntity(entityId) ?: return 0L
         var components = 0L
         for (component in container.all()) {
             val type = component::class.java
             if (type in IGNORED_COMPONENTS) continue
+            if (spentMana && component is TappedComponent) continue
             components += type.name.hashCode().toLong().mix(saturated(component).hashCode())
         }
         return entityId.hashCode().toLong().mix(components)
+    }
+
+    /**
+     * The permanents whose tapped state is spent mana rather than a game fact: non-creature lands
+     * and artifacts on the battlefield, read off the projection so an animated land or a crewed
+     * Vehicle still counts as the creature it is.
+     *
+     * Tapping one of these is what paying a mana cost looks like on the board, and reading it
+     * would make a paid no-op a fresh position every time — the guard would only ever catch free
+     * ones. It did: the AI stopped re-equipping Well-Worn Spatula for {0} next to Dwarven Mauler,
+     * then went on re-equipping it for {1} everywhere else until its lands ran out. Read net of
+     * mana, "pay {1}, re-attach it where it already is" is exactly as inert as the free version,
+     * and a paid back-and-forth exactly as circular as a free one.
+     *
+     * A mana *creature* is left out on purpose: tapping it does change the position (it can no
+     * longer block), so the worst the omission costs is the one wasted activation this object
+     * always accepts in that direction. The price of the reading is the other direction, the one
+     * [IGNORED_COMPONENTS] warns about: an action whose whole effect is tapping or untapping a
+     * non-creature land or artifact now reads as inert. That is rare off the stack — a spell moves
+     * from hand to graveyard, nearly every ability taps or pays with something else, and a mana
+     * ability is never a [Strategist] candidate to begin with.
+     */
+    private fun manaSourcesOf(state: GameState): Set<EntityId> {
+        val battlefield = state.getBattlefield()
+        if (battlefield.none { state.getEntity(it)?.has<TappedComponent>() == true }) return emptySet()
+        val projected = state.projectedState
+        return battlefield.filterTo(HashSet()) { id ->
+            !projected.isCreature(id) && (projected.hasType(id, "LAND") || projected.hasType(id, "ARTIFACT"))
+        }
     }
 
     private fun Long.mix(value: Int): Long = this * 0x100000001B3L xor value.toLong()
@@ -172,6 +215,9 @@ object StateProgress {
      * itself has to be listed: the `{T}` cost stamps the marker and the untap does not clear it, so
      * without this entry the pay-its-own-cost-back no-op would read as a fresh position every time.
      *
+     * [ManaPoolComponent] is the pool half of spent mana — see [manaSourcesOf]. Mana left floating
+     * after a payment is what an action was paid with, and the pool empties between steps anyway.
+     *
      * The list is a floor, not a ceiling: a memory component not named here makes an inert action
      * read as progress, so the AI takes it once more than it should. Which is why it fails in that
      * direction — a *missing* entry costs a wasted activation, whereas wrongly ignoring something
@@ -183,6 +229,7 @@ object StateProgress {
         TargetedByControllerThisTurnComponent::class.java,
         HasBecomeTappedComponent::class.java,
         TimestampComponent::class.java,
+        ManaPoolComponent::class.java,
     )
 
     /**

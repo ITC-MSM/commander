@@ -5,7 +5,7 @@ Krasis. Phase 2 — `CastChoicesComponent` generalized to a `ChoiceSlot` bag (X 
 creature + kicked + blight), `DynamicAmount.CastChoice` + `Conditions.CastChoiceMade`/`CastChoiceIs`,
 Riptide Replicator off `CreateChosenTokenEffect`, blight off `ContextProperty`. Phases 3–4 (`declare { }`
 DSL, emitter payoff) not started. **Owner:** TBD. **Related:**
-[`sdk-language-design.md`](sdk-language-design.md), [`forge-parity-harness.md`](forge-parity-harness.md),
+[`engine-sdk-architecture-review.md`](engine-sdk-architecture-review.md), [`forge-parity-harness.md`](forge-parity-harness.md),
 and the `:mtgish-tooling` *"Creator's note: extra costs & chosen / inherited values"* in
 [`../mtgish-tooling/README.md`](../mtgish-tooling/README.md) (this doc is the design that note asks for).
 

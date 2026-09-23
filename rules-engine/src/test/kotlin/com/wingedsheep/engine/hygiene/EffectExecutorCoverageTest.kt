@@ -14,7 +14,7 @@ import kotlin.reflect.KClass
  * The bug class this kills: adding an `Effect` subtype to the SDK compiles cleanly without an
  * executor, and `EffectExecutorRegistry.execute` silently returns the unchanged state for
  * unregistered types — so the card "works" but the effect does nothing, surfacing mid-game
- * instead of in CI (sdk-analysis-2026-06 §1.1).
+ * instead of in CI.
  *
  * If this test fails with a *missing* type: either register an executor for it in the matching
  * `*Executors` module, or — only if the type is genuinely never dispatched through the registry

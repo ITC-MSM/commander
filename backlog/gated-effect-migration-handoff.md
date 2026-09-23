@@ -41,7 +41,7 @@ sealed interface Gate {
 }
 ```
 
-**The point** (sdk-language-design "composition over enumeration"): one executor + one continuation
+**The point** ("composition over enumeration"): one executor + one continuation
 resumer own the *canonical resolution order*, so target-locking-vs-gate-timing is correct **by
 construction** for every gate instead of being re-encoded (and re-bugged) per wrapper:
 

@@ -2,7 +2,7 @@ package com.wingedsheep.gym.deckbuild
 
 import com.wingedsheep.ai.engine.LimitedCardRater
 import com.wingedsheep.gym.GymEnv
-import com.wingedsheep.gym.contract.ActionParams
+import com.wingedsheep.engine.core.ActionParams
 import com.wingedsheep.gym.contract.ActionRegistry
 import com.wingedsheep.gym.contract.DeckbuildObservation
 import com.wingedsheep.gym.contract.LegalActionView

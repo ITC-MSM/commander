@@ -916,7 +916,7 @@ class StaticAbilityHandler(
             // comment. They are listed explicitly (no `else`) so this `when` is
             // exhaustiveness-checked: a new StaticAbility subtype fails
             // compilation here until a deliberate decision is made about its
-            // engine half (sdk-analysis-2026-06 §1.1).
+            // engine half.
             // ------------------------------------------------------------------
 
             // Multi-effect conversions handled by convertStaticAbilities before
@@ -1145,7 +1145,7 @@ class StaticAbilityHandler(
      * StackResolver / PlayLandHandler / the clone continuations).
      *
      * Exhaustive `when` with no `else` on purpose: a new ReplacementEffect subtype fails
-     * compilation here until it's deliberately classified (sdk-analysis-2026-06 §1.1).
+     * compilation here until it's deliberately classified.
      */
     private fun isRuntimeReplacementEffect(it: com.wingedsheep.sdk.scripting.ReplacementEffect): Boolean =
         when (it) {

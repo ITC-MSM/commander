@@ -7,7 +7,7 @@
  * current subscriptions.
  */
 import type { SliceCreator, ActionPipelineState, PhaseResult } from '../types'
-import type { ActivateAbilityAction, CastSpellAction, EntityId, LegalActionInfo } from '@/types'
+import type { ActivateAbilityAction, CastSpellAction, EntityId, GameAction, LegalActionInfo } from '@/types'
 import { computePhases, mergeResult, enterPhase } from './pipelinePhases'
 import type { PipelineStoreMethods } from './pipelinePhases'
 import {
@@ -31,6 +31,49 @@ export interface PipelineSliceActions {
 }
 
 export type PipelineSlice = PipelineSliceState & PipelineSliceActions
+
+/** Every piece of UI state a pipeline phase can own, emptied together when the pipeline ends. */
+export const CLEARED_PIPELINE_SELECTIONS = {
+  pipelineState: null,
+  targetingState: null,
+  xSelectionState: null,
+  modalModeSelectionState: null,
+  blightVariableSelectionState: null,
+  payXLifeSelectionState: null,
+  convokeSelectionState: null,
+  tapForGenericSelectionState: null,
+  harmonizeSelectionState: null,
+  delveSelectionState: null,
+  manaSelectionState: null,
+  manaColorSelectionState: null,
+  counterDistributionState: null,
+  damageDistributionState: null,
+} as const
+
+/**
+ * Whether the object an in-progress action is being built for is still offered by the server.
+ * Compared by source identity (the card, permanent, or ability), not by the whole action: the
+ * pipeline has been folding the player's choices into its copy, and the server re-derives costs
+ * and targets on submit anyway.
+ */
+export function isActionStillOffered(
+  action: GameAction,
+  legalActions: readonly LegalActionInfo[],
+): boolean {
+  const key = actionSourceKey(action)
+  return legalActions.some((info) => actionSourceKey(info.action) === key)
+}
+
+function actionSourceKey(action: GameAction): string {
+  const source =
+    'cardId' in action ? action.cardId
+      : 'sourceId' in action ? action.sourceId
+        : 'vehicleId' in action ? action.vehicleId
+          : 'mountId' in action ? action.mountId
+            : ''
+  const abilityId = 'abilityId' in action ? action.abilityId : ''
+  return `${action.type}|${source}|${abilityId}`
+}
 
 export const createPipelineSlice: SliceCreator<PipelineSlice> = (set, get) => ({
   pipelineState: null,
@@ -288,22 +331,7 @@ export const createPipelineSlice: SliceCreator<PipelineSlice> = (set, get) => ({
   },
 
   cancelPipeline: () => {
-    set({
-      pipelineState: null,
-      targetingState: null,
-      xSelectionState: null,
-      modalModeSelectionState: null,
-      blightVariableSelectionState: null,
-      payXLifeSelectionState: null,
-      convokeSelectionState: null,
-      tapForGenericSelectionState: null,
-      harmonizeSelectionState: null,
-      delveSelectionState: null,
-      manaSelectionState: null,
-      manaColorSelectionState: null,
-      counterDistributionState: null,
-      damageDistributionState: null,
-    })
+    set(CLEARED_PIPELINE_SELECTIONS)
   },
 })
 
