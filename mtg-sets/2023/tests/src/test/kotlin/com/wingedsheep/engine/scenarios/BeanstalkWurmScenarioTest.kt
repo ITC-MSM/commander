@@ -18,6 +18,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Beanstalk Wurm // Plant Beans (WOE) — Adventure (CR 715).
@@ -56,7 +58,7 @@ class BeanstalkWurmScenarioTest : FunSpec({
                 faceIndex = 0,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.isPaused shouldBe false
 
@@ -72,10 +74,10 @@ class BeanstalkWurmScenarioTest : FunSpec({
         val forest1 = driver.putCardInHand(player, "Forest")
         val forest2 = driver.putCardInHand(player, "Forest")
         val forest3 = driver.putCardInHand(player, "Forest")
-        driver.playLand(player, forest1).isSuccess shouldBe true
-        driver.playLand(player, forest2).isSuccess shouldBe true
+        driver.playLand(player, forest1).outcome shouldBe Outcome.Done
+        driver.playLand(player, forest2).outcome shouldBe Outcome.Done
         // ...but not a third.
-        driver.submit(PlayLand(player, forest3)).isSuccess shouldBe false
+        driver.submit(PlayLand(player, forest3)).outcome shouldNotBe Outcome.Done
     }
 
     test("the creature can be cast from exile afterwards as a 5/4 with reach") {
@@ -92,7 +94,7 @@ class BeanstalkWurmScenarioTest : FunSpec({
                 faceIndex = 0,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.getExile(player) shouldContain wurm
 
@@ -104,7 +106,7 @@ class BeanstalkWurmScenarioTest : FunSpec({
                 cardId = wurm,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getPermanents(player) shouldContain wurm

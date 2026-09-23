@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Summon: G.F. Cerberus — {2}{R}{R} Enchantment Creature — Saga Dog, 3/3 (FIN).
@@ -74,7 +75,7 @@ class SummonGfCerberusScenarioTest : FunSpec({
     fun GameTestDriver.castShockAt(me: EntityId, opp: EntityId) {
         val shock = putCardInHand(me, "Shock")
         giveMana(me, Color.RED, 1)
-        castSpell(me, shock, listOf(opp)).isSuccess shouldBe true
+        castSpell(me, shock, listOf(opp)).outcome shouldBe Outcome.Done
         var guard = 0
         while (stackSize > 0 && guard++ < 30) {
             if (state.pendingDecision is ChooseTargetsDecision) submitTargetSelection(me, listOf(opp))

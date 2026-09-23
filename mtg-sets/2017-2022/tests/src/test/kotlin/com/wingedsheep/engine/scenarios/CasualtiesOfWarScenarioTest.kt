@@ -9,6 +9,8 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Casualties of War (WAR #187).
@@ -115,7 +117,7 @@ class CasualtiesOfWarScenarioTest : ScenarioTestBase() {
                 val result = cast(game, modes = emptyList(), targets = emptyList())
 
                 withClue("minChooseCount = 1 rejects the empty choice") {
-                    result.isSuccess shouldBe false
+                    result.outcome shouldNotBe Outcome.Done
                 }
             }
         }

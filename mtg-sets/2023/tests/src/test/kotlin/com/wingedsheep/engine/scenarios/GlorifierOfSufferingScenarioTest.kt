@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Glorifier of Suffering (LCI #15) — {2}{W} Creature — Vampire Soldier 3/2.
@@ -44,7 +45,7 @@ class GlorifierOfSufferingScenarioTest : FunSpec({
         val card = driver.putCardInHand(playerId, "Glorifier of Suffering")
         driver.giveMana(playerId, Color.WHITE, 1)
         driver.giveColorlessMana(playerId, 2)
-        driver.castSpell(playerId, card).isSuccess shouldBe true
+        driver.castSpell(playerId, card).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature spell
         driver.bothPass() // trigger goes on the stack; let it resolve
         return card

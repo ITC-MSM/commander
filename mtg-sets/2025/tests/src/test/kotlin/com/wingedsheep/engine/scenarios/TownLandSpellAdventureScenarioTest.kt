@@ -17,6 +17,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Town land // spell DFC (FIN) — the inverse-Adventure layout (CR 715).
@@ -57,7 +59,7 @@ class TownLandSpellAdventureScenarioTest : FunSpec({
         val player = startAtMain(driver)
 
         val ishgard = driver.putCardInHand(player, "Ishgard, the Holy See")
-        driver.playLand(player, ishgard).isSuccess shouldBe true
+        driver.playLand(player, ishgard).outcome shouldBe Outcome.Done
 
         driver.getPermanents(player) shouldContain ishgard
         driver.isTapped(ishgard) shouldBe true // "This land enters tapped."
@@ -80,7 +82,7 @@ class TownLandSpellAdventureScenarioTest : FunSpec({
                 faceIndex = 0,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.isPaused shouldBe false
 
@@ -99,7 +101,7 @@ class TownLandSpellAdventureScenarioTest : FunSpec({
         driver.state.mayPlayPermissions.any { lindblum in it.cardIds && it.controllerId == player } shouldBe true
 
         // Now play the land half from exile.
-        driver.playLand(player, lindblum).isSuccess shouldBe true
+        driver.playLand(player, lindblum).outcome shouldBe Outcome.Done
 
         driver.getPermanents(player) shouldContain lindblum
         driver.getExile(player) shouldNotContain lindblum
@@ -125,13 +127,13 @@ class TownLandSpellAdventureScenarioTest : FunSpec({
                 faceIndex = 0,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Play the land from exile — this is a normal land play and uses the land drop.
-        driver.playLand(player, lindblum).isSuccess shouldBe true
+        driver.playLand(player, lindblum).outcome shouldBe Outcome.Done
 
         // A second land play this turn is now illegal.
-        driver.submit(PlayLand(player, mountain)).isSuccess shouldBe false
+        driver.submit(PlayLand(player, mountain)).outcome shouldNotBe Outcome.Done
     }
 })

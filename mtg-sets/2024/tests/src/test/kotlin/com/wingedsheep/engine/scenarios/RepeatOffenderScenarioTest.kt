@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Repeat Offender (MKM) — {1}{B} 2/1 Creature — Human Assassin.
@@ -45,7 +46,7 @@ class RepeatOffenderScenarioTest : FunSpec({
         driver.giveMana(player, Color.BLACK, 3)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = offender, abilityId = abilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
     }
 

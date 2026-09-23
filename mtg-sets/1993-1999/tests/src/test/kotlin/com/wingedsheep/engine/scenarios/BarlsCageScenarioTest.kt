@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Barl's Cage — "{3}: Target creature doesn't untap during its controller's
@@ -51,7 +52,7 @@ class BarlsCageScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, bear)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.passPriorityUntil(Step.END)

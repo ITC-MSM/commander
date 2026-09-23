@@ -105,7 +105,7 @@ class DrawPhaseManager(
             }
             if (skipsDrawStep(s, teammate)) continue
             val r = drawCards(s, teammate, 1)
-            if (r.isPaused) {
+            if (r.outcome is Outcome.Paused) {
                 return ExecutionResult.propagatePause(r.newState, teammateEvents + r.events)
             }
             s = r.newState
@@ -132,7 +132,7 @@ class DrawPhaseManager(
         }
 
         val drawResult = drawCards(s, activePlayer, 1)
-        if (!drawResult.isSuccess) {
+        if (drawResult.outcome !is Outcome.Done) {
             return drawResult
         }
 

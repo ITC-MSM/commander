@@ -105,16 +105,11 @@ class TriggerProcessor(
             val trigger = liveTriggers[index]
             val result = processSingleTrigger(currentState, trigger)
 
-            if (!result.isSuccess && !result.isPaused) {
-                // Error occurred - return it
-                return ExecutionResult(
-                    state = result.state,
-                    events = allEvents + result.events,
-                    error = result.error
-                )
+            if (result.outcome is Outcome.Rejected) {
+                return ExecutionResult(result.state, allEvents + result.events, result.outcome)
             }
 
-            if (result.isPaused) {
+            if (result.outcome is Outcome.Paused) {
                 // This trigger requires target selection
                 // Store the remaining triggers to process after the decision
                 val remainingTriggers = liveTriggers.drop(index + 1)
@@ -514,7 +509,7 @@ class TriggerProcessor(
             ),
         )
 
-        if (!decisionResult.isPaused || decisionResult.pendingDecision == null) {
+        if (decisionResult.outcome !is Outcome.Paused || decisionResult.pendingDecision == null) {
             return ExecutionResult.error(state, "Failed to create yes/no decision for may trigger")
         }
 
@@ -608,7 +603,7 @@ class TriggerProcessor(
             ),
         )
 
-        if (!decisionResult.isPaused || decisionResult.pendingDecision == null) {
+        if (decisionResult.outcome !is Outcome.Paused || decisionResult.pendingDecision == null) {
             return ExecutionResult.error(state, "Failed to create yes/no decision for may pay mana trigger")
         }
 
@@ -741,7 +736,9 @@ class TriggerProcessor(
             TargetRequirementInfo(
                 index = index,
                 description = req.description,
-                minTargets = req.effectiveMinCount,
+                // A dependent slot is optional only if every slot after it is (DependentTargetSelection).
+                minTargets = if (sequential && !DependentTargetSelection.canStopAt(allRequirements, 0)) 1
+                    else req.effectiveMinCount,
                 maxTargets = maxTargets,
                 sameOwner = (req as? com.wingedsheep.sdk.scripting.targets.TargetObject)?.sameOwner == true,
                 totalManaValueAtMost = resolveTotalManaValueAtMost(state, trigger, req),
@@ -765,30 +762,7 @@ class TriggerProcessor(
                 controllerId = trigger.controllerId,
                 triggeringEntityId = trigger.triggerContext.triggeringEntityId,
                 triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
-                triggerDamageAmount = trigger.triggerContext.damageAmount,
-                triggerCounterCount = trigger.triggerContext.counterCount,
-                triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
-                triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
-            triggerLastKnownSubtypes = trigger.triggerContext.lastKnownSubtypes,
-            triggerLastKnownCardTypes = trigger.triggerContext.lastKnownCardTypes,
-                triggerLastKnownDamageDealtByPlayers =
-                    trigger.triggerContext.lastKnownDamageDealtByPlayers,
-                triggerLastKnownBlockingOrBlockedByIds =
-                    trigger.triggerContext.lastKnownBlockingOrBlockedByIds,
-                triggerLastKnownPower = trigger.triggerContext.lastKnownPower,
-                triggerLastKnownToughness = trigger.triggerContext.lastKnownToughness,
-                triggerDiedBatchTotalPower = trigger.triggerContext.diedBatchTotalPower,
-                triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
-                triggerScryCount = trigger.triggerContext.scryCount,
-                triggerClashWon = trigger.triggerContext.clashWon,
-                triggerDiscardCount = trigger.triggerContext.discardedCardCount,
-                triggerDiscoverValue = trigger.triggerContext.discoverValue,
-                triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
-                triggerRecipientToughness = trigger.triggerContext.recipientToughnessAtDamage,
-                triggerManaSpentOnTriggeringSpell = trigger.triggerContext.manaSpentOnTriggeringSpell,
-                triggerColorsSpentOnTriggeringSpell = trigger.triggerContext.colorsSpentOnTriggeringSpell,
-                triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell,
-                triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
+                triggerContext = trigger.triggerContext,
                 pipeline = trigger.carriedPipeline ?: com.wingedsheep.engine.handlers.PipelineState.EMPTY
             )
             ability.effect.runtimeDescription { amount -> evaluator.evaluateForDisplay(state, amount, context) }
@@ -813,44 +787,16 @@ class TriggerProcessor(
                 effect = ability.effect,
                 description = ability.description,
                 abilityIdentity = state.triggerIdentityFromCurrentCardDefinition(trigger.sourceId, ability.id),
-                triggerDamageAmount = trigger.triggerContext.damageAmount,
-                triggeringEntityId = trigger.triggerContext.triggeringEntityId,
-                triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+                triggerContext = trigger.triggerContext,
                 elseEffect = ability.elseEffect,
                 targetRequirements = allRequirements,
                 sequentialTargets = if (sequential) emptyList() else null,
-                triggerCounterCount = trigger.triggerContext.counterCount,
-                triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
-                triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
-                triggerLastKnownSubtypes = trigger.triggerContext.lastKnownSubtypes,
-                triggerLastKnownCardTypes = trigger.triggerContext.lastKnownCardTypes,
-                triggerLastKnownDamageDealtByPlayers =
-                    trigger.triggerContext.lastKnownDamageDealtByPlayers,
-                triggerLastKnownBlockingOrBlockedByIds =
-                    trigger.triggerContext.lastKnownBlockingOrBlockedByIds,
-                lastKnownPower = trigger.triggerContext.lastKnownPower,
-                lastKnownToughness = trigger.triggerContext.lastKnownToughness,
-                diedBatchTotalPower = trigger.triggerContext.diedBatchTotalPower,
-                triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
-                enchantedCreatureLastKnownPower = trigger.triggerContext.enchantedCreatureLastKnownPower,
-                triggerScryCount = trigger.triggerContext.scryCount,
-                triggerClashWon = trigger.triggerContext.clashWon,
-                triggerDiscardCount = trigger.triggerContext.discardedCardCount,
-                triggerDiscoverValue = trigger.triggerContext.discoverValue,
-                triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
-                triggerRecipientToughness = trigger.triggerContext.recipientToughnessAtDamage,
-                triggerManaSpentOnTriggeringSpell = trigger.triggerContext.manaSpentOnTriggeringSpell,
-                triggerColorsSpentOnTriggeringSpell = trigger.triggerContext.colorsSpentOnTriggeringSpell,
-                triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell,
-                triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
-                xValue = trigger.triggerContext.xValue,
                 carriedPipeline = trigger.carriedPipeline,
-                capturedEntityIds = trigger.triggerContext.capturedEntityIds ?: emptyList(),
                 interveningIf = ability.interveningIf
             ),
         )
 
-        if (!decisionResult.isPaused || decisionResult.pendingDecision == null) {
+        if (decisionResult.outcome !is Outcome.Paused || decisionResult.pendingDecision == null) {
             return ExecutionResult.error(state, "Failed to create target decision")
         }
 
@@ -890,37 +836,8 @@ class TriggerProcessor(
                 ?.get<com.wingedsheep.engine.state.components.identity.DoubleFacedComponent>()
                 ?.faceChanges,
             descriptionOverride = ability.descriptionOverride,
-            triggerDamageAmount = trigger.triggerContext.damageAmount,
-            triggeringEntityId = trigger.triggerContext.triggeringEntityId,
-            triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+            triggerContext = trigger.triggerContext,
             xValue = trigger.triggerContext.xValue ?: computeXForDisplay(state, trigger),
-            triggerCounterCount = trigger.triggerContext.counterCount,
-            triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
-            triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
-            triggerLastKnownSubtypes = trigger.triggerContext.lastKnownSubtypes,
-            triggerLastKnownCardTypes = trigger.triggerContext.lastKnownCardTypes,
-            triggerLastKnownDamageDealtByPlayers =
-                trigger.triggerContext.lastKnownDamageDealtByPlayers,
-            triggerLastKnownBlockingOrBlockedByIds =
-                trigger.triggerContext.lastKnownBlockingOrBlockedByIds,
-            targetingSourceEntityId = trigger.triggerContext.targetingSourceEntityId,
-            triggerUnattachedFromEntityId = trigger.triggerContext.unattachedFromEntityId,
-            lastKnownPower = trigger.triggerContext.lastKnownPower,
-            lastKnownToughness = trigger.triggerContext.lastKnownToughness,
-            diedBatchTotalPower = trigger.triggerContext.diedBatchTotalPower,
-            triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
-            enchantedCreatureLastKnownPower = trigger.triggerContext.enchantedCreatureLastKnownPower,
-            triggerScryCount = trigger.triggerContext.scryCount,
-            triggerClashWon = trigger.triggerContext.clashWon,
-            triggerDiscardCount = trigger.triggerContext.discardedCardCount,
-            triggerDiscoverValue = trigger.triggerContext.discoverValue,
-            triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
-            triggerRecipientToughness = trigger.triggerContext.recipientToughnessAtDamage,
-            triggerManaSpentOnTriggeringSpell = trigger.triggerContext.manaSpentOnTriggeringSpell,
-            triggerColorsSpentOnTriggeringSpell = trigger.triggerContext.colorsSpentOnTriggeringSpell,
-            triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell,
-            triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
-            capturedEntityIds = trigger.triggerContext.capturedEntityIds ?: emptyList(),
             sagaChapterInfo = trigger.sagaChapterInfo,
             carriedPipeline = trigger.carriedPipeline,
             // CR 603.4 — the intervening-"if" travels with the object so the resolver can check it
@@ -1255,11 +1172,11 @@ class TriggerProcessor(
         requirement = requirement,
         controllerId = ability.controllerId,
         sourceId = ability.sourceId,
-        triggeringEntityId = ability.triggeringEntityId,
+        triggeringEntityId = ability.triggerContext?.triggeringEntityId,
         pipelineContext = com.wingedsheep.engine.handlers.PredicateContext(
             controllerId = ability.controllerId,
-            triggeringEntityId = ability.triggeringEntityId,
-            triggeringPlayerId = ability.triggeringPlayerId,
+            triggeringEntityId = ability.triggerContext?.triggeringEntityId,
+            triggeringPlayerId = ability.triggerContext?.triggeringPlayerId,
             // Same reason as the pending-trigger call sites: an X-relative target filter must see
             // the X the ability went on the stack with, or it re-checks as having no legal targets.
             xValue = ability.xValue,
@@ -1292,23 +1209,6 @@ class TriggerProcessor(
     private fun isAttackCausedTrigger(trigger: PendingTrigger): Boolean =
         trigger.ability.trigger is com.wingedsheep.sdk.scripting.EventPattern.AttackEvent &&
             trigger.ability.binding == com.wingedsheep.sdk.scripting.TriggerBinding.SELF
-
-    /**
-     * Convenience method to detect and process triggers in one call.
-     *
-     * @param state The current game state
-     * @param events The events that may have caused triggers
-     * @param triggerDetector The detector to use for finding triggers
-     * @return ExecutionResult with triggers placed on stack (or paused for target selection)
-     */
-    fun detectAndProcess(
-        state: GameState,
-        events: List<GameEvent>,
-        triggerDetector: TriggerDetector
-    ): ExecutionResult {
-        val triggers = triggerDetector.detectTriggers(state, events)
-        return processTriggers(state, triggers)
-    }
 
     /**
      * Create a ChosenTarget from an EntityId based on what the entity is in the game state.
@@ -1548,32 +1448,11 @@ class TriggerProcessor(
                         triggeringEntityId = trigger.triggerContext.triggeringEntityId,
                         triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
                         xValue = trigger.triggerContext.xValue,
-                        triggerDamageAmount = trigger.triggerContext.damageAmount,
-                        triggerCounterCount = trigger.triggerContext.counterCount,
-                        triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
-                        triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
-            triggerLastKnownSubtypes = trigger.triggerContext.lastKnownSubtypes,
-            triggerLastKnownCardTypes = trigger.triggerContext.lastKnownCardTypes,
-                        triggerLastKnownDamageDealtByPlayers = trigger.triggerContext.lastKnownDamageDealtByPlayers,
-                        triggerLastKnownBlockingOrBlockedByIds = trigger.triggerContext.lastKnownBlockingOrBlockedByIds,
-                        triggerLastKnownPower = trigger.triggerContext.lastKnownPower,
-                        triggerLastKnownToughness = trigger.triggerContext.lastKnownToughness,
-                        triggerDiedBatchTotalPower = trigger.triggerContext.diedBatchTotalPower,
-                        triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
-                        triggerManaSpentOnTriggeringSpell = trigger.triggerContext.manaSpentOnTriggeringSpell,
-                        triggerColorsSpentOnTriggeringSpell = trigger.triggerContext.colorsSpentOnTriggeringSpell,
-                        triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell,
-                        triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
                         // The dynamic cap may read trigger-context properties — e.g. Elrond,
                         // Master of Healing's "up to X target creatures, where X is the number of
                         // cards looked at while scrying" (ContextPropertyKey.TRIGGER_SCRY_COUNT).
                         // Without this the cap resolves to 0 and the player can pick no targets.
-                        triggerScryCount = trigger.triggerContext.scryCount,
-                        triggerClashWon = trigger.triggerContext.clashWon,
-                        triggerDiscardCount = trigger.triggerContext.discardedCardCount,
-                        triggerDiscoverValue = trigger.triggerContext.discoverValue,
-                        triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
-                        triggerRecipientToughness = trigger.triggerContext.recipientToughnessAtDamage,
+                        triggerContext = trigger.triggerContext,
                         // A reflexive trigger's dynamic cap may read what its action half stashed
                         // (e.g. `VariableReference("discarded_count")`, Amass's army reference).
                         pipeline = trigger.carriedPipeline ?: com.wingedsheep.engine.handlers.PipelineState.EMPTY,
@@ -1616,28 +1495,7 @@ class TriggerProcessor(
                 triggeringEntityId = trigger.triggerContext.triggeringEntityId,
                 triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
                 xValue = trigger.triggerContext.xValue,
-                triggerDamageAmount = trigger.triggerContext.damageAmount,
-                triggerCounterCount = trigger.triggerContext.counterCount,
-                triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
-                triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
-            triggerLastKnownSubtypes = trigger.triggerContext.lastKnownSubtypes,
-            triggerLastKnownCardTypes = trigger.triggerContext.lastKnownCardTypes,
-                triggerLastKnownDamageDealtByPlayers = trigger.triggerContext.lastKnownDamageDealtByPlayers,
-                triggerLastKnownBlockingOrBlockedByIds = trigger.triggerContext.lastKnownBlockingOrBlockedByIds,
-                triggerLastKnownPower = trigger.triggerContext.lastKnownPower,
-                triggerLastKnownToughness = trigger.triggerContext.lastKnownToughness,
-                triggerDiedBatchTotalPower = trigger.triggerContext.diedBatchTotalPower,
-                triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
-                triggerManaSpentOnTriggeringSpell = trigger.triggerContext.manaSpentOnTriggeringSpell,
-                triggerColorsSpentOnTriggeringSpell = trigger.triggerContext.colorsSpentOnTriggeringSpell,
-                triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell,
-                triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
-                triggerScryCount = trigger.triggerContext.scryCount,
-                triggerClashWon = trigger.triggerContext.clashWon,
-                triggerDiscardCount = trigger.triggerContext.discardedCardCount,
-                triggerDiscoverValue = trigger.triggerContext.discoverValue,
-                triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
-                triggerRecipientToughness = trigger.triggerContext.recipientToughnessAtDamage,
+                triggerContext = trigger.triggerContext,
                 pipeline = trigger.carriedPipeline ?: com.wingedsheep.engine.handlers.PipelineState.EMPTY,
             )
             DynamicAmountEvaluator().evaluate(state, dyn, context).coerceAtLeast(0)

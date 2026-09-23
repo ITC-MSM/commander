@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Scarwood Bandits.
@@ -58,7 +59,7 @@ class ScarwoodBanditsScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, prize)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         settle(driver, opponent, pay = false)
 
         withClue("they declined, so the artifact came across") {
@@ -97,7 +98,7 @@ class ScarwoodBanditsScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, prize)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         var guard = 0
         while (guard++ < 16 && driver.pendingDecision == null && driver.state.stack.isNotEmpty()) {

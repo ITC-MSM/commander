@@ -31,6 +31,7 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Phase 1.1 of `backlog/multiplayer.md` — multi-defender combat. In a Free-for-All game the
@@ -119,13 +120,13 @@ class MultiDefenderCombatTest : FunSpec({
         val illegal = processor.process(
             state, DeclareBlockers(players[1], mapOf(ids["blkB"]!! to listOf(ids["atkC"]!!)))
         ).result
-        illegal.isSuccess.shouldBeFalse()
+        (illegal.outcome is Outcome.Done).shouldBeFalse()
 
         // players[1] blocks the attacker aimed at them — legal.
         val legal = processor.process(
             state, DeclareBlockers(players[1], mapOf(ids["blkB"]!! to listOf(ids["atkB"]!!)))
         ).result
-        legal.isSuccess.shouldBeTrue()
+        (legal.outcome is Outcome.Done).shouldBeTrue()
     }
 
     test("no seat gets a priority window between two defenders' block declarations (CR 802.4)") {
@@ -139,12 +140,12 @@ class MultiDefenderCombatTest : FunSpec({
         val afterB = processor.process(state, DeclareBlockers(players[1], emptyMap())).result.newState
         afterB.priorityPlayerId shouldBe players[3]
         // … so C — who sits between them and isn't being attacked — has no window to act in.
-        processor.process(afterB, PassPriority(players[2])).result.isSuccess.shouldBeFalse()
+        (processor.process(afterB, PassPriority(players[2])).result.outcome is Outcome.Done).shouldBeFalse()
 
         // Once D has declared too, the round is a normal priority round again.
         val afterD = processor.process(afterB, DeclareBlockers(players[3], emptyMap())).result.newState
         afterD.priorityPlayerId shouldBe players[3]
-        processor.process(afterD, PassPriority(players[3])).result.isSuccess.shouldBeTrue()
+        (processor.process(afterD, PassPriority(players[3])).result.outcome is Outcome.Done).shouldBeTrue()
     }
 
     test("both defenders declare blockers (APNAP) and damage lands on the right players") {
@@ -160,7 +161,7 @@ class MultiDefenderCombatTest : FunSpec({
         ).result.newState
 
         // While players[2] (C) still owes a block declaration, they cannot pass priority.
-        processor.process(state, PassPriority(players[2])).result.isSuccess.shouldBeFalse()
+        (processor.process(state, PassPriority(players[2])).result.outcome is Outcome.Done).shouldBeFalse()
 
         // Drive the rest of combat: declare C's (empty) blocks, then pass through to damage.
         val playersWhoDeclared = mutableSetOf<EntityId>()
@@ -179,7 +180,7 @@ class MultiDefenderCombatTest : FunSpec({
                 PassPriority(prio)
             }
             val result = processor.process(state, action).result
-            check(result.isSuccess || result.isPaused) { "action $action failed: ${result.error}" }
+            check(result.outcome is Outcome.Done || result.outcome is Outcome.Paused) { "action $action failed: ${result.error}" }
             state = result.newState
         }
 

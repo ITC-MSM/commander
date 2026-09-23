@@ -14,6 +14,8 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Broken Wings {2}{G} Instant (ZNR canonical; reprinted in FDN).
@@ -66,7 +68,7 @@ class BrokenWingsScenarioTest : FunSpec({
         castWings(driver, you)
         val wings = driver.putCardInHand(you, "Broken Wings")
 
-        driver.castSpellWithTargets(you, wings, listOf(ChosenTarget.Permanent(flyer))).isSuccess shouldBe true
+        driver.castSpellWithTargets(you, wings, listOf(ChosenTarget.Permanent(flyer))).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(opp, "Test Flyer") shouldBe null
@@ -83,7 +85,7 @@ class BrokenWingsScenarioTest : FunSpec({
         castWings(driver, you)
         val wings = driver.putCardInHand(you, "Broken Wings")
 
-        driver.castSpellWithTargets(you, wings, listOf(ChosenTarget.Permanent(rock))).isSuccess shouldBe true
+        driver.castSpellWithTargets(you, wings, listOf(ChosenTarget.Permanent(rock))).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(opp, "Test Rock") shouldBe null
@@ -108,7 +110,7 @@ class BrokenWingsScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.findPermanent(opp, "Test Grounder") shouldBe grounder
     }
 })

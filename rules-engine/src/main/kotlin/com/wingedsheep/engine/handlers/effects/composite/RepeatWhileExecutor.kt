@@ -95,7 +95,7 @@ class RepeatWhileExecutor(
             // Execute the body
             val result = effectExecutor(stateWithContinuation, body, context)
 
-            if (result.isPaused) {
+            if (result.outcome is Outcome.Paused) {
                 // Body paused — AFTER_BODY continuation is below body's continuation on the stack.
                 // checkForMoreContinuations will handle AFTER_BODY after the body's decision resolves.
                 return EffectResult.propagatePause(
@@ -104,10 +104,10 @@ class RepeatWhileExecutor(
                 )
             }
 
-            if (!result.isSuccess) {
-                // Body failed — pop AFTER_BODY and return error
+            if (result.outcome is Outcome.Rejected) {
+                // Body failed — pop AFTER_BODY and return the rejection
                 val (_, stateWithoutCont) = result.state.popContinuation()
-                return EffectResult(stateWithoutCont, priorEvents + result.events, result.error)
+                return EffectResult(stateWithoutCont, priorEvents + result.events, result.outcome)
             }
 
             // Body completed synchronously — pop AFTER_BODY and ask condition.

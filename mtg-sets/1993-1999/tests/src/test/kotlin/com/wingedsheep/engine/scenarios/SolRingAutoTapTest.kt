@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Sol Ring's mana ability is "{T}: Add {C}{C}" — two colorless from a single tap. Regression net
@@ -80,7 +81,7 @@ class SolRingAutoTapTest : FunSpec({
         val spell = driver.putCardInHand(player, "Generic Two")
 
         val result = driver.castSpell(player, spell)
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.isTapped(ring) shouldBe true
     }
 
@@ -91,7 +92,7 @@ class SolRingAutoTapTest : FunSpec({
         val spell = driver.putCardInHand(player, "Generic One")
 
         val result = driver.castSpell(player, spell)
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         // Sol Ring produced {C}{C}; {1} paid the spell, one {C} should remain floating.
         val pool = driver.state.getEntity(player)?.get<ManaPoolComponent>()
         (pool?.colorless ?: 0) shouldBe 1

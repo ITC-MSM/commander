@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Gigapede:
@@ -151,7 +152,7 @@ class GigapedeTest : FunSpec({
         val bolt = driver.putCardInHand(activePlayer, "Lightning Bolt")
 
         val result = driver.castSpell(activePlayer, bolt)
-        if (result.isSuccess && driver.pendingDecision is ChooseTargetsDecision) {
+        if (result.outcome is Outcome.Done && driver.pendingDecision is ChooseTargetsDecision) {
             val targetDecision = driver.pendingDecision as ChooseTargetsDecision
             val legalTargets = targetDecision.legalTargets[0] ?: emptyList()
             // Gigapede should NOT be a legal target (it has shroud)

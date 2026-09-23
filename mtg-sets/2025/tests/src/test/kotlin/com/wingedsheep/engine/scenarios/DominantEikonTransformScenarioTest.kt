@@ -21,6 +21,7 @@ import com.wingedsheep.sdk.scripting.TimingRule
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Dominant / eikon transform (FIN §2): the front face's "Exile this, then return it transformed"
@@ -107,7 +108,7 @@ class DominantEikonTransformScenarioTest : FunSpec({
         driver.giveColorlessMana(active, 4)
         val abilityId = CliveIfritsDominant.activatedAbilities.first().id
         driver.submit(ActivateAbility(playerId = active, sourceId = clive, abilityId = abilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
         declineOptionalDecisions(driver) // chapter I "fight up to one" — no other creature, none chosen
         resolveStack(driver)
@@ -170,7 +171,7 @@ class DominantEikonTransformScenarioTest : FunSpec({
         driver.giveColorlessMana(active, 3)
         val abilityId = JillShivasDominant.activatedAbilities.first().id
         driver.submit(ActivateAbility(playerId = active, sourceId = jill, abilityId = abilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
         declineOptionalDecisions(driver)
         resolveStack(driver)

@@ -173,12 +173,15 @@ class CostEnumerationUtils(
         anyPlayersZone: Boolean = false,
         singleZone: Boolean = false,
         count: Int = 1,
+        /** The cost's source, left out of the pool for an "exile **another** …" cost. */
+        excludeSelfId: EntityId? = null,
     ): List<EntityId> {
         val predicateContext = PredicateContext(controllerId = playerId)
         val owners = if (anyPlayersZone) state.turnOrder else listOf(playerId)
         val matchesByOwner = owners.map { owner ->
             state.getZone(ZoneKey(owner, zone)).filter { entityId ->
-                predicateEvaluator.matches(state, state.projectedState, entityId, filter, predicateContext)
+                entityId != excludeSelfId &&
+                    predicateEvaluator.matches(state, state.projectedState, entityId, filter, predicateContext)
             }
         }
         return if (singleZone) {

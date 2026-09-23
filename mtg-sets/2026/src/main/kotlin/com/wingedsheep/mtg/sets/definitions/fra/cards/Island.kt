@@ -2,18 +2,22 @@ package com.wingedsheep.mtg.sets.definitions.fra.cards
 
 import com.wingedsheep.sdk.dsl.basicLand
 
+/**
+ * Reality Fracture Island arts: two regular-frame booster arts in the main set numbering, then
+ * three non-booster treatments above it. Scryfall reports `booster: false` for every FRA basic
+ * (pre-release data), so the regular arts are marked in-booster by hand — they are what
+ * limited deck building hands out (`BoosterGenerator.getBasicLands`).
+ */
 val RealityFractureIsland283 = basicLand("Island") {
     collectorNumber = "283"
     artist = "Chris Ostrowski"
     imageUri = "https://cards.scryfall.io/normal/front/d/8/d8184e92-54e6-4ddc-86e8-67f5c5eb079d.jpg?1789599732"
-    inBooster = false
 }
 
 val RealityFractureIsland284 = basicLand("Island") {
     collectorNumber = "284"
     artist = "Zack Stella"
     imageUri = "https://cards.scryfall.io/normal/front/1/c/1c1b233f-ade1-40c8-a91f-e9d8cc63179b.jpg?1789599692"
-    inBooster = false
 }
 
 val RealityFractureIsland385 = basicLand("Island") {

@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Spinewoods Armadillo (OTJ #182) — {4}{G}{G} 7/7 Creature — Armadillo.
@@ -43,7 +44,7 @@ class SpinewoodsArmadilloScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = armadillo, abilityId = abilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Search decision for the basic land.

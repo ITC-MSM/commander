@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Patchwork Gnomes.
@@ -59,7 +60,7 @@ class PatchworkGnomesScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(discardedCards = listOf(toDiscard))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Card was discarded.
@@ -88,14 +89,14 @@ class PatchworkGnomesScenarioTest : FunSpec({
                 abilityId = abilityId,
                 costPayment = AdditionalCostPayment(discardedCards = listOf(toDiscard))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Lightning Bolt the 2/1 — lethal, but the shield replaces destruction. The active
         // player casts it (their own sorcery-speed priority) targeting their own creature.
         val bolt = driver.putCardInHand(activePlayer, "Lightning Bolt")
         driver.giveMana(activePlayer, Color.RED, 1)
-        driver.castSpell(activePlayer, bolt, listOf(gnomes)).isSuccess shouldBe true
+        driver.castSpell(activePlayer, bolt, listOf(gnomes)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Gnomes survived (regenerated) and is tapped.
@@ -121,6 +122,6 @@ class PatchworkGnomesScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(discardedCards = emptyList())
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

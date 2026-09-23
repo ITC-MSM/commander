@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * The Key to the Vault — {1}{U} Legendary Artifact — Equipment.
@@ -50,7 +51,7 @@ class OtjTheKeyToTheVaultScenarioTest : FunSpec({
         driver.giveMana(me, Color.BLUE, 1) // {2}{U}
         driver.submit(
             ActivateAbility(me, key, equipId, targets = listOf(ChosenTarget.Permanent(attacker)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getEntity(key)?.get<AttachedToComponent>()?.targetId shouldBe attacker
 

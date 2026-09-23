@@ -20,6 +20,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tarrian's Journal // The Tomb of Aclazotz (LCI #126).
@@ -68,7 +69,7 @@ class TarriansJournalScenarioTest : FunSpec({
         driver.giveColorlessMana(player, 2)
         val transformId = TarriansJournal.activatedAbilities[1].id
         driver.submit(ActivateAbility(playerId = player, sourceId = journal, abilityId = transformId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
         resolveStack(driver)
         driver.untapPermanent(journal)
@@ -98,7 +99,7 @@ class TarriansJournalScenarioTest : FunSpec({
         val backAbilities = TarriansJournal.backFace!!.activatedAbilities
         val reanimatorId = backAbilities.first { it.effect is GrantStaticAbilityEffect }.id
         driver.submit(ActivateAbility(playerId = active, sourceId = tomb, abilityId = reanimatorId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
         resolveStack(driver)
 
@@ -109,7 +110,7 @@ class TarriansJournalScenarioTest : FunSpec({
         driver.giveColorlessMana(active, 1)
         val castRes = driver.castSpell(active, rat)
         withClue("grants=$grantCount castError=${castRes.error} paused=${driver.isPaused}") {
-            castRes.isSuccess shouldBe true
+            castRes.outcome shouldBe Outcome.Done
         }
         driver.bothPass()
         resolveStack(driver)

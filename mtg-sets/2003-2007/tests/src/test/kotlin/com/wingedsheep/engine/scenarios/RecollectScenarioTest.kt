@@ -12,6 +12,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Recollect (RAV #178) — {2}{G} Sorcery, "Return target card from **your** graveyard to your hand."
@@ -56,7 +58,7 @@ class RecollectScenarioTest : FunSpec({
         val d = driver()
         val mine = d.putCardInGraveyard(d.player1, "Grizzly Bears")
 
-        castRecollect(d, d.player1, mine).isSuccess shouldBe true
+        castRecollect(d, d.player1, mine).outcome shouldBe Outcome.Done
         while (d.stackSize > 0) d.bothPass()
 
         d.getGraveyardCardNames(d.player1) shouldNotContain "Grizzly Bears"
@@ -70,7 +72,7 @@ class RecollectScenarioTest : FunSpec({
         d.putCardInGraveyard(d.player1, "Grizzly Bears")
         val theirs = d.putCardInGraveyard(d.player2, "Centaur Courser")
 
-        castRecollect(d, d.player2, theirs).isSuccess shouldBe false
+        castRecollect(d, d.player2, theirs).outcome shouldNotBe Outcome.Done
         d.getGraveyardCardNames(d.player2) shouldContain "Centaur Courser"
     }
 })

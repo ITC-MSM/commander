@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Wilt-Leaf Liege (SHM #245, reprinted as FDN #668) — {1}{G/W}{G/W}{G/W} 4/4 Creature — Elf Knight.
@@ -86,7 +87,7 @@ class WiltLeafLiegeScenarioTest : FunSpec({
 
         val mindRot = driver.putCardInHand(me, "Mind Rot")
         driver.giveMana(me, Color.BLACK, 3)
-        driver.castSpell(me, mindRot, listOf(foe)).isSuccess shouldBe true
+        driver.castSpell(me, mindRot, listOf(foe)).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.submitCardSelection(foe, listOf(liege, bears))
 
@@ -109,7 +110,7 @@ class WiltLeafLiegeScenarioTest : FunSpec({
         // Mind Rot targeting yourself: the causing spell is one you control, so the clause is off.
         val mindRot = driver.putCardInHand(me, "Mind Rot")
         driver.giveMana(me, Color.BLACK, 3)
-        driver.castSpell(me, mindRot, listOf(me)).isSuccess shouldBe true
+        driver.castSpell(me, mindRot, listOf(me)).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.submitCardSelection(me, listOf(liege, bears))
 

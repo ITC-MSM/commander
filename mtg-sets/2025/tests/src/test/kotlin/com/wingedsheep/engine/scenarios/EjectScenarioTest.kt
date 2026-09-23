@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Eject.
@@ -49,7 +50,7 @@ class EjectScenarioTest : FunSpec({
         driver.giveColorlessMana(activePlayer, 3)
 
         val castResult = driver.castSpell(activePlayer, eject, listOf(bears))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -78,6 +79,6 @@ class EjectScenarioTest : FunSpec({
         driver.giveColorlessMana(activePlayer, 3)
 
         val castResult = driver.castSpell(activePlayer, eject, listOf(land))
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
     }
 })

@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Nim Devourer (MRD #70) — {3}{B}{B} Creature — Zombie, 4/1.
@@ -115,7 +116,7 @@ class NimDevourerScenarioTest : FunSpec({
         canActivate(driver, me, devourer) shouldBe true
 
         driver.submit(ActivateAbility(playerId = me, sourceId = devourer, abilityId = abilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // The return happens before the sacrifice, so the Devourer is on the battlefield and is

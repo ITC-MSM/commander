@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Proteus Staff (MRD #230) — "{2}{U}, {T}: Put target creature on the bottom of its owner's
@@ -106,7 +107,7 @@ class ProteusStaffScenarioTest : FunSpec({
         withClue("two non-creature cards were revealed, so their owner orders them") {
             val decision = d.state.pendingDecision
             (decision as? ReorderLibraryDecision)?.playerId shouldBe d.player2
-            d.submitOrderedResponse(d.player2, listOf(second, first)).isSuccess shouldBe true
+            d.submitOrderedResponse(d.player2, listOf(second, first)).outcome shouldBe Outcome.Done
         }
 
         withClue("the revealed creature enters under the target's controller, not the Staff's") {
@@ -138,7 +139,7 @@ class ProteusStaffScenarioTest : FunSpec({
         )
         d.bothPass()
         (d.state.pendingDecision as? ReorderLibraryDecision)?.playerId shouldBe d.player1
-        d.submitOrderedResponse(d.player1, listOf(top, next)).isSuccess shouldBe true
+        d.submitOrderedResponse(d.player1, listOf(top, next)).outcome shouldBe Outcome.Done
 
         withClue("the bottomed target is the creature the reveal finds, so it returns") {
             d.getCreatures(d.player1).map { d.getCardName(it) } shouldBe listOf("Grizzly Bears")

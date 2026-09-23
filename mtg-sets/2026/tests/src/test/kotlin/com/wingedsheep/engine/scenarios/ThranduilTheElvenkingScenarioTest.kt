@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Thranduil, the Elvenking — {2}{B}{G}{U} Legendary Creature — Elf Noble (The Hobbit #167).
@@ -175,14 +176,14 @@ class ThranduilTheElvenkingScenarioTest : FunSpec({
         val handBefore = driver.getHandSize(you)
         val graveBefore = driver.getGraveyard(you).size
         driver.giveMana(you, Color.GREEN)
-        driver.castSpell(you, elf).isSuccess shouldBe true
+        driver.castSpell(you, elf).outcome shouldBe Outcome.Done
         driver.bothPass() // Resolve the Elf.
         resolveStack(driver) // Resolve the draw-two trigger, pausing on the discard choice.
 
         // Cast one (-1), drew two (+2), then discard one (-1) → net level with the starting hand.
         (driver.pendingDecision != null) shouldBe true
         val toDiscard = driver.getHand(you).first()
-        driver.submitCardSelection(you, listOf(toDiscard)).isSuccess shouldBe true
+        driver.submitCardSelection(you, listOf(toDiscard)).outcome shouldBe Outcome.Done
         resolveStack(driver)
 
         driver.getHandSize(you) shouldBe handBefore
@@ -198,14 +199,14 @@ class ThranduilTheElvenkingScenarioTest : FunSpec({
 
         var handBefore = driver.getHandSize(you)
         driver.giveMana(you, Color.GREEN)
-        driver.castSpell(you, scout).isSuccess shouldBe true
+        driver.castSpell(you, scout).outcome shouldBe Outcome.Done
         resolveStack(driver)
         driver.state.pendingDecision shouldBe null
         driver.getHandSize(you) shouldBe handBefore - 1
 
         handBefore = driver.getHandSize(you)
         driver.giveMana(you, Color.GREEN)
-        driver.castSpell(you, dwarf).isSuccess shouldBe true
+        driver.castSpell(you, dwarf).outcome shouldBe Outcome.Done
         resolveStack(driver)
         driver.state.pendingDecision shouldBe null
         driver.getHandSize(you) shouldBe handBefore - 1
@@ -221,7 +222,7 @@ class ThranduilTheElvenkingScenarioTest : FunSpec({
         driver.giveMana(you, Color.GREEN)
         driver.giveMana(you, Color.BLUE)
         driver.giveColorlessMana(you, 2)
-        driver.castSpell(you, thranduil).isSuccess shouldBe true
+        driver.castSpell(you, thranduil).outcome shouldBe Outcome.Done
         resolveStack(driver)
 
         driver.state.pendingDecision shouldBe null

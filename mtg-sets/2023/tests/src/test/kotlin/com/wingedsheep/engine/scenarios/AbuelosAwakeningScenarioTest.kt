@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Abuelo's Awakening (LCI #1).
@@ -66,7 +67,7 @@ class AbuelosAwakeningScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Moved from graveyard to the battlefield.
@@ -103,7 +104,7 @@ class AbuelosAwakeningScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.getZone(ZoneKey(player, Zone.BATTLEFIELD)).contains(enchantment) shouldBe true

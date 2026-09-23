@@ -230,7 +230,7 @@ class DynamicAmountEvaluator(
             // than zero.
             is DynamicAmount.LastKnownSourceCounters -> {
                 val snapshot = context.lastKnownSourceCounters
-                    .ifEmpty { context.triggerLastKnownCounters ?: emptyMap() }
+                    .ifEmpty { context.triggerContext?.lastKnownCounters ?: emptyMap() }
                 when (val filter = amount.counterType) {
                     is CounterTypeFilter.Any -> snapshot.values.sum()
                     else -> snapshot[counterTypeToString(resolveCounterType(filter))] ?: 0
@@ -241,7 +241,7 @@ class DynamicAmountEvaluator(
             // The per-player tally is captured onto the ZoneChangeEvent when the permanent leaves
             // the battlefield, so a dies trigger still reads it after the entity is gone.
             is DynamicAmount.LastKnownDamageDealtToSource ->
-                context.triggerLastKnownDamageDealtByPlayers?.values?.sum() ?: 0
+                context.triggerContext?.lastKnownDamageDealtByPlayers?.values?.sum() ?: 0
 
             // The {X} this object was cast with, read off the current object regardless of zone.
             // Reads, in order: the durable CastChoicesComponent on the battlefield permanent (and
@@ -510,7 +510,7 @@ class DynamicAmountEvaluator(
                     amount.numericProperty is EntityNumericProperty.Power &&
                     (entityId == null || entityId !in state.getBattlefield())
                 ) {
-                    return context.enchantedCreatureLastKnownPower ?: 0
+                    return context.triggerContext?.enchantedCreatureLastKnownPower ?: 0
                 }
                 if (entityId == null) return 0
                 // Last-known-information fallback (CR 113.7a / 603.10 / 608.2h): one rule for every
@@ -636,6 +636,8 @@ class DynamicAmountEvaluator(
                         state.getEntity(playerId)
                             ?.has<com.wingedsheep.engine.state.components.player.WasDealtCombatDamageThisTurnComponent>() == true
                     }
+                    TurnTracker.DEALT_NONCOMBAT_DAMAGE -> playerIds.count { it in state.playersDealtNoncombatDamageThisTurn }
+                    TurnTracker.DEALT_NONCOMBAT_DAMAGE_LAST_TURN -> playerIds.count { it in state.playersDealtNoncombatDamageLastTurn }
                     TurnTracker.DEALT_COMBAT_DAMAGE_BY_LEGENDARY_CREATURE -> playerIds.count { playerId ->
                         state.getEntity(playerId)
                             ?.has<com.wingedsheep.engine.state.components.player.WasDealtCombatDamageByLegendaryCreatureThisTurnComponent>() == true
@@ -668,6 +670,10 @@ class DynamicAmountEvaluator(
                     TurnTracker.FOOD_SACRIFICED -> playerIds.count { playerId ->
                         state.getEntity(playerId)
                             ?.has<com.wingedsheep.engine.state.components.player.SacrificedFoodThisTurnComponent>() == true
+                    }
+                    TurnTracker.SCRIED_OR_SURVEILED -> playerIds.count { playerId ->
+                        state.getEntity(playerId)
+                            ?.has<com.wingedsheep.engine.state.components.player.ScriedOrSurveiledThisTurnComponent>() == true
                     }
                     TurnTracker.ARTIFACT_SACRIFICED -> playerIds.count { playerId ->
                         state.getEntity(playerId)
@@ -895,7 +901,7 @@ class DynamicAmountEvaluator(
      * Resolve a [ContextPropertyKey] against the current resolution [context].
      *
      * The trigger amount keys (damage / life-gained / life-lost) all read the same
-     * `triggerDamageAmount` field — `LifeChangedEvent` populates it with the absolute
+     * `TriggerContext.damageAmount` field — `LifeChangedEvent` populates it with the absolute
      * amount of life moved, regardless of direction.
      */
     private fun evaluateContextProperty(
@@ -906,12 +912,12 @@ class DynamicAmountEvaluator(
         ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT,
         ContextPropertyKey.PREVENTED_DAMAGE_AMOUNT,
         ContextPropertyKey.TRIGGER_LIFE_GAINED,
-        ContextPropertyKey.TRIGGER_LIFE_LOST -> context.triggerDamageAmount ?: 0
+        ContextPropertyKey.TRIGGER_LIFE_LOST -> context.triggerContext?.damageAmount ?: 0
 
         ContextPropertyKey.LAST_KNOWN_PLUS_ONE_COUNTER_COUNT,
-        ContextPropertyKey.TRIGGER_COUNTERS_PLACED_AMOUNT -> context.triggerCounterCount ?: 0
-        ContextPropertyKey.TRIGGER_COUNTERS_REMOVED_AMOUNT -> context.triggerCounterCount ?: 0
-        ContextPropertyKey.LAST_KNOWN_TOTAL_COUNTER_COUNT -> context.triggerTotalCounterCount ?: 0
+        ContextPropertyKey.TRIGGER_COUNTERS_PLACED_AMOUNT -> context.triggerContext?.counterCount ?: 0
+        ContextPropertyKey.TRIGGER_COUNTERS_REMOVED_AMOUNT -> context.triggerContext?.counterCount ?: 0
+        ContextPropertyKey.LAST_KNOWN_TOTAL_COUNTER_COUNT -> context.triggerContext?.totalCounterCount ?: 0
 
         ContextPropertyKey.ADDITIONAL_COST_EXILED_COUNT -> context.exiledCardCount
 
@@ -924,27 +930,27 @@ class DynamicAmountEvaluator(
             com.wingedsheep.engine.handlers.costs.CostAtomAmounts
                 .totalManaValueOf(state, context.targets)
 
-        ContextPropertyKey.MODES_CHOSEN_ON_TRIGGERING_SPELL -> context.triggerModesChosenCount ?: 0
+        ContextPropertyKey.MODES_CHOSEN_ON_TRIGGERING_SPELL -> context.triggerContext?.modesChosenCount ?: 0
 
-        ContextPropertyKey.MANA_SPENT_ON_TRIGGERING_SPELL -> context.triggerManaSpentOnTriggeringSpell ?: 0
+        ContextPropertyKey.MANA_SPENT_ON_TRIGGERING_SPELL -> context.triggerContext?.manaSpentOnTriggeringSpell ?: 0
 
-        ContextPropertyKey.COLORS_SPENT_ON_TRIGGERING_SPELL -> context.triggerColorsSpentOnTriggeringSpell ?: 0
+        ContextPropertyKey.COLORS_SPENT_ON_TRIGGERING_SPELL -> context.triggerContext?.colorsSpentOnTriggeringSpell ?: 0
 
-        ContextPropertyKey.TRIGGERING_SPELL_MANA_VALUE -> context.triggerManaValueOfTriggeringSpell ?: 0
+        ContextPropertyKey.TRIGGERING_SPELL_MANA_VALUE -> context.triggerContext?.manaValueOfTriggeringSpell ?: 0
 
-        ContextPropertyKey.X_VALUE_OF_TRIGGERING_SPELL -> context.triggerXValueOfTriggeringSpell ?: 0
+        ContextPropertyKey.X_VALUE_OF_TRIGGERING_SPELL -> context.triggerContext?.xValueOfTriggeringSpell ?: 0
 
-        ContextPropertyKey.TRIGGER_SCRY_COUNT -> context.triggerScryCount ?: 0
+        ContextPropertyKey.TRIGGER_SCRY_COUNT -> context.triggerContext?.scryCount ?: 0
 
-        ContextPropertyKey.TRIGGER_DISCARD_COUNT -> context.triggerDiscardCount ?: 0
+        ContextPropertyKey.TRIGGER_DISCARD_COUNT -> context.triggerContext?.discardedCardCount ?: 0
 
-        ContextPropertyKey.TRIGGER_DISCOVER_VALUE -> context.triggerDiscoverValue ?: 0
+        ContextPropertyKey.TRIGGER_DISCOVER_VALUE -> context.triggerContext?.discoverValue ?: 0
 
-        ContextPropertyKey.TRIGGER_EXCESS_DAMAGE_AMOUNT -> context.triggerExcessDamageAmount ?: 0
+        ContextPropertyKey.TRIGGER_EXCESS_DAMAGE_AMOUNT -> context.triggerContext?.excessDamageAmount ?: 0
 
-        ContextPropertyKey.TRIGGER_RECIPIENT_TOUGHNESS -> context.triggerRecipientToughness ?: 0
+        ContextPropertyKey.TRIGGER_RECIPIENT_TOUGHNESS -> context.triggerContext?.recipientToughnessAtDamage ?: 0
 
-        ContextPropertyKey.DIED_BATCH_TOTAL_POWER -> context.triggerDiedBatchTotalPower ?: 0
+        ContextPropertyKey.DIED_BATCH_TOTAL_POWER -> context.triggerContext?.diedBatchTotalPower ?: 0
 
         ContextPropertyKey.LINKED_EXILE_CARD_COUNT -> {
             val sourceId = context.sourceId
@@ -1496,7 +1502,7 @@ class DynamicAmountEvaluator(
         val staleSource = entityId == context.sourceId && context.objectReferences.captured &&
             !context.objectReferences.isCurrent(context.objectReferences.source, state)
         if (staleTrigger || staleSource) {
-            val lastKnown = if (isPower) context.triggerLastKnownPower else context.triggerLastKnownToughness
+            val lastKnown = if (isPower) context.triggerContext?.lastKnownPower else context.triggerContext?.lastKnownToughness
             if (lastKnown != null) return lastKnown
         }
         if (useProjected) {
@@ -1508,7 +1514,7 @@ class DynamicAmountEvaluator(
         // triggering entity is no longer on the battlefield, its projected P/T is gone,
         // so consult the value captured on the ZoneChangeEvent (Rule 603.10, 113.7a).
         if (entityId == context.triggeringEntityId || entityId == context.sourceId) {
-            val lastKnown = if (isPower) context.triggerLastKnownPower else context.triggerLastKnownToughness
+            val lastKnown = if (isPower) context.triggerContext?.lastKnownPower else context.triggerContext?.lastKnownToughness
             if (lastKnown != null) return lastKnown
         }
         // Fall back to base stats (entity not on battlefield or projection disabled)

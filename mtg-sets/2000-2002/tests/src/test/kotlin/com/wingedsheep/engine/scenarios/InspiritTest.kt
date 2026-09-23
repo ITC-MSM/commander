@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Inspirit.
@@ -49,7 +50,7 @@ class InspiritTest : FunSpec({
         driver.giveMana(activePlayer, Color.WHITE, 3)
 
         val castResult = driver.castSpell(activePlayer, inspirit, listOf(bears))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

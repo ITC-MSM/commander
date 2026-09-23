@@ -12,6 +12,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Dwarven Miner (MIR #169) — {1}{R} 1/2 Creature — Dwarf,
@@ -58,7 +60,7 @@ class DwarvenMinerScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Permanent(gate)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (d.stackSize > 0) d.bothPass()
 
         d.findPermanent(d.player2, "Azorius Guildgate").shouldBeNull()
@@ -78,7 +80,7 @@ class DwarvenMinerScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Permanent(mountain)),
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
 
         d.findPermanent(d.player2, "Mountain").shouldNotBeNull()
     }

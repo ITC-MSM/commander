@@ -17,6 +17,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * "Whenever a creature you control becomes the target of a spell or ability
@@ -105,7 +106,7 @@ class PawpatchRecruitTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(forest))
             )
         )
-        animate.isSuccess shouldBe true
+        animate.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Opponent bolts the animated Forest — a creature the active player controls,

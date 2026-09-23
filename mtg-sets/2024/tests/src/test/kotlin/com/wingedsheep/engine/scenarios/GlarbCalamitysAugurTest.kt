@@ -76,7 +76,7 @@ class GlarbCalamitysAugurTest : FunSpec({
         val forestOnTop = driver.putCardOnTopOfLibrary(activePlayer, "Forest")
 
         val playResult = driver.playLand(activePlayer, forestOnTop)
-        playResult.isSuccess shouldBe true
+        playResult.outcome shouldBe Outcome.Done
 
         driver.findPermanent(activePlayer, "Forest") shouldNotBe null
     }
@@ -99,7 +99,7 @@ class GlarbCalamitysAugurTest : FunSpec({
         driver.giveMana(activePlayer, Color.GREEN, 4)
 
         val castResult = driver.castSpell(activePlayer, frogmiteOnTop)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -127,7 +127,7 @@ class GlarbCalamitysAugurTest : FunSpec({
         val creature = driver.putCreatureOnBattlefield(opponent, "Grizzly Bears")
 
         val castResult = driver.castSpell(activePlayer, boltOnTop, listOf(creature))
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
     }
 
     test("surveil 2 activated ability works") {
@@ -155,7 +155,7 @@ class GlarbCalamitysAugurTest : FunSpec({
                 abilityId = GlarbCard.script.activatedAbilities.first().id
             )
         )
-        activateResult.isSuccess shouldBe true
+        activateResult.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Should be paused for card selection (select cards to put in graveyard)

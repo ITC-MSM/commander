@@ -12,6 +12,8 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Irrigation Ditch has a sacrifice-free mana ability *and* a sacrifice one:
@@ -75,7 +77,7 @@ class IrrigationDitchAutoTapTest : FunSpec({
         // sacrifice must be a deliberate choice.
         val result = driver.castSpell(activePlayer, elf)
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         // Irrigation Ditch was NOT sacrificed: still on the battlefield, untapped.
         driver.findPermanent(activePlayer, "Irrigation Ditch") shouldBe ditch
         driver.isTapped(ditch) shouldBe false
@@ -94,7 +96,7 @@ class IrrigationDitchAutoTapTest : FunSpec({
         // {W}: Irrigation Ditch's plain "{T}: Add {W}" ability covers it without sacrificing.
         val result = driver.castSpell(activePlayer, bear)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         // Tapped for {W}, but still on the battlefield (not sacrificed).
         driver.isTapped(ditch) shouldBe true
         driver.findPermanent(activePlayer, "Irrigation Ditch") shouldBe ditch

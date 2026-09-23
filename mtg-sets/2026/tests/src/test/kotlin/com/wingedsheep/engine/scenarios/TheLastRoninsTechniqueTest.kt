@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * The Last Ronin's Technique (TMT #12) — Instant, Sneak {1}{W}. "Create three
@@ -27,7 +28,7 @@ class TheLastRoninsTechniqueTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         // mana added here — unspent mana empties as each step/phase ends (CR 500.5)
         driver.giveMana(player, Color.WHITE, 4)
-        driver.castSpell(player, spell).isSuccess shouldBe true
+        driver.castSpell(player, spell).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         val tokens = driver.getPermanents(player).filter {

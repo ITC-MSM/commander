@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario test for Halcyon Glaze (RAV #54) — {1}{U}{U} Enchantment.
@@ -39,7 +40,7 @@ class HalcyonGlazeScenarioTest : ScenarioTestBase() {
                     game.state.projectedState.isCreature(glaze) shouldBe false
                 }
 
-                game.castSpell(1, "Grizzly Bears").isSuccess shouldBe true
+                game.castSpell(1, "Grizzly Bears").outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 val projected = game.state.projectedState
@@ -69,7 +70,7 @@ class HalcyonGlazeScenarioTest : ScenarioTestBase() {
                 val glaze = game.findPermanent("Halcyon Glaze").shouldNotBeNull()
 
                 val bears = game.findPermanent("Grizzly Bears").shouldNotBeNull()
-                game.castSpell(1, "Lightning Bolt", bears).isSuccess shouldBe true
+                game.castSpell(1, "Lightning Bolt", bears).outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 withClue("The trigger reads \"creature spell\"") {

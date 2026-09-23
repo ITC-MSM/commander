@@ -542,6 +542,7 @@ object ZoneMovementUtils {
             .without<CraftedFromExiledComponent>()
             // Combat
             .without<AttackingComponent>()
+            .without<com.wingedsheep.engine.state.components.combat.BeingAttackedComponent>()
             .without<BlockingComponent>()
             .without<BlockedComponent>()
             .without<DamageAssignmentComponent>()

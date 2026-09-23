@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Entity Tracker (DSK #53) — {2}{U} Creature — Human Scout 2/3.
@@ -37,7 +38,7 @@ class EntityTrackerScenarioTest : FunSpec({
         val enchantment = driver.putCardInHand(player, "Test Enchantment")
         driver.giveMana(player, Color.WHITE, 1)
         driver.giveMana(player, Color.GREEN, 1)
-        driver.castSpell(player, enchantment).isSuccess shouldBe true
+        driver.castSpell(player, enchantment).outcome shouldBe Outcome.Done
         // Hand size right after the enchantment is on the stack (no longer in hand).
         val handAfterCast = driver.getHandSize(player)
         driver.bothPass() // resolve the enchantment — ETB queues the Eerie trigger

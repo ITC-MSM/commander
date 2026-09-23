@@ -41,6 +41,7 @@ data class ModifySpellCost(
             SpellCostTarget.SelfCast -> "This spell"
             is SpellCostTarget.YouCast -> "${filterAdjective(target.filter)}$noun you cast"
             is SpellCostTarget.AnyCaster -> "${filterAdjective(target.filter)}$noun"
+            is SpellCostTarget.OpponentsCast -> "${filterAdjective(target.filter)}$noun your opponents cast"
             is SpellCostTarget.OpponentsCastTargeting ->
                 "Spells your opponents cast that target ${target.targetFilter.description}"
             is SpellCostTarget.OpponentsCastFromZones ->
@@ -95,6 +96,7 @@ data class ModifySpellCost(
     private fun fromCasterPerspective(sourceDescription: String): String =
         when (target) {
             is SpellCostTarget.AnyCaster,
+            is SpellCostTarget.OpponentsCast,
             is SpellCostTarget.OpponentsCastTargeting,
             is SpellCostTarget.OpponentsCastFromZones ->
                 sourceDescription
@@ -183,6 +185,25 @@ sealed interface SpellCostTarget {
     @SerialName("AnyCaster")
     @Serializable
     data class AnyCaster(val filter: GameObjectFilter) : SpellCostTarget {
+        override fun applyTextReplacement(replacer: TextReplacer): SpellCostTarget {
+            val newFilter = filter.applyTextReplacement(replacer)
+            return if (newFilter !== filter) copy(filter = newFilter) else this
+        }
+    }
+
+    /**
+     * Spells matching [filter] cast by an **opponent** of the source's controller, from any zone —
+     * "Noncreature spells your opponents cast cost {1} more to cast" (Thalia, the Survivor).
+     *
+     * The opponent-only half of [AnyCaster]: the source's own controller is never taxed. Narrower
+     * siblings add a second axis on top of "an opponent cast it" — [OpponentsCastFromZones] (where
+     * the spell was cast from) and [OpponentsCastTargeting] (what it targets). Being a tax, it also
+     * applies to alternative costs (CR 118.9d), so the cost calculator's alternative-base path reads
+     * it alongside [AnyCaster].
+     */
+    @SerialName("OpponentsCast")
+    @Serializable
+    data class OpponentsCast(val filter: GameObjectFilter = GameObjectFilter.Any) : SpellCostTarget {
         override fun applyTextReplacement(replacer: TextReplacer): SpellCostTarget {
             val newFilter = filter.applyTextReplacement(replacer)
             return if (newFilter !== filter) copy(filter = newFilter) else this

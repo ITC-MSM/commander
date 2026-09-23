@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Haste Magic (FIN #140) — {1}{R} Instant.
@@ -43,7 +44,7 @@ class HasteMagicScenarioTest : FunSpec({
         val spell = driver.putCardInHand(me, "Haste Magic")
         driver.giveMana(me, Color.RED, 2)
 
-        driver.castSpell(me, spell, listOf(bears)).isSuccess shouldBe true
+        driver.castSpell(me, spell, listOf(bears)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Pump + haste applied (2/2 Grizzly Bears -> 5/3).
@@ -57,7 +58,7 @@ class HasteMagicScenarioTest : FunSpec({
         driver.state.mayPlayPermissions.any { exiled in it.cardIds } shouldBe true
 
         // It can actually be played from exile this turn.
-        driver.playLand(me, exiled).isSuccess shouldBe true
+        driver.playLand(me, exiled).outcome shouldBe Outcome.Done
         driver.getExile(me).contains(exiled) shouldBe false
     }
 
@@ -72,7 +73,7 @@ class HasteMagicScenarioTest : FunSpec({
         val spell = driver.putCardInHand(me, "Haste Magic")
         driver.giveMana(me, Color.RED, 2)
 
-        driver.castSpell(me, spell, listOf(bears)).isSuccess shouldBe true
+        driver.castSpell(me, spell, listOf(bears)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val exiled = driver.getExile(me).single()

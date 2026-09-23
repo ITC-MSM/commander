@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Fractured Loyalty (MRD #93) — "Whenever enchanted creature becomes the target of a spell or
@@ -39,7 +40,7 @@ class FracturedLoyaltyScenarioTest : FunSpec({
     fun GameTestDriver.enchant(enchanter: EntityId, creature: EntityId) {
         val aura = putCardInHand(enchanter, "Fractured Loyalty")
         giveMana(enchanter, Color.RED, 2)
-        castSpell(enchanter, aura, listOf(creature)).isSuccess shouldBe true
+        castSpell(enchanter, aura, listOf(creature)).outcome shouldBe Outcome.Done
         bothPass()
     }
 
@@ -64,7 +65,7 @@ class FracturedLoyaltyScenarioTest : FunSpec({
 
         val growth = d.putCardInHand(d.player1, "Giant Growth")
         d.giveMana(d.player1, Color.GREEN, 1)
-        d.castSpell(d.player1, growth, listOf(bears)).isSuccess shouldBe true
+        d.castSpell(d.player1, growth, listOf(bears)).outcome shouldBe Outcome.Done
         resolveStack(d)
 
         withClue("the creature ends up with the player who pointed a spell at it") {
@@ -84,7 +85,7 @@ class FracturedLoyaltyScenarioTest : FunSpec({
         val growth = d.putCardInHand(d.player2, "Giant Growth")
         d.giveMana(d.player2, Color.GREEN, 1)
         d.passPriority(d.player1)
-        d.castSpell(d.player2, growth, listOf(bears)).isSuccess shouldBe true
+        d.castSpell(d.player2, growth, listOf(bears)).outcome shouldBe Outcome.Done
         resolveStack(d)
 
         withClue("'that spell's controller' is the caster, not the Aura's controller") {
@@ -109,7 +110,7 @@ class FracturedLoyaltyScenarioTest : FunSpec({
                 IcyManipulator.activatedAbilities.single().id,
                 targets = listOf(ChosenTarget.Permanent(bears))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         resolveStack(d)
 
         withClue("the ability's controller gains control") {
@@ -130,12 +131,12 @@ class FracturedLoyaltyScenarioTest : FunSpec({
         val growth = d.putCardInHand(d.player2, "Giant Growth")
         d.giveMana(d.player2, Color.GREEN, 1)
         d.passPriority(d.player1)
-        d.castSpell(d.player2, growth, listOf(bears)).isSuccess shouldBe true
+        d.castSpell(d.player2, growth, listOf(bears)).outcome shouldBe Outcome.Done
 
         val disenchant = d.putCardInHand(d.player1, "Disenchant")
         d.giveMana(d.player1, Color.WHITE, 2)
         d.passPriority(d.player2)
-        d.castSpell(d.player1, disenchant, listOf(aura)).isSuccess shouldBe true
+        d.castSpell(d.player1, disenchant, listOf(aura)).outcome shouldBe Outcome.Done
         resolveStack(d)
 
         withClue("the Aura is gone") {

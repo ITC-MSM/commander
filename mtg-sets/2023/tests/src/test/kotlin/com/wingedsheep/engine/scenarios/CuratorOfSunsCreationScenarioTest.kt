@@ -16,6 +16,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario coverage for Curator of Sun's Creation — "Whenever you discover, discover again for the
@@ -68,7 +69,7 @@ class CuratorOfSunsCreationScenarioTest : FunSpec({
     fun GameTestDriver.castDiscover(me: EntityId, name: String) {
         val spell = putCardInHand(me, name)
         giveColorlessMana(me, 1)
-        submit(CastSpell(playerId = me, cardId = spell, paymentStrategy = PaymentStrategy.FromPool)).isSuccess shouldBe true
+        submit(CastSpell(playerId = me, cardId = spell, paymentStrategy = PaymentStrategy.FromPool)).outcome shouldBe Outcome.Done
         bothPass()
     }
 

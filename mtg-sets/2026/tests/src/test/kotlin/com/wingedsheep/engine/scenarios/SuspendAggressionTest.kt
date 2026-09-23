@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Suspend Aggression {1}{R}{W} — Instant.
@@ -64,7 +65,7 @@ class SuspendAggressionTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(oppCreature)),
                 paymentStrategy = PaymentStrategy.AutoPay
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Both cards are in exile, each in their owner's exile pile.

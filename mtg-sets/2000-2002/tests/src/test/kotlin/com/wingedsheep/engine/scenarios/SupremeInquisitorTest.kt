@@ -31,6 +31,8 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Supreme Inquisitor.
@@ -118,7 +120,7 @@ class SupremeInquisitorTest : FunSpec({
                 costPayment = AdditionalCostPayment(tappedPermanents = wizards)
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // All 5 wizards should be tapped
         wizards.forEach { driver.isTapped(it) shouldBe true }
@@ -222,6 +224,6 @@ class SupremeInquisitorTest : FunSpec({
                 costPayment = AdditionalCostPayment(tappedPermanents = wizards)
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

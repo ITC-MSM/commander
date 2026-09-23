@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Magmablood Archaic (Secrets of Strixhaven #123).
@@ -59,7 +60,7 @@ class MagmabloodArchaicScenarioTest : FunSpec({
         driver.giveMana(p, Color.RED, 2)
         driver.giveMana(p, Color.GREEN, 2)
 
-        driver.castSpell(p, archaic).isSuccess shouldBe true
+        driver.castSpell(p, archaic).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         plusCounters(driver, archaic) shouldBe 2
@@ -78,7 +79,7 @@ class MagmabloodArchaicScenarioTest : FunSpec({
         val bolt = driver.putCardInHand(p, "Lightning Bolt") // {R} → 1 color
         driver.giveMana(p, Color.RED, 1)
 
-        driver.castSpell(p, bolt, targets = listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(p, bolt, targets = listOf(victim)).outcome shouldBe Outcome.Done
         driver.bothPass() // bolt resolves
         driver.bothPass() // Magmablood cast-trigger resolves
 
@@ -100,7 +101,7 @@ class MagmabloodArchaicScenarioTest : FunSpec({
         driver.giveMana(p, Color.BLACK, 1)
         driver.giveMana(p, Color.RED, 1)
 
-        driver.castSpell(p, doomBlade, targets = listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(p, doomBlade, targets = listOf(victim)).outcome shouldBe Outcome.Done
         driver.bothPass() // Doom Blade resolves
         driver.bothPass() // Magmablood cast-trigger resolves
 

@@ -11,6 +11,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Goblin Wizard.
@@ -44,10 +46,10 @@ class GoblinWizardScenarioTest : FunSpec({
         driver.putCardInHand(me, "Goblin Balloon Brigade")
 
         driver.submit(ActivateAbility(playerId = me, sourceId = wizard, abilityId = putAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.submitCardSelection(me, listOf(driver.findCardInHand(me, "Goblin Balloon Brigade")!!))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         withClue("the Goblin arrived from hand, with no mana spent") {
             (driver.findPermanent(me, "Goblin Balloon Brigade") != null) shouldBe true
@@ -67,7 +69,7 @@ class GoblinWizardScenarioTest : FunSpec({
         driver.putCardInHand(me, "Grizzly Bears")
 
         driver.submit(ActivateAbility(playerId = me, sourceId = wizard, abilityId = putAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("the gather finds no Goblin permanent card, so nothing is offered or put") {
@@ -98,18 +100,18 @@ class GoblinWizardScenarioTest : FunSpec({
                 abilityId = protectionAbilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, attacker)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(me, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(me, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         withClue("protection from white: the white creature can't block it") {
-            driver.declareBlockers(opponent, mapOf(whiteBlocker to listOf(attacker))).isSuccess shouldBe false
+            driver.declareBlockers(opponent, mapOf(whiteBlocker to listOf(attacker))).outcome shouldNotBe Outcome.Done
         }
         withClue("but a red creature still can — it is protection from white, not from everything") {
-            driver.declareBlockers(opponent, mapOf(redBlocker to listOf(attacker))).isSuccess shouldBe true
+            driver.declareBlockers(opponent, mapOf(redBlocker to listOf(attacker))).outcome shouldBe Outcome.Done
         }
     }
 })

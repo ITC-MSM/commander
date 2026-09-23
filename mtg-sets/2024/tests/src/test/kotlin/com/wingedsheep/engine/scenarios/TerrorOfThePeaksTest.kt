@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Terror of the Peaks.
@@ -159,7 +160,7 @@ class TerrorOfThePeaksTest : FunSpec({
         val castResult = driver.castSpellWithTargets(player1, bolt, listOf(ChosenTarget.Permanent(terror)))
 
         // Cast fails validation: not enough life to pay targeting cost
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
 
         // Terror is unharmed, player1 life unchanged (cast was rejected)
         driver.findPermanent(player2, "Terror of the Peaks") shouldNotBe null

@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Whippoorwill.
@@ -68,7 +69,7 @@ class WhippoorwillScenarioTest : FunSpec({
                 cardId = boltId,
                 targets = listOf(entityIdToChosenTarget(driver.state, victim)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
     }
 
@@ -114,7 +115,7 @@ class WhippoorwillScenarioTest : FunSpec({
                 abilityId = whippoorwillAbility,
                 targets = listOf(entityIdToChosenTarget(driver.state, victim)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         shield(driver, me, healer, victim)
@@ -152,7 +153,7 @@ class WhippoorwillScenarioTest : FunSpec({
                 abilityId = whippoorwillAbility,
                 targets = listOf(entityIdToChosenTarget(driver.state, marked)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // The shield goes on the *bystander*, who was never marked.

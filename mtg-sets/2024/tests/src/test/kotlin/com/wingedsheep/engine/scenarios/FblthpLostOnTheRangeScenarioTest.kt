@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Fblthp, Lost on the Range (OTJ) — {1}{U}{U} 1/1, Ward {2}.
@@ -62,7 +63,7 @@ class FblthpLostOnTheRangeScenarioTest : FunSpec({
         driver.giveColorlessMana(p1, 3)
 
         // Plotting a land from the top is illegal (the grant is filtered to nonland).
-        driver.submit(PlotCard(p1, topLand)).isSuccess shouldBe false
+        driver.submit(PlotCard(p1, topLand)).outcome shouldNotBe Outcome.Done
         driver.state.getLibrary(p1).contains(topLand) shouldBe true
     }
 
@@ -74,7 +75,7 @@ class FblthpLostOnTheRangeScenarioTest : FunSpec({
         driver.giveColorlessMana(p1, 1)
         driver.giveMana(p1, Color.GREEN, 1)
 
-        driver.submit(PlotCard(p1, top)).isSuccess shouldBe false
+        driver.submit(PlotCard(p1, top)).outcome shouldNotBe Outcome.Done
         driver.state.getLibrary(p1).contains(top) shouldBe true
     }
 })

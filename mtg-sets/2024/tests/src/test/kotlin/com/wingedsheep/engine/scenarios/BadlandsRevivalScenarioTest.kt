@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Badlands Revival (OTJ #194) — {3}{B}{G} Sorcery.
@@ -51,7 +52,7 @@ class BadlandsRevivalScenarioTest : FunSpec({
                 ChosenTarget.Card(bear, me, Zone.GRAVEYARD),
                 ChosenTarget.Card(land, me, Zone.GRAVEYARD),
             ),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the spell
 
         // Creature reanimated to battlefield; permanent returned to hand.
@@ -76,7 +77,7 @@ class BadlandsRevivalScenarioTest : FunSpec({
             me,
             spell,
             listOf(ChosenTarget.Card(bear, me, Zone.GRAVEYARD)),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.getZone(ZoneKey(me, Zone.BATTLEFIELD)).contains(bear) shouldBe true

@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Frodo, Sauron's Bane (LTR #18) — the level-up Halfling who climbs Citizen → Scout → Rogue.
@@ -122,7 +123,7 @@ class FrodoSauronsBaneScenarioTest : FunSpec({
         driver.addComponent(attacker, TheRingComponent(temptCount = 4))
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, listOf(frodo), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(frodo), defender).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         driver.declareNoBlockers(defender)
         // Resolve combat damage and the resulting "loses the game" trigger. The game ends mid-combat
@@ -151,7 +152,7 @@ class FrodoSauronsBaneScenarioTest : FunSpec({
         driver.addComponent(attacker, TheRingComponent(temptCount = 3))
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, listOf(frodo), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(frodo), defender).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         driver.declareNoBlockers(defender)
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)

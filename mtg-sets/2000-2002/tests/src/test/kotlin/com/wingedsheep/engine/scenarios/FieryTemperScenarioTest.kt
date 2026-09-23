@@ -13,6 +13,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Fiery Temper (Torment #97) — {1}{R}{R} Instant.
@@ -64,7 +65,7 @@ class FieryTemperScenarioTest : FunSpec({
 
         val temper = driver.putCardInHand(player, "Fiery Temper")
         driver.giveMana(player, Color.RED, 3)
-        driver.castSpell(player, temper, targets = listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(player, temper, targets = listOf(opponent)).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         driver.getLifeTotal(opponent) shouldBe 17

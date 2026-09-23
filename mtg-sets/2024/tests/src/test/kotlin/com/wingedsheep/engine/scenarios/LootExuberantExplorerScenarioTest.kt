@@ -15,6 +15,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Loot, Exuberant Explorer (FDN #106) — "{4}{G}{G}, {T}: Look at the top six cards of your library.
@@ -56,7 +57,7 @@ class LootExuberantExplorerScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = loot, abilityId = activateAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (!driver.isPaused && driver.state.stack.isNotEmpty()) driver.bothPass()
 
         val pick = driver.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()
@@ -73,7 +74,7 @@ class LootExuberantExplorerScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = loot, abilityId = activateAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (!driver.isPaused && driver.state.stack.isNotEmpty()) driver.bothPass()
 
         // The "look at" pipeline still pauses (showAllCards), but the over-cap creature is not a

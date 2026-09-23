@@ -28,6 +28,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for double-faced cards (DFCs) — Rule 712.
@@ -86,7 +87,7 @@ class DoubleFacedCardTest : FunSpec({
         // Cast the transform spell targeting the DFC.
         val spell = driver.putCardInHand(caster, "Transform Target Creature")
         driver.giveMana(caster, Color.BLUE, 2)
-        driver.castSpell(caster, spell, listOf(entityId)).isSuccess shouldBe true
+        driver.castSpell(caster, spell, listOf(entityId)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the spell
 
         val container = driver.state.getEntity(entityId)
@@ -120,13 +121,13 @@ class DoubleFacedCardTest : FunSpec({
         // First transform — front → back.
         val spell1 = driver.putCardInHand(caster, "Transform Target Creature")
         driver.giveMana(caster, Color.BLUE, 2)
-        driver.castSpell(caster, spell1, listOf(entityId)).isSuccess shouldBe true
+        driver.castSpell(caster, spell1, listOf(entityId)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Second transform — back → front.
         val spell2 = driver.putCardInHand(caster, "Transform Target Creature")
         driver.giveMana(caster, Color.BLUE, 2)
-        driver.castSpell(caster, spell2, listOf(entityId)).isSuccess shouldBe true
+        driver.castSpell(caster, spell2, listOf(entityId)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val container = driver.state.getEntity(entityId)!!
@@ -148,8 +149,8 @@ class DoubleFacedCardTest : FunSpec({
         val spell = driver.putCardInHand(caster, "Transform Target Creature")
         driver.giveMana(caster, Color.BLUE, 2)
 
-        driver.castSpell(caster, spell, listOf(entityId)).isSuccess shouldBe true
-        driver.bothPass().isSuccess shouldBe true
+        driver.castSpell(caster, spell, listOf(entityId)).outcome shouldBe Outcome.Done
+        driver.bothPass().outcome shouldBe Outcome.Done
 
         val container = driver.state.getEntity(entityId)!!
         container.get<CardComponent>()?.name shouldBe "Savannah Lions"
@@ -203,7 +204,7 @@ class DoubleFacedCardTest : FunSpec({
 
         val spell = driver.putCardInHand(caster, "Transform Target Creature")
         driver.giveMana(caster, Color.BLUE, 2)
-        driver.castSpell(caster, spell, listOf(entityId)).isSuccess shouldBe true
+        driver.castSpell(caster, spell, listOf(entityId)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the transform spell
 
         // The transforms-trigger should now be queued on the stack.
@@ -230,7 +231,7 @@ class DoubleFacedCardTest : FunSpec({
 
         val spell = driver.putCardInHand(caster, "Transform Target Creature")
         driver.giveMana(caster, Color.BLUE, 2)
-        driver.castSpell(caster, spell, listOf(entityId)).isSuccess shouldBe true
+        driver.castSpell(caster, spell, listOf(entityId)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Counters survive the transform.

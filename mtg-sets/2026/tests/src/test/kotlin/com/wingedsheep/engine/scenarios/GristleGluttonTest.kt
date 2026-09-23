@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Gristle Glutton: {T}, Blight 1: Discard a card. If you do, draw a card.
@@ -60,7 +61,7 @@ class GristleGluttonTest : FunSpec({
                 costPayment = AdditionalCostPayment(blightTargets = listOf(bearsId))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Bears now has a -1/-1 counter
         val counters = driver.state.getEntity(bearsId)?.get<CountersComponent>()
@@ -111,7 +112,7 @@ class GristleGluttonTest : FunSpec({
                 costPayment = AdditionalCostPayment(blightTargets = listOf(gluttonId))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val counters = driver.state.getEntity(gluttonId)?.get<CountersComponent>()
         counters?.getCount(CounterType.MINUS_ONE_MINUS_ONE) shouldBe 1

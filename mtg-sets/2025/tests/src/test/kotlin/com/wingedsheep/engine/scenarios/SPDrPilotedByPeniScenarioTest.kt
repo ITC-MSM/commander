@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * SP//dr, Piloted by Peni (SPM) — {3}{W}{U} Legendary Artifact Creature 4/4.
@@ -41,7 +42,7 @@ class SPDrPilotedByPeniScenarioTest : FunSpec({
         giveColorlessMana(playerId, 3)
         giveMana(playerId, Color.WHITE, 1)
         giveMana(playerId, Color.BLUE, 1)
-        castSpell(playerId, spdrCard).isSuccess shouldBe true
+        castSpell(playerId, spdrCard).outcome shouldBe Outcome.Done
         bothPass() // resolve the creature spell itself; the ETB trigger goes on the stack next
         return findPermanent(playerId, "SP//dr, Piloted by Peni")!!
     }

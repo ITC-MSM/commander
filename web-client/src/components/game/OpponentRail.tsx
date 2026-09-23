@@ -19,6 +19,7 @@ import { useResponsiveContext } from './board/shared'
 import { SpeedGauge } from './overlay'
 import { HelpTip } from '../help/HelpTip'
 import { isLoneTargetRequirement } from '@/utils/targeting.ts'
+import { defendingPlayerOf } from '@/utils/combatTargets'
 
 /**
  * Total viewport width claimed by the fixed rail column (chip width + left offset + a
@@ -756,16 +757,18 @@ function RailChip({
     if (!declaringAttackers || !combatState || !gameState) return 0
     return Object.entries(combatState.attackerTargets).filter(([, targetId]) => {
       if (targetId === playerId) return true
-      return gameState.cards[targetId]?.controllerId === playerId
+      return defendingPlayerOf(targetId, gameState.cards) === playerId
     }).length
   }, [declaringAttackers, combatState, gameState, playerId])
 
-  // Planeswalker flyout: this opponent's planeswalkers that are legal attack targets.
+  // Planeswalker flyout: the permanents this opponent defends that are legal attack targets —
+  // their planeswalkers and the battles they protect (a Siege is usually *controlled* by the
+  // attacker, so keying on controller would never list it here).
   const attackablePlaneswalkers = useMemo<readonly ClientCard[]>(() => {
     if (!declaringAttackers || !combatState || !gameState) return []
     return combatState.validAttackTargets
       .map((id) => gameState.cards[id])
-      .filter((c): c is ClientCard => !!c && c.controllerId === playerId)
+      .filter((c): c is ClientCard => !!c && defendingPlayerOf(c.id, gameState.cards) === playerId)
   }, [declaringAttackers, combatState, gameState, playerId])
   // Attack restriction: while declaring attackers, this living seat can't be attacked at
   // all — neither the player (attack left/right, teammate) nor any of their
@@ -1289,6 +1292,11 @@ function RailChip({
                 {pw.name}
               </span>
               {pw.counters.LOYALTY != null && <span style={{ color: '#e0c068' }}>◆ {pw.counters.LOYALTY}</span>}
+              {pw.counters.DEFENSE != null && (
+                <span style={{ color: '#f0a0a0', display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <i className="ms ms-defense" /> {pw.counters.DEFENSE}
+                </span>
+              )}
             </button>
           ))}
         </div>

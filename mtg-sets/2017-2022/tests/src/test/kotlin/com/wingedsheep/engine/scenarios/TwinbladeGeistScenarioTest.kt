@@ -19,6 +19,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Twinblade Geist // Twinblade Invocation (VOW) — a disturb card whose back face is an Aura.
@@ -44,7 +45,7 @@ class TwinbladeGeistScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         driver.giveMana(player, Color.WHITE, 2)
 
-        driver.submit(CastSpell(player, geist, paymentStrategy = PaymentStrategy.FromPool)).isSuccess shouldBe true
+        driver.submit(CastSpell(player, geist, paymentStrategy = PaymentStrategy.FromPool)).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         val perm = driver.findPermanent(player, "Twinblade Geist")
@@ -73,7 +74,7 @@ class TwinbladeGeistScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        io.kotest.assertions.withClue("error=${result.error}") { result.isSuccess shouldBe true }
+        io.kotest.assertions.withClue("error=${result.error}") { result.outcome shouldBe Outcome.Done }
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         val aura = driver.findPermanent(player, "Twinblade Invocation")

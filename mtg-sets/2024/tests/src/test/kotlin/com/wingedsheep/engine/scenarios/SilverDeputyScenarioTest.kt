@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Silver Deputy (OTJ #248) — {2} Artifact Creature — Mercenary, 1/2.
@@ -48,7 +49,7 @@ class SilverDeputyScenarioTest : FunSpec({
         // Cast from hand so the enters-the-battlefield trigger fires.
         val deputyCard = driver.putCardInHand(player, "Silver Deputy")
         driver.giveMana(player, Color.GREEN, 2)
-        driver.castSpell(player, deputyCard).isSuccess shouldBe true
+        driver.castSpell(player, deputyCard).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature spell -> it enters, ETB trigger goes on stack
         driver.bothPass() // resolve the ETB trigger
 
@@ -82,7 +83,7 @@ class SilverDeputyScenarioTest : FunSpec({
                 abilityId = pumpAbilityId,
                 targets = listOf(ChosenTarget.Permanent(bear))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.isTapped(deputy) shouldBe true

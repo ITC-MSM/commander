@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Abyssal Gorestalker (LCI #87) — {4}{B}{B} Creature — Horror 6/6.
@@ -70,7 +71,7 @@ class AbyssalGorestalkerScenarioTest : FunSpec({
         val gorestalkerCard = driver.putCardInHand(me, "Abyssal Gorestalker")
         driver.giveColorlessMana(me, 4)
         driver.giveMana(me, Color.BLACK, 2)
-        driver.castSpell(me, gorestalkerCard).isSuccess shouldBe true
+        driver.castSpell(me, gorestalkerCard).outcome shouldBe Outcome.Done
 
         driver.drainStack()
 
@@ -96,7 +97,7 @@ class AbyssalGorestalkerScenarioTest : FunSpec({
         val gorestalkerCard = driver.putCardInHand(me, "Abyssal Gorestalker")
         driver.giveColorlessMana(me, 4)
         driver.giveMana(me, Color.BLACK, 2)
-        driver.castSpell(me, gorestalkerCard).isSuccess shouldBe true
+        driver.castSpell(me, gorestalkerCard).outcome shouldBe Outcome.Done
 
         // No SelectCardsDecision should appear — both players have ≤ 2 creatures so auto-sacrifice.
         var sawDecision = false

@@ -11,6 +11,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Engine coverage for horsemanship (CR 702.31) — Portal Three Kingdoms' signature evasion keyword.
@@ -50,14 +52,14 @@ class HorsemanshipScenarioTest : FunSpec({
         val horseBlocker = driver.putCreatureOnBattlefield(opponent, "Shu Cavalry")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(me, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(me, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         withClue("Shu Defender has no horsemanship, so it cannot block Wu Light Cavalry") {
-            driver.declareBlockers(opponent, mapOf(plainBlocker to listOf(attacker))).isSuccess shouldBe false
+            driver.declareBlockers(opponent, mapOf(plainBlocker to listOf(attacker))).outcome shouldNotBe Outcome.Done
         }
         withClue("Shu Cavalry does have horsemanship, so the block is legal") {
-            driver.declareBlockers(opponent, mapOf(horseBlocker to listOf(attacker))).isSuccess shouldBe true
+            driver.declareBlockers(opponent, mapOf(horseBlocker to listOf(attacker))).outcome shouldBe Outcome.Done
         }
     }
 
@@ -74,11 +76,11 @@ class HorsemanshipScenarioTest : FunSpec({
         val horseBlocker = driver.putCreatureOnBattlefield(opponent, "Shu Cavalry")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(me, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(me, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         withClue("a horsemanship creature may block anything; the keyword only gates the attacker") {
-            driver.declareBlockers(opponent, mapOf(horseBlocker to listOf(attacker))).isSuccess shouldBe true
+            driver.declareBlockers(opponent, mapOf(horseBlocker to listOf(attacker))).outcome shouldBe Outcome.Done
         }
     }
 
@@ -96,14 +98,14 @@ class HorsemanshipScenarioTest : FunSpec({
         val plainBlocker = driver.putCreatureOnBattlefield(opponent, "Shu Defender")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(me, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(me, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         withClue("Zuo Ci can't be blocked by creatures with horsemanship") {
-            driver.declareBlockers(opponent, mapOf(horseBlocker to listOf(attacker))).isSuccess shouldBe false
+            driver.declareBlockers(opponent, mapOf(horseBlocker to listOf(attacker))).outcome shouldNotBe Outcome.Done
         }
         withClue("a creature without horsemanship blocks Zuo Ci normally") {
-            driver.declareBlockers(opponent, mapOf(plainBlocker to listOf(attacker))).isSuccess shouldBe true
+            driver.declareBlockers(opponent, mapOf(plainBlocker to listOf(attacker))).outcome shouldBe Outcome.Done
         }
     }
 })

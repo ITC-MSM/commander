@@ -11,6 +11,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Jinxed Idol.
@@ -80,7 +82,7 @@ class JinxedIdolScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(bear))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Opponent now controls the idol (control change is a Layer.CONTROL floating effect).
@@ -105,6 +107,6 @@ class JinxedIdolScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = emptyList())
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

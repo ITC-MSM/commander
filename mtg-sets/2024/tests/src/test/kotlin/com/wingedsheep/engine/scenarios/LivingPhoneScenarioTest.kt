@@ -15,6 +15,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Living Phone (DSK #20) — {2}{W} Artifact Creature — Toy 2/1.
@@ -53,7 +54,7 @@ class LivingPhoneScenarioTest : FunSpec({
         // Bolt the 2/1 Living Phone to kill it and fire the dies trigger.
         val bolt = driver.putCardInHand(player, "Lightning Bolt")
         driver.giveMana(player, Color.RED, 1)
-        driver.castSpell(player, bolt, targets = listOf(phone)).isSuccess shouldBe true
+        driver.castSpell(player, bolt, targets = listOf(phone)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the bolt — Living Phone dies, queuing the dies trigger
         driver.bothPass() // resolve the dies trigger — pauses at the optional reveal
 
@@ -82,7 +83,7 @@ class LivingPhoneScenarioTest : FunSpec({
         val bolt = driver.putCardInHand(player, "Lightning Bolt")
         val handAfterBolt = driver.getHandSize(player) - 1 // hand once the bolt is cast away
         driver.giveMana(player, Color.RED, 1)
-        driver.castSpell(player, bolt, targets = listOf(phone)).isSuccess shouldBe true
+        driver.castSpell(player, bolt, targets = listOf(phone)).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass()
 

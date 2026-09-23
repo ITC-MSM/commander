@@ -14,6 +14,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Wojek Apothecary (RAV #36) — "Radiance — {T}: Prevent the next 1 damage that would be dealt to
@@ -41,7 +42,7 @@ class WojekApothecaryScenarioTest : FunSpec({
     fun GameTestDriver.shield(source: EntityId, target: EntityId) {
         submit(
             ActivateAbility(player1, source, apothecaryAbility, targets = listOf(ChosenTarget.Permanent(target)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         // The activator keeps priority after putting the ability on the stack.
         passPriority(player2)
         bothPass()
@@ -50,7 +51,7 @@ class WojekApothecaryScenarioTest : FunSpec({
     fun GameTestDriver.bolt(victim: EntityId) {
         giveMana(player1, Color.RED, 1)
         val card = putCardInHand(player1, "Lightning Bolt")
-        castSpellWithTargets(player1, card, listOf(ChosenTarget.Permanent(victim))).isSuccess shouldBe true
+        castSpellWithTargets(player1, card, listOf(ChosenTarget.Permanent(victim))).outcome shouldBe Outcome.Done
         var guard = 0
         while (stackSize > 0 && guard++ < 10) bothPass()
     }

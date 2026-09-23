@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Ultima Weapon — {7} Legendary Artifact — Equipment
@@ -46,7 +47,7 @@ class UltimaWeaponTest : FunSpec({
         driver.giveColorlessMana(me, 7)
         driver.submit(
             ActivateAbility(me, weapon, equipId, targets = listOf(ChosenTarget.Permanent(courser)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.getEntity(weapon)?.get<AttachedToComponent>()?.targetId shouldBe courser
@@ -71,7 +72,7 @@ class UltimaWeaponTest : FunSpec({
         driver.giveColorlessMana(me, 7)
         driver.submit(
             ActivateAbility(me, weapon, equipId, targets = listOf(ChosenTarget.Permanent(attacker)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val victim = driver.putCreatureOnBattlefield(opp, "Glory Seeker")

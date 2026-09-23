@@ -21,6 +21,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests B1 / B2 from [`backlog/modal-cast-time-choices-plan.md`]:
@@ -87,7 +88,7 @@ class ModalSpellStackVisibilityTest : FunSpec({
                     listOf(ChosenTarget.Permanent(centaur), ChosenTarget.Permanent(goblin))
                 )
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Transform from the opponent's viewpoint — they must see everything the caster does
         // for the modes/targets, so they can knowingly decide whether to counter.
@@ -198,7 +199,7 @@ class ModalSpellStackVisibilityTest : FunSpec({
                     listOf(ChosenTarget.Permanent(centaur), ChosenTarget.Permanent(goblin))
                 )
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Now splice in a hidden-zone target on the second mode's target list. The DTO
         // transformer doesn't validate; it renders what's on the component. That gives us a

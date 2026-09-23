@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario test for Improvisation Capstone (SOS) — {5}{R}{R} Sorcery — Lesson.
@@ -46,7 +47,7 @@ class ImprovisationCapstoneScenarioTest : FunSpec({
         driver.giveMana(player, Color.RED, 2)
 
         val exileBefore = driver.getExile(player).size
-        driver.castSpell(player, spell).isSuccess shouldBe true
+        driver.castSpell(player, spell).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val nowExiled = driver.getExile(player)

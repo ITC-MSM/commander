@@ -80,7 +80,7 @@ class RummagingWizardTest : FunSpec({
                 abilityId = wizardAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Should be paused for card selection (select cards to put in graveyard)
@@ -136,7 +136,7 @@ class RummagingWizardTest : FunSpec({
                 abilityId = wizardAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.isPaused shouldBe true
@@ -198,7 +198,7 @@ class RummagingWizardTest : FunSpec({
                 abilityId = wizardAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Should NOT be paused - no cards to surveil

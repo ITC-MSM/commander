@@ -14,8 +14,6 @@ import com.wingedsheep.engine.core.ManaAddedEvent
 import com.wingedsheep.engine.core.PaymentStrategy
 import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.core.TurnManager
-import com.wingedsheep.engine.event.TriggerDetector
-import com.wingedsheep.engine.event.TriggerProcessor
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.CostHandler
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
@@ -37,6 +35,7 @@ import com.wingedsheep.engine.mechanics.mana.buildAbilityPaymentContext
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.mechanics.targeting.TargetValidator
 import com.wingedsheep.engine.legalactions.utils.CastPermissionUtils
+import com.wingedsheep.engine.legality.LegalityKernel
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.nameVisibleToAll
 import com.wingedsheep.engine.state.GameState
@@ -65,7 +64,6 @@ import com.wingedsheep.sdk.scripting.costs.manaCostOrNull
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.AbilityIdentity
 import com.wingedsheep.sdk.scripting.ActivatedAbility
-import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.ExtraLoyaltyActivation
 import com.wingedsheep.sdk.scripting.targets.TargetChooser
 import com.wingedsheep.sdk.scripting.TimingRule
@@ -89,6 +87,7 @@ import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.Zone
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Result of resolving an activated-ability id on an object.
@@ -152,9 +151,8 @@ class ActivateAbilityHandler(
     private val stackResolver: StackResolver,
     private val targetValidator: TargetValidator,
     private val conditionEvaluator: ConditionEvaluator,
-    private val triggerDetector: TriggerDetector,
-    private val triggerProcessor: TriggerProcessor,
     private val castPermissionUtils: CastPermissionUtils,
+    private val legality: LegalityKernel,
     private val manaAbilitySideEffectExecutor:
         com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor,
 ) : ActionHandler<ActivateAbility> {
@@ -254,11 +252,8 @@ class ActivateAbilityHandler(
             if (!inZone) return "This ability can only be activated from the ${ability.activateFromZone.name.lowercase()}"
             if (ownerId != action.playerId) return "You don't own this card"
         } else {
-            // Check if any player may activate this ability (e.g., Lethal Vapors). Recursive
-            // through `All`, because the permission is routinely *narrowed* by a companion
-            // restriction rather than standing alone — Merseine's "only the controller of the
-            // enchanted creature may activate this ability" is AnyPlayerMay + a condition.
-            val anyPlayerMay = ability.restrictions.any { anyPlayerMayIn(it) }
+            // Check if any player may activate this ability (e.g., Lethal Vapors, Merseine).
+            val anyPlayerMay = LegalityKernel.anyPlayerMay(ability)
 
             if (!anyPlayerMay) {
                 // Use projected controller to account for control-changing effects (e.g., Annex)
@@ -559,12 +554,8 @@ class ActivateAbilityHandler(
         }
 
         // Check activation restrictions
-        for (restriction in ability.restrictions) {
-            val error = checkActivationRestriction(
-                state, action.playerId, action.sourceId, restriction, ability
-            )
-            if (error != null) return error
-        }
+        legality.activationRestrictionsFailure(state, action.playerId, action.sourceId, ability)
+            ?.let { return it }
 
         // Validate targets. Only the controller-chosen requirements are validated here — any
         // "… of an opponent's choice" requirement (Cuombajj Witches) is picked by an opponent in
@@ -676,7 +667,7 @@ class ActivateAbilityHandler(
             priorityPlayerId = state.priorityPlayerId,
             priorityPassedBy = state.priorityPassedBy
         )
-        if (result.isPaused) {
+        if (result.outcome is Outcome.Paused) {
             return ExecutionResult.propagatePause(restored, result.events)
         }
         return ManaPaymentWindow.resumeIfPending(restored, result.events, cardRegistry)
@@ -971,16 +962,9 @@ class ActivateAbilityHandler(
             // exiles "two creature cards from a single graveyard", so every player's graveyard is
             // in the pool, and a graveyard holding fewer than `count` matches is dropped because
             // it can't legally supply the whole payment on its own.
-            val exileOwners =
-                if (exileFromGraveyardCost.anyPlayersZone) state.turnOrder else listOf(action.playerId)
-            val exileCandidatesByOwner = exileOwners.map { owner ->
-                costHandler.findMatchingCardsUnified(
-                    state,
-                    state.getZone(com.wingedsheep.engine.state.ZoneKey(owner, Zone.GRAVEYARD)),
-                    exileFromGraveyardCost.filter,
-                    action.playerId
-                )
-            }
+            val exileCandidatesByOwner = costHandler
+                .exileCandidatesByOwner(state, exileFromGraveyardCost, action.playerId, action.sourceId)
+                .values
             val exileCandidates =
                 if (exileFromGraveyardCost.singleZone) {
                     exileCandidatesByOwner.filter { it.size >= exileFromGraveyardCost.count }.flatten()
@@ -1501,14 +1485,6 @@ class ActivateAbilityHandler(
         // Collect events from cost payment (e.g., sacrifice events)
         events.addAll(costResult.events)
 
-        // Cost-payment events drive triggered abilities (e.g., a mana ability whose cost
-        // sacrifices the source — Wizard's Rockets: "{X}, {T}, Sacrifice this artifact: ..."
-        // — fires its dies/leaves-the-battlefield trigger). The mana-ability path resolves off
-        // the stack and returns early, so capture these now to detect triggers before returning.
-        // Scoped to cost-payment events so mana-production events keep their existing inline
-        // handling ([ManaAbilityResolutionPipeline] etc.).
-        val costPaymentEvents = costResult.events
-
         // Deduct X mana from the pool. ManaPool.pay() skips X symbols ("handled by caller"),
         // so we must explicitly spend the X portion here (same pattern as CastSpellHandler.autoPay).
         // Skip for Explicit payment — sources were already tapped to cover the full cost including X.
@@ -1573,19 +1549,14 @@ class ActivateAbilityHandler(
         }
 
         // Snapshot of the activation's cost-side events (cost payment + the {T}/tap/loyalty events
-        // emitted just above) before any mana-production event is appended. The mana-ability path
-        // resolves off the stack and returns early, so it must run trigger detection over this set
-        // — including the {T} TappedEvent — so an ANY-binding "whenever an artifact becomes tapped"
-        // trigger (Powerleech, Tap Watcher) fires when a {T} mana ability is activated.
+        // emitted just above) before any mana-production event is appended: the objects these
+        // events name are the ones the resolving ability may refer back to.
         val activationCostEvents = events.toList()
 
-        // Track per-turn activation if the ability has an OncePerTurn or MaxPerTurn restriction
-        fun isPerTurnTracked(r: ActivationRestriction): Boolean =
-            r is ActivationRestriction.OncePerTurn || r is ActivationRestriction.MaxPerTurn ||
-                (r is ActivationRestriction.All && r.restrictions.any { isPerTurnTracked(it) })
+        // Track per-turn activation if the ability has an OncePerTurn or MaxPerTurn restriction.
         // `trackActivations` opts an unrestricted ability into the same tally so its own effect can
         // read the count back (Farrelite Priest's burnout clause).
-        if (ability.trackActivations || ability.restrictions.any { isPerTurnTracked(it) }) {
+        if (ability.trackActivations || LegalityKernel.tracksActivationsPerTurn(ability)) {
             // Only track if source is still on the battlefield (it might have been bounced as cost)
             if (currentState.getEntity(action.sourceId) != null) {
                 currentState = currentState.updateEntity(action.sourceId) { c ->
@@ -1596,7 +1567,7 @@ class ActivateAbilityHandler(
         }
 
         // Track once-ever activation if the ability has an Once restriction
-        if (ability.restrictions.any { it is ActivationRestriction.Once || (it is ActivationRestriction.All && it.restrictions.any { r -> r is ActivationRestriction.Once }) }) {
+        if (LegalityKernel.tracksActivationsEver(ability)) {
             if (currentState.getEntity(action.sourceId) != null) {
                 currentState = currentState.updateEntity(action.sourceId) { c ->
                     val tracker = c.get<AbilityActivatedEverComponent>() ?: AbilityActivatedEverComponent()
@@ -1734,35 +1705,14 @@ class ActivateAbilityHandler(
             )
 
             val effectResult = effectExecutorRegistry.execute(currentState, finalEffect, context).toExecutionResult()
-            if (effectResult.isPaused) {
-                // The mana ability's effect paused for a decision (e.g. choosing colors for
-                // "add X mana in any combination of colors"). Any triggered ability that fired
-                // from the cost payment (e.g. the source's dies trigger when sacrificed —
-                // Wizard's Rockets: "When this artifact is put into a graveyard..., draw a card")
-                // must survive that pause. Queue it as a PendingTriggersContinuation beneath the
-                // in-flight decision so it's put on the stack once the ability finishes resolving
-                // (mirrors PassPriorityHandler / SubmitDecisionHandler mid-resolution handling).
-                val deferred = triggerDetector.detectTriggers(
-                    effectResult.state, costPaymentEvents + manaAbilityActivatedEvent
-                )
-                if (deferred.isNotEmpty()) {
-                    val pending = com.wingedsheep.engine.core.PendingTriggersContinuation(
-                        remainingTriggers = deferred
-                    )
-                    // Insert at the BOTTOM of the continuation stack so the cost trigger is put on
-                    // the stack only after the whole mana ability finishes resolving — including a
-                    // multi-step "any combination of colors" effect that pauses once per mana. The
-                    // stack here holds only frames pushed by this activation's effect, so bottom
-                    // insertion can't jump ahead of unrelated work.
-                    val newStack = listOf(pending) + effectResult.state.continuationStack
-                    return ExecutionResult.propagatePause(
-                        effectResult.state.copy(continuationStack = newStack),
-                        events + effectResult.events
-                    )
-                }
-                return effectResult
+            // A pause (e.g. choosing colors for "add X mana in any combination of colors") carries
+            // the activation's own events out with it, so the settle boundary queues the triggers
+            // they cause (Wizard's Rockets' dies trigger, Ceaseless Searblades' activation trigger)
+            // until the ability finishes resolving.
+            if (effectResult.outcome is Outcome.Paused) {
+                return ExecutionResult.propagatePause(effectResult.state, events + effectResult.events)
             }
-            if (!effectResult.isSuccess) {
+            if (effectResult.outcome !is Outcome.Done) {
                 return effectResult
             }
 
@@ -1891,37 +1841,14 @@ class ActivateAbilityHandler(
                 currentState, action.sourceId, cardComponent, action.playerId,
                 manaEvent, events + effectResult.events
             )
-            if (bonusResult.isPaused) return bonusResult
+            if (bonusResult.outcome is Outcome.Paused) return bonusResult
 
-            // Detect and queue any triggered abilities from the activation — the cost-side events
-            // (a sacrificed source's dies trigger, the {T} TappedEvent for an artifact-tap trigger),
-            // the mana-ability activation event from the top of this branch, and the mana ability's OWN effect
-            // resolution events (e.g. a `ReflexiveTriggerEffect`'s `ReflexiveAbilityTriggeredEvent` —
-            // Rubble Rouser's "Add {R}. When you do, deal 1 damage to each opponent": the reflexive
-            // half is NOT itself a mana ability (CR 605.1a requires it produce mana), so it must go
-            // on the stack normally even though the ability that caused it resolved off it). Such
-            // triggered abilities still use the stack even though the mana ability itself resolves
-            // off it.
-            // `activationCostEvents` was snapshotted before `manaAbilityActivatedEvent` was added,
-            // so naming it here adds it exactly once. `bonusResult.events` already carries it —
-            // it flowed in through `events` — so `resultEvents` must not append it again.
-            val activationTriggerEvents =
-                activationCostEvents + manaAbilityActivatedEvent + effectResult.events
-            val resultEvents = bonusResult.events
-            val costTriggers = triggerDetector.detectTriggers(bonusResult.newState, activationTriggerEvents)
-            if (costTriggers.isNotEmpty()) {
-                val triggerResult = triggerProcessor.processTriggers(bonusResult.newState, costTriggers)
-                if (triggerResult.isPaused) {
-                    return ExecutionResult.propagatePause(
-                        triggerResult.state.withPriority(action.playerId),
-                        resultEvents + triggerResult.events
-                    )
-                }
-                return ExecutionResult.success(
-                    triggerResult.newState.withPriority(action.playerId),
-                    resultEvents + triggerResult.events
-                )
-            }
+            // Triggered abilities from the activation go on the stack at the settle boundary: the
+            // cost-side events (a sacrificed source's dies trigger, the {T} TappedEvent for an
+            // artifact-tap trigger), the mana ability's own resolution events (Rubble Rouser's
+            // reflexive "when you do" half, which is not itself a mana ability, CR 605.1a), and the
+            // land-tapped event Mana Flare-style triggers watch. Such triggered abilities still use
+            // the stack even though the mana ability itself resolves off it.
             return bonusResult
         }
 
@@ -1976,7 +1903,8 @@ class ActivateAbilityHandler(
             targetRequirements = effectiveTargetReqs,
             costsTap = hasTapCost(effectiveCost),
             isExhaust = ability.isExhaust,
-            cantBeCopied = ability.cantBeCopied
+            cantBeCopied = ability.cantBeCopied,
+            isLoyalty = ability.isPlaneswalkerAbility,
         )
         currentState = stackResult.newState
         events.addAll(stackResult.events)
@@ -2074,24 +2002,6 @@ class ActivateAbilityHandler(
         }
 
         val allEvents = events.toList()
-
-        // Detect and process triggers from cost payment (e.g., sacrifice death triggers)
-        val triggers = triggerDetector.detectTriggers(currentState, allEvents)
-        if (triggers.isNotEmpty()) {
-            val triggerResult = triggerProcessor.processTriggers(currentState, triggers)
-
-            if (triggerResult.isPaused) {
-                return ExecutionResult.propagatePause(
-                    triggerResult.state.withPriority(action.playerId),
-                    allEvents + triggerResult.events
-                )
-            }
-
-            return ExecutionResult.success(
-                triggerResult.newState.withPriority(action.playerId),
-                allEvents + triggerResult.events
-            )
-        }
 
         return ExecutionResult.success(currentState, allEvents)
     }
@@ -2525,91 +2435,6 @@ class ActivateAbilityHandler(
         else -> cost
     }
 
-    /** Whether [restriction] opens the ability to players other than the source's controller. */
-    private fun anyPlayerMayIn(restriction: ActivationRestriction): Boolean = when (restriction) {
-        is ActivationRestriction.AnyPlayerMay -> true
-        is ActivationRestriction.All -> restriction.restrictions.any { anyPlayerMayIn(it) }
-        else -> false
-    }
-
-    private fun checkActivationRestriction(
-        state: GameState,
-        playerId: com.wingedsheep.sdk.model.EntityId,
-        sourceId: com.wingedsheep.sdk.model.EntityId,
-        restriction: ActivationRestriction,
-        // Required, with no default: a defaulted `ability` would let a forgetful call site silently
-        // disable the ExtraOnceOnlyActivations permission on this path while the enumerators kept
-        // honouring it. Omission must be a compile error, not a behaviour difference. It is also
-        // the only source of the ability id the turn trackers key on, so that id can't disagree
-        // with the ability whose flags the `Once` branch reads.
-        ability: com.wingedsheep.sdk.scripting.ActivatedAbility
-    ): String? {
-        return when (restriction) {
-            is ActivationRestriction.AnyPlayerMay -> null // Not a restriction; handled in validate()
-            is ActivationRestriction.OnlyDuringYourTurn -> {
-                // CR 805.5a — "your turn" is the active team's turn in Two-Headed Giant.
-                if (!state.isActiveTurnFor(playerId)) "This ability can only be activated during your turn"
-                else null
-            }
-            is ActivationRestriction.BeforeStep -> {
-                if (state.step.ordinal >= restriction.step.ordinal)
-                    "This ability can only be activated before ${restriction.step.displayName}"
-                else null
-            }
-            is ActivationRestriction.DuringPhase -> {
-                if (state.phase != restriction.phase)
-                    "This ability can only be activated during ${restriction.phase.displayName}"
-                else null
-            }
-            is ActivationRestriction.DuringStep -> {
-                if (state.step != restriction.step)
-                    "This ability can only be activated during ${restriction.step.displayName}"
-                else null
-            }
-            is ActivationRestriction.OnlyIfCondition -> {
-                val context = EffectContext(
-                    sourceId = sourceId,
-                    controllerId = playerId,
-                    targets = emptyList(),
-                    xValue = 0
-                )
-                if (!conditionEvaluator.evaluate(state, restriction.condition, context))
-                    "Activation condition not met"
-                else null
-            }
-            is ActivationRestriction.OncePerTurn -> {
-                val tracker = state.getEntity(sourceId)?.get<AbilityActivatedThisTurnComponent>()
-                if (tracker != null && tracker.hasActivated(ability.id)) {
-                    "This ability can only be activated once each turn"
-                } else null
-            }
-            is ActivationRestriction.MaxPerTurn -> {
-                val tracker = state.getEntity(sourceId)?.get<AbilityActivatedThisTurnComponent>()
-                if ((tracker?.activationCount(ability.id) ?: 0) >= restriction.count) {
-                    "This ability can't be activated more than ${restriction.count} times each turn"
-                } else null
-            }
-            is ActivationRestriction.Once -> {
-                // An exhaust or power-up ability's once-only memory can be raised or waived by an
-                // ExtraOnceOnlyActivations permission (Elvish Refueler, Wonder Man); a plain Once
-                // restriction on an ordinary ability never is.
-                val allowed = castPermissionUtils.mayActivateOnceOnlyAbility(state, playerId, sourceId, ability)
-                if (!allowed) "This ability can only be activated once" else null
-            }
-            is ActivationRestriction.ControlledSinceYourMostRecentTurn -> {
-                if (state.getEntity(sourceId)
-                        ?.has<com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent>() == true
-                ) "You must have controlled this permanent continuously since your most recent turn began"
-                else null
-            }
-            is ActivationRestriction.All -> {
-                restriction.restrictions.firstNotNullOfOrNull {
-                    checkActivationRestriction(state, playerId, sourceId, it, ability)
-                }
-            }
-        }
-    }
-
     private val dynamicAmountEvaluator = DynamicAmountEvaluator()
     private val predicateEvaluator = PredicateEvaluator()
 
@@ -2877,9 +2702,8 @@ class ActivateAbilityHandler(
                 services.stackResolver,
                 services.targetValidator,
                 services.conditionEvaluator,
-                services.triggerDetector,
-                services.triggerProcessor,
                 services.castPermissionUtils,
+                services.legalityKernel,
                 services.manaAbilitySideEffectExecutor
             )
         }

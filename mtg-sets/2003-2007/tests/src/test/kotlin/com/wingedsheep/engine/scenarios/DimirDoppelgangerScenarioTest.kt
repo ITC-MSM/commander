@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Dimir Doppelganger (RAV #202) — "{1}{U}{B}: Exile target creature card from a graveyard. This
@@ -56,7 +57,7 @@ class DimirDoppelgangerScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Card(graveyardCard, cardOwner, Zone.GRAVEYARD)),
             )
         )
-        withClue(result.error ?: "activation failed") { result.isSuccess shouldBe true }
+        withClue(result.error ?: "activation failed") { result.outcome shouldBe Outcome.Done }
         var guard = 0
         while (stackSize > 0 && guard++ < 10) bothPass()
     }

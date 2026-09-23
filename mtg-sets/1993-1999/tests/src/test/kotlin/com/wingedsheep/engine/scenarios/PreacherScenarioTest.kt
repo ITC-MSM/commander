@@ -51,7 +51,7 @@ class PreacherScenarioTest : FunSpec({
             ActivateAbility(playerId = me, sourceId = preacher, abilityId = abilityId)
         )
         // A paused result is the success shape here: the ability is waiting on the opponent's
-        // target choice, so `isSuccess` is false while `error` stays null.
+        // target choice, so the outcome is `Outcome.Paused` and `error` stays null.
         withClue("activation should not error: ${activation.error}") {
             activation.error shouldBe null
         }

@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.StormCopyEffect
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Verifies that a pending spell-copy (CopyNextSpellCastEffect / CopyEachSpellCastEffect) honours its
@@ -52,7 +53,7 @@ class CopySpellCastFilterTest : FunSpec({
         )
 
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
-        driver.castSpell(caster, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt, listOf(opponent)).outcome shouldBe Outcome.Done
 
         stormCopyTriggers(driver).size shouldBe 1
         driver.state.pendingSpellCopies.size shouldBe 0
@@ -83,7 +84,7 @@ class CopySpellCastFilterTest : FunSpec({
         )
 
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
-        driver.castSpell(caster, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt, listOf(opponent)).outcome shouldBe Outcome.Done
 
         stormCopyTriggers(driver).size shouldBe 0
         driver.state.pendingSpellCopies.size shouldBe 1
@@ -113,7 +114,7 @@ class CopySpellCastFilterTest : FunSpec({
         )
 
         val centaur = driver.putCardInHand(caster, "Centaur Courser")
-        driver.castSpell(caster, centaur).isSuccess shouldBe true
+        driver.castSpell(caster, centaur).outcome shouldBe Outcome.Done
 
         driver.state.pendingSpellCopies.size shouldBe 0
     }

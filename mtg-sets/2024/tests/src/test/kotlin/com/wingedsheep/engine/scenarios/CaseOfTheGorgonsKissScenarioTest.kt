@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Case of the Gorgon's Kiss — {B} Enchantment — Case.
@@ -97,7 +98,7 @@ class CaseOfTheGorgonsKissScenarioTest : FunSpec({
     fun GameTestDriver.castSorcery(name: String) {
         val spell = putCardInHand(player1, name)
         giveColorlessMana(player1, 1)
-        castSpell(player1, spell).isSuccess shouldBe true
+        castSpell(player1, spell).outcome shouldBe Outcome.Done
         bothPass()
     }
 
@@ -108,12 +109,12 @@ class CaseOfTheGorgonsKissScenarioTest : FunSpec({
 
         val spark = driver.putCardInHand(driver.player1, "Test Spark")
         driver.giveColorlessMana(driver.player1, 1)
-        driver.castSpell(driver.player1, spark, listOf(damaged)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, spark, listOf(damaged)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val card = driver.putCardInHand(driver.player1, "Case of the Gorgon's Kiss")
         driver.giveMana(driver.player1, Color.BLACK, 1)
-        driver.castSpell(driver.player1, card).isSuccess shouldBe true
+        driver.castSpell(driver.player1, card).outcome shouldBe Outcome.Done
         driver.bothPass() // the Case resolves; its enters trigger asks for a target
 
         val decision = driver.pendingDecision

@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Construct a Cosmic Cube (MSH) — "Whenever you draw your second card each turn, create a 2/1 black
@@ -53,7 +54,7 @@ class ConstructACosmicCubeScenarioTest : FunSpec({
     fun GameTestDriver.drawOneCard() {
         val spell = putCardInHand(player1, "Draw One Test Spell")
         giveMana(player1, Color.BLUE, 1)
-        castSpell(player1, spell).isSuccess shouldBe true
+        castSpell(player1, spell).outcome shouldBe Outcome.Done
         settle()
     }
 

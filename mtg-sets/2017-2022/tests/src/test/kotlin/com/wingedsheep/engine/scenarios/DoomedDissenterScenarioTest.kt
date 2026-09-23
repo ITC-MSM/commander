@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Doomed Dissenter (AKH #87, reprinted VOW #? — canonical is AKH).
@@ -40,7 +41,7 @@ class DoomedDissenterScenarioTest : FunSpec({
             bolt,
             listOf(com.wingedsheep.engine.state.components.stack.ChosenTarget.Permanent(dissenter))
         )
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the bolt: Doomed Dissenter (1/1) takes 3 damage and dies.
         driver.bothPass()

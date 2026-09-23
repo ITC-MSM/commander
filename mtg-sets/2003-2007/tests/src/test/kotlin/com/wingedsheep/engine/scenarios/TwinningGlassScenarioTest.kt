@@ -9,6 +9,8 @@ import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.TypeLine
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 class TwinningGlassScenarioTest : ScenarioTestBase() {
     init {
@@ -80,8 +82,8 @@ class TwinningGlassScenarioTest : ScenarioTestBase() {
             game.castSpellTargetingPlayer(1, "Lightning Bolt", 2).error shouldBe null
             game.resolveStack()
             activate(game)
-            game.selectCards(listOf(game.findCardsInHand(1, "Grizzly Bears").single())).isSuccess shouldBe false
-            game.selectCards(listOf(game.findCardsInHand(1, "Island").single())).isSuccess shouldBe false
+            game.selectCards(listOf(game.findCardsInHand(1, "Grizzly Bears").single())).outcome shouldNotBe Outcome.Done
+            game.selectCards(listOf(game.findCardsInHand(1, "Island").single())).outcome shouldNotBe Outcome.Done
             game.selectCards(emptyList()).error shouldBe null
             game.resolveStack()
             game.isInHand(1, "Lightning Bolt") shouldBe true

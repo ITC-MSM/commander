@@ -15,6 +15,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Razia, Boros Archangel (RAV #223) — "{T}: The next 3 damage that would be dealt to target
@@ -47,7 +48,7 @@ class RaziaBorosArchangelScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Permanent(shielded), ChosenTarget.Permanent(recipient)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         var guard = 0
         while (stackSize > 0 && guard++ < 10) bothPass()
     }
@@ -55,7 +56,7 @@ class RaziaBorosArchangelScenarioTest : FunSpec({
     fun GameTestDriver.bolt(caster: EntityId, target: EntityId) {
         giveMana(caster, Color.RED, 1)
         val bolt = putCardInHand(caster, "Lightning Bolt")
-        castSpellWithTargets(caster, bolt, listOf(ChosenTarget.Permanent(target))).isSuccess shouldBe true
+        castSpellWithTargets(caster, bolt, listOf(ChosenTarget.Permanent(target))).outcome shouldBe Outcome.Done
         var guard = 0
         while (stackSize > 0 && guard++ < 10) bothPass()
     }

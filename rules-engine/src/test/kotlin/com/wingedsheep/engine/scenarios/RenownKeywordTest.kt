@@ -35,6 +35,7 @@ import com.wingedsheep.sdk.scripting.KeywordAbility
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Mechanic-level tests for Renown N (CR 702.112).
@@ -163,9 +164,9 @@ class RenownKeywordTest : FunSpec({
     fun attackUnblocked(driver: GameTestDriver, attacker: EntityId, attackers: List<EntityId>) {
         val defender = driver.getOpponent(attacker)
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, attackers, defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, attackers, defender).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(defender, emptyMap()).isSuccess shouldBe true
+        driver.declareBlockers(defender, emptyMap()).outcome shouldBe Outcome.Done
         resolveThroughCombat(driver)
     }
 
@@ -205,9 +206,9 @@ class RenownKeywordTest : FunSpec({
         driver.removeSummoningSickness(scout)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(player, listOf(scout), defender).isSuccess shouldBe true
+        driver.declareAttackers(player, listOf(scout), defender).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(defender, mapOf(wall to listOf(scout))).isSuccess shouldBe true
+        driver.declareBlockers(defender, mapOf(wall to listOf(scout))).outcome shouldBe Outcome.Done
         resolveThroughCombat(driver)
 
         // All of the Scout's damage went to the blocker, none to the player.
@@ -264,7 +265,7 @@ class RenownKeywordTest : FunSpec({
         val recallCard = driver.putCardInHand(player, "Test Recall")
         driver.submit(
             CastSpell(player, recallCard, listOf(ChosenTarget.Permanent(scout)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val replayed = driver.putCreatureOnBattlefield(player, "Test Renowned Scout")

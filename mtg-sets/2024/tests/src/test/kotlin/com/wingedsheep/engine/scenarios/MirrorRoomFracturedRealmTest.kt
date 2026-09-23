@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario for `Mirror Room // Fractured Realm` (DSK 67), a split-layout Room (CR 709.5).
@@ -105,7 +106,7 @@ class MirrorRoomFracturedRealmTest : FunSpec({
         val creature = d.putCardInHand(p1, "Test ETB Drawer")
         d.giveColorlessMana(p1, 2)
         val before = d.getHandSize(p1)
-        d.castSpell(p1, creature).isSuccess shouldBe true
+        d.castSpell(p1, creature).outcome shouldBe Outcome.Done
         var guard = 0
         while (d.state.stack.isNotEmpty() && guard++ < 20) {
             d.bothPass()

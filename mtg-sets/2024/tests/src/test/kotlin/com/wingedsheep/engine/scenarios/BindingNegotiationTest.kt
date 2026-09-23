@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Binding Negotiation (OTJ #78).
@@ -33,7 +34,7 @@ class BindingNegotiationTest : FunSpec({
         driver.giveMana(you, Color.BLACK, 1)
         driver.giveColorlessMana(you, 1)
         // Target the opponent at cast time (the helper builds a ChosenTarget.Player).
-        driver.castSpell(you, card, targets = listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(you, card, targets = listOf(opponent)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the spell onto the stack -> begin its resolution
     }
 

@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Daru Healer.
@@ -53,7 +54,7 @@ class DaruHealerTest : FunSpec({
                 abilityId = healerAbilityId,
                 targets = listOf(ChosenTarget.Permanent(target))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Deal 3 damage via Lightning Bolt - shield prevents 1, 2 gets through
@@ -88,7 +89,7 @@ class DaruHealerTest : FunSpec({
                 abilityId = healerAbilityId,
                 targets = listOf(ChosenTarget.Player(opponent))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Deal 3 damage to opponent via Lightning Bolt - shield prevents 1, so 2 gets through
@@ -122,7 +123,7 @@ class DaruHealerTest : FunSpec({
                 abilityId = healerAbilityId,
                 targets = listOf(ChosenTarget.Player(opponent))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // First bolt: 3 damage, shield prevents 1, 2 gets through

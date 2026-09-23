@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Dive Bomber.
@@ -72,7 +73,7 @@ class DiveBomberTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(blocker))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Let the ability resolve
         driver.bothPass()
@@ -124,7 +125,7 @@ class DiveBomberTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(attacker))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Let the ability resolve
         driver.bothPass()

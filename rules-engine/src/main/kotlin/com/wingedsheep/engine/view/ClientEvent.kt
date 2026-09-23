@@ -1398,6 +1398,7 @@ is PermanentsSacrificedEvent -> {
             is DamageAssignedEvent,
             is PhaseChangedEvent,
             is StepChangedEvent,
+            is TurnEndedByEffectEvent,
             is PriorityChangedEvent,
             is ManaSpentEvent,
             is LandTappedForManaEvent,

@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Invasion engine gap #9 — discard (at random) as an activation cost.
@@ -56,7 +57,7 @@ class MeteorStormDiscardCostTest : FunSpec({
                 targets = listOf(ChosenTarget.Player(opp))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         d.bothPass()
 
         // Exactly two cards discarded at random; they land in the graveyard.

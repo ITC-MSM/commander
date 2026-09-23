@@ -24,6 +24,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Zhao, the Moon Slayer ({1}{R} Legendary Creature — Human Soldier, 2/2):
@@ -88,7 +89,7 @@ class ZhaoTheMoonSlayerScenarioTest : FunSpec({
         driver.putPermanentOnBattlefield(me, "Zhao, the Moon Slayer")
 
         val land = driver.putCardInHand(me, "Tropical Island")
-        driver.playLand(me, land).isSuccess shouldBe true
+        driver.playLand(me, land).outcome shouldBe Outcome.Done
         driver.state.getEntity(land)?.has<TappedComponent>() shouldBe true
     }
 
@@ -97,14 +98,14 @@ class ZhaoTheMoonSlayerScenarioTest : FunSpec({
         driver.putPermanentOnBattlefield(me, "Zhao, the Moon Slayer")
 
         val forest = driver.putCardInHand(me, "Forest")
-        driver.playLand(me, forest).isSuccess shouldBe true
+        driver.playLand(me, forest).outcome shouldBe Outcome.Done
         driver.state.getEntity(forest)?.has<TappedComponent>() shouldBe false
     }
 
     test("baseline: a nonbasic land enters untapped without Zhao") {
         val (driver, me) = newGame()
         val land = driver.putCardInHand(me, "Tropical Island")
-        driver.playLand(me, land).isSuccess shouldBe true
+        driver.playLand(me, land).outcome shouldBe Outcome.Done
         driver.state.getEntity(land)?.has<TappedComponent>() shouldBe false
     }
 

@@ -20,6 +20,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * When more than one `MayCastFromGraveyard` permission applies to the same creature — a free grant
@@ -110,7 +111,7 @@ class GraveyardCastGrantChoiceTest : FunSpec({
         giveRatMana(driver, player)
 
         driver.submit(CastSpell(playerId = player, cardId = rat, graveyardCastRider = GraveyardCastRiderSelection()))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
         resolveStack(driver)
 
@@ -136,7 +137,7 @@ class GraveyardCastGrantChoiceTest : FunSpec({
                 cardId = rat,
                 graveyardCastRider = GraveyardCastRiderSelection(CounterType.FINALITY, "Vampire"),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         resolveStack(driver)
 
@@ -154,7 +155,7 @@ class GraveyardCastGrantChoiceTest : FunSpec({
 
         // Client claims the free (no-rider) permission, but none applies — must not dodge the rider.
         driver.submit(CastSpell(playerId = player, cardId = rat, graveyardCastRider = GraveyardCastRiderSelection()))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
         resolveStack(driver)
 

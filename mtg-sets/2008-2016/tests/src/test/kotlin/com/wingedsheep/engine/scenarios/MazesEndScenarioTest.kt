@@ -22,6 +22,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Maze's End (DGM #152, reprinted in FDN #727) — Land.
@@ -68,7 +69,7 @@ class MazesEndScenarioTest : FunSpec({
         driver.giveMana(player, Color.GREEN, 3)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = mazesEnd, abilityId = tutorAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
     }
 
     test("returning Maze's End to hand is part of the cost — it is in hand before the ability resolves") {

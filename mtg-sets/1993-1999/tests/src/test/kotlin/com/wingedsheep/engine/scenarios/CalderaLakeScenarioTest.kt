@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Caldera Lake (TMP #316)
@@ -42,7 +43,7 @@ class CalderaLakeScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = activePlayer, sourceId = lake, abilityId = blueAbilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()
         pool?.blue shouldBe 1
@@ -62,7 +63,7 @@ class CalderaLakeScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = activePlayer, sourceId = lake, abilityId = redAbilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()
         pool?.red shouldBe 1
@@ -82,7 +83,7 @@ class CalderaLakeScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = activePlayer, sourceId = lake, abilityId = colorlessAbilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()
         pool?.colorless shouldBe 1

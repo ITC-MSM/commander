@@ -11,6 +11,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Rag Man — "{B}{B}{B}, {T}: Target opponent reveals their hand and discards a
@@ -58,7 +60,7 @@ class RagManScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, opponent)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("the one creature card is the only thing that can be picked") {
@@ -92,7 +94,7 @@ class RagManScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, opponent)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("an empty gather makes the select and move silent no-ops") {
@@ -122,7 +124,7 @@ class RagManScenarioTest : FunSpec({
                     abilityId = abilityId,
                     targets = listOf(entityIdToChosenTarget(driver.state, first)),
                 )
-            ).isSuccess shouldBe false
+            ).outcome shouldNotBe Outcome.Done
         }
     }
 })

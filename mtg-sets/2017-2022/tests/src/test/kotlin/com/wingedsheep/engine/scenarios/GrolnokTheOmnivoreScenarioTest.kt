@@ -15,6 +15,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Grolnok, the Omnivore (VOW #238).
@@ -59,7 +60,7 @@ class GrolnokTheOmnivoreScenarioTest : FunSpec({
         val island = d.putCardOnTopOfLibrary(me, "Island")
 
         d.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        d.declareAttackers(me, listOf(grolnok), opponent).isSuccess shouldBe true
+        d.declareAttackers(me, listOf(grolnok), opponent).outcome shouldBe Outcome.Done
         repeat(6) { d.bothPass() }
 
         withClue("the two permanent cards were exiled; the instant stayed in the graveyard") {
@@ -86,7 +87,7 @@ class GrolnokTheOmnivoreScenarioTest : FunSpec({
 
         val note = d.putCardInHand(me, "Mental Note")
         d.giveMana(me, Color.BLUE, 1)
-        d.castSpell(me, note).isSuccess shouldBe true
+        d.castSpell(me, note).outcome shouldBe Outcome.Done
         repeat(4) { d.bothPass() }
 
         withClue("the milled creature card is exiled with a croak counter, the instant is not") {
@@ -108,7 +109,7 @@ class GrolnokTheOmnivoreScenarioTest : FunSpec({
         d.putCardOnTopOfLibrary(me, "Mountain") // second milled card, also croak-exiled
         val note = d.putCardInHand(me, "Mental Note")
         d.giveMana(me, Color.BLUE, 1)
-        d.castSpell(me, note).isSuccess shouldBe true
+        d.castSpell(me, note).outcome shouldBe Outcome.Done
         repeat(4) { d.bothPass() }
         croakCounters(d, croaked) shouldBe 1
 

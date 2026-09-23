@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Parish-Blade Trainee (VOW #29) — {1}{W} 1/2 Creature — Human Soldier, Training + a dies payoff.
@@ -67,7 +68,7 @@ class ParishBladeTraineeScenarioTest : FunSpec({
         val doomBlade = driver.putCardInHand(me, "Doom Blade")
         driver.giveMana(me, Color.BLACK, 1)
         driver.giveColorlessMana(me, 1)
-        driver.castSpell(me, doomBlade, targets = listOf(trainee)).isSuccess shouldBe true
+        driver.castSpell(me, doomBlade, targets = listOf(trainee)).outcome shouldBe Outcome.Done
 
         // Resolve Doom Blade + the ensuing dies trigger; pick the recipient when it asks for a target.
         var targeted = false

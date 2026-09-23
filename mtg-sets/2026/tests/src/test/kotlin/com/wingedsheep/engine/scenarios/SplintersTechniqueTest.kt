@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Splinter's Technique (TMT #80) — Sorcery, Sneak {1}{B}. "Search your library
@@ -26,7 +27,7 @@ class SplintersTechniqueTest : FunSpec({
         // mana added here — unspent mana empties as each step/phase ends (CR 500.5)
         driver.giveMana(player, Color.BLACK, 4)
         val handBefore = driver.getHandSize(player)
-        driver.castSpell(player, spell).isSuccess shouldBe true
+        driver.castSpell(player, spell).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty() && driver.pendingDecision == null) driver.bothPass()
 
         val decision = driver.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()

@@ -9,6 +9,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Wicked Pact's multi-target spell behavior.
@@ -54,7 +55,7 @@ class WickedPactTest : FunSpec({
 
         // Cast Wicked Pact with both targets
         val castResult = driver.castSpell(activePlayer, wickedPact, listOf(creature1, creature2))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Let the spell resolve
         driver.bothPass()
@@ -95,7 +96,7 @@ class WickedPactTest : FunSpec({
 
         // Cast Wicked Pact targeting both creatures
         val castResult = driver.castSpell(activePlayer, wickedPact, listOf(ownCreature, opponentCreature))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Let the spell resolve
         driver.bothPass()
@@ -169,7 +170,7 @@ class WickedPactTest : FunSpec({
 
         // Try to cast Wicked Pact - should fail due to insufficient mana
         val castResult = driver.castSpell(activePlayer, wickedPact, listOf(creature1, creature2))
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
 
         // Creatures should still be on the battlefield
         driver.findPermanent(opponent, "Grizzly Bears") shouldBe creature1

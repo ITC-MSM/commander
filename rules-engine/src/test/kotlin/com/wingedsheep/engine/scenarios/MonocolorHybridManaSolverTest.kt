@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * End-to-end land auto-tap for monocolored hybrid ("twobrid") costs. The {2/B} pip can be paid
@@ -83,7 +84,7 @@ class MonocolorHybridManaSolverTest : FunSpec({
         val watcher = driver.putCardInHand(player, "Twobrid Watcher")
 
         val result = driver.castSpell(player, watcher)
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass() // resolve
 
         driver.findPermanent(player, "Twobrid Watcher") shouldBe watcher

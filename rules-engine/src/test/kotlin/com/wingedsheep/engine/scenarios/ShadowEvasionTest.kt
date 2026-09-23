@@ -8,6 +8,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContainIgnoringCase
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for shadow evasion.
@@ -55,7 +57,7 @@ class ShadowEvasionTest : FunSpec({
         driver.removeSummoningSickness(blocker)
 
         driver.advanceToPlayer1DeclareAttackers()
-        driver.declareAttackers(driver.player1, listOf(attacker), driver.player2).isSuccess shouldBe true
+        driver.declareAttackers(driver.player1, listOf(attacker), driver.player2).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
 
@@ -63,7 +65,7 @@ class ShadowEvasionTest : FunSpec({
             DeclareBlockers(driver.player2, mapOf(blocker to listOf(attacker)))
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "shadow"
         result.error shouldContainIgnoringCase "cannot block"
     }
@@ -77,7 +79,7 @@ class ShadowEvasionTest : FunSpec({
         driver.removeSummoningSickness(blocker)
 
         driver.advanceToPlayer1DeclareAttackers()
-        driver.declareAttackers(driver.player1, listOf(attacker), driver.player2).isSuccess shouldBe true
+        driver.declareAttackers(driver.player1, listOf(attacker), driver.player2).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
 
@@ -85,7 +87,7 @@ class ShadowEvasionTest : FunSpec({
             DeclareBlockers(driver.player2, mapOf(blocker to listOf(attacker)))
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "shadow"
         result.error shouldContainIgnoringCase "cannot block"
     }
@@ -99,14 +101,14 @@ class ShadowEvasionTest : FunSpec({
         driver.removeSummoningSickness(blocker)
 
         driver.advanceToPlayer1DeclareAttackers()
-        driver.declareAttackers(driver.player1, listOf(attacker), driver.player2).isSuccess shouldBe true
+        driver.declareAttackers(driver.player1, listOf(attacker), driver.player2).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
 
         driver.declareBlockers(
             driver.player2,
             mapOf(blocker to listOf(attacker))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
     }
 
     test("a shadow attacker connects when the defender has only non-shadow blockers") {
@@ -120,11 +122,11 @@ class ShadowEvasionTest : FunSpec({
         val startingLife = driver.getLifeTotal(driver.player2)
 
         driver.advanceToPlayer1DeclareAttackers()
-        driver.declareAttackers(driver.player1, listOf(attacker), driver.player2).isSuccess shouldBe true
+        driver.declareAttackers(driver.player1, listOf(attacker), driver.player2).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
 
-        driver.declareBlockers(driver.player2, emptyMap()).isSuccess shouldBe true
+        driver.declareBlockers(driver.player2, emptyMap()).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass()
 

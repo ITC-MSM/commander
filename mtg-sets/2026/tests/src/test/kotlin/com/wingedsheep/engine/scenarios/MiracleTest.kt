@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Miracle (CR 702.94): "You may cast this card for its miracle cost when you draw it if it's the
@@ -51,7 +52,7 @@ class MiracleTest : FunSpec({
         val drawSpell = driver.putCardInHand(caster, "Miracle Draw Test")
 
         // Cast the draw spell; Shock is drawn as the first card of the turn.
-        driver.castSpell(caster, drawSpell).isSuccess shouldBe true
+        driver.castSpell(caster, drawSpell).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the draw
 
         // The drawn Shock is in hand with an open miracle window.
@@ -81,7 +82,7 @@ class MiracleTest : FunSpec({
         driver.putLandOnBattlefield(caster, "Mountain")
         val drawSpell = driver.putCardInHand(caster, "Miracle Draw Test")
 
-        driver.castSpell(caster, drawSpell).isSuccess shouldBe true
+        driver.castSpell(caster, drawSpell).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val oppLifeBefore = driver.state.getEntity(opponent)
@@ -97,7 +98,7 @@ class MiracleTest : FunSpec({
                 alternativeCostType = com.wingedsheep.engine.core.AlternativeCostType.MIRACLE
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Shock
 
         val oppLifeAfter = driver.state.getEntity(opponent)
@@ -121,9 +122,9 @@ class MiracleTest : FunSpec({
         val draw1 = driver.putCardInHand(caster, "Miracle Draw Test")
         val draw2 = driver.putCardInHand(caster, "Miracle Draw Test")
 
-        driver.castSpell(caster, draw1).isSuccess shouldBe true
+        driver.castSpell(caster, draw1).outcome shouldBe Outcome.Done
         driver.bothPass() // draws Mountain (first draw)
-        driver.castSpell(caster, draw2).isSuccess shouldBe true
+        driver.castSpell(caster, draw2).outcome shouldBe Outcome.Done
         driver.bothPass() // draws Shock (second draw)
 
         // Shock was the second draw → no miracle window.
@@ -143,7 +144,7 @@ class MiracleTest : FunSpec({
         driver.putLandOnBattlefield(caster, "Mountain")
         val drawSpell = driver.putCardInHand(caster, "Miracle Draw Test")
 
-        driver.castSpell(caster, drawSpell).isSuccess shouldBe true
+        driver.castSpell(caster, drawSpell).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // No miracle window on a creature card; the grant filter excludes it.

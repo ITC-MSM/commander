@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Together as One ({6} sorcery):
@@ -50,7 +51,7 @@ class TogetherAsOneScenarioTest : FunSpec({
         val oppLifeBefore = driver.getLifeTotal(opp)
 
         // Target player = the caster (draws X), any target = the opponent (takes X damage).
-        driver.castSpell(p, spell, targets = listOf(p, opp)).isSuccess shouldBe true
+        driver.castSpell(p, spell, targets = listOf(p, opp)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // -1 (cast the sorcery) + 3 (drew X) = +2 net hand.
@@ -71,7 +72,7 @@ class TogetherAsOneScenarioTest : FunSpec({
         val lifeBefore = driver.getLifeTotal(p)
         val oppLifeBefore = driver.getLifeTotal(opp)
 
-        driver.castSpell(p, spell, targets = listOf(p, opp)).isSuccess shouldBe true
+        driver.castSpell(p, spell, targets = listOf(p, opp)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getHandSize(p) shouldBe (handBefore - 1) // only the cast sorcery left hand

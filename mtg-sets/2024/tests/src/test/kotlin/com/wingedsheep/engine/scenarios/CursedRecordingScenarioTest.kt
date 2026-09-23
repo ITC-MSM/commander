@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.StormCopyEffect
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Cursed Recording (DSK #131) — {2}{R}{R} Artifact.
@@ -51,7 +52,7 @@ class CursedRecordingScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(player, "Lightning Bolt")
         driver.giveMana(player, Color.RED, 1)
-        driver.castSpell(player, bolt, targets = listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(player, bolt, targets = listOf(opponent)).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty() && !driver.isPaused) driver.bothPass()
 
         timeCounters(driver, recording) shouldBe 1
@@ -70,7 +71,7 @@ class CursedRecordingScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(player, "Lightning Bolt")
         driver.giveMana(player, Color.RED, 1)
-        driver.castSpell(player, bolt, targets = listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(player, bolt, targets = listOf(opponent)).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty() && !driver.isPaused) driver.bothPass()
 
         // The counters were removed and the controller took 20.
@@ -96,7 +97,7 @@ class CursedRecordingScenarioTest : FunSpec({
         // copy is consumed.
         val bolt = driver.putCardInHand(player, "Lightning Bolt")
         driver.giveMana(player, Color.RED, 1)
-        driver.castSpell(player, bolt, targets = listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(player, bolt, targets = listOf(opponent)).outcome shouldBe Outcome.Done
 
         val stormCopies = driver.state.stack.mapNotNull {
             driver.state.getEntity(it)?.get<TriggeredAbilityOnStackComponent>()

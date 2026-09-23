@@ -13,6 +13,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Lammastide Weave (LRW #226) — "Choose a card name, then target player mills a card. If a card
@@ -50,7 +51,7 @@ class LammastideWeaveScenarioTest : FunSpec({
         d.giveMana(me, Color.GREEN, 2)
         val handBeforeCast = d.getHandSize(me)
 
-        d.castSpell(me, weave, listOf(opponent)).isSuccess shouldBe true
+        d.castSpell(me, weave, listOf(opponent)).outcome shouldBe Outcome.Done
         d.bothPass()
 
         val decision = d.pendingDecision

@@ -138,6 +138,15 @@ data class GameState(
     /** Continuation stack for resuming after player decisions */
     val continuationStack: List<ContinuationFrame> = emptyList(),
 
+    /**
+     * Triggered abilities that have triggered but are not on the stack yet (CR 603.3): they wait
+     * until the next time a player would receive priority. Only [com.wingedsheep.engine.core.Settler]
+     * fills and drains this. It detects triggers once per action at the engine boundary, parks them
+     * here while a decision is pending, and puts them on the stack when the game settles. Nothing
+     * else detects triggers from events, so no trigger is detected twice.
+     */
+    val pendingTriggers: List<com.wingedsheep.engine.event.PendingTrigger> = emptyList(),
+
     /** Number of spells cast this turn (by all players), used for Storm count */
     val spellsCastThisTurn: Int = 0,
 
@@ -295,6 +304,18 @@ data class GameState(
      * the `PlayerCommittedCrimeThisTurn` condition (e.g. Seize the Secrets' cost reduction).
      */
     val playersWhoCommittedCrimeThisTurn: Set<EntityId> = emptySet(),
+    /**
+     * Players (by entity id) who were dealt noncombat damage this turn — more than zero damage
+     * after prevention, from any source. Populated in `DamageUtils.dealDamageToTarget` and cleared
+     * at every turn boundary. Backs `TurnTracker.DEALT_NONCOMBAT_DAMAGE`.
+     */
+    val playersDealtNoncombatDamageThisTurn: Set<EntityId> = emptySet(),
+    /**
+     * [playersDealtNoncombatDamageThisTurn] as it stood when the previous turn ended, rolled over by
+     * `TurnManager.startTurn`. "Last turn" is the previous turn in the game, not the reader's own
+     * last turn. Backs `TurnTracker.DEALT_NONCOMBAT_DAMAGE_LAST_TURN` (Command the Stage).
+     */
+    val playersDealtNoncombatDamageLastTurn: Set<EntityId> = emptySet(),
 
     /**
      * Colors of the spell most recently cast this turn (by any player), or null if no spell has

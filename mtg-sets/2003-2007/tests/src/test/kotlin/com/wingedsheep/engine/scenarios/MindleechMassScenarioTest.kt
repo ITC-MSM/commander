@@ -7,6 +7,8 @@ import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 class MindleechMassScenarioTest : ScenarioTestBase() {
     init {
@@ -60,7 +62,7 @@ class MindleechMassScenarioTest : ScenarioTestBase() {
             val island = game.findCardsInHand(2, "Island").single()
             game.answerYesNo(true).error shouldBe null
             game.resolveStack()
-            game.selectCards(listOf(island)).isSuccess shouldBe false
+            game.selectCards(listOf(island)).outcome shouldNotBe Outcome.Done
             game.isInHand(2, "Island") shouldBe true
         }
 

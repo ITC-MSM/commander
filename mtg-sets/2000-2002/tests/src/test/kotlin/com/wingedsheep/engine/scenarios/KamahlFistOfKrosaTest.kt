@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Kamahl, Fist of Krosa.
@@ -59,7 +60,7 @@ class KamahlFistOfKrosaTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(forest))
             )
         )
-        activateResult.isSuccess shouldBe true
+        activateResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -136,7 +137,7 @@ class KamahlFistOfKrosaTest : FunSpec({
                 targets = emptyList()
             )
         )
-        activateResult.isSuccess shouldBe true
+        activateResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

@@ -21,6 +21,7 @@ import com.wingedsheep.sdk.scripting.ConvokePayment
 import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Real-card version of [ConvokeWithConditionalManaTest]: Ashling, Rimebound's conditional mana
@@ -98,7 +99,7 @@ class AshlingRimeboundConvokeScenarioTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Both restricted mana were spent; the Druid was tapped for the remainder.
         driver.state.getEntity(player)!!.get<ManaPoolComponent>()!!.restrictedMana.size shouldBe 0

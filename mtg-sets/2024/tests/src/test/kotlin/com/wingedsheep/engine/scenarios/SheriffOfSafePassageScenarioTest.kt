@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Sheriff of Safe Passage (OTJ #29).
@@ -40,7 +41,7 @@ class SheriffOfSafePassageScenarioTest : FunSpec({
         val sheriff = driver.putCardInHand(activePlayer, "Sheriff of Safe Passage")
         driver.giveMana(activePlayer, Color.WHITE, 3)
 
-        driver.castSpell(activePlayer, sheriff).isSuccess shouldBe true
+        driver.castSpell(activePlayer, sheriff).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Base 0/0 + 1 fixed counter = 1/1.
@@ -62,7 +63,7 @@ class SheriffOfSafePassageScenarioTest : FunSpec({
         val sheriff = driver.putCardInHand(activePlayer, "Sheriff of Safe Passage")
         driver.giveMana(activePlayer, Color.WHITE, 3)
 
-        driver.castSpell(activePlayer, sheriff).isSuccess shouldBe true
+        driver.castSpell(activePlayer, sheriff).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // 1 fixed + 2 other creatures = 3 counters → 3/3.
@@ -86,7 +87,7 @@ class SheriffOfSafePassageScenarioTest : FunSpec({
         val sheriff = driver.putCardInHand(activePlayer, "Sheriff of Safe Passage")
         driver.giveMana(activePlayer, Color.WHITE, 3)
 
-        driver.castSpell(activePlayer, sheriff).isSuccess shouldBe true
+        driver.castSpell(activePlayer, sheriff).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // 1 fixed + 1 of my other creatures (opponent's two are ignored) = 2 → 2/2.

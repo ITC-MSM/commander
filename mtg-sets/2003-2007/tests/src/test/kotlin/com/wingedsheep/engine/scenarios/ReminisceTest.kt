@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Reminisce (ONS #105).
@@ -51,7 +52,7 @@ class ReminisceTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLUE, 3)
         val reminisce = driver.putCardInHand(activePlayer, "Reminisce")
         val castResult = driver.castSpell(activePlayer, reminisce, listOf(opponent))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -86,7 +87,7 @@ class ReminisceTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLUE, 3)
         val reminisce = driver.putCardInHand(activePlayer, "Reminisce")
         val castResult = driver.castSpell(activePlayer, reminisce, listOf(activePlayer))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -120,7 +121,7 @@ class ReminisceTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLUE, 3)
         val reminisce = driver.putCardInHand(activePlayer, "Reminisce")
         val castResult = driver.castSpell(activePlayer, reminisce, listOf(opponent))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

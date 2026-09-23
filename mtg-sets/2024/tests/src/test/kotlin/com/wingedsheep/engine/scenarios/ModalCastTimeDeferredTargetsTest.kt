@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Covers the single-panel client mode-selection path for choose-N modal (Spree) spells:
@@ -53,7 +54,7 @@ class ModalCastTimeDeferredTargetsTest : FunSpec({
         )
         // The cast is accepted but pauses for targets rather than being rejected/fizzling.
         result.error shouldBe null
-        result.isPaused shouldBe true
+        (result.outcome is Outcome.Paused) shouldBe true
 
         // Engine should pause for the chosen mode's target (rule 601.2c), not reject the cast.
         val decision = driver.pendingDecision as? ChooseTargetsDecision
@@ -81,7 +82,7 @@ class ModalCastTimeDeferredTargetsTest : FunSpec({
             CastSpell(playerId = player, cardId = spell, chosenModes = listOf(0, 1))
         )
         result.error shouldBe null
-        result.isPaused shouldBe true
+        (result.outcome is Outcome.Paused) shouldBe true
 
         // First mode's target.
         (driver.pendingDecision is ChooseTargetsDecision) shouldBe true

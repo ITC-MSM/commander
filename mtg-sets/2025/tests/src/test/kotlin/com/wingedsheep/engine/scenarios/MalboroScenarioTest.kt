@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Malboro (FIN #106).
@@ -46,7 +47,7 @@ class MalboroScenarioTest : FunSpec({
         driver.giveMana(active, Color.BLACK, 2)
         driver.giveColorlessMana(active, 4)
 
-        driver.castSpell(active, malboro).isSuccess shouldBe true
+        driver.castSpell(active, malboro).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature; Bad Breath trigger goes on the stack
         driver.bothPass() // resolve the trigger; it pauses for the opponent's discard choice
 

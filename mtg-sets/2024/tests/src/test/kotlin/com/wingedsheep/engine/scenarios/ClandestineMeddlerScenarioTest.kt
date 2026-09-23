@@ -17,6 +17,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Clandestine Meddler — "When this creature enters, suspect up to one other target creature you
@@ -48,7 +49,7 @@ class ClandestineMeddlerScenarioTest : FunSpec({
     fun castMeddler(driver: GameTestDriver): EntityId {
         val meddler = driver.putCardInHand(driver.player1, "Clandestine Meddler")
         driver.giveMana(driver.player1, Color.BLACK, 3)
-        driver.castSpell(driver.player1, meddler).isSuccess shouldBe true
+        driver.castSpell(driver.player1, meddler).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature; the enters trigger asks for its target
         return meddler
     }

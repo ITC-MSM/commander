@@ -26,6 +26,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Phase 5 of `backlog/storm-implementation-correctness.md`: per rule 707.10c a
@@ -101,7 +102,7 @@ class StormIllegalTargetFizzleTest : FunSpec({
             EffectContext(sourceId = spellEntity, controllerId = p1)
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Copy is on the stack with CopyOfComponent
         val copyId = result.state.stack.single { id ->
@@ -142,7 +143,7 @@ class StormIllegalTargetFizzleTest : FunSpec({
             EffectContext(sourceId = spellEntity, controllerId = p1)
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Three copies on the stack alongside the source.
         val copyIds = result.state.stack.filter { id ->

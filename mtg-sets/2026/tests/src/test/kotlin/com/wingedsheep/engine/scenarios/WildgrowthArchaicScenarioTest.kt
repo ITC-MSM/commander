@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Wildgrowth Archaic ({2/G}{2/G}, 0/0 Avatar, Trample/Reach):
@@ -66,7 +67,7 @@ class WildgrowthArchaicScenarioTest : FunSpec({
     fun resolveWildgrowth(driver: GameTestDriver, p: EntityId, mana: Map<Color, Int> = mapOf(Color.GREEN to 2)): EntityId {
         val wild = driver.putCardInHand(p, "Wildgrowth Archaic")
         mana.forEach { (color, amount) -> driver.giveMana(p, color, amount) }
-        driver.castSpell(p, wild).isSuccess shouldBe true
+        driver.castSpell(p, wild).outcome shouldBe Outcome.Done
         driver.bothPass()
         return wild
     }
@@ -90,7 +91,7 @@ class WildgrowthArchaicScenarioTest : FunSpec({
         driver.giveMana(p, Color.WHITE, 1)
         driver.giveMana(p, Color.BLUE, 1)
         driver.giveMana(p, Color.BLACK, 1)
-        driver.castSpell(p, bear).isSuccess shouldBe true
+        driver.castSpell(p, bear).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Base 2/2, no own enters-with counters → exactly the 3 granted by Wildgrowth.
@@ -104,7 +105,7 @@ class WildgrowthArchaicScenarioTest : FunSpec({
 
         val bear = driver.putCardInHand(p, "Generic Test Bear")
         driver.giveColorlessMana(p, 3) // 0 distinct colors
-        driver.castSpell(p, bear).isSuccess shouldBe true
+        driver.castSpell(p, bear).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         plusCounters(driver, bear) shouldBe 0

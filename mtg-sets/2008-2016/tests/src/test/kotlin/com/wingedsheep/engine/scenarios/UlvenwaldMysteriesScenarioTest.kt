@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Ulvenwald Mysteries (SOI) — {2}{G} Enchantment
@@ -49,7 +50,7 @@ class UlvenwaldMysteriesScenarioTest : FunSpec({
         // Kill my own creature — 3 damage to a 2/2.
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, listOf(goblin)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(goblin)).outcome shouldBe Outcome.Done
         driver.bothPass() // Bolt resolves, Goblin dies, dies-trigger goes on the stack
         driver.bothPass() // investigate resolves
 
@@ -67,7 +68,7 @@ class UlvenwaldMysteriesScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, listOf(goblin)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(goblin)).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass()
 
@@ -100,7 +101,7 @@ class UlvenwaldMysteriesScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, listOf(theirGoblin)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(theirGoblin)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getGraveyardCardNames(opponent).contains("Goblin Guide") shouldBe true

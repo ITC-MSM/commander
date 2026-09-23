@@ -14,6 +14,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Barad-dûr — "{X}{X}{B}, {T}: Amass Orcs X. Activate only if a creature died this turn." Exercises
@@ -52,7 +54,7 @@ class BaradDurScenarioTest : FunSpec({
         val result = d.submit(
             ActivateAbility(playerId = you, sourceId = barad, abilityId = amassAbilityId, xValue = 2)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         d.bothPass() // resolve the amass
 
         val army = d.orcArmies(you).single()
@@ -72,7 +74,7 @@ class BaradDurScenarioTest : FunSpec({
         val result = d.submit(
             ActivateAbility(playerId = you, sourceId = barad, abilityId = amassAbilityId, xValue = 2)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         d.orcArmies(you).size shouldBe 0
     }
 })

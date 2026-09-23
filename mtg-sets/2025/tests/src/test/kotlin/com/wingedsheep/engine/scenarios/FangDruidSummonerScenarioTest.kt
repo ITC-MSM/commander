@@ -12,6 +12,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 class FangDruidSummonerScenarioTest : FunSpec({
     test("enters and finds only a creature card with no abilities from library or graveyard") {
@@ -26,7 +27,7 @@ class FangDruidSummonerScenarioTest : FunSpec({
         driver.giveMana(active, Color.GREEN, 1)
         driver.giveColorlessMana(active, 3)
 
-        driver.castSpell(active, summoner).isSuccess shouldBe true
+        driver.castSpell(active, summoner).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass()
 

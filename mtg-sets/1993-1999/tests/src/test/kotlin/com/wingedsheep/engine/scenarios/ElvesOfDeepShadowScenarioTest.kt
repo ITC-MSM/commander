@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 class ElvesOfDeepShadowScenarioTest : FunSpec({
     val manaAbilityId = ElvesOfDeepShadow.activatedAbilities.single().id
@@ -33,7 +34,7 @@ class ElvesOfDeepShadowScenarioTest : FunSpec({
             ActivateAbility(playerId = activePlayer, sourceId = elves, abilityId = manaAbilityId)
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.isTapped(elves) shouldBe true
         driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()?.black shouldBe 1
         driver.getLifeTotal(activePlayer) shouldBe lifeBefore - 1

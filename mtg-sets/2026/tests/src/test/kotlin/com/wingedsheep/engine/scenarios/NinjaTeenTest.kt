@@ -18,6 +18,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Ninja Teen level 3: "Creature cards in your graveyard have sneak {3}{B}. You may cast creature
@@ -51,9 +53,9 @@ class NinjaTeenTest : FunSpec({
     /** Advance to the declare blockers step with [attackerCreature] declared, unblocked. */
     fun GameTestDriver.openSneakWindow(attacker: EntityId, defender: EntityId, attackerCreature: EntityId) {
         passPriorityUntil(Step.DECLARE_ATTACKERS)
-        declareAttackers(attacker, listOf(attackerCreature), defender).isSuccess shouldBe true
+        declareAttackers(attacker, listOf(attackerCreature), defender).outcome shouldBe Outcome.Done
         passPriorityUntil(Step.DECLARE_BLOCKERS)
-        declareBlockers(defender, emptyMap()).isSuccess shouldBe true
+        declareBlockers(defender, emptyMap()).outcome shouldBe Outcome.Done
         var guard = 0
         while (state.priorityPlayerId != null && state.priorityPlayerId != attacker &&
             state.step == Step.DECLARE_BLOCKERS && guard++ < 4
@@ -90,7 +92,7 @@ class NinjaTeenTest : FunSpec({
             )
         )
         withClue("error=${cast.error} pendingDecision=${cast.pendingDecision}") {
-            cast.isSuccess shouldBe true
+            cast.outcome shouldBe Outcome.Done
         }
         while (d.state.stack.isNotEmpty()) d.bothPass()
 
@@ -126,6 +128,6 @@ class NinjaTeenTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        cast.isSuccess shouldBe false
+        cast.outcome shouldNotBe Outcome.Done
     }
 })

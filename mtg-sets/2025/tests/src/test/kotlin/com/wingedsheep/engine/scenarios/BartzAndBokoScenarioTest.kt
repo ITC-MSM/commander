@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Bartz and Boko (FIN #175) — {3}{G}{G} Legendary Creature — Human Bird 4/3.
@@ -48,7 +49,7 @@ class BartzAndBokoScenarioTest : FunSpec({
         driver.giveMana(active, Color.GREEN, 2)
         driver.giveColorlessMana(active, 3)
 
-        driver.castSpell(active, bartz).isSuccess shouldBe true
+        driver.castSpell(active, bartz).outcome shouldBe Outcome.Done
         driver.bothPass() // Bartz resolves and enters; the ETB trigger goes on the stack
 
         val decision = driver.pendingDecision

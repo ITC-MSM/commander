@@ -2,7 +2,7 @@
 
 **Set Size:** 285 cards
 **Release Date:** October 2, 2026
-**Implemented:** 171 / 285
+**Implemented:** 215 / 285
 | Section    | Total | Done |
 |------------|-------|------|
 | Extras     | 285   | 78   |
@@ -34,11 +34,11 @@
 - [x] Blessed Ghoul
 - [x] Bloodline Recollector
 - [x] Bloombrute
-- [ ] Blossom-Blessed Angel
-- [ ] Break Under Pressure
+- [x] Blossom-Blessed Angel
+- [x] Break Under Pressure
 - [x] Budding Insurgent
 - [x] Campus Crier
-- [ ] Carnivorous Cultivator
+- [x] Carnivorous Cultivator
 - [x] Cast Away Doubt
 - [x] Chandra's Emberling
 - [ ] Chandra, Chill of Compliance
@@ -46,7 +46,7 @@
 - [x] Charge the Sanctum
 - [ ] Clash of Elements
 - [ ] Codie, Ravenous Codex
-- [ ] Command the Stage
+- [x] Command the Stage
 - [ ] Compel Brutality
 - [ ] Countersculpt
 - [x] Craftwork Crusher
@@ -54,32 +54,32 @@
 - [ ] Cruel Calculations
 - [x] Cryotheory Adept
 - [x] Curse-Marred Demon
-- [ ] Danitha, Spear of Agony
-- [ ] Danitha, Sword of Hope
+- [x] Danitha, Spear of Agony
+- [x] Danitha, Sword of Hope
 - [x] Dark Matter Manipulator
 - [x] Darklight Phoenix
 - [x] Dedicated Commons
 - [x] Denzilore Fatehold
 - [x] Deserted Beach
-- [ ] Desperate Futurescribe
-- [ ] Diviner of Victory
+- [x] Desperate Futurescribe
+- [x] Diviner of Victory
 - [x] Divining Duelist
 - [ ] Draconic Visitor
 - [x] Eardrum Rattler
 - [x] Edgar, Ancient Bloodlord
 - [x] Edgar, Moonlit Sovereign
-- [ ] Emergency Phytomedic
+- [x] Emergency Phytomedic
 - [ ] Emrakul, the Exigent Doom
 - [ ] Enlightened Confidant
 - [ ] Entrust the Spark
 - [x] Essence Burn
 - [x] Extended Absence
 - [ ] Extrapolate the Impossible
-- [ ] Eye of Jace
+- [x] Eye of Jace
 - [ ] Face Yourself
 - [x] Fatehold Annex
-- [ ] Fatehold Charm
-- [ ] Fatehold Chronologist
+- [x] Fatehold Charm
+- [x] Fatehold Chronologist
 - [x] Fateshaper Aspirant
 - [ ] Fblthp, Impossibly Lost
 - [ ] Fblthp, Knows the Way
@@ -90,8 +90,8 @@
 - [x] Formidable Commons
 - [x] Frostbite Pyromental
 - [x] Fulminous Forte
-- [ ] Gallia, Tragic Host
-- [ ] Gallia, the Merrymaker
+- [x] Gallia, Tragic Host
+- [x] Gallia, the Merrymaker
 - [ ] Gardenize
 - [ ] Garruk, Curse Breaker
 - [ ] Garruk, Veiled Butcher
@@ -100,16 +100,16 @@
 - [x] Germinate Recruits
 - [ ] Ghalta the Immovable
 - [x] Ghalta the Unstoppable
-- [ ] Gideon the Oathless
+- [x] Gideon the Oathless
 - [ ] Gideon's Memorial
 - [x] Graft Surgeon
 - [x] Greenhouse Propagator
-- [ ] Grim Repriser
+- [x] Grim Repriser
 - [x] Guiding Hydra
 - [ ] Hall of Echoes
-- [ ] Hallway Heckler
+- [x] Hallway Heckler
 - [ ] Hapatra, the Desert Fang
-- [ ] Hapatra, the Desert Frost
+- [x] Hapatra, the Desert Frost
 - [x] Haunted Ridge
 - [x] Heartstring Puller
 - [ ] Heartwood Crafter
@@ -152,11 +152,11 @@
 - [x] Lyra, Archangel of Dawn
 - [ ] Lyra, Tolarian Archangel
 - [x] Mabel, Bitter Recluse
-- [ ] Mabel, Valley Hero
+- [x] Mabel, Valley Hero
 - [x] Marwyn, the Clearcutter
 - [x] Marwyn, the Preserver
-- [ ] Massacre Girl, Most Wanted
-- [ ] Master of Barbs
+- [x] Massacre Girl, Most Wanted
+- [x] Master of Barbs
 - [x] Medic's Kitesail
 - [x] Memory Trap
 - [x] Meticulous Commons
@@ -176,28 +176,28 @@
 - [x] Pia, Determined Rebuilder
 - [x] Plains
 - [ ] Plan for All Outcomes
-- [ ] Pompous Battlemage
+- [x] Pompous Battlemage
 - [x] Precise Redaction
 - [x] Predictive Preparations
-- [ ] Primal Witchstalker
-- [ ] Proctor of Potential
+- [x] Primal Witchstalker
+- [x] Proctor of Potential
 - [x] Proft, Consulting Detective
-- [ ] Proft, Sinister Mastermind
+- [x] Proft, Sinister Mastermind
 - [x] Prophesied End
 - [x] Protege's Awakening
-- [ ] Prudent Fateseer
+- [x] Prudent Fateseer
 - [ ] Puppet Crafting
 - [ ] Pyre Rhymer
 - [x] Rampart Hunter
 - [x] Rank Rat
-- [ ] Recursive Recruitment
+- [x] Recursive Recruitment
 - [x] Refute Destiny
 - [x] Repurposed Enforcer
 - [x] Rescue Girl, First Responder
 - [x] Restore with Empathy
 - [x] Return to the Light Realms
 - [x] Rewrite Regrets
-- [ ] Rise of the Deathbringer
+- [x] Rise of the Deathbringer
 - [x] Rockfall Vale
 - [ ] Roiling Canopy
 - [x] Room of Refuge
@@ -210,7 +210,7 @@
 - [x] Sanctum Lurker
 - [x] Screeching Soulbreaker
 - [ ] Seasoned Cryomancer
-- [ ] Semester Foreseer
+- [x] Semester Foreseer
 - [x] Shatterwing Pegasus
 - [x] Shipwreck Marsh
 - [x] Silence the Echo
@@ -220,16 +220,16 @@
 - [ ] Solitary Cell
 - [x] Solve for Disappointment
 - [x] Something Worth Saving
-- [ ] Sphinx of False Conclusions
+- [x] Sphinx of False Conclusions
 - [ ] Sphinx's Approach
 - [x] Stingcaster Mage
 - [x] Stingerquill Annex
 - [x] Stingerquill Charm
-- [ ] Stingerquill Voxmancer
+- [x] Stingerquill Voxmancer
 - [x] Stinging Vitriol
 - [x] Sureshot Sower
 - [x] Surgical Precision
-- [ ] Surveillance Phantasm
+- [x] Surveillance Phantasm
 - [x] Swamp
 - [x] Tam's Resistance
 - [ ] Tam, the Possibility
@@ -242,7 +242,7 @@
 - [x] Tetsuko Umezawa, Pursuer
 - [x] Teyo, Diamondblade Mage
 - [x] Teyo, Lightshield Expert
-- [ ] Thalia, the Survivor
+- [x] Thalia, the Survivor
 - [x] The Echoverse Fulcrum
 - [ ] The Theorist, Jace Beleren
 - [x] Theoretical Necromancer
@@ -250,15 +250,15 @@
 - [ ] Theorist's Sanctum
 - [x] Theorix Annex
 - [x] Theorix Charm
-- [ ] Theorix Metamage
+- [x] Theorix Metamage
 - [x] Tinybones, Pocket Nuisance
 - [x] Titanbones, Towering Heart
-- [ ] Tomik, Izzet Sparkmage
+- [x] Tomik, Izzet Sparkmage
 - [ ] Tomik, Orzhov Lawmage
 - [x] Transformative Commons
 - [x] Traxos, Academy Guardian
 - [x] Traxos, Scourge Eternal
-- [ ] Twinned Vision
+- [x] Twinned Vision
 - [x] Twisted Fates
 - [ ] Uldaros Theorix
 - [x] Undulating Witness
@@ -268,28 +268,28 @@
 - [ ] Verdant Kraken
 - [x] Vigorbloom Annex
 - [x] Vigorbloom Charm
-- [ ] Vigorbloom Vanguard
+- [x] Vigorbloom Vanguard
 - [ ] Vindictive Triumph
 - [x] Vinelasher Adept
 - [ ] Violent Echoes
-- [ ] Void Extrapolator
+- [x] Void Extrapolator
 - [x] Vraska's Final Mercy
 - [ ] Vraska, Soul of Stone
 - [x] Vraska, the Cutting Glare
 - [ ] Warrior's Blades
 - [ ] Way of the Cryomancer
-- [ ] Way of the Deathbringer
+- [x] Way of the Deathbringer
 - [x] Way of the Healer
 - [x] Way of the Mentor
 - [ ] Way of the Mind Sculptor
 - [x] Way of the Necromancer
-- [ ] Way of the Paradox
+- [x] Way of the Paradox
 - [x] Way of the Pyromancer
-- [ ] Way of the Warlord
+- [x] Way of the Warlord
 - [x] Way of the Wildspeaker
-- [ ] Whiplash Wordsmith
+- [x] Whiplash Wordsmith
 - [x] Winter, Team Player
-- [ ] Winter, Tormented Loner
+- [x] Winter, Tormented Loner
 - [x] Woodwork Prodigy
 - [x] Wrath of the Bloodmane
 - [x] Wrecking Gecko
@@ -299,4 +299,4 @@
 - [x] Yoshimaru, Scrappy Stray
 - [x] Your Fate Ends Here
 - [ ] Yuriko, Blade of the Mighty
-- [ ] Yuriko, Hope from the Shadows
+- [x] Yuriko, Hope from the Shadows

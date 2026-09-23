@@ -22,6 +22,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tinybones, Bauble Burglar (FDN #72) — {1}{B} Legendary Creature — Skeleton Rogue 1/3.
@@ -148,7 +149,7 @@ class TinybonesBaubleBurglarScenarioTest : FunSpec({
         val duress = driver.putCardInHand(me, "Stash Test Duress")
         driver.giveMana(me, Color.BLACK, 1)
 
-        driver.castSpell(me, duress).isSuccess shouldBe true
+        driver.castSpell(me, duress).outcome shouldBe Outcome.Done
         driver.settle(discards = listOf(first, second))
 
         driver.state.getZone(opponent, Zone.EXILE).containsAll(listOf(first, second)).shouldBeTrue()
@@ -214,7 +215,7 @@ class TinybonesBaubleBurglarScenarioTest : FunSpec({
 
         driver.castActionsFor(me, stashed).isNotEmpty().shouldBeTrue()
 
-        driver.castSpell(me, stashed).isSuccess shouldBe true
+        driver.castSpell(me, stashed).outcome shouldBe Outcome.Done
         driver.settle()
 
         driver.state.getZone(me, Zone.BATTLEFIELD).contains(stashed).shouldBeTrue()
@@ -229,7 +230,7 @@ class TinybonesBaubleBurglarScenarioTest : FunSpec({
         val stashedLand = driver.putStashedCardInExile(opponent, "Swamp")
 
         driver.playLandActionsFor(me, stashedLand).isNotEmpty().shouldBeTrue()
-        driver.playLand(me, stashedLand).isSuccess shouldBe true
+        driver.playLand(me, stashedLand).outcome shouldBe Outcome.Done
         driver.state.getZone(me, Zone.BATTLEFIELD).contains(stashedLand).shouldBeTrue()
     }
 

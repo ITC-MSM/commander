@@ -16,6 +16,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Itzquinth, Firstborn of Gishath (LCI #230) — {R}{G}, Legendary Creature — Dinosaur, 2/3.
@@ -71,7 +72,7 @@ class ItzquinthFirstbornOfGishathScenarioTest : FunSpec({
         ), opponent)
 
         withClue("Itzquinth should be able to attack on the turn it enters (haste): ${result.error}") {
-            result.isSuccess shouldBe true
+            result.outcome shouldBe Outcome.Done
         }
     }
 
@@ -95,7 +96,7 @@ class ItzquinthFirstbornOfGishathScenarioTest : FunSpec({
         d.putLandOnBattlefield(player, "Forest")
 
         val card = d.putCardInHand(player, "Itzquinth, Firstborn of Gishath")
-        d.castSpell(player, card).isSuccess shouldBe true
+        d.castSpell(player, card).outcome shouldBe Outcome.Done
 
         // Itzquinth resolves → enters the battlefield → ETB trigger resolves to the pay gate.
         d.bothPass()
@@ -145,7 +146,7 @@ class ItzquinthFirstbornOfGishathScenarioTest : FunSpec({
         d.giveColorlessMana(player, 2) // afford the cast and optionally the {2}
 
         val card = d.putCardInHand(player, "Itzquinth, Firstborn of Gishath")
-        d.castSpell(player, card).isSuccess shouldBe true
+        d.castSpell(player, card).outcome shouldBe Outcome.Done
         d.bothPass()
 
         // The "Pay {2}?" gate is offered first — decline it.

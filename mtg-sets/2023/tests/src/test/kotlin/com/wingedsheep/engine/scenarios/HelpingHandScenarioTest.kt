@@ -6,6 +6,8 @@ import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Helping Hand (LCI #17, {W} Sorcery).
@@ -69,7 +71,7 @@ class HelpingHandScenarioTest : ScenarioTestBase() {
                 val result = game.castSpellTargetingGraveyardCard(1, "Helping Hand", 1, "Force of Nature")
 
                 withClue("Targeting a MV-5 creature should be rejected") {
-                    result.isSuccess shouldBe false
+                    result.outcome shouldNotBe Outcome.Done
                 }
                 withClue("Force of Nature should remain in the graveyard") {
                     game.isInGraveyard(1, "Force of Nature") shouldBe true

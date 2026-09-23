@@ -14,6 +14,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Sword of Wealth and Power — {3} Artifact — Equipment
@@ -87,7 +89,7 @@ class SwordOfWealthAndPowerScenarioTest : FunSpec({
         val bolt = driver.putCardInHand(opp, "Lightning Bolt")
         driver.giveMana(opp, Color.RED, 1)
         val result = driver.castSpell(opp, bolt, listOf(equipped))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("equipped creature has protection from sorceries — can't be targeted by a sorcery") {
@@ -107,7 +109,7 @@ class SwordOfWealthAndPowerScenarioTest : FunSpec({
         val doomBlade = driver.putCardInHand(opp, "Doom Blade")
         driver.giveMana(opp, Color.BLACK, 2)
         val result = driver.castSpell(opp, doomBlade, listOf(equipped))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("an unequipped creature can still be targeted by an instant") {
@@ -127,7 +129,7 @@ class SwordOfWealthAndPowerScenarioTest : FunSpec({
         val bolt = driver.putCardInHand(opp, "Lightning Bolt")
         driver.giveMana(opp, Color.RED, 1)
         val result = driver.castSpell(opp, bolt, listOf(unequipped))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("dealing combat damage to a player creates a Treasure token") {

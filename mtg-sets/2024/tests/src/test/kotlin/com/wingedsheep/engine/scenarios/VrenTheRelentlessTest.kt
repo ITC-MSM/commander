@@ -10,6 +10,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Vren, the Relentless (BLB).
@@ -50,7 +51,7 @@ class VrenTheRelentlessTest : FunSpec({
 
         val courser = driver.findPermanent(opponent, "Centaur Courser")!!
         val castResult = driver.castSpell(player, hammer, listOf(courser))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getExileCardNames(opponent) shouldContain "Centaur Courser"

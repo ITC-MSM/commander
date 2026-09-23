@@ -424,11 +424,13 @@ class ObjectIdentityTest : FunSpec({
         registry.register(landDefinition)
         val services = com.wingedsheep.engine.core.EngineServices(registry)
         val handler = com.wingedsheep.engine.handlers.actions.land.PlayLandHandler(
-            registry, services.triggerDetector, services.triggerProcessor, services.conditionEvaluator,
+            registry, services.conditionEvaluator,
             effectExecutor = { next, _, context ->
                 captured = context
                 com.wingedsheep.engine.core.EffectResult.success(next)
-            }, sbaChecker = services.sbaChecker)
+            },
+            legality = services.legalityKernel,
+        )
         val hand = inZone(Zone.HAND).withEntity(cardId,
             com.wingedsheep.engine.core.CardEntityFactory.create(landDefinition, owner))
             .copy(activePlayerId = owner, priorityPlayerId = owner,

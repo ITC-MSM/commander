@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Shadow Urchin.
@@ -57,7 +58,7 @@ class ShadowUrchinTest : FunSpec({
         driver.state.activePlayerId shouldBe p1
         driver.giveMana(p1, Color.RED, 1)
         val bolt = driver.putCardInHand(p1, "Lightning Bolt")
-        driver.castSpell(p1, bolt, listOf(urchin)).isSuccess shouldBe true
+        driver.castSpell(p1, bolt, listOf(urchin)).outcome shouldBe Outcome.Done
 
         // Resolve the bolt + the death trigger (exile top card, grant may-play) on P1's turn.
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN, maxPasses = 200)

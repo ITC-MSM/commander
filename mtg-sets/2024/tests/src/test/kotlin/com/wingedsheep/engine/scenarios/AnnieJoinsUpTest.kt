@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Annie Joins Up (OTJ #191).
@@ -72,7 +73,7 @@ class AnnieJoinsUpTest : FunSpec({
         driver.giveMana(you, Color.GREEN, 1)
         driver.giveMana(you, Color.WHITE, 1)
         driver.giveColorlessMana(you, 1)
-        driver.castSpell(you, annie).isSuccess shouldBe true
+        driver.castSpell(you, annie).outcome shouldBe Outcome.Done
         var guard = 0
         while ((driver.state.stack.isNotEmpty() || driver.state.pendingDecision is ChooseTargetsDecision) && guard++ < 20) {
             if (driver.state.pendingDecision is ChooseTargetsDecision) {
@@ -99,7 +100,7 @@ class AnnieJoinsUpTest : FunSpec({
         val drawer = driver.putCardInHand(you, "Test Legendary Drawer")
         driver.giveColorlessMana(you, 2)
         val before = driver.getHandSize(you)
-        driver.castSpell(you, drawer).isSuccess shouldBe true
+        driver.castSpell(you, drawer).outcome shouldBe Outcome.Done
         var guard = 0
         while (driver.state.stack.isNotEmpty() && guard++ < 20) {
             driver.bothPass()
@@ -121,7 +122,7 @@ class AnnieJoinsUpTest : FunSpec({
         val drawer = driver.putCardInHand(you, "Test Plain Drawer")
         driver.giveColorlessMana(you, 2)
         val before = driver.getHandSize(you)
-        driver.castSpell(you, drawer).isSuccess shouldBe true
+        driver.castSpell(you, drawer).outcome shouldBe Outcome.Done
         var guard = 0
         while (driver.state.stack.isNotEmpty() && guard++ < 20) {
             driver.bothPass()

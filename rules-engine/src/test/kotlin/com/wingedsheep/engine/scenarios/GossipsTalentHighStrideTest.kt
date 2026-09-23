@@ -12,6 +12,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Regression test: Gossip's Talent (level 2) grants "target attacking creature
@@ -73,7 +75,7 @@ class GossipsTalentHighStrideTest : FunSpec({
             cardId = spell,
             targets = listOf(ChosenTarget.Permanent(bears))
         ))
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
 
         // Resolve High Stride.
         driver.bothPass()
@@ -85,6 +87,6 @@ class GossipsTalentHighStrideTest : FunSpec({
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         val blockResult = driver.declareBlockers(opponent, mapOf(blocker to listOf(bears)))
-        blockResult.isSuccess shouldBe false
+        blockResult.outcome shouldNotBe Outcome.Done
     }
 })

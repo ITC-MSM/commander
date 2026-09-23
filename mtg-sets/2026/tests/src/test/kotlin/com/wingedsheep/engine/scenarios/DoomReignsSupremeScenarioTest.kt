@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Doom Reigns Supreme (MSH #96) — {1}{B} Enchantment — Plan.
@@ -135,7 +136,7 @@ class DoomReignsSupremeScenarioTest : FunSpec({
 
         val thug = d.putCardInHand(d.player1, "Test Villain Thug")
         d.giveMana(d.player1, Color.BLACK, 1)
-        d.castSpell(d.player1, thug).isSuccess shouldBe true
+        d.castSpell(d.player1, thug).outcome shouldBe Outcome.Done
         d.runUntilDecisionOrEmptyStack()
         return d to plan
     }
@@ -304,7 +305,7 @@ class DoomReignsSupremeScenarioTest : FunSpec({
 
         val thug = d.putCardInHand(players[0], "Test Villain Thug")
         d.giveMana(players[0], Color.BLACK, 1)
-        d.castSpell(players[0], thug).isSuccess shouldBe true
+        d.castSpell(players[0], thug).outcome shouldBe Outcome.Done
         d.runUntilDecisionOrEmptyStack()
 
         withClue("the gain is a flat 1, not one per opponent — this is why it isn't DrainLife") {

@@ -72,14 +72,16 @@ class InsidiousFungusScenarioTest : ScenarioTestBase() {
                 val game = scenario()
                     .withPlayers("Player1", "Player2")
                     .withCardOnBattlefield(1, "Insidious Fungus")
-                    .withCardOnBattlefield(2, "Pacifism") // an enchantment
+                    // A non-Aura enchantment: an unattached Aura would be put into its owner's
+                    // graveyard by the state-based check (CR 704.5m) before the ability resolves.
+                    .withCardOnBattlefield(2, "Glorious Anthem")
                     .withLandsOnBattlefield(1, "Forest", 2)
                     .withActivePlayer(1)
                     .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                     .build()
 
                 val fungus = game.findPermanent("Insidious Fungus")!!
-                val pacifism = game.findPermanent("Pacifism")!!
+                val anthem = game.findPermanent("Glorious Anthem")!!
 
                 game.execute(ActivateAbility(game.player1Id, fungus, abilityId)).error shouldBe null
                 game.resolveStack()
@@ -90,11 +92,11 @@ class InsidiousFungusScenarioTest : ScenarioTestBase() {
 
                 val targetDecision = game.state.pendingDecision as? ChooseTargetsDecision
                     ?: error("expected a ChooseTargetsDecision after mode pick")
-                game.submitDecision(TargetsResponse(targetDecision.id, mapOf(0 to listOf(pacifism))))
+                game.submitDecision(TargetsResponse(targetDecision.id, mapOf(0 to listOf(anthem))))
                 game.resolveStack()
 
                 withClue("The enchantment is destroyed") {
-                    game.isInGraveyard(2, "Pacifism") shouldBe true
+                    game.isInGraveyard(2, "Glorious Anthem") shouldBe true
                 }
             }
 

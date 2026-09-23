@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Phase 1 of `backlog/storm-implementation-correctness.md`: Storm copies are
@@ -34,7 +35,7 @@ class StormCopiesAreSpellsTest : FunSpec({
         driver.replaceState(driver.state.copy(spellsCastThisTurn = 1))
         repeat(4) { driver.putLandOnBattlefield(caster, "Swamp") }
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
-        driver.castSpell(caster, tendrils, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, tendrils, listOf(opponent)).outcome shouldBe Outcome.Done
 
         // Drive the Storm copy onto the stack: resolve the Storm trigger and supply a target.
         var guard = 0
@@ -42,7 +43,7 @@ class StormCopiesAreSpellsTest : FunSpec({
             driver.bothPass()
             guard++
         }
-        driver.submitTargetSelection(caster, listOf(opponent)).isSuccess shouldBe true
+        driver.submitTargetSelection(caster, listOf(opponent)).outcome shouldBe Outcome.Done
 
         // Identify the copy entity.
         val copyId = driver.state.stack.single { id ->
@@ -72,14 +73,14 @@ class StormCopiesAreSpellsTest : FunSpec({
         driver.replaceState(driver.state.copy(spellsCastThisTurn = 1))
         repeat(4) { driver.putLandOnBattlefield(caster, "Swamp") }
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
-        driver.castSpell(caster, tendrils, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, tendrils, listOf(opponent)).outcome shouldBe Outcome.Done
 
         var guard = 0
         while (driver.state.pendingDecision !is ChooseTargetsDecision && guard < 20) {
             driver.bothPass()
             guard++
         }
-        driver.submitTargetSelection(caster, listOf(opponent)).isSuccess shouldBe true
+        driver.submitTargetSelection(caster, listOf(opponent)).outcome shouldBe Outcome.Done
 
         val spellLikeOnStack = driver.state.stack.filter { id ->
             driver.state.getEntity(id)?.get<SpellOnStackComponent>() != null

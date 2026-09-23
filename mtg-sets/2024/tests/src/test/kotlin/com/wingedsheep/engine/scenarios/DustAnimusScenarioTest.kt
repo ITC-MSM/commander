@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Dust Animus (OTJ).
@@ -46,7 +47,7 @@ class DustAnimusScenarioTest : FunSpec({
 
         val animus = driver.putCardInHand(p1, "Dust Animus")
         driver.giveMana(p1, Color.WHITE, 2)
-        driver.castSpell(p1, animus).isSuccess shouldBe true
+        driver.castSpell(p1, animus).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve → enters the battlefield
 
         driver.power(animus) shouldBe 4   // 2 + two +1/+1 counters
@@ -62,7 +63,7 @@ class DustAnimusScenarioTest : FunSpec({
 
         val animus = driver.putCardInHand(p1, "Dust Animus")
         driver.giveMana(p1, Color.WHITE, 2)
-        driver.castSpell(p1, animus).isSuccess shouldBe true
+        driver.castSpell(p1, animus).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.power(animus) shouldBe 2
@@ -80,7 +81,7 @@ class DustAnimusScenarioTest : FunSpec({
 
         val animus = driver.putCardInHand(p1, "Dust Animus")
         driver.giveMana(p1, Color.WHITE, 2)
-        driver.castSpell(p1, animus).isSuccess shouldBe true
+        driver.castSpell(p1, animus).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Only 4 untapped lands → no counters.

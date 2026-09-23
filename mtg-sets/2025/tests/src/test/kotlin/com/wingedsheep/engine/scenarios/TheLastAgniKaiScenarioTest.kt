@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * The Last Agni Kai — {1}{R} instant
@@ -74,7 +75,7 @@ class TheLastAgniKaiScenarioTest : FunSpec({
 
         val agniKai = driver.putCardInHand(active, "The Last Agni Kai")
         driver.giveMana(active, Color.RED, 2)  // pays {1}{R}; spent before resolution
-        driver.castSpell(active, agniKai, targets = listOf(mine, theirs)).isSuccess shouldBe true
+        driver.castSpell(active, agniKai, targets = listOf(mine, theirs)).outcome shouldBe Outcome.Done
         driver.resolveAll()
 
         // 5 damage to a 2/2 → lethal 2 → excess 3 → add {R}{R}{R}.
@@ -93,7 +94,7 @@ class TheLastAgniKaiScenarioTest : FunSpec({
 
         val agniKai = driver.putCardInHand(active, "The Last Agni Kai")
         driver.giveMana(active, Color.RED, 2)
-        driver.castSpell(active, agniKai, targets = listOf(mine, theirs)).isSuccess shouldBe true
+        driver.castSpell(active, agniKai, targets = listOf(mine, theirs)).outcome shouldBe Outcome.Done
         driver.resolveAll()
 
         // 2 damage to a 2/2 = exactly lethal, 0 excess → no red added.
@@ -112,7 +113,7 @@ class TheLastAgniKaiScenarioTest : FunSpec({
 
         val agniKai = driver.putCardInHand(active, "The Last Agni Kai")
         driver.giveMana(active, Color.RED, 2)
-        driver.castSpell(active, agniKai, targets = listOf(mine, theirs)).isSuccess shouldBe true
+        driver.castSpell(active, agniKai, targets = listOf(mine, theirs)).outcome shouldBe Outcome.Done
         driver.resolveAll()
 
         // 3 red from the excess, plus some unprotected green floating in the pool.

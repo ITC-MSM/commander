@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Case of the Burning Masks — {1}{R}{R} Enchantment — Case.
@@ -80,7 +81,7 @@ class CaseOfTheBurningMasksScenarioTest : FunSpec({
     fun GameTestDriver.cast(name: String, target: EntityId) {
         val spell = putCardInHand(player1, name)
         giveMana(player1, Color.RED, 1)
-        castSpell(player1, spell, listOf(target)).isSuccess shouldBe true
+        castSpell(player1, spell, listOf(target)).outcome shouldBe Outcome.Done
         bothPass()
     }
 
@@ -117,7 +118,7 @@ class CaseOfTheBurningMasksScenarioTest : FunSpec({
 
         val card = driver.putCardInHand(driver.player1, "Case of the Burning Masks")
         driver.giveMana(driver.player1, Color.RED, 3)
-        driver.castSpell(driver.player1, card).isSuccess shouldBe true
+        driver.castSpell(driver.player1, card).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.submitTargetSelection(driver.player1, listOf(victim))
         driver.bothPass()

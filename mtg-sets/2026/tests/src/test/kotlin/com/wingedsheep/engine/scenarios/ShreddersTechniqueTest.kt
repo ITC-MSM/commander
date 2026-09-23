@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Shredder's Technique (TMT #77) — Sorcery, Sneak {B}. "Destroy target creature
@@ -27,7 +28,7 @@ class ShreddersTechniqueTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         // mana added here — unspent mana empties as each step/phase ends (CR 500.5)
         driver.giveMana(player, Color.BLACK, 3)
-        driver.castSpellWithTargets(player, spell, listOf(ChosenTarget.Permanent(victim))).isSuccess shouldBe true
+        driver.castSpellWithTargets(player, spell, listOf(ChosenTarget.Permanent(victim))).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         (driver.findPermanent(opponent, "Grizzly Bears") == null) shouldBe true

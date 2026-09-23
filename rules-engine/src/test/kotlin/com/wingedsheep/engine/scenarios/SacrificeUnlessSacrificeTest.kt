@@ -21,6 +21,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for "Sacrifice [this] unless you sacrifice [N permanents]" effects.
@@ -97,7 +98,7 @@ class SacrificeUnlessSacrificeTest : FunSpec({
 
         // Cast Plant Elemental
         val castResult = driver.castSpell(activePlayer, plantElemental)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Let the spell resolve
         driver.bothPass()

@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Ertha Jo, Frontier Mentor — {2}{R}{W} Legendary Creature — Kor Advisor 2/4
@@ -128,7 +129,7 @@ class ErthaJoFrontierMentorScenarioTest : FunSpec({
             guard++
         }
         (driver.state.pendingDecision is ChooseTargetsDecision) shouldBe true
-        driver.submitTargetSelection(me, listOf(creatureB)).isSuccess shouldBe true
+        driver.submitTargetSelection(me, listOf(creatureB)).outcome shouldBe Outcome.Done
 
         // Resolve everything (the copy, then the original ability).
         guard = 0

@@ -13,6 +13,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario test for Madame Web, Clairvoyant (SPM #36) — {4}{U}{U}
@@ -57,7 +58,7 @@ class MadameWebClairvoyantScenarioTest : FunSpec({
         driver.giveMana(activePlayer, Color.WHITE, 2)
 
         val castResult = driver.castSpell(activePlayer, enchantmentOnTop)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(activePlayer, "Test Enchantment") shouldNotBe null
@@ -75,7 +76,7 @@ class MadameWebClairvoyantScenarioTest : FunSpec({
         driver.giveMana(activePlayer, Color.GREEN, 2)
 
         val castResult = driver.castSpell(activePlayer, spiderOnTop)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(activePlayer, "Test Spider") shouldNotBe null
@@ -94,7 +95,7 @@ class MadameWebClairvoyantScenarioTest : FunSpec({
         driver.giveMana(activePlayer, Color.GREEN, 3)
 
         val castResult = driver.castSpell(activePlayer, centaurOnTop)
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
     }
 
     test("attacking lets you mill a card") {
@@ -111,7 +112,7 @@ class MadameWebClairvoyantScenarioTest : FunSpec({
         val milledCard = driver.putCardOnTopOfLibrary(activePlayer, "Island")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(web), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(web), opponent).outcome shouldBe Outcome.Done
 
         // The "Whenever you attack, you may mill a card" trigger resolves and offers a yes/no.
         driver.bothPass()
@@ -138,7 +139,7 @@ class MadameWebClairvoyantScenarioTest : FunSpec({
         val topCard = driver.putCardOnTopOfLibrary(activePlayer, "Island")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(web), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(web), opponent).outcome shouldBe Outcome.Done
 
         driver.bothPass()
         driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>()

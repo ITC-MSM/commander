@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Neonate's Rush — {2}{R} Instant
@@ -45,7 +46,7 @@ class NeonatesRushScenarioTest : FunSpec({
         val rush = d.putCardInHand(p1, "Neonate's Rush")
         val handBefore = d.getHand(p1).size
         d.giveMana(p1, Color.RED, 3) // no Vampire -> full {2}{R}
-        d.castSpell(p1, rush, targets = listOf(victim)).isSuccess shouldBe true
+        d.castSpell(p1, rush, targets = listOf(victim)).outcome shouldBe Outcome.Done
         d.bothPass()
 
         // 1 damage kills the 1/1, and its controller takes 1.
@@ -69,7 +70,7 @@ class NeonatesRushScenarioTest : FunSpec({
         // Only {1}{R} available — enough only if the Vampire discount applied.
         d.giveMana(p1, Color.RED, 1)
         d.giveColorlessMana(p1, 1)
-        d.castSpell(p1, rush, targets = listOf(victim)).isSuccess shouldBe true
+        d.castSpell(p1, rush, targets = listOf(victim)).outcome shouldBe Outcome.Done
         d.bothPass()
 
         // The reduced cast still resolved: victim died and its controller took 1.

@@ -16,6 +16,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Grim Reminder (MRD #66) — "Search your library for a nonland card and reveal it. Each opponent
@@ -50,7 +51,7 @@ class GrimReminderScenarioTest : FunSpec({
         if (caster != activePlayer) passPriority(activePlayer!!)
         val ritual = putCardInHand(caster, "Dark Ritual")
         giveMana(caster, Color.BLACK, 1)
-        castSpell(caster, ritual).isSuccess shouldBe true
+        castSpell(caster, ritual).outcome shouldBe Outcome.Done
         bothPass()
         // Hand priority back to player 1 so the Grim Reminder cast below is legal — passing it to
         // the opponent to let them cast leaves it there once the stack empties.
@@ -68,7 +69,7 @@ class GrimReminderScenarioTest : FunSpec({
         val decoy = putCardOnTopOfLibrary(player1, "Giant Growth")
         val reminder = putCardInHand(player1, "Grim Reminder")
         giveMana(player1, Color.BLACK, 3)
-        castSpell(player1, reminder).isSuccess shouldBe true
+        castSpell(player1, reminder).outcome shouldBe Outcome.Done
         bothPass()
 
         val decision = pendingDecision
@@ -142,7 +143,7 @@ class GrimReminderScenarioTest : FunSpec({
         upkeep.assertStep(Step.UPKEEP)
         val card = upkeep.putCardInGraveyard(upkeep.player1, "Grim Reminder")
         upkeep.giveMana(upkeep.player1, Color.BLACK, 2)
-        upkeep.submit(ActivateAbility(upkeep.player1, card, returnAbility)).isSuccess shouldBe true
+        upkeep.submit(ActivateAbility(upkeep.player1, card, returnAbility)).outcome shouldBe Outcome.Done
         resolveStack(upkeep)
 
         withClue("it comes back to hand from the graveyard") {

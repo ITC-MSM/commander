@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Slagstorm {1}{R}{R} Sorcery (MBS canonical; reprinted in FDN).
@@ -47,7 +48,7 @@ class SlagstormScenarioTest : FunSpec({
         driver.giveMana(me, Color.RED, 3)
         val slag = driver.putCardInHand(me, "Slagstorm")
 
-        driver.submit(CastSpell(playerId = me, cardId = slag, chosenModes = listOf(0))).isSuccess shouldBe true
+        driver.submit(CastSpell(playerId = me, cardId = slag, chosenModes = listOf(0))).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // 3 damage kills every 2/2; both players are untouched.
@@ -68,7 +69,7 @@ class SlagstormScenarioTest : FunSpec({
         driver.giveMana(me, Color.RED, 3)
         val slag = driver.putCardInHand(me, "Slagstorm")
 
-        driver.submit(CastSpell(playerId = me, cardId = slag, chosenModes = listOf(1))).isSuccess shouldBe true
+        driver.submit(CastSpell(playerId = me, cardId = slag, chosenModes = listOf(1))).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Each player (including the caster) takes 3; the creature survives.

@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Blooming Blast - a Gift a Treasure instant from Bloomburrow.
@@ -53,7 +54,7 @@ class BloomingBlastTest : FunSpec({
             chosenModes = listOf(0),
             modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(creatureId)))
         ))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -89,7 +90,7 @@ class BloomingBlastTest : FunSpec({
             chosenModes = listOf(1),
             modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(creatureId)))
         ))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

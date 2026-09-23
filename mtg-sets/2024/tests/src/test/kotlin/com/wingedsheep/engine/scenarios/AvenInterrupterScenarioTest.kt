@@ -13,6 +13,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Aven Interrupter (OTJ) — {1}{W}{W} 2/2 Bird Rogue, Flash, Flying.
@@ -41,7 +42,7 @@ class AvenInterrupterScenarioTest : FunSpec({
         driver.passPriority(me)
         val oppSpell = driver.putCardInHand(opp, "Lightning Bolt")
         driver.giveMana(opp, Color.RED, 1)
-        driver.castSpell(opp, oppSpell, listOf(me)).isSuccess shouldBe true
+        driver.castSpell(opp, oppSpell, listOf(me)).outcome shouldBe Outcome.Done
         driver.getStackSpellNames().contains("Lightning Bolt") shouldBe true
 
         // Opponent passes priority back so I get a window to respond at instant speed.
@@ -51,7 +52,7 @@ class AvenInterrupterScenarioTest : FunSpec({
         val aven = driver.putCardInHand(me, "Aven Interrupter")
         driver.giveColorlessMana(me, 1)
         driver.giveMana(me, Color.WHITE, 2)
-        driver.castSpell(me, aven).isSuccess shouldBe true
+        driver.castSpell(me, aven).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Aven onto the battlefield
         driver.bothPass() // resolve the ETB trigger off the stack
 

@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tomb Trawler — {2} 0/4 Artifact Creature — Golem
@@ -52,7 +53,7 @@ class TombTrawlerScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Card(bears, player, Zone.GRAVEYARD)),
             ),
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the ability
 
         // The card left the graveyard and is now the bottom card of the library.

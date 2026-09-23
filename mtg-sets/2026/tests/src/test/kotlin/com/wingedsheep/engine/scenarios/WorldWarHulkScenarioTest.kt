@@ -18,6 +18,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario test for World War Hulk (MSH #197) — {3}{G}{G} Enchantment — Saga.
@@ -114,7 +115,7 @@ class WorldWarHulkScenarioTest : FunSpec({
         val bears = driver.putCardInHand(controller, "Grizzly Bears")
         driver.submit(
             CastSpell(controller, bears, useWithoutPayingManaCost = true, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(controller, "Grizzly Bears") shouldNotBe null
@@ -152,7 +153,7 @@ class WorldWarHulkScenarioTest : FunSpec({
         }
 
         // And the offered action is actually accepted by the handler.
-        driver.submit(freeCasts.single { it.cardId == bears }).isSuccess shouldBe true
+        driver.submit(freeCasts.single { it.cardId == bears }).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.findPermanent(controller, "Grizzly Bears") shouldNotBe null
     }
@@ -189,7 +190,7 @@ class WorldWarHulkScenarioTest : FunSpec({
         // A blue creature spell cast in between must not consume the rider.
         driver.giveMana(controller, Color.BLUE, 3)
         val warrior = driver.putCardInHand(controller, "Phantom Warrior")
-        driver.castSpell(controller, warrior).isSuccess shouldBe true
+        driver.castSpell(controller, warrior).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.findPermanent(controller, "Phantom Warrior") shouldNotBe null
         withClue("a non-matching spell leaves the rider alone") {
@@ -200,7 +201,7 @@ class WorldWarHulkScenarioTest : FunSpec({
         val guide = driver.putCardInHand(controller, "Goblin Guide")
         driver.submit(
             CastSpell(controller, guide, useWithoutPayingManaCost = true, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.findPermanent(controller, "Goblin Guide") shouldNotBe null
         driver.state.pendingFreeCastSpells.shouldBeEmpty()
@@ -216,7 +217,7 @@ class WorldWarHulkScenarioTest : FunSpec({
         // Pay for the first green creature spell in full — the grant applied to it either way.
         driver.giveMana(controller, Color.GREEN, 2)
         val bears = driver.putCardInHand(controller, "Grizzly Bears")
-        driver.castSpell(controller, bears).isSuccess shouldBe true
+        driver.castSpell(controller, bears).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.findPermanent(controller, "Grizzly Bears") shouldNotBe null
 
@@ -233,7 +234,7 @@ class WorldWarHulkScenarioTest : FunSpec({
         val guide = driver.putCardInHand(controller, "Goblin Guide")
         driver.submit(
             CastSpell(controller, guide, useWithoutPayingManaCost = true, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 
     test("chapters II and III: three +1/+1 counters, then doubled power/toughness and trample") {

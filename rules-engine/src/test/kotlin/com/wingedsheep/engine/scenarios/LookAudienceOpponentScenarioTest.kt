@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.scripting.effects.LookAudience
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Exercises [LookAudience.Opponent] on [GatherCardsEffect] — "an opponent looks at the top N
@@ -58,7 +59,7 @@ class LookAudienceOpponentScenarioTest : FunSpec({
 
         val spell = driver.putCardInHand(active, "Opponent Looks")
         driver.giveMana(active, Color.BLUE, 1)
-        driver.castSpell(active, spell).isSuccess shouldBe true
+        driver.castSpell(active, spell).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.isPaused shouldBe false

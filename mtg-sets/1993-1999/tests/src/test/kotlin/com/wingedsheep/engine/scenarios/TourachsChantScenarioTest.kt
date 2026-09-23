@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Tourach's Chant (Fallen Empires).
@@ -38,7 +39,7 @@ class TourachsChantScenarioTest : FunSpec({
         driver.putPermanentOnBattlefield(alice, "Tourach's Chant")
 
         val forest = driver.putCardInHand(alice, "Forest")
-        driver.playLand(alice, forest).isSuccess shouldBe true
+        driver.playLand(alice, forest).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("no creature to put the counter on, so the damage is unavoidable") {
@@ -56,7 +57,7 @@ class TourachsChantScenarioTest : FunSpec({
         val warrior = driver.putCreatureOnBattlefield(alice, "Elvish Warrior")  // 2/3
 
         val forest = driver.putCardInHand(alice, "Forest")
-        driver.playLand(alice, forest).isSuccess shouldBe true
+        driver.playLand(alice, forest).outcome shouldBe Outcome.Done
         // The trigger goes on the stack first; the choice is offered as it resolves.
         driver.bothPass()
         driver.submitCardSelection(alice, listOf(warrior))

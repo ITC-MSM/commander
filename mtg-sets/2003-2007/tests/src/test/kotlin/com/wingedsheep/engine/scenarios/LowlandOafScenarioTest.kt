@@ -13,6 +13,8 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Lowland Oaf (LRW #184) — "{T}: Target Goblin creature you control gets +1/+0 and gains flying
@@ -47,7 +49,7 @@ class LowlandOafScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(me, oaf, oafAbility, targets = listOf(ChosenTarget.Permanent(goblin)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         withClue("a 1/1 Goblin becomes a 2/1 flier") {
@@ -76,7 +78,7 @@ class LowlandOafScenarioTest : FunSpec({
 
         d.submitExpectFailure(
             ActivateAbility(me, oaf, oafAbility, targets = listOf(ChosenTarget.Permanent(theirGoblin)))
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
         withClue("the opponent's Goblin is untouched") {
             d.state.projectedState.getPower(theirGoblin) shouldBe 1
         }
@@ -91,6 +93,6 @@ class LowlandOafScenarioTest : FunSpec({
 
         d.submitExpectFailure(
             ActivateAbility(me, oaf, oafAbility, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 })

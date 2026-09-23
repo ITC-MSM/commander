@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Archmage's Newt (OTJ #39) — {1}{U} 2/2 Creature — Salamander Mount.
@@ -79,7 +80,7 @@ class ArchmagesNewtScenarioTest : FunSpec({
                 useAlternativeCost = true,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Bolt dealt 3 to the opponent (they took 2 combat + 3 = started 20). The spell exiled.
@@ -121,7 +122,7 @@ class ArchmagesNewtScenarioTest : FunSpec({
                 useAlternativeCost = true,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.getZone(ZoneKey(player, Zone.EXILE)).contains(bolt) shouldBe true

@@ -13,6 +13,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Gisa's Bidding (Shadows over Innistrad #114) — {2}{B}{B} Sorcery.
@@ -65,7 +66,7 @@ class GisasBiddingScenarioTest : FunSpec({
 
         val bidding = driver.putCardInHand(player, "Gisa's Bidding")
         driver.giveMana(player, Color.BLACK, 4)
-        driver.castSpell(player, bidding).isSuccess shouldBe true
+        driver.castSpell(player, bidding).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         val tokens = zombies(driver, player)

@@ -19,6 +19,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Weathered Wayfarer.
@@ -103,7 +104,7 @@ class WeatheredWayfarerTest : FunSpec({
                 abilityId = wayfarerAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Wayfarer should be tapped
         driver.isTapped(wayfarer) shouldBe true
@@ -157,7 +158,7 @@ class WeatheredWayfarerTest : FunSpec({
                 abilityId = wayfarerAbilityId
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         // Wayfarer should still be untapped
         driver.isTapped(wayfarer) shouldBe false
@@ -195,7 +196,7 @@ class WeatheredWayfarerTest : FunSpec({
                 abilityId = wayfarerAbilityId
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("can find any land card, not just basic lands") {
@@ -230,7 +231,7 @@ class WeatheredWayfarerTest : FunSpec({
                 abilityId = wayfarerAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

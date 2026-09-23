@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * A permanent's battlefield-scoped granted *static* ability (`GameState.grantedStaticAbilities`,
@@ -71,7 +72,7 @@ class GrantedStaticAbilityCleanupScenarioTest : FunSpec({
         driver.giveMana(active, Color.GREEN, 1)
         val abilityId = granter.activatedAbilities.first().id
         driver.submit(ActivateAbility(playerId = active, sourceId = g, abilityId = abilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
         resolveStack(driver)
 

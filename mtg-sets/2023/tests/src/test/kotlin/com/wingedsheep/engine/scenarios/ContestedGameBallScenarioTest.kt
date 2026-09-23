@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Contested Game Ball (LCI #251) — {2} Artifact.
@@ -58,9 +59,9 @@ class ContestedGameBallScenarioTest : FunSpec({
         driver.removeSummoningSickness(bears)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, listOf(bears), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(bears), defender).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareNoBlockers(defender).isSuccess shouldBe true
+        driver.declareNoBlockers(defender).outcome shouldBe Outcome.Done
 
         // Combat damage step: defender takes 2, the trigger resolves.
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)

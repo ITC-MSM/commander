@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Rhino's Rampage — {R/G} sorcery
@@ -104,7 +105,7 @@ class RhinosRampageScenarioTest : FunSpec({
 
         val rampage = driver.putCardInHand(active, "Rhino's Rampage")
         driver.giveMana(active, Color.RED, 1) // {R/G}
-        driver.castSpell(active, rampage, targets = listOf(mine, theirs)).isSuccess shouldBe true
+        driver.castSpell(active, rampage, targets = listOf(mine, theirs)).outcome shouldBe Outcome.Done
 
         // Pump (+1/+0 → 3 power) then fight: 3 damage to a 2/2 → lethal 2 → 1 excess → reflexive fires.
         driver.advanceToDecisionOrEmpty()
@@ -131,7 +132,7 @@ class RhinosRampageScenarioTest : FunSpec({
 
         val rampage = driver.putCardInHand(active, "Rhino's Rampage")
         driver.giveMana(active, Color.RED, 1)
-        driver.castSpell(active, rampage, targets = listOf(mine, theirs)).isSuccess shouldBe true
+        driver.castSpell(active, rampage, targets = listOf(mine, theirs)).outcome shouldBe Outcome.Done
 
         // Pumped to 3 power, 3 damage to a 3-toughness creature is exactly lethal → 0 excess.
         driver.advanceToDecisionOrEmpty()
@@ -154,7 +155,7 @@ class RhinosRampageScenarioTest : FunSpec({
 
         val rampage = driver.putCardInHand(active, "Rhino's Rampage")
         driver.giveMana(active, Color.RED, 1)
-        driver.castSpell(active, rampage, targets = listOf(mine, theirs)).isSuccess shouldBe true
+        driver.castSpell(active, rampage, targets = listOf(mine, theirs)).outcome shouldBe Outcome.Done
 
         // 1 excess → the reflexive fires and offers the destroy, but the controller declines.
         driver.advanceToDecisionOrEmpty()

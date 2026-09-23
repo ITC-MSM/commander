@@ -11,6 +11,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for the Goad mechanic (CR 701.15).
@@ -57,7 +59,7 @@ class GoadEffectTest : FunSpec({
         val goadSpell = driver.putCardInHand(caster, "Goad Spell")
         driver.giveMana(caster, Color.RED, 1)
         val castResult = driver.castSpell(caster, goadSpell, listOf(target))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
         driver.bothPass() // resolve
 
         // Target should now have GoadedComponent with the caster as the goader
@@ -99,7 +101,7 @@ class GoadEffectTest : FunSpec({
         // On opponent's declare-attackers, declaring no attackers must fail
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
         val noAttack = driver.declareAttackers(opponent, emptyMap())
-        noAttack.isSuccess shouldBe false
+        noAttack.outcome shouldNotBe Outcome.Done
     }
 
     test("CR 701.15c: goaded creature must attack a player other than its goader if able") {
@@ -126,7 +128,7 @@ class GoadEffectTest : FunSpec({
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
         // Only the goader is available to attack — "if able" lets the creature attack them
         val attackResult = driver.declareAttackers(opponent, listOf(creature), caster)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
     }
 
     test("CR 701.15a: goaded designation expires at the goader's next turn") {
@@ -228,11 +230,11 @@ class GoadEffectTest : FunSpec({
         // The free creature alone may attack (or stay back), but the goaded creature
         // must be in the attack — leaving it home is illegal.
         val partialAttack = driver.declareAttackers(opponent, listOf(freeCreature), caster)
-        partialAttack.isSuccess shouldBe false
+        partialAttack.outcome shouldNotBe Outcome.Done
 
         // Including the goaded creature is fine.
         val fullAttack = driver.declareAttackers(opponent, listOf(goadedCreature, freeCreature), caster)
-        fullAttack.isSuccess shouldBe true
+        fullAttack.outcome shouldBe Outcome.Done
     }
 
     test("tapped goaded creature does not need to attack (\"if able\" carve-out)") {
@@ -260,7 +262,7 @@ class GoadEffectTest : FunSpec({
 
         // Declaring no attackers is now legal — the goaded creature is tapped.
         val noAttack = driver.declareAttackers(opponent, emptyMap())
-        noAttack.isSuccess shouldBe true
+        noAttack.outcome shouldBe Outcome.Done
     }
 
     test("CR 701.15c: two distinct goaders compound into the goader set; each expires on its own turn") {

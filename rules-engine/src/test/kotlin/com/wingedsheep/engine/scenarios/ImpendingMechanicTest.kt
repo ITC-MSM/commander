@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Mechanic-level tests for Impending (CR 702.175), wired by the `impending(n, cost)` DSL helper.
@@ -67,7 +68,7 @@ class ImpendingMechanicTest : FunSpec({
         val result = driver.submit(
             CastSpell(player, cardId, useAlternativeCost = true, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.stackSize shouldBe 1
     }
 

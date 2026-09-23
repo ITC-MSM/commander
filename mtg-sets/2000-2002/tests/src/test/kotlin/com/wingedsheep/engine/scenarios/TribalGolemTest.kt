@@ -14,6 +14,8 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Tribal Golem.
@@ -200,7 +202,7 @@ class TribalGolemTest : FunSpec({
                 abilityId = regenerateAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("regenerate ability is NOT available without a Zombie") {
@@ -227,6 +229,6 @@ class TribalGolemTest : FunSpec({
                 abilityId = regenerateAbilityId
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

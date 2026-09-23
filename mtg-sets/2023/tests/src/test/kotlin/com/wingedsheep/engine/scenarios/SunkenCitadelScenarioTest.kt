@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Sunken Citadel — Land — Cave.
@@ -76,7 +77,7 @@ class SunkenCitadelScenarioTest : FunSpec({
 
         val result = d.submit(ActivateAbility(playerId = you, sourceId = citadel, abilityId = oneManaAbilityId))
         // No further color choice — the color was fixed on entry.
-        result.isPaused shouldBe false
+        (result.outcome is Outcome.Paused) shouldBe false
 
         val pool = d.state.getEntity(you)?.get<ManaPoolComponent>()!!
         pool.getAmount(Color.BLUE) shouldBe 1
@@ -97,7 +98,7 @@ class SunkenCitadelScenarioTest : FunSpec({
         d.untapPermanent(citadel)
 
         val result = d.submit(ActivateAbility(playerId = you, sourceId = citadel, abilityId = twoManaAbilityId))
-        result.isPaused shouldBe false
+        (result.outcome is Outcome.Paused) shouldBe false
 
         val pool = d.state.getEntity(you)?.get<ManaPoolComponent>()!!
         // Two mana of the chosen color, each carrying the land-source restriction.

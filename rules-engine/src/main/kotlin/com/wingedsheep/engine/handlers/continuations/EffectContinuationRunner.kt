@@ -6,6 +6,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutorRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Executes a list of effects in sequence, handling pauses, errors, and context updates.
@@ -41,7 +42,7 @@ class EffectContinuationRunner(
 
             val result = effectExecutorRegistry.execute(stateForExecution, effect, currentContext)
 
-            if (!result.isSuccess && !result.isPaused) {
+            if (result.outcome !is Outcome.Done && result.outcome !is Outcome.Paused) {
                 currentState = if (stillRemaining.isNotEmpty()) {
                     val (_, stateWithoutCont) = result.state.popContinuation()
                     stateWithoutCont
@@ -52,7 +53,7 @@ class EffectContinuationRunner(
                 continue
             }
 
-            if (result.isPaused) {
+            if (result.outcome is Outcome.Paused) {
                 return EffectResult.propagatePause(
                     result.state,
                     allEvents + result.events

@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Marina Vendrell (DSK) — the enters-the-battlefield reveal-and-sort.
@@ -55,7 +56,7 @@ class MarinaVendrellScenarioTest : FunSpec({
         d.giveMana(active, Color.BLACK, 1)
         d.giveMana(active, Color.RED, 1)
         d.giveMana(active, Color.GREEN, 1)
-        d.castSpell(active, marina, emptyList()).isSuccess shouldBe true
+        d.castSpell(active, marina, emptyList()).outcome shouldBe Outcome.Done
         repeat(10) { if (d.pendingDecision == null) d.bothPass() }
 
         withClue("Both enchantments among the top seven were put into hand") {

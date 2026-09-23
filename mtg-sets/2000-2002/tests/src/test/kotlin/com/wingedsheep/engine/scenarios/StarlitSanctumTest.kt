@@ -14,6 +14,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Starlit Sanctum.
@@ -75,7 +77,7 @@ class StarlitSanctumTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(cleric))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -108,7 +110,7 @@ class StarlitSanctumTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(cleric))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -140,7 +142,7 @@ class StarlitSanctumTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(cleric))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -175,7 +177,7 @@ class StarlitSanctumTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(cleric))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -205,7 +207,7 @@ class StarlitSanctumTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(goblin))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         // Life should not change
         driver.getLifeTotal(activePlayer) shouldBe 20
@@ -234,7 +236,7 @@ class StarlitSanctumTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(cleric))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

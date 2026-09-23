@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Elenda, Saint of Dusk (FDN #119) — {2}{W}{B} 4/4 Legendary Creature — Vampire Knight.
@@ -97,12 +99,12 @@ class ElendaSaintOfDuskScenarioTest : FunSpec({
         // Lightning Bolt is an instant — hexproof from instants makes her an illegal target.
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
         driver.giveMana(caster, Color.RED, 1)
-        driver.castSpell(caster, bolt, listOf(elenda)).isSuccess shouldBe false
+        driver.castSpell(caster, bolt, listOf(elenda)).outcome shouldNotBe Outcome.Done
 
         // A sorcery from the same opponent is unaffected by "hexproof from instants".
         val rockslide = driver.putCardInHand(caster, "Rumbling Rockslide")
         driver.giveMana(caster, Color.RED, 4)
-        driver.castSpell(caster, rockslide, listOf(elenda)).isSuccess shouldBe true
+        driver.castSpell(caster, rockslide, listOf(elenda)).outcome shouldBe Outcome.Done
     }
 
     test("her own controller can still target her with an instant") {
@@ -113,6 +115,6 @@ class ElendaSaintOfDuskScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, listOf(elenda)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(elenda)).outcome shouldBe Outcome.Done
     }
 })

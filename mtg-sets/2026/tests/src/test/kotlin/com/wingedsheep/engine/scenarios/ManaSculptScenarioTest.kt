@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Mana Sculpt (SOS #57).
@@ -96,7 +97,7 @@ class ManaSculptScenarioTest : FunSpec({
         driver.giveMana(player1, Color.BLUE, 2)
         driver.giveColorlessMana(player1, 1)
         val cast = driver.castSpellWithTargets(player1, sculpt, listOf(ChosenTarget.Spell(bear)))
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
 
         // Resolve the stack: Mana Sculpt counters Big Bear.
         driver.bothPass()

@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Twitching Doll (DSK #201) — {1}{G} Artifact Creature — Spider Toy 2/2.
@@ -75,7 +76,7 @@ class TwitchingDollScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = doll, abilityId = sacAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the activated ability
 
         driver.isPaused shouldBe false
@@ -93,7 +94,7 @@ class TwitchingDollScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = doll, abilityId = sacAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.isPaused shouldBe false

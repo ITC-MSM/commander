@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.ManaExpiry
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Fire Nation Palace (TLA) — Land — Rare.
@@ -65,7 +66,7 @@ class FireNationPalaceScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val palace = driver.putCardInHand(me, "Fire Nation Palace")
-        driver.playLand(me, palace).isSuccess shouldBe true
+        driver.playLand(me, palace).outcome shouldBe Outcome.Done
 
         driver.isTapped(palace) shouldBe true
     }
@@ -77,7 +78,7 @@ class FireNationPalaceScenarioTest : FunSpec({
 
         driver.putLandOnBattlefield(me, "Mountain") // a basic land we control
         val palace = driver.putCardInHand(me, "Fire Nation Palace")
-        driver.playLand(me, palace).isSuccess shouldBe true
+        driver.playLand(me, palace).outcome shouldBe Outcome.Done
 
         driver.isTapped(palace) shouldBe false
     }

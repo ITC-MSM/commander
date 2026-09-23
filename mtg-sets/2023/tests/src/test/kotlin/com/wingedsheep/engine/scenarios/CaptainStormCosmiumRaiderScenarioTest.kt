@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Captain Storm, Cosmium Raider (LCI #227).
@@ -62,7 +63,7 @@ class CaptainStormCosmiumRaiderScenarioTest : FunSpec({
 
         // Cast the free artifact to fire the ETB trigger.
         val artifact = driver.putCardInHand(me, "Test Artifact")
-        driver.castSpell(me, artifact).isSuccess shouldBe true
+        driver.castSpell(me, artifact).outcome shouldBe Outcome.Done
         driver.bothPass() // artifact resolves, ETB trigger put on stack
 
         // Engine pauses for target selection.
@@ -84,7 +85,7 @@ class CaptainStormCosmiumRaiderScenarioTest : FunSpec({
         val captain = driver.putCreatureOnBattlefield(me, "Captain Storm, Cosmium Raider")
 
         // First artifact.
-        driver.castSpell(me, driver.putCardInHand(me, "Test Artifact")).isSuccess shouldBe true
+        driver.castSpell(me, driver.putCardInHand(me, "Test Artifact")).outcome shouldBe Outcome.Done
         driver.bothPass() // first artifact resolves
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
         driver.submitTargetSelection(me, listOf(captain))
@@ -93,7 +94,7 @@ class CaptainStormCosmiumRaiderScenarioTest : FunSpec({
         plusOneCounters(driver, captain) shouldBe 1
 
         // Second artifact.
-        driver.castSpell(me, driver.putCardInHand(me, "Test Artifact")).isSuccess shouldBe true
+        driver.castSpell(me, driver.putCardInHand(me, "Test Artifact")).outcome shouldBe Outcome.Done
         driver.bothPass() // second artifact resolves
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
         driver.submitTargetSelection(me, listOf(captain))
@@ -115,7 +116,7 @@ class CaptainStormCosmiumRaiderScenarioTest : FunSpec({
         val ragavan = driver.putCreatureOnBattlefield(me, "Test Hasty Prospector")
 
         val artifact = driver.putCardInHand(me, "Test Artifact")
-        driver.castSpell(me, artifact).isSuccess shouldBe true
+        driver.castSpell(me, artifact).outcome shouldBe Outcome.Done
         driver.bothPass() // artifact resolves, trigger fires
 
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()

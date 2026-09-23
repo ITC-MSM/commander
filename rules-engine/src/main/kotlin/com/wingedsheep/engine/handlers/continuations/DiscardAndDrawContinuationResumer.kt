@@ -41,7 +41,7 @@ class DiscardAndDrawContinuationResumer(
         }
         val chosenX = response.number.coerceAtLeast(0)
         val result = cycleCardHandler.execute(state, continuation.action.copy(xValue = chosenX))
-        return if (result.isPaused || result.error != null) result
+        return if (result.outcome is Outcome.Paused || result.error != null) result
         else checkForMore(result.newState, result.events)
     }
 
@@ -167,7 +167,7 @@ class DiscardAndDrawContinuationResumer(
         return ExecutionResult(
             lifeLossResult.state,
             discardEvents + lifeLossResult.events,
-            lifeLossResult.error
+            lifeLossResult.outcome
         )
     }
 
@@ -185,7 +185,7 @@ class DiscardAndDrawContinuationResumer(
             return ExecutionResult(
                 lifeLossResult.state,
                 priorEvents + lifeLossResult.events,
-                lifeLossResult.error
+                lifeLossResult.outcome
             )
         }
 

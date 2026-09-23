@@ -20,6 +20,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Nature's Rhythm ({X}{G}{G}, Harmonize {X}{G}{G}{G}{G}) cast from the graveyard.
@@ -80,7 +81,7 @@ class NaturesRhythmHarmonizeTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool,
                 alternativePayment = AlternativePaymentChoice(harmonizeCreature = bears),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.isTapped(bears).shouldBeTrue()
         driver.bothPass()
 

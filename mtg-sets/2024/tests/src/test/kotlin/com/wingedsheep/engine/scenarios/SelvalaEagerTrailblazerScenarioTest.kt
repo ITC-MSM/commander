@@ -16,6 +16,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Selvala, Eager Trailblazer — {2}{G}{W} Legendary Creature — Elf Scout 4/5, vigilance.
@@ -66,7 +67,7 @@ class SelvalaEagerTrailblazerScenarioTest : FunSpec({
 
         val result = d.submit(ActivateAbility(playerId = p, sourceId = selvala, abilityId = manaAbilityId))
         withClue("error=${result.error} isPaused=${d.isPaused}") {
-            result.isPaused shouldBe true
+            (result.outcome is Outcome.Paused) shouldBe true
         }
         // Pauses to choose a color.
         d.pendingDecision.shouldBeInstanceOf<ChooseColorDecision>()
@@ -109,7 +110,7 @@ class SelvalaEagerTrailblazerScenarioTest : FunSpec({
         val bear = d.putCardInHand(p, "Selvala Test Bear 2")
         d.giveMana(p, Color.GREEN, 2)
         val result = d.castSpell(p, bear)
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         // Resolve the cast trigger (token creation) and the spell.
         d.bothPass()
 

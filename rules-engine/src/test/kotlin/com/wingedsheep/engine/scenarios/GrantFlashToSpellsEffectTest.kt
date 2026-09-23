@@ -22,6 +22,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Covers the Gap 4 primitive: [GrantFlashToSpellsEffect] / `FlashGrantsThisTurnComponent`.
@@ -103,7 +105,7 @@ class GrantFlashToSpellsEffectTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = sorcery, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("FlashGrantsThisTurnComponent makes a sorcery legal at end step (CR 702.8a, 601.3)") {
@@ -132,7 +134,7 @@ class GrantFlashToSpellsEffectTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = sorcery, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("the grant is owner-scoped: an opponent's matching spell does not gain flash") {
@@ -164,7 +166,7 @@ class GrantFlashToSpellsEffectTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p2, cardId = sorcery, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("filter is respected: a Sorcery-only grant does not flash a creature spell") {
@@ -193,7 +195,7 @@ class GrantFlashToSpellsEffectTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = beast, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("filter is respected: a Sorcery-only grant does flash a sorcery spell") {
@@ -221,7 +223,7 @@ class GrantFlashToSpellsEffectTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = sorcery, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     // ------------------------------------------------------------------

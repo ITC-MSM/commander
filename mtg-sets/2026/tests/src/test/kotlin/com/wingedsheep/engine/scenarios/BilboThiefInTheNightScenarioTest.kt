@@ -11,6 +11,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Bilbo, Thief in the Night — {1}{U} Legendary Creature — Halfling Rogue (The Hobbit #33).
@@ -54,7 +56,7 @@ class BilboThiefInTheNightScenarioTest : FunSpec({
         val bilbo = driver.putCreatureOnBattlefield(you, "Bilbo, Thief in the Night")
         driver.removeSummoningSickness(bilbo)
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(you, listOf(bilbo), driver.getOpponent(you)).isSuccess shouldBe true
+        driver.declareAttackers(you, listOf(bilbo), driver.getOpponent(you)).outcome shouldBe Outcome.Done
         var guard = 0
         while (driver.state.stack.isNotEmpty() && guard++ < 20) driver.bothPass()
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
@@ -70,7 +72,7 @@ class BilboThiefInTheNightScenarioTest : FunSpec({
         // {2} sorcery reduced to {1}: one generic mana is exactly enough.
         driver.giveColorlessMana(you, 1)
         val lifeBefore = driver.getLifeTotal(you)
-        driver.castSpell(you, sorcery).isSuccess shouldBe true
+        driver.castSpell(you, sorcery).outcome shouldBe Outcome.Done
         var guard = 0
         while (driver.state.stack.isNotEmpty() && guard++ < 20) driver.bothPass()
 
@@ -89,7 +91,7 @@ class BilboThiefInTheNightScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         driver.giveColorlessMana(you, 5)
-        driver.castSpell(you, sorcery).isSuccess shouldBe false
+        driver.castSpell(you, sorcery).outcome shouldNotBe Outcome.Done
         driver.getGraveyard(you).contains(sorcery) shouldBe true
     }
 
@@ -101,10 +103,10 @@ class BilboThiefInTheNightScenarioTest : FunSpec({
 
         // One mana is NOT enough from hand — the reduction excludes the hand.
         driver.giveColorlessMana(you, 1)
-        driver.castSpell(you, sorcery).isSuccess shouldBe false
+        driver.castSpell(you, sorcery).outcome shouldNotBe Outcome.Done
 
         driver.giveColorlessMana(you, 1)
-        driver.castSpell(you, sorcery).isSuccess shouldBe true
+        driver.castSpell(you, sorcery).outcome shouldBe Outcome.Done
         var guard = 0
         while (driver.state.stack.isNotEmpty() && guard++ < 20) driver.bothPass()
 
@@ -121,12 +123,12 @@ class BilboThiefInTheNightScenarioTest : FunSpec({
         attackWithBilbo(driver, you)
 
         driver.giveColorlessMana(you, 1)
-        driver.castSpell(you, first).isSuccess shouldBe true
+        driver.castSpell(you, first).outcome shouldBe Outcome.Done
         var guard = 0
         while (driver.state.stack.isNotEmpty() && guard++ < 20) driver.bothPass()
 
         driver.giveColorlessMana(you, 5)
-        driver.castSpell(you, second).isSuccess shouldBe false
+        driver.castSpell(you, second).outcome shouldNotBe Outcome.Done
         driver.getGraveyard(you).contains(second) shouldBe true
     }
 })

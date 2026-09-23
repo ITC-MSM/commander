@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Group Project {1}{W} — Sorcery.
@@ -69,7 +70,7 @@ class GroupProjectTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(tappedPermanents = listOf(c1, c2, c3)),
                 paymentStrategy = PaymentStrategy.AutoPay
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // The three tapped creatures are tapped.

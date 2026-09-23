@@ -42,8 +42,10 @@ object CombatTaxes {
      * The generic-mana tax owed for declaring [attackers] (creature → defender), without paying it.
      *
      * [AttackTax] is a per-defender restriction: only permanents controlled by the player being
-     * attacked (or protecting the attacked planeswalker/battle) tax, and only for the attackers
-     * aimed at them.
+     * attacked tax, and only for the attackers aimed at them — at that player, or at a planeswalker
+     * they control when the tax says "or planeswalkers you control" ([AttackTax.coversPlaneswalkers]).
+     * An attack on a battle is taxed by nobody: no printed tax names battles, and the battle's
+     * controller (who may be the attacker, for a Siege) is certainly not the one taxing it.
      */
     fun attackTax(
         state: GameState,
@@ -52,20 +54,21 @@ object CombatTaxes {
         projected: ProjectedState,
     ): Int {
         if (attackers.isEmpty()) return 0
-        val attackersPerDefender = mutableMapOf<EntityId, Int>()
+        // Per taxing player: attackers aimed at them directly, and attackers aimed at a planeswalker
+        // they control. Battles fall in neither bucket.
+        val attackersAtPlayer = mutableMapOf<EntityId, Int>()
+        val attackersAtPlaneswalkers = mutableMapOf<EntityId, Int>()
         for ((_, defenderId) in attackers) {
-            val defenderPlayerId = if (state.turnOrder.contains(defenderId)) {
-                defenderId
-            } else {
-                projected.getController(defenderId)
-            }
-            if (defenderPlayerId != null) {
-                attackersPerDefender[defenderPlayerId] = (attackersPerDefender[defenderPlayerId] ?: 0) + 1
+            if (state.turnOrder.contains(defenderId)) {
+                attackersAtPlayer[defenderId] = (attackersAtPlayer[defenderId] ?: 0) + 1
+            } else if (projected.isPlaneswalker(defenderId)) {
+                val controller = projected.getController(defenderId) ?: continue
+                attackersAtPlaneswalkers[controller] = (attackersAtPlaneswalkers[controller] ?: 0) + 1
             }
         }
 
         var totalGenericTax = 0
-        for ((defenderId, attackerCount) in attackersPerDefender) {
+        for (defenderId in attackersAtPlayer.keys + attackersAtPlaneswalkers.keys) {
             val defenderPermanents = projected.getBattlefieldControlledBy(defenderId)
             for (entityId in defenderPermanents) {
                 val container = state.getEntity(entityId) ?: continue
@@ -73,6 +76,9 @@ object CombatTaxes {
                 val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId) ?: continue
                 for (ability in cardDef.staticAbilities) {
                     if (ability !is AttackTax) continue
+                    val attackerCount = (attackersAtPlayer[defenderId] ?: 0) +
+                        if (ability.coversPlaneswalkers) attackersAtPlaneswalkers[defenderId] ?: 0 else 0
+                    if (attackerCount == 0) continue
                     val ctx = EffectContext(sourceId = entityId, controllerId = defenderId)
                     // Gate on the source's state (e.g. Archangel of Tithes — only while untapped).
                     val condition = ability.condition

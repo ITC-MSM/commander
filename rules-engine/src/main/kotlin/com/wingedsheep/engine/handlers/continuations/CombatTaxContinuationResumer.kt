@@ -14,6 +14,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Resumes attack / block declarations that paused for the player to pick mana sources
@@ -75,7 +76,7 @@ class CombatTaxContinuationResumer(
         val sacrificeResult = com.wingedsheep.engine.handlers.effects.zones.ForceSacrificeExecutor()
             .sacrificePermanents(state, continuation.attackingPlayer, response.selectedCards)
             .toExecutionResult()
-        if (!sacrificeResult.isSuccess) return sacrificeResult
+        if (sacrificeResult.outcome !is Outcome.Done) return sacrificeResult
 
         val next = continuation.remaining.firstOrNull()
         if (next != null) {

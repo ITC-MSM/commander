@@ -18,6 +18,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Pyrrhic Strike (ECL #30) — {2}{W} Instant.
@@ -141,6 +143,6 @@ class PyrrhicStrikeModalBlightTest : FunSpec({
                 chosenModes = listOf(0, 1),
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

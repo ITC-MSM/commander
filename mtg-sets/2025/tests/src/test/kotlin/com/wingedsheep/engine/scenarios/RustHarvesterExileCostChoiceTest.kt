@@ -104,7 +104,7 @@ class RustHarvesterExileCostChoiceTest : FunSpec({
         )
         // The activation should not error — it pauses for the cost-choice decision.
         // (Mirrors SecludedStarforgeTest's UI-flow pattern: paused-for-decision is not
-        // an error, and `ExecutionResult.isSuccess` is false while paused.)
+        // an error: the outcome is `Outcome.Paused`, not `Outcome.Rejected`.)
         result.error shouldBe null
 
         // BUG: engine auto-picks the first artifact instead of prompting. The

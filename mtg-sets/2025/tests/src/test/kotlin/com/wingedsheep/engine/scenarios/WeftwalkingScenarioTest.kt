@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Weftwalking — Edge of Eternities mythic enchantment, {4}{U}{U}.
@@ -68,7 +69,7 @@ class WeftwalkingScenarioTest : FunSpec({
 
         driver.submit(
             CastSpell(player, weftwalking, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         // Spell resolves on first pair of passes; the ETB trigger goes onto the stack and needs
         // a second pair to resolve.
         driver.bothPass()
@@ -101,7 +102,7 @@ class WeftwalkingScenarioTest : FunSpec({
         val bears = driver.putCardInHand(player, "Grizzly Bears")
         driver.submit(
             CastSpell(player, bears, useWithoutPayingManaCost = true, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.getZone(ZoneKey(player, Zone.BATTLEFIELD)).contains(bears) shouldBe true
@@ -116,7 +117,7 @@ class WeftwalkingScenarioTest : FunSpec({
         val first = driver.putCardInHand(player, "Grizzly Bears")
         driver.submit(
             CastSpell(player, first, useWithoutPayingManaCost = true, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // After one spell has resolved this turn, the gate is shut.
@@ -128,7 +129,7 @@ class WeftwalkingScenarioTest : FunSpec({
         val second = driver.putCardInHand(player, "Grizzly Bears")
         driver.submit(
             CastSpell(player, second, useWithoutPayingManaCost = true, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 
     test("legal-action label for the free-cast variant reads 'Cast X (Free)' with actionType 'CastWithoutPayingManaCost' and manaCostString '{0}'") {
@@ -200,7 +201,7 @@ class WeftwalkingScenarioTest : FunSpec({
         val bears = driver.putCardInHand(activePlayer, "Grizzly Bears")
         driver.submit(
             CastSpell(activePlayer, bears, useWithoutPayingManaCost = true, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.getZone(ZoneKey(activePlayer, Zone.BATTLEFIELD)).contains(bears) shouldBe true
@@ -242,7 +243,7 @@ class WeftwalkingScenarioTest : FunSpec({
         // The player picks the free cast — and it works at {0}, the WUBRG pool stays untouched.
         driver.submit(
             CastSpell(player, bears, useWithoutPayingManaCost = true, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getZone(ZoneKey(player, Zone.BATTLEFIELD)).contains(bears) shouldBe true
     }
@@ -262,7 +263,7 @@ class WeftwalkingScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("free-casting Embrace Oblivion still requires sacrificing an artifact or creature (mandatory additional cost survives 'without paying its mana cost')") {
@@ -288,7 +289,7 @@ class WeftwalkingScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // The sacrifice resolved (fodder is in the graveyard) and Embrace Oblivion destroyed the victim.
@@ -315,6 +316,6 @@ class WeftwalkingScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

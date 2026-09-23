@@ -9,6 +9,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Engine coverage for intimidate (CR 702.13) — "can't be blocked except by artifact creatures
@@ -45,14 +47,14 @@ class IntimidateScenarioTest : FunSpec({
         val redBlocker = driver.putCreatureOnBattlefield(opponent, "Goblin Guide")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(me, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(me, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         withClue("Centaur Courser is green and not an artifact, so it shares no color with the red Enforcer") {
-            driver.declareBlockers(opponent, mapOf(greenBlocker to listOf(attacker))).isSuccess shouldBe false
+            driver.declareBlockers(opponent, mapOf(greenBlocker to listOf(attacker))).outcome shouldNotBe Outcome.Done
         }
         withClue("Goblin Guide is red, so it shares a color and the block is legal") {
-            driver.declareBlockers(opponent, mapOf(redBlocker to listOf(attacker))).isSuccess shouldBe true
+            driver.declareBlockers(opponent, mapOf(redBlocker to listOf(attacker))).outcome shouldBe Outcome.Done
         }
     }
 
@@ -69,11 +71,11 @@ class IntimidateScenarioTest : FunSpec({
         val artifactBlocker = driver.putCreatureOnBattlefield(opponent, "Artifact Creature")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(me, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(me, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         withClue("the artifact half of CR 702.13b: a colorless artifact creature blocks regardless of color") {
-            driver.declareBlockers(opponent, mapOf(artifactBlocker to listOf(attacker))).isSuccess shouldBe true
+            driver.declareBlockers(opponent, mapOf(artifactBlocker to listOf(attacker))).outcome shouldBe Outcome.Done
         }
     }
 
@@ -91,14 +93,14 @@ class IntimidateScenarioTest : FunSpec({
         val blackBlocker = driver.putCreatureOnBattlefield(opponent, "Black Creature")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(me, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(me, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         withClue("red shares no color with the black Accursed Spirit") {
-            driver.declareBlockers(opponent, mapOf(redBlocker to listOf(attacker))).isSuccess shouldBe false
+            driver.declareBlockers(opponent, mapOf(redBlocker to listOf(attacker))).outcome shouldNotBe Outcome.Done
         }
         withClue("black shares a color with the black Accursed Spirit") {
-            driver.declareBlockers(opponent, mapOf(blackBlocker to listOf(attacker))).isSuccess shouldBe true
+            driver.declareBlockers(opponent, mapOf(blackBlocker to listOf(attacker))).outcome shouldBe Outcome.Done
         }
     }
 
@@ -115,11 +117,11 @@ class IntimidateScenarioTest : FunSpec({
         val greenBlocker = driver.putCreatureOnBattlefield(opponent, "Centaur Courser")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(me, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(me, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         withClue("the rule must not restrict blocks against attackers that lack the keyword") {
-            driver.declareBlockers(opponent, mapOf(greenBlocker to listOf(attacker))).isSuccess shouldBe true
+            driver.declareBlockers(opponent, mapOf(greenBlocker to listOf(attacker))).outcome shouldBe Outcome.Done
         }
     }
 })

@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Restless Vents (LCI #284).
@@ -48,7 +49,7 @@ class RestlessVentsScenarioTest : FunSpec({
         driver.giveColorlessMana(player, 1)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = land, abilityId = animateAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
     }
 
@@ -58,7 +59,7 @@ class RestlessVentsScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val vents = driver.putCardInHand(player, "Restless Vents")
-        driver.playLand(player, vents).isSuccess shouldBe true
+        driver.playLand(player, vents).outcome shouldBe Outcome.Done
 
         driver.isTapped(vents) shouldBe true
     }
@@ -113,7 +114,7 @@ class RestlessVentsScenarioTest : FunSpec({
         val gyBefore = driver.getGraveyard(player).size
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(player, listOf(vents), opponent).isSuccess shouldBe true
+        driver.declareAttackers(player, listOf(vents), opponent).outcome shouldBe Outcome.Done
 
         // Rummage trigger: yes, discard the card, then draw the top card.
         var safety = 0
@@ -147,7 +148,7 @@ class RestlessVentsScenarioTest : FunSpec({
         val gyBefore = driver.getGraveyard(player).size
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(player, listOf(vents), opponent).isSuccess shouldBe true
+        driver.declareAttackers(player, listOf(vents), opponent).outcome shouldBe Outcome.Done
 
         var safety = 0
         while (safety < 40) {

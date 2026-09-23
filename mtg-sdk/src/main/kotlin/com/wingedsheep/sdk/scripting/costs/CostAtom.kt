@@ -280,15 +280,22 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
          * be combined, so a board with one creature card in each graveyard pays nothing.
          */
         val singleZone: Boolean = false,
+        /**
+         * Leave the cost's own source out of the pool — "exile **another** creature card from your
+         * graveyard" (Gallia, Tragic Host), whose ability is activated from that same graveyard.
+         * The [Sacrifice.excludeSelf] twin; spell additional costs have no source and leave it false.
+         */
+        val excludeSelf: Boolean = false,
     ) : CostAtom {
         override val selectionCount: Int get() = count
-        override val description: String get() = when {
-            anyPlayersZone && singleZone ->
-                "exile ${quantify(count, filter.description)} from a single ${zone.name.lowercase()}"
-            anyPlayersZone ->
-                "exile ${quantify(count, filter.description)} from a ${zone.name.lowercase()}"
-            else ->
-                "exile ${quantify(count, filter.description)} from your ${zone.name.lowercase()}"
+        override val description: String get() {
+            val what = if (excludeSelf && count == 1) "another ${filter.description}"
+            else quantify(count, filter.description)
+            return when {
+                anyPlayersZone && singleZone -> "exile $what from a single ${zone.name.lowercase()}"
+                anyPlayersZone -> "exile $what from a ${zone.name.lowercase()}"
+                else -> "exile $what from your ${zone.name.lowercase()}"
+            }
         }
 
         override fun applyTextReplacement(replacer: TextReplacer): CostAtom {

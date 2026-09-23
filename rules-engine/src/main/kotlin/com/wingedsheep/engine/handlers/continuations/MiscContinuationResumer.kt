@@ -84,7 +84,7 @@ class MiscContinuationResumer(
             targets = selectedTargets,
             targetRequirements = continuation.targetRequirements
         )
-        if (!stackResult.isSuccess) return stackResult
+        if (stackResult.outcome !is Outcome.Done) return stackResult
 
         return checkForMore(stackResult.newState, stackResult.events)
     }
@@ -122,7 +122,7 @@ class MiscContinuationResumer(
             // doesn't itself re-trigger "whenever you activate an ability" abilities.
             emitActivationEvent = false
         )
-        if (!stackResult.isSuccess) return stackResult
+        if (stackResult.outcome !is Outcome.Done) return stackResult
 
         return checkForMore(stackResult.newState, stackResult.events)
     }
@@ -158,7 +158,7 @@ class MiscContinuationResumer(
                 targets = selectedTargets,
                 targetRequirements = continuation.targetRequirements
             )
-        if (!push.isSuccess) return push
+        if (push.outcome !is Outcome.Done) return push
 
         // Continue the loop for the remaining copies (may pause again for the next copy's targets).
         val driveResult = com.wingedsheep.engine.handlers.effects.stack.CopyTargetSpellOrAbilityExecutor
@@ -173,7 +173,7 @@ class MiscContinuationResumer(
                 totalCopies = continuation.totalCopies,
                 priorEvents = push.events
             )
-        return if (driveResult.isPaused) driveResult
+        return if (driveResult.outcome is Outcome.Paused) driveResult
         else checkForMore(driveResult.newState, driveResult.events)
     }
 
@@ -206,7 +206,7 @@ class MiscContinuationResumer(
         )
         val result = services.effectExecutorRegistry.execute(state, addEffect, addContext).toExecutionResult()
 
-        if (result.isPaused) {
+        if (result.outcome is Outcome.Paused) {
             return result
         }
 
@@ -240,7 +240,7 @@ class MiscContinuationResumer(
             )
             val result = services.effectExecutorRegistry.execute(newState, payEffect, payContext)
                 .toExecutionResult()
-            if (result.isPaused) return result
+            if (result.outcome is Outcome.Paused) return result
             return checkForMore(result.state, result.events.toList())
         }
 
@@ -320,7 +320,7 @@ class MiscContinuationResumer(
         )
         val result = services.effectExecutorRegistry.execute(currentState, drawEffect, drawContext).toExecutionResult()
 
-        if (result.isPaused) {
+        if (result.outcome is Outcome.Paused) {
             return result
         }
 
@@ -356,7 +356,7 @@ class MiscContinuationResumer(
             priorEvents = emptyList()
         )
 
-        if (result.isPaused) {
+        if (result.outcome is Outcome.Paused) {
             return result.toExecutionResult()
         }
 
@@ -406,7 +406,7 @@ class MiscContinuationResumer(
             priorEvents = emptyList()
         )
 
-        if (result.isPaused) return result.toExecutionResult()
+        if (result.outcome is Outcome.Paused) return result.toExecutionResult()
 
         val published = exposeCollectionsToNextFrame(
             result.state,
@@ -490,7 +490,7 @@ class MiscContinuationResumer(
                         decisionHandler = decisionHandler,
                         priorEvents = settled.events
                     )
-                if (result.isPaused) return result.toExecutionResult()
+                if (result.outcome is Outcome.Paused) return result.toExecutionResult()
                 val published = exposeCollectionsToNextFrame(
                     result.state,
                     collections = emptyMap(),
@@ -520,7 +520,7 @@ class MiscContinuationResumer(
     ): ExecutionResult {
         if (subEffect == null) return checkForMore(state, flipEvents)
         val result = effectRunner.executeRemainingEffects(state, listOf(subEffect), context)
-        if (result.isPaused) {
+        if (result.outcome is Outcome.Paused) {
             return ExecutionResult.propagatePause(
                 result.state,
                 flipEvents + result.events
@@ -554,7 +554,7 @@ class MiscContinuationResumer(
             targetRequirements = continuation.targetRequirements,
             controllerId = continuation.controllerId
         )
-        if (!copyResult.isSuccess) return copyResult
+        if (copyResult.outcome !is Outcome.Done) return copyResult
         val mutated = com.wingedsheep.engine.handlers.effects.stack.StormCopyEffectExecutor
             .applyCopyMutations(
                 copyResult.newState, copyResult.events,
@@ -575,7 +575,7 @@ class MiscContinuationResumer(
             )
         // Propagate a further pause (another copy needs retargeting) or an error as-is;
         // otherwise let the engine continue resolving the stack.
-        if (result.isPaused || result.error != null) return result
+        if (result.outcome is Outcome.Paused || result.error != null) return result
         return checkForMore(result.newState, result.events)
     }
 
@@ -607,7 +607,7 @@ class MiscContinuationResumer(
             copyTotal = continuation.totalCopies,
             controllerId = continuation.controllerId
         )
-        if (!stackResult.isSuccess) return stackResult
+        if (stackResult.outcome !is Outcome.Done) return stackResult
         currentState = com.wingedsheep.engine.handlers.effects.stack.StormCopyEffectExecutor
             .applyCopyMutations(
                 stackResult.newState, stackResult.events,
@@ -647,7 +647,7 @@ class MiscContinuationResumer(
                     copyTotal = continuation.totalCopies,
                     controllerId = continuation.controllerId
                 )
-                if (!res.isSuccess) return res
+                if (res.outcome !is Outcome.Done) return res
                 loopState = com.wingedsheep.engine.handlers.effects.stack.StormCopyEffectExecutor
                     .applyCopyMutations(
                         res.newState, res.events,
@@ -734,7 +734,7 @@ class MiscContinuationResumer(
             removeLegendary = continuation.removeLegendary
         )
 
-        if (result.isPaused) {
+        if (result.outcome is Outcome.Paused) {
             return result
         }
 
@@ -869,7 +869,7 @@ class MiscContinuationResumer(
             controllerId = continuation.controllerId
         )
         val tokenResult = effectRunner.executeRemainingEffects(newState, listOf(tokenEffect), tokenContext)
-        if (tokenResult.isPaused) return tokenResult.toExecutionResult()
+        if (tokenResult.outcome is Outcome.Paused) return tokenResult.toExecutionResult()
         newState = tokenResult.state
         events.addAll(tokenResult.events)
 

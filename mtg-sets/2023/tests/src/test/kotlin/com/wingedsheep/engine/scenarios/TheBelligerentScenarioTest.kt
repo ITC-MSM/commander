@@ -14,6 +14,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for The Belligerent.
@@ -56,7 +57,7 @@ class TheBelligerentScenarioTest : FunSpec({
         val mountainOnTop = driver.putCardOnTopOfLibrary(you, "Mountain")
 
         // A land on top of library can only be played via the (currently inactive) permission.
-        driver.playLand(you, mountainOnTop).isSuccess shouldBe false
+        driver.playLand(you, mountainOnTop).outcome shouldNotBe Outcome.Done
         driver.findPermanent(you, "Mountain") shouldBe null
 
         // The client view mirrors the gate: the top card is not revealed to the controller yet.
@@ -98,7 +99,7 @@ class TheBelligerentScenarioTest : FunSpec({
         transformer(driver).transform(driver.state, viewingPlayerId = opponent)
             .cards.keys shouldNotContain mountainOnTop
 
-        driver.playLand(you, mountainOnTop).isSuccess shouldBe true
+        driver.playLand(you, mountainOnTop).outcome shouldBe Outcome.Done
         driver.findPermanent(you, "Mountain") shouldNotBe null
     }
 
@@ -124,7 +125,7 @@ class TheBelligerentScenarioTest : FunSpec({
         val frogmiteOnTop = driver.putCardOnTopOfLibrary(you, "Frogmite")
         driver.giveMana(you, Color.BLUE, 4)
 
-        driver.castSpell(you, frogmiteOnTop).isSuccess shouldBe true
+        driver.castSpell(you, frogmiteOnTop).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getBattlefield(you).contains(frogmiteOnTop) shouldBe true
     }

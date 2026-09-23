@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Krovod Haunch (MKM #21) — {W} Artifact — Food Equipment.
@@ -63,7 +64,7 @@ class KrovodHaunchScenarioTest : FunSpec({
                 abilityId = equipAbilityId,
                 targets = listOf(ChosenTarget.Permanent(courser))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
         d.state.getEntity(haunch)?.get<AttachedToComponent>()?.targetId shouldBe courser
 
@@ -84,7 +85,7 @@ class KrovodHaunchScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(playerId = p1, sourceId = haunch, abilityId = sacAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         var guard = 0
         while (guard++ < 12) {
@@ -114,7 +115,7 @@ class KrovodHaunchScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(playerId = p1, sourceId = haunch, abilityId = sacAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         var guard = 0
         while (guard++ < 12) {

@@ -7,6 +7,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Bite Down (DMU #155) — {1}{G} Instant.
@@ -37,7 +39,7 @@ class BiteDownScenarioTest : FunSpec({
         driver.giveMana(driver.player1, Color.GREEN, 2)
         // Both targets on your own side is an illegal targeting — the second requirement is
         // "creature or planeswalker you don't control".
-        driver.castSpell(driver.player1, bite, listOf(yours, alsoYours)).isSuccess shouldBe false
+        driver.castSpell(driver.player1, bite, listOf(yours, alsoYours)).outcome shouldNotBe Outcome.Done
     }
 
     test("your creature deals damage equal to its power to the opponent's creature") {
@@ -47,7 +49,7 @@ class BiteDownScenarioTest : FunSpec({
 
         val bite = driver.putCardInHand(driver.player1, "Bite Down")
         driver.giveMana(driver.player1, Color.GREEN, 2)
-        driver.castSpell(driver.player1, bite, listOf(yours, theirs)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, bite, listOf(yours, theirs)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // 2 damage is non-lethal to a 2/3, and it's one-sided — your Bears takes nothing back.

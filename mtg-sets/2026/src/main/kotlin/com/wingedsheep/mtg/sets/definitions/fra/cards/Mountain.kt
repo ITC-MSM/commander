@@ -2,18 +2,22 @@ package com.wingedsheep.mtg.sets.definitions.fra.cards
 
 import com.wingedsheep.sdk.dsl.basicLand
 
+/**
+ * Reality Fracture Mountain arts: two regular-frame booster arts in the main set numbering, then
+ * three non-booster treatments above it. Scryfall reports `booster: false` for every FRA basic
+ * (pre-release data), so the regular arts are marked in-booster by hand — they are what
+ * limited deck building hands out (`BoosterGenerator.getBasicLands`).
+ */
 val RealityFractureMountain287 = basicLand("Mountain") {
     collectorNumber = "287"
     artist = "Jorge Jacinto"
     imageUri = "https://cards.scryfall.io/normal/front/1/6/16671d98-6f00-477b-a010-d2905c94eb65.jpg?1789599693"
-    inBooster = false
 }
 
 val RealityFractureMountain288 = basicLand("Mountain") {
     collectorNumber = "288"
     artist = "Chris Ostrowski"
     imageUri = "https://cards.scryfall.io/normal/front/e/d/ed8ebf4a-2879-4da2-93d8-b63d782a7786.jpg?1789599698"
-    inBooster = false
 }
 
 val RealityFractureMountain391 = basicLand("Mountain") {

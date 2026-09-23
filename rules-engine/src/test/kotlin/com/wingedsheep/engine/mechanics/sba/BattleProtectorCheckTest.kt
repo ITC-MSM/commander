@@ -9,6 +9,10 @@ import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.ProtectorComponent
+import com.wingedsheep.engine.state.components.combat.AttackingComponent
+import com.wingedsheep.engine.state.components.identity.TeamComponent
+import com.wingedsheep.engine.state.components.player.LossReason
+import com.wingedsheep.engine.state.components.player.PlayerLostComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
@@ -25,6 +29,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * The CR 704.5x / 704.5y state-based actions that keep a battle's protector legal (CR 310.9),
@@ -87,7 +92,7 @@ class BattleProtectorCheckTest : FunSpec({
 
         val result = check.check(state)
 
-        result.isPaused shouldBe true
+        (result.outcome is Outcome.Paused) shouldBe true
         val decision = result.pendingDecision
         decision.shouldBeInstanceOf<ChooseOptionDecision>()
         withClue("the battle's controller makes the choice, not its would-be protector") {
@@ -106,7 +111,7 @@ class BattleProtectorCheckTest : FunSpec({
 
         val result = check.check(state)
 
-        result.isPaused shouldBe false
+        (result.outcome is Outcome.Paused) shouldBe false
         Battles.protectorOf(result.state, battleId) shouldBe p2
     }
 
@@ -132,12 +137,51 @@ class BattleProtectorCheckTest : FunSpec({
         }
     }
 
+    test("CR 310.12a — a player who has lost the game can't be chosen to protect a Siege") {
+        val state = stateWith(listOf(p1, p2, p3), siege = true)
+            .updateEntity(p3) { it.with(PlayerLostComponent(LossReason.LIFE_ZERO)) }
+        Battles.eligibleProtectors(state, battleId) shouldContainExactlyInAnyOrder listOf(p2)
+    }
+
+    test("CR 102.3 / 310.12a — a teammate is not an opponent, so can't protect your Siege") {
+        val state = stateWith(listOf(p1, p2, p3), siege = true)
+            .updateEntity(p1) { it.with(TeamComponent(0)) }
+            .updateEntity(p2) { it.with(TeamComponent(0)) }
+            .updateEntity(p3) { it.with(TeamComponent(1)) }
+        Battles.eligibleProtectors(state, battleId) shouldContainExactlyInAnyOrder listOf(p3)
+    }
+
+    test("CR 704.5x — a protector who left the game is replaced once the battle isn't being attacked") {
+        val state = stateWith(listOf(p1, p2, p3), siege = true, protector = p2)
+            .updateEntity(p2) { it.with(PlayerLostComponent(LossReason.LIFE_ZERO)) }
+
+        val result = check.check(state)
+
+        withClue("p3 is the only opponent still in the game, so the choice is forced") {
+            Battles.protectorOf(result.state, battleId) shouldBe p3
+        }
+    }
+
+    test("CR 704.5x — a protector who left the game is kept while creatures are still attacking the battle") {
+        val attacker = EntityId.of("attacker-1")
+        val state = stateWith(listOf(p1, p2, p3), siege = true, protector = p2)
+            .updateEntity(p2) { it.with(PlayerLostComponent(LossReason.LIFE_ZERO)) }
+            .withEntity(attacker, ComponentContainer.of(AttackingComponent(battleId)))
+            .addToZone(ZoneKey(p3, Zone.BATTLEFIELD), attacker)
+
+        val result = check.check(state)
+
+        withClue("704.5x waits for the attack to end rather than handing the battle to someone new") {
+            Battles.protectorOf(result.state, battleId) shouldBe p2
+        }
+    }
+
     test("a legal protector is left alone — the check is idempotent") {
         val state = stateWith(listOf(p1, p2, p3), siege = true, protector = p3)
 
         val result = check.check(state)
 
-        result.isPaused shouldBe false
+        (result.outcome is Outcome.Paused) shouldBe false
         Battles.protectorOf(result.state, battleId) shouldBe p3
     }
 })

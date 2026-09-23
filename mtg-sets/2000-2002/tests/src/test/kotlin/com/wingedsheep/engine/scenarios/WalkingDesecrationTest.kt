@@ -16,6 +16,8 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Walking Desecration.
@@ -82,7 +84,7 @@ class WalkingDesecrationTest : FunSpec({
                 abilityId = abilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the ability
         driver.bothPass()
@@ -127,7 +129,7 @@ class WalkingDesecrationTest : FunSpec({
                 attackers = emptyMap()
             )
         )
-        noAttackResult.isSuccess shouldBe false
+        noAttackResult.outcome shouldNotBe Outcome.Done
 
         // Declare the bear as attacker - should succeed
         val attackResult = driver.submit(
@@ -136,7 +138,7 @@ class WalkingDesecrationTest : FunSpec({
                 attackers = mapOf(bear to opponent)
             )
         )
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
     }
 
     test("MustAttackThisTurnComponent is cleaned up at end of turn") {
@@ -192,6 +194,6 @@ class WalkingDesecrationTest : FunSpec({
                 attackers = emptyMap()
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 })

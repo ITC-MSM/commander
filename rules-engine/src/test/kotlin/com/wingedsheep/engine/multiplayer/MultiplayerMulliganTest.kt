@@ -16,6 +16,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * CR 800.6 — in a multiplayer game (one that began with more than two players) the first mulligan
@@ -89,11 +90,11 @@ class MultiplayerMulliganTest : FunSpec({
         val processor = ActionProcessor(registry())
 
         val afterFirst = processor.process(initial, TakeMulligan(players[0])).result
-        afterFirst.isSuccess.shouldBeTrue()
+        (afterFirst.outcome is Outcome.Done).shouldBeTrue()
         afterFirst.newState.mull(players[0]).cardsToBottom shouldBe 0
 
         val afterSecond = processor.process(afterFirst.newState, TakeMulligan(players[0])).result
-        afterSecond.isSuccess.shouldBeTrue()
+        (afterSecond.outcome is Outcome.Done).shouldBeTrue()
         afterSecond.newState.mull(players[0]).cardsToBottom shouldBe 1
     }
 
@@ -102,7 +103,7 @@ class MultiplayerMulliganTest : FunSpec({
         val processor = ActionProcessor(registry())
 
         val afterFirst = processor.process(initial, TakeMulligan(players[0])).result
-        afterFirst.isSuccess.shouldBeTrue()
+        (afterFirst.outcome is Outcome.Done).shouldBeTrue()
         afterFirst.newState.mull(players[0]).cardsToBottom shouldBe 1
     }
 })

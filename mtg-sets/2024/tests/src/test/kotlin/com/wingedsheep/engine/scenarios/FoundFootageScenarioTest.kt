@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Found Footage (DSK #246) — {1} Artifact — Clue.
@@ -40,7 +41,7 @@ class FoundFootageScenarioTest : FunSpec({
 
         val handBefore = d.getHand(you).size
 
-        d.submit(ActivateAbility(you, footage, FoundFootage.activatedAbilities[0].id)).isSuccess shouldBe true
+        d.submit(ActivateAbility(you, footage, FoundFootage.activatedAbilities[0].id)).outcome shouldBe Outcome.Done
         while (!d.isPaused && d.state.stack.isNotEmpty()) d.bothPass()
 
         // Surveil 2 pauses to choose which looked-at cards to bin — keep both on top.

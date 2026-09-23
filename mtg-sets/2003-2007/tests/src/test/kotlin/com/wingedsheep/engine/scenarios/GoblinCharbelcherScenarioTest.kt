@@ -15,6 +15,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Goblin Charbelcher (MRD #176) — "{3}, {T}: Reveal cards from the top of your library until you
@@ -56,7 +57,7 @@ class GoblinCharbelcherScenarioTest : FunSpec({
         giveColorlessMana(player1, 3)
         submit(
             ActivateAbility(player1, belcher, belchAbility, targets = listOf(ChosenTarget.Player(opponent)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         bothPass()
         return belcher
     }

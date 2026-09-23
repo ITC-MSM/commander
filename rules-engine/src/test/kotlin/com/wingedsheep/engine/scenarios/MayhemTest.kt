@@ -28,6 +28,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for the Mayhem [cost] keyword (CR 702.187, Marvel's Spider-Man).
@@ -146,7 +147,7 @@ class MayhemTest : FunSpec({
             )
         )
         io.kotest.assertions.withClue("error=${result.error} pending=${result.pendingDecision}") {
-            result.isSuccess shouldBe true
+            result.outcome shouldBe Outcome.Done
         }
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
@@ -184,7 +185,7 @@ class MayhemTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         // Mayhem branch ran (gain 5, not 2).
@@ -211,7 +212,7 @@ class MayhemTest : FunSpec({
                 useAlternativeCost = true, alternativeCostType = AlternativeCostType.MAYHEM,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         // It's back in the graveyard, but is a new object (CR 400.7) that you did NOT discard —
@@ -237,7 +238,7 @@ class MayhemTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = player, cardId = bolt, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         driver.getLifeTotal(player) shouldBe lifeBefore + 2
@@ -276,7 +277,7 @@ class MayhemTest : FunSpec({
         val cast = driver.submit(
             CastSpell(playerId = player, cardId = outlet, paymentStrategy = PaymentStrategy.FromPool)
         )
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
         var guard = 0
         while (guard++ < 20 && (driver.state.stack.isNotEmpty() || driver.pendingDecision != null)) {
             val pending = driver.pendingDecision

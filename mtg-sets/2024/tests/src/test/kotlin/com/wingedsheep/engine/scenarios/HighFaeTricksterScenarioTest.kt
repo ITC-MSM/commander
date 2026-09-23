@@ -13,6 +13,8 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * High Fae Trickster (FDN #40) — {3}{U} Creature — Faerie Wizard, 4/2.
@@ -54,7 +56,7 @@ class HighFaeTricksterScenarioTest : FunSpec({
         d.giveColorlessMana(p1, 1)
 
         val result = d.submit(CastSpell(playerId = p1, cardId = beast, paymentStrategy = PaymentStrategy.FromPool))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("High Fae Trickster lets its controller cast a creature at instant speed") {
@@ -68,7 +70,7 @@ class HighFaeTricksterScenarioTest : FunSpec({
         d.giveColorlessMana(p1, 1)
 
         val result = d.submit(CastSpell(playerId = p1, cardId = beast, paymentStrategy = PaymentStrategy.FromPool))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("opponents do not benefit from the grant") {
@@ -84,6 +86,6 @@ class HighFaeTricksterScenarioTest : FunSpec({
         d.giveColorlessMana(p2, 1)
 
         val result = d.submit(CastSpell(playerId = p2, cardId = beast, paymentStrategy = PaymentStrategy.FromPool))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

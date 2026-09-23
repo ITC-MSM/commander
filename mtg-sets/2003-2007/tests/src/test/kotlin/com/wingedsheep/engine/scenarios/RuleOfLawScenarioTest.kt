@@ -6,6 +6,7 @@ import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Rule of Law (MRD #19) — {2}{W} Enchantment.
@@ -32,7 +33,7 @@ class RuleOfLawScenarioTest : ScenarioTestBase() {
                     .build()
 
                 val firstShock = game.findCardsInHand(1, "Shock").first()
-                game.castSpellTargetingPlayer(1, "Shock", 2).isSuccess shouldBe true
+                game.castSpellTargetingPlayer(1, "Shock", 2).outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 val secondShock = game.findCardsInHand(1, "Shock").first()
@@ -59,7 +60,7 @@ class RuleOfLawScenarioTest : ScenarioTestBase() {
                     .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                     .build()
 
-                game.castSpellTargetingPlayer(2, "Shock", 1).isSuccess shouldBe true
+                game.castSpellTargetingPlayer(2, "Shock", 1).outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 val secondShock = game.findCardsInHand(2, "Shock").first()
@@ -81,7 +82,7 @@ class RuleOfLawScenarioTest : ScenarioTestBase() {
                     .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                     .build()
 
-                game.castSpellTargetingPlayer(1, "Shock", 2).isSuccess shouldBe true
+                game.castSpellTargetingPlayer(1, "Shock", 2).outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 val secondShock = game.findCardsInHand(1, "Shock").first()

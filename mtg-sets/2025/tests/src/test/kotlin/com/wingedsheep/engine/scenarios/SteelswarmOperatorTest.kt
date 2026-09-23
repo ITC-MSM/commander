@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Steelswarm Operator's two restricted mana abilities.
@@ -73,7 +74,7 @@ class SteelswarmOperatorTest : FunSpec({
         val relic = driver.putCardInHand(caster, "Cryogen Relic")
 
         val castResult = driver.castSpell(caster, relic)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Both sources tapped.
         driver.state.getEntity(operator)?.has<TappedComponent>() shouldBe true
@@ -138,7 +139,7 @@ class SteelswarmOperatorTest : FunSpec({
                 targets = listOf(ChosenTarget.Card(graveyardCard, caster, Zone.GRAVEYARD)),
             )
         )
-        activateResult.isSuccess shouldBe true
+        activateResult.outcome shouldBe Outcome.Done
 
         // Steelswarm Operator must have been tapped to produce the {U}{U} that paid the
         // {2} portion of Chrome Companion's cost.

@@ -19,6 +19,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.Duration
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Old Man of the Sea (Arabian Nights).
@@ -64,7 +66,7 @@ class OldManOfTheSeaScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(target))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -93,7 +95,7 @@ class OldManOfTheSeaScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(target))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
         projector.project(driver.state).getController(target) shouldBe activePlayer
@@ -125,7 +127,7 @@ class OldManOfTheSeaScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(target))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("Control returns when Old Man of the Sea is untapped") {
@@ -386,7 +388,7 @@ class OldManOfTheSeaScenarioTest : FunSpec({
             cardRegistry = driver.cardRegistry
         )
         val sbaResult = sbaChecker.checkAndApply(driver.state)
-        sbaResult.isSuccess shouldBe true
+        sbaResult.outcome shouldBe Outcome.Done
         driver.replaceState(sbaResult.newState)
 
         driver.state.getEntity(target)
@@ -426,7 +428,7 @@ class OldManOfTheSeaScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(target))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
         projector.project(driver.state).getController(target) shouldBe activePlayer

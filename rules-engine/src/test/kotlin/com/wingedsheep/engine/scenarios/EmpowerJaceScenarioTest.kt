@@ -30,6 +30,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Empower Jace N (CR 701.71a): "If you don't control a Jace planeswalker token, create a blue Jace
@@ -109,7 +110,7 @@ class EmpowerJaceScenarioTest : FunSpec({
         state.getEntity(id)?.get<CountersComponent>()?.getCount(CounterType.LOYALTY) ?: 0
 
     fun GameTestDriver.cast(player: EntityId, name: String) {
-        castSpell(player, putCardInHand(player, name)).isSuccess shouldBe true
+        castSpell(player, putCardInHand(player, name)).outcome shouldBe Outcome.Done
         bothPass()
     }
 
@@ -166,7 +167,7 @@ class EmpowerJaceScenarioTest : FunSpec({
         val second = driver.jaceTokens(me).single { it != first }
         driver.loyalty(second) shouldBe 1
 
-        driver.castSpell(me, driver.putCardInHand(me, "Empower Three")).isSuccess shouldBe true
+        driver.castSpell(me, driver.putCardInHand(me, "Empower Three")).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val decision = driver.pendingDecision

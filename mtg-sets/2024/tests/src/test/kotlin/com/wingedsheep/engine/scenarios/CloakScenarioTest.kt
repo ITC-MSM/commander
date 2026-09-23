@@ -25,6 +25,8 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Cloak (CR 701.58) — manifest plus ward {2}.
@@ -111,7 +113,7 @@ class CloakScenarioTest : FunSpec({
             driver.giveMana(player, Color.RED, 1)
             val bolt = driver.putCardInHand(player, "Lightning Bolt")
             driver.castSpellWithTargets(player, bolt, listOf(ChosenTarget.Permanent(cloaked)))
-                .isSuccess shouldBe true
+                .outcome shouldBe Outcome.Done
 
             driver.bothPass()
             val decision = driver.pendingDecision
@@ -182,7 +184,7 @@ class CloakScenarioTest : FunSpec({
             driver.state.getEntity(cloaked)?.get<MorphDataComponent>() shouldBe null
             driver.legalActions(player).none { it.action is TurnFaceUp } shouldBe true
             // And the special action is rejected outright, not silently ignored.
-            driver.submit(TurnFaceUp(playerId = player, sourceId = cloaked)).isSuccess shouldBe false
+            driver.submit(TurnFaceUp(playerId = player, sourceId = cloaked)).outcome shouldNotBe Outcome.Done
         }
     }
 
@@ -259,7 +261,7 @@ class CloakScenarioTest : FunSpec({
 
             driver.submit(
                 TurnFaceUp(playerId = player, sourceId = cloaked, procedureIndex = 7)
-            ).isSuccess shouldBe false
+            ).outcome shouldNotBe Outcome.Done
             driver.state.getEntity(cloaked)?.get<FaceDownComponent>() shouldBe FaceDownComponent
         }
     }

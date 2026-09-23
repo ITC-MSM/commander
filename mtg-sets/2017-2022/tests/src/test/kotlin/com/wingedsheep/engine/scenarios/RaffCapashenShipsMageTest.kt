@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantFlashToSpellType
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Raff Capashen, Ship's Mage
@@ -100,7 +102,7 @@ class RaffCapashenShipsMageTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("controller can cast artifact at instant speed with Raff on battlefield") {
@@ -127,7 +129,7 @@ class RaffCapashenShipsMageTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("controller cannot cast non-historic creature at instant speed with Raff on battlefield") {
@@ -155,7 +157,7 @@ class RaffCapashenShipsMageTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("opponent cannot cast legendary creature at instant speed with Raff on opponent's battlefield") {
@@ -188,6 +190,6 @@ class RaffCapashenShipsMageTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

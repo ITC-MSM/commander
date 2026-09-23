@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Opera Love Song — {1}{R} Instant, modal "Choose one —".
@@ -40,7 +41,7 @@ class OperaLoveSongScenarioTest : FunSpec({
 
         val spell = driver.putCardInHand(me, "Opera Love Song")
         driver.giveMana(me, Color.RED, 2)
-        driver.submit(CastSpell(playerId = me, cardId = spell, chosenModes = listOf(0))).isSuccess shouldBe true
+        driver.submit(CastSpell(playerId = me, cardId = spell, chosenModes = listOf(0))).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Two cards exiled, both flagged playable.
@@ -72,7 +73,7 @@ class OperaLoveSongScenarioTest : FunSpec({
                 chosenModes = listOf(1),
                 modeTargetsOrdered = listOf(targets)
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Each gets +2/+0.
@@ -102,7 +103,7 @@ class OperaLoveSongScenarioTest : FunSpec({
                 chosenModes = listOf(1),
                 modeTargetsOrdered = listOf(targets)
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         projector.getProjectedPower(driver.state, a) shouldBe 5

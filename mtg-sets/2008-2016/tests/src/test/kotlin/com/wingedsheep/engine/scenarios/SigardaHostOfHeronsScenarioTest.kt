@@ -17,6 +17,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Sigarda, Host of Herons — {2}{G}{W}{W} Legendary Creature — Angel 5/5
@@ -71,7 +72,7 @@ class SigardaHostOfHeronsScenarioTest : FunSpec({
         val decree = driver.putCardInHand(caster, "Grim Decree")
         driver.giveMana(caster, Color.BLACK, 1)
         driver.giveColorlessMana(caster, 1)
-        driver.castSpell(caster, decree).isSuccess shouldBe true
+        driver.castSpell(caster, decree).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("no prompt at all — the protected player is never offered the choice") {
@@ -92,7 +93,7 @@ class SigardaHostOfHeronsScenarioTest : FunSpec({
         val decree = driver.putCardInHand(caster, "Grim Decree")
         driver.giveMana(caster, Color.BLACK, 1)
         driver.giveColorlessMana(caster, 1)
-        driver.castSpell(caster, decree).isSuccess shouldBe true
+        driver.castSpell(caster, decree).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(defender, "Grizzly Bears") shouldBe null
@@ -110,7 +111,7 @@ class SigardaHostOfHeronsScenarioTest : FunSpec({
 
         val wave = driver.putCardInHand(caster, "Killing Wave")
         driver.giveMana(caster, Color.BLACK, 3)
-        driver.castXSpell(caster, wave, xValue = 2).isSuccess shouldBe true
+        driver.castXSpell(caster, wave, xValue = 2).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // The caster is still asked about their own creature — Sigarda protects only her controller.
@@ -138,7 +139,7 @@ class SigardaHostOfHeronsScenarioTest : FunSpec({
         val devotion = driver.putCardInHand(player, "Grim Devotion")
         driver.giveMana(player, Color.BLACK, 1)
         driver.giveColorlessMana(player, 1)
-        driver.castSpell(player, devotion).isSuccess shouldBe true
+        driver.castSpell(player, devotion).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Two creatures, one to sacrifice — the controller picks.

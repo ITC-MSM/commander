@@ -1759,6 +1759,26 @@ object Conditions {
         trackerAtLeast(com.wingedsheep.sdk.scripting.values.TurnTracker.LIFE_LOST, player = Player.EachOpponent)
 
     /**
+     * If an opponent was dealt noncombat damage this turn (Whiplash Wordsmith, Grim Repriser).
+     * Prevented damage isn't dealt, so it doesn't count.
+     */
+    val OpponentWasDealtNoncombatDamageThisTurn: ConditionInterface =
+        trackerAtLeast(
+            com.wingedsheep.sdk.scripting.values.TurnTracker.DEALT_NONCOMBAT_DAMAGE,
+            player = Player.EachOpponent
+        )
+
+    /**
+     * If an opponent was dealt noncombat damage last turn — the turn before this one, whoever's
+     * it was (Command the Stage).
+     */
+    val OpponentWasDealtNoncombatDamageLastTurn: ConditionInterface =
+        trackerAtLeast(
+            com.wingedsheep.sdk.scripting.values.TurnTracker.DEALT_NONCOMBAT_DAMAGE_LAST_TURN,
+            player = Player.EachOpponent
+        )
+
+    /**
      * If [player] lost life this turn (from any source). Use when the wording binds the
      * check to a specific player rather than "an opponent" — e.g. Thought-Stalker Warlock:
      * "choose target opponent. If THEY lost life this turn, …" →
@@ -1947,6 +1967,13 @@ object Conditions {
      */
     val ArtifactEnteredBattlefieldThisTurn: ConditionInterface =
         PermanentTypeEnteredBattlefieldThisTurn(CardType.ARTIFACT)
+
+    /**
+     * "If you've scried or surveilled this turn" — Surveillance Phantasm, Desperate Futurescribe,
+     * Proctor of Potential.
+     */
+    val ScriedOrSurveiledThisTurn: ConditionInterface =
+        trackerAtLeast(com.wingedsheep.sdk.scripting.values.TurnTracker.SCRIED_OR_SURVEILED)
 
     /**
      * If you put a counter on a creature this turn.

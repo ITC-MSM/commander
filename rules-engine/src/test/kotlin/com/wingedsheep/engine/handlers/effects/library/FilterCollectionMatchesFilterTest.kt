@@ -26,6 +26,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 class FilterCollectionMatchesFilterTest : FunSpec({
 
@@ -101,7 +103,7 @@ class FilterCollectionMatchesFilterTest : FunSpec({
         val ctx = context(playerId, mapOf("gathered" to listOf(creatureId1, enchantmentId)))
         val result = executor.execute(state, filterEffect(GameObjectFilter.Creature), ctx)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.updatedCollections["matching"]!!.shouldContainExactlyInAnyOrder(creatureId1)
         result.updatedCollections["nonMatching"]!!.shouldContainExactlyInAnyOrder(enchantmentId)
     }
@@ -118,7 +120,7 @@ class FilterCollectionMatchesFilterTest : FunSpec({
         val ctx = context(playerId, mapOf("gathered" to listOf(creatureId1, creatureId2)))
         val result = executor.execute(state, filterEffect(filter), ctx)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.updatedCollections["matching"]!!.shouldContainExactlyInAnyOrder(creatureId1)
         result.updatedCollections["nonMatching"]!!.shouldContainExactlyInAnyOrder(creatureId2)
     }
@@ -132,7 +134,7 @@ class FilterCollectionMatchesFilterTest : FunSpec({
         val ctx = context(playerId, mapOf("gathered" to listOf(creatureId1, creatureId2)))
         val result = executor.execute(state, filterEffect(GameObjectFilter.Creature), ctx)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.updatedCollections["matching"]!!.shouldContainExactlyInAnyOrder(creatureId1, creatureId2)
         result.updatedCollections["nonMatching"]!!.shouldBeEmpty()
     }
@@ -145,7 +147,7 @@ class FilterCollectionMatchesFilterTest : FunSpec({
         val ctx = context(playerId, mapOf("gathered" to listOf(enchantmentId)))
         val result = executor.execute(state, filterEffect(GameObjectFilter.Creature), ctx)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.updatedCollections["matching"]!!.shouldBeEmpty()
         result.updatedCollections["nonMatching"]!!.shouldContainExactlyInAnyOrder(enchantmentId)
     }
@@ -165,7 +167,7 @@ class FilterCollectionMatchesFilterTest : FunSpec({
         val ctx = context(playerId, mapOf("gathered" to listOf(creatureId1, enchantmentId)))
         val result = executor.execute(state, effect, ctx)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.updatedCollections["matching"]!!.shouldContainExactlyInAnyOrder(creatureId1)
         result.updatedCollections.containsKey("nonMatching") shouldBe false
     }
@@ -196,7 +198,7 @@ class FilterCollectionMatchesFilterTest : FunSpec({
         val ctx = context(playerId, mapOf("gathered" to listOf(creatureId1, creatureId2)))
         val result = executor.execute(state, filterEffect(GameObjectFilter.Creature), ctx)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.updatedCollections["matching"]!!.shouldContainExactlyInAnyOrder(creatureId1, creatureId2)
     }
 
@@ -208,7 +210,7 @@ class FilterCollectionMatchesFilterTest : FunSpec({
         val ctx = context(playerId, mapOf("gathered" to emptyList()))
         val result = executor.execute(state, filterEffect(GameObjectFilter.Creature), ctx)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.updatedCollections["matching"]!!.shouldBeEmpty()
         result.updatedCollections["nonMatching"]!!.shouldBeEmpty()
     }
@@ -221,6 +223,6 @@ class FilterCollectionMatchesFilterTest : FunSpec({
         val ctx = context(playerId)
         val result = executor.execute(state, filterEffect(GameObjectFilter.Creature), ctx)
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

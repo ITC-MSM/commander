@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * CR 702.40a: "you may choose new targets for any of the copies." Verify that
@@ -33,7 +34,7 @@ class StormCopyRetargetingTest : FunSpec({
         repeat(4) { driver.putLandOnBattlefield(caster, "Swamp") }
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
 
-        driver.castSpell(caster, tendrils, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, tendrils, listOf(opponent)).outcome shouldBe Outcome.Done
 
         // Pass priority so the Storm trigger on top of the stack resolves.
         // Expect the executor to pause with a ChooseTargetsDecision for the sole copy.
@@ -45,7 +46,7 @@ class StormCopyRetargetingTest : FunSpec({
         (driver.state.pendingDecision is ChooseTargetsDecision) shouldBe true
 
         // Submit the caster (self) as the new target for the Storm copy.
-        driver.submitTargetSelection(caster, listOf(caster)).isSuccess shouldBe true
+        driver.submitTargetSelection(caster, listOf(caster)).outcome shouldBe Outcome.Done
 
         // A copy of Tendrils must now be on the stack with caster as its chosen target.
         val copyId = driver.state.stack.single { id ->
@@ -68,7 +69,7 @@ class StormCopyRetargetingTest : FunSpec({
         driver.replaceState(driver.state.copy(spellsCastThisTurn = 1))
         repeat(4) { driver.putLandOnBattlefield(caster, "Swamp") }
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
-        driver.castSpell(caster, tendrils, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, tendrils, listOf(opponent)).outcome shouldBe Outcome.Done
 
         var guard = 0
         while (driver.state.pendingDecision !is ChooseTargetsDecision && guard < 20) {
@@ -77,7 +78,7 @@ class StormCopyRetargetingTest : FunSpec({
         }
         (driver.state.pendingDecision is ChooseTargetsDecision) shouldBe true
 
-        driver.submitTargetSelection(caster, listOf(opponent)).isSuccess shouldBe true
+        driver.submitTargetSelection(caster, listOf(opponent)).outcome shouldBe Outcome.Done
 
         val copyId = driver.state.stack.single { id ->
             val c = driver.state.getEntity(id)

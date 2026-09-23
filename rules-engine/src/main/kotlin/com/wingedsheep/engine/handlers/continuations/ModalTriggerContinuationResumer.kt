@@ -9,6 +9,7 @@ import com.wingedsheep.engine.core.TriggerModalModeSelectionContinuation
 import com.wingedsheep.engine.core.TriggerModalTargetSelectionContinuation
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.effects.ModalEffect
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Drives mode + target selection for a modal **triggered** ability on its way to the stack
@@ -132,5 +133,5 @@ class ModalTriggerContinuationResumer(
      * continuation chain drain — sibling triggers queued behind this one still need placing.
      */
     private fun ExecutionResult.thenCheckForMore(checkForMore: CheckForMore): ExecutionResult =
-        if (isSuccess) checkForMore(state, events) else this
+        if (outcome is Outcome.Done) checkForMore(state, events) else this
 }

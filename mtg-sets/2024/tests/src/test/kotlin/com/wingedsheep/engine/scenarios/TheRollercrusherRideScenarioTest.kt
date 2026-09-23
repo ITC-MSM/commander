@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * The Rollercrusher Ride (DSK).
@@ -55,7 +56,7 @@ class TheRollercrusherRideScenarioTest : FunSpec({
 
         val ride = d.putCardInHand(active, "The Rollercrusher Ride")
         d.giveMana(active, Color.RED, 5) // {X=2}{2}{R}
-        d.castXSpell(active, ride, xValue = 2).isSuccess shouldBe true
+        d.castXSpell(active, ride, xValue = 2).outcome shouldBe Outcome.Done
         d.resolveStack()
 
         // The enters trigger asks for up to X (=2) target creatures.
@@ -81,7 +82,7 @@ class TheRollercrusherRideScenarioTest : FunSpec({
 
         val ride = d.putCardInHand(active, "The Rollercrusher Ride")
         d.giveMana(active, Color.RED, 5) // {X=2}{2}{R}
-        d.castXSpell(active, ride, xValue = 2).isSuccess shouldBe true
+        d.castXSpell(active, ride, xValue = 2).outcome shouldBe Outcome.Done
         d.resolveStack()
 
         (d.pendingDecision as? ChooseTargetsDecision)
@@ -104,7 +105,7 @@ class TheRollercrusherRideScenarioTest : FunSpec({
 
         val ride = d.putCardInHand(active, "The Rollercrusher Ride")
         d.giveMana(active, Color.RED, 3) // {X=0}{2}{R}
-        d.castXSpell(active, ride, xValue = 0).isSuccess shouldBe true
+        d.castXSpell(active, ride, xValue = 0).outcome shouldBe Outcome.Done
         d.resolveStack()
 
         withClue("With X = 0 there is nothing to target and no creature is harmed") {

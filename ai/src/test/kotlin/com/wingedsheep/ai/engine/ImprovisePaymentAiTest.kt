@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * The built-in AI's automatic **improvise** (CR 702.126) payment.
@@ -62,7 +63,7 @@ class ImprovisePaymentAiTest : FunSpec({
         (chosen.alternativePayment?.tapForGenericPermanents ?: emptySet()).isEmpty() shouldBe true
 
         val result = driver.submit(chosen)
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.state.getEntity(rock)!!.has<TappedComponent>() shouldBe true // tapped for mana, not improvise
     }
 
@@ -83,7 +84,7 @@ class ImprovisePaymentAiTest : FunSpec({
         chosen.alternativePayment?.tapForGenericPermanents?.size shouldBe 3
 
         val result = driver.submit(chosen)
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         cogs.all { result.state.getEntity(it)!!.has<TappedComponent>() } shouldBe true
     }
 })

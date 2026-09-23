@@ -10,6 +10,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Exorcise — {1}{W} Sorcery
@@ -40,7 +42,7 @@ class ExorciseScenarioTest : FunSpec({
 
         driver.giveMana(me, Color.WHITE, 1)
         driver.giveColorlessMana(me, 1)
-        driver.castSpell(me, exorcise, listOf(bigCreature)).isSuccess shouldBe true
+        driver.castSpell(me, exorcise, listOf(bigCreature)).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.isPaused shouldBe false
 
@@ -60,7 +62,7 @@ class ExorciseScenarioTest : FunSpec({
 
         driver.giveMana(me, Color.WHITE, 1)
         driver.giveColorlessMana(me, 1)
-        driver.castSpell(me, exorcise, listOf(enchantment)).isSuccess shouldBe true
+        driver.castSpell(me, exorcise, listOf(enchantment)).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.isPaused shouldBe false
 
@@ -80,7 +82,7 @@ class ExorciseScenarioTest : FunSpec({
 
         driver.giveMana(me, Color.WHITE, 1)
         driver.giveColorlessMana(me, 1)
-        driver.castSpell(me, exorcise, listOf(smallCreature)).isSuccess shouldBe false
+        driver.castSpell(me, exorcise, listOf(smallCreature)).outcome shouldNotBe Outcome.Done
         driver.getExileCardNames(opponent) shouldNotContain "Savannah Lions"
     }
 })

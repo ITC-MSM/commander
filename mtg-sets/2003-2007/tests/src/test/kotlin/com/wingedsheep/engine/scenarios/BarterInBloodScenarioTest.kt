@@ -11,6 +11,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Barter in Blood (MRD #57) — "Each player sacrifices two creatures of their choice."
@@ -33,7 +34,7 @@ class BarterInBloodScenarioTest : FunSpec({
     fun GameTestDriver.castBarter(caster: com.wingedsheep.sdk.model.EntityId) {
         val card = putCardInHand(caster, "Barter in Blood")
         giveMana(caster, Color.BLACK, 4)
-        castSpell(caster, card).isSuccess shouldBe true
+        castSpell(caster, card).outcome shouldBe Outcome.Done
         bothPass()
     }
 

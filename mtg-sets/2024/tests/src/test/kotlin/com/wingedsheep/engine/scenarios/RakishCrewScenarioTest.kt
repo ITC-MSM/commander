@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Rakish Crew — {2}{B} Enchantment.
@@ -44,7 +45,7 @@ class RakishCrewScenarioTest : FunSpec({
         // Cast Rakish Crew, resolve it and its ETB token trigger.
         val crew = driver.putCardInHand(me, "Rakish Crew")
         driver.giveMana(me, Color.BLACK, 3)
-        driver.castSpell(me, crew).isSuccess shouldBe true
+        driver.castSpell(me, crew).outcome shouldBe Outcome.Done
         var guard = 0
         while (driver.stackSize > 0 && !driver.isPaused && guard++ < 10) driver.bothPass()
 

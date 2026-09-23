@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Centaur Glade.
@@ -57,7 +58,7 @@ class CentaurGladeTest : FunSpec({
                 abilityId = gladeAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Let the ability resolve
         driver.bothPass()
@@ -132,7 +133,7 @@ class CentaurGladeTest : FunSpec({
                 abilityId = gladeAbilityId
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         // No creatures should exist
         driver.getCreatures(activePlayer).size shouldBe 0

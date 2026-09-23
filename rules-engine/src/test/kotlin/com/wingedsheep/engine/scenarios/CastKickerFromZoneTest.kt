@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.scripting.MayCastFromGraveyard
 import com.wingedsheep.sdk.scripting.MayCastSelfFromZones
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests that kicker/offspring variants are offered when casting from non-hand zones
@@ -87,7 +88,7 @@ class CastKickerFromZoneTest : FunSpec({
                 paymentStrategy = PaymentStrategy.AutoPay
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the spell
         driver.passPriority(p1)
@@ -125,7 +126,7 @@ class CastKickerFromZoneTest : FunSpec({
                 paymentStrategy = PaymentStrategy.AutoPay
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the spell
         driver.passPriority(p1)
@@ -169,7 +170,7 @@ class CastKickerFromZoneTest : FunSpec({
                 paymentStrategy = PaymentStrategy.AutoPay
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Verify life was paid
         driver.getLifeTotal(p1) shouldBe 19

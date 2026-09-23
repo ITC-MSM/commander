@@ -15,6 +15,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for the [ManaRestriction.SpellsWithManaValueAtLeast] mana spending restriction.
@@ -53,7 +55,7 @@ class SpellsWithManaValueAtLeastRestrictionTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = player, cardId = cardId, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         val pool = driver.state.getEntity(player)?.get<ManaPoolComponent>()!!
         pool.restrictedMana.size shouldBe 3
@@ -83,7 +85,7 @@ class SpellsWithManaValueAtLeastRestrictionTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = player, sourceId = mountain, abilityId = manaAbilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val after = driver.state.getEntity(player)?.get<ManaPoolComponent>()!!
         after.red shouldBe 1
@@ -102,7 +104,7 @@ class SpellsWithManaValueAtLeastRestrictionTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = player, cardId = cardId, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(player)?.get<ManaPoolComponent>()!!
         pool.restrictedMana.size shouldBe 0

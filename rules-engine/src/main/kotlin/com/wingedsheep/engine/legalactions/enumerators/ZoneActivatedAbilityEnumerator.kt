@@ -73,17 +73,7 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
                 if (context.castPermissionUtils.isPowerUpActivationRestricted(state, ability)) continue
 
                 // Check activation restrictions
-                var restrictionsMet = true
-                for (restriction in ability.restrictions) {
-                    if (!context.castPermissionUtils.checkActivationRestriction(
-                            state, playerId, restriction, entityId, ability
-                        )
-                    ) {
-                        restrictionsMet = false
-                        break
-                    }
-                }
-                if (!restrictionsMet) continue
+                if (!context.legality.activationRestrictionsMet(state, playerId, entityId, ability)) continue
 
                 // Check cost requirements and build cost info. A *defined* {X} (CR 107.3c) and
                 // the ability's generic cost reduction are both resolved here for the same reason
@@ -119,6 +109,7 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
                             hasDiscardCost = true
                             if (handCards.isEmpty()) costCanBePaid = false
                         }
+                        is CostAtom.ExileFrom -> if (!canExile(context, playerId, entityId, atom)) costCanBePaid = false
                         // Other atoms — engine validates at payment.
                         else -> {}
                     }
@@ -148,6 +139,9 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
                                         if (targets.size < atom.count) {
                                             costCanBePaid = false; break
                                         }
+                                    }
+                                    is CostAtom.ExileFrom -> if (!canExile(context, playerId, entityId, atom)) {
+                                        costCanBePaid = false; break
                                     }
                                     // Other atoms — engine validates at payment.
                                     else -> {}
@@ -289,4 +283,22 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
 
         return result
     }
+
+    /**
+     * Whether [playerId] has enough cards to pay an exile-from-zone cost of the ability on
+     * [sourceId]. The card activating from its own graveyard is left out for an "exile **another**
+     * …" cost (Gallia, Tragic Host) — otherwise a graveyard holding only the source would offer an
+     * ability that payment then rejects. The *which cards* choice is made at activation
+     * (`ActivateAbilityHandler` pauses when there are more candidates than the count).
+     */
+    private fun canExile(
+        context: EnumerationContext,
+        playerId: EntityId,
+        sourceId: EntityId,
+        atom: CostAtom.ExileFrom,
+    ): Boolean = context.costUtils.findExileTargets(
+        context.state, playerId, atom.filter, atom.zone,
+        atom.anyPlayersZone, atom.singleZone, atom.count,
+        excludeSelfId = if (atom.excludeSelf) sourceId else null,
+    ).size >= atom.count
 }

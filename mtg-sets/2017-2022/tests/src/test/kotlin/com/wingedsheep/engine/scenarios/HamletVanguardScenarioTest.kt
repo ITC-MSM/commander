@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Hamlet Vanguard (VOW #201) — {2}{G} Creature — Human Warrior, 1/1.
@@ -45,7 +46,7 @@ class HamletVanguardScenarioTest : FunSpec({
     fun GameTestDriver.castVanguard(player: EntityId): EntityId {
         val vanguard = putCardInHand(player, "Hamlet Vanguard")
         giveMana(player, Color.GREEN, 3)
-        castSpell(player, vanguard).isSuccess shouldBe true
+        castSpell(player, vanguard).outcome shouldBe Outcome.Done
         bothPass() // resolve → enters the battlefield
         return vanguard
     }
@@ -106,7 +107,7 @@ class HamletVanguardScenarioTest : FunSpec({
         val dance = driver.putCardInHand(player, "Join the Dance")
         driver.giveMana(player, Color.GREEN, 1)
         driver.giveMana(player, Color.WHITE, 1)
-        driver.castSpell(player, dance).isSuccess shouldBe true
+        driver.castSpell(player, dance).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val vanguard = driver.castVanguard(player)

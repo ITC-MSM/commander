@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Fractalize ({X}{U} instant):
@@ -52,7 +53,7 @@ class FractalizeScenarioTest : FunSpec({
         val spell = driver.putCardInHand(p, "Fractalize")
         driver.giveMana(p, Color.BLUE, 1) // {U}
         driver.giveColorlessMana(p, 2)    // {X} with X = 2
-        driver.castXSpell(p, spell, xValue = 2, targets = listOf(courser)).isSuccess shouldBe true
+        driver.castXSpell(p, spell, xValue = 2, targets = listOf(courser)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Base P/T each X + 1 = 3.
@@ -78,7 +79,7 @@ class FractalizeScenarioTest : FunSpec({
 
         val spell = driver.putCardInHand(p, "Fractalize")
         driver.giveMana(p, Color.BLUE, 1)
-        driver.castXSpell(p, spell, xValue = 0, targets = listOf(courser)).isSuccess shouldBe true
+        driver.castXSpell(p, spell, xValue = 0, targets = listOf(courser)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         projector.getProjectedPower(driver.state, courser) shouldBe 1
@@ -94,7 +95,7 @@ class FractalizeScenarioTest : FunSpec({
         val spell = driver.putCardInHand(p, "Fractalize")
         driver.giveMana(p, Color.BLUE, 1)
         driver.giveColorlessMana(p, 2)
-        driver.castXSpell(p, spell, xValue = 2, targets = listOf(courser)).isSuccess shouldBe true
+        driver.castXSpell(p, spell, xValue = 2, targets = listOf(courser)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val fractalArt = "https://cards.scryfall.io/normal/front/8/b/8b5f1fdb-04df-4224-acb4-7819c37565f5.jpg?1775828306"

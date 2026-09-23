@@ -81,12 +81,15 @@ private val RavagerOfTheFells = card("Ravager of the Fells") {
     triggeredAbility {
         trigger = Triggers.TransformsToBack
         val playerOrPlaneswalker = target("target opponent or planeswalker", Targets.OpponentOrPlaneswalker)
+        // "That player or that planeswalker's controller": the first branch reads a player
+        // target, the second the controller of a planeswalker target (as on Chandra Nalaar).
         val creature = target(
-            "target creature that player controls",
+            "target creature that player or that planeswalker's controller controls",
             TargetCreature(
                 optional = true,
                 filter = TargetFilter(
-                    GameObjectFilter.Creature.targetPlayerControls(playerOrPlaneswalker),
+                    GameObjectFilter.Creature.targetPlayerControls(playerOrPlaneswalker) or
+                        GameObjectFilter.Creature.targetPlayerControls(EffectTarget.TargetController),
                 ),
             ),
         )

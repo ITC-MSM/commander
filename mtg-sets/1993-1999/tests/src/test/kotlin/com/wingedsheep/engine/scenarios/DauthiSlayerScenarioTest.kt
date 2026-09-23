@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Dauthi Slayer ({B}{B} Creature — Dauthi Soldier 2/2):
@@ -52,12 +54,12 @@ class DauthiSlayerScenarioTest : FunSpec({
 
         // Declaring no attackers must fail — Dauthi Slayer is forced to attack.
         val noAttack = driver.submit(DeclareAttackers(playerId = you, attackers = emptyMap()))
-        noAttack.isSuccess shouldBe false
+        noAttack.outcome shouldNotBe Outcome.Done
         noAttack.error shouldContain "must attack"
 
         // Declaring it as an attacker succeeds.
         val attack = driver.submit(DeclareAttackers(playerId = you, attackers = mapOf(slayer to opponent)))
-        attack.isSuccess shouldBe true
+        attack.outcome shouldBe Outcome.Done
     }
 
     test("Dauthi Slayer is not forced to attack when it cannot attack (tapped)") {
@@ -80,6 +82,6 @@ class DauthiSlayerScenarioTest : FunSpec({
 
         // Declaring only the bear succeeds — the tapped Dauthi Slayer is not forced to attack.
         val attack = driver.submit(DeclareAttackers(playerId = you, attackers = mapOf(bear to opponent)))
-        attack.isSuccess shouldBe true
+        attack.outcome shouldBe Outcome.Done
     }
 })

@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * CR 707.10: "The act of copying a spell or ability is not the same as casting
@@ -28,7 +29,7 @@ class StormCopiesDoNotCountTest : FunSpec({
         driver.replaceState(driver.state.copy(spellsCastThisTurn = 2))
         repeat(4) { driver.putLandOnBattlefield(caster, "Swamp") }
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
-        driver.castSpell(caster, tendrils, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, tendrils, listOf(opponent)).outcome shouldBe Outcome.Done
 
         // Storm created 2 copies. Per 707.10 the copies don't count.
         driver.state.spellsCastThisTurn shouldBe 3
@@ -48,7 +49,7 @@ class StormCopiesDoNotCountTest : FunSpec({
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
 
         val eventsBefore = driver.events.size
-        driver.castSpell(caster, tendrils, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, tendrils, listOf(opponent)).outcome shouldBe Outcome.Done
 
         val eventsAfter = driver.events.drop(eventsBefore)
         // Storm trigger landing on stack emits AbilityTriggeredEvent, not SpellCastEvent.

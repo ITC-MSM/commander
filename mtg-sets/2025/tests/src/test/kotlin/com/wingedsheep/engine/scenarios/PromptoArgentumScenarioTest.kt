@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Prompto Argentum (FIN #148) — {1}{R} Legendary Creature — Human Scout 2/2
@@ -59,7 +60,7 @@ class PromptoArgentumScenarioTest : FunSpec({
             active,
             stoke,
             listOf(entityIdToChosenTarget(driver.state, opponent)),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         // Resolve Prompto's trigger (on top of the stack), then the spell.
         driver.bothPass()
         driver.bothPass()
@@ -83,7 +84,7 @@ class PromptoArgentumScenarioTest : FunSpec({
             active,
             bolt,
             listOf(entityIdToChosenTarget(driver.state, opponent)),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass()
 

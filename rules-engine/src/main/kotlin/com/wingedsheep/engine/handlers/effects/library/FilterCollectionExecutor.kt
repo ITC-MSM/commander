@@ -94,8 +94,12 @@ class FilterCollectionExecutor : EffectExecutor<FilterCollectionEffect> {
             }
 
             is CollectionFilter.GreatestManaValue -> {
+                // A face-down permanent has no mana cost (CR 708.2a), so its mana value is 0
+                // (CR 202.3a): a gathered battlefield collection (Break Under Pressure) never
+                // ranks a morph by its hidden cost.
                 fun manaValueOf(cardId: EntityId): Int =
-                    state.getEntity(cardId)?.get<CardComponent>()?.manaValue ?: Int.MIN_VALUE
+                    if (projected.getProjectedValues(cardId)?.isFaceDown == true) 0
+                    else state.getEntity(cardId)?.get<CardComponent>()?.manaValue ?: Int.MIN_VALUE
                 val maxManaValue = cards.maxOfOrNull { manaValueOf(it) }
                 if (maxManaValue == null || maxManaValue == Int.MIN_VALUE) {
                     emptyList<EntityId>() to cards

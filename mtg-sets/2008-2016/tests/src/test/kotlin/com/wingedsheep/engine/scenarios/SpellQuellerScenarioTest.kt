@@ -11,6 +11,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Spell Queller (EMN) — {1}{W}{U} 2/3 Spirit, Flash, Flying.
@@ -45,7 +46,7 @@ class SpellQuellerScenarioTest : FunSpec({
         val bears = driver.putCardInHand(opp, "Grizzly Bears")
         driver.giveColorlessMana(opp, 1)
         driver.giveMana(opp, Color.GREEN, 1)
-        driver.castSpell(opp, bears).isSuccess shouldBe true
+        driver.castSpell(opp, bears).outcome shouldBe Outcome.Done
         driver.getStackSpellNames().contains("Grizzly Bears") shouldBe true
 
         // Opponent passes priority, giving us the instant-speed window.
@@ -55,7 +56,7 @@ class SpellQuellerScenarioTest : FunSpec({
         driver.giveColorlessMana(me, 1)
         driver.giveMana(me, Color.WHITE, 1)
         driver.giveMana(me, Color.BLUE, 1)
-        driver.castSpell(me, quellerCard).isSuccess shouldBe true
+        driver.castSpell(me, quellerCard).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Spell Queller onto the battlefield
         driver.bothPass() // resolve its enters trigger
         driver.submitTargetSelection(me, listOf(bears))
@@ -88,12 +89,12 @@ class SpellQuellerScenarioTest : FunSpec({
         // Kill our own Queller with a Lightning Bolt (2/3 takes 3 damage).
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, listOf(queller)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(queller)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the Bolt; the Queller dies and its leaves trigger goes on the stack
         driver.bothPass() // resolve the leaves trigger
 
         // The *owner* of the exiled card decides — and casts it.
-        driver.submitYesNo(opp, true).isSuccess shouldBe true
+        driver.submitYesNo(opp, true).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("Grizzly Bears was cast for free by its owner and resolved under their control") {
@@ -110,11 +111,11 @@ class SpellQuellerScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, listOf(queller)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(queller)).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass()
 
-        driver.submitYesNo(opp, false).isSuccess shouldBe true
+        driver.submitYesNo(opp, false).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("declining the 'may' leaves the card in exile forever") {
@@ -134,7 +135,7 @@ class SpellQuellerScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, listOf(queller)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(queller)).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass()
 

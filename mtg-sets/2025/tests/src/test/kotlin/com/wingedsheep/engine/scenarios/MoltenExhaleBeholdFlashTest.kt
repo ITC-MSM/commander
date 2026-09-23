@@ -15,6 +15,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Molten Exhale: "You may cast this spell as though it had flash if you behold a Dragon
@@ -77,7 +79,7 @@ class MoltenExhaleBeholdFlashTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the spell — the 4/4 Ogre takes 4 damage and dies; the beheld Dragon stays.
         driver.bothPass()
@@ -110,7 +112,7 @@ class MoltenExhaleBeholdFlashTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("Molten Exhale can still be cast at sorcery speed without beholding") {
@@ -133,7 +135,7 @@ class MoltenExhaleBeholdFlashTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
         driver.findPermanent(p2, "Test Ogre") shouldBe null

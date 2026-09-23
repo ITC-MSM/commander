@@ -33,6 +33,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import java.util.UUID
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * The connive keyword action as a *primitive* (CR 701.50): a named, replaceable, observable action
@@ -163,7 +164,7 @@ class ConniveReplacementTest : FunSpec({
         driver.removeSummoningSickness(creature)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = creature, abilityId = abilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         return creature to handCard
     }
@@ -262,7 +263,7 @@ class ConniveReplacementTest : FunSpec({
         driver.removeSummoningSickness(creature)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = creature, abilityId = conniveAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("the draw was impossible — empty library") {

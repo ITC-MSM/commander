@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Uchbenbak, the Great Mistake (LCI #242) — {3}{U}{B} 6/4 Legendary Creature — Skeleton Horror.
@@ -114,7 +115,7 @@ class UchbenbakTheGreatMistakeScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = uchbenbak, abilityId = abilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.isPaused shouldBe false
 

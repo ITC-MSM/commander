@@ -23,6 +23,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 class ModalTargetForcednessTest : FunSpec({
 
@@ -59,7 +60,7 @@ class ModalTargetForcednessTest : FunSpec({
     test("resolution-time modal target is surfaced when the lone opponent may be declined") {
         val (driver, result) = processMode(optional = true)
 
-        result.isPaused.shouldBeTrue()
+        (result.outcome is Outcome.Paused).shouldBeTrue()
         val decision = result.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
         decision.targetRequirements.single().minTargets shouldBe 0
         decision.legalTargets.values.single() shouldBe listOf(driver.player2)
@@ -73,8 +74,8 @@ class ModalTargetForcednessTest : FunSpec({
     test("resolution-time modal target still auto-selects the lone mandatory opponent") {
         val (driver, result) = processMode(optional = false)
 
-        result.isPaused.shouldBeFalse()
-        result.isSuccess.shouldBeTrue()
+        (result.outcome is Outcome.Paused).shouldBeFalse()
+        (result.outcome is Outcome.Done).shouldBeTrue()
         result.state.lifeTotal(driver.player1) shouldBe driver.state.lifeTotal(driver.player1) + 1
     }
 
@@ -103,7 +104,7 @@ class ModalTargetForcednessTest : FunSpec({
 
         val controller = driver.activePlayer!!
         val cardId = driver.putCardInHand(controller, testCard.name)
-        driver.castSpell(controller, cardId).isSuccess.shouldBeTrue()
+        (driver.castSpell(controller, cardId).outcome is Outcome.Done).shouldBeTrue()
 
         var guard = 0
         while (driver.state.stack.isNotEmpty() && driver.pendingDecision == null && guard++ < 20) {

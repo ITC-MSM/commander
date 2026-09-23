@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Deep Forest Hermit (MH1 #161).
@@ -93,7 +94,7 @@ class DeepForestHermitScenarioTest : ScenarioTestBase() {
                 val controller = driver.activePlayer!!
                 driver.giveMana(controller, Color.GREEN, 5)
                 val cardId = driver.putCardInHand(controller, "Deep Forest Hermit")
-                driver.submit(CastSpell(controller, cardId, emptyList())).isSuccess shouldBe true
+                driver.submit(CastSpell(controller, cardId, emptyList())).outcome shouldBe Outcome.Done
                 driver.bothPass()
 
                 val hermit = driver.findPermanent(controller, "Deep Forest Hermit")

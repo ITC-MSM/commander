@@ -28,6 +28,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Two-Headed Giant — team priority (CR 805.5).
@@ -271,7 +272,7 @@ class TwoHeadedGiantTeamPriorityTest : FunSpec({
         // A second pass from p1 is refused — it would leave the state exactly as it is, which is
         // the loop an AI partner polling its legal actions fell into.
         val again = proc.process(state, PassPriority(p[1])).result
-        again.isSuccess shouldBe false
+        again.outcome shouldNotBe Outcome.Done
         // And it is no longer offered: the enumerator mirrors the handler.
         val services = com.wingedsheep.engine.core.EngineServices(registry())
         val enumerator = com.wingedsheep.engine.legalactions.LegalActionEnumerator(
@@ -285,7 +286,7 @@ class TwoHeadedGiantTeamPriorityTest : FunSpec({
         // Once p0 acts, the round is re-armed and p1 may pass again.
         state = proc.process(state, CastSpell(p[0], state.handCard(p[0], hunch.name))).result.newState
         state.priorityPassedBy.shouldBeEmpty()
-        proc.process(state, PassPriority(p[1])).result.isSuccess shouldBe true
+        proc.process(state, PassPriority(p[1])).result.outcome shouldBe Outcome.Done
     }
 
     test("nextUnpassedPriorityAfter is plain getNextPlayer while nobody has passed") {

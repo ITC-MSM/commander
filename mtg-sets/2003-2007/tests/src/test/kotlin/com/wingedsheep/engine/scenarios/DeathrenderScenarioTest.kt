@@ -15,6 +15,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Deathrender (LRW #255) — "Equipped creature gets +2/+2. Whenever equipped creature dies, you may
@@ -85,7 +86,7 @@ class DeathrenderScenarioTest : FunSpec({
         // Resolve the Equipment's dies trigger; the pipeline then asks which card to put in.
         d.bothPass()
         d.pendingDecision.shouldNotBeNull()
-        d.submitCardSelection(me, listOf(force)).isSuccess shouldBe true
+        d.submitCardSelection(me, listOf(force)).outcome shouldBe Outcome.Done
 
         val inPlay = d.findPermanent(me, "Force of Nature").shouldNotBeNull()
         withClue("the card was put onto the battlefield, not cast") { inPlay shouldBe force }
@@ -112,7 +113,7 @@ class DeathrenderScenarioTest : FunSpec({
         d.bothPass()
 
         d.pendingDecision.shouldNotBeNull()
-        d.submitCardSelection(me, emptyList()).isSuccess shouldBe true
+        d.submitCardSelection(me, emptyList()).outcome shouldBe Outcome.Done
 
         d.findPermanent(me, "Force of Nature") shouldBe null
         d.getHand(me) shouldContain force

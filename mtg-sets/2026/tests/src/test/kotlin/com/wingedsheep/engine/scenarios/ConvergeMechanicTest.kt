@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Converge (ability word, CR 207.2c) — scales an effect by the number of distinct *colors* of
@@ -57,7 +58,7 @@ class ConvergeMechanicTest : FunSpec({
         val spell = driver.putCardInHand(p, "Rancorous Archaic")
         driver.giveColorlessMana(p, 5)
 
-        driver.castSpell(p, spell).isSuccess shouldBe true
+        driver.castSpell(p, spell).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         plusCounters(driver, spell) shouldBe 0
@@ -71,7 +72,7 @@ class ConvergeMechanicTest : FunSpec({
         driver.giveColorlessMana(p, 4)
         driver.giveMana(p, Color.RED, 1)
 
-        driver.castSpell(p, spell).isSuccess shouldBe true
+        driver.castSpell(p, spell).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         plusCounters(driver, spell) shouldBe 1
@@ -85,7 +86,7 @@ class ConvergeMechanicTest : FunSpec({
         driver.giveMana(p, Color.WHITE, 3)
         driver.giveMana(p, Color.BLUE, 2)
 
-        driver.castSpell(p, spell).isSuccess shouldBe true
+        driver.castSpell(p, spell).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Five mana spent, but only two distinct colors → two counters (a 4/4), not five.
@@ -103,7 +104,7 @@ class ConvergeMechanicTest : FunSpec({
         driver.giveMana(p, Color.RED, 1)
         driver.giveMana(p, Color.GREEN, 1)
 
-        driver.castSpell(p, spell).isSuccess shouldBe true
+        driver.castSpell(p, spell).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         plusCounters(driver, spell) shouldBe 5
@@ -121,7 +122,7 @@ class ConvergeMechanicTest : FunSpec({
         val spell = driver.putCardInHand(p, "Arcane Omens")
         driver.giveMana(p, Color.BLACK, 5) // {4}{B} all black → 1 color
 
-        driver.castSpell(p, spell, targets = listOf(opp)).isSuccess shouldBe true
+        driver.castSpell(p, spell, targets = listOf(opp)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val discard = driver.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()
@@ -144,7 +145,7 @@ class ConvergeMechanicTest : FunSpec({
         driver.giveMana(p, Color.GREEN, 1)
         driver.giveMana(p, Color.BLACK, 1)
 
-        driver.castSpell(p, spell, targets = listOf(opp)).isSuccess shouldBe true
+        driver.castSpell(p, spell, targets = listOf(opp)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val discard = driver.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()
@@ -167,7 +168,7 @@ class ConvergeMechanicTest : FunSpec({
         driver.giveMana(p, Color.RED, 1)
         driver.giveMana(p, Color.BLUE, 1) // {6} paid with 4 colorless + R + U → 2 colors
 
-        driver.castSpell(p, spell).isSuccess shouldBe true
+        driver.castSpell(p, spell).outcome shouldBe Outcome.Done
         driver.bothPass() // creature resolves; CastRecordComponent stamped (2 colors)
 
         val predicateEvaluator = PredicateEvaluator()
@@ -191,7 +192,7 @@ class ConvergeMechanicTest : FunSpec({
         val spell = driver.putCardInHand(p, "Sundering Archaic")
         driver.giveColorlessMana(p, 6) // 0 colors spent
 
-        driver.castSpell(p, spell).isSuccess shouldBe true
+        driver.castSpell(p, spell).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val predicateEvaluator = PredicateEvaluator()

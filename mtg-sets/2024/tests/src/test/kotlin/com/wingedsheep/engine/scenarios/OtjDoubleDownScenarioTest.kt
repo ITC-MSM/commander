@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Double Down — {3}{U} Enchantment.
@@ -70,7 +71,7 @@ class OtjDoubleDownScenarioTest : FunSpec({
 
         val bandit = driver.putCardInHand(caster, "Test Bandit")
         driver.giveColorlessMana(caster, 1)
-        driver.castSpell(caster, bandit).isSuccess shouldBe true
+        driver.castSpell(caster, bandit).outcome shouldBe Outcome.Done
 
         // Resolve the Double Down trigger (the copy → token) and the original spell.
         driver.resolveStack()
@@ -86,7 +87,7 @@ class OtjDoubleDownScenarioTest : FunSpec({
 
         val bear = driver.putCardInHand(caster, "Test Bear")
         driver.giveColorlessMana(caster, 1)
-        driver.castSpell(caster, bear).isSuccess shouldBe true
+        driver.castSpell(caster, bear).outcome shouldBe Outcome.Done
         driver.resolveStack()
 
         driver.countNamed(caster, "Test Bear") shouldBe 1

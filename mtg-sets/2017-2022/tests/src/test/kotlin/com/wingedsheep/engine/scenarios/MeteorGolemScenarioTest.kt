@@ -14,6 +14,7 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Meteor Golem (M19 #241) — {7} 3/3 Artifact Creature — Golem, "When this creature enters, destroy
@@ -47,7 +48,7 @@ class MeteorGolemScenarioTest : FunSpec({
         repeat(7) { d.putLandOnBattlefield(you, "Forest") }
         d.submit(
             CastSpell(playerId = you, cardId = golem, paymentStrategy = PaymentStrategy.AutoPay),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass() // resolve the golem; its ETB trigger goes on the stack and wants a target
     }
 

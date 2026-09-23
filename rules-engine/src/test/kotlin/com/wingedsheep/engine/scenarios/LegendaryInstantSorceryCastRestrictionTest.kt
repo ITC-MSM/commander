@@ -9,6 +9,7 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * CR 205.4e — "Any instant or sorcery spell with the supertype 'legendary' is subject to a casting
@@ -73,7 +74,7 @@ class LegendaryInstantSorceryCastRestrictionTest : ScenarioTestBase() {
             game.castOfferedFor("Test Legendary Instant").shouldBeFalse()
 
             val result = game.castSpell(1, "Test Legendary Instant")
-            result.isSuccess.shouldBeFalse()
+            (result.outcome is Outcome.Done).shouldBeFalse()
             result.error!! shouldContain RESTRICTION_MSG
         }
 
@@ -86,7 +87,7 @@ class LegendaryInstantSorceryCastRestrictionTest : ScenarioTestBase() {
                 .build()
 
             game.castOfferedFor("Test Legendary Instant").shouldBeTrue()
-            game.castSpell(1, "Test Legendary Instant").isSuccess.shouldBeTrue()
+            (game.castSpell(1, "Test Legendary Instant").outcome is Outcome.Done).shouldBeTrue()
         }
 
         test("legendary instant IS castable while controlling a legendary planeswalker") {
@@ -98,7 +99,7 @@ class LegendaryInstantSorceryCastRestrictionTest : ScenarioTestBase() {
                 .build()
 
             game.castOfferedFor("Test Legendary Instant").shouldBeTrue()
-            game.castSpell(1, "Test Legendary Instant").isSuccess.shouldBeTrue()
+            (game.castSpell(1, "Test Legendary Instant").outcome is Outcome.Done).shouldBeTrue()
         }
 
         test("a NON-legendary creature does not satisfy the restriction") {
@@ -141,7 +142,7 @@ class LegendaryInstantSorceryCastRestrictionTest : ScenarioTestBase() {
                 .withCardInLibrary(1, "Test Plain Bear")
                 .build()
             with.castOfferedFor("Test Legendary Sorcery").shouldBeTrue()
-            with.castSpell(1, "Test Legendary Sorcery").isSuccess.shouldBeTrue()
+            (with.castSpell(1, "Test Legendary Sorcery").outcome is Outcome.Done).shouldBeTrue()
         }
 
         test("a NON-legendary instant is unaffected (castable with no legendary permanents)") {
@@ -152,7 +153,7 @@ class LegendaryInstantSorceryCastRestrictionTest : ScenarioTestBase() {
                 .build()
 
             game.castOfferedFor("Test Plain Instant").shouldBeTrue()
-            game.castSpell(1, "Test Plain Instant").isSuccess.shouldBeTrue()
+            (game.castSpell(1, "Test Plain Instant").outcome is Outcome.Done).shouldBeTrue()
         }
 
         test("only the OPPONENT's legendary creature does not let you cast (control matters)") {
@@ -180,7 +181,7 @@ class LegendaryInstantSorceryCastRestrictionTest : ScenarioTestBase() {
 
             val bearId = game.findPermanent("Test Plain Bear")!!
             val result = game.castSpell(1, "Isildur's Fateful Strike", bearId)
-            result.isSuccess.shouldBeFalse()
+            (result.outcome is Outcome.Done).shouldBeFalse()
             result.error!! shouldContain RESTRICTION_MSG
         }
     }

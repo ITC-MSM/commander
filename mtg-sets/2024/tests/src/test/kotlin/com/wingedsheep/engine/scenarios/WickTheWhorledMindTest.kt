@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Regression test for the bug where Wick, the Whorled Mind's sacrifice ability read the
@@ -61,7 +62,7 @@ class WickTheWhorledMindTest : FunSpec({
         val scales = driver.putCardInHand(activePlayer, "Scales of Shale")
         driver.giveMana(activePlayer, Color.BLACK, 1)
         driver.giveColorlessMana(activePlayer, 2)
-        driver.castSpell(activePlayer, scales, targets = listOf(snail)).isSuccess shouldBe true
+        driver.castSpell(activePlayer, scales, targets = listOf(snail)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val handBefore = driver.getHandSize(activePlayer)
@@ -80,7 +81,7 @@ class WickTheWhorledMindTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(snail))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Snail is sacrificed
@@ -122,7 +123,7 @@ class WickTheWhorledMindTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(snail))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getLifeTotal(opponent) shouldBe opponentLifeBefore - 1

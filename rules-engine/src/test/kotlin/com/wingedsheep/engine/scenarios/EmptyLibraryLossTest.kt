@@ -22,6 +22,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Rule 704.5c: A player who was unable to draw a card
@@ -317,7 +318,7 @@ class EmptyLibraryLossTest : FunSpec({
         val result = turnManager.drawCards(driver.state, player1, 1)
 
         // The draw should succeed (return success) but mark the player as lost
-        result.isSuccess.shouldBeTrue()
+        (result.outcome is Outcome.Done).shouldBeTrue()
 
         // Check that player is marked as lost due to empty library
         val lostComponent = result.newState.getEntity(player1)?.get<PlayerLostComponent>()

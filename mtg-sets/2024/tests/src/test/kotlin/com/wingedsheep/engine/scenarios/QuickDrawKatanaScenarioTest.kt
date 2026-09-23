@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Quick-Draw Katana — {2} Artifact — Equipment, equip {2}
@@ -52,7 +53,7 @@ class QuickDrawKatanaScenarioTest : FunSpec({
         driver.giveColorlessMana(me, 2)
         driver.submit(
             ActivateAbility(me, katana, equipId, targets = listOf(ChosenTarget.Permanent(courser)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.getEntity(katana)?.get<AttachedToComponent>()?.targetId shouldBe courser

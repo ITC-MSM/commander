@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.GrantAdditionalLandDrop
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for the GrantAdditionalLandDrop static ability.
@@ -67,21 +69,21 @@ class GrantAdditionalLandDropTest : FunSpec({
 
         // Base remaining is 1, but with the static bonus we should be able to play 2 lands
         val forest1 = driver.putCardInHand(player, "Forest")
-        driver.playLand(player, forest1).isSuccess shouldBe true
+        driver.playLand(player, forest1).outcome shouldBe Outcome.Done
 
         // LandDropsComponent.remaining is now 0, but static bonus allows one more
         val landDrops = driver.state.getEntity(player)?.get<LandDropsComponent>()
         landDrops!!.remaining shouldBe 0
 
         val forest2 = driver.putCardInHand(player, "Forest")
-        driver.playLand(player, forest2).isSuccess shouldBe true
+        driver.playLand(player, forest2).outcome shouldBe Outcome.Done
 
         // remaining is now -1, and with +1 bonus the effective is 0 — no more land plays
         driver.state.getEntity(player)?.get<LandDropsComponent>()?.remaining shouldBe -1
 
         val forest3 = driver.putCardInHand(player, "Forest")
         val result = driver.submitExpectFailure(PlayLand(player, forest3))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("multiple sources stack additively") {
@@ -97,13 +99,13 @@ class GrantAdditionalLandDropTest : FunSpec({
         // Should be able to play 3 total lands (1 base + 2 bonus)
         for (i in 1..3) {
             val forest = driver.putCardInHand(player, "Forest")
-            driver.playLand(player, forest).isSuccess shouldBe true
+            driver.playLand(player, forest).outcome shouldBe Outcome.Done
         }
 
         // Fourth should fail
         val forest = driver.putCardInHand(player, "Forest")
         val result = driver.submitExpectFailure(PlayLand(player, forest))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("count parameter grants multiple drops from a single source") {
@@ -118,13 +120,13 @@ class GrantAdditionalLandDropTest : FunSpec({
         // Should be able to play 3 total lands (1 base + 2 bonus)
         for (i in 1..3) {
             val forest = driver.putCardInHand(player, "Forest")
-            driver.playLand(player, forest).isSuccess shouldBe true
+            driver.playLand(player, forest).outcome shouldBe Outcome.Done
         }
 
         // Fourth should fail
         val forest = driver.putCardInHand(player, "Forest")
         val result = driver.submitExpectFailure(PlayLand(player, forest))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("effect does not persist after turn resets") {
@@ -137,9 +139,9 @@ class GrantAdditionalLandDropTest : FunSpec({
 
         // Play 2 lands (1 base + 1 bonus)
         val forest1 = driver.putCardInHand(startingPlayer, "Forest")
-        driver.playLand(startingPlayer, forest1).isSuccess shouldBe true
+        driver.playLand(startingPlayer, forest1).outcome shouldBe Outcome.Done
         val forest2 = driver.putCardInHand(startingPlayer, "Forest")
-        driver.playLand(startingPlayer, forest2).isSuccess shouldBe true
+        driver.playLand(startingPlayer, forest2).outcome shouldBe Outcome.Done
 
         // Advance to next turn for this player
         driver.passPriorityUntil(Step.END)
@@ -165,14 +167,14 @@ class GrantAdditionalLandDropTest : FunSpec({
 
         // Can still play 2 lands again
         val forest3 = driver.putCardInHand(startingPlayer, "Forest")
-        driver.playLand(startingPlayer, forest3).isSuccess shouldBe true
+        driver.playLand(startingPlayer, forest3).outcome shouldBe Outcome.Done
         val forest4 = driver.putCardInHand(startingPlayer, "Forest")
-        driver.playLand(startingPlayer, forest4).isSuccess shouldBe true
+        driver.playLand(startingPlayer, forest4).outcome shouldBe Outcome.Done
 
         // Third fails
         val forest5 = driver.putCardInHand(startingPlayer, "Forest")
         val result = driver.submitExpectFailure(PlayLand(startingPlayer, forest5))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("stacks with one-shot PlayAdditionalLandsEffect (Summer Bloom)") {
@@ -197,12 +199,12 @@ class GrantAdditionalLandDropTest : FunSpec({
 
         for (i in 1..5) {
             val forest = driver.putCardInHand(player, "Forest")
-            driver.playLand(player, forest).isSuccess shouldBe true
+            driver.playLand(player, forest).outcome shouldBe Outcome.Done
         }
 
         // Sixth fails
         val forest = driver.putCardInHand(player, "Forest")
         val result = driver.submitExpectFailure(PlayLand(player, forest))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

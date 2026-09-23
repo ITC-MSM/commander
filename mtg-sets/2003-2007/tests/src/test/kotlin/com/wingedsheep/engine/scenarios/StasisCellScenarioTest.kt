@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Stasis Cell (RAV #66) — "Enchant creature. Enchanted creature doesn't untap during its
@@ -40,7 +41,7 @@ class StasisCellScenarioTest : FunSpec({
         val aura = putCardInHand(caster, "Stasis Cell")
         giveColorlessMana(caster, 4)
         giveMana(caster, Color.BLUE, 1)
-        castSpell(caster, aura, listOf(creature)).isSuccess shouldBe true
+        castSpell(caster, aura, listOf(creature)).outcome shouldBe Outcome.Done
         bothPass()
         return aura
     }
@@ -73,7 +74,7 @@ class StasisCellScenarioTest : FunSpec({
                 abilityId = moveAbility,
                 targets = listOf(ChosenTarget.Permanent(second)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         var guard = 0
         while (d.stackSize > 0 && guard++ < 20) d.bothPass()
 

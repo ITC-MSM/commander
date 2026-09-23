@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Banshee — "{X}, {T}: deals half X damage, rounded down, to any target, and
@@ -50,7 +51,7 @@ class BansheeScenarioTest : FunSpec({
                 targets = listOf(entityIdToChosenTarget(driver.state, opponent)),
                 xValue = x,
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         return driver.getLifeTotal(opponent) to driver.getLifeTotal(me)

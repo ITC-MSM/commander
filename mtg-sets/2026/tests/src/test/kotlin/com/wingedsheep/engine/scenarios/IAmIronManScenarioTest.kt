@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * I Am Iron Man (MSH) — "Until end of turn, target artifact or creature becomes an artifact creature
@@ -35,7 +36,7 @@ class IAmIronManScenarioTest : FunSpec({
 
         val spell = d.putCardInHand(d.player1, "I Am Iron Man")
         d.giveMana(d.player1, Color.BLUE, 3)
-        d.castSpell(d.player1, spell, listOf(bear)).isSuccess shouldBe true
+        d.castSpell(d.player1, spell, listOf(bear)).outcome shouldBe Outcome.Done
         repeat(6) { if (d.state.pendingDecision != null) d.autoResolveDecision() else d.bothPass() }
 
         val card = ClientStateTransformer(d.cardRegistry).transform(d.state, d.player1)

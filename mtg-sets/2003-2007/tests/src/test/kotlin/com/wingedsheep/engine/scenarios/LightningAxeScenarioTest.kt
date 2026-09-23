@@ -17,6 +17,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
  * Lightning Axe — {R} Instant
@@ -60,7 +62,7 @@ class LightningAxeScenarioTest : FunSpec({
         d.giveMana(p1, Color.RED, 1)
 
         d.submit(CastSpell(playerId = p1, cardId = axe, paymentStrategy = PaymentStrategy.FromPool))
-            .isPaused shouldBe true
+            .outcome.shouldBeInstanceOf<Outcome.Paused>()
         d.finishCast(p1, modeIndex = 0, victim = victim, discardFodder = fodder)
         d.bothPass()
 
@@ -84,7 +86,7 @@ class LightningAxeScenarioTest : FunSpec({
         d.giveColorlessMana(p1, 5)
 
         d.submit(CastSpell(playerId = p1, cardId = axe, paymentStrategy = PaymentStrategy.FromPool))
-            .isPaused shouldBe true
+            .outcome.shouldBeInstanceOf<Outcome.Paused>()
         d.finishCast(p1, modeIndex = 1, victim = victim, discardFodder = null)
         d.bothPass()
 

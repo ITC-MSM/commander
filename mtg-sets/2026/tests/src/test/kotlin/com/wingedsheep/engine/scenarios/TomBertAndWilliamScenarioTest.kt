@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tom, Bert, and William {3}{B}{G} — Legendary Creature — Troll 5/5.
@@ -85,7 +86,7 @@ class TomBertAndWilliamScenarioTest : FunSpec({
                 abilityId = sacOutletId,
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(courser))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         settleStack(driver)
 
         // The discard is a card selection; pitch the first card in hand.
@@ -165,7 +166,7 @@ class TomBertAndWilliamScenarioTest : FunSpec({
                 abilityId = sacOutletId,
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(lion))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         settleStack(driver)
 
         driver.submitCardSelection(you, listOf(driver.getHand(you).first())).error shouldBe null

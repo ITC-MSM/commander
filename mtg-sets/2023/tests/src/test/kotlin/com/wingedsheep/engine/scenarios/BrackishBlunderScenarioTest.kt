@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Brackish Blunder (LCI #46) — {1}{U} Instant
@@ -51,7 +52,7 @@ class BrackishBlunderScenarioTest : FunSpec({
         driver.giveColorlessMana(me, 1)
         driver.giveMana(me, Color.BLUE, 1)
 
-        driver.castSpellWithTargets(me, spell, listOf(ChosenTarget.Permanent(bear))).isSuccess shouldBe true
+        driver.castSpellWithTargets(me, spell, listOf(ChosenTarget.Permanent(bear))).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Creature is returned to the opponent's hand.
@@ -77,7 +78,7 @@ class BrackishBlunderScenarioTest : FunSpec({
         driver.giveColorlessMana(me, 1)
         driver.giveMana(me, Color.BLUE, 1)
 
-        driver.castSpellWithTargets(me, spell, listOf(ChosenTarget.Permanent(bear))).isSuccess shouldBe true
+        driver.castSpellWithTargets(me, spell, listOf(ChosenTarget.Permanent(bear))).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Creature is returned to the opponent's hand.

@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Delighted Halfling — "{T}: Add one mana of any color. Spend this mana only to cast a legendary
@@ -54,7 +55,7 @@ class DelightedHalflingScenarioTest : FunSpec({
         val halfling = putCreatureOnBattlefield(you, "Delighted Halfling")
         removeSummoningSickness(halfling)
         val result = submit(ActivateAbility(playerId = you, sourceId = halfling, abilityId = anyColorAbilityId))
-        result.isPaused shouldBe true
+        (result.outcome is Outcome.Paused) shouldBe true
         val decision = pendingDecision as ChooseColorDecision
         submitDecision(you, ColorChosenResponse(decision.id, Color.GREEN))
         return halfling

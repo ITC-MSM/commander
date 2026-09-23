@@ -9,6 +9,7 @@ import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.player.MulliganStateComponent
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Handler for the BottomCards action.
@@ -49,7 +50,7 @@ class BottomCardsHandler(
 
     override fun execute(state: GameState, action: BottomCards): ExecutionResult {
         val result = mulliganHandler.handleBottomCards(state, action)
-        if (!result.isSuccess) return result
+        if (result.outcome !is Outcome.Done) return result
         return mulliganHandler.tryAdvancePastMulliganPhase(result.newState, result.events, turnManager)
     }
 

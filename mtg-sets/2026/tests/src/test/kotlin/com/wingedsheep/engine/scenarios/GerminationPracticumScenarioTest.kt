@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario test for Germination Practicum (SOS) — {3}{G}{G} Sorcery — Lesson.
@@ -48,7 +49,7 @@ class GerminationPracticumScenarioTest : FunSpec({
         val spell = driver.putCardInHand(player, "Germination Practicum")
         driver.giveColorlessMana(player, 3)
         driver.giveMana(player, Color.GREEN, 2)
-        driver.castSpell(player, spell).isSuccess shouldBe true
+        driver.castSpell(player, spell).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         plus(driver, mine1) shouldBe 2

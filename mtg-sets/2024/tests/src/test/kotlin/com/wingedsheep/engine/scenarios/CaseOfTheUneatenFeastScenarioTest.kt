@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Case of the Uneaten Feast — {W} Enchantment — Case.
@@ -71,7 +72,7 @@ class CaseOfTheUneatenFeastScenarioTest : FunSpec({
     fun GameTestDriver.castDog() {
         val dog = putCardInHand(player1, "Feast Dog")
         giveMana(player1, Color.WHITE, 1)
-        castSpell(player1, dog).isSuccess shouldBe true
+        castSpell(player1, dog).outcome shouldBe Outcome.Done
         bothPass() // the Dog resolves; the Case's life trigger goes on the stack
         bothPass() // resolve the life trigger
     }
@@ -132,7 +133,7 @@ class CaseOfTheUneatenFeastScenarioTest : FunSpec({
         // than life, this one would read 1 and the Case would never solve.
         val blessing = driver.putCardInHand(driver.player1, "Feast Blessing")
         driver.giveMana(driver.player1, Color.WHITE, 1)
-        driver.castSpell(driver.player1, blessing).isSuccess shouldBe true
+        driver.castSpell(driver.player1, blessing).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.passPriorityUntil(Step.END)
@@ -166,7 +167,7 @@ class CaseOfTheUneatenFeastScenarioTest : FunSpec({
         driver.graveyardCastNames().any { it.contains("Feast Dog") } shouldBe true
 
         // And it really is castable: cast it and it comes back as a permanent.
-        driver.castSpell(driver.player1, dogInYard).isSuccess shouldBe true
+        driver.castSpell(driver.player1, dogInYard).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getBattlefield().contains(dogInYard) shouldBe true
     }
@@ -226,7 +227,7 @@ class CaseOfTheUneatenFeastScenarioTest : FunSpec({
         driver.solveAndActivate(case)
 
         driver.giveMana(driver.player1, Color.WHITE, 1)
-        driver.castSpell(driver.player1, dogInYard).isSuccess shouldBe true
+        driver.castSpell(driver.player1, dogInYard).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getBattlefield().contains(dogInYard) shouldBe true
 
@@ -234,7 +235,7 @@ class CaseOfTheUneatenFeastScenarioTest : FunSpec({
         // Case handed to the old object does not follow it.
         val bolt = driver.putCardInHand(driver.player1, "Lightning Bolt")
         driver.giveMana(driver.player1, Color.RED, 1)
-        driver.castSpell(driver.player1, bolt, listOf(dogInYard)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, bolt, listOf(dogInYard)).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.getGraveyard(driver.player1).contains(dogInYard) shouldBe true
 
@@ -252,7 +253,7 @@ class CaseOfTheUneatenFeastScenarioTest : FunSpec({
         driver.solveAndActivate(case)
 
         driver.giveMana(driver.player1, Color.WHITE, 1)
-        driver.castSpell(driver.player1, dogInYard).isSuccess shouldBe true
+        driver.castSpell(driver.player1, dogInYard).outcome shouldBe Outcome.Done
 
         // The Dog left the graveyard when it was cast, so it stopped being the object the Case
         // granted the permission to — being countered back into the yard makes a third object.
@@ -261,7 +262,7 @@ class CaseOfTheUneatenFeastScenarioTest : FunSpec({
         driver.passPriority(driver.player1) // hand priority to the opponent with the Dog on the stack
         driver.castSpellWithTargets(
             driver.player2, counter, listOf(ChosenTarget.Spell(dogInYard))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // Counterspell resolves, countering the Dog
         driver.getGraveyard(driver.player1).contains(dogInYard) shouldBe true
 

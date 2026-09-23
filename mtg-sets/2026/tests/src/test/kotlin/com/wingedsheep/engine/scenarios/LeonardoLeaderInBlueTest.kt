@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Leonardo, Leader in Blue (TMT #16) — sneak-paid ETB anthem + activated first strike.
@@ -36,7 +37,7 @@ class LeonardoLeaderInBlueTest : FunSpec({
         driver.giveMana(player, Color.WHITE, 2)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = leo, abilityId = firstStrikeAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.projectedState.hasKeyword(leo, Keyword.FIRST_STRIKE) shouldBe true
     }
@@ -74,7 +75,7 @@ class LeonardoLeaderInBlueTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(bouncedPermanents = listOf(attacker)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         // Sneak cost paid → back-rank Grizzly Bears gets +2/+0 this turn (2 -> 4 power).

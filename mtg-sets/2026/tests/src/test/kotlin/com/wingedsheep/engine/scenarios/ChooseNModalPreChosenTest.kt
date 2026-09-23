@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Phase 5: pre-chosen choose-N modal spells iterate every chosen mode in order,
@@ -66,7 +67,7 @@ class ChooseNModalPreChosenTest : FunSpec({
                 listOf(ChosenTarget.Permanent(centaur), ChosenTarget.Permanent(goblin))   // mode 3: Centaur fights Goblin
             )
         ))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val spell = d.state.stack.first().let { id -> d.state.getEntity(id)?.get<SpellOnStackComponent>() }
         spell?.chosenModes shouldBe listOf(2, 3)
@@ -120,7 +121,7 @@ class ChooseNModalPreChosenTest : FunSpec({
                 listOf(ChosenTarget.Permanent(lions), ChosenTarget.Permanent(goblin))
             )
         ))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         d.bothPass()
 
@@ -161,7 +162,7 @@ class ChooseNModalPreChosenTest : FunSpec({
                 listOf(ChosenTarget.Permanent(centaur), ChosenTarget.Permanent(goblin))
             )
         ))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Manually remove Lions from the battlefield (simulate it being destroyed between cast and
         // resolution — easier than scheduling another spell). Use replaceState to move it to the

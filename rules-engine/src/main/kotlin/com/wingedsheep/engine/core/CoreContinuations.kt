@@ -54,74 +54,18 @@ data class TriggeredAbilityContinuation(
      *  [com.wingedsheep.sdk.scripting.AbilityIdentity]); preserved across target selection so the
      *  stack object built on resume carries it. Null for sources with no card definition. */
     val abilityIdentity: com.wingedsheep.sdk.scripting.AbilityIdentity? = null,
-    val triggerDamageAmount: Int? = null,
-    val triggeringEntityId: EntityId? = null,
-    val triggeringPlayerId: EntityId? = null,
+    /** Everything the trigger event said about why this ability fired — damage amount, last-known
+     *  power, scry count, clash outcome, captured batch, the trigger's own X, … — carried whole across
+     *  target selection so the stack object built on resume sees exactly what an untargeted trigger
+     *  would (see [com.wingedsheep.engine.event.TriggerContext]). */
+    val triggerContext: com.wingedsheep.engine.event.TriggerContext? = null,
     val elseEffect: Effect? = null,
     val targetRequirements: List<TargetRequirement> = emptyList(),
     /** Non-null while dependent targets are being chosen, one requirement at a time. */
     val sequentialTargets: List<EntityId>? = null,
-    val triggerCounterCount: Int? = null,
-    val triggerTotalCounterCount: Int? = null,
-    val triggerLastKnownCounters: Map<String, Int>? = null,
-    /** Projected subtypes / card types the triggering permanent had as it left the battlefield
-     *  (CR 603.10), preserved across target selection for the intervening-"if"'s second check. */
-    val triggerLastKnownSubtypes: Set<String>? = null,
-    val triggerLastKnownCardTypes: Set<String>? = null,
-    val triggerLastKnownDamageDealtByPlayers: Map<EntityId, Int>? = null,
-    /** Creatures blocking/blocked by the trigger's source on leave-battlefield (CR 509 LKI, Abu Ja'far). */
-    val triggerLastKnownBlockingOrBlockedByIds: List<EntityId>? = null,
-    val lastKnownPower: Int? = null,
-    val lastKnownToughness: Int? = null,
-    /** Total last-known power of a creatures-died batch (CR 603.2c). Null for non-batch triggers. */
-    val diedBatchTotalPower: Int? = null,
-    val triggerModesChosenCount: Int? = null,
-    /** Power of the aura/equipment's attached creature, captured at trigger time (CR 608.2h LKI). */
-    val enchantedCreatureLastKnownPower: Int? = null,
-    /** Cards looked at by the scry that fired this trigger (CR 701.22). Null for non-scry triggers. */
-    val triggerScryCount: Int? = null,
-    /** Whether this trigger's controller won the clash that fired it (CR 701.30d). Read via
-     *  `Conditions.YouWonTheClash` (Rebellion of the Flamekin, whose {1} gate pauses first). Null
-     *  for non-clash triggers. */
-    val triggerClashWon: Boolean? = null,
-    /** Cards discarded in the batch that fired this trigger (CR 603.2c). Read via
-     *  `ContextPropertyKey.TRIGGER_DISCARD_COUNT` (Magmakin Artillerist). Null for non-discard triggers. */
-    val triggerDiscardCount: Int? = null,
-    /** Discover value N of the discover that fired this trigger (CR 701.57). Null for non-discover triggers. */
-    val triggerDiscoverValue: Int? = null,
-    /** Damage past lethal dealt to the trigger's creature recipient (CR 120.4a). Null for non-damage triggers. */
-    val triggerExcessDamageAmount: Int? = null,
-    /** Recipient creature's toughness when the triggering damage was dealt (CR 603.10 LKI). Read via
-     *  `ContextPropertyKey.TRIGGER_RECIPIENT_TOUGHNESS` (Taii Wakeen). Null for non-creature recipients. */
-    val triggerRecipientToughness: Int? = null,
-    /** Total mana spent to cast the spell that fired this trigger (Aberrant Manawurm, Expressive
-     *  Firedancer). Read via `ContextPropertyKey.MANA_SPENT_ON_TRIGGERING_SPELL`. Null for non-cast triggers. */
-    val triggerManaSpentOnTriggeringSpell: Int? = null,
-    /** Distinct colors of mana spent to cast the spell that fired this trigger (Magmablood Archaic).
-     *  Read via `ContextPropertyKey.COLORS_SPENT_ON_TRIGGERING_SPELL`. Null for non-cast triggers. */
-    val triggerColorsSpentOnTriggeringSpell: Int? = null,
-    /** Mana value of the spell that fired this trigger (Kellan, the Kid). Read via
-     *  `ContextPropertyKey.TRIGGERING_SPELL_MANA_VALUE`. Null for non-cast triggers. */
-    val triggerManaValueOfTriggeringSpell: Int? = null,
-    /** Value chosen for {X} on the spell that fired this trigger (Geometer's Arthropod). Read via
-     *  `ContextPropertyKey.X_VALUE_OF_TRIGGERING_SPELL`. Null for non-cast / no-{X} triggers. */
-    val triggerXValueOfTriggeringSpell: Int? = null,
-    /** The trigger's own X — the value announced for an `{X}` cost on the *action that fired it*
-     *  (an `{X}` cycling cost, a megamorph turn-up), as opposed to
-     *  [triggerXValueOfTriggeringSpell], which is a *cast spell's* X. Read as
-     *  `DynamicAmount.XValue` and by X-relative target filters (`manaValueEqualsX()`), so it must
-     *  survive target selection or the ability fizzles its own legal target on resolution. */
-    val xValue: Int? = null,
     /** Pipeline state carried from a `ReflexiveTriggerEffect`'s action half, preserved across target
      *  selection so the stack object built on resume carries it (CR 603.12). Null otherwise. */
     val carriedPipeline: com.wingedsheep.engine.handlers.PipelineState? = null,
-    /** The objects a batch trigger captured as "the ones that caused it" (CR 603.2c), preserved
-     *  across target selection so the stack object built on resume still exposes them to the
-     *  payoff under `PipelineState.TRIGGER_CAPTURED_COLLECTION`. Without this a batch trigger that
-     *  *also* targets — "…are put into exile, you may choose a creature card from among them.
-     *  Until end of turn, **target** token you control becomes a copy of it" (Kaya, Spirits'
-     *  Justice) — resolves with an empty "them". Empty for non-batch triggers. */
-    val capturedEntityIds: List<EntityId> = emptyList(),
     /** The ability's intervening-"if" (CR 603.4), preserved across target selection so the stack
      *  object built on resume can re-check it as it resolves. See
      *  [com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent.interveningIf]. */
@@ -159,27 +103,12 @@ data class TriggerDamageDistributionContinuation(
      *  [com.wingedsheep.sdk.scripting.AbilityIdentity]); preserved across damage distribution so
      *  the stack object built on resume carries it. Null for sources with no card definition. */
     val abilityIdentity: com.wingedsheep.sdk.scripting.AbilityIdentity? = null,
-    val triggerDamageAmount: Int? = null,
-    val triggeringEntityId: EntityId? = null,
-    val triggeringPlayerId: EntityId? = null,
-    val triggerCounterCount: Int? = null,
-    val triggerTotalCounterCount: Int? = null,
-    val triggerLastKnownCounters: Map<String, Int>? = null,
-    /** Projected subtypes / card types the triggering permanent had as it left the battlefield
-     *  (CR 603.10), preserved across target selection for the intervening-"if"'s second check. */
-    val triggerLastKnownSubtypes: Set<String>? = null,
-    val triggerLastKnownCardTypes: Set<String>? = null,
-    val triggerLastKnownDamageDealtByPlayers: Map<EntityId, Int>? = null,
-    /** Creatures blocking/blocked by the trigger's source on leave-battlefield (CR 509 LKI, Abu Ja'far). */
-    val triggerLastKnownBlockingOrBlockedByIds: List<EntityId>? = null,
+    /** The trigger's whole [com.wingedsheep.engine.event.TriggerContext], carried on through this
+     *  second pause so it reaches the stack object alongside the distribution. */
+    val triggerContext: com.wingedsheep.engine.event.TriggerContext? = null,
     val selectedTargets: List<ChosenTarget>,
     val targetRequirements: List<TargetRequirement>,
     val totalDamage: Int,
-    val lastKnownPower: Int? = null,
-    val lastKnownToughness: Int? = null,
-    /** The objects a batch trigger captured (CR 603.2c), carried on through this second pause so
-     *  they reach the stack object alongside the distribution. Empty for non-batch triggers. */
-    val capturedEntityIds: List<EntityId> = emptyList(),
     /** The ability's intervening-"if" (CR 603.4), preserved across the distribution decision so the
      *  stack object built on resume can re-check it as it resolves. */
     val interveningIf: com.wingedsheep.sdk.scripting.conditions.Condition? = null

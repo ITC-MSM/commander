@@ -15,6 +15,8 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Murderous Compulsion (Shadows over Innistrad #126) — {1}{B} Sorcery.
@@ -68,7 +70,7 @@ class MurderousCompulsionScenarioTest : FunSpec({
         val compulsion = driver.putCardInHand(player, "Murderous Compulsion")
         driver.giveMana(player, Color.BLACK, 2)
 
-        driver.castSpell(player, compulsion, targets = listOf(bears)).isSuccess shouldBe true
+        driver.castSpell(player, compulsion, targets = listOf(bears)).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         driver.findPermanent(opponent, "Grizzly Bears").shouldBeNull()
@@ -85,7 +87,7 @@ class MurderousCompulsionScenarioTest : FunSpec({
         val compulsion = driver.putCardInHand(player, "Murderous Compulsion")
         driver.giveMana(player, Color.BLACK, 2)
 
-        driver.castSpell(player, compulsion, targets = listOf(bears)).isSuccess shouldBe false
+        driver.castSpell(player, compulsion, targets = listOf(bears)).outcome shouldNotBe Outcome.Done
         driver.findPermanent(opponent, "Grizzly Bears").shouldNotBeNull()
     }
 

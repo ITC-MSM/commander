@@ -7,6 +7,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Primal Might (M21 #197) — {X}{G} Sorcery.
@@ -36,7 +38,7 @@ class PrimalMightScenarioTest : FunSpec({
         val might = driver.putCardInHand(driver.player1, "Primal Might")
         driver.giveMana(driver.player1, Color.GREEN, 3)
         driver.castXSpell(driver.player1, might, xValue = 2, targets = listOf(yours, alsoYours))
-            .isSuccess shouldBe false
+            .outcome shouldNotBe Outcome.Done
     }
 
     test("X=2 pumps your creature to 4/4, which then kills the opponent's 2/3 in the fight") {
@@ -47,7 +49,7 @@ class PrimalMightScenarioTest : FunSpec({
         val might = driver.putCardInHand(driver.player1, "Primal Might")
         driver.giveMana(driver.player1, Color.GREEN, 3)
         driver.castXSpell(driver.player1, might, xValue = 2, targets = listOf(yours, theirs))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // The +2/+2 lands before the fight, so a 4/4 kills the 2/3 and survives the 2 back.

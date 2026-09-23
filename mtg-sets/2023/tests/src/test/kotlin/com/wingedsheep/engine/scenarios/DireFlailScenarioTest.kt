@@ -30,6 +30,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Dire Flail // Dire Blunderbuss (LCI #145) — {R} Artifact — Equipment // Artifact — Equipment.
@@ -130,7 +131,7 @@ class DireFlailScenarioTest : FunSpec({
                 abilityId = craftAbilityId(),
                 costPayment = AdditionalCostPayment(exiledCards = listOf(material))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         drainStack()
 
         state.getZone(ZoneKey(p1, Zone.EXILE)).shouldContain(material)
@@ -147,7 +148,7 @@ class DireFlailScenarioTest : FunSpec({
                 abilityId = backEquipAbilityId(),
                 targets = listOf(ChosenTarget.Permanent(creature))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         bothPass()
         state.getEntity(blunderbuss)?.get<AttachedToComponent>()?.targetId shouldBe creature
     }
@@ -168,7 +169,7 @@ class DireFlailScenarioTest : FunSpec({
                 abilityId = frontEquipAbilityId(),
                 targets = listOf(ChosenTarget.Permanent(courser))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.getEntity(flail)?.get<AttachedToComponent>()?.targetId shouldBe courser
@@ -371,7 +372,7 @@ class DireFlailScenarioTest : FunSpec({
                 abilityId = frontEquipAbilityId(),
                 targets = listOf(ChosenTarget.Permanent(courser))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getEntity(coEquip)?.get<AttachedToComponent>()?.targetId shouldBe courser
 
@@ -478,7 +479,7 @@ class DireFlailScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(courser))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         // Nothing moved: still the front face, the Courser untouched.
         driver.state.getEntity(flail)!!.get<CardComponent>()!!.name shouldBe "Dire Flail"

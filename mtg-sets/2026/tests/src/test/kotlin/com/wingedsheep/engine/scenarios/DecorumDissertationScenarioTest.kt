@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario test for Decorum Dissertation (SOS) — {3}{B}{B} Sorcery — Lesson.
@@ -40,7 +41,7 @@ class DecorumDissertationScenarioTest : FunSpec({
         val spell = driver.putCardInHand(player, "Decorum Dissertation")
         driver.giveColorlessMana(player, 3)
         driver.giveMana(player, Color.BLACK, 2)
-        driver.castSpell(player, spell, targets = listOf(player)).isSuccess shouldBe true
+        driver.castSpell(player, spell, targets = listOf(player)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // handBefore was measured before adding the spell to hand; the spell leaves hand on cast,

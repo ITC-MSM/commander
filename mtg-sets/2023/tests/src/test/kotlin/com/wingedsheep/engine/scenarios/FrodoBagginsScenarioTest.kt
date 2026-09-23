@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Frodo Baggins — "As long as Frodo Baggins is your Ring-bearer, it must be blocked if able."
@@ -49,15 +51,15 @@ class FrodoBagginsScenarioTest : FunSpec({
         val p1 = driver.activePlayer!!
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(p1, listOf(frodo), p2).isSuccess shouldBe true
+        driver.declareAttackers(p1, listOf(frodo), p2).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         // p2 controls a Savannah Lions that can block, so declaring no blockers is illegal.
-        driver.declareBlockers(p2, emptyMap()).isSuccess shouldBe false
+        driver.declareBlockers(p2, emptyMap()).outcome shouldNotBe Outcome.Done
 
         // Blocking Frodo with the Lions is legal.
         val lions = driver.findPermanent(p2, "Savannah Lions")!!
-        driver.declareBlockers(p2, mapOf(lions to listOf(frodo))).isSuccess shouldBe true
+        driver.declareBlockers(p2, mapOf(lions to listOf(frodo))).outcome shouldBe Outcome.Done
     }
 
     test("non-Ring-bearer Frodo has no must-be-blocked requirement") {
@@ -73,10 +75,10 @@ class FrodoBagginsScenarioTest : FunSpec({
         driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(p1, listOf(frodo), p2).isSuccess shouldBe true
+        driver.declareAttackers(p1, listOf(frodo), p2).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         // Frodo isn't the Ring-bearer → the defender may decline to block.
-        driver.declareBlockers(p2, emptyMap()).isSuccess shouldBe true
+        driver.declareBlockers(p2, emptyMap()).outcome shouldBe Outcome.Done
     }
 })

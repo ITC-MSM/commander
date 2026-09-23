@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 class LiesaForgottenArchangelScenarioTest : FunSpec({
 
@@ -29,7 +30,7 @@ class LiesaForgottenArchangelScenarioTest : FunSpec({
     fun destroy(driver: GameTestDriver, caster: EntityId, victim: EntityId) {
         val murder = driver.putCardInHand(caster, "Murder")
         driver.giveMana(caster, Color.BLACK, 3)
-        driver.castSpell(caster, murder, listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(caster, murder, listOf(victim)).outcome shouldBe Outcome.Done
         driver.bothPass()
     }
 

@@ -66,13 +66,13 @@ class PlayLandEnumerator : ActionEnumerator {
         // handler's authorization answer the same question — filter included.
         val seenLinkedLands = mutableSetOf<com.wingedsheep.sdk.model.EntityId>()
         for (granter in com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExilePlayUtils
-            .landGranters(state, playerId, context.cardRegistry)) {
+            .landGranters(state, playerId, context.legality)) {
             for (exiledId in granter.exiledIds) {
                 if (!seenLinkedLands.add(exiledId)) continue
                 val cardComponent = state.getEntity(exiledId)?.get<CardComponent>() ?: continue
                 if (!cardComponent.typeLine.isLand) continue
                 if (!com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExilePlayUtils
-                        .canPlayLand(state, playerId, exiledId, context.cardRegistry)
+                        .canPlayLand(state, playerId, exiledId, context.legality)
                 ) continue
                 result.addAll(landPlays(context, exiledId, cardComponent, sourceZone = "EXILE"))
             }

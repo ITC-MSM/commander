@@ -13,6 +13,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Vanille, Cheerful l'Cie (FIN).
@@ -46,7 +47,7 @@ class VanilleCheerfulLCieScenarioTest : FunSpec({
         // Cast Vanille so its ETB trigger fires.
         val vanille = driver.putCardInHand(you, "Vanille, Cheerful l'Cie")
         driver.giveMana(you, Color.GREEN, 4) // {3}{G}
-        driver.castSpell(you, vanille).isSuccess shouldBe true
+        driver.castSpell(you, vanille).outcome shouldBe Outcome.Done
 
         // Resolve the creature spell and its ETB trigger (mill 2) until the return choice pauses.
         var guard = 0

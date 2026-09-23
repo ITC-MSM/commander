@@ -23,6 +23,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Soulcipher Board // Cipherbound Spirit (VOW) — {1}{U} Artifact.
@@ -77,7 +78,7 @@ class SoulcipherBoardScenarioTest : FunSpec({
         val card = driver.putCardInHand(me, "Soulcipher Board")
         driver.giveColorlessMana(me, 1)
         driver.giveMana(me, Color.BLUE, 1)
-        driver.castSpell(me, card).isSuccess shouldBe true
+        driver.castSpell(me, card).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         return driver to driver.findPermanent(me, "Soulcipher Board")!!
@@ -103,7 +104,7 @@ class SoulcipherBoardScenarioTest : FunSpec({
         driver.bothPass()
 
         // Choose the Bears to go to the graveyard.
-        driver.submitCardSelection(me, listOf(bears)).isSuccess shouldBe true
+        driver.submitCardSelection(me, listOf(bears)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("the chosen card is put into the graveyard") {
@@ -125,7 +126,7 @@ class SoulcipherBoardScenarioTest : FunSpec({
             val bears = driver.putCreatureOnBattlefield(me, "Grizzly Bears")
             val bolt = driver.putCardInHand(me, "Lightning Bolt")
             driver.giveMana(me, Color.RED, 1)
-            driver.castSpell(me, bolt, listOf(bears)).isSuccess shouldBe true
+            driver.castSpell(me, bolt, listOf(bears)).outcome shouldBe Outcome.Done
             driver.bothPass() // resolve the Bolt; the Bears dies
             driver.bothPass() // resolve the omen-counter trigger
 
@@ -151,7 +152,7 @@ class SoulcipherBoardScenarioTest : FunSpec({
         // The Bolt itself is an instant card put into my graveyard as it resolves.
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, listOf(opp)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(opp)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getGraveyard(me).contains(bolt) shouldBe true
@@ -214,7 +215,7 @@ class SoulcipherBoardScenarioTest : FunSpec({
         val token = driver.createMouseToken(me)
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, listOf(token)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(token)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("the token died") {

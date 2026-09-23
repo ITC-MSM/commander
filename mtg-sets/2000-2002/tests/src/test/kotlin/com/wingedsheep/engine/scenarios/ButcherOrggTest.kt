@@ -45,7 +45,7 @@ class ButcherOrggTest : FunSpec({
         driver.removeSummoningSickness(orgg)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(orgg), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(orgg), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         driver.declareNoBlockers(opponent)
@@ -74,10 +74,10 @@ class ButcherOrggTest : FunSpec({
         driver.removeSummoningSickness(orgg)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(orgg), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(orgg), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(orgg))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(orgg))).outcome shouldBe Outcome.Done
 
         // Pass priority to reach combat damage step (where the distribution decision is created)
         driver.passPriorityUntil(Step.COMBAT_DAMAGE)
@@ -120,7 +120,7 @@ class ButcherOrggTest : FunSpec({
         driver.removeSummoningSickness(orgg)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(orgg), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(orgg), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         driver.declareBlockers(opponent, mapOf(
@@ -166,10 +166,10 @@ class ButcherOrggTest : FunSpec({
         driver.removeSummoningSickness(orgg)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(orgg), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(orgg), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(bigBlocker to listOf(orgg))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(bigBlocker to listOf(orgg))).outcome shouldBe Outcome.Done
 
         // Pass priority to reach combat damage step
         driver.passPriorityUntil(Step.COMBAT_DAMAGE)
@@ -204,10 +204,10 @@ class ButcherOrggTest : FunSpec({
         driver.removeSummoningSickness(orgg)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(orgg), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(orgg), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(orgg))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(orgg))).outcome shouldBe Outcome.Done
 
         // Pass priority to reach combat damage step
         driver.passPriorityUntil(Step.COMBAT_DAMAGE)
@@ -251,7 +251,7 @@ class ButcherOrggTest : FunSpec({
         val bear = driver.putCreatureOnBattlefield(opponent, "Grizzly Bears")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(orgg), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(orgg), opponent).outcome shouldBe Outcome.Done
 
         // After declaring attackers, active player passes priority; opponent activates Shieldmage Elder
         driver.passPriority(activePlayer)
@@ -268,7 +268,7 @@ class ButcherOrggTest : FunSpec({
                 )
             )
         )
-        activateResult.isSuccess shouldBe true
+        activateResult.outcome shouldBe Outcome.Done
 
         // Resolve the ability
         driver.bothPass()
@@ -307,7 +307,7 @@ class ButcherOrggTest : FunSpec({
         val blocker = driver.putCreatureOnBattlefield(opponent, "Grizzly Bears")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(orgg), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(orgg), opponent).outcome shouldBe Outcome.Done
 
         // Opponent activates Shieldmage Elder to prevent Butcher Orgg's damage
         driver.passPriority(activePlayer)
@@ -323,7 +323,7 @@ class ButcherOrggTest : FunSpec({
                     tappedPermanents = listOf(elder, cleric)
                 )
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Resolve the ability
         driver.bothPass()
@@ -331,7 +331,7 @@ class ButcherOrggTest : FunSpec({
         driver.bothPass()
 
         // Opponent blocks with Grizzly Bears
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(orgg))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(orgg))).outcome shouldBe Outcome.Done
 
         // Move through combat damage - should NOT get a DistributeDecision
         // because Butcher Orgg's damage is fully prevented
@@ -363,10 +363,10 @@ class ButcherOrggTest : FunSpec({
         driver.removeSummoningSickness(orgg)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(orgg), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(orgg), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(orgg))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(orgg))).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.COMBAT_DAMAGE)
 
@@ -379,7 +379,7 @@ class ButcherOrggTest : FunSpec({
         driver.submitDecision(
             activePlayer,
             DistributionResponse(decision.id, mapOf(bystander to 3, opponent to 3))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
 
@@ -418,16 +418,16 @@ class ButcherOrggTest : FunSpec({
         driver.putCreatureOnBattlefield(opponent, "Centaur Courser")                   // 3/3 — could be a target
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(activePlayer, listOf(orgg), opponent).isSuccess shouldBe true
+        driver.declareAttackers(activePlayer, listOf(orgg), opponent).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(orgg))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(orgg))).outcome shouldBe Outcome.Done
 
         // Remove the only creature blocking Butcher Orgg before the combat damage step. The
         // defending player holds priority right after declaring blockers, so pass it to the
         // attacker, who burns the blocker down.
         driver.passPriority(opponent)
-        driver.castSpell(activePlayer, bolt, listOf(blocker)).isSuccess shouldBe true
+        driver.castSpell(activePlayer, bolt, listOf(blocker)).outcome shouldBe Outcome.Done
         driver.bothPass()  // resolve Lightning Bolt
         driver.findPermanent(opponent, "Grizzly Bears") shouldBe null
 

@@ -16,6 +16,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 class ChandraNalaarScenarioTest : FunSpec({
     val animatedWalker = card("Animated Planeswalker Test") {
@@ -43,7 +45,7 @@ class ChandraNalaarScenarioTest : FunSpec({
         val me = d.activePlayer!!
         val chandra = d.putCardInHand(me, "Chandra Nalaar")
         d.giveMana(me, com.wingedsheep.sdk.core.Color.RED, 5)
-        d.castSpell(me, chandra).isSuccess shouldBe true
+        d.castSpell(me, chandra).outcome shouldBe Outcome.Done
         d.bothPass()
         loyalty(d, chandra) shouldBe 6
     }
@@ -87,7 +89,7 @@ class ChandraNalaarScenarioTest : FunSpec({
             val chandra = putChandra(d, me)
             val creature = d.putPermanentOnBattlefield(d.getOpponent(me), "Grizzly Bears")
             d.submit(ActivateAbility(me, chandra, abilities[1].id,
-                targets = listOf(ChosenTarget.Permanent(creature)), xValue = x)).isSuccess shouldBe false
+                targets = listOf(ChosenTarget.Permanent(creature)), xValue = x)).outcome shouldNotBe Outcome.Done
             loyalty(d, chandra) shouldBe 6
         }
     }

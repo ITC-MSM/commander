@@ -23,6 +23,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Radiant Lotus — "{T}, Sacrifice one or more artifacts: Choose a color. Target player adds three
@@ -260,7 +262,7 @@ class RadiantLotusScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(variableCostPermanents = listOf(enchantment))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error.shouldNotBeNull()
         d.state.getZone(ZoneKey(you, Zone.BATTLEFIELD)).contains(enchantment) shouldBe true
     }
@@ -278,7 +280,7 @@ class RadiantLotusScenarioTest : FunSpec({
         // The client submits the bare action — no cost selection, no target. The engine pauses
         // rather than succeeding outright.
         d.submit(ActivateAbility(playerId = you, sourceId = lotus, abilityId = abilityId))
-            .isPaused shouldBe true
+            .outcome.shouldBeInstanceOf<Outcome.Paused>()
 
         // 1. Which artifacts to sacrifice. All three artifacts (including the Lotus) are offered;
         //    the enchantment is not.
@@ -316,7 +318,7 @@ class RadiantLotusScenarioTest : FunSpec({
         val sacrificed = d.putPermanentOnBattlefield(you, "Test Trinket")
 
         d.submit(ActivateAbility(playerId = you, sourceId = lotus, abilityId = abilityId))
-            .isPaused shouldBe true
+            .outcome.shouldBeInstanceOf<Outcome.Paused>()
         val decision = d.pendingDecision
         decision.shouldBeInstanceOf<SelectCardsDecision>()
         d.submitDecision(you, com.wingedsheep.engine.core.CancelDecisionResponse(decision.id))

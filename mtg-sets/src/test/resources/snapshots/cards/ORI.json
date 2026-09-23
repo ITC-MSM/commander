@@ -465,7 +465,8 @@
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "untapped"
-                }
+                },
+                "coversPlaneswalkers": true
             },
             {
                 "type": "BlockTax",

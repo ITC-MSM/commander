@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for The Legend of Kuruk // Avatar Kuruk (TLA #61).
@@ -113,7 +114,7 @@ class TheLegendOfKurukScenarioTest : ScenarioTestBase() {
                 // modeled by the opponent skipping their next turn (see TimeWarpScenarioTest).
                 val exhaust = TheLegendOfKuruk.backFace!!.activatedAbilities.first { it.isExhaust }
                 driver.giveColorlessMana(you, 20)
-                driver.submit(ActivateAbility(you, kuruk!!, exhaust.id)).isSuccess shouldBe true
+                driver.submit(ActivateAbility(you, kuruk!!, exhaust.id)).outcome shouldBe Outcome.Done
                 drain(driver)
 
                 withClue("the extra turn makes the opponent skip their next turn") {

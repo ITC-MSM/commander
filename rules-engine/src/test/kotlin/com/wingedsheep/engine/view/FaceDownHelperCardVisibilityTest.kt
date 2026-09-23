@@ -20,6 +20,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Which helper card a face-down object is *drawn* as.
@@ -75,7 +76,7 @@ class FaceDownHelperCardVisibilityTest : FunSpec({
                 castFaceDown = true,
                 paymentStrategy = PaymentStrategy.FromPool,
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         return card
     }
 

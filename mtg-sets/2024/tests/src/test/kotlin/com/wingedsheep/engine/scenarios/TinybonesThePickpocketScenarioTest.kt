@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tinybones, the Pickpocket (OTJ) — {B} Legendary Creature — Skeleton Rogue 1/1.
@@ -106,7 +107,7 @@ class TinybonesThePickpocketScenarioTest : FunSpec({
 
         // Tap the Swamps (black mana) to pay the {G}{G} cost — possible only because mana of any
         // type can be spent to cast it.
-        driver.castSpell(me, stolenCard).isSuccess shouldBe true
+        driver.castSpell(me, stolenCard).outcome shouldBe Outcome.Done
         repeat(4) {
             if (driver.pendingDecision != null) driver.autoResolveDecision() else driver.bothPass()
             if (driver.state.getZone(me, Zone.BATTLEFIELD).contains(stolenCard)) return@repeat

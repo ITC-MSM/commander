@@ -11,6 +11,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Vexing Devil — {R} 4/3 Creature — Devil
@@ -34,7 +35,7 @@ class VexingDevilScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         val devil = driver.putCardInHand(caster, "Vexing Devil")
         driver.giveMana(caster, Color.RED, 1)
-        driver.castSpell(caster, devil).isSuccess shouldBe true
+        driver.castSpell(caster, devil).outcome shouldBe Outcome.Done
         // Resolve the creature spell, then the ETB trigger it puts on the stack.
         driver.bothPass()
         driver.stackSize shouldBe 1
@@ -53,7 +54,7 @@ class VexingDevilScenarioTest : FunSpec({
         decision shouldNotBe null
         decision.shouldBeInstanceOf<YesNoDecision>().playerId shouldBe opponent
 
-        driver.submitYesNo(opponent, true).isSuccess shouldBe true
+        driver.submitYesNo(opponent, true).outcome shouldBe Outcome.Done
 
         driver.getLifeTotal(opponent) shouldBe 16
         driver.getLifeTotal(caster) shouldBe 20
@@ -70,7 +71,7 @@ class VexingDevilScenarioTest : FunSpec({
         castDevil(driver)
 
         driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>().playerId shouldBe opponent
-        driver.submitYesNo(opponent, false).isSuccess shouldBe true
+        driver.submitYesNo(opponent, false).outcome shouldBe Outcome.Done
 
         driver.getLifeTotal(opponent) shouldBe 20
         driver.findPermanent(caster, "Vexing Devil") shouldNotBe null

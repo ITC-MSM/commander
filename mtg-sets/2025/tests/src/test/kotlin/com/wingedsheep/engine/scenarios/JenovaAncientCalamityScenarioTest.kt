@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Jenova, Ancient Calamity (FIN).
@@ -101,7 +102,7 @@ class JenovaAncientCalamityScenarioTest : FunSpec({
         // Destroy the Mutant for real so its dies trigger fires with last-known power (3).
         val doomBlade = driver.putCardInHand(driver.player1, "Doom Blade")
         driver.giveMana(driver.player1, Color.BLACK, 2)
-        driver.castSpell(driver.player1, doomBlade, targets = listOf(bear)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, doomBlade, targets = listOf(bear)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Doom Blade -> Bear is destroyed, queuing the dies trigger
         driver.state.getBattlefield().contains(bear) shouldBe false
         driver.bothPass() // resolve Jenova's "Mutant you control dies" draw trigger

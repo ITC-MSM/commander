@@ -332,6 +332,10 @@ internal class BlockPhaseManager(
         if (!projected.isCreature(blockerId)) {
             return "Only creatures can block: ${cardComponent.name}"
         }
+        // CR 509.1a / 506.3f: a creature that is also a battle can't block.
+        if (projected.isBattle(blockerId)) {
+            return "A battle can't block: ${cardComponent.name}"
+        }
         val controller = projected.getController(blockerId)
         if (controller != blockingPlayer) {
             return "You don't control ${cardComponent.name}"
@@ -1034,6 +1038,7 @@ internal class BlockPhaseManager(
                 val controller = projected.getController(entityId)
 
                 projected.isCreature(entityId) &&
+                    !projected.isBattle(entityId) &&
                     controller == blockingPlayer &&
                     !container.has<TappedComponent>()
             }

@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for the auto-generated ISD cards that sit in the engine's known-risky space
@@ -48,7 +49,7 @@ class IsdAutogenRiskyShapesTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(sacrificedPermanents = listOf(bear)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // The additional cost is paid on cast (CR 601.2h) — the creature is gone before resolution.
         d.findPermanent(p1, "Grizzly Bears") shouldBe null
@@ -73,7 +74,7 @@ class IsdAutogenRiskyShapesTest : FunSpec({
         val result = d.submit(
             CastSpell(playerId = p1, cardId = spell, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("Infernal Plunge — sacrificing a creature adds {R}{R}{R} usable in the same main phase") {
@@ -93,7 +94,7 @@ class IsdAutogenRiskyShapesTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(sacrificedPermanents = listOf(bear)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         d.findPermanent(p1, "Grizzly Bears") shouldBe null
 
@@ -120,7 +121,7 @@ class IsdAutogenRiskyShapesTest : FunSpec({
         d.giveColorlessMana(p1, 1)
         d.submit(
             CastSpell(playerId = p1, cardId = bears, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.stackSize shouldBe 1
         d.passPriority(p1)
 
@@ -136,7 +137,7 @@ class IsdAutogenRiskyShapesTest : FunSpec({
                 targets = listOf(ChosenTarget.Spell(bearsOnStack), ChosenTarget.Permanent(giant)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.stackSize shouldBe 2
 
         d.bothPass()

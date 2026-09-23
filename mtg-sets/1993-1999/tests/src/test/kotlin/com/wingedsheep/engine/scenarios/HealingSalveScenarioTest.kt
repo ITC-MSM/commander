@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Healing Salve — {W} Instant
@@ -52,7 +53,7 @@ class HealingSalveScenarioTest : FunSpec({
             chosenModes = listOf(0),
             modeTargetsOrdered = listOf(listOf(ChosenTarget.Player(p1)))
         ))
-        if (!result.isSuccess) throw AssertionError("cast failed: ${result.error}")
+        if (result.outcome !is Outcome.Done) throw AssertionError("cast failed: ${result.error}")
         d.bothPass()
 
         d.getLifeTotal(p1) shouldBe 23
@@ -75,7 +76,7 @@ class HealingSalveScenarioTest : FunSpec({
             chosenModes = listOf(1),
             modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(giant)))
         ))
-        if (!cast.isSuccess) throw AssertionError("cast failed: ${cast.error}")
+        if (cast.outcome !is Outcome.Done) throw AssertionError("cast failed: ${cast.error}")
         d.bothPass()
 
         // Lightning Bolt deals 3 → shield prevents all 3 → no damage marked, creature survives.
@@ -103,7 +104,7 @@ class HealingSalveScenarioTest : FunSpec({
             chosenModes = listOf(1),
             modeTargetsOrdered = listOf(listOf(ChosenTarget.Player(p2)))
         ))
-        if (!cast.isSuccess) throw AssertionError("cast failed: ${cast.error}")
+        if (cast.outcome !is Outcome.Done) throw AssertionError("cast failed: ${cast.error}")
         d.bothPass()
 
         // Lightning Bolt deals 3 to p2 → all prevented → life stays at 20.

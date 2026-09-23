@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Disciple of the Vault (MRD #62) — {B} Creature — Human Cleric 1/1.
@@ -35,7 +36,7 @@ class DiscipleOfTheVaultScenarioTest : ScenarioTestBase() {
                 val startingLife = game.getLifeTotal(2)
                 val gnomes = game.findPermanent("Bottle Gnomes")!!
 
-                game.castSpell(1, "Shatter", gnomes).isSuccess shouldBe true
+                game.castSpell(1, "Shatter", gnomes).outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 withClue("The artifact should be in the graveyard") {
@@ -67,7 +68,7 @@ class DiscipleOfTheVaultScenarioTest : ScenarioTestBase() {
                 val startingLife = game.getLifeTotal(2)
                 val gnomes = game.findPermanent("Bottle Gnomes")!!
 
-                game.castSpell(1, "Shatter", gnomes).isSuccess shouldBe true
+                game.castSpell(1, "Shatter", gnomes).outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 if (game.hasPendingDecision()) game.answerYesNo(false)
@@ -94,7 +95,7 @@ class DiscipleOfTheVaultScenarioTest : ScenarioTestBase() {
                 val startingLife = game.getLifeTotal(2)
                 val gnomes = game.findPermanent("Bottle Gnomes")!!
 
-                game.castSpell(1, "Shatter", gnomes).isSuccess shouldBe true
+                game.castSpell(1, "Shatter", gnomes).outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 if (game.hasPendingDecision()) game.answerYesNo(true)
@@ -121,7 +122,7 @@ class DiscipleOfTheVaultScenarioTest : ScenarioTestBase() {
                 val startingLife = game.getLifeTotal(2)
                 val bears = game.findPermanent("Grizzly Bears")!!
 
-                game.castSpell(1, "Terror", bears).isSuccess shouldBe true
+                game.castSpell(1, "Terror", bears).outcome shouldBe Outcome.Done
                 game.resolveStack()
                 if (game.hasPendingDecision()) game.answerYesNo(true)
                 game.resolveStack()

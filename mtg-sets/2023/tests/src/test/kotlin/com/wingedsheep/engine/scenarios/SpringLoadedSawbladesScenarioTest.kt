@@ -22,6 +22,8 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Spring-Loaded Sawblades // Bladewheel Chariot (LCI #36) — Craft transform DFC (CR 702.167).
@@ -127,10 +129,10 @@ class SpringLoadedSawbladesScenarioTest : FunSpec({
         driver.pendingDecision.shouldNotBeNull()
 
         // Negative: the UNTAPPED creature is not a legal target for the trigger.
-        driver.submitTargetSelection(active, listOf(untappedOx)).isSuccess shouldBe false
+        driver.submitTargetSelection(active, listOf(untappedOx)).outcome shouldNotBe Outcome.Done
 
         // The tapped creature is legal; 5 damage kills the 3/3.
-        driver.submitTargetSelection(active, listOf(tappedOx)).isSuccess shouldBe true
+        driver.submitTargetSelection(active, listOf(tappedOx)).outcome shouldBe Outcome.Done
         driver.drainStack()
 
         // 5 damage kills the tapped 3/3.
@@ -200,7 +202,7 @@ class SpringLoadedSawbladesScenarioTest : FunSpec({
                 abilityId = chariotAnimateAbilityId,
                 costPayment = AdditionalCostPayment(tappedPermanents = listOf(chariot, relicA))
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
 
         // Two OTHER untapped artifacts pay the cost.
         driver.submitSuccess(
@@ -259,7 +261,7 @@ class SpringLoadedSawbladesScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(bear))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         // Still the front face on the battlefield; the bear is untouched.
         driver.state.getEntity(sawblades)!!.get<CardComponent>()!!.name shouldBe "Spring-Loaded Sawblades"

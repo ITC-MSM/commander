@@ -890,6 +890,72 @@ const SET_SYNERGIES: Record<string, SetSynergies> = {
       },
     ],
   },
+  FRA: {
+    setCode: 'FRA',
+    setName: 'Reality Fracture',
+    archetypes: [
+      {
+        name: 'Fatehold',
+        colors: ['W', 'U'],
+        keyCard: 'Denzilore Fatehold',
+        description: 'Scry and surveil every turn, turning each look at the library into +1/+1 counters, pump and loyalty for your Jace token. A card-selection tempo deck that grows its fliers while it filters its draws.',
+      },
+      {
+        name: 'Konstrari',
+        colors: ['R', 'G'],
+        keyCard: 'Aerid Konstrari',
+        description: 'Make Heartwood tokens to ramp and fix, then cash that mana in for trampling threats and big modal creatures. An artifact-ramp midrange deck that goes over the top.',
+      },
+      {
+        name: 'Stingerquill',
+        colors: ['B', 'R'],
+        keyCard: 'Ingris Stingerquill',
+        description: 'Flood the board with Cadet tokens and hasty attackers, pinging the opponent with every attack and every noncombat burn spell. A go-wide aggro deck that closes with reach.',
+      },
+      {
+        name: 'Theorix',
+        colors: ['U', 'B'],
+        keyCard: 'Uldaros Theorix',
+        description: 'Mill your own library to stock the graveyard, then recast spells with flashback and recursion as threshold payoffs come online. A graveyard-value control deck that out-grinds the opponent.',
+      },
+      {
+        name: 'Vigorbloom',
+        colors: ['G', 'W'],
+        keyCard: 'Kwia Vigorbloom',
+        description: 'Gain life every turn and spread +1/+1 counters across a sturdy board, drawing cards and turning lifegain into value. A counters-and-lifegain midrange deck that outlasts aggression.',
+      },
+      {
+        name: 'Dedicated',
+        colors: ['R', 'W'],
+        keyCard: 'Mabel, Valley Hero',
+        description: 'Curve out with small creatures that pile +1/+1 counters onto whatever just entered, then suit up with Equipment. A counters-matter aggro deck that snowballs early board presence.',
+      },
+      {
+        name: 'Meticulous',
+        colors: ['W', 'B'],
+        keyCard: 'Edgar, Ancient Bloodlord',
+        description: 'Sacrifice creatures and planeswalkers for value, drain life whenever your permanents die, and answer threats with hard removal. An aristocrats midrange deck that trades up.',
+      },
+      {
+        name: 'Innovative',
+        colors: ['U', 'R'],
+        keyCard: 'Saheeli, Jewel of Avishkar',
+        description: 'Cast noncreature spells to make Thopter tokens and trigger prowess, tempoing the opponent with bounce and burn. A spells-matter artifact tempo deck.',
+      },
+      {
+        name: 'Formidable',
+        colors: ['B', 'G'],
+        keyCard: 'Primal Witchstalker',
+        description: 'Mill to fill the graveyard with lands and creatures, then return them to the battlefield while -1/-1 counters and deathtouch handle blockers. A graveyard ramp midrange deck.',
+      },
+      {
+        name: 'Transformative',
+        colors: ['G', 'U'],
+        keyCard: 'Kiora of Salt and Sand',
+        description: 'Ramp with landfall and lean on planeswalkers, empowering Jace and using loyalty abilities to power unblockable attackers. A planeswalker-matters ramp deck.',
+      },
+    ],
+  },
   FIN: {
     setCode: 'FIN',
     setName: 'Final Fantasy',

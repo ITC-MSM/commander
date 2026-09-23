@@ -14,6 +14,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Don't Make a Sound — {1}{U} Instant
@@ -45,7 +46,7 @@ class DontMakeASoundScenarioTest : FunSpec({
         val spell = driver.putCardInHand(me, "Don't Make a Sound")
         driver.giveMana(me, Color.BLUE, 1)
         driver.giveColorlessMana(me, 1)
-        driver.castSpellWithTargets(me, spell, listOf(ChosenTarget.Spell(boltOnStack))).isSuccess shouldBe true
+        driver.castSpellWithTargets(me, spell, listOf(ChosenTarget.Spell(boltOnStack))).outcome shouldBe Outcome.Done
 
         // Opponent could pay {2} but will decline.
         driver.giveColorlessMana(opponent, 2)
@@ -75,7 +76,7 @@ class DontMakeASoundScenarioTest : FunSpec({
         val spell = driver.putCardInHand(me, "Don't Make a Sound")
         driver.giveMana(me, Color.BLUE, 1)
         driver.giveColorlessMana(me, 1)
-        driver.castSpellWithTargets(me, spell, listOf(ChosenTarget.Spell(boltOnStack))).isSuccess shouldBe true
+        driver.castSpellWithTargets(me, spell, listOf(ChosenTarget.Spell(boltOnStack))).outcome shouldBe Outcome.Done
 
         // Opponent pays {2}.
         driver.giveColorlessMana(opponent, 2)

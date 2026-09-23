@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Map the Frontier (OTJ #170) — {3}{G} Sorcery.
@@ -41,7 +42,7 @@ class MapTheFrontierScenarioTest : FunSpec({
         val spell = driver.putCardInHand(player, "Map the Frontier")
         driver.giveMana(player, Color.GREEN, 4)
 
-        driver.castSpell(player, spell).isSuccess shouldBe true
+        driver.castSpell(player, spell).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.isPaused shouldBe true
@@ -69,7 +70,7 @@ class MapTheFrontierScenarioTest : FunSpec({
         val spell = driver.putCardInHand(player, "Map the Frontier")
         driver.giveMana(player, Color.GREEN, 4)
 
-        driver.castSpell(player, spell).isSuccess shouldBe true
+        driver.castSpell(player, spell).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val decision = driver.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()

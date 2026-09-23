@@ -17,6 +17,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Agatha's Soul Cauldron — {2} Legendary Artifact (WOE #242).
@@ -116,7 +118,7 @@ class AgathasSoulCauldronScenarioTest : FunSpec({
         // Two eligible creatures → the reflexive trigger pauses to choose where the counter goes.
         var guard = 0
         while (driver.state.pendingDecision == null && driver.state.stack.isNotEmpty() && guard++ < 20) driver.bothPass()
-        driver.submitTargetSelection(me, listOf(withCounter)).isSuccess shouldBe true
+        driver.submitTargetSelection(me, listOf(withCounter)).outcome shouldBe Outcome.Done
         guard = 0
         while (driver.state.stack.isNotEmpty() && guard++ < 20) driver.bothPass()
 
@@ -126,7 +128,7 @@ class AgathasSoulCauldronScenarioTest : FunSpec({
         // The counter-less creature has no granted ability — activating it fails.
         driver.giveMana(me, Color.RED, 1)
         driver.submit(ActivateAbility(playerId = me, sourceId = withoutCounter, abilityId = mysticAbilityId))
-            .isSuccess shouldBe false
+            .outcome shouldNotBe Outcome.Done
     }
 
     test("exiling a non-creature card adds no counter (reflexive trigger does not fire)") {

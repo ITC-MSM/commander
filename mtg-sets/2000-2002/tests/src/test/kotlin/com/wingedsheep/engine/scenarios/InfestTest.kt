@@ -10,6 +10,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Infest.
@@ -49,7 +50,7 @@ class InfestTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLACK, 3)
 
         val castResult = driver.castSpell(activePlayer, infest)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

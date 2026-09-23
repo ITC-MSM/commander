@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Sandman, Shifting Scoundrel (SPM #112) — {1}{G}{G} Legendary Creature — Sand Elemental Villain.
@@ -71,19 +72,19 @@ class SandmanShiftingScoundrelScenarioTest : FunSpec({
         driver.removeSummoningSickness(blocker)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, listOf(sandman), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(sandman), defender).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         driver.declareBlockers(defender, mapOf(blocker to listOf(sandman)))
     }
 
     test("can't be blocked by a power-2 creature") {
         // Grizzly Bears is 2/2 — power 2, caught by the restriction.
-        declareBlockOnSandman("Grizzly Bears").isSuccess shouldBe false
+        declareBlockOnSandman("Grizzly Bears").outcome shouldNotBe Outcome.Done
     }
 
     test("a power-3 creature may still block") {
         // Hill Giant is 3/3 — power 3, unaffected by the restriction.
-        declareBlockOnSandman("Hill Giant").isSuccess shouldBe true
+        declareBlockOnSandman("Hill Giant").outcome shouldBe Outcome.Done
     }
 
     test("{3}{G}{G} graveyard ability returns Sandman and a target land to the battlefield tapped") {

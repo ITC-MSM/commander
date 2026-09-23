@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Clockwork Percussionist (DSK #130) — {R} 1/1 Artifact Creature — Monkey Toy, Haste.
@@ -44,7 +45,7 @@ class ClockworkPercussionistScenarioTest : FunSpec({
 
         // Lethal damage to the 1/1 -> it dies -> dies trigger fires.
         driver.giveMana(driver.player1, Color.RED, 1)
-        driver.castSpell(driver.player1, bolt, listOf(perc)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, bolt, listOf(perc)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve bolt (and SBA death)
         driver.bothPass() // resolve the dies trigger
 

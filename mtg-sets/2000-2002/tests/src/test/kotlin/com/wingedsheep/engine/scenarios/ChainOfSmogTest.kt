@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetPlayer
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Chain of Smog.
@@ -53,7 +54,7 @@ class ChainOfSmogTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLACK, 2)
 
         val castResult = driver.castSpell(activePlayer, chain, listOf(opponent))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -95,7 +96,7 @@ class ChainOfSmogTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLACK, 2)
 
         val castResult = driver.castSpell(activePlayer, chain, listOf(opponent))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -133,7 +134,7 @@ class ChainOfSmogTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLACK, 2)
 
         val castResult = driver.castSpell(activePlayer, chain, listOf(opponent))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -191,7 +192,7 @@ class ChainOfSmogTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLACK, 2)
 
         val castResult = driver.castSpell(activePlayer, chain, listOf(activePlayer))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

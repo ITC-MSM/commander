@@ -32,6 +32,8 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain as stringShouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Throne of the Grim Captain // The Grim Captain (LCI #266).
@@ -192,7 +194,7 @@ class ThroneOfTheGrimCaptainScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = vamps)
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         // Nothing moved — the Throne and all four Vampires stay on the battlefield.
         val battlefield = driver.state.getZone(ZoneKey(p1, Zone.BATTLEFIELD))
@@ -222,7 +224,7 @@ class ThroneOfTheGrimCaptainScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(dino, merf, vamp1, vamp2))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error.shouldNotBeNull() stringShouldContain "slot"
         driver.state.getEntity(throne)!!.get<CardComponent>()!!.name shouldBe "Throne of the Grim Captain"
     }

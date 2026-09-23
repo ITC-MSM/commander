@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario coverage for the FIN "creatures" batch. Cactuar (intervening-if end-step self-bounce),
@@ -99,7 +100,7 @@ class FinCreatureCardsScenarioTest : FunSpec({
                 targets = listOf(entityIdToChosenTarget(driver.state, victim)),
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.isTapped(victim) shouldBe true

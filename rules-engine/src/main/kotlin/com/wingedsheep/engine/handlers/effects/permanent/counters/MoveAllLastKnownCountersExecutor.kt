@@ -16,7 +16,7 @@ import kotlin.reflect.KClass
  * Executor for [MoveAllLastKnownCountersEffect].
  *
  * Reads the last-known counter map captured when the trigger's source left the
- * battlefield ([EffectContext.triggerLastKnownCounters]) and places one of every
+ * battlefield ([com.wingedsheep.engine.event.TriggerContext.lastKnownCounters]) and places one of every
  * counter kind onto the target. Used by Essence Channeler:
  * "When this creature dies, put its counters on target creature you control."
  *
@@ -35,11 +35,11 @@ class MoveAllLastKnownCountersExecutor : EffectExecutor<MoveAllLastKnownCounters
         val targetId = context.resolveTarget(effect.target, state)
             ?: return EffectResult.error(state, "No valid target for moved counters")
 
-        // Dies/leaves triggers carry the last-known counter map on triggerLastKnownCounters; an
+        // Dies/leaves triggers carry the last-known counter map on triggerContext.lastKnownCounters; an
         // activated ability whose source was sacrificed/exiled as a cost (Zack Fair) carries the
         // same map on lastKnownSourceCounters (captured before the cost wiped them, CR 113.7a). Read
         // the trigger map first, falling back to the cost-sacrifice map so both shapes work.
-        val lastKnown = context.triggerLastKnownCounters?.takeIf { it.isNotEmpty() }
+        val lastKnown = context.triggerContext?.lastKnownCounters?.takeIf { it.isNotEmpty() }
             ?: context.lastKnownSourceCounters
         if (lastKnown.isEmpty()) {
             return EffectResult.success(state, emptyList())

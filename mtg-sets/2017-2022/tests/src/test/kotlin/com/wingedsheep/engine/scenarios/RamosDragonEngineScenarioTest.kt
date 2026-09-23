@@ -15,6 +15,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 class RamosDragonEngineScenarioTest : FunSpec({
 
@@ -39,14 +41,14 @@ class RamosDragonEngineScenarioTest : FunSpec({
         val helix = driver.putCardInHand(player, "Lightning Helix")
         driver.giveMana(player, Color.RED, 1)
         driver.giveMana(player, Color.WHITE, 1)
-        driver.castSpell(player, helix, targets = listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(player, helix, targets = listOf(opponent)).outcome shouldBe Outcome.Done
         driver.bothPass() // Ramos trigger
 
         counters(driver, ramos) shouldBe 2
         driver.bothPass() // Lightning Helix
 
         val ornithopter = driver.putCardInHand(player, "Ornithopter")
-        driver.castSpell(player, ornithopter).isSuccess shouldBe true
+        driver.castSpell(player, ornithopter).outcome shouldBe Outcome.Done
         driver.bothPass() // Ramos trigger
 
         counters(driver, ramos) shouldBe 2
@@ -73,7 +75,7 @@ class RamosDragonEngineScenarioTest : FunSpec({
         pool.green shouldBe 2
         counters(driver, ramos) shouldBe 5
 
-        driver.submit(ActivateAbility(player, ramos, abilityId)).isSuccess shouldBe false
+        driver.submit(ActivateAbility(player, ramos, abilityId)).outcome shouldNotBe Outcome.Done
         counters(driver, ramos) shouldBe 5
     }
 })

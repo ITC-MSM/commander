@@ -17,6 +17,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Gonti, Night Minister (DFT #87) — {2}{B}{B} Legendary Creature — Aetherborn Rogue 3/4.
@@ -138,7 +139,7 @@ class GontiNightMinisterScenarioTest : FunSpec({
         // Cast the stolen card in the thief's postcombat main, paying {G}{G} from two Swamps.
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
         withClue("The stolen card is castable out of the victim's exile by the thief") {
-            driver.castSpell(thief, stolen).isSuccess shouldBe true
+            driver.castSpell(thief, stolen).outcome shouldBe Outcome.Done
         }
         repeat(8) { driver.passOnce() }
 
@@ -183,7 +184,7 @@ class GontiNightMinisterScenarioTest : FunSpec({
         val ownCard = driver.putCardInHand(caster, "Gonti Test Thug")
         repeat(2) { driver.putLandOnBattlefield(caster, "Swamp") }
 
-        driver.castSpell(caster, ownCard).isSuccess shouldBe true
+        driver.castSpell(caster, ownCard).outcome shouldBe Outcome.Done
         repeat(8) { driver.passOnce() }
 
         withClue("The creature resolved, so the cast really happened") {

@@ -17,6 +17,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Matzalantli, the Great Door // The Core (LCI #256).
@@ -93,7 +95,7 @@ class MatzalantliTheGreatDoorScenarioTest : FunSpec({
         // 3 permanent types (creature/artifact/enchantment); the instant + sorcery are not permanent
         // types, so the "four or more permanent types" gate is unmet — activation is rejected.
         driver.submit(ActivateAbility(playerId = active, sourceId = matz, abilityId = transformId))
-            .isSuccess shouldBe false
+            .outcome shouldNotBe Outcome.Done
     }
 
     test("a kindred permanent doesn't count 'kindred' as a permanent type (3 types stays blocked)") {
@@ -109,7 +111,7 @@ class MatzalantliTheGreatDoorScenarioTest : FunSpec({
         driver.giveColorlessMana(active, 4)
 
         driver.submit(ActivateAbility(playerId = active, sourceId = matz, abilityId = transformId))
-            .isSuccess shouldBe false
+            .outcome shouldNotBe Outcome.Done
     }
 
     test("transform is allowed with 4 permanent types (adds a land) and flips to The Core, a land") {
@@ -119,7 +121,7 @@ class MatzalantliTheGreatDoorScenarioTest : FunSpec({
         driver.giveColorlessMana(active, 4)
 
         driver.submit(ActivateAbility(playerId = active, sourceId = matz, abilityId = transformId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
         resolveStack(driver)
 
@@ -134,7 +136,7 @@ class MatzalantliTheGreatDoorScenarioTest : FunSpec({
         driver.giveColorlessMana(active, 4)
 
         driver.submit(ActivateAbility(playerId = active, sourceId = matz, abilityId = transformId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
         resolveStack(driver)
         driver.untapPermanent(matz)
@@ -144,7 +146,7 @@ class MatzalantliTheGreatDoorScenarioTest : FunSpec({
         val manaAbilityId = MatzalantliTheGreatDoor.backFace!!.activatedAbilities[0].id
         driver.submit(
             ActivateAbility(playerId = active, sourceId = matz, abilityId = manaAbilityId, manaColorChoice = Color.GREEN)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         if (driver.isPaused) {
             val decision = driver.pendingDecision!!
             if (decision is ChooseColorDecision) driver.submitDecision(active, ColorChosenResponse(decision.id, Color.GREEN))

@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Underfoot Underdogs (Tarkir: Dragonstorm):
@@ -79,7 +80,7 @@ class UnderfootUnderdogsScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(player, underdogs, unblockAbilityId, targets = listOf(ChosenTarget.Permanent(underdogs)))
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the ability
 
         driver.state.projectedState.hasKeyword(underdogs, AbilityFlag.CANT_BE_BLOCKED) shouldBe true

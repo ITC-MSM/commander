@@ -15,6 +15,8 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Merseine (Fallen Empires).
@@ -90,6 +92,6 @@ class MerseineScenarioTest : FunSpec({
         driver.giveMana(alice, Color.GREEN, 2)
         driver.submit(
             ActivateAbility(playerId = alice, sourceId = merseine, abilityId = abilityId)
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 })

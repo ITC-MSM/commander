@@ -20,6 +20,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Bolg of the North (HOB #148) — {3}{B}{R} 5/5 Legendary Goblin Soldier.
@@ -70,7 +71,7 @@ class BolgOfTheNorthScenarioTest : FunSpec({
         driver.giveMana(me, Color.RED, 1)
         driver.giveColorlessMana(me, 3)
         val card = driver.putCardInHand(me, "Bolg of the North")
-        driver.castSpell(me, card).isSuccess shouldBe true
+        driver.castSpell(me, card).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature spell
         driver.bothPass() // resolve the enters trigger off the stack
     }

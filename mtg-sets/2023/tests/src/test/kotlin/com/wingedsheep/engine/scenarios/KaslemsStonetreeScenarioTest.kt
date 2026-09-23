@@ -24,6 +24,8 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Kaslem's Stonetree // Kaslem's Strider (LCI #197) — Craft transform DFC.
@@ -182,7 +184,7 @@ class KaslemsStonetreeScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(forest))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         // Nothing moved: the Stonetree is still on the battlefield as its front face,
         // the Forest is not exiled.
@@ -208,6 +210,6 @@ class KaslemsStonetreeScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(cave1, cave2))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

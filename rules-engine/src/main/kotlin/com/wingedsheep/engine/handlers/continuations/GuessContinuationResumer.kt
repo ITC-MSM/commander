@@ -22,6 +22,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.effects.CardKind
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Resumes the two-step opponent-guess flow for
@@ -183,7 +184,7 @@ class GuessContinuationResumer(
             continuation.effectContext
         )
 
-        if (result.isPaused) {
+        if (result.outcome is Outcome.Paused) {
             return ExecutionResult.propagatePause(result.state, events + result.events)
         }
         return checkForMore(result.state, events + result.events.toList())

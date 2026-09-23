@@ -19,6 +19,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Pause/resume safety for every [com.wingedsheep.sdk.scripting.effects.ForEachEffect]
@@ -79,7 +80,7 @@ class ForEachPauseResumeScenarioTest : FunSpec({
     fun GameTestDriver.castAndResolve(player: com.wingedsheep.sdk.model.EntityId, cardName: String) {
         giveMana(player, Color.GREEN, 1)
         val spell = putCardInHand(player, cardName)
-        castSpell(player, spell).isSuccess shouldBe true
+        castSpell(player, spell).outcome shouldBe Outcome.Done
         bothPass() // resolve the sorcery; first iteration's decision pauses resolution
     }
 

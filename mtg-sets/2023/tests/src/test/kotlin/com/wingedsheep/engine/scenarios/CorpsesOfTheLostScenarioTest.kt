@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Corpses of the Lost (LCI #98): {2}{B} Enchantment
@@ -74,7 +75,7 @@ class CorpsesOfTheLostScenarioTest : FunSpec({
         // Cast Corpses of the Lost — {2}{B}.
         val enchantment = driver.putCardInHand(player, "Corpses of the Lost")
         driver.giveMana(player, Color.BLACK, 3)
-        driver.castSpell(player, enchantment).isSuccess shouldBe true
+        driver.castSpell(player, enchantment).outcome shouldBe Outcome.Done
 
         // Resolve the enchantment spell and its ETB token-creation trigger.
         var guard = 0

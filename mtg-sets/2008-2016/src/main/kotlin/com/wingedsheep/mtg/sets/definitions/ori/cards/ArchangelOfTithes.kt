@@ -40,6 +40,7 @@ val ArchangelOfTithes = card("Archangel of Tithes") {
         ability = AttackTax(
             amountPerAttacker = DynamicAmount.Fixed(1),
             condition = Conditions.SourceIsUntapped,
+            coversPlaneswalkers = true,
         )
     }
 

@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Firemane Angel (RAV #205) — 4/3 flying, first strike.
@@ -151,7 +152,7 @@ class FiremaneAngelScenarioTest : FunSpec({
         canActivate(driver, me, angel) shouldBe true
 
         driver.submit(ActivateAbility(playerId = me, sourceId = angel, abilityId = returnAbility))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.drainStack()
 
         driver.state.getZone(ZoneKey(me, Zone.GRAVEYARD)).contains(angel) shouldBe false

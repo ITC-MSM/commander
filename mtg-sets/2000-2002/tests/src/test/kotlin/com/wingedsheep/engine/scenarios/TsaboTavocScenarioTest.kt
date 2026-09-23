@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tsabo Tavoc (Invasion engine gap #13): protection from a supertype + the {T} destroy-legendary
@@ -43,7 +45,7 @@ class TsaboTavocScenarioTest : FunSpec({
                 abilityId = destroyAbilityId,
                 targets = listOf(ChosenTarget.Permanent(sisay)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getGraveyardCardNames(opp).contains("Captain Sisay") shouldBe true
@@ -63,6 +65,6 @@ class TsaboTavocScenarioTest : FunSpec({
 
         // The legendary creature can't legally block a creature with protection from legendary creatures.
         val result = driver.declareBlockers(opp, mapOf(sisay to listOf(tsabo)))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

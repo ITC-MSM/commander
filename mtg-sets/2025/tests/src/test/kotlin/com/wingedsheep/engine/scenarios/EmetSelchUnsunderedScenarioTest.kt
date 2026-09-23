@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Emet-Selch, Unsundered // Hades, Sorcerer of Eld (FIN #218).
@@ -101,7 +102,7 @@ class EmetSelchUnsunderedScenarioTest : FunSpec({
         val lion = driver.putCreatureOnBattlefield(you, "Savannah Lions")
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, listOf(lion)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, listOf(lion)).outcome shouldBe Outcome.Done
         var g = 0
         while (driver.state.stack.isNotEmpty() && g++ < 20) driver.bothPass()
 

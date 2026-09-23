@@ -25,6 +25,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Loki Laufeyson (MSH #143) — {1}{R} Legendary Creature — God Sorcerer Villain, 2/1.
@@ -160,7 +161,7 @@ class LokiLaufeysonScenarioTest : FunSpec({
         // Mana value 2 vs. a base 2/1 Loki — "less than or equal to" includes equal.
         val salve = driver.putCardInHand(player, "Test Two-Mana Salve")
         driver.giveMana(player, Color.RED, 2)
-        driver.castSpell(player, salve).isSuccess shouldBe true
+        driver.castSpell(player, salve).outcome shouldBe Outcome.Done
 
         withClue("MV 2 <= power 2, so the rider fires") { stormCopies(driver) shouldBe 1 }
         withClue("a one-shot rider is consumed by the spell it copies") {
@@ -183,7 +184,7 @@ class LokiLaufeysonScenarioTest : FunSpec({
 
         val salve = driver.putCardInHand(player, "Test Three-Mana Salve")
         driver.giveMana(player, Color.RED, 3)
-        driver.castSpell(player, salve).isSuccess shouldBe true
+        driver.castSpell(player, salve).outcome shouldBe Outcome.Done
 
         withClue("MV 3 > power 2, so nothing is copied") { stormCopies(driver) shouldBe 0 }
         withClue("a non-matching cast must not consume the rider") {
@@ -206,7 +207,7 @@ class LokiLaufeysonScenarioTest : FunSpec({
         // Mana value 2, so it clears the dynamic cap — but it is not an instant or sorcery.
         val trickster = driver.putCardInHand(player, "Test Two-Mana Trickster")
         driver.giveMana(player, Color.RED, 2)
-        driver.castSpell(player, trickster).isSuccess shouldBe true
+        driver.castSpell(player, trickster).outcome shouldBe Outcome.Done
 
         withClue("InstantOrSorcery rejects a creature spell even under the cap") {
             stormCopies(driver) shouldBe 0
@@ -229,7 +230,7 @@ class LokiLaufeysonScenarioTest : FunSpec({
 
         val salve = driver.putCardInHand(player, "Test Three-Mana Salve")
         driver.giveMana(player, Color.RED, 3)
-        driver.castSpell(player, salve).isSuccess shouldBe true
+        driver.castSpell(player, salve).outcome shouldBe Outcome.Done
 
         withClue("the cap is read at cast time, not when the rider was created") {
             stormCopies(driver) shouldBe 1
@@ -251,7 +252,7 @@ class LokiLaufeysonScenarioTest : FunSpec({
     fun killLoki(driver: GameTestDriver, player: EntityId, loki: EntityId) {
         val removal = driver.putCardInHand(player, "Test Costly Assassination")
         driver.giveMana(player, Color.BLACK, 5)
-        driver.castSpell(player, removal, listOf(loki)).isSuccess shouldBe true
+        driver.castSpell(player, removal, listOf(loki)).outcome shouldBe Outcome.Done
         resolveStack(driver)
         withClue("the removal has to have actually resolved for this to be an LKI test") {
             (loki in driver.state.getBattlefield()) shouldBe false
@@ -282,7 +283,7 @@ class LokiLaufeysonScenarioTest : FunSpec({
 
         val salve = driver.putCardInHand(player, "Test Three-Mana Salve")
         driver.giveMana(player, Color.RED, 3)
-        driver.castSpell(player, salve).isSuccess shouldBe true
+        driver.castSpell(player, salve).outcome shouldBe Outcome.Done
 
         withClue("MV 3 <= last-known power 4, so the rider still fires (CR 608.2h)") {
             stormCopies(driver) shouldBe 1
@@ -307,7 +308,7 @@ class LokiLaufeysonScenarioTest : FunSpec({
 
         val salve = driver.putCardInHand(player, "Test Three-Mana Salve")
         driver.giveMana(player, Color.RED, 3)
-        driver.castSpell(player, salve).isSuccess shouldBe true
+        driver.castSpell(player, salve).outcome shouldBe Outcome.Done
 
         withClue("MV 3 > last-known power 2, so nothing is copied") { stormCopies(driver) shouldBe 0 }
         withClue("a non-matching cast must not consume the rider") {
@@ -332,7 +333,7 @@ class LokiLaufeysonScenarioTest : FunSpec({
         // the read is coming from a snapshot rather than from projected state.
         val salve = driver.putCardInHand(player, "Test Two-Mana Salve")
         driver.giveMana(player, Color.RED, 2)
-        driver.castSpell(player, salve).isSuccess shouldBe true
+        driver.castSpell(player, salve).outcome shouldBe Outcome.Done
 
         withClue("MV 2 <= last-known power 2") { stormCopies(driver) shouldBe 1 }
 

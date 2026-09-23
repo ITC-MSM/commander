@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Shantotto, Tactician Magician (FIN #241).
@@ -50,7 +51,7 @@ class ShantottoTacticianMagicianScenarioTest : FunSpec({
         val bolt = driver.putCardInHand(p, "Lightning Bolt") // {R} → 1 mana
         driver.giveMana(p, Color.RED, 1)
 
-        driver.castSpell(p, bolt, targets = listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(p, bolt, targets = listOf(victim)).outcome shouldBe Outcome.Done
         driver.bothPass() // Bolt resolves
         driver.bothPass() // Shantotto cast-trigger resolves
 
@@ -72,7 +73,7 @@ class ShantottoTacticianMagicianScenarioTest : FunSpec({
         val handBefore = driver.getHandSize(p) // counts Stoke still in hand
         driver.giveMana(p, Color.RED, 4)
 
-        driver.castSpell(p, stoke, targets = listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(p, stoke, targets = listOf(victim)).outcome shouldBe Outcome.Done
         driver.bothPass() // Stoke resolves
         driver.bothPass() // Shantotto cast-trigger resolves
 
@@ -90,7 +91,7 @@ class ShantottoTacticianMagicianScenarioTest : FunSpec({
         val courser = driver.putCardInHand(p, "Centaur Courser") // a creature spell, {2}{G}
         driver.giveMana(p, Color.GREEN, 3)
 
-        driver.castSpell(p, courser).isSuccess shouldBe true
+        driver.castSpell(p, courser).outcome shouldBe Outcome.Done
         driver.bothPass() // Courser resolves
         driver.bothPass()
 

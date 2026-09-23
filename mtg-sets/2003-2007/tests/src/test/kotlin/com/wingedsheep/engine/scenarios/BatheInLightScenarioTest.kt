@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Bathe in Light (RAV #2) — "Radiance — Choose a color. Target creature and each other creature
@@ -40,7 +41,7 @@ class BatheInLightScenarioTest : FunSpec({
     fun GameTestDriver.bathe(caster: EntityId, target: EntityId) {
         giveMana(caster, Color.WHITE, 2)
         val spell = putCardInHand(caster, "Bathe in Light")
-        castSpellWithTargets(caster, spell, listOf(ChosenTarget.Permanent(target))).isSuccess shouldBe true
+        castSpellWithTargets(caster, spell, listOf(ChosenTarget.Permanent(target))).outcome shouldBe Outcome.Done
         var guard = 0
         while (stackSize > 0 && pendingDecision == null && guard++ < 10) bothPass()
         val decision = pendingDecision ?: error("Expected a colour-choice decision from Bathe in Light")

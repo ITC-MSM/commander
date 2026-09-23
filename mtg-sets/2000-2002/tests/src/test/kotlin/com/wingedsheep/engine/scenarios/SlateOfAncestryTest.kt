@@ -15,6 +15,8 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.references.Player
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Slate of Ancestry.
@@ -84,7 +86,7 @@ class SlateOfAncestryTest : FunSpec({
                 abilityId = abilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Let the ability resolve
         driver.bothPass()
@@ -115,7 +117,7 @@ class SlateOfAncestryTest : FunSpec({
                 abilityId = abilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -148,7 +150,7 @@ class SlateOfAncestryTest : FunSpec({
                 abilityId = abilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -181,7 +183,7 @@ class SlateOfAncestryTest : FunSpec({
                 abilityId = abilityId
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("cannot activate when already tapped") {
@@ -206,7 +208,7 @@ class SlateOfAncestryTest : FunSpec({
                 abilityId = abilityId
             )
         )
-        result1.isSuccess shouldBe true
+        result1.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Second activation should fail (slate is tapped)
@@ -218,6 +220,6 @@ class SlateOfAncestryTest : FunSpec({
                 abilityId = abilityId
             )
         )
-        result2.isSuccess shouldBe false
+        result2.outcome shouldNotBe Outcome.Done
     }
 })

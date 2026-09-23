@@ -14,6 +14,9 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
  * Transmutation Font — {5} Artifact (BIG #28).
@@ -47,7 +50,7 @@ class TransmutationFontScenarioTest : FunSpec({
         val font = driver.putPermanentOnBattlefield(me, "Transmutation Font")
 
         driver.submit(ActivateAbility(playerId = me, sourceId = font, abilityId = createTokenAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass() // resolve → mode choice
 
         val mode = driver.pendingDecision as ChooseOptionDecision
@@ -89,7 +92,7 @@ class TransmutationFontScenarioTest : FunSpec({
         // "With different names" is always a real choice, so the activation pauses to let the
         // player pick the distinctly-named set to sacrifice.
         driver.submit(ActivateAbility(playerId = me, sourceId = font, abilityId = searchAbilityId))
-            .isPaused shouldBe true
+            .outcome.shouldBeInstanceOf<Outcome.Paused>()
 
         // Pay the sacrifice cost: pick the three distinctly-named tokens.
         driver.submitCardSelection(me, blood + clue + food)
@@ -127,6 +130,6 @@ class TransmutationFontScenarioTest : FunSpec({
         val result = driver.submit(ActivateAbility(playerId = me, sourceId = font, abilityId = searchAbilityId))
 
         // The cost is unpayable (no three distinctly-named artifact tokens), so the ability is illegal.
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

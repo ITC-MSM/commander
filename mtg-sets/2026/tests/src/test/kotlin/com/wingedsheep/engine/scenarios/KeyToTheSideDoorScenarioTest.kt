@@ -11,6 +11,8 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Key to the Side-Door (HOB #175) — {1} Artifact.
@@ -59,7 +61,7 @@ class KeyToTheSideDoorScenarioTest : FunSpec({
                 abilityId = drawAbilityId,
                 costPayment = AdditionalCostPayment(discardedCards = listOf(duplicate))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // +1 duplicate put in hand, -1 discarded as the cost, +2 drawn on resolution.
@@ -84,7 +86,7 @@ class KeyToTheSideDoorScenarioTest : FunSpec({
                 abilityId = drawAbilityId,
                 costPayment = AdditionalCostPayment(discardedCards = listOf(other))
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 
     test("a name match on a permanent an OPPONENT controls doesn't pay the cost") {
@@ -105,6 +107,6 @@ class KeyToTheSideDoorScenarioTest : FunSpec({
                 abilityId = drawAbilityId,
                 costPayment = AdditionalCostPayment(discardedCards = listOf(duplicate))
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 })

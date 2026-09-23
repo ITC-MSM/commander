@@ -13,6 +13,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Ancestral Vision — Sorcery (no printed mana cost) — Rare (Time Spiral).
@@ -74,7 +76,7 @@ class AncestralVisionScenarioTest : FunSpec({
         val card = driver.putCardInHand(me, "Ancestral Vision")
 
         val result = driver.submit(SuspendCardFromHand(me, card))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.getHand(me).contains(card) shouldBe true
     }
 
@@ -92,12 +94,12 @@ class AncestralVisionScenarioTest : FunSpec({
         // right after casting, but the stack is no longer empty (CR 702.62c).
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(opponent)).outcome shouldBe Outcome.Done
         driver.state.stack.isEmpty() shouldBe false
         driver.state.priorityPlayerId shouldBe me
 
         val result = driver.submit(SuspendCardFromHand(me, card))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.getHand(me).contains(card) shouldBe true
     }
 
@@ -116,7 +118,7 @@ class AncestralVisionScenarioTest : FunSpec({
         castOffered shouldBe false
 
         // ...and a direct engine-level cast attempt is rejected even if submitted anyway.
-        driver.castSpell(me, card).isSuccess shouldBe false
+        driver.castSpell(me, card).outcome shouldNotBe Outcome.Done
     }
 
     test("full lifecycle: after 4 owner upkeeps, the owner may cast it for free and target player draws 3") {

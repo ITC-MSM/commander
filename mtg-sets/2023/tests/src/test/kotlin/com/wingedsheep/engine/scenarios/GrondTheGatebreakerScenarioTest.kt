@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Grond, the Gatebreaker — Legendary Artifact — Vehicle, 5/5.
@@ -68,7 +69,7 @@ class GrondTheGatebreakerScenarioTest : FunSpec({
 
         driver.state.projectedState.isCreature(grond) shouldBe false
 
-        driver.submit(CrewVehicle(you, grond, listOf(crewer))).isSuccess shouldBe true
+        driver.submit(CrewVehicle(you, grond, listOf(crewer))).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the Crew ability
 
         // Now an artifact creature with printed 5/5 and Trample.
@@ -81,7 +82,7 @@ class GrondTheGatebreakerScenarioTest : FunSpec({
         // It can attack (was on the battlefield since the turn began).
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
         val opponent = driver.getOpponent(you)
-        driver.declareAttackers(you, listOf(grond), opponent).isSuccess shouldBe true
+        driver.declareAttackers(you, listOf(grond), opponent).outcome shouldBe Outcome.Done
     }
 
     test("static makes Grond an artifact creature on your turn while you control an Army") {

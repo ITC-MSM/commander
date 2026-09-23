@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Rise of the Witch-king (LTR).
@@ -53,7 +54,7 @@ class RiseOfTheWitchKingTest : FunSpec({
         driver.giveMana(active, Color.GREEN, 1)
         driver.giveColorlessMana(active, 2)
         // No target at cast time — the reanimation is resolution-time.
-        driver.castSpell(active, rise).isSuccess shouldBe true
+        driver.castSpell(active, rise).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // After auto-sacrifice on both sides, the rider's SelectFromCollection pauses.
@@ -93,7 +94,7 @@ class RiseOfTheWitchKingTest : FunSpec({
         driver.giveMana(active, Color.BLACK, 1)
         driver.giveMana(active, Color.GREEN, 1)
         driver.giveColorlessMana(active, 2)
-        driver.castSpell(active, rise).isSuccess shouldBe true
+        driver.castSpell(active, rise).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val pending = driver.pendingDecision
@@ -132,7 +133,7 @@ class RiseOfTheWitchKingTest : FunSpec({
         driver.giveMana(active, Color.BLACK, 1)
         driver.giveMana(active, Color.GREEN, 1)
         driver.giveColorlessMana(active, 2)
-        driver.castSpell(active, rise).isSuccess shouldBe true
+        driver.castSpell(active, rise).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val pending = driver.pendingDecision
@@ -176,7 +177,7 @@ class RiseOfTheWitchKingTest : FunSpec({
         driver.giveMana(active, Color.BLACK, 1)
         driver.giveMana(active, Color.GREEN, 1)
         driver.giveColorlessMana(active, 2)
-        driver.castSpell(active, rise).isSuccess shouldBe true
+        driver.castSpell(active, rise).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // The intervening condition is false, so the rider never opens a selection.

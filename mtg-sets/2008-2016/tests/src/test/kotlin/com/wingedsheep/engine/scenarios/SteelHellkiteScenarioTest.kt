@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Steel Hellkite (SOM #205, reprinted as FDN #681) — {6} 5/5 Artifact Creature — Dragon.
@@ -43,7 +44,7 @@ class SteelHellkiteScenarioTest : FunSpec({
     fun connectWithOpponent(driver: GameTestDriver, attacker: EntityId, hellkite: EntityId, defender: EntityId) {
         driver.removeSummoningSickness(hellkite)
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, listOf(hellkite), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(hellkite), defender).outcome shouldBe Outcome.Done
         driver.declareNoBlockers(defender)
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
     }
@@ -52,7 +53,7 @@ class SteelHellkiteScenarioTest : FunSpec({
         driver.giveColorlessMana(player, x)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = hellkite, abilityId = sweepAbilityId, xValue = x)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
     }
 
@@ -135,7 +136,7 @@ class SteelHellkiteScenarioTest : FunSpec({
         sweepOffered() shouldBe true
         driver.submit(
             ActivateAbility(playerId = me, sourceId = hellkite, abilityId = sweepAbilityId, xValue = 1)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         sweepOffered() shouldBe false
     }

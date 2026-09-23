@@ -17,6 +17,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Intrepid Stablemaster (OTJ #169) — {1}{G} Human Scout, 2/2, Reach.
@@ -81,7 +83,7 @@ class IntrepidStablemasterScenarioTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = mount, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("two restricted mana can pay for a Vehicle spell") {
@@ -96,7 +98,7 @@ class IntrepidStablemasterScenarioTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = vehicle, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("two restricted mana cannot pay for a non-Mount, non-Vehicle spell") {
@@ -111,6 +113,6 @@ class IntrepidStablemasterScenarioTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = ogre, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

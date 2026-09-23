@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Freestrider Commando (OTJ #162) — {2}{G} Centaur Mercenary, 3/3, Plot {3}{G}.
@@ -51,7 +52,7 @@ class FreestriderCommandoScenarioTest : FunSpec({
 
         driver.submit(
             CastSpell(player, commando, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val onBattlefield = driver.getCreatures(player).single()
@@ -73,7 +74,7 @@ class FreestriderCommandoScenarioTest : FunSpec({
         val commando = driver.putCardInHand(player, "Freestrider Commando")
         driver.submit(
             CastSpell(player, commando, useWithoutPayingManaCost = true, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Weftwalking is an enchantment, so Freestrider Commando is the only creature in play.

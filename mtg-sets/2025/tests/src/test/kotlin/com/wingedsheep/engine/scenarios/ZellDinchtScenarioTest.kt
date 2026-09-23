@@ -11,6 +11,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Zell Dincht (FIN) — {2}{R} Legendary Creature — Human Monk 0/3.
@@ -60,16 +62,16 @@ class ZellDinchtScenarioTest : FunSpec({
         driver.putCreatureOnBattlefield(me, "Zell Dincht")
 
         val land1 = driver.putCardInHand(me, "Mountain")
-        driver.playLand(me, land1).isSuccess shouldBe true
+        driver.playLand(me, land1).outcome shouldBe Outcome.Done
         driver.state.getEntity(me)?.get<LandDropsComponent>()?.remaining shouldBe 0
 
         // The static bonus grants one more land play this turn.
         val land2 = driver.putCardInHand(me, "Mountain")
-        driver.playLand(me, land2).isSuccess shouldBe true
+        driver.playLand(me, land2).outcome shouldBe Outcome.Done
 
         // Now the extra drop is consumed; a third land play is illegal.
         val land3 = driver.putCardInHand(me, "Mountain")
-        driver.submitExpectFailure(com.wingedsheep.engine.core.PlayLand(me, land3)).isSuccess shouldBe false
+        driver.submitExpectFailure(com.wingedsheep.engine.core.PlayLand(me, land3)).outcome shouldNotBe Outcome.Done
     }
 
     test("returns a land you control to its owner's hand at your end step") {

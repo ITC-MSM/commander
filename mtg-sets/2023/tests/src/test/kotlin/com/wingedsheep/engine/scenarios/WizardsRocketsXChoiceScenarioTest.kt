@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Wizard's Rockets (LTR) — "{X}, {T}, Sacrifice this artifact: Add X mana in any combination of
@@ -47,7 +48,7 @@ class WizardsRocketsXChoiceScenarioTest : FunSpec({
 
         // Bare activation (no xValue) — the legal-actions/UI path.
         val res = d.submit(ActivateAbility(playerId = active, sourceId = rockets, abilityId = abilityId))
-        res.isPaused shouldBe true
+        (res.outcome is Outcome.Paused) shouldBe true
         // It must pause asking for X (not silently resolve at X=0).
         d.pendingDecision.shouldBeInstanceOf<ChooseNumberDecision>()
 
@@ -55,12 +56,16 @@ class WizardsRocketsXChoiceScenarioTest : FunSpec({
         d.submitDecision(active, NumberChosenResponse(d.pendingDecision!!.id, 2))
         // Resolve the remaining flow: "add 2 mana in any combination of colors" pauses per mana for
         // a color choice; then the sacrifice's draw trigger goes on the stack.
-        repeat(12) {
+        // Stop once nothing is left to answer or resolve: passing on an empty stack would walk
+        // on into the cleanup step and discard the drawn card down to hand size.
+        var guard = 0
+        while (guard++ < 12) {
             val dec = d.pendingDecision
             when {
                 dec is ChooseColorDecision -> d.submitDecision(active, ColorChosenResponse(dec.id, Color.RED))
                 dec != null -> d.autoResolveDecision()
-                else -> d.bothPass()
+                d.stackSize > 0 -> d.bothPass()
+                else -> break
             }
         }
 

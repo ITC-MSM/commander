@@ -20,6 +20,8 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Gandalf, Friend of the Shire (LTR — {3}{U}, Legendary Creature — Avatar Wizard, 2/4):
@@ -97,7 +99,7 @@ class GandalfFriendOfTheShireTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = sorcery, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("the static does not grant flash to a non-sorcery spell (e.g. a creature)") {
@@ -116,7 +118,7 @@ class GandalfFriendOfTheShireTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = beast, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("the static is controller-only: an opponent's sorcery does not gain flash") {
@@ -137,7 +139,7 @@ class GandalfFriendOfTheShireTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p2, cardId = sorcery, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     // 3 — Ring-tempts-you draw clause.

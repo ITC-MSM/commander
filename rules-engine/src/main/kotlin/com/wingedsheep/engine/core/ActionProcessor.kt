@@ -69,30 +69,28 @@ class ActionProcessor(
      *
      * @param state The current game state
      * @param action The action to process
-     * @return ExecutionResult with new state, events, and any error or pending decision
+     * @return ExecutionResult with new state, events, and its [Outcome]
      */
     fun process(state: GameState, action: GameAction): ProcessedAction {
-        // Basic validation that applies to all actions
-        val basicError = validateBasics(state, action)
-        if (basicError != null) {
-            return ProcessedAction(ExecutionResult.error(state, basicError))
-        }
-
-        // Delegate to the handler registry for action-specific validation
-        val validationError = registry.validate(state, action)
+        val validationError = validate(state, action)
         if (validationError != null) {
-            return ProcessedAction(ExecutionResult.error(state, validationError))
+            return ProcessedAction(ExecutionResult.rejected(state, Rejection.IllegalAction(validationError)))
         }
 
-        val executed = registry.execute(state, action)
+        // Handlers never detect triggers or check state-based actions themselves. The one settle
+        // boundary does that for every action, paused or not (CR 117.5, 603.3).
+        val executed = services.settler.settle(registry.execute(state, action))
 
         // Action handlers may compose several immutable intermediate states before a nested
         // handler or resumed continuation rejects a later step. The public action contract is
-        // atomic on error: retain only the message and hand back the entry state itself. A
+        // atomic on error: retain only the rejection and hand back the entry state itself. A
         // rejected attempt therefore skips event-driven post-action bookkeeping entirely — its
-        // events describe work that is being thrown away and must not reach the tracker.
-        val result = if (executed.error != null) {
-            ExecutionResult.error(state, executed.error)
+        // events describe work that is being thrown away and must not reach the tracker. The
+        // typed reason survives: validation refusals above are IllegalAction, and anything
+        // execution rejects keeps its own reason.
+        val outcome = executed.outcome
+        val result = if (outcome is Outcome.Rejected) {
+            ExecutionResult.rejected(state, outcome.reason)
         } else {
             // Cards revealed into hand or bounced back to hand stay visible until a same-named
             // card is played — see [RevealedInHandTracker]. Paused actions are accepted in-flight
@@ -106,6 +104,15 @@ class ActionProcessor(
         }
         return ProcessedAction(result, undoPolicy)
     }
+
+    /**
+     * The verdict [process] gives [action] before executing it: `null` when it is legal, otherwise
+     * why not. The legal-action enumerators must never offer a fully-specified action this refuses —
+     * `LegalActionsPassValidateTest` holds them to it.
+     */
+    fun validate(state: GameState, action: GameAction): String? =
+        // Basic validation that applies to all actions, then the handler's own.
+        validateBasics(state, action) ?: registry.validate(state, action)
 
     /**
      * Basic validation that applies to all actions.

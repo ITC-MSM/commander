@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import com.wingedsheep.mtg.sets.definitions.lci.cards.MarketGnome
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Market Gnome (LCI #22) — the two "gain 1 life and draw a card" triggers.
@@ -86,7 +87,7 @@ class MarketGnomeScenarioTest : FunSpec({
         // Lightning Bolt for 3 kills the 0/3 gnome for real, so its dies trigger fires.
         val bolt = driver.putCardInHand(p1, "Lightning Bolt")
         driver.giveMana(p1, Color.RED, 3)
-        driver.castSpell(p1, bolt, targets = listOf(gnome)).isSuccess shouldBe true
+        driver.castSpell(p1, bolt, targets = listOf(gnome)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Bolt -> gnome dies, queue its dies trigger
         driver.bothPass() // resolve the dies trigger
 
@@ -137,7 +138,7 @@ class MarketGnomeScenarioTest : FunSpec({
 
         val banishId = driver.putCardInHand(p1, "Test Banish")
         driver.giveMana(p1, Color.RED, 1)
-        driver.castSpell(p1, banishId, targets = listOf(gnome)).isSuccess shouldBe true
+        driver.castSpell(p1, banishId, targets = listOf(gnome)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Banish -> gnome exiled (non-craft)
         driver.bothPass()
 

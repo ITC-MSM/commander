@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Cloudbound Moogle (FIN #11).
@@ -44,7 +45,7 @@ class CloudboundMoogleScenarioTest : FunSpec({
         driver.giveMana(active, Color.WHITE, 2)
         driver.giveColorlessMana(active, 3)
 
-        driver.castSpell(active, moogle).isSuccess shouldBe true
+        driver.castSpell(active, moogle).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature; ETB trigger goes on the stack and asks for a target
 
         val moogleId = driver.findPermanent(active, "Cloudbound Moogle")

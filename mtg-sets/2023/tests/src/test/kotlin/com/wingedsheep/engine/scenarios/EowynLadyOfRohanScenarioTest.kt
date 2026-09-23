@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Éowyn, Lady of Rohan (LTR).
@@ -115,7 +116,7 @@ class EowynLadyOfRohanScenarioTest : FunSpec({
         driver.giveColorlessMana(driver.player1, 2)
         driver.submit(
             ActivateAbility(driver.player1, blade, equipId, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getEntity(blade)?.get<AttachedToComponent>()?.targetId shouldBe bear
 
@@ -147,7 +148,7 @@ class EowynLadyOfRohanScenarioTest : FunSpec({
         driver.giveColorlessMana(driver.player1, 2)
         driver.submit(
             ActivateAbility(driver.player1, blade, equipId, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getEntity(blade)?.get<AttachedToComponent>()?.targetId shouldBe bear
     }

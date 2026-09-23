@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Riptide Chronologist.
@@ -89,7 +90,7 @@ class RiptideChronologistTest : FunSpec({
                 abilityId = abilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the ability
         driver.bothPass()
@@ -125,7 +126,7 @@ class RiptideChronologistTest : FunSpec({
                 abilityId = abilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Chronologist should be sacrificed (no longer on battlefield)
         driver.state.getBattlefield().contains(chronologist) shouldBe false

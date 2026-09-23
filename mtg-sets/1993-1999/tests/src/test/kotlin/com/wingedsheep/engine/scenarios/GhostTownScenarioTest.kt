@@ -11,6 +11,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.nulls.shouldBeNull
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Ghost Town (TMP #318)
@@ -41,7 +42,7 @@ class GhostTownScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = activePlayer, sourceId = town, abilityId = manaAbilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()
         pool?.colorless shouldBe 1
     }
@@ -78,7 +79,7 @@ class GhostTownScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = opponent, sourceId = town, abilityId = bounceAbilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         // Let the ability resolve.
         driver.bothPass()
 

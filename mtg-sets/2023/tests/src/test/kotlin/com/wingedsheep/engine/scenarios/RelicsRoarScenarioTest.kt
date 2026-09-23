@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Relic's Roar (LCI #71).
@@ -39,7 +40,7 @@ class RelicsRoarScenarioTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLUE, 1)
 
         val castResult = driver.castSpell(activePlayer, spell, targets = listOf(courser))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val projected = projector.project(driver.state)

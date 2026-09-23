@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Splatter Technique {1}{U}{U}{R}{R} Sorcery (SOS canonical).
@@ -43,7 +44,7 @@ class SplatterTechniqueScenarioTest : FunSpec({
 
         driver.submit(
             CastSpell(playerId = me, cardId = spell, chosenModes = listOf(0))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // -1 for casting the spell, +4 for the draw.
@@ -66,7 +67,7 @@ class SplatterTechniqueScenarioTest : FunSpec({
 
         driver.submit(
             CastSpell(playerId = me, cardId = spell, chosenModes = listOf(1))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // 1/1 is dead; 5/5 survives 4 damage.

@@ -18,6 +18,7 @@ import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Stolen Uniform.
@@ -102,7 +103,7 @@ class StolenUniformScenarioTest : FunSpec({
         val spell = driver.putCardInHand(me, "Stolen Uniform")
         driver.giveMana(me, Color.BLUE, 1)
         val result = driver.castSpell(me, spell, targets = listOf(myCreature, equipment))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the spell
 
         // Gained control of the Equipment, and it's force-attached to my creature.
@@ -123,7 +124,7 @@ class StolenUniformScenarioTest : FunSpec({
 
         val spell = driver.putCardInHand(me, "Stolen Uniform")
         driver.giveMana(me, Color.BLUE, 1)
-        driver.castSpell(me, spell, targets = listOf(myCreature, equipment)).isSuccess shouldBe true
+        driver.castSpell(me, spell, targets = listOf(myCreature, equipment)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.controllerOf(equipment) shouldBe me
@@ -136,7 +137,7 @@ class StolenUniformScenarioTest : FunSpec({
         driver.giveMana(opponent, Color.BLUE, 1)
         // Hand priority to the opponent so they can cast their instant.
         driver.passPriority(me)
-        driver.castSpell(opponent, reclaim, targets = listOf(equipment)).isSuccess shouldBe true
+        driver.castSpell(opponent, reclaim, targets = listOf(equipment)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Reclaim → control moves to opponent, delayed trigger fires
         driver.bothPass() // resolve the delayed "unattach" trigger
 

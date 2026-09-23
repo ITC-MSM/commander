@@ -13,6 +13,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContainIgnoringCase
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Resilient Roadrunner's activated ability:
@@ -49,11 +51,11 @@ class ResilientRoadrunnerScenarioTest : FunSpec({
         // Activate "{3}: can't be blocked this turn except by creatures with haste."
         giveMana(player, Color.RED, 3)
         submit(ActivateAbility(playerId = player, sourceId = roadrunner, abilityId = abilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         bothPass() // resolve the ability
 
         passPriorityUntil(Step.DECLARE_ATTACKERS)
-        declareAttackers(player, listOf(roadrunner), opponent).isSuccess shouldBe true
+        declareAttackers(player, listOf(roadrunner), opponent).outcome shouldBe Outcome.Done
         bothPass() // move to declare blockers
         currentStep shouldBe Step.DECLARE_BLOCKERS
         return Triple(roadrunner, blocker, opponent)
@@ -67,7 +69,7 @@ class ResilientRoadrunnerScenarioTest : FunSpec({
             DeclareBlockers(opponent, mapOf(blocker to listOf(roadrunner)))
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "haste"
         result.error shouldContainIgnoringCase "cannot block"
     }
@@ -78,7 +80,7 @@ class ResilientRoadrunnerScenarioTest : FunSpec({
             driver.setupAttackWithAbilityActive("Test Hasty Prospector")
 
         driver.declareBlockers(opponent, mapOf(blocker to listOf(roadrunner)))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
     }
 
     test("without activating the ability, any creature can block (restriction is the floating grant)") {
@@ -93,11 +95,11 @@ class ResilientRoadrunnerScenarioTest : FunSpec({
         driver.removeSummoningSickness(blocker)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(player, listOf(roadrunner), opponent).isSuccess shouldBe true
+        driver.declareAttackers(player, listOf(roadrunner), opponent).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
 
         driver.declareBlockers(opponent, mapOf(blocker to listOf(roadrunner)))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
     }
 })

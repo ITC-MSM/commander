@@ -18,6 +18,8 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Alien Symbiosis (SPM #50) — {1}{B} Enchantment — Aura.
@@ -94,7 +96,7 @@ class AlienSymbiosisScenarioTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(discardedCards = listOf(fodder))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         d.bothPass()
 
         // Resolved onto the battlefield attached to the bear.
@@ -132,7 +134,7 @@ class AlienSymbiosisScenarioTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(discardedCards = emptyList())
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("cast normally from hand: still costs {1}{B}, no discard required") {

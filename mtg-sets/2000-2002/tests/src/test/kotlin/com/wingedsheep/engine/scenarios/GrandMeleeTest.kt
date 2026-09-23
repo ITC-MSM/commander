@@ -16,6 +16,8 @@ import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Grand Melee.
@@ -74,7 +76,7 @@ class GrandMeleeTest : FunSpec({
                 attackers = emptyMap()
             )
         )
-        noAttackResult.isSuccess shouldBe false
+        noAttackResult.outcome shouldNotBe Outcome.Done
         noAttackResult.error shouldContain "must attack"
 
         // Declare the bear as attacker - should succeed
@@ -84,7 +86,7 @@ class GrandMeleeTest : FunSpec({
                 attackers = mapOf(bear to opponent)
             )
         )
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
     }
 
     test("Grand Melee forces creatures to block if able") {
@@ -126,7 +128,7 @@ class GrandMeleeTest : FunSpec({
                 blockers = emptyMap()
             )
         )
-        noBlockResult.isSuccess shouldBe false
+        noBlockResult.outcome shouldNotBe Outcome.Done
         noBlockResult.error shouldContain "must block"
 
         // Declare the blocker - should succeed
@@ -136,7 +138,7 @@ class GrandMeleeTest : FunSpec({
                 blockers = mapOf(blocker to listOf(attacker))
             )
         )
-        blockResult.isSuccess shouldBe true
+        blockResult.outcome shouldBe Outcome.Done
     }
 
     test("Grand Melee does not force creatures with summoning sickness to attack") {
@@ -168,7 +170,7 @@ class GrandMeleeTest : FunSpec({
                 attackers = mapOf(readyBear to opponent)
             )
         )
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
     }
 
     test("Grand Melee does not force tapped creatures to block") {
@@ -211,7 +213,7 @@ class GrandMeleeTest : FunSpec({
                 blockers = emptyMap()
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("Grand Melee effect applies to all players' creatures") {
@@ -239,7 +241,7 @@ class GrandMeleeTest : FunSpec({
                 attackers = emptyMap()
             )
         )
-        noAttackResult.isSuccess shouldBe false
+        noAttackResult.outcome shouldNotBe Outcome.Done
 
         // Attack with our creature
         driver.submit(
@@ -258,6 +260,6 @@ class GrandMeleeTest : FunSpec({
                 blockers = emptyMap()
             )
         )
-        noBlockResult.isSuccess shouldBe false
+        noBlockResult.outcome shouldNotBe Outcome.Done
     }
 })

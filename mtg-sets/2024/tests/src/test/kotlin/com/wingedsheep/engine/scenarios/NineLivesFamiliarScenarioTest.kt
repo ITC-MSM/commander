@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Nine-Lives Familiar (FDN #66) — {1}{B}{B} 1/1 Creature — Cat.
@@ -42,7 +43,7 @@ class NineLivesFamiliarScenarioTest : FunSpec({
     fun castFamiliar(driver: GameTestDriver, player: EntityId): EntityId {
         val cat = driver.putCardInHand(player, "Nine-Lives Familiar")
         driver.giveMana(player, Color.BLACK, 3)
-        driver.castSpell(player, cat).isSuccess shouldBe true
+        driver.castSpell(player, cat).outcome shouldBe Outcome.Done
         driver.bothPass()
         return cat
     }
@@ -51,7 +52,7 @@ class NineLivesFamiliarScenarioTest : FunSpec({
     fun bolt(driver: GameTestDriver, player: EntityId, victim: EntityId) {
         val bolt = driver.putCardInHand(player, "Lightning Bolt")
         driver.giveMana(player, Color.RED, 1)
-        driver.castSpell(player, bolt, listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(player, bolt, listOf(victim)).outcome shouldBe Outcome.Done
         driver.bothPass() // Bolt resolves; the creature dies and its trigger goes on the stack
         driver.bothPass() // the dies trigger resolves, scheduling the delayed return
     }

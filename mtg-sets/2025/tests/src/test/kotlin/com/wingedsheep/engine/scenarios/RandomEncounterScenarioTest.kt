@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Random Encounter.
@@ -49,7 +50,7 @@ class RandomEncounterScenarioTest : FunSpec({
         driver.giveMana(player, Color.RED, 2)
         driver.giveColorlessMana(player, 4)
         val result = driver.castSpell(player, card, emptyList())
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
         return card
     }
@@ -93,7 +94,7 @@ class RandomEncounterScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
         val attackResult = driver.declareAttackers(activePlayer, listOf(bears), opponent)
         // Without haste this would be rejected (summoning sickness).
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
     }
 
     test("returns the reanimated creatures to their owner's hand at the next end step") {

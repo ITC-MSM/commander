@@ -18,6 +18,8 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import com.wingedsheep.sdk.scripting.DistributedCounterRemoval
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Power Conduit (MRD #229, {2} Artifact).
@@ -167,7 +169,7 @@ class PowerConduitScenarioTest : ScenarioTestBase() {
                     ActivateAbility(playerId = game.player1Id, sourceId = conduit, abilityId = abilityId)
                 )
                 withClue("The counter removal is a cost, not an optional rider") {
-                    act.isSuccess shouldBe false
+                    act.outcome shouldNotBe Outcome.Done
                 }
                 withClue("A rejected activation leaves the Conduit untapped") {
                     game.state.getEntity(conduit)?.has<TappedComponent>() shouldBe false

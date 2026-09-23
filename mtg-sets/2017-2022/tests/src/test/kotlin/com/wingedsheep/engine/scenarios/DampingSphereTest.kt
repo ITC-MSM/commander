@@ -19,6 +19,8 @@ import com.wingedsheep.sdk.scripting.SpellCostTarget
 import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Damping Sphere.
@@ -96,7 +98,7 @@ class DampingSphereTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("second spell costs {1} more") {
@@ -138,7 +140,7 @@ class DampingSphereTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        failResult.isSuccess shouldBe false
+        failResult.outcome shouldNotBe Outcome.Done
 
         // With {1}{R}, should succeed
         driver.giveMana(activePlayer, Color.RED, 1)
@@ -149,7 +151,7 @@ class DampingSphereTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        successResult.isSuccess shouldBe true
+        successResult.outcome shouldBe Outcome.Done
     }
 
     test("third spell costs {2} more") {
@@ -191,14 +193,14 @@ class DampingSphereTest : FunSpec({
         val failResult = driver.submit(
             CastSpell(playerId = activePlayer, cardId = goblin3, paymentStrategy = PaymentStrategy.FromPool)
         )
-        failResult.isSuccess shouldBe false
+        failResult.outcome shouldNotBe Outcome.Done
 
         // {2}{R} should work
         driver.giveMana(activePlayer, Color.RED, 1)
         val successResult = driver.submit(
             CastSpell(playerId = activePlayer, cardId = goblin3, paymentStrategy = PaymentStrategy.FromPool)
         )
-        successResult.isSuccess shouldBe true
+        successResult.outcome shouldBe Outcome.Done
     }
 
     test("tax is per-player — opponent's first spell is not taxed") {
@@ -244,7 +246,7 @@ class DampingSphereTest : FunSpec({
         val failResult = driver.submit(
             CastSpell(playerId = activePlayer, cardId = goblin3, paymentStrategy = PaymentStrategy.FromPool)
         )
-        failResult.isSuccess shouldBe false
+        failResult.outcome shouldNotBe Outcome.Done
     }
 
     test("mana dampening replaces 2+ mana with 1 colorless") {
@@ -345,6 +347,6 @@ class DampingSphereTest : FunSpec({
                 paymentStrategy = PaymentStrategy.AutoPay
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 })

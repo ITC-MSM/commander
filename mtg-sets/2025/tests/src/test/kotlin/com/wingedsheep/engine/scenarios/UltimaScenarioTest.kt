@@ -18,10 +18,10 @@ import io.kotest.matchers.shouldBe
 
 /**
  * Engine coverage for Ultima ({3}{W}{W} sorcery — "Destroy all artifacts and creatures. End the
- * turn.") and the underlying [com.wingedsheep.sdk.dsl.Effects.EndTheTurn] effect (CR 720).
+ * turn.") and the underlying [com.wingedsheep.sdk.dsl.Effects.EndTheTurn] effect (CR 724.1).
  *
  * The tests pin the four observable consequences of ending the turn: the board wipe resolves, the
- * dies triggers from that wipe never reach the stack (CR 720.1c), Ultima exiles itself (CR 720.1a),
+ * dies triggers from that wipe never reach the stack (CR 724.1a), Ultima exiles itself (CR 724.1b),
  * and the turn ends into the opponent's turn — with the cleanup step's hand-size discard applied.
  */
 class UltimaScenarioTest : FunSpec({
@@ -66,7 +66,7 @@ class UltimaScenarioTest : FunSpec({
         driver.findPermanent(p1, "Artifact Creature") shouldBe null
         driver.findPermanent(p1, "Test Relic") shouldBe null
 
-        // CR 720.1a: Ultima is exiled along with the stack, not put into the graveyard.
+        // CR 724.1b: Ultima is exiled along with the stack, not put into the graveyard.
         driver.getExileCardNames(p1) shouldContain "Ultima"
         driver.getGraveyardCardNames(p1) shouldNotContain "Ultima"
 
@@ -74,7 +74,7 @@ class UltimaScenarioTest : FunSpec({
         driver.activePlayer shouldBe p2
     }
 
-    test("The dies triggers from Ultima's board wipe never resolve (CR 720.1c)") {
+    test("The dies triggers from Ultima's board wipe never resolve (CR 724.1a)") {
         val driver = createDriver()
         val p1 = driver.player1
 

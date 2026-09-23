@@ -17,6 +17,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.collections.shouldHaveSize
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Firion, Wild Rose Warrior (FIN).
@@ -95,7 +97,7 @@ class FirionWildRoseWarriorScenarioTest : FunSpec({
         driver.giveColorlessMana(driver.player1, 3)
         driver.submit(
             ActivateAbility(driver.player1, blade, equipId, targets = listOf(ChosenTarget.Permanent(equippedBear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getEntity(blade)?.get<AttachedToComponent>()?.targetId shouldBe equippedBear
 
@@ -113,7 +115,7 @@ class FirionWildRoseWarriorScenarioTest : FunSpec({
 
         driver.advanceToPlayer1(Step.PRECOMBAT_MAIN)
         driver.giveColorlessMana(driver.player1, 1)
-        driver.castSpell(driver.player1, bladeInHand).isSuccess shouldBe true
+        driver.castSpell(driver.player1, bladeInHand).outcome shouldBe Outcome.Done
         driver.resolveStack()
 
         // The printed blade plus its token copy — two Equipment, exactly one of them a token.
@@ -131,7 +133,7 @@ class FirionWildRoseWarriorScenarioTest : FunSpec({
 
         driver.advanceToPlayer1(Step.PRECOMBAT_MAIN)
         driver.giveColorlessMana(driver.player1, 1)
-        driver.castSpell(driver.player1, bladeInHand).isSuccess shouldBe true
+        driver.castSpell(driver.player1, bladeInHand).outcome shouldBe Outcome.Done
         driver.resolveStack()
 
         val token = driver.tokenBlade(driver.player1)
@@ -141,12 +143,12 @@ class FirionWildRoseWarriorScenarioTest : FunSpec({
         driver.giveColorlessMana(driver.player1, 1)
         driver.submit(
             ActivateAbility(driver.player1, printed, equipId, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
 
         // The token's equip is reduced by {2}: the same {1} pays for it.
         driver.submit(
             ActivateAbility(driver.player1, token, equipId, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.state.getEntity(token)?.get<AttachedToComponent>()?.targetId shouldBe bear
     }
@@ -160,7 +162,7 @@ class FirionWildRoseWarriorScenarioTest : FunSpec({
 
         driver.advanceToPlayer1(Step.PRECOMBAT_MAIN)
         driver.giveColorlessMana(driver.player1, 1)
-        driver.castSpell(driver.player1, bladeInHand).isSuccess shouldBe true
+        driver.castSpell(driver.player1, bladeInHand).outcome shouldBe Outcome.Done
         driver.resolveStack()
 
         val token = driver.tokenBlade(driver.player1)

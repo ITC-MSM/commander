@@ -14,6 +14,8 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 private val projector = StateProjector()
 
@@ -143,7 +145,7 @@ class WallCrawlScenarioTest : FunSpec({
         driver.advanceToPlayer1DeclareAttackers()
         driver.activePlayer shouldBe me
 
-        driver.declareAttackers(me, listOf(spider), opponent).isSuccess shouldBe true
+        driver.declareAttackers(me, listOf(spider), opponent).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
 
@@ -151,11 +153,11 @@ class WallCrawlScenarioTest : FunSpec({
         val defenderBlock = driver.submitExpectFailure(
             DeclareBlockers(opponent, mapOf(wall to listOf(spider)))
         )
-        defenderBlock.isSuccess shouldBe false
+        defenderBlock.outcome shouldNotBe Outcome.Done
 
         // A creature without defender blocks the Spider just fine.
         val bearBlock = driver.declareBlockers(opponent, mapOf(bear to listOf(spider)))
-        bearBlock.isSuccess shouldBe true
+        bearBlock.outcome shouldBe Outcome.Done
     }
 
     test("without Wall Crawl, a defender creature CAN block your Spider") {
@@ -170,10 +172,10 @@ class WallCrawlScenarioTest : FunSpec({
         driver.removeSummoningSickness(wall)
 
         driver.advanceToPlayer1DeclareAttackers()
-        driver.declareAttackers(me, listOf(spider), opponent).isSuccess shouldBe true
+        driver.declareAttackers(me, listOf(spider), opponent).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.currentStep shouldBe Step.DECLARE_BLOCKERS
 
-        driver.declareBlockers(opponent, mapOf(wall to listOf(spider))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(wall to listOf(spider))).outcome shouldBe Outcome.Done
     }
 })

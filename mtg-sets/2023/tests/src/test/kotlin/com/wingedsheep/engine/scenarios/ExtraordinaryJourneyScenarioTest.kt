@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Extraordinary Journey {X}{X}{U}{U} — Enchantment.
@@ -63,7 +64,7 @@ class ExtraordinaryJourneyScenarioTest : FunSpec({
     fun castAndResolve(driver: GameTestDriver, player: EntityId, cardId: EntityId) {
         driver.submit(
             CastSpell(playerId = player, cardId = cardId, paymentStrategy = PaymentStrategy.AutoPay)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         drainStack(driver)
     }
 
@@ -87,10 +88,10 @@ class ExtraordinaryJourneyScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.AutoPay,
                 xValue = x
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         if (driver.pendingDecision != null) {
-            driver.submitTargetSelection(caster, targets).isSuccess shouldBe true
+            driver.submitTargetSelection(caster, targets).outcome shouldBe Outcome.Done
         }
         drainStack(driver)
     }

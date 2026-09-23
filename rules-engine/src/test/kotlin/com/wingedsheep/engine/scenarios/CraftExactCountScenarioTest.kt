@@ -19,6 +19,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Exact-count Craft costs (CR 702.167a): "Craft with artifact" exiles exactly one material —
@@ -108,7 +110,7 @@ class CraftExactCountScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(material1, material2))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error.shouldNotBeNull() shouldContain "at most"
 
         // Nothing moved: both materials and the crafter are still on the battlefield.

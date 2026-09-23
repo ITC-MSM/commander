@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Phoenix Down (FIN #29) — {W} Artifact.
@@ -43,7 +44,7 @@ class PhoenixDownScenarioTest : FunSpec({
         driver.giveMana(me, Color.WHITE, 2) // {1}{W}
 
         val abilityId = PhoenixDown.activatedAbilities[0].id
-        driver.submit(ActivateAbility(playerId = me, sourceId = down, abilityId = abilityId)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(playerId = me, sourceId = down, abilityId = abilityId)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve → mode choice
 
         val modeDecision = driver.pendingDecision as ChooseOptionDecision
@@ -71,7 +72,7 @@ class PhoenixDownScenarioTest : FunSpec({
         driver.giveMana(me, Color.WHITE, 2)
 
         val abilityId = PhoenixDown.activatedAbilities[0].id
-        driver.submit(ActivateAbility(playerId = me, sourceId = down, abilityId = abilityId)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(playerId = me, sourceId = down, abilityId = abilityId)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val modeDecision = driver.pendingDecision as ChooseOptionDecision

@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Wisecrack (SPM) — {2}{R} Instant.
@@ -74,7 +75,7 @@ class WisecrackScenarioTest : FunSpec({
         driver.giveColorlessMana(p1, 2)
         driver.giveMana(p1, Color.RED, 1)
         val p2LifeBefore = driver.getLifeTotal(p2)
-        driver.castSpell(p1, wisecrack, targets = listOf(giant)).isSuccess shouldBe true
+        driver.castSpell(p1, wisecrack, targets = listOf(giant)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // The attacker dealt 3 to itself and died, and its controller (p2) took 2.

@@ -33,6 +33,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests G1 / G2 from [`backlog/modal-cast-time-choices-plan.md`]: rule 700.2g —
@@ -110,7 +111,7 @@ class ModalCopyPreservationTest : FunSpec({
                     listOf(ChosenTarget.Permanent(centaur), ChosenTarget.Permanent(goblin))
                 )
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         val brigidsOnStackId = d.state.stack.first()
 
@@ -126,7 +127,7 @@ class ModalCopyPreservationTest : FunSpec({
                 cardId = copySpell,
                 targets = listOf(ChosenTarget.Spell(brigidsOnStackId))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Both pass so Copy Spell resolves first (LIFO).
         d.bothPass()
@@ -222,7 +223,7 @@ class ModalCopyPreservationTest : FunSpec({
 
         val executor = StormCopyEffectExecutor(cardRegistry = CardRegistry(), targetFinder = TargetFinder())
         val result = executor.execute(state, stormEffect, context)
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Per 707.12, the copy is a spell on the stack — a SpellOnStackComponent-backed
         // entity with a CopyOfComponent marker, not a triggered ability.

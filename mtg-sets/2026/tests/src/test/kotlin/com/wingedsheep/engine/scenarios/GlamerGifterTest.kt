@@ -14,6 +14,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Glamer Gifter's ETB ability: sets base P/T to 4/4 and grants all creature types.
@@ -50,7 +51,7 @@ class GlamerGifterTest : FunSpec({
 
         // Cast Glamer Gifter
         val castResult = driver.castSpell(activePlayer, gifter)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the creature spell
         driver.bothPass()

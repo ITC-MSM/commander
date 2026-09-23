@@ -27,6 +27,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Phase 3 of `backlog/storm-implementation-correctness.md`: per rule 707.10 the copy
@@ -123,7 +124,7 @@ class StormCopyInheritsAllDecisionsTest : FunSpec({
         )
 
         val result = runStorm(buildState(p1, spellEntity, source), spellEntity, p1)
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val copy = copyComponent(result.state)
         copy.casterId shouldBe p1
@@ -153,7 +154,7 @@ class StormCopyInheritsAllDecisionsTest : FunSpec({
         val source = SpellOnStackComponent(casterId = p1, xValue = 4)
 
         val result = runStorm(buildState(p1, spellEntity, source), spellEntity, p1)
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val copyId = result.state.stack.single { id ->
             val c = result.state.getEntity(id)
@@ -174,7 +175,7 @@ class StormCopyInheritsAllDecisionsTest : FunSpec({
         )
 
         val result = runStorm(buildState(p1, spellEntity, source), spellEntity, p1)
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         result.events.none { it is ManaSpentEvent } shouldBe true
         result.events.none { it is SpellCastEvent } shouldBe true

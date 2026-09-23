@@ -21,6 +21,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import java.util.UUID
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Dwarven Blastminer.
@@ -110,7 +111,7 @@ class DwarvenBlastminerTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(nonbasicLand))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Blastminer should be tapped
         driver.isTapped(blastminer) shouldBe true
@@ -154,7 +155,7 @@ class DwarvenBlastminerTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(basicLand))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         // The basic land should still be there
         driver.findPermanent(opponent, "Forest") shouldNotBe null

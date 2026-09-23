@@ -54,7 +54,31 @@ export function layoutEnvFor(base: ResponsiveSizes): LayoutEnv {
  * `base` itself when nothing would change, so downstream useMemos keyed on the
  * sizes identity don't invalidate for no visual change.
  */
+/**
+ * Per-base cache of derived sizes, so the same width always yields the same object. The sizes are
+ * a context value every battlefield card reads: without the cache, anything that re-runs the slot
+ * solve — tapping a land changes the row stats — hands every card a fresh-but-equal context
+ * value and re-renders the whole board even though no card changed size.
+ */
+const sizesCache = new WeakMap<ResponsiveSizes, Map<number, ResponsiveSizes>>()
+const SIZES_CACHE_LIMIT = 64
+
 export function sizesForCardWidth(base: ResponsiveSizes, cardWidth: number): ResponsiveSizes {
+  let byWidth = sizesCache.get(base)
+  const cached = byWidth?.get(cardWidth)
+  if (cached) return cached
+  const sizes = computeSizesForCardWidth(base, cardWidth)
+  if (!byWidth) {
+    byWidth = new Map()
+    sizesCache.set(base, byWidth)
+  }
+  // Widths come from a continuous solve; a live resize drag can mint many. Keep the cache bounded.
+  if (byWidth.size >= SIZES_CACHE_LIMIT) byWidth.clear()
+  byWidth.set(cardWidth, sizes)
+  return sizes
+}
+
+function computeSizesForCardWidth(base: ResponsiveSizes, cardWidth: number): ResponsiveSizes {
   const cardHeight = cardHeightFor(cardWidth)
   if (cardWidth === base.battlefieldCardWidth && cardHeight === base.battlefieldCardHeight) return base
 
@@ -764,9 +788,8 @@ export const PASSIVE_COUNTER_TYPES: readonly CounterType[] = [
   // spore (the Fungus/Thallid mechanic).
   //
   // CounterType.DEFENSE is deliberately absent. It is the battle analogue of loyalty (CR 310.4c) —
-  // a number the permanent is defined by, not a marker sitting on it — so it belongs with the
-  // loyalty-style display battles will need, not in this marker-badge allowlist. Until that exists
-  // it still shows in the card preview's counter panel, which lists whatever the server sent.
+  // a number the permanent is defined by, not a marker sitting on it — so GameCard draws it as the
+  // battle's own defense badge over the printed shield, not in this marker-badge allowlist.
   CounterType.STORAGE,
   CounterType.HUNGER,
   CounterType.DOOM,

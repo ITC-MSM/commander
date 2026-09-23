@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Eshki Dragonclaw ({1}{G}{U}{R}, 4/4, Vigilance/Trample/Ward {1}):
@@ -44,13 +45,13 @@ class EshkiDragonclawTest : FunSpec({
         // Cast a creature spell ...
         driver.giveMana(me, Color.GREEN, 2)
         val bears = driver.putCardInHand(me, "Grizzly Bears")
-        driver.castSpell(me, bears).isSuccess shouldBe true
+        driver.castSpell(me, bears).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // ... and a noncreature spell.
         driver.giveMana(me, Color.RED, 1)
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
-        driver.castSpell(me, bolt, listOf(opp)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, listOf(opp)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val handBefore = driver.state.getZone(ZoneKey(me, Zone.HAND)).size
@@ -71,7 +72,7 @@ class EshkiDragonclawTest : FunSpec({
 
         driver.giveMana(me, Color.GREEN, 2)
         val bears = driver.putCardInHand(me, "Grizzly Bears")
-        driver.castSpell(me, bears).isSuccess shouldBe true
+        driver.castSpell(me, bears).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val handBefore = driver.state.getZone(ZoneKey(me, Zone.HAND)).size

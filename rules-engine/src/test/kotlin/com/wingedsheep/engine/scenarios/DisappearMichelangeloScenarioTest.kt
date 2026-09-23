@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Disappear intervening-if test, exercised through Michelangelo, Game Master (TMT):
@@ -50,7 +51,7 @@ class DisappearMichelangeloScenarioTest : FunSpec({
                 sourceId = food,
                 abilityId = PredefinedTokens.Food.activatedAbilities.first().id
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         var guard = 0
         while (d.stackSize > 0 && guard++ < 6) d.bothPass()
 

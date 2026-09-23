@@ -14,6 +14,7 @@ import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Daring Archaeologist (DOM #13) — "When this creature enters, you may return target artifact card
@@ -53,7 +54,7 @@ class DaringArchaeologistScenarioTest : FunSpec({
                 cardId = archaeologist,
                 paymentStrategy = PaymentStrategy.AutoPay,
             ),
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         bothPass() // the creature resolves and its ETB trigger asks whether you want to do this
         return Triple(you, golem, myr)
     }

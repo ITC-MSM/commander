@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for the two TDM check-lands Great Arashin City (#257) and Mistrise Village (#261), plus
@@ -47,7 +48,7 @@ class TdmCheckLandsScenarioTest : FunSpec({
 
         driver.putLandOnBattlefield(p1, "Forest")
         val city = driver.putCardInHand(p1, "Great Arashin City")
-        driver.playLand(p1, city).isSuccess shouldBe true
+        driver.playLand(p1, city).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(city)?.has<TappedComponent>() shouldBe false
     }
@@ -59,7 +60,7 @@ class TdmCheckLandsScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val city = driver.putCardInHand(p1, "Great Arashin City")
-        driver.playLand(p1, city).isSuccess shouldBe true
+        driver.playLand(p1, city).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(city)?.has<TappedComponent>() shouldBe true
     }
@@ -75,7 +76,7 @@ class TdmCheckLandsScenarioTest : FunSpec({
         driver.giveMana(p1, Color.BLACK, 2)
 
         val spiritAbility = GreatArashinCity.activatedAbilities[1].id
-        driver.submit(ActivateAbility(p1, city, spiritAbility)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, city, spiritAbility)).outcome shouldBe Outcome.Done
         var guard = 0
         while (driver.state.pendingDecision != null && guard < 10) { driver.autoResolveDecision(); guard++ }
         var stackGuard = 0
@@ -92,7 +93,7 @@ class TdmCheckLandsScenarioTest : FunSpec({
 
         driver.putLandOnBattlefield(p1, "Mountain")
         val village = driver.putCardInHand(p1, "Mistrise Village")
-        driver.playLand(p1, village).isSuccess shouldBe true
+        driver.playLand(p1, village).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(village)?.has<TappedComponent>() shouldBe false
     }
@@ -105,7 +106,7 @@ class TdmCheckLandsScenarioTest : FunSpec({
 
         val village = driver.putPermanentOnBattlefield(p1, "Mistrise Village")
         val manaAbility = MistriseVillage.activatedAbilities[0].id
-        driver.submit(ActivateAbility(p1, village, manaAbility)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, village, manaAbility)).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.blue shouldBe 1
     }

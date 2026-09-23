@@ -40,6 +40,8 @@ class ActionProcessorAtomicityTest : ScenarioTestBase() {
             val result = processed.result
 
             result.error shouldBe "No valid target for life gain"
+            // Validation accepted the answer; carrying it out is what failed.
+            result.outcome shouldBe Outcome.Rejected(Rejection.ExecutionFailed("No valid target for life gain"))
             assertSoftly {
                 // Identity, not equality: the boundary hands back the caller's own state object,
                 // so nothing the rejected attempt built can survive in any field of it.
@@ -49,9 +51,22 @@ class ActionProcessorAtomicityTest : ScenarioTestBase() {
                 result.state.continuationStack shouldBe preActionState.continuationStack
                 result.events.shouldBeEmpty()
                 result.pendingDecision shouldBe null
-                result.triggersAlreadyProcessed shouldBe false
                 processed.undoPolicy shouldBe UndoCheckpointAction.PRESERVE
             }
+        }
+
+        test("an action validation refuses is rejected as illegal, not as an execution failure") {
+            val (game, decision) = gameAwaitingDividedDamage(
+                then = Effects.GainLife(1, EffectTarget.ContextTarget(0))
+            )
+
+            // Nobody may pass priority while a decision is pending.
+            val result = actionProcessor.process(game.state, PassPriority(game.player1Id)).result
+
+            val outcome = result.outcome.shouldBeInstanceOf<Outcome.Rejected>()
+            outcome.reason.shouldBeInstanceOf<Rejection.IllegalAction>()
+            result.state shouldBeSameInstanceAs game.state
+            result.state.pendingDecision shouldBe decision
         }
 
         test("a rejected action drops the revealed-in-hand bookkeeping its events would have driven") {

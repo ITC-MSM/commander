@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 class BlightPaymentAiTest : FunSpec({
     fun driver(): GameTestDriver = GameTestDriver().apply {
@@ -34,7 +35,7 @@ class BlightPaymentAiTest : FunSpec({
             as ActivateAbility
         chosen.sourceId shouldBe gift
         chosen.costPayment?.blightTargets shouldBe listOf(creature)
-        driver.submit(chosen).isSuccess shouldBe true
+        driver.submit(chosen).outcome shouldBe Outcome.Done
     }
 
     test("AI materializes the Blight branch instead of being charged its alternative mana") {
@@ -53,6 +54,6 @@ class BlightPaymentAiTest : FunSpec({
         val chosen = AIPlayer.create(driver.cardRegistry, player).chooseFrom(driver.state, listOf(legal)).action
             as CastSpell
         chosen.additionalCostPayment?.blightTargets shouldBe listOf(blightCreature)
-        driver.submit(chosen).isSuccess shouldBe true
+        driver.submit(chosen).outcome shouldBe Outcome.Done
     }
 })

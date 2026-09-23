@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Micromancer — {3}{U} 3/3
@@ -44,7 +45,7 @@ class MicromancerScenarioTest : FunSpec({
 
         val micromancer = driver.putCardInHand(me, "Micromancer")
         driver.giveMana(me, Color.BLUE, 4)
-        driver.castSpell(me, micromancer).isSuccess shouldBe true
+        driver.castSpell(me, micromancer).outcome shouldBe Outcome.Done
 
         // Resolve the creature, then its ETB "may" trigger: accept the yes/no, capture the search.
         var searchDecision: SelectCardsDecision? = null
@@ -86,7 +87,7 @@ class MicromancerScenarioTest : FunSpec({
 
         val micromancer = driver.putCardInHand(me, "Micromancer")
         driver.giveMana(me, Color.BLUE, 4)
-        driver.castSpell(me, micromancer).isSuccess shouldBe true
+        driver.castSpell(me, micromancer).outcome shouldBe Outcome.Done
 
         var declined = false
         var safety = 0

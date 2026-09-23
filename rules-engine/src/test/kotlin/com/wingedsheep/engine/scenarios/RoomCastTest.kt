@@ -15,6 +15,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Phase 2 of the Rooms mechanic (CR 709): split-layout cards can be cast face-by-face,
@@ -98,7 +99,7 @@ class RoomCastTest : FunSpec({
 
         // Cast the left face (Test Hall, faceIndex = 0).
         val castResult = driver.submit(CastSpell(player, roomId, faceIndex = 0))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the spell.
         driver.bothPass()
@@ -121,7 +122,7 @@ class RoomCastTest : FunSpec({
         driver.giveMana(player, Color.BLACK, 5)
 
         val castResult = driver.submit(CastSpell(player, roomId, faceIndex = 1))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val room = driver.state.getEntity(roomId)?.get<RoomComponent>()

@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.scripting.Duration
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Regression: marked damage must be removed at the cleanup step (CR 514.2) even when the
@@ -85,9 +86,9 @@ class CleanupHandSizeDiscardDamageRemovalTest : FunSpec({
         // Attack into the deathtouch blocker; the attacker takes 1 deathtouch damage. Let
         // passPriorityUntil auto-resolve the combat-damage assignment.
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attackerController, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(attackerController, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).isSuccess shouldBe true
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(attacker))).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
 
         // Indestructible kept the attacker alive through the deathtouch damage this turn.

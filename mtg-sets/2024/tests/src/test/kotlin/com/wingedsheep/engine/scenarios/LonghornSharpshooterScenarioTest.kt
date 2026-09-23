@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Longhorn Sharpshooter (OTJ #132) — {2}{R} Minotaur Rogue, 3/3, Reach, Plot {3}{R}.
@@ -38,7 +39,7 @@ class LonghornSharpshooterScenarioTest : FunSpec({
         driver.giveMana(player, Color.RED, 4) // plot cost {3}{R}
 
         // Plotting pauses for the "becomes plotted" trigger's target choice.
-        driver.submit(PlotCard(player, sharpshooter)).isPaused shouldBe true
+        (driver.submit(PlotCard(player, sharpshooter)).outcome is Outcome.Paused) shouldBe true
         driver.submitTargetSelection(player, listOf(target))
         driver.bothPass() // resolve the trigger
 
@@ -58,7 +59,7 @@ class LonghornSharpshooterScenarioTest : FunSpec({
         val sharpshooter = driver.putCardInHand(player, "Longhorn Sharpshooter")
         driver.giveMana(player, Color.RED, 4)
 
-        driver.submit(PlotCard(player, sharpshooter)).isPaused shouldBe true
+        (driver.submit(PlotCard(player, sharpshooter)).outcome is Outcome.Paused) shouldBe true
         driver.submitTargetSelection(player, listOf(opponent))
         driver.bothPass()
 

@@ -21,6 +21,7 @@ import com.wingedsheep.sdk.scripting.TimingRule
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Crystal Fragments // Summon: Alexander (FIN #13).
@@ -76,7 +77,7 @@ class CrystalFragmentsScenarioTest : FunSpec({
         driver.giveColorlessMana(you, 1)
         driver.submit(
             ActivateAbility(you, fragments, equipAbilityId, targets = listOf(ChosenTarget.Permanent(courser)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the equip ability off the stack
         resolveStack(driver)
         projector.project(driver.state).getPower(courser) shouldBe 4
@@ -85,7 +86,7 @@ class CrystalFragmentsScenarioTest : FunSpec({
         // {5}{W}{W}: exile and return transformed (sorcery speed).
         driver.giveMana(you, Color.WHITE, 2)
         driver.giveColorlessMana(you, 5)
-        driver.submit(ActivateAbility(you, fragments, transformAbilityId)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(you, fragments, transformAbilityId)).outcome shouldBe Outcome.Done
         driver.bothPass()
         resolveStack(driver)
 
@@ -117,7 +118,7 @@ class CrystalFragmentsScenarioTest : FunSpec({
         // triggers on entry and resolves, leaving a turn-long shield.
         driver.giveMana(you, Color.WHITE, 2)
         driver.giveColorlessMana(you, 5)
-        driver.submit(ActivateAbility(you, fragments, transformAbilityId)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(you, fragments, transformAbilityId)).outcome shouldBe Outcome.Done
         driver.bothPass()
         resolveStack(driver)
         driver.state.getEntity(fragments)!!.get<CardComponent>()!!.name shouldBe "Summon: Alexander"
@@ -156,7 +157,7 @@ class CrystalFragmentsScenarioTest : FunSpec({
 
         driver.giveMana(you, Color.WHITE, 2)
         driver.giveColorlessMana(you, 5)
-        driver.submit(ActivateAbility(you, fragments, transformAbilityId)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(you, fragments, transformAbilityId)).outcome shouldBe Outcome.Done
         driver.bothPass()
         resolveStack(driver)
 

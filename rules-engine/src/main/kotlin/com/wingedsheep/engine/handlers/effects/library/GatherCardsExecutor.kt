@@ -283,7 +283,7 @@ class GatherCardsExecutor : EffectExecutor<GatherCardsEffect> {
                 // to creatures still on the battlefield — a creature that already left can't be
                 // affected (last-known-information identifies them, it doesn't resurrect them).
                 val battlefield = state.getBattlefield().toSet()
-                (context.triggerLastKnownBlockingOrBlockedByIds ?: emptyList())
+                (context.triggerContext?.lastKnownBlockingOrBlockedByIds ?: emptyList())
                     .filter { it in battlefield }
             }
 

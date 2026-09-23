@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Glarecaster and the RedirectNextDamage mechanic.
@@ -70,7 +71,7 @@ class GlarecasterTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Permanent(bigCreature))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Verify shield is active
@@ -116,7 +117,7 @@ class GlarecasterTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Permanent(bigCreature))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // P1 casts Lightning Bolt targeting their own Glarecaster
@@ -157,7 +158,7 @@ class GlarecasterTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Permanent(hillGiant))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // First bolt at P1 - should be redirected
@@ -205,7 +206,7 @@ class GlarecasterTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Player(p2))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // P1 casts Lightning Bolt targeting themselves
@@ -245,7 +246,7 @@ class GlarecasterTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Player(p2))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Shield should be active
@@ -295,7 +296,7 @@ class GlarecasterTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Player(p2))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Shield should be active
@@ -352,7 +353,7 @@ class GlarecasterTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Player(p2))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Both attackers swing at P1 unblocked.

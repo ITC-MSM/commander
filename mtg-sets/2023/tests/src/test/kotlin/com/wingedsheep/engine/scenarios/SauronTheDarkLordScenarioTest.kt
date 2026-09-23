@@ -20,6 +20,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Sauron, the Dark Lord (LTR #224).
@@ -133,7 +134,7 @@ class SauronTheDarkLordScenarioTest : FunSpec({
         repeat(2) { driver.putCardInHand(controller, "Mountain") }
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(controller, listOf(army), defender).isSuccess shouldBe true
+        driver.declareAttackers(controller, listOf(army), defender).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         driver.declareNoBlockers(defender)
 

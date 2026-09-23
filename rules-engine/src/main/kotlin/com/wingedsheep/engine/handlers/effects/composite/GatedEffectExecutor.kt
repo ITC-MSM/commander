@@ -688,7 +688,7 @@ class GatedEffectExecutor(
 
         val result = effectExecutor(stateWithCont, gate.action, context)
 
-        if (result.isPaused) {
+        if (result.outcome is Outcome.Paused) {
             // Action paused; leave the continuation on the stack for the auto-resumer.
             return result
         }

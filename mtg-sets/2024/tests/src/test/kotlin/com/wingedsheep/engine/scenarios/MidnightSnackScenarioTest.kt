@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Midnight Snack {2}{B} — Enchantment
@@ -100,7 +101,7 @@ class MidnightSnackScenarioTest : FunSpec({
         // Gain 4 life this turn so the drain's X = 4.
         val gain = driver.putCardInHand(you, "Gain Four Life")
         driver.giveMana(you, Color.WHITE, 1)
-        driver.castSpell(you, gain).isSuccess shouldBe true
+        driver.castSpell(you, gain).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.assertLifeTotal(you, 24)
 
@@ -114,7 +115,7 @@ class MidnightSnackScenarioTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Player(opponent))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the drain
 
         driver.findPermanent(you, "Midnight Snack") shouldBe null // sacrificed

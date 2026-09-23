@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for the Incubate keyword action (CR 701.51).
@@ -62,7 +63,7 @@ class IncubateTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val spell = driver.putCardInHand(caster, "Test Incubate 3")
-        driver.castSpell(caster, spell, emptyList()).isSuccess shouldBe true
+        driver.castSpell(caster, spell, emptyList()).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the Incubate spell
 
         val tokenId = driver.findPermanent(caster, "Incubator")
@@ -90,7 +91,7 @@ class IncubateTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val spell = driver.putCardInHand(caster, "Test Incubate 3")
-        driver.castSpell(caster, spell, emptyList()).isSuccess shouldBe true
+        driver.castSpell(caster, spell, emptyList()).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val tokenId = driver.findPermanent(caster, "Incubator")!!
@@ -103,7 +104,7 @@ class IncubateTest : FunSpec({
         driver.giveColorlessMana(caster, 2)
         driver.submit(
             ActivateAbility(playerId = caster, sourceId = tokenId, abilityId = transformAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the activation
 
         val container = driver.state.getEntity(tokenId)!!

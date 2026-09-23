@@ -15,6 +15,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Elvish Pathcutter.
@@ -79,7 +81,7 @@ class ElvishPathcutterTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(elf))
             )
         )
-        activateResult.isSuccess shouldBe true
+        activateResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -110,7 +112,7 @@ class ElvishPathcutterTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(pathcutter))
             )
         )
-        activateResult.isSuccess shouldBe true
+        activateResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -143,7 +145,7 @@ class ElvishPathcutterTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(human))
             )
         )
-        activateResult.isSuccess shouldBe false
+        activateResult.outcome shouldNotBe Outcome.Done
     }
 
     test("Forestwalk wears off at end of turn") {

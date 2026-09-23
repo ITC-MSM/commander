@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Kefka, Court Mage // Kefka, Ruler of Ruin (FIN #231).
@@ -82,7 +83,7 @@ class KefkaCourtMageScenarioTest : FunSpec({
 
         giveKefkaMana(driver, you)
         val kefka = driver.putCardInHand(you, "Kefka, Court Mage")
-        driver.castSpell(you, kefka).isSuccess shouldBe true
+        driver.castSpell(you, kefka).outcome shouldBe Outcome.Done
 
         val eventsBefore = driver.events.size
         resolve(driver, mapOf(you to yourInstant, opponent to oppCreature))
@@ -105,7 +106,7 @@ class KefkaCourtMageScenarioTest : FunSpec({
 
         giveKefkaMana(driver, you)
         val kefka = driver.putCardInHand(you, "Kefka, Court Mage")
-        driver.castSpell(you, kefka).isSuccess shouldBe true
+        driver.castSpell(you, kefka).outcome shouldBe Outcome.Done
 
         val eventsBefore = driver.events.size
         resolve(driver, mapOf(you to yourCreature, opponent to oppCreature))
@@ -128,7 +129,7 @@ class KefkaCourtMageScenarioTest : FunSpec({
         driver.giveMana(you, Color.RED, 8)
 
         driver.submit(ActivateAbility(playerId = you, sourceId = kefka, abilityId = eightManaAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         resolve(driver, emptyMap())
 
         // The opponent's only permanent is sacrificed.

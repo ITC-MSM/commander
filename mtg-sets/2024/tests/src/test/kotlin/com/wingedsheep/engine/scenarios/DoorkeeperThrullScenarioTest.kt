@@ -13,6 +13,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Doorkeeper Thrull — "Artifacts and creatures entering don't cause abilities to trigger."
@@ -38,7 +39,7 @@ class DoorkeeperThrullScenarioTest : FunSpec({
     fun GameTestDriver.castAndSettle(you: EntityId, cardName: String, black: Int) {
         val card = putCardInHand(you, cardName)
         giveMana(you, Color.BLACK, black)
-        castSpell(you, card).isSuccess shouldBe true
+        castSpell(you, card).outcome shouldBe Outcome.Done
         var guard = 0
         while (!isPaused && state.stack.isNotEmpty() && guard++ < 20) bothPass()
     }

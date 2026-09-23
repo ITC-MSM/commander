@@ -89,7 +89,7 @@ unevenly.
 - Several touch points in the `add-feature` skill's cross-layer checklist ("register in
   `TriggerIndex`", "mirror in `enums.ts`") then become build failures instead of prose.
 
-## 2. One context record, one settle boundary, a sealed result — [HIGH]
+## 2. One context record, one settle boundary, a sealed result — [HIGH] ✅ Done
 
 **Problem: pauses are hand-written continuation-passing.**
 - There are about 155 `AnswerContinuation` classes, about 18 automatic continuations, and about 37
@@ -127,19 +127,62 @@ unevenly.
   failure.
 
 **Fix.**
-1. Carry **one `ResolutionContext` record** through every frame and resumer. Adding a fact becomes
+- [x] Carry **one `ResolutionContext` record** through every frame and resumer. Adding a fact becomes
    one field on one record.
-2. Add **one `settle(state)` step** that runs at a single engine boundary: detect triggers →
+   _Done: the existing `TriggerContext` is that record. The triggered-ability stack object, both
+   trigger continuations and `EffectContext` carry it whole, so clash-won would now touch two engine
+   files instead of 11. `LegacyTriggerContextLift` upgrades saved games, and
+   `TriggerContextCarrierInvariantTest` blocks a per-fact field from coming back._
+- [x] Add **one `settle(state)` step** that runs at a single engine boundary: detect triggers →
    state-based actions → put triggers on the stack → give priority. Then delete
    `triggersAlreadyProcessed` and the mirrored loops.
-3. Replace `isSuccess` / `isPaused` with a **sealed `Done | Paused | Rejected(reason)`** and a typed
+   _Done: `Settler` runs at `ActionProcessor` after every action. Waiting triggers live in
+   `GameState.pendingTriggers` (CR 603.3) across pauses. The untap and cleanup steps park the rest of
+   their turn beneath their choice, so `SubmitDecisionHandler` lost its UNTAP and CLEANUP special
+   cases. `SingleSettleBoundaryTest` keeps detection in one place._
+- [x] Replace `isSuccess` / `isPaused` with a **sealed `Done | Paused | Rejected(reason)`** and a typed
    rejection reason.
-4. Encode the suspension-trace goldens without defaults, so an additive field doesn't break them.
-5. Longer term, evaluate suspending coroutines or a small effect interpreter, so continuations are
+   _Done: `ExecutionResult` / `EffectResult` store an `Outcome`. A `Rejection` is `IllegalAction`
+   (validation refused it) or `ExecutionFailed` (it failed after passing validation). Both booleans
+   are deleted, and engine and test code were codemodded onto `outcome`._
+- [x] Encode the suspension-trace goldens without defaults, so an additive field doesn't break them.
+   _Done: this change's own new `pendingTriggers` field no longer touches them._
+- [x] Longer term, evaluate suspending coroutines or a small effect interpreter, so continuations are
    derived by the compiler rather than hand-written. The serializable-continuation property must
    survive; that is the design constraint, not an obstacle.
+   _Evaluated in [`docs/plans/derived-continuations.md`](../docs/plans/derived-continuations.md).
+   Coroutines are ruled out because Kotlin continuations are one-shot and can't be serialized. The
+   recommendation is an effect-tree interpreter, piloted on the "may" frames, with replay-to-resume
+   for action handlers. The implementation itself is future work._
 
-## 3. One legality kernel — [HIGH]
+## 3. ✅ One legality kernel — [HIGH] — DONE
+
+> **Done (2026-09-23).** `rules-engine/.../legality/LegalityKernel.kt` is the one place that
+> decides:
+> - whether an `ActivationRestriction` holds;
+> - whether a spell's `CastRestriction`s hold;
+> - whether a `GrantMayCastFromLinkedExile` lets a player cast an exiled card.
+>
+> These now call it: `ActivateAbilityHandler.validate`, `CastSpellHandler.validate`, `ManaSolver`,
+> every ability and cast enumerator, `CastZoneResolver`, the land-play path, and
+> `ClientStateTransformer`. The four copies of the activation `when`, the second cast `when`, and
+> the view's `isCastableFromLinkedExile` are deleted. The linked-exile grant is now read from
+> projected control and the granter's functioning abilities (none when it is face down or has lost
+> all abilities, plus granted ones). That fixed a stolen Rona granting to its old controller and a
+> Deep-Frozen Rona still granting in every path, not only the view.
+>
+> Two tests guard it:
+> - `LegalityKernelBoundaryTest` fails on restriction dispatch outside the kernel.
+> - `LegalActionsPassValidateTest` plays seeded random games over six sets and submits every
+>   complete affordable offer to `ActionProcessor.validate`. On its first run it caught
+>   `ManaAbilityEnumerator` offering a bare `{1}:` mana ability (Three Tree Mascot) with no mana to
+>   pay for it.
+>
+> Enumerators still assemble their offers themselves rather than calling `validate` per candidate.
+> An offer usually lacks the targets and payment choices `validate` needs, and the extra cost would
+> land on the MCTS hot path. The shared kernel plus the parity test stand in for that. Folding the
+> other offer/accept pairs (costs, timing) into the kernel belongs with §4's cost plug-ins.
+
 
 **Problem.** Legality is implemented three to five times:
 - **`ActivationRestriction`** is switched on in four places:
@@ -342,10 +385,10 @@ other "target" Oracle text scripted without a target requirement. That can becom
    - ~~§1 fail-closed dispatch and its coverage tests~~ (done);
    - remove the global singletons and the ad-hoc `StackResolver`s;
    - delete the `ContextTarget(0)` defaults;
-   - the single `settle()` boundary from §2.
+   - ~~the single `settle()` boundary from §2~~ (done).
 2. **Medium:**
-   - `ResolutionContext` and the sealed result type (§2);
-   - the legality kernel (§3);
+   - ~~`ResolutionContext` and the sealed result type (§2)~~ (done);
+   - ~~the legality kernel (§3)~~ (done);
    - the staged casting pipeline with cost plug-ins (§4).
 3. **Large, codemod-driven:** SDK consolidation (§5), then generation (§6).
 4. **When gym throughput matters:** persistent collections and incremental projection.

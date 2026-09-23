@@ -167,7 +167,8 @@
 }
 
 .contextCardImage {
-  width: 150px;
+  --card-w: 150px;
+  width: var(--card-w);
   height: auto;
   border-radius: var(--radius-md);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
@@ -176,19 +177,27 @@
 /* Secondary context (what triggered the ability) — present but visibly subordinate. */
 .contextCardImageSecondary {
   composes: contextCardImage;
-  width: 110px;
+  --card-w: 110px;
   opacity: 0.85;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 .contextCardImageSubject {
   composes: contextCardImage;
-  width: 176px;
+  --card-w: 176px;
   outline: 3px solid var(--color-decision-subject);
   outline-offset: 2px;
   box-shadow:
     0 0 16px var(--color-decision-subject-glow),
     0 0 32px var(--color-decision-subject-shadow);
+}
+
+/* A sideways-printed card (a battle, a split card) turned to read landscape. The image keeps its
+   portrait box and is rotated in place; the margins trade the portrait's extra height for width
+   (a card is ~1.4× as tall as it is wide, so each side moves by ~0.2 of its width). */
+.contextCardLandscape {
+  transform: rotate(90deg);
+  margin: calc(var(--card-w) * -0.2) calc(var(--card-w) * 0.2);
 }
 
 .contextCardLabelSubject {
@@ -203,15 +212,15 @@
   }
 
   .contextCardImage {
-    width: 96px;
+    --card-w: 96px;
   }
 
   .contextCardImageSecondary {
-    width: 76px;
+    --card-w: 76px;
   }
 
   .contextCardImageSubject {
-    width: 112px;
+    --card-w: 112px;
   }
 }
 

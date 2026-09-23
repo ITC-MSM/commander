@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * CR 302.6 / 508.1a — a creature can't attack unless it has been under its controller's control
@@ -47,7 +48,7 @@ class VehicleEntersThisTurnAttackTest : FunSpec({
         // Cast Turtle Blimp from hand so it enters via the real ZoneTransitionService path.
         val blimpInHand = driver.putCardInHand(you, "Turtle Blimp")
         driver.giveMana(you, Color.RED, 5)
-        driver.castSpell(you, blimpInHand).isSuccess shouldBe true
+        driver.castSpell(you, blimpInHand).outcome shouldBe Outcome.Done
         driver.bothPass()  // resolve the spell — Blimp enters, ETB queues the token
         driver.bothPass()  // resolve the ETB trigger — 2/2 Mutant token enters
 

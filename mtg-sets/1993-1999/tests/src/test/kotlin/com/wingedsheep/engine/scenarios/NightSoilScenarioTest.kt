@@ -12,6 +12,8 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Night Soil (Fallen Empires).
@@ -147,6 +149,6 @@ class NightSoilScenarioTest : FunSpec({
                 abilityId = abilityId,
                 costPayment = AdditionalCostPayment(exiledCards = listOf(mine, theirs))
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 })

@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.FaceDownMode
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Coveted Falcon — {1}{U}{U} Artifact Creature — Bird 1/4.
@@ -93,7 +94,7 @@ class CovetedFalconScenarioTest : FunSpec({
             driver.submitMultiTargetSelection(
                 me,
                 mapOf(0 to listOf(opp), 1 to listOf(gift1, gift2)),
-            ).isSuccess shouldBe true
+            ).outcome shouldBe Outcome.Done
 
             var guard = 0
             while (driver.state.stack.isNotEmpty() && guard++ < 20) driver.bothPass()
@@ -125,7 +126,7 @@ class CovetedFalconScenarioTest : FunSpec({
             driver.submitMultiTargetSelection(
                 me,
                 mapOf(0 to listOf(opp), 1 to emptyList()),
-            ).isSuccess shouldBe true
+            ).outcome shouldBe Outcome.Done
 
             var guard = 0
             while (driver.state.stack.isNotEmpty() && guard++ < 20) driver.bothPass()
@@ -155,7 +156,7 @@ class CovetedFalconScenarioTest : FunSpec({
             driver.submitMultiTargetSelection(
                 me,
                 mapOf(0 to listOf(opp), 1 to listOf(survivor, doomed)),
-            ).isSuccess shouldBe true
+            ).outcome shouldBe Outcome.Done
 
             // With the trigger on the stack and its targets locked in (CR 603.3d), one of them dies.
             driver.moveToGraveyard(doomed)
@@ -193,7 +194,7 @@ class CovetedFalconScenarioTest : FunSpec({
                 driver.bothPass()
             }
             (driver.state.pendingDecision is ChooseTargetsDecision) shouldBe true
-            driver.submitTargetSelection(me, listOf(mine)).isSuccess shouldBe true
+            driver.submitTargetSelection(me, listOf(mine)).outcome shouldBe Outcome.Done
 
             guard = 0
             while (driver.state.stack.isNotEmpty() && guard++ < 20) driver.bothPass()

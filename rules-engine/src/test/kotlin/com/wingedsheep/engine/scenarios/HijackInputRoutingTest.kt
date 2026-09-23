@@ -19,6 +19,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Phase 2B input-routing tests for the Mindslaver-style hijack mechanic.
@@ -77,7 +78,7 @@ class HijackInputRoutingTest : FunSpec({
                 targets = listOf(ChosenTarget.Player(opponent))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Stack item is controlled by V (the affected player), not the controller.
         val stackId = d.state.stack.first()

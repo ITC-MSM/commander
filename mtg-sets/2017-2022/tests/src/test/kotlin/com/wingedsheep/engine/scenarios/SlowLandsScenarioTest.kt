@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for the three Crimson Vow / Secrets of Strixhaven "slow lands":
@@ -38,7 +39,7 @@ class SlowLandsScenarioTest : FunSpec({
 
         driver.putLandOnBattlefield(p1, "Forest")
         val glade = driver.putCardInHand(p1, "Deathcap Glade")
-        driver.playLand(p1, glade).isSuccess shouldBe true
+        driver.playLand(p1, glade).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(glade)?.has<TappedComponent>() shouldBe true
     }
@@ -52,7 +53,7 @@ class SlowLandsScenarioTest : FunSpec({
         driver.putLandOnBattlefield(p1, "Forest")
         driver.putLandOnBattlefield(p1, "Swamp")
         val glade = driver.putCardInHand(p1, "Deathcap Glade")
-        driver.playLand(p1, glade).isSuccess shouldBe true
+        driver.playLand(p1, glade).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(glade)?.has<TappedComponent>() shouldBe false
     }
@@ -64,7 +65,7 @@ class SlowLandsScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val glade = driver.putCardInHand(p1, "Deathcap Glade")
-        driver.playLand(p1, glade).isSuccess shouldBe true
+        driver.playLand(p1, glade).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(glade)?.has<TappedComponent>() shouldBe true
     }
@@ -76,11 +77,11 @@ class SlowLandsScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val black = driver.putPermanentOnBattlefield(p1, "Deathcap Glade")
-        driver.submit(ActivateAbility(p1, black, DeathcapGlade.activatedAbilities[0].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, black, DeathcapGlade.activatedAbilities[0].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.black shouldBe 1
 
         val green = driver.putPermanentOnBattlefield(p1, "Deathcap Glade")
-        driver.submit(ActivateAbility(p1, green, DeathcapGlade.activatedAbilities[1].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, green, DeathcapGlade.activatedAbilities[1].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.green shouldBe 1
     }
 
@@ -93,15 +94,15 @@ class SlowLandsScenarioTest : FunSpec({
         driver.putLandOnBattlefield(p1, "Forest")
         driver.putLandOnBattlefield(p1, "Island")
         val cascade = driver.putCardInHand(p1, "Dreamroot Cascade")
-        driver.playLand(p1, cascade).isSuccess shouldBe true
+        driver.playLand(p1, cascade).outcome shouldBe Outcome.Done
         driver.state.getEntity(cascade)?.has<TappedComponent>() shouldBe false
 
         val green = driver.putPermanentOnBattlefield(p1, "Dreamroot Cascade")
-        driver.submit(ActivateAbility(p1, green, DreamrootCascade.activatedAbilities[0].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, green, DreamrootCascade.activatedAbilities[0].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.green shouldBe 1
 
         val blue = driver.putPermanentOnBattlefield(p1, "Dreamroot Cascade")
-        driver.submit(ActivateAbility(p1, blue, DreamrootCascade.activatedAbilities[1].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, blue, DreamrootCascade.activatedAbilities[1].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.blue shouldBe 1
     }
 
@@ -113,7 +114,7 @@ class SlowLandsScenarioTest : FunSpec({
 
         driver.putLandOnBattlefield(p1, "Forest")
         val cascade = driver.putCardInHand(p1, "Dreamroot Cascade")
-        driver.playLand(p1, cascade).isSuccess shouldBe true
+        driver.playLand(p1, cascade).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(cascade)?.has<TappedComponent>() shouldBe true
     }
@@ -127,15 +128,15 @@ class SlowLandsScenarioTest : FunSpec({
         driver.putLandOnBattlefield(p1, "Mountain")
         driver.putLandOnBattlefield(p1, "Plains")
         val pass = driver.putCardInHand(p1, "Sundown Pass")
-        driver.playLand(p1, pass).isSuccess shouldBe true
+        driver.playLand(p1, pass).outcome shouldBe Outcome.Done
         driver.state.getEntity(pass)?.has<TappedComponent>() shouldBe false
 
         val red = driver.putPermanentOnBattlefield(p1, "Sundown Pass")
-        driver.submit(ActivateAbility(p1, red, SundownPass.activatedAbilities[0].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, red, SundownPass.activatedAbilities[0].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.red shouldBe 1
 
         val white = driver.putPermanentOnBattlefield(p1, "Sundown Pass")
-        driver.submit(ActivateAbility(p1, white, SundownPass.activatedAbilities[1].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, white, SundownPass.activatedAbilities[1].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.white shouldBe 1
     }
 
@@ -147,7 +148,7 @@ class SlowLandsScenarioTest : FunSpec({
 
         driver.putLandOnBattlefield(p1, "Mountain")
         val pass = driver.putCardInHand(p1, "Sundown Pass")
-        driver.playLand(p1, pass).isSuccess shouldBe true
+        driver.playLand(p1, pass).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(pass)?.has<TappedComponent>() shouldBe true
     }
@@ -161,15 +162,15 @@ class SlowLandsScenarioTest : FunSpec({
         driver.putLandOnBattlefield(p1, "Plains")
         driver.putLandOnBattlefield(p1, "Swamp")
         val sanctum = driver.putCardInHand(p1, "Shattered Sanctum")
-        driver.playLand(p1, sanctum).isSuccess shouldBe true
+        driver.playLand(p1, sanctum).outcome shouldBe Outcome.Done
         driver.state.getEntity(sanctum)?.has<TappedComponent>() shouldBe false
 
         val white = driver.putPermanentOnBattlefield(p1, "Shattered Sanctum")
-        driver.submit(ActivateAbility(p1, white, ShatteredSanctum.activatedAbilities[0].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, white, ShatteredSanctum.activatedAbilities[0].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.white shouldBe 1
 
         val black = driver.putPermanentOnBattlefield(p1, "Shattered Sanctum")
-        driver.submit(ActivateAbility(p1, black, ShatteredSanctum.activatedAbilities[1].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, black, ShatteredSanctum.activatedAbilities[1].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.black shouldBe 1
     }
 
@@ -181,7 +182,7 @@ class SlowLandsScenarioTest : FunSpec({
 
         driver.putLandOnBattlefield(p1, "Plains")
         val sanctum = driver.putCardInHand(p1, "Shattered Sanctum")
-        driver.playLand(p1, sanctum).isSuccess shouldBe true
+        driver.playLand(p1, sanctum).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(sanctum)?.has<TappedComponent>() shouldBe true
     }
@@ -195,15 +196,15 @@ class SlowLandsScenarioTest : FunSpec({
         driver.putLandOnBattlefield(p1, "Island")
         driver.putLandOnBattlefield(p1, "Mountain")
         val coast = driver.putCardInHand(p1, "Stormcarved Coast")
-        driver.playLand(p1, coast).isSuccess shouldBe true
+        driver.playLand(p1, coast).outcome shouldBe Outcome.Done
         driver.state.getEntity(coast)?.has<TappedComponent>() shouldBe false
 
         val blue = driver.putPermanentOnBattlefield(p1, "Stormcarved Coast")
-        driver.submit(ActivateAbility(p1, blue, StormcarvedCoast.activatedAbilities[0].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, blue, StormcarvedCoast.activatedAbilities[0].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.blue shouldBe 1
 
         val red = driver.putPermanentOnBattlefield(p1, "Stormcarved Coast")
-        driver.submit(ActivateAbility(p1, red, StormcarvedCoast.activatedAbilities[1].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, red, StormcarvedCoast.activatedAbilities[1].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.red shouldBe 1
     }
 
@@ -215,7 +216,7 @@ class SlowLandsScenarioTest : FunSpec({
 
         driver.putLandOnBattlefield(p1, "Island")
         val coast = driver.putCardInHand(p1, "Stormcarved Coast")
-        driver.playLand(p1, coast).isSuccess shouldBe true
+        driver.playLand(p1, coast).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(coast)?.has<TappedComponent>() shouldBe true
     }

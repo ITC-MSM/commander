@@ -16,6 +16,8 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Sisters of Stone Death (RAV #231) —
@@ -57,7 +59,7 @@ class SistersOfStoneDeathScenarioTest : FunSpec({
                 targets = targets.map { ChosenTarget.Permanent(it) },
             )
         )
-        withClue(result.error ?: "activation failed") { result.isSuccess shouldBe true }
+        withClue(result.error ?: "activation failed") { result.outcome shouldBe Outcome.Done }
         resolveStack()
     }
 
@@ -79,7 +81,7 @@ class SistersOfStoneDeathScenarioTest : FunSpec({
         d.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         withClue("the bear is under a requirement to block the Sisters") {
-            d.declareBlockers(opp, emptyMap()).isSuccess shouldBe false
+            d.declareBlockers(opp, emptyMap()).outcome shouldNotBe Outcome.Done
             d.declareBlockers(opp, mapOf(bear to listOf(sisters))).error shouldBe null
         }
         d.state.getEntity(free).shouldNotBeNull()
@@ -142,7 +144,7 @@ class SistersOfStoneDeathScenarioTest : FunSpec({
                 abilityId = petrify,
                 targets = listOf(ChosenTarget.Permanent(bystander)),
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
         d.findPermanent(opp, "Grizzly Bears").shouldNotBeNull()
     }
 })

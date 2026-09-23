@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Drake Familiar (RAV #44) — "When this creature enters, sacrifice it unless you return an
@@ -38,7 +39,7 @@ class DrakeFamiliarScenarioTest : FunSpec({
     fun GameTestDriver.castDrake(caster: EntityId): EntityId {
         giveMana(caster, Color.BLUE, 2)
         val card = putCardInHand(caster, "Drake Familiar")
-        castSpell(caster, card).isSuccess shouldBe true
+        castSpell(caster, card).outcome shouldBe Outcome.Done
         var guard = 0
         while (stackSize > 0 && pendingDecision == null && guard++ < 10) bothPass()
         return card

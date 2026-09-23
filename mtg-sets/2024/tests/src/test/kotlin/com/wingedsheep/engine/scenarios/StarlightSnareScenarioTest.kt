@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Starlight Snare (FDN #514) — {2}{U} Enchantment — Aura.
@@ -38,7 +39,7 @@ class StarlightSnareScenarioTest : FunSpec({
         val aura = driver.putCardInHand(caster, "Starlight Snare")
         driver.giveMana(caster, Color.BLUE, 3)
         driver.castSpellWithTargets(caster, aura, listOf(ChosenTarget.Permanent(creature)))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         driver.bothPass() // Aura resolves, ETB trigger goes on the stack
         driver.bothPass() // ETB trigger resolves

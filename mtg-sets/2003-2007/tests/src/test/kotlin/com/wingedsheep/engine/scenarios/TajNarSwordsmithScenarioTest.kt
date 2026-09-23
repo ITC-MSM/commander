@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Taj-Nar Swordsmith (MRD #27) — {3}{W} Creature — Cat Soldier, 2/3.
@@ -43,7 +44,7 @@ class TajNarSwordsmithScenarioTest : FunSpec({
     fun GameTestDriver.castSwordsmith(player: EntityId, x: Int, pick: String? = null): List<String> {
         val card = putCardInHand(player, "Taj-Nar Swordsmith")
         giveMana(player, Color.WHITE, 4 + x)
-        castSpell(player, card).isSuccess shouldBe true
+        castSpell(player, card).outcome shouldBe Outcome.Done
 
         val offered = mutableListOf<String>()
         var guard = 0

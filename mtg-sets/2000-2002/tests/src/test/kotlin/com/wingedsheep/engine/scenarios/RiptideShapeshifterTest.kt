@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Riptide Shapeshifter.
@@ -75,7 +76,7 @@ class RiptideShapeshifterTest : FunSpec({
                 abilityId = abilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Shapeshifter should be sacrificed
         driver.state.getBattlefield().contains(shapeshifter) shouldBe false

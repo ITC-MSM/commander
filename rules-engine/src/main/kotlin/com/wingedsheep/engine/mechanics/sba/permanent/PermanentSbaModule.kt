@@ -13,6 +13,7 @@ class PermanentSbaModule(
         DayNightCheck(cardRegistry),
         EndedDurationExpiryCheck(),
         AttachedCopyExpiryCheck(),
+        AttackedPermanentRemovedFromCombatCheck(),
         PlaneswalkerLoyaltyCheck(),
         BattleDefenseCheck(),
         BattleProtectorCheck(),

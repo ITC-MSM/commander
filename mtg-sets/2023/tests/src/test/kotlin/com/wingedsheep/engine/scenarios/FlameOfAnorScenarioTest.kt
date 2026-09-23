@@ -21,6 +21,8 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Flame of Anor — "Choose one. If you control a Wizard as you cast this spell, you may
@@ -79,7 +81,7 @@ class FlameOfAnorScenarioTest : FunSpec({
             )
         ))
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("no Wizard — choosing exactly one mode resolves (deal 5 to a creature)") {
@@ -97,7 +99,7 @@ class FlameOfAnorScenarioTest : FunSpec({
             chosenModes = listOf(2),
             modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(centaur)))
         ))
-        if (!result.isSuccess) throw AssertionError("cast failed: ${result.error}")
+        if (result.outcome !is Outcome.Done) throw AssertionError("cast failed: ${result.error}")
 
         d.bothPass()
         // Centaur (3/3) took 5 damage → destroyed.
@@ -125,7 +127,7 @@ class FlameOfAnorScenarioTest : FunSpec({
                 listOf(ChosenTarget.Permanent(centaur))
             )
         ))
-        if (!result.isSuccess) throw AssertionError("cast failed: ${result.error}")
+        if (result.outcome !is Outcome.Done) throw AssertionError("cast failed: ${result.error}")
 
         d.bothPass()
 

@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for mana sources that produce multiple mana per tap (e.g., Elvish Aberration {T}: Add {G}{G}{G}).
@@ -60,7 +61,7 @@ class MultiManaSourceTest : FunSpec({
                 )
             )
 
-            castResult.isSuccess shouldBe true
+            castResult.outcome shouldBe Outcome.Done
             driver.getTopOfStackName() shouldBe "Force of Nature"
         }
 
@@ -95,7 +96,7 @@ class MultiManaSourceTest : FunSpec({
             )
 
             // 3 (Aberration) + 4 (Forests) = 7 mana, Elvish Aberration costs {5}{G} = 6 CMC
-            castResult.isSuccess shouldBe true
+            castResult.outcome shouldBe Outcome.Done
             driver.getTopOfStackName() shouldBe "Elvish Aberration"
         }
 
@@ -124,7 +125,7 @@ class MultiManaSourceTest : FunSpec({
                 )
             )
 
-            castResult.isSuccess shouldBe false
+            castResult.outcome shouldNotBe Outcome.Done
         }
     }
 

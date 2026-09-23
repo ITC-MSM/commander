@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /** Scenario tests for Dismember (NPH #57) — {1}{B/P}{B/P} Instant. */
 class DismemberScenarioTest : ScenarioTestBase() {
@@ -84,10 +85,10 @@ class DismemberScenarioTest : ScenarioTestBase() {
                             phyrexianLifePayments = listOf(Color.BLACK, Color.BLACK)
                         )
                     )
-                ).isSuccess shouldBe true
+                ).outcome shouldBe Outcome.Done
 
                 driver.getLifeTotal(caster) shouldBe 16
-                driver.bothPass().isSuccess shouldBe true
+                driver.bothPass().outcome shouldBe Outcome.Done
                 driver.findPermanent(opponent, "Grizzly Bears") shouldBe null
             }
         }

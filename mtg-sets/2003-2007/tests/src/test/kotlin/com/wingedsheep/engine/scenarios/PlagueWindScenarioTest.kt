@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Plague Wind (PCY #74) — {7}{B}{B} Sorcery.
@@ -36,7 +37,7 @@ class PlagueWindScenarioTest : FunSpec({
 
         val wind = driver.putCardInHand(driver.player1, "Plague Wind")
         driver.giveMana(driver.player1, Color.BLACK, 9)
-        driver.castSpell(driver.player1, wind).isSuccess shouldBe true
+        driver.castSpell(driver.player1, wind).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.getCreatures(driver.player1).size shouldBe 2

@@ -15,6 +15,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldNotContain
+import com.wingedsheep.engine.core.Outcome
 
 class CamelliaTheSeedmiserForageTest : FunSpec({
 
@@ -82,7 +83,7 @@ class CamelliaTheSeedmiserForageTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = chosen)
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val exile = driver.state.getExile(active)
         exile shouldContainAll chosen

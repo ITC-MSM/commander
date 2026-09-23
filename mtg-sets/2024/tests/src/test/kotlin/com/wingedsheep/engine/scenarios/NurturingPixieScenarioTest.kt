@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Nurturing Pixie (OTJ #20) — {W} Creature — Faerie Rogue 1/1.
@@ -43,7 +44,7 @@ class NurturingPixieScenarioTest : FunSpec({
 
         val pixieCard = driver.putCardInHand(me, "Nurturing Pixie")
         driver.giveMana(me, Color.WHITE, 1)
-        driver.castSpell(me, pixieCard).isSuccess shouldBe true
+        driver.castSpell(me, pixieCard).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve creature -> enters -> ETB trigger on stack
 
         val decision = driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
@@ -69,7 +70,7 @@ class NurturingPixieScenarioTest : FunSpec({
 
         val pixieCard = driver.putCardInHand(me, "Nurturing Pixie")
         driver.giveMana(me, Color.WHITE, 1)
-        driver.castSpell(me, pixieCard).isSuccess shouldBe true
+        driver.castSpell(me, pixieCard).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val decision = driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()

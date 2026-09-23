@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Reproduces: "a planeswalker doesn't appear the turn you put it on the battlefield".
@@ -33,7 +34,7 @@ class AjaniCastBugTest : FunSpec({
         val ajani = driver.putCardInHand(player, "Ajani, Outland Chaperone")
 
         val castResult = driver.castSpell(player, ajani)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the spell.
         driver.bothPass()

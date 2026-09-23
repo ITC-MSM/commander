@@ -16,6 +16,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Unified Strike.
@@ -76,7 +77,7 @@ class UnifiedStrikeTest : FunSpec({
         // Active player passes, opponent casts
         driver.passPriority(activePlayer)
         val castResult = driver.castSpell(opponent, unifiedStrike, listOf(attacker))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Let it resolve
         driver.bothPass()
@@ -120,7 +121,7 @@ class UnifiedStrikeTest : FunSpec({
 
         driver.passPriority(activePlayer)
         val castResult = driver.castSpell(opponent, unifiedStrike, listOf(attacker))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

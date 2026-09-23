@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Dragon Breath.
@@ -66,7 +67,7 @@ class DragonBreathTest : FunSpec({
                 abilityId = pumpAbilityId
             )
         )
-        activateResult.isSuccess shouldBe true
+        activateResult.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Goblin should now be 3/2

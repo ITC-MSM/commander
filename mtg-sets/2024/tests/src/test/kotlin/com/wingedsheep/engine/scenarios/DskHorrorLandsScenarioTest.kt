@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for two Duskmourn: House of Horror common dual lands:
@@ -35,7 +36,7 @@ class DskHorrorLandsScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val land = driver.putCardInHand(p1, "Abandoned Campground")
-        driver.playLand(p1, land).isSuccess shouldBe true
+        driver.playLand(p1, land).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(land)?.has<TappedComponent>() shouldBe true
     }
@@ -48,7 +49,7 @@ class DskHorrorLandsScenarioTest : FunSpec({
 
         driver.setLifeTotal(driver.getOpponent(p1), 13)
         val land = driver.putCardInHand(p1, "Abandoned Campground")
-        driver.playLand(p1, land).isSuccess shouldBe true
+        driver.playLand(p1, land).outcome shouldBe Outcome.Done
 
         driver.state.getEntity(land)?.has<TappedComponent>() shouldBe false
     }
@@ -60,11 +61,11 @@ class DskHorrorLandsScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val white = driver.putPermanentOnBattlefield(p1, "Abandoned Campground")
-        driver.submit(ActivateAbility(p1, white, AbandonedCampground.activatedAbilities[0].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, white, AbandonedCampground.activatedAbilities[0].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.white shouldBe 1
 
         val blue = driver.putPermanentOnBattlefield(p1, "Abandoned Campground")
-        driver.submit(ActivateAbility(p1, blue, AbandonedCampground.activatedAbilities[1].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, blue, AbandonedCampground.activatedAbilities[1].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.blue shouldBe 1
     }
 
@@ -75,15 +76,15 @@ class DskHorrorLandsScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val land = driver.putCardInHand(p1, "Strangled Cemetery")
-        driver.playLand(p1, land).isSuccess shouldBe true
+        driver.playLand(p1, land).outcome shouldBe Outcome.Done
         driver.state.getEntity(land)?.has<TappedComponent>() shouldBe true
 
         val black = driver.putPermanentOnBattlefield(p1, "Strangled Cemetery")
-        driver.submit(ActivateAbility(p1, black, StrangledCemetery.activatedAbilities[0].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, black, StrangledCemetery.activatedAbilities[0].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.black shouldBe 1
 
         val green = driver.putPermanentOnBattlefield(p1, "Strangled Cemetery")
-        driver.submit(ActivateAbility(p1, green, StrangledCemetery.activatedAbilities[1].id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(p1, green, StrangledCemetery.activatedAbilities[1].id)).outcome shouldBe Outcome.Done
         driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.green shouldBe 1
     }
 
@@ -95,7 +96,7 @@ class DskHorrorLandsScenarioTest : FunSpec({
 
         driver.setLifeTotal(p1, 10)
         val land = driver.putCardInHand(p1, "Strangled Cemetery")
-        driver.playLand(p1, land).isSuccess shouldBe true
+        driver.playLand(p1, land).outcome shouldBe Outcome.Done
         driver.state.getEntity(land)?.has<TappedComponent>() shouldBe false
     }
 })

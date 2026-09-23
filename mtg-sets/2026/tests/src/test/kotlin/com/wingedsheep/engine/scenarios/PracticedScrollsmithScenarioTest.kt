@@ -17,6 +17,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Practiced Scrollsmith (SOS) — {R}{R/W}{W} Creature — Dwarf Cleric 3/2, First strike.
@@ -72,7 +73,7 @@ class PracticedScrollsmithScenarioTest : FunSpec({
 
         // Cast Practiced Scrollsmith from hand so its ETB trigger fires.
         val scrollsmith = driver.putCardInHand(me, "Practiced Scrollsmith")
-        driver.castSpell(me, scrollsmith).isSuccess shouldBe true
+        driver.castSpell(me, scrollsmith).outcome shouldBe Outcome.Done
 
         // Resolve the trigger; choose the instant in my graveyard when the targeting decision appears.
         run {
@@ -104,7 +105,7 @@ class PracticedScrollsmithScenarioTest : FunSpec({
         repeat(2) { driver.putLandOnBattlefield(me, "Mountain") }
         driver.putLandOnBattlefield(me, "Plains")
         val scrollsmith = driver.putCardInHand(me, "Practiced Scrollsmith")
-        driver.castSpell(me, scrollsmith).isSuccess shouldBe true
+        driver.castSpell(me, scrollsmith).outcome shouldBe Outcome.Done
 
         // Drive to end step; with no legal target the ETB ability never asks for a target and
         // nothing is exiled.

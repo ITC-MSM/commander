@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Blind Seer (INV #47) — Invasion engine gap #11: recoloring a spell on the stack.
@@ -52,7 +53,7 @@ class BlindSeerTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Permanent(bears))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         driver.bothPass() // resolve the ability -> color choice
         driver.pendingDecision.shouldBeInstanceOf<ChooseColorDecision>()
@@ -86,7 +87,7 @@ class BlindSeerTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Spell(bolt))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         driver.bothPass() // resolve Blind Seer's ability (top of stack) -> color choice
         val decision = driver.pendingDecision as ChooseColorDecision

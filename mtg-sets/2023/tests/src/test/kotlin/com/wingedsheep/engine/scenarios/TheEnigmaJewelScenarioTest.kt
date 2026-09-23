@@ -33,6 +33,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * The Enigma Jewel // Locus of Enlightenment (LCI #55) — {U} Legendary Artifact // Legendary Artifact.
@@ -282,7 +284,7 @@ class TheEnigmaJewelScenarioTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = me, cardId = trinket, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     // =====================================================================================
@@ -324,7 +326,7 @@ class TheEnigmaJewelScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = valid + vanilla)
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         // Nothing moved.
         driver.state.getZone(ZoneKey(me, Zone.BATTLEFIELD)).contains(vanilla) shouldBe true
         driver.state.getEntity(jewel)?.get<CardComponent>()?.name shouldBe "The Enigma Jewel"
@@ -346,7 +348,7 @@ class TheEnigmaJewelScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = valid + land)
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.state.getZone(ZoneKey(me, Zone.BATTLEFIELD)).contains(land) shouldBe true
     }
 
@@ -365,7 +367,7 @@ class TheEnigmaJewelScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = three)
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.state.getEntity(jewel)?.get<CardComponent>()?.name shouldBe "The Enigma Jewel"
     }
 
@@ -450,7 +452,7 @@ class TheEnigmaJewelScenarioTest : FunSpec({
         // It is spent for the turn: not offered even with mana in pool, and re-submitting is rejected.
         driver.giveMana(me, Color.BLUE, 2)
         driver.abilitiesOn(me, locus).any { it.abilityId == cacheAAbility.abilityId } shouldBe false
-        driver.submit(cacheAAbility).isSuccess shouldBe false
+        driver.submit(cacheAAbility).outcome shouldNotBe Outcome.Done
 
         // Advance to my next turn (opponent's turn, then mine) — the cap resets at cleanup. Route
         // through the end step each time, since passPriorityUntil is a no-op if already at the target.
@@ -518,7 +520,7 @@ class TheEnigmaJewelScenarioTest : FunSpec({
             driver.bothPass(); guard++
         }
         (driver.state.pendingDecision is ChooseTargetsDecision) shouldBe true
-        driver.submitTargetSelection(me, listOf(creatureB)).isSuccess shouldBe true
+        driver.submitTargetSelection(me, listOf(creatureB)).outcome shouldBe Outcome.Done
 
         guard = 0
         while (driver.state.stack.isNotEmpty() && guard < 20) { driver.bothPass(); guard++ }

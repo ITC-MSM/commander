@@ -12,6 +12,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Incite Hysteria (RAV #132) — "Radiance — Until end of turn, target creature and each other
@@ -36,7 +37,7 @@ class InciteHysteriaScenarioTest : FunSpec({
     fun GameTestDriver.incite(victim: EntityId) {
         giveMana(player1, Color.RED, 3)
         val card = putCardInHand(player1, "Incite Hysteria")
-        castSpellWithTargets(player1, card, listOf(ChosenTarget.Permanent(victim))).isSuccess shouldBe true
+        castSpellWithTargets(player1, card, listOf(ChosenTarget.Permanent(victim))).outcome shouldBe Outcome.Done
         var guard = 0
         while (stackSize > 0 && guard++ < 10) bothPass()
     }

@@ -29,6 +29,8 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Sunbird Standard // Sunbird Effigy (LCI #262).
@@ -261,6 +263,6 @@ class SunbirdStandardScenarioTest : FunSpec({
                 // costPayment intentionally omitted — materials are the activator's choice.
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

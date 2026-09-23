@@ -9,10 +9,7 @@ import com.wingedsheep.engine.core.ManaSpentEvent
 import com.wingedsheep.engine.core.PaymentStrategy
 import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.core.TypecycleCard
-import com.wingedsheep.engine.core.TypecycleSearchContinuation
 import com.wingedsheep.engine.core.ZoneChangeEvent
-import com.wingedsheep.engine.event.TriggerDetector
-import com.wingedsheep.engine.event.TriggerProcessor
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.handlers.actions.ActionHandler
@@ -31,6 +28,7 @@ import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.PreventCycling
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Handler for the TypecycleCard action.
@@ -42,8 +40,6 @@ import kotlin.reflect.KClass
 class TypecycleCardHandler(
     private val cardRegistry: CardRegistry,
     private val manaSolver: ManaSolver,
-    private val triggerDetector: TriggerDetector,
-    private val triggerProcessor: TriggerProcessor,
     private val effectExecutorRegistry: EffectExecutorRegistry,
     private val manaAbilitySideEffectExecutor: com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor
 ) : ActionHandler<TypecycleCard> {
@@ -203,35 +199,6 @@ class TypecycleCardHandler(
 
         currentState = currentState.tick()
 
-        // Detect and process triggers from discard + cycling events before search
-        val preTriggers = triggerDetector.detectTriggers(currentState, events)
-        if (preTriggers.isNotEmpty()) {
-            // Push search continuation BEFORE processing triggers, so it ends up below
-            // any trigger continuations on the stack. After all triggers resolve,
-            // checkForMoreContinuations() will find this and execute the search.
-            val stateWithSearchContinuation = currentState.pushContinuation(
-                TypecycleSearchContinuation(
-                    playerId = action.playerId,
-                    cardId = action.cardId,
-                    searchFilter = variant.searchFilter,
-                    abilityDescription = variant.description
-                )
-            )
-            val triggerResult = triggerProcessor.processTriggers(stateWithSearchContinuation, preTriggers)
-
-            if (triggerResult.isPaused) {
-                return ExecutionResult.propagatePause(
-                    triggerResult.state,
-                    events + triggerResult.events
-                )
-            }
-
-            // Triggers resolved synchronously — pop the search continuation and search inline
-            val (_, stateAfterPop) = triggerResult.newState.popContinuation()
-            currentState = stateAfterPop
-            events.addAll(triggerResult.events)
-        }
-
         // Search library for a card matching the typecycling variant's filter
         val searchEffect = Patterns.Library.searchLibrary(
             filter = variant.searchFilter,
@@ -245,7 +212,7 @@ class TypecycleCardHandler(
         )
 
         val searchResult = effectExecutorRegistry.execute(currentState, searchEffect, effectContext)
-        if (searchResult.isPaused) {
+        if (searchResult.outcome is Outcome.Paused) {
             return ExecutionResult.propagatePause(
                 searchResult.state,
                 events + searchResult.events
@@ -297,8 +264,6 @@ class TypecycleCardHandler(
             return TypecycleCardHandler(
                 services.cardRegistry,
                 services.manaSolver,
-                services.triggerDetector,
-                services.triggerProcessor,
                 services.effectExecutorRegistry,
                 services.manaAbilitySideEffectExecutor
             )

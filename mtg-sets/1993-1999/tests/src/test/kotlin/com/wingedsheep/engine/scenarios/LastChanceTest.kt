@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for TakeExtraTurnEffect with loseAtEndStep (Last Chance and similar cards).
@@ -48,7 +49,7 @@ class LastChanceTest : FunSpec({
 
         // Cast Last Chance
         val castResult = driver.castSpell(caster, lastChance, emptyList())
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the spell
         driver.bothPass()

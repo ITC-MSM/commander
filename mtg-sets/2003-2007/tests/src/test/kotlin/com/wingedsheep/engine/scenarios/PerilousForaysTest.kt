@@ -19,6 +19,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Perilous Forays (Ravnica: City of Guilds).
@@ -88,7 +89,7 @@ class PerilousForaysTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(fodder))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // The creature was sacrificed to pay the cost.
         driver.findPermanent(activePlayer, "Grizzly Bears") shouldBe null

@@ -10,7 +10,10 @@ import kotlinx.serialization.json.JsonTransformingSerializer
 /** A snapshot uses execution fields that this reader cannot safely restore. */
 class UnsupportedGameStateFormatException(message: String) : SerializationException(message)
 
-/** Reject obsolete execution fields before permissive JSON decoding can discard them. */
+/**
+ * Reject obsolete execution fields before permissive JSON decoding can discard them, and lift the
+ * pre-record flat trigger facts into their `triggerContext` record ([LegacyTriggerContextLift]).
+ */
 @OptIn(ExperimentalSerializationApi::class)
 object GameStateSerializer : JsonTransformingSerializer<GameState>(GameState.generatedSerializer()) {
     override fun transformDeserialize(element: JsonElement): JsonElement {
@@ -22,6 +25,8 @@ object GameStateSerializer : JsonTransformingSerializer<GameState>(GameState.gen
         if (stack?.any { it is JsonObject && "decisionId" in it } == true) {
             throw UnsupportedGameStateFormatException("Unsupported GameState format: continuation decisionId")
         }
-        return element
+        // Trigger facts used to be flat fields on each carrier; move them into the nested record
+        // before permissive decoding (ignoreUnknownKeys) can discard them.
+        return LegacyTriggerContextLift.lift(state)
     }
 }

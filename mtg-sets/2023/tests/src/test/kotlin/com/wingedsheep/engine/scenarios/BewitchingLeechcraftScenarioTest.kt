@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Bewitching Leechcraft (LTR #41).
@@ -52,7 +53,7 @@ class BewitchingLeechcraftScenarioTest : FunSpec({
         val aura = driver.putCardInHand(p1, "Bewitching Leechcraft")
         driver.giveMana(p1, Color.BLUE, 2)
         driver.castSpellWithTargets(p1, aura, listOf(ChosenTarget.Permanent(creature)))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         // Resolve the Aura, then its ETB "tap enchanted creature" trigger.
         driver.bothPass() // Aura resolves, ETB trigger goes on the stack

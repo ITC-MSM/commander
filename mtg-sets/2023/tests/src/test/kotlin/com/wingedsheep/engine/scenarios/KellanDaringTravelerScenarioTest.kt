@@ -15,6 +15,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Kellan, Daring Traveler // Journey On (LCI).
@@ -112,7 +113,7 @@ class KellanDaringTravelerScenarioTest : FunSpec({
                 faceIndex = 0, // Journey On
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         mapTokens(driver, driver.player1).size shouldBe 1 // 1 + 0 opponents with an artifact
@@ -135,7 +136,7 @@ class KellanDaringTravelerScenarioTest : FunSpec({
                 faceIndex = 0,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         mapTokens(driver, driver.player1).size shouldBe 2

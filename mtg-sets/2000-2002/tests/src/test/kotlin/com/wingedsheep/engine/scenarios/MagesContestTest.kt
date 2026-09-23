@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Mages' Contest (INV #154) — Invasion engine gap #16: open life-bidding auction.
@@ -43,14 +44,14 @@ class MagesContestTest : FunSpec({
         // Opp casts Lightning Bolt at you, then passes priority.
         val bolt = driver.putCardInHand(opp, "Lightning Bolt")
         driver.giveMana(opp, Color.RED, 1)
-        driver.castSpell(opp, bolt, listOf(you)).isSuccess shouldBe true
+        driver.castSpell(opp, bolt, listOf(you)).outcome shouldBe Outcome.Done
         driver.state.stack.contains(bolt) shouldBe true
         driver.passPriority(opp)
 
         // You respond with Mages' Contest targeting the Bolt.
         val contest = driver.putCardInHand(you, "Mages' Contest")
         driver.giveMana(you, Color.RED, 3)
-        driver.castSpellWithTargets(you, contest, listOf(ChosenTarget.Spell(bolt))).isSuccess shouldBe true
+        driver.castSpellWithTargets(you, contest, listOf(ChosenTarget.Spell(bolt))).outcome shouldBe Outcome.Done
 
         // Resolve Mages' Contest — the auction opens, asking opp whether to top the bid of 1.
         driver.bothPass()

@@ -53,10 +53,7 @@ class CommandZoneAbilityEnumerator : ActionEnumerator {
                 if (context.castPermissionUtils.isPowerUpActivationRestricted(state, ability)) continue
 
                 // Activation restrictions (e.g. once each turn).
-                if (ability.restrictions.any {
-                        !context.castPermissionUtils.checkActivationRestriction(state, playerId, it, entityId, ability)
-                    }
-                ) continue
+                if (!context.legality.activationRestrictionsMet(state, playerId, entityId, ability)) continue
 
                 // Cost payability — Mana and Discard, atom or composite (the avatar's "{X}{X}{X},
                 // Discard a card"). Other atoms are validated by the handler at payment time.

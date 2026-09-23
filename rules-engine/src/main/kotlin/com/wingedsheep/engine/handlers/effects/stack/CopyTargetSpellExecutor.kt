@@ -150,7 +150,7 @@ class CopyTargetSpellExecutor(
                     stackResolver.putTriggeredAbility(currentState, copyAbility),
                     effect.keywordsForCopy
                 )
-                if (!pushed.isSuccess) return EffectResult.from(pushed)
+                if (pushed.outcome !is Outcome.Done) return EffectResult.from(pushed)
                 currentState = pushed.newState
                 allEvents.addAll(pushed.events)
             }
@@ -193,7 +193,7 @@ class CopyTargetSpellExecutor(
                 copyTotal = copyCount,
                 controllerId = controllerId
             )
-            if (!copyResult.isSuccess) return copyResult
+            if (copyResult.outcome !is Outcome.Done) return copyResult
             currentState = StormCopyEffectExecutor.applyCopyMutations(
                 copyResult.newState, copyResult.events,
                 keywordsForCopy, removeLegendary, tokenRiders
@@ -207,7 +207,7 @@ class CopyTargetSpellExecutor(
         result: com.wingedsheep.engine.core.ExecutionResult,
         keywords: List<String>
     ): com.wingedsheep.engine.core.ExecutionResult {
-        if (keywords.isEmpty() || !result.isSuccess) return result
+        if (keywords.isEmpty() || result.outcome !is Outcome.Done) return result
         val copyId = result.events.asReversed().firstNotNullOfOrNull { event ->
             when (event) {
                 is com.wingedsheep.engine.core.SpellCopiedEvent -> event.copyEntityId

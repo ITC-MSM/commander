@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.TimingRule
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Garland, Knight of Cornelia // Chaos, the Endless (FIN):
@@ -51,7 +52,7 @@ class GarlandKnightOfCorneliaScenarioTest : FunSpec({
         driver.giveColorlessMana(active, 3)
         val abilityId = GarlandKnightOfCornelia.activatedAbilities.first().id
         driver.submit(ActivateAbility(playerId = active, sourceId = garland, abilityId = abilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
         resolveStack(driver)
         return garland
@@ -91,7 +92,7 @@ class GarlandKnightOfCorneliaScenarioTest : FunSpec({
         repeat(2) {
             val bolt = driver.putCardInHand(active, "Lightning Bolt")
             driver.giveMana(active, Color.RED, 1)
-            driver.castSpell(active, bolt, targets = listOf(garland)).isSuccess shouldBe true
+            driver.castSpell(active, bolt, targets = listOf(garland)).outcome shouldBe Outcome.Done
             driver.bothPass()
             resolveStack(driver)
         }

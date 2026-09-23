@@ -23,6 +23,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Éowyn, Fearless Knight (LTR #201) — covers two engine additions:
@@ -131,7 +132,7 @@ class EowynFearlessKnightScenarioTest : FunSpec({
         driver.giveMana(me, Color.RED, 1)
         driver.giveMana(me, Color.WHITE, 1)
         driver.giveMana(me, Color.WHITE, 2) // generic {2}
-        driver.castSpell(me, eowyn).isSuccess shouldBe true
+        driver.castSpell(me, eowyn).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Target selection: legal targets must contain the 4/4 Dimir Bear and exclude the 2/2.
@@ -178,7 +179,7 @@ class EowynFearlessKnightScenarioTest : FunSpec({
         driver.giveMana(me, Color.RED, 1)
         driver.giveMana(me, Color.WHITE, 1)
         driver.giveMana(me, Color.WHITE, 2)
-        driver.castSpell(me, eowyn).isSuccess shouldBe true
+        driver.castSpell(me, eowyn).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
@@ -210,7 +211,7 @@ class EowynFearlessKnightScenarioTest : FunSpec({
         driver.giveMana(me, Color.RED, 1)
         driver.giveMana(me, Color.WHITE, 1)
         driver.giveMana(me, Color.WHITE, 2)
-        driver.castSpell(me, eowyn).isSuccess shouldBe true
+        driver.castSpell(me, eowyn).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.submitTargetSelection(me, listOf(brute))
         driver.bothPass()
@@ -243,7 +244,7 @@ class EowynFearlessKnightScenarioTest : FunSpec({
         driver.giveMana(me, Color.RED, 1)
         driver.giveMana(me, Color.WHITE, 1)
         driver.giveMana(me, Color.WHITE, 2)
-        driver.castSpell(me, eowyn).isSuccess shouldBe true
+        driver.castSpell(me, eowyn).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.submitTargetSelection(me, listOf(dimirBear))
         driver.bothPass()
@@ -279,7 +280,7 @@ class EowynFearlessKnightScenarioTest : FunSpec({
         // Recolor the Brute to green until end of turn.
         val wash = driver.putCardInHand(me, "Verdant Wash")
         driver.giveMana(me, Color.GREEN, 1)
-        driver.castSpell(me, wash, listOf(crimsonBrute)).isSuccess shouldBe true
+        driver.castSpell(me, wash, listOf(crimsonBrute)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Sanity: projection now reports GREEN over the printed RED.
@@ -292,7 +293,7 @@ class EowynFearlessKnightScenarioTest : FunSpec({
         driver.giveMana(me, Color.RED, 1)
         driver.giveMana(me, Color.WHITE, 1)
         driver.giveMana(me, Color.WHITE, 2)
-        driver.castSpell(me, eowyn).isSuccess shouldBe true
+        driver.castSpell(me, eowyn).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.submitTargetSelection(me, listOf(crimsonBrute))
         driver.bothPass()

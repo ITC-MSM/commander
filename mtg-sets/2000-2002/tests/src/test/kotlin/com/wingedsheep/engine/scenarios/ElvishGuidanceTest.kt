@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Elvish Guidance.
@@ -91,7 +92,7 @@ class ElvishGuidanceTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Forest produces 1G base + 2G from Elvish Guidance (2 Elves) = 3G total
         val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()!!
@@ -130,7 +131,7 @@ class ElvishGuidanceTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Forest produces only 1G (no Elves = no additional mana)
         val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()!!
@@ -172,7 +173,7 @@ class ElvishGuidanceTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Forest produces 1G base + 2G from Elvish Guidance (2 Elves total) = 3G
         val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()!!
@@ -285,7 +286,7 @@ class ElvishGuidanceTest : FunSpec({
         // Remaining in pool: 3G bonus mana
         val elf = driver.putCardInHand(activePlayer, "Test Elf")
         val result = driver.castSpell(activePlayer, elf)
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // After casting Test Elf ({G}), the bonus mana should remain in the pool
@@ -336,7 +337,7 @@ class ElvishGuidanceTest : FunSpec({
 
         val card = driver.putCardInHand(activePlayer, "Big Elf")
         val result = driver.castSpell(activePlayer, card)
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // After casting {5}{G} with exactly 6G available, pool should be empty

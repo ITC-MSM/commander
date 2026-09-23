@@ -102,7 +102,7 @@ class SacrificeAndPayContinuationResumer(
             val resultStateWithSnaps =
                 withSacrificeSnapshots(result.state, result.updatedSacrificedPermanents)
             val allEvents = events + result.events
-            return if (result.isPaused) {
+            return if (result.outcome is Outcome.Paused) {
                 // Another player needs a decision — return paused with combined events
                 ExecutionResult.propagatePause(resultStateWithSnaps, allEvents)
             } else {
@@ -222,7 +222,7 @@ class SacrificeAndPayContinuationResumer(
                 triggeringPlayerId = continuation.triggeringPlayerId
             )
             val result = services.effectExecutorRegistry.execute(state, continuation.sufferEffect, context).toExecutionResult()
-            return if (result.isPaused) result else checkForMore(result.state, result.events.toList())
+            return if (result.outcome is Outcome.Paused) result else checkForMore(result.state, result.events.toList())
         }
 
         // Player chose a cost option — create a single-cost PayOrSufferEffect and execute it
@@ -249,7 +249,7 @@ class SacrificeAndPayContinuationResumer(
             triggeringPlayerId = continuation.triggeringPlayerId
         )
         val result = services.effectExecutorRegistry.execute(state, singleCostEffect, context).toExecutionResult()
-        return if (result.isPaused) result else checkForMore(result.state, result.events.toList())
+        return if (result.outcome is Outcome.Paused) result else checkForMore(result.state, result.events.toList())
     }
 
     /**
@@ -801,7 +801,7 @@ class SacrificeAndPayContinuationResumer(
         // Execute the suffer effect using the registry
         val result = services.effectExecutorRegistry.execute(state, sufferEffect, context).toExecutionResult()
 
-        return if (result.isPaused) {
+        return if (result.outcome is Outcome.Paused) {
             result
         } else {
             checkForMore(result.state, result.events.toList())
@@ -899,7 +899,7 @@ class SacrificeAndPayContinuationResumer(
         )
         val result = services.effectExecutorRegistry.execute(state, consequence, context).toExecutionResult()
         val allEvents = priorEvents + result.events
-        return if (result.isPaused) result.copy(events = allEvents) else checkForMore(result.state, allEvents)
+        return if (result.outcome is Outcome.Paused) result.copy(events = allEvents) else checkForMore(result.state, allEvents)
     }
 
     /**
@@ -1085,6 +1085,7 @@ class SacrificeAndPayContinuationResumer(
             }
         }
 
-        return ExecutionResult.success(newState, events)
+        // The rest of the turn (TurnManager parks it beneath this choice) carries on from here.
+        return checkForMore(newState, events)
     }
 }

@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Ancient Spring has a sacrifice-free mana ability *and* a sacrifice one, and the sacrifice
@@ -49,7 +51,7 @@ class AncientSpringAutoTapTest : FunSpec({
         // {U} plus something else. {1}{U} is unpayable off this land alone.
         val result = driver.castSpell(activePlayer, zombie)
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.findPermanent(activePlayer, "Ancient Spring") shouldBe spring
         driver.isTapped(spring) shouldBe false
         driver.getGraveyardCardNames(activePlayer).contains("Ancient Spring") shouldBe false
@@ -98,7 +100,7 @@ class AncientSpringAutoTapTest : FunSpec({
         // Mountain pays the generic {1}, Ancient Spring taps for {U} without being sacrificed.
         val result = driver.castSpell(activePlayer, zombie)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.isTapped(spring) shouldBe true
         driver.isTapped(mountain) shouldBe true
         driver.findPermanent(activePlayer, "Ancient Spring") shouldBe spring

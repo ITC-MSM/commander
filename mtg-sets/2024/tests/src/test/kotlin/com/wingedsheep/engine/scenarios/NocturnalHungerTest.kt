@@ -14,6 +14,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Nocturnal Hunger — a Gift a Food instant from Bloomburrow.
@@ -55,7 +56,7 @@ class NocturnalHungerTest : FunSpec({
             chosenModes = listOf(1),
             modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(theirs)))
         ))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -88,7 +89,7 @@ class NocturnalHungerTest : FunSpec({
             chosenModes = listOf(0),
             modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(theirs)))
         ))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

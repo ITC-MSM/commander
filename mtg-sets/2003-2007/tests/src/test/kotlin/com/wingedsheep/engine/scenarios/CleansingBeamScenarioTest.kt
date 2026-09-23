@@ -14,6 +14,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Cleansing Beam (RAV #118) — "Radiance — Cleansing Beam deals 2 damage to target creature and
@@ -40,7 +41,7 @@ class CleansingBeamScenarioTest : FunSpec({
     fun GameTestDriver.beam(caster: EntityId, target: EntityId) {
         giveMana(caster, Color.RED, 5)
         val beam = putCardInHand(caster, "Cleansing Beam")
-        castSpellWithTargets(caster, beam, listOf(ChosenTarget.Permanent(target))).isSuccess shouldBe true
+        castSpellWithTargets(caster, beam, listOf(ChosenTarget.Permanent(target))).outcome shouldBe Outcome.Done
         var guard = 0
         while (stackSize > 0 && guard++ < 10) bothPass()
     }

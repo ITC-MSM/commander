@@ -13,6 +13,8 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContainIgnoringCase
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Tetsuko Umezawa, Fugitive.
@@ -93,7 +95,7 @@ class TetsukoUmezawaFugitiveTest : FunSpec({
         val result = driver.submitExpectFailure(
             DeclareBlockers(driver.player2, mapOf(blocker to listOf(attacker)))
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "can't be blocked"
     }
 
@@ -117,7 +119,7 @@ class TetsukoUmezawaFugitiveTest : FunSpec({
         val result = driver.submitExpectFailure(
             DeclareBlockers(driver.player2, mapOf(blocker to listOf(attacker)))
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "can't be blocked"
     }
 
@@ -142,7 +144,7 @@ class TetsukoUmezawaFugitiveTest : FunSpec({
         val result = driver.submitExpectFailure(
             DeclareBlockers(driver.player2, mapOf(blocker to listOf(attacker)))
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "can't be blocked"
     }
 
@@ -169,7 +171,7 @@ class TetsukoUmezawaFugitiveTest : FunSpec({
             driver.player2,
             mapOf(blocker to listOf(attacker))
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("without Tetsuko, 1/1 creature can be blocked normally") {
@@ -192,7 +194,7 @@ class TetsukoUmezawaFugitiveTest : FunSpec({
             driver.player2,
             mapOf(blocker to listOf(attacker))
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("Tetsuko does not affect opponent's creatures") {
@@ -228,7 +230,7 @@ class TetsukoUmezawaFugitiveTest : FunSpec({
             driver.player1,
             mapOf(blocker to listOf(opponentAttacker))
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("Tetsuko itself can't be blocked (1/3, power 1)") {
@@ -249,7 +251,7 @@ class TetsukoUmezawaFugitiveTest : FunSpec({
         val result = driver.submitExpectFailure(
             DeclareBlockers(driver.player2, mapOf(blocker to listOf(tetsuko)))
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "can't be blocked"
     }
 })

@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Divine Resilience (FDN #10) — {W} Instant, Kicker {2}{W}.
@@ -50,7 +51,7 @@ class DivineResilienceScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(bear)),
                 paymentStrategy = PaymentStrategy.AutoPay,
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve
 
         driver.state.projectedState.hasKeyword(bear, Keyword.INDESTRUCTIBLE) shouldBe true
@@ -73,7 +74,7 @@ class DivineResilienceScenarioTest : FunSpec({
                 declaredCostSlot = ChoiceSlot.KICKED,
                 paymentStrategy = PaymentStrategy.AutoPay,
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve
 
         driver.state.projectedState.hasKeyword(bear1, Keyword.INDESTRUCTIBLE) shouldBe true

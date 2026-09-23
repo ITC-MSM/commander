@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Enter the Battlefield (ETB) triggered abilities.
@@ -47,7 +48,7 @@ class EntersBattlefieldTriggerTest : FunSpec({
 
         // Cast Venerable Monk
         val castResult = driver.castSpell(activePlayer, monk)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Let the spell resolve (both players pass priority)
         driver.bothPass()

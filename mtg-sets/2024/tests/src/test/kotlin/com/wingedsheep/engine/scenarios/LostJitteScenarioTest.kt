@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Lost Jitte — {1} Legendary Artifact — Equipment
@@ -102,7 +103,7 @@ class LostJitteScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = me, sourceId = jitte, abilityId = abilityId)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass() // resolve → mode choice
 
@@ -165,7 +166,7 @@ class LostJitteScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = me, sourceId = jitte, abilityId = abilityId)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("Lost Jitte is legendary") {

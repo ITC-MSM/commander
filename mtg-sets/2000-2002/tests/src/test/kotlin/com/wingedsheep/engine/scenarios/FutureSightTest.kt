@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Future Sight.
@@ -52,7 +53,7 @@ class FutureSightTest : FunSpec({
 
         // Cast Lightning Bolt from top of library targeting the creature
         val castResult = driver.castSpell(activePlayer, lightningBoltOnTop, listOf(creature))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the spell
         driver.bothPass()
@@ -80,7 +81,7 @@ class FutureSightTest : FunSpec({
 
         // Play the land from top of library
         val playResult = driver.playLand(activePlayer, forestOnTop)
-        playResult.isSuccess shouldBe true
+        playResult.outcome shouldBe Outcome.Done
 
         // The forest should be on the battlefield
         driver.findPermanent(activePlayer, "Forest") shouldNotBe null
@@ -109,7 +110,7 @@ class FutureSightTest : FunSpec({
 
         // Try to cast Lightning Bolt from top of library - should fail
         val castResult = driver.castSpell(activePlayer, lightningBoltOnTop, listOf(creature))
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
     }
 
     test("top card updates after casting from library") {
@@ -140,12 +141,12 @@ class FutureSightTest : FunSpec({
 
         // Cast first Lightning Bolt from top
         val result1 = driver.castSpell(activePlayer, firstSpell, listOf(creature1))
-        result1.isSuccess shouldBe true
+        result1.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Now second spell is on top - cast it too
         val result2 = driver.castSpell(activePlayer, secondSpell, listOf(creature2))
-        result2.isSuccess shouldBe true
+        result2.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Both creatures should be destroyed (both were Grizzly Bears)

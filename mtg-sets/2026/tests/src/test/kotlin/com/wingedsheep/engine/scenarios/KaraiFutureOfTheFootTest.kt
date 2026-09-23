@@ -16,6 +16,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Karai, Future of the Foot (TMT #151) — "Whenever Karai deals combat damage to a player, return
@@ -98,9 +99,9 @@ class KaraiFutureOfTheFootTest : FunSpec({
 
         // Open the sneak window: declare the Brawler, leave it unblocked.
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(player, listOf(attacker), opponent).isSuccess shouldBe true
+        driver.declareAttackers(player, listOf(attacker), opponent).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(opponent, emptyMap()).isSuccess shouldBe true
+        driver.declareBlockers(opponent, emptyMap()).outcome shouldBe Outcome.Done
         var pg = 0
         while (driver.state.priorityPlayerId != null && driver.state.priorityPlayerId != player &&
             driver.state.step == Step.DECLARE_BLOCKERS && pg++ < 4
@@ -121,7 +122,7 @@ class KaraiFutureOfTheFootTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(bouncedPermanents = listOf(attacker)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         // Karai deals combat damage the same turn she's sneaked in, firing the trigger; choose the

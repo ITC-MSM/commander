@@ -14,6 +14,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Bilbo's Gambit (HOB #5) — {1}{W} Instant.
@@ -47,7 +49,7 @@ class BilbosGambitScenarioTest : FunSpec({
         // one on the stack, and using the caster's keeps priority in the right place.
         val bears = driver.putCardInHand(caster, "Grizzly Bears")
         driver.giveMana(caster, Color.GREEN, 2)
-        driver.submit(CastSpell(playerId = caster, cardId = bears)).isSuccess shouldBe true
+        driver.submit(CastSpell(playerId = caster, cardId = bears)).outcome shouldBe Outcome.Done
 
         val gambit = driver.putCardInHand(caster, "Bilbo's Gambit")
         driver.giveMana(caster, Color.WHITE, 2)
@@ -59,7 +61,7 @@ class BilbosGambitScenarioTest : FunSpec({
                 chosenModes = listOf(0),
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Spell(bears)))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         (bears in driver.getHand(caster)) shouldBe true
@@ -77,7 +79,7 @@ class BilbosGambitScenarioTest : FunSpec({
 
         val bears = driver.putCardInHand(caster, "Grizzly Bears")
         driver.giveMana(caster, Color.GREEN, 2)
-        driver.submit(CastSpell(playerId = caster, cardId = bears)).isSuccess shouldBe true
+        driver.submit(CastSpell(playerId = caster, cardId = bears)).outcome shouldBe Outcome.Done
 
         val gambit = driver.putCardInHand(caster, "Bilbo's Gambit")
         driver.giveMana(caster, Color.WHITE, 2)
@@ -89,7 +91,7 @@ class BilbosGambitScenarioTest : FunSpec({
                 chosenModes = listOf(1),
                 modeTargetsOrdered = listOf(listOf(ChosenTarget.Spell(bears)))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         (bears in driver.getHand(caster)) shouldBe true
@@ -104,6 +106,6 @@ class BilbosGambitScenarioTest : FunSpec({
 
         // And it bites: the just-bounced Bears can't be recast this turn.
         driver.giveMana(caster, Color.GREEN, 2)
-        driver.submit(CastSpell(playerId = caster, cardId = bears)).isSuccess shouldBe false
+        driver.submit(CastSpell(playerId = caster, cardId = bears)).outcome shouldNotBe Outcome.Done
     }
 })

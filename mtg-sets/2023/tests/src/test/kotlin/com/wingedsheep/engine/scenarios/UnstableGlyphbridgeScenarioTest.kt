@@ -33,6 +33,7 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Unstable Glyphbridge // Sandswirl Wanderglyph (LCI #41).
@@ -235,7 +236,7 @@ class UnstableGlyphbridgeScenarioTest : FunSpec({
                     costPayment = AdditionalCostPayment(exiledCards = listOf(frogmite, myr))
                 )
             )
-            tooMany.isSuccess shouldBe false
+            tooMany.outcome shouldNotBe Outcome.Done
         }
 
         driver.submitSuccess(
@@ -329,7 +330,7 @@ class UnstableGlyphbridgeScenarioTest : FunSpec({
             driver.giveMana(p2, Color.WHITE, 1)
             val cast = driver.castSpell(p2, spell)
             withClue("the attacker is locked out of casting for the rest of the turn") {
-                cast.isSuccess shouldBe false
+                cast.outcome shouldNotBe Outcome.Done
                 cast.error shouldNotBe null
             }
         }

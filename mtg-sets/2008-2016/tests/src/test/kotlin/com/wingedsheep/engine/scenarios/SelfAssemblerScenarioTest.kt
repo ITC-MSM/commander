@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Self-Assembler (KLD #232) — {5} Artifact Creature — Assembly-Worker, 4/4.
@@ -42,7 +43,7 @@ class SelfAssemblerScenarioTest : FunSpec({
     fun GameTestDriver.castSelfAssembler(player: EntityId, pick: String? = null): List<String> {
         val card = putCardInHand(player, "Self-Assembler")
         giveMana(player, Color.WHITE, 5)
-        castSpell(player, card).isSuccess shouldBe true
+        castSpell(player, card).outcome shouldBe Outcome.Done
 
         val offered = mutableListOf<String>()
         var guard = 0

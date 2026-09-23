@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Syphon Mind.
@@ -47,7 +48,7 @@ class SyphonMindTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLACK, 4)
 
         val castResult = driver.castSpell(activePlayer, syphonMind)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve - both pass priority
         driver.bothPass()
@@ -104,7 +105,7 @@ class SyphonMindTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLACK, 4)
 
         val castResult = driver.castSpell(activePlayer, syphonMind)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve
         driver.bothPass()
@@ -138,7 +139,7 @@ class SyphonMindTest : FunSpec({
         val opponentHandsBefore = opponents.associateWith(driver::getHandSize)
         val syphonMind = driver.putCardInHand(controller, "Syphon Mind")
         driver.giveMana(controller, Color.BLACK, 4)
-        driver.castSpell(controller, syphonMind).isSuccess shouldBe true
+        driver.castSpell(controller, syphonMind).outcome shouldBe Outcome.Done
 
         // A multiplayer priority round: every seat passes before the spell resolves.
         repeat(players.size) {

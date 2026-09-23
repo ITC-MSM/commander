@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.TimingRule
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Virtue of Strength — "If you tap a basic land for mana, it produces three times as much of that
@@ -76,7 +77,7 @@ class VirtueOfStrengthScenarioTest : FunSpec({
         val result = driver.submit(
             ActivateAbility(player, forest, TestForest.activatedAbilities[0].id)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.state.getEntity(player)?.get<ManaPoolComponent>()!!.green shouldBe 3
     }
@@ -92,7 +93,7 @@ class VirtueOfStrengthScenarioTest : FunSpec({
         val forest = driver.putPermanentOnBattlefield(player, "Forest")
 
         driver.submit(ActivateAbility(player, forest, TestForest.activatedAbilities[0].id))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         driver.state.getEntity(player)?.get<ManaPoolComponent>()!!.green shouldBe 9
     }
@@ -107,7 +108,7 @@ class VirtueOfStrengthScenarioTest : FunSpec({
         val grove = driver.putPermanentOnBattlefield(player, "Timber Grove")
 
         driver.submit(ActivateAbility(player, grove, TestNonbasicForest.activatedAbilities[0].id))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         driver.state.getEntity(player)?.get<ManaPoolComponent>()!!.green shouldBe 1
     }
@@ -125,7 +126,7 @@ class VirtueOfStrengthScenarioTest : FunSpec({
         val forest = driver.putPermanentOnBattlefield(player, "Forest")
 
         driver.submit(ActivateAbility(player, forest, TestForest.activatedAbilities[0].id))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         driver.state.getEntity(player)?.get<ManaPoolComponent>()!!.green shouldBe 1
 
@@ -147,7 +148,7 @@ class VirtueOfStrengthScenarioTest : FunSpec({
         val forest = driver.putPermanentOnBattlefield(player, "Forest")
 
         driver.submit(ActivateAbility(player, forest, TestForest.activatedAbilities[0].id))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         driver.state.getEntity(player)?.get<ManaPoolComponent>()!!.green shouldBe 4
     }
@@ -174,7 +175,7 @@ class VirtueOfStrengthScenarioTest : FunSpec({
 
         val forest = driver.putPermanentOnBattlefield(player, "Forest")
         driver.submit(ActivateAbility(player, forest, TestForest.activatedAbilities[0].id))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         driver.state.getEntity(player)?.get<ManaPoolComponent>()!!.green shouldBe 1
     }

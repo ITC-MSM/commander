@@ -41,6 +41,7 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Two-Headed Giant — the *second* head's turn-keyed state (CR 805.4 / 805.8).
@@ -96,7 +97,7 @@ class TwoHeadedGiantSecondHeadTurnTest : FunSpec({
                 continue
             }
             val result = proc.process(state, PassPriority(prio)).result
-            check(result.isSuccess || result.isPaused) { "pass by $prio at ${state.step} failed: ${result.error}" }
+            check(result.outcome is Outcome.Done || result.outcome is Outcome.Paused) { "pass by $prio at ${state.step} failed: ${result.error}" }
             state = result.newState
         }
         return state

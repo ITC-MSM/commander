@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * The Astonishing Ant-Man (MSH) — "{2}{G}, {T}, Remove any number of +1/+1 counters from The
@@ -69,7 +70,7 @@ class TheAstonishingAntManScenarioTest : FunSpec({
             .first { it.actionType == "ActivateAbility" && it.maxAffordableX != null }
         val activate = ability.action as com.wingedsheep.engine.core.ActivateAbility
         val result = d.submit(activate.copy(xValue = 2))
-        withClue("activation failed: ${result.error}") { result.isSuccess shouldBe true }
+        withClue("activation failed: ${result.error}") { result.outcome shouldBe Outcome.Done }
         repeat(12) {
             if (d.state.pendingDecision != null) d.autoResolveDecision()
             else if (d.stackSize > 0) d.bothPass()

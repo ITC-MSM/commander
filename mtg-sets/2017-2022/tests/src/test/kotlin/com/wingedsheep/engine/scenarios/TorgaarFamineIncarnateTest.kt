@@ -17,6 +17,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Torgaar, Famine Incarnate.
@@ -69,7 +70,7 @@ class TorgaarFamineIncarnateTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve Torgaar
         driver.bothPass()
@@ -121,7 +122,7 @@ class TorgaarFamineIncarnateTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Sacrificed creatures should be gone
         driver.findPermanent(activePlayer, "Test Creature") shouldBe null
@@ -169,7 +170,7 @@ class TorgaarFamineIncarnateTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve Torgaar
         driver.bothPass()
@@ -320,6 +321,6 @@ class TorgaarFamineIncarnateTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 })

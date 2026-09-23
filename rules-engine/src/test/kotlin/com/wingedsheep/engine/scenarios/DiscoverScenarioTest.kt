@@ -16,6 +16,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Engine coverage for Discover N (CR 701.57), exercised through inline test spells so each
@@ -89,7 +90,7 @@ class DiscoverScenarioTest : FunSpec({
     fun GameTestDriver.castDiscover(me: com.wingedsheep.sdk.model.EntityId, name: String) {
         val spell = putCardInHand(me, name)
         giveColorlessMana(me, 1)
-        submit(CastSpell(playerId = me, cardId = spell, paymentStrategy = PaymentStrategy.FromPool)).isSuccess shouldBe true
+        submit(CastSpell(playerId = me, cardId = spell, paymentStrategy = PaymentStrategy.FromPool)).outcome shouldBe Outcome.Done
         bothPass()
     }
 

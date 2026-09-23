@@ -17,6 +17,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Reasonable Doubt (MKM #69) — {1}{U} Instant.
@@ -62,7 +63,7 @@ class ReasonableDoubtScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Spell(boltOnStack), ChosenTarget.Permanent(bear)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Enough floating mana that declining is a real choice rather than an auto-counter.
         driver.giveColorlessMana(opponent, 2)
@@ -103,7 +104,7 @@ class ReasonableDoubtScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Spell(boltOnStack), ChosenTarget.Permanent(bear)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         driver.giveColorlessMana(opponent, 2)
 
@@ -143,7 +144,7 @@ class ReasonableDoubtScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Spell(boltOnStack)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         driver.bothPass()
         if (driver.pendingDecision is YesNoDecision) driver.submitYesNo(opponent, false)
@@ -178,7 +179,7 @@ class ReasonableDoubtScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Spell(boltOnStack)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

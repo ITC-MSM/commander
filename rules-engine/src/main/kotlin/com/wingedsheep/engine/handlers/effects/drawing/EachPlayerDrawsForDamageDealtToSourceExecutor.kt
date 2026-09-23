@@ -11,7 +11,7 @@ import kotlin.reflect.KClass
 /**
  * Executor for [EachPlayerDrawsForDamageDealtToSourceEffect].
  *
- * Reads [EffectContext.triggerLastKnownDamageDealtByPlayers] (captured on the trigger's
+ * Reads [com.wingedsheep.engine.event.TriggerContext.lastKnownDamageDealtByPlayers] (captured on the trigger's
  * source when it left the battlefield) and has each tracked player draw that many cards.
  * Players that dealt no damage to the source this turn are not included in the map and
  * therefore draw nothing. Used for Grothama, All-Devouring's LTB ability.
@@ -28,7 +28,7 @@ class EachPlayerDrawsForDamageDealtToSourceExecutor(
         effect: EachPlayerDrawsForDamageDealtToSourceEffect,
         context: EffectContext
     ): EffectResult {
-        val perPlayer = context.triggerLastKnownDamageDealtByPlayers ?: emptyMap()
+        val perPlayer = context.triggerContext?.lastKnownDamageDealtByPlayers ?: emptyMap()
         if (perPlayer.isEmpty()) return EffectResult.success(state, emptyList())
 
         // Resolve in turn order so APNAP-ish ordering is deterministic.

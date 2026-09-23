@@ -15,6 +15,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Soaring Stoneglider (SOS) — {2}{W} Creature — Elephant Cleric 4/3, Flying, vigilance.
@@ -77,7 +78,7 @@ class SoaringStonegliderScenarioTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(exiledCards = listOf(grave1, grave2)),
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         repeat(4) { if (driver.pendingDecision != null) driver.autoResolveDecision() else driver.bothPass() }
 
         driver.state.getZone(me, Zone.EXILE).shouldContainAll(listOf(grave1, grave2))
@@ -96,7 +97,7 @@ class SoaringStonegliderScenarioTest : FunSpec({
         val stoneglider = driver.putCardInHand(me, "Soaring Stoneglider")
         // No exiled cards in the payment → the pay path; the engine adds {1}{W}.
         val result = driver.submit(CastSpell(playerId = me, cardId = stoneglider))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         repeat(4) { if (driver.pendingDecision != null) driver.autoResolveDecision() else driver.bothPass() }
 
         driver.state.getZone(me, Zone.BATTLEFIELD).contains(stoneglider).shouldBeTrue()

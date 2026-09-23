@@ -102,7 +102,7 @@ class StormCopyEffectExecutor(
                     controllerId = context.controllerId
                 )
             )
-            if (!result.isSuccess) return result
+            if (result.outcome !is Outcome.Done) return result
             currentState = result.newState
             allEvents.addAll(result.events)
         }
@@ -147,7 +147,7 @@ class StormCopyEffectExecutor(
                     copyTotal = effect.copyCount,
                     controllerId = context.controllerId
                 )
-                if (!copyResult.isSuccess) return EffectResult.from(copyResult)
+                if (copyResult.outcome !is Outcome.Done) return EffectResult.from(copyResult)
                 currentState = copyResult.newState
                 allEvents.addAll(copyResult.events)
                 copiesLeft--
@@ -313,7 +313,7 @@ class StormCopyEffectExecutor(
                     copyTotal = totalCopies,
                     controllerId = controllerId
                 )
-                if (!copyResult.isSuccess) return copyResult
+                if (copyResult.outcome !is Outcome.Done) return copyResult
                 currentState = applyCopyMutations(
                     copyResult.newState, copyResult.events, keywordsForCopy, removeLegendary
                 )

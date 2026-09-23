@@ -11,6 +11,8 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Deranged Assistant (ISD #52) — {1}{U} 1/1 Human Wizard, "{T}, Mill a card: Add {C}."
@@ -100,7 +102,7 @@ class DerangedAssistantScenarioTest : FunSpec({
 
         // …and submitting it anyway is rejected — no free {C}.
         val result = driver.submit(ActivateAbility(playerId = you, sourceId = assistant, abilityId = abilityId))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.state.getEntity(you)?.get<ManaPoolComponent>()?.colorless shouldBe 0
         driver.isTapped(assistant) shouldBe false
     }
@@ -118,7 +120,7 @@ class DerangedAssistantScenarioTest : FunSpec({
         driver.submitSuccess(ActivateAbility(playerId = you, sourceId = assistant, abilityId = abilityId))
         val second = driver.submit(ActivateAbility(playerId = you, sourceId = assistant, abilityId = abilityId))
 
-        second.isSuccess shouldBe false
+        second.outcome shouldNotBe Outcome.Done
         // Exactly one card milled — the failed second activation paid nothing.
         libraryOf(driver, you).size shouldBe libraryBefore - 1
 

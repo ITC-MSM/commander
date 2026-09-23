@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantFlashToSpellType
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Flash keyword and GrantFlashToSpellType static ability.
@@ -97,7 +99,7 @@ class QuickSliverTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("creature without Flash cannot be cast at instant speed") {
@@ -123,7 +125,7 @@ class QuickSliverTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("GrantFlashToSpellType allows matching Sliver to be cast at instant speed") {
@@ -151,7 +153,7 @@ class QuickSliverTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("GrantFlashToSpellType does not grant flash to non-matching creatures") {
@@ -179,7 +181,7 @@ class QuickSliverTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("GrantFlashToSpellType allows opponent to cast Sliver at instant speed") {
@@ -213,6 +215,6 @@ class QuickSliverTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 })

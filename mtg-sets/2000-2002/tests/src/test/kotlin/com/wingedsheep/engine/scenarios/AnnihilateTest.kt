@@ -9,6 +9,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Annihilate.
@@ -40,7 +42,7 @@ class AnnihilateTest : FunSpec({
         val handBefore = driver.getHandSize(player1)
 
         val result = driver.castSpellWithTargets(player1, annihilate, listOf(ChosenTarget.Permanent(bears)))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(player2, "Grizzly Bears") shouldBe null
@@ -61,7 +63,7 @@ class AnnihilateTest : FunSpec({
         driver.giveMana(player1, Color.BLACK, 5)
 
         val result = driver.castSpellWithTargets(player1, annihilate, listOf(ChosenTarget.Permanent(blackCreature)))
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.findPermanent(player2, "Black Creature") shouldBe blackCreature
     }
 })

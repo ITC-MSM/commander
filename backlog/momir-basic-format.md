@@ -56,7 +56,7 @@ plan: `ActivateAbilityHandler` *already* handles non-battlefield `activateFromZo
   `EffectContext.xValue`, read by `DynamicAmount.XValue`. **So MV = X, payment = 3X, with no new
   cost math.**
 - `TimingRule.SorcerySpeed` and `ActivationRestriction.OncePerTurn` exist and are enforced
-  (`checkActivationRestriction`).
+  (`LegalityKernel.activationRestrictionFailure`).
 - **`ActivatedAbilityEnumerator` does NOT scan the command zone** — it iterates battlefield
   permanents and filters own abilities to `activateFromZone == Zone.BATTLEFIELD`.
   `GraveyardAbilityEnumerator` is the precedent for a non-battlefield-zone enumerator (scans a zone,
@@ -111,7 +111,7 @@ plan: `ActivateAbilityHandler` *already* handles non-battlefield `activateFromZo
   `GraveyardAbilityEnumerator`: scan `ZoneKey(playerId, Zone.COMMAND)`, resolve each entity's
   `CardDefinition` via `context.cardRegistry`, take abilities with
   `activateFromZone == Zone.COMMAND`, gate `TimingRule.SorcerySpeed` on `canPlaySorcerySpeed`, run
-  `checkActivationRestriction` (`OncePerTurn`), reuse the composite-cost path (mana `{X}{X}{X}` +
+  `LegalityKernel.activationRestrictionsMet` (`OncePerTurn`), reuse the composite-cost path (mana `{X}{X}{X}` +
   discard) including `abilityHasXCost` / `maxAffordableX`. Register in `LegalActionEnumerator`
   alongside `GraveyardAbilityEnumerator`.
 

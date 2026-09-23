@@ -23,6 +23,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.PayCost
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Resumer for [CostPaymentContinuation] — the single resume path for every [PayCost] variant paid
@@ -282,7 +283,7 @@ class CostPaymentContinuationResumer(
             .execute(state, followup, effectContext(state, continuation).authorizeObjectMoves(priorEvents))
             .toExecutionResult()
         val allEvents = priorEvents + result.events
-        return if (result.isPaused) {
+        return if (result.outcome is Outcome.Paused) {
             ExecutionResult.propagatePause(result.state, allEvents)
         } else {
             checkForMore(result.state, allEvents)

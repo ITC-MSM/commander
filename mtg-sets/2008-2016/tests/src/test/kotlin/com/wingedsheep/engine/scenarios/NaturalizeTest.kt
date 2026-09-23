@@ -9,6 +9,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Naturalize.
@@ -44,7 +45,7 @@ class NaturalizeTest : FunSpec({
         driver.giveMana(activePlayer, Color.GREEN, 2)
 
         val castResult = driver.castSpell(activePlayer, naturalize, listOf(enchantment))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -71,7 +72,7 @@ class NaturalizeTest : FunSpec({
         driver.giveMana(activePlayer, Color.GREEN, 2)
 
         val castResult = driver.castSpell(activePlayer, naturalize, listOf(artifact))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -97,7 +98,7 @@ class NaturalizeTest : FunSpec({
         driver.giveMana(activePlayer, Color.GREEN, 2)
 
         val castResult = driver.castSpell(activePlayer, naturalize, listOf(creature))
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
 
         driver.findPermanent(opponent, "Grizzly Bears") shouldNotBe null
     }

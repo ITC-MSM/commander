@@ -119,7 +119,7 @@ These are the ones that have actually caused bugs here.
 - **Events, not silent mutations** — every state change emits a `GameEvent` so triggers and animations
   can react.
 - **Server is authoritative** — never compute legal actions in the client; the server sends them.
-- **Last-known information** — dies/leaves triggers read `triggerLastKnownPower`,
+- **Last-known information** — dies/leaves triggers read `triggerContext.lastKnownPower`,
   `lastKnownCardDefinitionId`, and `lastKnownCounters` off the `ZoneChangeEvent`; the entity is already
   gone when the trigger resolves.
 

@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Lifespark Spellbomb (MRD #197).
@@ -55,7 +56,7 @@ class LifesparkSpellbombScenarioTest : FunSpec({
                 abilityId = animateAbilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, forest))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val projected = stateProjector.project(driver.state)
@@ -87,7 +88,7 @@ class LifesparkSpellbombScenarioTest : FunSpec({
                 abilityId = animateAbilityId,
                 targets = listOf(entityIdToChosenTarget(driver.state, forest))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         stateProjector.project(driver.state).isCreature(forest) shouldBe true
@@ -111,7 +112,7 @@ class LifesparkSpellbombScenarioTest : FunSpec({
         driver.giveColorlessMana(player, 1)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = spellbomb, abilityId = drawAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         withClue("One card drawn") {

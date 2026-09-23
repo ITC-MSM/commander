@@ -22,6 +22,7 @@ import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Cast-zone qualifier on the spell-cast tracker (OTJ engine gap #4).
@@ -59,7 +60,7 @@ class CastFromZoneThisTurnTest : FunSpec({
         val you = driver.activePlayer!!
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, listOf(you)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, listOf(you)).outcome shouldBe Outcome.Done
 
         lastRecord(driver, you).castFromZone shouldBe Zone.HAND
     }
@@ -80,7 +81,7 @@ class CastFromZoneThisTurnTest : FunSpec({
         driver.bothPass() // resolve the ability — grants forage-cast permission
 
         driver.giveMana(you, Color.BLACK, 2)
-        driver.castSpell(you, orator).isSuccess shouldBe true
+        driver.castSpell(you, orator).outcome shouldBe Outcome.Done
 
         lastRecord(driver, you).castFromZone shouldBe Zone.GRAVEYARD
     }
@@ -107,7 +108,7 @@ class CastFromZoneThisTurnTest : FunSpec({
         driver.submitSuccess(ActivateAbility(playerId = you, sourceId = adept, abilityId = abilityId))
         driver.bothPass()
         driver.giveMana(you, Color.BLACK, 2)
-        driver.castSpell(you, orator).isSuccess shouldBe true
+        driver.castSpell(you, orator).outcome shouldBe Outcome.Done
 
         // You *have* cast a spell, but not from your hand.
         evaluator.evaluate(driver.state, PlayerCastSpellsThisTurn(Player.You, atLeast = 1), ctx) shouldBe true
@@ -117,7 +118,7 @@ class CastFromZoneThisTurnTest : FunSpec({
         // Now cast a spell from hand — the hand qualifier flips true.
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, listOf(opp)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, listOf(opp)).outcome shouldBe Outcome.Done
         evaluator.evaluate(driver.state, PlayerCastSpellsThisTurn(Player.You, atLeast = 1, fromZone = Zone.HAND), ctx) shouldBe true
     }
 

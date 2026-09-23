@@ -14,6 +14,7 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.core.spec.style.FunSpec
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Alchemist's Greeting (Eldritch Moon #116) — {4}{R} Sorcery.
@@ -66,7 +67,7 @@ class AlchemistsGreetingScenarioTest : FunSpec({
         val greeting = driver.putCardInHand(player, "Alchemist's Greeting")
         driver.giveMana(player, Color.RED, 5)
 
-        driver.castSpell(player, greeting, targets = listOf(bears)).isSuccess shouldBe true
+        driver.castSpell(player, greeting, targets = listOf(bears)).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         driver.findPermanent(opponent, "Grizzly Bears").shouldBeNull()

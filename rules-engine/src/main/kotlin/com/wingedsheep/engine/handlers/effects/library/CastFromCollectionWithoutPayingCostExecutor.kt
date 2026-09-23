@@ -168,7 +168,6 @@ class CastFromCollectionWithoutPayingCostExecutor(
                 castResult.events,
             ).copy(
                 updatedCollections = castCollections,
-                triggersAlreadyProcessed = castResult.triggersAlreadyProcessed,
             )
         }
 
@@ -178,7 +177,6 @@ class CastFromCollectionWithoutPayingCostExecutor(
         return EffectResult.success(castResult.state, castResult.events)
             .copy(
                 updatedCollections = castCollections,
-                triggersAlreadyProcessed = castResult.triggersAlreadyProcessed,
             )
     }
 

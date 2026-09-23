@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Ceaseless Searblades (LRW #158) — "Whenever you activate an ability of an Elemental, this
@@ -91,7 +92,7 @@ class CeaselessSearbladesScenarioTest : FunSpec({
         d.giveMana(me, Color.WHITE, 3)
 
         d.power(searblades) shouldBe 2
-        d.submit(ActivateAbility(me, hoofprints, hoofprintAbility)).isSuccess shouldBe true
+        d.submit(ActivateAbility(me, hoofprints, hoofprintAbility)).outcome shouldBe Outcome.Done
         drain(d)
 
         withClue("Hoofprints of the Stag is a Kindred Enchantment — Elemental") {
@@ -126,7 +127,7 @@ class CeaselessSearbladesScenarioTest : FunSpec({
                 me, harrier, harrierAbility,
                 targets = listOf(ChosenTarget.Permanent(searblades))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         drain(d)
 
         withClue("Goldmeadow Harrier is a Kithkin Soldier") {

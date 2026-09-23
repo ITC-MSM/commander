@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 class ButcherGhoulScenarioTest : FunSpec({
 
@@ -28,7 +29,7 @@ class ButcherGhoulScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, listOf(ghoul)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, listOf(ghoul)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.getGraveyard(you).contains(ghoul) shouldBe true

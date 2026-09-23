@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Soulbright Flamekin (LRW #190) — "{2}: Target creature gains trample until end of turn. If this
@@ -60,7 +61,7 @@ class SoulbrightFlamekinScenarioTest : FunSpec({
                 abilityId = flareAbility,
                 targets = listOf(entityIdToChosenTarget(d.state, victim))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
     }
 
@@ -87,7 +88,7 @@ class SoulbrightFlamekinScenarioTest : FunSpec({
 
         flare(d, me, flamekin, courser)
         withClue("the third resolution asks") { d.isPaused shouldBe true }
-        d.submitYesNo(me, true).isSuccess shouldBe true
+        d.submitYesNo(me, true).outcome shouldBe Outcome.Done
 
         withClue("\"you may add {R}{R}{R}{R}{R}{R}{R}{R}\"") {
             redInPool(d, me) shouldBe 8
@@ -104,7 +105,7 @@ class SoulbrightFlamekinScenarioTest : FunSpec({
         flare(d, me, flamekin, courser)
 
         d.isPaused shouldBe true
-        d.submitYesNo(me, false).isSuccess shouldBe true
+        d.submitYesNo(me, false).outcome shouldBe Outcome.Done
 
         withClue("a declined \"may\" leaves the pool empty") {
             redInPool(d, me) shouldBe 0

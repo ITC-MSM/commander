@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Restless Anchorage (LCI #280) — Land, creature-land "Restless" cycle.
@@ -49,7 +50,7 @@ class RestlessAnchorageScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val landCard = driver.putCardInHand(player, "Restless Anchorage")
-        driver.playLand(player, landCard).isSuccess shouldBe true
+        driver.playLand(player, landCard).outcome shouldBe Outcome.Done
 
         driver.isTapped(landCard) shouldBe true
     }
@@ -62,7 +63,7 @@ class RestlessAnchorageScenarioTest : FunSpec({
         val land = driver.putLandOnBattlefield(player, "Restless Anchorage")
         driver.submit(
             ActivateAbility(playerId = player, sourceId = land, abilityId = whiteManaAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(player)?.get<ManaPoolComponent>()
         (pool?.white ?: 0) shouldBe 1
@@ -81,7 +82,7 @@ class RestlessAnchorageScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = land, abilityId = animateAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val projected = projector.project(driver.state)
@@ -135,7 +136,7 @@ class RestlessAnchorageScenarioTest : FunSpec({
         driver.findPermanent(player, "Map") shouldBe null
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(player, listOf(land), opponent).isSuccess shouldBe true
+        driver.declareAttackers(player, listOf(land), opponent).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // The attack trigger created a Map token on the controller's battlefield.

@@ -8,6 +8,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Executor for CompositeEffect.
@@ -54,7 +55,7 @@ class CompositeEffectExecutor(
 
             val result = effectExecutor(stateForExecution, subEffect, currentContext)
 
-            if (!result.isSuccess && !result.isPaused) {
+            if (result.outcome !is Outcome.Done && result.outcome !is Outcome.Paused) {
                 if (effect.stopOnError) {
                     // Cost-then-payoff composite: if the cost fails, abort remaining effects.
                     // Used by the GatedEffect Gate.MayPay resumer, where paying the cost is
@@ -81,7 +82,7 @@ class CompositeEffectExecutor(
                 continue
             }
 
-            if (result.isPaused) {
+            if (result.outcome is Outcome.Paused) {
                 // Sub-effect needs a decision.
                 // Its continuation is on top of the stack.
                 // Our pre-pushed EffectContinuation is underneath, ready to be

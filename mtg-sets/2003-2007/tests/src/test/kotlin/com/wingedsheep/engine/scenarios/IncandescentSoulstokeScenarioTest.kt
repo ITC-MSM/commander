@@ -14,6 +14,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Incandescent Soulstoke (LRW #178) — "Other Elemental creatures you control get +1/+1.
@@ -69,7 +70,7 @@ class IncandescentSoulstokeScenarioTest : FunSpec({
         val whiskergill = d.putCardInHand(me, "Ethereal Whiskergill")
         d.giveMana(me, Color.RED, 2)
 
-        d.submit(ActivateAbility(me, stoke, stokeAbility)).isSuccess shouldBe true
+        d.submit(ActivateAbility(me, stoke, stokeAbility)).outcome shouldBe Outcome.Done
         d.bothPass()
         d.submitCardSelection(me, listOf(whiskergill))
 
@@ -94,7 +95,7 @@ class IncandescentSoulstokeScenarioTest : FunSpec({
         val whiskergill = d.putCardInHand(me, "Ethereal Whiskergill")
         d.giveMana(me, Color.RED, 2)
 
-        d.submit(ActivateAbility(me, stoke, stokeAbility)).isSuccess shouldBe true
+        d.submit(ActivateAbility(me, stoke, stokeAbility)).outcome shouldBe Outcome.Done
         d.bothPass()
         d.submitCardSelection(me, emptyList())
 

@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Dollhouse of Horrors (VOW #255).
@@ -65,7 +66,7 @@ class DollhouseOfHorrorsScenarioTest : FunSpec({
                 abilityId = abilityId,
                 costPayment = AdditionalCostPayment(exiledCards = listOf(fuel)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         withClue("the cost exiled the creature card") {
@@ -110,7 +111,7 @@ class DollhouseOfHorrorsScenarioTest : FunSpec({
                 abilityId = abilityId,
                 costPayment = AdditionalCostPayment(exiledCards = listOf(fuelA)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
         val tokenA = tokenOf(d, me, "Centaur Courser", beforeA)
 
@@ -122,7 +123,7 @@ class DollhouseOfHorrorsScenarioTest : FunSpec({
                 abilityId = abilityId,
                 costPayment = AdditionalCostPayment(exiledCards = listOf(fuelB)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
         val tokenB = tokenOf(d, me, "Grizzly Bears", beforeB)
 

@@ -7,6 +7,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Fear of Being Hunted (DSK #134) — "Haste. This creature must be blocked if able."
@@ -34,15 +36,15 @@ class FearOfBeingHuntedScenarioTest : FunSpec({
         driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(p1, listOf(nightmare), p2).isSuccess shouldBe true
+        driver.declareAttackers(p1, listOf(nightmare), p2).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         // p2 controls a Grizzly Bears that can block, so declaring no blockers is illegal.
-        driver.declareBlockers(p2, emptyMap()).isSuccess shouldBe false
+        driver.declareBlockers(p2, emptyMap()).outcome shouldNotBe Outcome.Done
 
         // Blocking the attacker is legal.
         val bears = driver.findPermanent(p2, "Grizzly Bears")!!
-        driver.declareBlockers(p2, mapOf(bears to listOf(nightmare))).isSuccess shouldBe true
+        driver.declareBlockers(p2, mapOf(bears to listOf(nightmare))).outcome shouldBe Outcome.Done
     }
 
     test("no requirement when the defender has no creature able to block") {
@@ -57,9 +59,9 @@ class FearOfBeingHuntedScenarioTest : FunSpec({
         // p2 has no creatures — nothing is able to block, so declaring no blockers is legal.
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(p1, listOf(nightmare), p2).isSuccess shouldBe true
+        driver.declareAttackers(p1, listOf(nightmare), p2).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
-        driver.declareBlockers(p2, emptyMap()).isSuccess shouldBe true
+        driver.declareBlockers(p2, emptyMap()).outcome shouldBe Outcome.Done
     }
 })

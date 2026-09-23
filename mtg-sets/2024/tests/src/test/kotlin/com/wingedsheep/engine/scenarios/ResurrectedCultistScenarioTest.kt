@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Resurrected Cultist (DSK #115) — {2}{B} 4/1 Creature — Human Cleric.
@@ -73,7 +74,7 @@ class ResurrectedCultistScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = cultist, abilityId = abilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.isPaused shouldBe false
 

@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Unstable Experiment (SPM #47) — {1}{U} Instant.
@@ -54,7 +55,7 @@ class UnstableExperimentScenarioTest : FunSpec({
         val spell = driver.putCardInHand(caster, "Unstable Experiment")
         driver.giveMana(caster, Color.BLUE, 2)
 
-        driver.castSpell(caster, spell, targets = listOf(drawer, creature)).isSuccess shouldBe true
+        driver.castSpell(caster, spell, targets = listOf(drawer, creature)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // The opponent has already drawn; resolution now pauses on the connive discard choice.
@@ -88,7 +89,7 @@ class UnstableExperimentScenarioTest : FunSpec({
         val spell = driver.putCardInHand(caster, "Unstable Experiment")
         driver.giveMana(caster, Color.BLUE, 2)
 
-        driver.castSpell(caster, spell, targets = listOf(drawer, creature)).isSuccess shouldBe true
+        driver.castSpell(caster, spell, targets = listOf(drawer, creature)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.isPaused shouldBe true
@@ -118,7 +119,7 @@ class UnstableExperimentScenarioTest : FunSpec({
         val casterHandBefore = driver.getHandSize(caster) // just the spell
         driver.giveMana(caster, Color.BLUE, 2)
 
-        driver.castSpell(caster, spell, targets = listOf(drawer)).isSuccess shouldBe true
+        driver.castSpell(caster, spell, targets = listOf(drawer)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Resolves fully with no discard decision — nothing connived.

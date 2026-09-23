@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Pit Imp ({B} Creature — Imp 0/1):
@@ -52,18 +54,18 @@ class PitImpScenarioTest : FunSpec({
         driver.giveMana(you, Color.BLACK, 3)
 
         val first = driver.submit(ActivateAbility(playerId = you, sourceId = imp, abilityId = pumpAbilityId(driver)))
-        first.isSuccess shouldBe true
+        first.outcome shouldBe Outcome.Done
         driver.bothPass()
         projector.getProjectedPower(driver.state, imp) shouldBe 1
         projector.getProjectedToughness(driver.state, imp) shouldBe 1
 
         val second = driver.submit(ActivateAbility(playerId = you, sourceId = imp, abilityId = pumpAbilityId(driver)))
-        second.isSuccess shouldBe true
+        second.outcome shouldBe Outcome.Done
         driver.bothPass()
         projector.getProjectedPower(driver.state, imp) shouldBe 2
 
         // Third activation in the same turn is illegal (MaxPerTurn(2)).
         val third = driver.submit(ActivateAbility(playerId = you, sourceId = imp, abilityId = pumpAbilityId(driver)))
-        third.isSuccess shouldBe false
+        third.outcome shouldNotBe Outcome.Done
     }
 })

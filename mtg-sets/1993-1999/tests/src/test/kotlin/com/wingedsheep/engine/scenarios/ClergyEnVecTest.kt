@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Clergy en-Vec — auto-generated from the mtgish IR by mtgish-tooling
@@ -52,7 +53,7 @@ class ClergyEnVecTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Permanent(target))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Lightning Bolt deals 3 — the shield prevents 1, so 2 lands.
@@ -86,7 +87,7 @@ class ClergyEnVecTest : FunSpec({
                 abilityId = abilityId,
                 targets = listOf(ChosenTarget.Player(opponent))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.giveMana(activePlayer, Color.RED, 1)

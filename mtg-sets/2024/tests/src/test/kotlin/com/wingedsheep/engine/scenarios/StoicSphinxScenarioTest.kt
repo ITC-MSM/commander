@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Stoic Sphinx (OTJ) — {2}{U}{U} Sphinx 5/3, Flash, Flying.
@@ -55,7 +56,7 @@ class StoicSphinxScenarioTest : FunSpec({
         // Cast any spell this turn → controller's spell count becomes 1.
         val bolt = driver.putCardInHand(you, "Lightning Bolt")
         driver.giveMana(you, Color.RED, 1)
-        driver.castSpell(you, bolt, listOf(you)).isSuccess shouldBe true
+        driver.castSpell(you, bolt, listOf(you)).outcome shouldBe Outcome.Done
 
         val projected = projector.project(driver.state)
         projected.hasKeyword(sphinx, Keyword.FLYING) shouldBe true

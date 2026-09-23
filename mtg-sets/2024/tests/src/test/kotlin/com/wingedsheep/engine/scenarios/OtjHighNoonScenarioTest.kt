@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * High Noon {1}{W} Enchantment (OTJ canonical).
@@ -109,7 +110,7 @@ class OtjHighNoonScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Player(opp))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // High Noon was sacrificed as part of the cost.

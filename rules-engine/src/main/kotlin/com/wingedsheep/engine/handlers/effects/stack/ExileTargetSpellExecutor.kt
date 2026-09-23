@@ -11,6 +11,7 @@ import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.BendType
 import com.wingedsheep.sdk.scripting.effects.ExileTargetSpellEffect
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Executor for [ExileTargetSpellEffect] (CR 718, "exile target spell" — Aven Interrupter).
@@ -54,7 +55,7 @@ class ExileTargetSpellExecutor(
         )
         // CR 701.65b: airbending a spell fires "whenever you airbend" — but only once the spell is
         // actually exiled (the early returns above already skip a target that left the stack).
-        if (!effect.emitAirbend || !exiled.isSuccess) return exiled
+        if (!effect.emitAirbend || exiled.outcome !is Outcome.Done) return exiled
         val (bendState, bendEvent) = BendEvents.record(exiled.state, context.controllerId, BendType.AIR)
         return exiled.copy(state = bendState, events = exiled.events + bendEvent)
     }

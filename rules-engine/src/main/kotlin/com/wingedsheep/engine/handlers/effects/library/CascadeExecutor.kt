@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.CascadeEffect
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Executor for [CascadeEffect] (CR 702.85).
@@ -98,7 +99,7 @@ class CascadeExecutor(
 
         for (cardId in exiledCards) {
             val result = ZoneMovementUtils.moveCardToZone(currentState, cardId, Zone.EXILE)
-            if (result.isSuccess) {
+            if (result.outcome is Outcome.Done) {
                 currentState = result.state
                 allEvents.addAll(result.events)
             }

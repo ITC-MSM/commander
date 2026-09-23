@@ -14,6 +14,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Bedhead Beastie (DSK #125) — {4}{R}{R} 5/6 Creature — Beast.
@@ -48,7 +49,7 @@ class BedheadBeastieScenarioTest : FunSpec({
         d.giveColorlessMana(you, 2)
 
         val result = d.submit(TypecycleCard(playerId = you, cardId = beastie))
-        (result.isSuccess || result.isPaused).shouldBeTrue()
+        (result.outcome is Outcome.Done || result.outcome is Outcome.Paused).shouldBeTrue()
         d.getGraveyardCardNames(you) shouldContain "Bedhead Beastie"
 
         val decision = d.pendingDecision

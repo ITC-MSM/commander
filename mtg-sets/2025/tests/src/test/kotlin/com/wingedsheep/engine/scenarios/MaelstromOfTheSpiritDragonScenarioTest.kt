@@ -14,6 +14,8 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Maelstrom of the Spirit Dragon (TDM #260) — Land.
@@ -73,7 +75,7 @@ class MaelstromOfTheSpiritDragonScenarioTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = dragon, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("any-color mana tagged for Dragon/Omen cannot pay for a non-Dragon, non-Omen spell") {
@@ -96,6 +98,6 @@ class MaelstromOfTheSpiritDragonScenarioTest : FunSpec({
             CastSpell(playerId = p1, cardId = ogre, paymentStrategy = PaymentStrategy.FromPool)
         )
         // The restricted mana can't pay for an Ogre and there's no other mana available.
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Trade Secrets.
@@ -50,7 +51,7 @@ class TradeSecretsTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLUE, 3)
 
         val castResult = driver.castSpell(activePlayer, tradeSecrets, targets = listOf(opponent))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve - both pass priority on the stack
         driver.bothPass()
@@ -96,7 +97,7 @@ class TradeSecretsTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLUE, 3)
 
         val castResult = driver.castSpell(activePlayer, tradeSecrets, targets = listOf(opponent))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -145,7 +146,7 @@ class TradeSecretsTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLUE, 3)
 
         val castResult = driver.castSpell(activePlayer, tradeSecrets, targets = listOf(opponent))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

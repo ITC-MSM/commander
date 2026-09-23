@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Ragnarok, Divine Deliverance (FIN) — meld back of Vanille + Fang, authored as a plain legendary
@@ -67,11 +68,11 @@ class RagnarokDivineDeliveranceScenarioTest : FunSpec({
         val bolt2 = driver.putCardInHand(driver.player1, "Lightning Bolt")
         driver.giveMana(driver.player1, Color.RED, 2)
 
-        driver.castSpell(driver.player1, bolt1, targets = listOf(ragnarok)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, bolt1, targets = listOf(ragnarok)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve first bolt — 3 damage, Ragnarok survives
         driver.state.getBattlefield().contains(ragnarok) shouldBe true
 
-        driver.castSpell(driver.player1, bolt2, targets = listOf(ragnarok)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, bolt2, targets = listOf(ragnarok)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve second bolt — 6 damage, Ragnarok dies, queuing its trigger
 
         driver.state.getBattlefield().contains(ragnarok) shouldBe false

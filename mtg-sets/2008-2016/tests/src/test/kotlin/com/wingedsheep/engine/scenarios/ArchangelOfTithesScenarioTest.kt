@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Archangel of Tithes (ORI #4, reprinted OTJ #2).
@@ -90,7 +91,7 @@ class ArchangelOfTithesScenarioTest : FunSpec({
         val result = driver.declareAttackers(attacker, listOf(bear), defender)
 
         // No tax while Archangel is tapped → attack resolves with no mana decision.
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         (result.newState.pendingDecision is SelectManaSourcesDecision) shouldBe false
     }
 
@@ -131,7 +132,7 @@ class ArchangelOfTithesScenarioTest : FunSpec({
         // Archangel attacks → it becomes "attacking", enabling the block tax. No attack tax
         // against the opponent (they have no AttackTax permanent).
         val attackResult = driver.declareAttackers(attacker, listOf(archangel), blockerPlayer)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         val blockResult = driver.declareBlockers(blockerPlayer, mapOf(blocker to listOf(archangel)))

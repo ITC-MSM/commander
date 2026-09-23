@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * The Earth Crystal (FIN #184) — {2}{G}{G} Legendary Artifact.
@@ -53,7 +54,7 @@ class TheEarthCrystalScenarioTest : FunSpec({
         val abilityId = TheEarthCrystal.activatedAbilities.first().id
         driver.submit(
             ActivateAbility(you, crystal, abilityId, targets = listOf(ChosenTarget.Permanent(bears)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         resolveStack(driver)
 
         // 2 counters distributed onto Grizzly Bears, doubled by The Earth Crystal -> 4.

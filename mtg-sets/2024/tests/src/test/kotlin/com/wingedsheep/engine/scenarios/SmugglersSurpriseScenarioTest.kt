@@ -15,6 +15,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Smuggler's Surprise — {G} Instant, Spree
@@ -59,7 +61,7 @@ class SmugglersSurpriseScenarioTest : FunSpec({
                 chosenModes = listOf(0),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve -> mill 4 -> pause for the up-to-two selection
 
         driver.isPaused shouldBe true
@@ -99,7 +101,7 @@ class SmugglersSurpriseScenarioTest : FunSpec({
                 chosenModes = listOf(2),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.isPaused shouldBe false
@@ -128,7 +130,7 @@ class SmugglersSurpriseScenarioTest : FunSpec({
                 chosenModes = listOf(1),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve -> pause for the up-to-two hand selection
 
         driver.isPaused shouldBe true
@@ -162,6 +164,6 @@ class SmugglersSurpriseScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

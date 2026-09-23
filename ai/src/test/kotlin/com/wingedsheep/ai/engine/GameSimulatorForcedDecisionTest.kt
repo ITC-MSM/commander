@@ -21,6 +21,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 class GameSimulatorForcedDecisionTest : FunSpec({
 
@@ -44,7 +45,7 @@ class GameSimulatorForcedDecisionTest : FunSpec({
 
         val caster = driver.activePlayer!!
         val cardId = driver.putCardInHand(caster, testCard.name)
-        driver.castSpell(caster, cardId).isSuccess.shouldBeTrue()
+        (driver.castSpell(caster, cardId).outcome is Outcome.Done).shouldBeTrue()
 
         val priority = driver.state.priorityPlayerId!!
         return GameSimulator(driver.cardRegistry).simulate(driver.state, PassPriority(priority))

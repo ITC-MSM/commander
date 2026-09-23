@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.scripting.values.ContextPropertyKey
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for LifeLossEvent trigger support.
@@ -98,7 +99,7 @@ class LifeLossTriggerTest : FunSpec({
 
         val spell = driver.putCardInHand(activePlayer, "Lose Three Life")
         driver.giveMana(activePlayer, Color.BLACK, 1)
-        driver.castSpell(activePlayer, spell).isSuccess shouldBe true
+        driver.castSpell(activePlayer, spell).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Lose Three Life (lose 3 life, trigger fires)
         driver.bothPass() // resolve triggered ability (draw a card)
 
@@ -153,7 +154,7 @@ class LifeLossTriggerTest : FunSpec({
 
         val spell = driver.putCardInHand(activePlayer, "Lose Three Life")
         driver.giveMana(activePlayer, Color.BLACK, 1)
-        driver.castSpell(activePlayer, spell).isSuccess shouldBe true
+        driver.castSpell(activePlayer, spell).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Lose Three Life
         driver.bothPass() // resolve triggered ability
 
@@ -193,7 +194,7 @@ class LifeLossTriggerTest : FunSpec({
 
         val spell = driver.putCardInHand(activePlayer, "Lose Three Life")
         driver.giveMana(activePlayer, Color.BLACK, 1)
-        driver.castSpell(activePlayer, spell).isSuccess shouldBe true
+        driver.castSpell(activePlayer, spell).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve spell
         driver.bothPass() // resolve trigger
 

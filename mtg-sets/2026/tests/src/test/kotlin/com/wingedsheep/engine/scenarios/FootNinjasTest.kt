@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Foot Ninjas (TMT #147) — {4}{W/B}{W/B} 5/5 Creature — Human Ninja.
@@ -31,7 +32,7 @@ class FootNinjasTest : FunSpec({
         // {4}{W/B}{W/B}: six white mana pays the four generic and both hybrid pips.
         // mana added here — unspent mana empties as each step/phase ends (CR 500.5)
         driver.giveMana(player, Color.WHITE, 6)
-        driver.castSpell(player, foot).isSuccess shouldBe true
+        driver.castSpell(player, foot).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         driver.findPermanent(player, "Foot Ninjas").shouldNotBeNull()

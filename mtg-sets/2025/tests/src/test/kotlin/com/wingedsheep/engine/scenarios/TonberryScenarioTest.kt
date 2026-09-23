@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Tonberry (FIN #122).
@@ -41,7 +42,7 @@ class TonberryScenarioTest : FunSpec({
 
         val tonberry = driver.putCardInHand(active, "Tonberry")
         driver.giveMana(active, Color.BLACK, 1)
-        driver.castSpell(active, tonberry).isSuccess shouldBe true
+        driver.castSpell(active, tonberry).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature; enters-replacements apply
 
         // Enters tapped with one stun counter.

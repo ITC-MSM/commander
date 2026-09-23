@@ -67,7 +67,7 @@ class AncestralMemoriesPipelineTest : FunSpec({
 
         // Cast Ancestral Memories
         val castResult = driver.castSpell(activePlayer, spellCard)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Let the spell resolve (both players pass priority)
         driver.bothPass()

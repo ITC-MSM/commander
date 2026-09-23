@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Intimidation Campaign (OTJ #208) — {1}{U}{B} Enchantment.
@@ -42,7 +43,7 @@ class IntimidationCampaignScenarioTest : FunSpec({
         driver.giveMana(me, Color.BLUE, 1)
         driver.giveMana(me, Color.BLACK, 1)
         driver.giveColorlessMana(me, 1)
-        driver.castSpell(me, campaign).isSuccess shouldBe true
+        driver.castSpell(me, campaign).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve enchantment -> enters -> ETB trigger on stack
         driver.bothPass() // resolve the ETB trigger
 
@@ -62,7 +63,7 @@ class IntimidationCampaignScenarioTest : FunSpec({
         // Commit a crime: cast Lightning Bolt targeting the opponent.
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, targets = listOf(opp)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, targets = listOf(opp)).outcome shouldBe Outcome.Done
         // Crime is committed at cast; the bounce trigger goes on the stack above the Bolt and
         // resolves first, presenting the "may" prompt.
         driver.bothPass()
@@ -82,7 +83,7 @@ class IntimidationCampaignScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, targets = listOf(opp)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, targets = listOf(opp)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>()

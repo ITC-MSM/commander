@@ -19,6 +19,8 @@ import com.wingedsheep.sdk.scripting.ConvokePayment
 import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Convoke (CR 702.51) paid alongside conditional ("spend this mana only to …") floating mana.
@@ -113,7 +115,7 @@ class ConvokeWithConditionalManaTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.state.getEntity(player)!!.get<ManaPoolComponent>()!!.restrictedMana.size shouldBe 0
     }
 
@@ -139,7 +141,7 @@ class ConvokeWithConditionalManaTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("convoke-reduced payment keeps the printed mana value: restricted mana stays eligible") {
@@ -168,7 +170,7 @@ class ConvokeWithConditionalManaTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.state.getEntity(player)!!.get<ManaPoolComponent>()!!.restrictedMana.size shouldBe 0
     }
 
@@ -219,7 +221,7 @@ class ConvokeWithConditionalManaTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.state.getEntity(player)!!.get<ManaPoolComponent>()!!.restrictedMana.size shouldBe 3
     }
 
@@ -253,7 +255,7 @@ class ConvokeWithConditionalManaTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("restricted mana pays the colored pips while convoke pays the generic") {
@@ -278,7 +280,7 @@ class ConvokeWithConditionalManaTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.state.getEntity(player)!!.get<ManaPoolComponent>()!!.restrictedMana.size shouldBe 0
     }
 
@@ -312,7 +314,7 @@ class ConvokeWithConditionalManaTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.state.getEntity(player)!!.get<ManaPoolComponent>()!!.restrictedMana.size shouldBe 0
     }
 
@@ -339,6 +341,6 @@ class ConvokeWithConditionalManaTest : FunSpec({
                 )
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

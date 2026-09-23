@@ -326,7 +326,7 @@ class CombatAdvisorTest : FunSpec({
         ) as DeclareBlockers
 
         result.blockers.values.flatten().count { it == attacker } shouldBe 1
-        driver.submit(result).isSuccess shouldBe true
+        driver.submit(result).outcome shouldBe Outcome.Done
     }
 
     // ═════════════════════════════════════════════════════════════════════

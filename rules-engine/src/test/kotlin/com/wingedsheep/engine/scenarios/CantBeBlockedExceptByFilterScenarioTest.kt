@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * A creature granted "can't be blocked except by creatures with <filter>" routes through the
@@ -49,7 +50,7 @@ class CantBeBlockedExceptByFilterScenarioTest : FunSpec({
 
         val spell = d.putCardInHand(d.player1, "Grant Haste Evasion Test")
         d.giveMana(d.player1, com.wingedsheep.sdk.core.Color.RED, 1)
-        d.castSpell(d.player1, spell, listOf(runner)).isSuccess shouldBe true
+        d.castSpell(d.player1, spell, listOf(runner)).outcome shouldBe Outcome.Done
         // Stop as soon as the stack is empty: passing further would run the turn to cleanup and
         // expire the EndOfTurn floating effect we're trying to observe.
         repeat(12) {

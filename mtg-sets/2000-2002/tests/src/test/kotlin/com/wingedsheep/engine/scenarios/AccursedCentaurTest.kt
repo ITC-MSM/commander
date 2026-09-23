@@ -18,6 +18,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for SacrificeEffect via Accursed Centaur.
@@ -54,7 +55,7 @@ class AccursedCentaurTest : FunSpec({
 
         // Cast Accursed Centaur
         val castResult = driver.castSpell(activePlayer, centaur)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the creature spell
         driver.bothPass()

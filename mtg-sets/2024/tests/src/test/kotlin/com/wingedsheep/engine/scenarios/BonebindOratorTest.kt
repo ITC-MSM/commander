@@ -15,6 +15,8 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Bonebind Orator's activated ability reads "Return another target creature card
@@ -55,7 +57,7 @@ class BonebindOratorTest : FunSpec({
                 targets = listOf(ChosenTarget.Card(opponentCreature, opponent, Zone.GRAVEYARD))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         // Opponent's creature must still be in opponent's graveyard;
         // orator must not have been exiled (cost not paid).
@@ -86,7 +88,7 @@ class BonebindOratorTest : FunSpec({
                 targets = listOf(ChosenTarget.Card(orator, activePlayer, Zone.GRAVEYARD))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         driver.getGraveyardCardNames(activePlayer) shouldContain "Bonebind Orator"
     }
@@ -146,7 +148,7 @@ class BonebindOratorTest : FunSpec({
                 targets = listOf(ChosenTarget.Card(ownCreature, activePlayer, Zone.GRAVEYARD))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

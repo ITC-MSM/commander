@@ -11,6 +11,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Council of Echoes (LCI #51): {4}{U}{U} 4/4 Creature — Spirit Advisor
@@ -64,7 +65,7 @@ class CouncilOfEchoesScenarioTest : FunSpec({
         driver.bothPass()
 
         val decision = driver.pendingDecision as ChooseTargetsDecision
-        driver.submitTargetSelection(player, listOf(bounceTarget)).isSuccess shouldBe true
+        driver.submitTargetSelection(player, listOf(bounceTarget)).outcome shouldBe Outcome.Done
         // ETB trigger resolves: return target nonland permanent to its owner's hand.
         driver.bothPass()
 
@@ -115,7 +116,7 @@ class CouncilOfEchoesScenarioTest : FunSpec({
         // Condition is met, so a ChooseTargetsDecision is issued.
         val decision = driver.pendingDecision as ChooseTargetsDecision
         // Decline — choose zero targets ("up to one" allows this).
-        driver.submitTargetSelection(player, emptyList()).isSuccess shouldBe true
+        driver.submitTargetSelection(player, emptyList()).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // No bounce occurred; the eligible permanent remains on the battlefield.

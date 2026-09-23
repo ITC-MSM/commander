@@ -23,6 +23,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Visage of Dread // Dread Osseosaur (LCI #129).
@@ -215,7 +217,7 @@ class VisageOfDreadScenarioTest : FunSpec({
                 abilityId = craftAbilityId(),
                 costPayment = AdditionalCostPayment(exiledCards = listOf(bear1))
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
 
         // Three materials — above the exact count.
         driver.submit(
@@ -225,7 +227,7 @@ class VisageOfDreadScenarioTest : FunSpec({
                 abilityId = craftAbilityId(),
                 costPayment = AdditionalCostPayment(exiledCards = listOf(bear1, bear2, bear3))
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
 
         // Nothing happened: still the front face, no materials exiled.
         driver.state.getEntity(visage)!!.get<CardComponent>()!!.name shouldBe "Visage of Dread"

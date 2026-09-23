@@ -14,6 +14,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Wojek Embermage (RAV #152) — "Radiance — {T}: This creature deals 1 damage to target creature
@@ -46,7 +47,7 @@ class WojekEmbermageScenarioTest : FunSpec({
     fun GameTestDriver.fire(source: EntityId, target: EntityId) {
         submit(
             ActivateAbility(player1, source, embermageAbility, targets = listOf(ChosenTarget.Permanent(target)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         // The activator keeps priority after putting the ability on the stack.
         passPriority(player2)
         bothPass()

@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Izzet Signet: {1}, {T}: Add {U}{R}. Pins that paying {1} (from pool) + tapping the artifact
@@ -43,7 +44,7 @@ class IzzetSignetScenarioTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool,
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(player)!!.get<ManaPoolComponent>()!!
         pool.blue shouldBe 1

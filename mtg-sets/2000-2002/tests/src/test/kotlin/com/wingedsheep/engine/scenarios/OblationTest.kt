@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Oblation.
@@ -50,7 +51,7 @@ class OblationTest : FunSpec({
         driver.giveMana(activePlayer, Color.WHITE, 3)
 
         val castResult = driver.castSpell(activePlayer, oblation, listOf(bears))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -89,7 +90,7 @@ class OblationTest : FunSpec({
         driver.giveMana(activePlayer, Color.WHITE, 3)
 
         val castResult = driver.castSpell(activePlayer, oblation, listOf(bears))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -121,6 +122,6 @@ class OblationTest : FunSpec({
 
         val castResult = driver.castSpell(activePlayer, oblation, listOf(plains))
         // Should fail - lands are not valid targets for Oblation
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
     }
 })

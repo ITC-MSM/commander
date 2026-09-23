@@ -856,7 +856,8 @@ class CostPaymentService(private val services: EngineServices) {
                 // The whole hand goes, so there is nothing for the payer to pick.
                 is CostAtom.DiscardHand -> null
                 is CostAtom.RevealFromHand -> cardsInHand(state, payerId, atom.filter)
-                is CostAtom.ExileFrom -> cardsInZone(state, payerId, atom.filter, atom.zone)
+                is CostAtom.ExileFrom ->
+                    cardsInZone(state, payerId, atom.filter, atom.zone, if (atom.excludeSelf) sourceId else null)
                 // Collect evidence N (CR 701.59a) — the whole graveyard is selectable; the gate is
                 // the summed mana value, checked in [canAfford].
                 is CostAtom.CollectEvidence ->
@@ -916,15 +917,21 @@ class CostPaymentService(private val services: EngineServices) {
             }
         }
 
-        fun cardsInZone(state: GameState, playerId: EntityId, filter: GameObjectFilter, zone: Zone): List<EntityId> {
+        fun cardsInZone(
+            state: GameState,
+            playerId: EntityId,
+            filter: GameObjectFilter,
+            zone: Zone,
+            excludeSelfId: EntityId? = null,
+        ): List<EntityId> {
             if (zone == Zone.BATTLEFIELD) {
                 return BattlefieldFilterUtils.findMatchingOnBattlefield(
-                    state, filter.youControl(), PredicateContext(controllerId = playerId)
+                    state, filter.youControl(), PredicateContext(controllerId = playerId), excludeSelfId = excludeSelfId
                 )
             }
             val context = PredicateContext(controllerId = playerId)
             return state.getZone(playerId, zone).filter {
-                predicateEvaluator.matches(state, state.projectedState, it, filter, context)
+                it != excludeSelfId && predicateEvaluator.matches(state, state.projectedState, it, filter, context)
             }
         }
 

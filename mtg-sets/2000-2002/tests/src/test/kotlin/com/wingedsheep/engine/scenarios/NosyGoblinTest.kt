@@ -13,6 +13,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Nosy Goblin.
@@ -66,7 +68,7 @@ class NosyGoblinTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(faceDownCreature))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Let the ability resolve
         driver.bothPass()
@@ -108,6 +110,6 @@ class NosyGoblinTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(normalCreature))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

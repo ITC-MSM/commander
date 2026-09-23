@@ -25,6 +25,7 @@ import com.wingedsheep.sdk.dsl.Conditions
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import java.util.UUID
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Mistform Wall.
@@ -127,7 +128,7 @@ class MistformWallTest : FunSpec({
                 abilityId = mistformWallAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the ability
         driver.bothPass()
@@ -313,7 +314,7 @@ class MistformWallTest : FunSpec({
 
         // Attack with the former Wall
         val attackResult = driver.declareAttackers(activePlayer, listOf(wall), opponent)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // No blocks

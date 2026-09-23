@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Meathook Massacre II (DSK) — the death-trigger pay/suffer-or-steal flow (DSK engine gap #16).
@@ -81,7 +82,7 @@ class MeathookMassacreIIScenarioTest : FunSpec({
         val meathook = d.putCardInHand(active, "Meathook Massacre II")
         // {X}{X}{B}{B}{B}{B} with X = 1 → six mana, four of them black; black covers the generic too.
         d.giveMana(active, Color.BLACK, 6)
-        d.castXSpell(active, meathook, xValue = 1).isSuccess shouldBe true
+        d.castXSpell(active, meathook, xValue = 1).outcome shouldBe Outcome.Done
 
         // Resolve the spell + ETB trigger, answering each player's "sacrifice 1" selection and
         // declining the follow-on "may pay 3 life" prompts from the death of each sacrificed token.
@@ -118,7 +119,7 @@ class MeathookMassacreIIScenarioTest : FunSpec({
         // Kill your own creature with Doom Blade (a real death drives the dies trigger).
         val doomBlade = d.putCardInHand(active, "Doom Blade")
         d.giveMana(active, Color.BLACK, 2)
-        d.castSpell(active, doomBlade, listOf(bear)).isSuccess shouldBe true
+        d.castSpell(active, doomBlade, listOf(bear)).outcome shouldBe Outcome.Done
         d.passUntilDecision()
 
         withClue("The 'creature you control dies' trigger asks YOU whether to pay") {
@@ -146,7 +147,7 @@ class MeathookMassacreIIScenarioTest : FunSpec({
 
         val doomBlade = d.putCardInHand(active, "Doom Blade")
         d.giveMana(active, Color.BLACK, 2)
-        d.castSpell(active, doomBlade, listOf(bear)).isSuccess shouldBe true
+        d.castSpell(active, doomBlade, listOf(bear)).outcome shouldBe Outcome.Done
         d.passUntilDecision()
 
         d.submitYesNo(active, false)
@@ -178,7 +179,7 @@ class MeathookMassacreIIScenarioTest : FunSpec({
 
         val doomBlade = d.putCardInHand(active, "Doom Blade")
         d.giveMana(active, Color.BLACK, 2)
-        d.castSpell(active, doomBlade, listOf(bear)).isSuccess shouldBe true
+        d.castSpell(active, doomBlade, listOf(bear)).outcome shouldBe Outcome.Done
         d.passUntilDecision()
 
         withClue("The decision is routed to the OPPONENT (the dying creature's controller), not you") {
@@ -214,7 +215,7 @@ class MeathookMassacreIIScenarioTest : FunSpec({
 
         val doomBlade = d.putCardInHand(active, "Doom Blade")
         d.giveMana(active, Color.BLACK, 2)
-        d.castSpell(active, doomBlade, listOf(bear)).isSuccess shouldBe true
+        d.castSpell(active, doomBlade, listOf(bear)).outcome shouldBe Outcome.Done
         d.passUntilDecision()
 
         // They pay 3 life to keep the card out of your hands.
@@ -245,7 +246,7 @@ class MeathookMassacreIIScenarioTest : FunSpec({
 
         val doomBlade = d.putCardInHand(active, "Doom Blade")
         d.giveMana(active, Color.BLACK, 2)
-        d.castSpell(active, doomBlade, listOf(bear)).isSuccess shouldBe true
+        d.castSpell(active, doomBlade, listOf(bear)).outcome shouldBe Outcome.Done
 
         // No pay-or-suffer decision is offered when the opponent can't afford it.
         repeat(8) { if (d.pendingDecision == null) d.bothPass() }

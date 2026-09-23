@@ -16,6 +16,8 @@ import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for the negated card-type mana restriction —
@@ -72,7 +74,7 @@ class NoncreatureManaRestrictionTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool,
             )
         )
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()
         pool!!.restrictedMana.size shouldBe 0
@@ -95,7 +97,7 @@ class NoncreatureManaRestrictionTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool,
             )
         )
-        castResult.isSuccess shouldBe false
+        castResult.outcome shouldNotBe Outcome.Done
     }
 
     test("non-negated restriction is unchanged: creature-type-only mana pays creature spells") {
@@ -119,6 +121,6 @@ class NoncreatureManaRestrictionTest : FunSpec({
                 paymentStrategy = PaymentStrategy.FromPool,
             )
         )
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
     }
 })

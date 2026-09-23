@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Cosmium Confluence (LCI #181) — {4}{G} Sorcery.
@@ -97,7 +98,7 @@ class CosmiumConfluenceScenarioTest : FunSpec({
                 )
             )
         )
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
 
         driver.drainStack()
 
@@ -152,7 +153,7 @@ class CosmiumConfluenceScenarioTest : FunSpec({
                 )
             )
         )
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
 
         driver.drainStack()
 

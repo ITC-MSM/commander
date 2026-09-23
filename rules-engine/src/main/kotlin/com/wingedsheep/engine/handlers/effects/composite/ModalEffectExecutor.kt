@@ -354,11 +354,11 @@ internal fun processPreTargetedEffectQueue(
     val result = effectExecutor(stateForExecution, head.effect, effectContext)
     val nextEvents = accumulatedEvents + result.events
 
-    if (result.isPaused) {
+    if (result.outcome is Outcome.Paused) {
         return EffectResult.propagatePause(result.state, nextEvents)
     }
-    if (result.error != null) {
-        return EffectResult(state = result.state, events = nextEvents, error = result.error)
+    if (result.outcome is Outcome.Rejected) {
+        return EffectResult(state = result.state, events = nextEvents, outcome = result.outcome)
     }
 
     // Success — pop the pre-pushed tail continuation and drain the rest synchronously.

@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Adarkar Wastes (DMU #243).
@@ -59,7 +60,7 @@ class AdarkarWastesTest : FunSpec({
                 abilityId = whiteAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Land is tapped
         driver.isTapped(wastes) shouldBe true
@@ -92,7 +93,7 @@ class AdarkarWastesTest : FunSpec({
                 abilityId = blueAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()
         pool?.blue shouldBe 1
@@ -120,7 +121,7 @@ class AdarkarWastesTest : FunSpec({
                 abilityId = colorlessAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()
         pool?.colorless shouldBe 1
@@ -148,7 +149,7 @@ class AdarkarWastesTest : FunSpec({
         val before = driver.getLifeTotal(activePlayer)
 
         val result = driver.submit(CycleCard(activePlayer, essenceFracture))
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.getLifeTotal(activePlayer) shouldBe (before - 1)
     }
@@ -172,7 +173,7 @@ class AdarkarWastesTest : FunSpec({
         // {T}: Add {W} ability resolves its full effect, which includes
         // "this land deals 1 damage to you".
         val result = driver.castSpell(activePlayer, lions)
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         driver.isTapped(wastes) shouldBe true
         driver.getLifeTotal(activePlayer) shouldBe (before - 1)

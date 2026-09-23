@@ -15,6 +15,8 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Voidmage Prodigy.
@@ -91,7 +93,7 @@ class VoidmageProdigyTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(wizard))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the counter ability
         driver.bothPass()
@@ -144,7 +146,7 @@ class VoidmageProdigyTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(prodigy))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the counter ability
         driver.bothPass()
@@ -195,7 +197,7 @@ class VoidmageProdigyTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(goblin))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         // Goblin should still be on the battlefield
         driver.findPermanent(player1, "Goblin Scout") shouldBe goblin
@@ -236,7 +238,7 @@ class VoidmageProdigyTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(wizard))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         // Wizard should still be on the battlefield (not sacrificed)
         driver.findPermanent(player1, "Merfolk Wizard") shouldBe wizard

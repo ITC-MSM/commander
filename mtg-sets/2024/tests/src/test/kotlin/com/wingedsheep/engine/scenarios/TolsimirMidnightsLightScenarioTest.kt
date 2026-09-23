@@ -16,6 +16,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tolsimir, Midnight's Light (MKM) — {2}{G}{W}{W} Legendary Creature — Elf Scout 3/2.
@@ -56,7 +58,7 @@ class TolsimirMidnightsLightScenarioTest : FunSpec({
         driver.giveMana(me, Color.GREEN, 1)
         driver.giveMana(me, Color.WHITE, 2)
         driver.giveColorlessMana(me, 2)
-        driver.castSpell(me, card).isSuccess shouldBe true
+        driver.castSpell(me, card).outcome shouldBe Outcome.Done
         var guard = 0
         while (driver.state.stack.isNotEmpty() && guard++ < 10) driver.bothPass()
 
@@ -104,9 +106,9 @@ class TolsimirMidnightsLightScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         // Blocking nothing ignores the requirement.
-        driver.declareBlockers(opponent, emptyMap()).isSuccess shouldBe false
+        driver.declareBlockers(opponent, emptyMap()).outcome shouldNotBe Outcome.Done
         // Blocking *Tolsimir* does not satisfy it — the requirement names the Wolf.
-        driver.declareBlockers(opponent, mapOf(blocker to listOf(tolsimir))).isSuccess shouldBe false
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(tolsimir))).outcome shouldNotBe Outcome.Done
         // Blocking the Wolf does. The unpinned creature is free to do anything, including nothing.
         driver.declareBlockers(opponent, mapOf(blocker to listOf(voja))).error shouldBe null
 

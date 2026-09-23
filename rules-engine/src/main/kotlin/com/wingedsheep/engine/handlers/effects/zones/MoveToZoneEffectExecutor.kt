@@ -30,6 +30,7 @@ import com.wingedsheep.sdk.scripting.effects.FaceDownMode
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Executor for MoveToZoneEffect.
@@ -207,23 +208,16 @@ class MoveToZoneEffectExecutor(
             if (onEnterResult != null) {
                 resultState = onEnterResult.state
                 extraEvents.addAll(onEnterResult.events)
-                // pendingDecision is null when the replacement finished without asking anything,
-                // so this one return covers both the paused and the completed case.
+                // One return covers both the paused and the completed case.
                 //
-                // triggersAlreadyProcessed must ride along: the replacement can nest a cast
-                // (CastFromCollectionWithoutPayingCost routes through CastSpellHandler, which
-                // stacks its own cast-triggers), and dropping the flag makes the resume path
-                // re-scan those events and fire the trigger twice.
-                //
-                // onEnterResult.error is deliberately NOT propagated. The permanent did enter —
+                // A rejection is deliberately NOT propagated. The permanent did enter —
                 // only the as-enters clause failed — and surfacing an error here would make the
                 // enclosing composite treat the whole move as the failed step (CR 609.3: an
                 // effect that attempts something impossible does only as much as possible).
                 return EffectResult(
                     state = resultState,
                     events = transitionResult.events + extraEvents,
-                    pendingDecision = onEnterResult.pendingDecision,
-                    triggersAlreadyProcessed = onEnterResult.triggersAlreadyProcessed,
+                    outcome = onEnterResult.outcome.takeIf { it is Outcome.Paused } ?: Outcome.Done,
                 )
             }
         }

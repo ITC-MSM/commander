@@ -15,6 +15,8 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Oaken Siren (LCI #66) — {1}{U} Artifact Creature — Siren Pirate 1/2
@@ -80,7 +82,7 @@ class OakenSirenScenarioTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = artifact, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("restricted mana cannot pay for a non-artifact spell") {
@@ -95,6 +97,6 @@ class OakenSirenScenarioTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = creature, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

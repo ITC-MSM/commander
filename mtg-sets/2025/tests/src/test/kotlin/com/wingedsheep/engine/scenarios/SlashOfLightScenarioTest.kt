@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Slash of Light (FIN #32) — {1}{W} Instant.
@@ -72,7 +73,7 @@ class SlashOfLightScenarioTest : FunSpec({
         val slash = driver.putCardInHand(me, "Slash of Light")
         driver.giveMana(me, Color.WHITE, 2)
 
-        driver.castSpell(me, slash, listOf(target)).isSuccess shouldBe true
+        driver.castSpell(me, slash, listOf(target)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.markedDamage(target) shouldBe 3
@@ -96,7 +97,7 @@ class SlashOfLightScenarioTest : FunSpec({
         val slash = driver.putCardInHand(me, "Slash of Light")
         driver.giveMana(me, Color.WHITE, 2)
 
-        driver.castSpell(me, slash, listOf(target)).isSuccess shouldBe true
+        driver.castSpell(me, slash, listOf(target)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.markedDamage(target) shouldBe 2

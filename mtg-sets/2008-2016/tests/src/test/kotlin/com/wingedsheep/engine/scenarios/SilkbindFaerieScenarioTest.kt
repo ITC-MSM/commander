@@ -13,6 +13,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Silkbind Faerie (SHM) — {2}{W/U} 1/3 Creature — Faerie Rogue
@@ -66,7 +68,7 @@ class SilkbindFaerieScenarioTest : FunSpec({
                 abilityId = SilkbindFaerie.script.activatedAbilities.single().id,
                 targets = listOf(ChosenTarget.Permanent(victim))
             )
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
     }
 
     test("a tapped, non-sick Silkbind Faerie untaps itself and taps the target") {
@@ -94,7 +96,7 @@ class SilkbindFaerieScenarioTest : FunSpec({
                 abilityId = SilkbindFaerie.script.activatedAbilities.single().id,
                 targets = listOf(ChosenTarget.Permanent(victim))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         withClue("paying {Q} untaps the source as part of the cost") {
             driver.state.getEntity(faerie)!!.has<TappedComponent>() shouldBe false

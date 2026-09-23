@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Restless Ridgeline (LCI #283).
@@ -57,7 +58,7 @@ class RestlessRidgelineScenarioTest : FunSpec({
         driver.giveColorlessMana(player, 2)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = ridgeline, abilityId = animateAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
     }
 
@@ -67,7 +68,7 @@ class RestlessRidgelineScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val ridgeline = driver.putCardInHand(player, "Restless Ridgeline")
-        driver.playLand(player, ridgeline).isSuccess shouldBe true
+        driver.playLand(player, ridgeline).outcome shouldBe Outcome.Done
 
         driver.isTapped(ridgeline) shouldBe true
     }
@@ -121,7 +122,7 @@ class RestlessRidgelineScenarioTest : FunSpec({
 
         // Attack trigger requires "another target attacking creature" — pick the bear.
         (driver.pendingDecision is ChooseTargetsDecision) shouldBe true
-        driver.submitTargetSelection(player, listOf(bear)).isSuccess shouldBe true
+        driver.submitTargetSelection(player, listOf(bear)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val projected = projector.project(driver.state)

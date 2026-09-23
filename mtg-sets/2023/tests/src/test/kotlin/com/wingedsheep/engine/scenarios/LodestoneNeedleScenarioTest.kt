@@ -25,6 +25,8 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Lodestone Needle // Guidestone Compass (LCI #62).
@@ -82,7 +84,7 @@ class LodestoneNeedleScenarioTest : FunSpec({
         val needle = driver.putCardInHand(p1, "Lodestone Needle")
         driver.giveMana(p1, Color.BLUE, 2)
 
-        driver.castSpell(p1, needle).isSuccess shouldBe true
+        driver.castSpell(p1, needle).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the artifact spell; the ETB trigger asks for its target
 
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
@@ -104,7 +106,7 @@ class LodestoneNeedleScenarioTest : FunSpec({
         val needle = driver.putCardInHand(p1, "Lodestone Needle")
         driver.giveMana(p1, Color.BLUE, 2)
 
-        driver.castSpell(p1, needle).isSuccess shouldBe true
+        driver.castSpell(p1, needle).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the artifact spell; the ETB trigger asks for its target
 
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
@@ -208,7 +210,7 @@ class LodestoneNeedleScenarioTest : FunSpec({
                 targets = listOf(entityIdToChosenTarget(driver.state, bears))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error.shouldNotBeNull() shouldContain "sorcery"
     }
 
@@ -229,6 +231,6 @@ class LodestoneNeedleScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(bears))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

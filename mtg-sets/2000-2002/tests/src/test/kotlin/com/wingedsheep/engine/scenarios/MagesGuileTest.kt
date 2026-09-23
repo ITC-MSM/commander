@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Mage's Guile.
@@ -51,7 +52,7 @@ class MagesGuileTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLUE, 2)
 
         val castResult = driver.castSpell(activePlayer, guile, listOf(bears))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 
@@ -79,7 +80,7 @@ class MagesGuileTest : FunSpec({
         driver.giveMana(activePlayer, Color.BLUE, 2)
 
         val castResult = driver.castSpell(activePlayer, guile, listOf(opponentBears))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         driver.bothPass()
 

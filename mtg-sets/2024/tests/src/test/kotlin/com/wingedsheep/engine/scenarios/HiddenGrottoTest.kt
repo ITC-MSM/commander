@@ -24,6 +24,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import java.util.UUID
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Hidden Grotto.
@@ -80,7 +82,7 @@ class HiddenGrottoTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.isTapped(grotto) shouldBe false
     }
 
@@ -104,7 +106,7 @@ class HiddenGrottoTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         // Both Hidden Grotto (outer tap cost) and Mountain (paying the {1}) must be tapped.
         // Bug: solver picks Grotto's own {T}: Add {C} to cover the {1}, leaving Mountain untapped.
         driver.isTapped(grotto) shouldBe true
@@ -126,7 +128,7 @@ class HiddenGrottoTest : FunSpec({
 
         val result = driver.castSpell(activePlayer, curator)
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         // Forest pays one {G}; Hidden Grotto's any-color ability pays the other {G}
         // but requires {1} — which must come from tapping the Swamp.
         driver.isTapped(forest) shouldBe true
@@ -157,7 +159,7 @@ class HiddenGrottoTest : FunSpec({
 
         // {G}{G}: Forest pays one {G}; Hidden Grotto's any-color ability pays the other {G},
         // and its own {1} is funded by tapping the Swamp.
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.isTapped(forest) shouldBe true
         driver.isTapped(grotto) shouldBe true
         driver.isTapped(swamp) shouldBe true
@@ -185,7 +187,7 @@ class HiddenGrottoTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         driver.isTapped(grotto) shouldBe false
     }
 })

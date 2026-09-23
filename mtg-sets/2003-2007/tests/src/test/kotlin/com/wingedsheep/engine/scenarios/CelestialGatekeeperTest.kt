@@ -16,6 +16,7 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 class CelestialGatekeeperTest : FunSpec({
 
@@ -49,7 +50,7 @@ class CelestialGatekeeperTest : FunSpec({
         driver.giveMana(activePlayer, Color.RED, 1)
         val bolt = driver.putCardInHand(activePlayer, "Lightning Bolt")
         val castResult = driver.castSpell(activePlayer, bolt, listOf(gatekeeper))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the bolt
         driver.bothPass()
@@ -106,7 +107,7 @@ class CelestialGatekeeperTest : FunSpec({
         driver.giveMana(activePlayer, Color.RED, 1)
         val bolt = driver.putCardInHand(activePlayer, "Lightning Bolt")
         val castResult = driver.castSpell(activePlayer, bolt, listOf(gatekeeper))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the bolt
         driver.bothPass()
@@ -164,7 +165,7 @@ class CelestialGatekeeperTest : FunSpec({
         driver.giveMana(activePlayer, Color.RED, 1)
         val bolt = driver.putCardInHand(activePlayer, "Lightning Bolt")
         val castResult = driver.castSpell(activePlayer, bolt, listOf(gatekeeper))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the bolt
         driver.bothPass()

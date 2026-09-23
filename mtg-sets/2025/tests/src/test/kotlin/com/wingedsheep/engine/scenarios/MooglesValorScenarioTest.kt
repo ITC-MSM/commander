@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Moogles' Valor — {3}{W}{W} Instant
@@ -54,7 +55,7 @@ class MooglesValorScenarioTest : FunSpec({
         d.giveColorlessMana(p1, 3)
         d.giveMana(p1, Color.WHITE, 2)
         val cast = d.castSpell(p1, spell)
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
         d.bothPass()
 
         // Exactly two Moogle tokens were created (one per original creature).

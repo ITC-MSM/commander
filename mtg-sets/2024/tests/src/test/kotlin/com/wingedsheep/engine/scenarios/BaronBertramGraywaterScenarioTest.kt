@@ -13,6 +13,8 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Baron Bertram Graywater — {2}{W}{B} 3/4 Legendary Creature — Vampire Noble
@@ -90,7 +92,7 @@ class BaronBertramGraywaterScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(fodder)),
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the draw
 
         driver.findPermanent(me, "Grizzly Bears") shouldBe null
@@ -113,6 +115,6 @@ class BaronBertramGraywaterScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(baron)),
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

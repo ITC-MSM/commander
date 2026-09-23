@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Peerless Ropemaster (OTJ #60) — {4}{U} Creature — Human Rogue 4/4.
@@ -43,7 +44,7 @@ class PeerlessRopemasterScenarioTest : FunSpec({
 
         val rope = driver.putCardInHand(me, "Peerless Ropemaster")
         driver.giveMana(me, Color.BLUE, 5)
-        driver.castSpell(me, rope).isSuccess shouldBe true
+        driver.castSpell(me, rope).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature spell -> enters -> ETB trigger on stack
 
         // The ETB targets up to one tapped creature.
@@ -66,7 +67,7 @@ class PeerlessRopemasterScenarioTest : FunSpec({
 
         val rope = driver.putCardInHand(me, "Peerless Ropemaster")
         driver.giveMana(me, Color.BLUE, 5)
-        driver.castSpell(me, rope).isSuccess shouldBe true
+        driver.castSpell(me, rope).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val decision = driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()

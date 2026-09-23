@@ -18,6 +18,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 class GatherCardsFromLinkedExileTest : FunSpec({
 
@@ -73,7 +75,7 @@ class GatherCardsFromLinkedExileTest : FunSpec({
 
         val result = executor.execute(state, gatherEffect(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.updatedCollections["linked"]!!.shouldContainExactlyInAnyOrder(exiledCard1, exiledCard2)
     }
 
@@ -109,7 +111,7 @@ class GatherCardsFromLinkedExileTest : FunSpec({
 
         val result = executor.execute(state, gatherEffect(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.updatedCollections["linked"]!!.shouldContainExactlyInAnyOrder(exiledCard1)
     }
 
@@ -126,7 +128,7 @@ class GatherCardsFromLinkedExileTest : FunSpec({
 
         val result = executor.execute(state, gatherEffect(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.updatedCollections["linked"]!!.shouldBeEmpty()
     }
 
@@ -143,7 +145,7 @@ class GatherCardsFromLinkedExileTest : FunSpec({
 
         val result = executor.execute(state, gatherEffect(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.updatedCollections["linked"]!!.shouldBeEmpty()
     }
 
@@ -171,7 +173,7 @@ class GatherCardsFromLinkedExileTest : FunSpec({
 
         val result = executor.execute(state, gatherEffect(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.updatedCollections["linked"]!!.shouldContainExactlyInAnyOrder(exiledCard1, exiledCard2)
     }
 
@@ -187,6 +189,6 @@ class GatherCardsFromLinkedExileTest : FunSpec({
 
         val result = executor.execute(state, gatherEffect(), noSourceContext)
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

@@ -20,6 +20,7 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Pit of Offerings (LCI #278) — Land — Cave.
@@ -82,7 +83,7 @@ class PitOfOfferingsScenarioTest : FunSpec({
         val (pit, _) = d.pitWithLinkedExile(you, listOf("White Test Bear", "Blue Test Bear"))
 
         val result = d.submit(ActivateAbility(playerId = you, sourceId = pit, abilityId = colorAbilityId))
-        result.isPaused shouldBe true
+        (result.outcome is Outcome.Paused) shouldBe true
         val decision = d.pendingDecision
         decision.shouldBeInstanceOf<ChooseColorDecision>()
         decision.availableColors.toSet() shouldBe setOf(Color.WHITE, Color.BLUE)
@@ -101,7 +102,7 @@ class PitOfOfferingsScenarioTest : FunSpec({
         val (pit, _) = d.pitWithLinkedExile(you, listOf("White Test Bear"))
 
         val result = d.submit(ActivateAbility(playerId = you, sourceId = pit, abilityId = colorAbilityId))
-        result.isPaused shouldBe false
+        (result.outcome is Outcome.Paused) shouldBe false
         d.state.getEntity(you)?.get<ManaPoolComponent>()!!.getAmount(Color.WHITE) shouldBe 1
     }
 
@@ -113,7 +114,7 @@ class PitOfOfferingsScenarioTest : FunSpec({
         val (pit, _) = d.pitWithLinkedExile(you, listOf("Colorless Test Golem"))
 
         val result = d.submit(ActivateAbility(playerId = you, sourceId = pit, abilityId = colorAbilityId))
-        result.isPaused shouldBe false
+        (result.outcome is Outcome.Paused) shouldBe false
         val pool = d.state.getEntity(you)?.get<ManaPoolComponent>()
         Color.entries.sumOf { pool?.getAmount(it) ?: 0 } shouldBe 0
     }
@@ -126,7 +127,7 @@ class PitOfOfferingsScenarioTest : FunSpec({
         val pit = d.putPermanentOnBattlefield(you, "Pit of Offerings")
 
         val result = d.submit(ActivateAbility(playerId = you, sourceId = pit, abilityId = colorAbilityId))
-        result.isPaused shouldBe false
+        (result.outcome is Outcome.Paused) shouldBe false
         val pool = d.state.getEntity(you)?.get<ManaPoolComponent>()
         Color.entries.sumOf { pool?.getAmount(it) ?: 0 } shouldBe 0
     }
@@ -142,7 +143,7 @@ class PitOfOfferingsScenarioTest : FunSpec({
         d.moveToGraveyard(exiled[1])
 
         val result = d.submit(ActivateAbility(playerId = you, sourceId = pit, abilityId = colorAbilityId))
-        result.isPaused shouldBe false // only white remains → auto-picked
+        (result.outcome is Outcome.Paused) shouldBe false // only white remains → auto-picked
         d.state.getEntity(you)?.get<ManaPoolComponent>()!!.getAmount(Color.WHITE) shouldBe 1
     }
 
@@ -174,7 +175,7 @@ class PitOfOfferingsScenarioTest : FunSpec({
         // The color ability now offers both exiled colors.
         d.untapPermanent(pit)
         val result = d.submit(ActivateAbility(playerId = you, sourceId = pit, abilityId = colorAbilityId))
-        result.isPaused shouldBe true
+        (result.outcome is Outcome.Paused) shouldBe true
         val decision = d.pendingDecision as ChooseColorDecision
         decision.availableColors.toSet() shouldBe setOf(Color.WHITE, Color.BLUE)
         d.submitDecision(you, ColorChosenResponse(decision.id, Color.WHITE))

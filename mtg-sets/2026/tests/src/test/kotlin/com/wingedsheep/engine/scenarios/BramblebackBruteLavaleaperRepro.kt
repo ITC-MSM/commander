@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Regression test for the interaction between Lavaleaper and Brambleback Brute's activated
@@ -58,6 +59,6 @@ class BramblebackBruteLavaleaperRepro : FunSpec({
         val result = driver.submit(
             ActivateAbility(playerId = p, sourceId = bb, abilityId = abilityId, targets = listOf(target))
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 })

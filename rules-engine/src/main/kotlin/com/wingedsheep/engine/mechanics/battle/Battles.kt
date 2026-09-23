@@ -2,6 +2,7 @@ package com.wingedsheep.engine.mechanics.battle
 
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
+import com.wingedsheep.engine.state.components.battlefield.DefeatTriggerArmedComponent
 import com.wingedsheep.engine.state.components.battlefield.ProtectorComponent
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Counters
@@ -72,11 +73,29 @@ object Battles {
      */
     fun eligibleProtectors(state: GameState, battleId: EntityId): List<EntityId> {
         val controller = state.projectedState.getController(battleId) ?: return emptyList()
+        // Only players still in the game qualify: `turnOrder` keeps players who have lost, and a
+        // departed protector must be replaced (CR 704.5y), not re-offered. "Opponent" is the team-
+        // aware one (CR 102.3), so a Two-Headed Giant teammate can't protect your Siege.
         return if (isSiege(state, battleId)) {
-            state.turnOrder.filter { it != controller }
+            state.getOpponents(controller)
         } else {
-            listOf(controller).filter { it in state.turnOrder }
+            listOf(controller).filter { it in state.activePlayers }
         }
+    }
+
+    /**
+     * Clears every [DefeatTriggerArmedComponent]. Called by the Settler once it has detected the
+     * triggers an action caused: a Siege defeated in combat is then spared by its queued defeat
+     * trigger (CR 704.5v), so the marker that bridged the gap before detection is no longer needed.
+     */
+    fun disarmDefeatTriggers(state: GameState): GameState {
+        var newState = state
+        for (entityId in state.getBattlefield()) {
+            if (state.getEntity(entityId)?.has<DefeatTriggerArmedComponent>() == true) {
+                newState = newState.updateEntity(entityId) { it.without<DefeatTriggerArmedComponent>() }
+            }
+        }
+        return newState
     }
 
     /**

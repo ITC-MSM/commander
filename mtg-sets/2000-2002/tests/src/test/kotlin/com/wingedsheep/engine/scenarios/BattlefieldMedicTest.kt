@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Battlefield Medic and the PreventNextDamage mechanic.
@@ -57,7 +58,7 @@ class BattlefieldMedicTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(target))
             )
         )
-        activateResult.isSuccess shouldBe true
+        activateResult.outcome shouldBe Outcome.Done
 
         // Let the ability resolve
         driver.bothPass()
@@ -249,7 +250,7 @@ class BattlefieldMedicTest : FunSpec({
         // Second bolt: full 3 damage, no shield. Total = 2 + 3 = 5 >= 3 toughness = lethal.
         driver.giveMana(activePlayer, Color.RED, 1)
         val bolt2 = driver.putCardInHand(activePlayer, "Lightning Bolt")
-        driver.castSpellWithTargets(activePlayer, bolt2, listOf(ChosenTarget.Permanent(target))).isSuccess shouldBe true
+        driver.castSpellWithTargets(activePlayer, bolt2, listOf(ChosenTarget.Permanent(target))).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Creature took lethal damage (5 >= 3 toughness) — destroyed by state-based actions.
@@ -287,7 +288,7 @@ class BattlefieldMedicTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(target))
             )
         )
-        activateResult.isSuccess shouldBe true
+        activateResult.outcome shouldBe Outcome.Done
 
         // P1 passes priority
         driver.passPriority(p1)
@@ -296,7 +297,7 @@ class BattlefieldMedicTest : FunSpec({
         val guile = driver.putCardInHand(p2, "Mage's Guile")
         driver.giveMana(p2, Color.BLUE, 2)
         val castResult = driver.castSpellWithTargets(p2, guile, listOf(ChosenTarget.Permanent(target)))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Both pass → Mage's Guile resolves (LIFO) → Hill Giant gains shroud
         driver.bothPass()

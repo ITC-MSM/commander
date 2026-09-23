@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.effects.DiscoverEffect
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Quintorius Kand {3}{R}{W} — proves the signature loop: −3 discovers, and casting the discovered
@@ -54,7 +55,7 @@ class QuintoriusKandScenarioTest : FunSpec({
         driver.putCardOnTopOfLibrary(me, "Test Imp") // mana value 1 → discovered by Discover 4
 
         val minus3 = QuintoriusKand.script.activatedAbilities.first { it.effect is DiscoverEffect }
-        driver.submit(ActivateAbility(me, quintorius, minus3.id)).isSuccess shouldBe true
+        driver.submit(ActivateAbility(me, quintorius, minus3.id)).outcome shouldBe Outcome.Done
         driver.bothPass() // −3 resolves → Discover 4 → cast-or-hand pause
 
         driver.submitYesNo(me, choice = true) // cast Test Imp for free, from exile

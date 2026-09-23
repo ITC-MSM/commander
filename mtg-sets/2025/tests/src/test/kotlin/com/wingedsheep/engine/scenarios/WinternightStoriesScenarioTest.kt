@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Winternight Stories — {2}{U} Sorcery.
@@ -47,7 +48,7 @@ class WinternightStoriesScenarioTest : FunSpec({
 
         driver.submit(
             CastSpell(player, spell, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // After drawing three, a single discard decision: discard one creature card (the reduced
@@ -79,7 +80,7 @@ class WinternightStoriesScenarioTest : FunSpec({
 
         driver.submit(
             CastSpell(player, spell, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // No creature in hand → the only feasible branch is "discard two cards" (auto-chosen).

@@ -20,6 +20,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Ares, God of War (MSH) — "Whenever an attacking creature you control dies, return that card to
@@ -129,7 +130,7 @@ class AresGodOfWarScenarioTest : FunSpec({
 
         val zap = d.putCardInHand(p1, "Ares Test Zap")
         d.giveMana(p1, Color.RED, 1)
-        d.castSpell(p1, zap, listOf(grunt)).isSuccess shouldBe true
+        d.castSpell(p1, zap, listOf(grunt)).outcome shouldBe Outcome.Done
         d.resolveStack()
 
         withClue("graveyard=${d.graveyardNames(p1)} — the Grunt must have died") {

@@ -25,6 +25,7 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for the Madness [cost] keyword (CR 702.35).
@@ -269,7 +270,7 @@ class MadnessTest : FunSpec({
         val spark = driver.putCardInHand(player, "Madness Spark")
         driver.giveColorlessMana(player, 1)
         val result = driver.submit(CycleCard(player, spark, paymentStrategy = PaymentStrategy.FromPool))
-        withClue("error=${result.error}") { result.isSuccess shouldBe true }
+        withClue("error=${result.error}") { result.outcome shouldBe Outcome.Done }
 
         // Cycling is a discard, so the madness replacement applies to it.
         driver.getExile(player) shouldContain spark

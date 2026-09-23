@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Cruelclaw's Heist (BLB) — {B}{B} Sorcery.
@@ -98,7 +99,7 @@ class CruelclawsHeistScenarioTest : FunSpec({
         driver.castActionsFor(me, stolenCard).isNotEmpty().shouldBeTrue()
 
         // ...and actually resolves onto my battlefield, paid for with black mana.
-        driver.castSpell(me, stolenCard).isSuccess shouldBe true
+        driver.castSpell(me, stolenCard).outcome shouldBe Outcome.Done
         repeat(6) {
             if (driver.state.getZone(me, Zone.BATTLEFIELD).contains(stolenCard)) return@repeat
             if (driver.pendingDecision != null) driver.autoResolveDecision() else driver.bothPass()

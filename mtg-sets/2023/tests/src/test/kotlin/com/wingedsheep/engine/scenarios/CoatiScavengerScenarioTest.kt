@@ -11,6 +11,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Coati Scavenger (LCI #179): {2}{G} 3/2 Creature — Raccoon
@@ -58,7 +59,7 @@ class CoatiScavengerScenarioTest : FunSpec({
         driver.bothPass()
 
         val decision = driver.pendingDecision as ChooseTargetsDecision
-        driver.submitTargetSelection(player, listOf(returnTarget)).isSuccess shouldBe true
+        driver.submitTargetSelection(player, listOf(returnTarget)).outcome shouldBe Outcome.Done
         // ETB trigger resolves: return target permanent card from graveyard to hand.
         driver.bothPass()
 

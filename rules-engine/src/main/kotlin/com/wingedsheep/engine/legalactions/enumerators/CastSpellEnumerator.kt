@@ -104,7 +104,7 @@ class CastSpellEnumerator : ActionEnumerator {
                             landCardDef.layout == com.wingedsheep.sdk.model.CardLayout.OMEN ||
                             landCardDef.layout == com.wingedsheep.sdk.model.CardLayout.MODAL_DFC) &&
                         landCardDef.cardFaces.isNotEmpty() &&
-                        context.castPermissionUtils.checkCastRestrictions(
+                        context.legality.castRestrictionsMet(
                             state, playerId, landCardDef.script.castRestrictions
                         )
                     ) {
@@ -128,7 +128,7 @@ class CastSpellEnumerator : ActionEnumerator {
 
             // Check cast restrictions first
             val castRestrictions = cardDef.script.castRestrictions
-            if (!context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) {
+            if (!context.legality.castRestrictionsMet(state, playerId, castRestrictions)) {
                 continue
             }
 
@@ -609,7 +609,7 @@ class CastSpellEnumerator : ActionEnumerator {
             // halves of the grant must be payable — a `{0}` mana half is trivially affordable, so
             // the non-mana half is the whole gate for a purely non-mana grant.
             val grantedAltCost = context.alternativeCastingCosts.firstOrNull { grant ->
-                val altEffective = context.costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, grant.manaCost)
+                val altEffective = context.costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, grant.manaCost, playerId)
                 context.manaSolver.canPay(state, playerId, altEffective, precomputedSources = cachedSources) &&
                     grant.additionalCosts.all { cost ->
                         canPayAdditionalCostForAlternative(context, state, playerId, cardId, cost)
@@ -857,7 +857,7 @@ class CastSpellEnumerator : ActionEnumerator {
             // rides along as the client's picker payload — the same [SelfAltCostResult] shape the
             // card's own alternative cost uses, so the two paths emit one kind of cast action.
             val altCostInfo = if (grantedAltCost != null) {
-                val altEffective = context.costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, grantedAltCost.manaCost)
+                val altEffective = context.costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, grantedAltCost.manaCost, playerId)
                 val altPreview = if (context.skipAutoTapPreview) null else {
                     context.manaSolver.solve(state, playerId, altEffective, precomputedSources = cachedSources)
                         ?.sources?.map { it.entityId }
@@ -1881,7 +1881,7 @@ class CastSpellEnumerator : ActionEnumerator {
             if (!isInstant && !grantedFlash && !context.canPlaySorcerySpeed) continue
 
             val castRestrictions = cardDef.script.castRestrictions
-            if (castRestrictions.isNotEmpty() && !context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
+            if (castRestrictions.isNotEmpty() && !context.legality.castRestrictionsMet(state, playerId, castRestrictions)) continue
 
             // Gather controlled, untapped creatures that share at least one color with the spell.
             val eligibleTapTargets = mutableListOf<EntityId>()
@@ -1983,7 +1983,7 @@ class CastSpellEnumerator : ActionEnumerator {
             if (!isInstant && !grantedFlash && !context.canPlaySorcerySpeed) continue
 
             val castRestrictions = cardDef.script.castRestrictions
-            if (castRestrictions.isNotEmpty() && !context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
+            if (castRestrictions.isNotEmpty() && !context.legality.castRestrictionsMet(state, playerId, castRestrictions)) continue
 
             // Gather controlled creatures whose projected power meets the threshold.
             val eligibleSacrifices = mutableListOf<EntityId>()
@@ -2100,7 +2100,7 @@ class CastSpellEnumerator : ActionEnumerator {
 
             val castRestrictions = cardDef.script.castRestrictions
             if (castRestrictions.isNotEmpty() &&
-                !context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)
+                !context.legality.castRestrictionsMet(state, playerId, castRestrictions)
             ) continue
 
             val candidates = SpliceCasts.candidates(
@@ -2202,7 +2202,7 @@ class CastSpellEnumerator : ActionEnumerator {
             ) continue
 
             val castRestrictions = cardDef.script.castRestrictions
-            if (castRestrictions.isNotEmpty() && !context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
+            if (castRestrictions.isNotEmpty() && !context.legality.castRestrictionsMet(state, playerId, castRestrictions)) continue
 
             // One cast variant per mechanic riding the optional-additional-cost rail, keyed by the
             // slot it declares: kicker/multikicker/offspring stamp KICKED, bargain stamps BARGAINED
@@ -2573,7 +2573,7 @@ class CastSpellEnumerator : ActionEnumerator {
 
             // Check cast restrictions
             val castRestrictions = cardDef.script.castRestrictions
-            if (castRestrictions.isNotEmpty() && !context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
+            if (castRestrictions.isNotEmpty() && !context.legality.castRestrictionsMet(state, playerId, castRestrictions)) continue
 
             // Cleave mana cost (CR 202.3b — mana value is still computed from the printed cost, not
             // the cleave cost; only affordability uses this).

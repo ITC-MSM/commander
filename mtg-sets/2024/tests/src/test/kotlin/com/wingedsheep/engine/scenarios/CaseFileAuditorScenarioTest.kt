@@ -15,6 +15,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Case File Auditor — "When this creature enters **and whenever you solve a Case**, look at the top
@@ -62,7 +63,7 @@ class CaseFileAuditorScenarioTest : FunSpec({
 
         val card = driver.putCardInHand(driver.player1, "Case File Auditor")
         driver.giveMana(driver.player1, Color.WHITE, 3)
-        driver.castSpell(driver.player1, card).isSuccess shouldBe true
+        driver.castSpell(driver.player1, card).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature; the enters trigger goes on the stack
         driver.bothPass() // resolve the trigger
 
@@ -101,7 +102,7 @@ class CaseFileAuditorScenarioTest : FunSpec({
 
         val card = driver.putCardInHand(driver.player1, "Case File Auditor")
         driver.giveMana(driver.player1, Color.WHITE, 3)
-        driver.castSpell(driver.player1, card).isSuccess shouldBe true
+        driver.castSpell(driver.player1, card).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass()
 

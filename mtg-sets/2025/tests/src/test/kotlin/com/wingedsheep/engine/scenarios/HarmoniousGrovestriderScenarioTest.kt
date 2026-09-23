@@ -12,6 +12,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Harmonious Grovestrider — {3}{G}{G} Creature — Beast
@@ -52,7 +53,7 @@ class HarmoniousGrovestriderScenarioTest : FunSpec({
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
         driver.castSpellWithTargets(
             caster, bolt, listOf(ChosenTarget.Permanent(grovestrider))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         withClue("the ward trigger goes on the stack above the Bolt") {
             driver.stackSize shouldBe 2

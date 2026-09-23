@@ -28,6 +28,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Phase 4 of `backlog/storm-implementation-correctness.md`: per 702.40a the copy
@@ -102,7 +103,7 @@ class StormModalRetargetingTest : FunSpec({
             EffectContext(sourceId = spellEntity, controllerId = p1)
         )
 
-        result.isPaused shouldBe true
+        (result.outcome is Outcome.Paused) shouldBe true
         val decision = result.pendingDecision
         decision.shouldBeInstanceOf<ChooseTargetsDecision>()
         decision.playerId shouldBe p1
@@ -143,7 +144,7 @@ class StormModalRetargetingTest : FunSpec({
             EffectContext(sourceId = spellEntity, controllerId = p1)
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         val copyId = result.state.stack.single { id ->
             val c = result.state.getEntity(id)
             c?.get<SpellOnStackComponent>() != null && c.has<CopyOfComponent>()

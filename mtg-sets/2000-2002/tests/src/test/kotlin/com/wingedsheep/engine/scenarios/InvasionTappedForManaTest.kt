@@ -26,6 +26,7 @@ import com.wingedsheep.sdk.scripting.AbilityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Invasion engine gap #3 — "whenever a player taps a land for mana" mana effects.
@@ -97,7 +98,7 @@ class InvasionTappedForManaTest : FunSpec({
         val tapResult = driver.submit(
             ActivateAbility(playerId = you, sourceId = forest, abilityId = AbilityId.intrinsicMana('G'))
         )
-        tapResult.isPaused.shouldBeTrue()
+        (tapResult.outcome is Outcome.Paused).shouldBeTrue()
 
         // Base {G} is already in the pool; the bonus is still pending.
         driver.pool(you).green shouldBe 1

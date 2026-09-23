@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Stromkirk Bloodthief — {2}{B} Vampire Rogue 2/2
@@ -47,7 +48,7 @@ class StromkirkBloodthiefScenarioTest : FunSpec({
         // Make an opponent lose life this turn (real damage → life-loss event).
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
-        driver.castSpell(me, bolt, targets = listOf(opp)).isSuccess shouldBe true
+        driver.castSpell(me, bolt, targets = listOf(opp)).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.getLifeTotal(opp) shouldBe 17
 

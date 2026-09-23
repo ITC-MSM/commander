@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Friendly Rivalry (LTR) — "Target creature you control and up to one **other** target legendary
@@ -46,7 +48,7 @@ class FriendlyRivalryScenarioTest : FunSpec({
         val res = d.castSpellWithTargets(
             active, spell, listOf(ChosenTarget.Permanent(frodo), ChosenTarget.Permanent(frodo), ChosenTarget.Permanent(victim))
         )
-        res.isSuccess shouldBe false
+        res.outcome shouldNotBe Outcome.Done
     }
 
     test("two different controlled creatures each deal their power to the opponent's creature") {

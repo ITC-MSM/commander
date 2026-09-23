@@ -864,6 +864,7 @@ export interface ClientAttacker {
 export type ClientCombatTarget =
   | { readonly type: 'Player'; readonly playerId: EntityId }
   | { readonly type: 'Planeswalker'; readonly permanentId: EntityId }
+  | { readonly type: 'Battle'; readonly permanentId: EntityId }
 
 /**
  * Blocker information for combat display.

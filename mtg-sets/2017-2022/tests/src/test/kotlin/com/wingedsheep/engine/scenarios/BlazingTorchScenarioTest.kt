@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.scripting.GrantActivatedAbility
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /** Scenario tests for Blazing Torch. */
 class BlazingTorchScenarioTest : FunSpec({
@@ -50,7 +51,7 @@ class BlazingTorchScenarioTest : FunSpec({
                 abilityId = equipId,
                 targets = listOf(ChosenTarget.Permanent(bear))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
         d.state.getEntity(torch)?.get<AttachedToComponent>()?.targetId shouldBe bear
 
@@ -68,7 +69,7 @@ class BlazingTorchScenarioTest : FunSpec({
                 abilityId = grantedId,
                 targets = listOf(ChosenTarget.Player(opponent))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // `{T}` taps the bearer; the Torch is sacrificed as part of the cost, before resolution.
         d.isTapped(bear) shouldBe true
@@ -100,7 +101,7 @@ class BlazingTorchScenarioTest : FunSpec({
                 abilityId = equipId,
                 targets = listOf(ChosenTarget.Permanent(bear))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         d.passPriorityUntil(Step.DECLARE_ATTACKERS)

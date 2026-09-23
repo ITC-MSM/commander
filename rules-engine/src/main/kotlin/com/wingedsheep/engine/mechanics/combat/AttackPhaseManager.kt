@@ -209,6 +209,7 @@ internal class AttackPhaseManager(
                 container.with(AttackingComponent(defenderId, bandIdByAttacker[attackerId]))
                     .with(AttackedThisCombatComponent)
             }
+            newState = AttackedPermanents.markAttacked(newState, defenderId)
             // Non-vigilance attackers tap as a turn-based action; route through the tap atom so the
             // TappedEvent fires "becomes tapped" triggers (it was open-coded and once dropped here).
             if (!hasVigilance) {

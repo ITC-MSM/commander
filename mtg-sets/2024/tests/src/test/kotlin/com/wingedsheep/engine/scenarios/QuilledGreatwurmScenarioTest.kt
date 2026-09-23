@@ -20,6 +20,7 @@ import com.wingedsheep.sdk.scripting.DistributedCounterRemoval
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Quilled Greatwurm (FDN #111) — {4}{G}{G} 7/7 Creature — Wurm.
@@ -171,7 +172,7 @@ class QuilledGreatwurmScenarioTest : FunSpec({
                 )
             )
         )
-        withClue("Casting from the graveyard should succeed") { result.isSuccess shouldBe true }
+        withClue("Casting from the graveyard should succeed") { result.outcome shouldBe Outcome.Done }
         d.bothPass()
 
         withClue("The Wurm resolved onto the battlefield") {

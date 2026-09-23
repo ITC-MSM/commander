@@ -7,6 +7,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContainIgnoringCase
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for fear evasion ability.
@@ -66,7 +68,7 @@ class FearEvasionTest : FunSpec({
 
         // Declare Fear Creature as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(fearCreature), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Both players pass to move to declare blockers
         driver.bothPass()
@@ -80,7 +82,7 @@ class FearEvasionTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "fear"
         result.error shouldContainIgnoringCase "cannot block"
     }
@@ -103,7 +105,7 @@ class FearEvasionTest : FunSpec({
 
         // Declare Fear Creature as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(fearCreature), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Both players pass to move to declare blockers
         driver.bothPass()
@@ -115,7 +117,7 @@ class FearEvasionTest : FunSpec({
             mapOf(blocker to listOf(fearCreature))
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("artifact creature CAN block creature with fear") {
@@ -136,7 +138,7 @@ class FearEvasionTest : FunSpec({
 
         // Declare Fear Creature as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(fearCreature), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Both players pass to move to declare blockers
         driver.bothPass()
@@ -148,7 +150,7 @@ class FearEvasionTest : FunSpec({
             mapOf(blocker to listOf(fearCreature))
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("fear creature attacks unblocked when defender has only non-black non-artifact blockers") {
@@ -172,7 +174,7 @@ class FearEvasionTest : FunSpec({
 
         // Declare Fear Creature as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(fearCreature), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Both players pass to move to declare blockers
         driver.bothPass()
@@ -180,7 +182,7 @@ class FearEvasionTest : FunSpec({
 
         // Declare no blockers (can't block anyway)
         val blockResult = driver.declareBlockers(driver.player2, emptyMap())
-        blockResult.isSuccess shouldBe true
+        blockResult.outcome shouldBe Outcome.Done
 
         // Both players pass through combat damage
         driver.bothPass() // End of declare blockers

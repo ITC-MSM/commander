@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Goldberry, River-Daughter ({1}{U} Legendary Creature — Nymph, 1/3)
@@ -68,7 +69,7 @@ class GoldberryRiverDaughterScenarioTest : FunSpec({
                 targets = listOf(entityIdToChosenTarget(driver.state, target))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Goldberry gained a +1/+1 (it lacked it) but NOT another charge (already had one).
@@ -105,7 +106,7 @@ class GoldberryRiverDaughterScenarioTest : FunSpec({
                 targets = listOf(entityIdToChosenTarget(driver.state, target))
             )
         )
-        activateResult.isSuccess shouldBe true
+        activateResult.outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Engine prompts how many +1/+1 counters to move. Move both.

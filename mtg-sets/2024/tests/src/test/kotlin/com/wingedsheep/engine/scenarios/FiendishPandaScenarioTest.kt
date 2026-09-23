@@ -18,6 +18,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Fiendish Panda (FDN) — {2}{W}{B} Creature — Bear Demon, 3/2.
@@ -88,7 +89,7 @@ class FiendishPandaScenarioTest : FunSpec({
         // Kill the Panda with a bolt (3 damage to a 3/2).
         val bolt = driver.putCardInHand(controller, "Lightning Bolt")
         driver.giveMana(controller, Color.RED, 1)
-        driver.castSpell(controller, bolt, listOf(panda)).isSuccess shouldBe true
+        driver.castSpell(controller, bolt, listOf(panda)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve Lightning Bolt → Panda dies, dies trigger wants a target
 
         // The dies trigger asks for its reanimation target; choose the Centaur Courser.
@@ -118,7 +119,7 @@ class FiendishPandaScenarioTest : FunSpec({
 
         val bolt = driver.putCardInHand(controller, "Lightning Bolt")
         driver.giveMana(controller, Color.RED, 1)
-        driver.castSpell(controller, bolt, listOf(panda)).isSuccess shouldBe true
+        driver.castSpell(controller, bolt, listOf(panda)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve bolt → Panda dies; no legal target so nothing reanimates
         if (driver.stackSize > 0) driver.bothPass()
 

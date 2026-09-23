@@ -14,6 +14,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Platinum Angel (MRD #228) — {7} 4/4 Artifact Creature — Angel.
@@ -64,7 +65,7 @@ class PlatinumAngelScenarioTest : FunSpec({
 
         val spell = putCardInHand(player, cardName)
         giveColorlessMana(player, 1)
-        castSpell(player, spell).isSuccess shouldBe true
+        castSpell(player, spell).outcome shouldBe Outcome.Done
         settle()
     }
 
@@ -98,7 +99,7 @@ class PlatinumAngelScenarioTest : FunSpec({
         if (holder != null && holder != p2) d.passPriority(holder)
         val shatter = d.putCardInHand(p2, "Shatter")
         d.giveMana(p2, Color.RED, 2)
-        d.castSpellWithTargets(p2, shatter, listOf(ChosenTarget.Permanent(angel))).isSuccess shouldBe true
+        d.castSpellWithTargets(p2, shatter, listOf(ChosenTarget.Permanent(angel))).outcome shouldBe Outcome.Done
         d.settle()
 
         d.state.gameOver.shouldBeTrue()

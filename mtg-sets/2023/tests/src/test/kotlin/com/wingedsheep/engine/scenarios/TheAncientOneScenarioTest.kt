@@ -14,6 +14,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * The Ancient One — {U}{B} 8/8 Legendary Creature — Spirit God (LCI #222).
@@ -148,7 +149,7 @@ class TheAncientOneScenarioTest : FunSpec({
         driver.giveMana(you, Color.BLACK, 3)
 
         driver.submit(ActivateAbility(playerId = you, sourceId = ancientOne, abilityId = activatedAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         // Resolve the ability: choose the {2}{G} card to discard, then aim the mill at the opponent.
         var guard = 0

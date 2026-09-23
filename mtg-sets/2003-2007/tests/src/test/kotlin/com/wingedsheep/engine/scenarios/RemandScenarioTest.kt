@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Remand (RAV #63) — "Counter target spell. If that spell is countered this way, put it into its
@@ -42,7 +43,7 @@ class RemandScenarioTest : FunSpec({
         giveMana(caster, Color.BLUE, 2)
         val remandCard = putCardInHand(caster, "Remand")
         val cast = castSpellWithTargets(caster, remandCard, listOf(ChosenTarget.Spell(spellOnStack)))
-        withClue(cast.error ?: "casting Remand failed") { cast.isSuccess shouldBe true }
+        withClue(cast.error ?: "casting Remand failed") { cast.outcome shouldBe Outcome.Done }
         var guard = 0
         while (stackSize > 0 && guard++ < 20) bothPass()
     }
@@ -54,7 +55,7 @@ class RemandScenarioTest : FunSpec({
 
         d.giveMana(victim, Color.GREEN, 3)
         val courser = d.putCardInHand(victim, "Centaur Courser")
-        d.castSpell(victim, courser).isSuccess shouldBe true
+        d.castSpell(victim, courser).outcome shouldBe Outcome.Done
         val handBefore = d.getHandSize(caster)
 
         d.remand(caster, courser)
@@ -80,7 +81,7 @@ class RemandScenarioTest : FunSpec({
 
         d.giveMana(victim, Color.GREEN, 3)
         val courser = d.putCardInHand(victim, "Centaur Courser")
-        d.castSpell(victim, courser).isSuccess shouldBe true
+        d.castSpell(victim, courser).outcome shouldBe Outcome.Done
         d.addComponent(courser, CantBeCounteredComponent)
         val handBefore = d.getHandSize(caster)
 

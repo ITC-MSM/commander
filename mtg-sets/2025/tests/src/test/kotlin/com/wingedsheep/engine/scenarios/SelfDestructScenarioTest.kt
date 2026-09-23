@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Self-Destruct (FIN #157) — {1}{R} Instant.
@@ -35,7 +36,7 @@ class SelfDestructScenarioTest : FunSpec({
         val boom = driver.putCardInHand(driver.player1, "Self-Destruct")
         driver.giveMana(driver.player1, Color.RED, 1)
         driver.giveColorlessMana(driver.player1, 1)
-        driver.castSpell(driver.player1, boom, listOf(yours, theirs)).isSuccess shouldBe true
+        driver.castSpell(driver.player1, boom, listOf(yours, theirs)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.findPermanent(driver.player2, "Grizzly Bears") shouldBe null

@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Stag Beetle.
@@ -50,7 +51,7 @@ class StagBeetleTest : FunSpec({
         driver.giveMana(activePlayer, Color.GREEN, 5)
 
         val castResult = driver.castSpell(activePlayer, beetle)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve - beetle enters the battlefield
         driver.bothPass()

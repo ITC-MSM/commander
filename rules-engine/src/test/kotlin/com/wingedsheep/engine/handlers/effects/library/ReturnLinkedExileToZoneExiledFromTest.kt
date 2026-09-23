@@ -30,6 +30,7 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Engine coverage for `CardDestination.ToZoneExiledFrom` — the CR 610.3 "return the object to its
@@ -116,7 +117,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExileToZoneExiledFrom(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         // CR 610.3c — returned under its OWNER's control, not the returning ability's controller.
         result.state.getZone(ZoneKey(ownerId, Zone.BATTLEFIELD)).shouldContainExactlyInAnyOrder(cardId)
         result.state.getZone(ZoneKey(casterId, Zone.BATTLEFIELD)).shouldBeEmpty()
@@ -129,7 +130,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExileToZoneExiledFrom(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.state.getZone(ZoneKey(ownerId, Zone.HAND)).shouldContainExactlyInAnyOrder(cardId)
         result.state.getZone(ZoneKey(ownerId, Zone.BATTLEFIELD)).shouldBeEmpty()
         result.state.getZone(ZoneKey(casterId, Zone.HAND)).shouldBeEmpty()
@@ -140,7 +141,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExileToZoneExiledFrom(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.state.getZone(ZoneKey(ownerId, Zone.GRAVEYARD)).shouldContainExactlyInAnyOrder(cardId)
         result.state.getZone(ZoneKey(ownerId, Zone.BATTLEFIELD)).shouldBeEmpty()
     }
@@ -150,7 +151,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExileToZoneExiledFrom(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.state.getZone(ZoneKey(ownerId, Zone.LIBRARY)).shouldContainExactlyInAnyOrder(cardId)
         result.state.getZone(ZoneKey(ownerId, Zone.BATTLEFIELD)).shouldBeEmpty()
     }
@@ -160,7 +161,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExileToZoneExiledFrom(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.state.getZone(ZoneKey(ownerId, Zone.COMMAND)).shouldContainExactlyInAnyOrder(cardId)
         result.state.getZone(ZoneKey(ownerId, Zone.BATTLEFIELD)).shouldBeEmpty()
     }
@@ -170,7 +171,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExileToZoneExiledFrom(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.state.getZone(ZoneKey(ownerId, Zone.SIDEBOARD)).shouldContainExactlyInAnyOrder(cardId)
         result.state.getZone(ZoneKey(ownerId, Zone.BATTLEFIELD)).shouldBeEmpty()
     }
@@ -186,7 +187,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExileToZoneExiledFrom(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.state.getZone(ZoneKey(ownerId, Zone.HAND)).shouldContainExactlyInAnyOrder(fromHand)
         result.state.getZone(ZoneKey(ownerId, Zone.BATTLEFIELD)).shouldContainExactlyInAnyOrder(fromBattlefield)
         result.state.getZone(ZoneKey(ownerId, Zone.GRAVEYARD)).shouldContainExactlyInAnyOrder(fromGraveyard)
@@ -205,7 +206,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExileToZoneExiledFrom(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.state.getZone(ZoneKey(ownerId, Zone.GRAVEYARD)).shouldContainExactlyInAnyOrder(cardId)
         result.state.getZone(ZoneKey(ownerId, Zone.HAND)).shouldBeEmpty()
         result.events.filterIsInstance<ZoneChangeEvent>().shouldBeEmpty()
@@ -222,7 +223,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExileToZoneExiledFrom(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.state.getZone(ZoneKey(ownerId, Zone.HAND)).shouldContainExactlyInAnyOrder(cardId)
     }
 
@@ -235,7 +236,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExileToZoneExiledFrom(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.state.getZone(ZoneKey(ownerId, Zone.BATTLEFIELD)).shouldBeEmpty()
         result.state.getEntity(tokenId).shouldBeNull()
         result.events.filterIsInstance<ZoneChangeEvent>().shouldBeEmpty()
@@ -253,7 +254,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExileToZoneExiledFrom(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.state.getZone(ZoneKey(ownerId, Zone.BATTLEFIELD)).shouldContainExactlyInAnyOrder(cardId)
     }
 
@@ -269,7 +270,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExileToZoneExiledFrom(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         withClue("CR 610.3's 'previous zone' for an object exiled from exile is exile — it stays put") {
             result.state.getZone(ZoneKey(ownerId, Zone.EXILE)).shouldContainExactlyInAnyOrder(cardId)
             result.state.getZone(ZoneKey(ownerId, Zone.BATTLEFIELD)).shouldBeEmpty()
@@ -295,13 +296,13 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         val swept = ExileOpponentsGraveyardsExecutor()
             .execute(state, ExileOpponentsGraveyardsEffect, context())
-        swept.isSuccess shouldBe true
+        swept.outcome shouldBe Outcome.Done
         swept.state.getEntity(cardId)?.get<ExiledFromZoneComponent>()?.zone shouldBe Zone.GRAVEYARD
 
         val linked = swept.state.updateEntity(sourceId) { c -> c.with(LinkedExileComponent(listOf(cardId))) }
         val result = registry().execute(linked, Patterns.Exile.returnLinkedExileToZoneExiledFrom(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         withClue("back to the graveyard it was swept out of, not onto the battlefield") {
             result.state.getZone(ZoneKey(ownerId, Zone.GRAVEYARD)).shouldContainExactlyInAnyOrder(cardId)
             result.state.getZone(ZoneKey(ownerId, Zone.BATTLEFIELD)).shouldBeEmpty()
@@ -323,7 +324,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExileToZoneExiledFrom(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.state.getZone(ZoneKey(ownerId, Zone.BATTLEFIELD)).shouldContainExactlyInAnyOrder(cardId)
     }
 
@@ -340,7 +341,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExile(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         // Controller's battlefield, not the owner's, and not the zones they came from.
         result.state.getZone(ZoneKey(casterId, Zone.BATTLEFIELD))
             .shouldContainExactlyInAnyOrder(fromHand, fromGraveyard)
@@ -357,7 +358,7 @@ class ReturnLinkedExileToZoneExiledFromTest : FunSpec({
 
         val result = registry().execute(state, Patterns.Exile.returnLinkedExileToHand(), context())
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         result.state.getZone(ZoneKey(ownerId, Zone.HAND))
             .shouldContainExactlyInAnyOrder(fromBattlefield, fromGraveyard)
         result.state.getZone(ZoneKey(ownerId, Zone.BATTLEFIELD)).shouldBeEmpty()

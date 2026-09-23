@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Ruthless Lawbringer ({1}{W}{B}, 3/2 Vampire Assassin):
@@ -37,7 +38,7 @@ class RuthlessLawbringerTest : FunSpec({
         driver.giveMana(me, Color.BLACK, 1)
         driver.giveColorlessMana(me, 1)
         val card = driver.putCardInHand(me, "Ruthless Lawbringer")
-        driver.castSpell(me, card).isSuccess shouldBe true
+        driver.castSpell(me, card).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the creature spell
         driver.bothPass() // resolve the enters trigger off the stack
         return card

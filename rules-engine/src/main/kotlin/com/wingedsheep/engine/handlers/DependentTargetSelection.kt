@@ -1,23 +1,47 @@
 package com.wingedsheep.engine.handlers
 
+import com.wingedsheep.engine.handlers.continuations.entityIdToChosenTarget
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
+import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import com.wingedsheep.sdk.scripting.values.EntityReference
 
-/** Select mandatory single-object targets in order when a filter reads an earlier target. */
+/**
+ * Select single targets in order when a filter reads an earlier target — an object's
+ * characteristics ("power less than that creature's") or the player it names ("target creature
+ * that player controls", Ravager of the Fells). A slot may be optional only when every slot after
+ * it is optional too, so declining one ends the selection without shifting a later target.
+ */
 object DependentTargetSelection {
     fun isRequired(requirements: List<TargetRequirement>): Boolean = requirements.any {
         it is TargetObject && referencesTarget(it.filter.baseFilter)
     }
 
     private fun referencesTarget(filter: GameObjectFilter): Boolean =
-        filter.cardPredicates.any(::referencesTarget) || filter.anyOf.any(::referencesTarget)
+        filter.cardPredicates.any(::referencesTarget) ||
+            filter.controllerPredicate?.let(::referencesTarget) == true ||
+            filter.anyOf.any(::referencesTarget)
+
+    private fun referencesTarget(predicate: ControllerPredicate): Boolean = when (predicate) {
+        is ControllerPredicate.And -> predicate.predicates.any(::referencesTarget)
+        is ControllerPredicate.Or -> predicate.predicates.any(::referencesTarget)
+        is ControllerPredicate.Not -> referencesTarget(predicate.predicate)
+        is ControllerPredicate.ControlledByReferencedPlayer -> when (predicate.target) {
+            is EffectTarget.ContextTarget, is EffectTarget.BoundVariable, EffectTarget.TargetController -> true
+            else -> false
+        }
+        else -> false
+    }
+
+    /** Whether selection may stop before slot [index]: it and every later slot are "up to one". */
+    fun canStopAt(requirements: List<TargetRequirement>, index: Int): Boolean =
+        requirements.drop(index).all { it.effectiveMinCount == 0 }
 
     private fun referencesTarget(predicate: CardPredicate): Boolean = when (predicate) {
         is CardPredicate.And -> predicate.predicates.any(::referencesTarget)
@@ -48,9 +72,10 @@ object DependentTargetSelection {
         chosen: List<EntityId>,
         context: PredicateContext,
     ): List<EntityId> {
-        require(requirements.all { it is TargetObject && it.filter.zone == Zone.BATTLEFIELD &&
-            it.count == 1 && it.effectiveMinCount == 1 && !it.unlimited }) {
-            "Dependent target selection requires mandatory single-permanent target slots"
+        require(requirements.all { req ->
+            req.count == 1 && !req.unlimited && (req !is TargetObject || req.filter.zone == Zone.BATTLEFIELD)
+        }) {
+            "Dependent target selection requires single-target slots over players or permanents"
         }
         val finder = TargetFinder()
         fun candidates(prefix: List<EntityId>): List<EntityId> = finder.findLegalTargets(
@@ -58,10 +83,15 @@ object DependentTargetSelection {
             sourceId = context.sourceId,
             targetingSourceType = TargetingSourceType.ABILITY,
             triggeringEntityId = context.triggeringEntityId,
-            pipelineContext = context.copy(targets = prefix.map { ChosenTarget.Permanent(it) }),
+            pipelineContext = prefix.map { entityIdToChosenTarget(state, it) }.let { chosen ->
+                context.copy(
+                    targets = chosen,
+                    namedTargets = EffectContext.buildNamedTargets(requirements.take(chosen.size), chosen),
+                )
+            },
         )
         fun canComplete(prefix: List<EntityId>): Boolean =
-            prefix.size == requirements.size || candidates(prefix).any { canComplete(prefix + it) }
+            canStopAt(requirements, prefix.size) || candidates(prefix).any { canComplete(prefix + it) }
         return candidates(chosen).filter { canComplete(chosen + it) }
     }
 }

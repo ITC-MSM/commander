@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Calamitous Cave-In (LCI #139) — {3}{R} Sorcery.
@@ -71,7 +72,7 @@ class CalamitousCaveInScenarioTest : FunSpec({
         driver.giveMana(me, Color.RED, 1)
 
         val cast = driver.castSpell(me, caveInCard)
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
 
         driver.drainStack()
 
@@ -105,7 +106,7 @@ class CalamitousCaveInScenarioTest : FunSpec({
         driver.giveMana(me, Color.RED, 1)
 
         val cast = driver.castSpell(me, caveInCard)
-        cast.isSuccess shouldBe true
+        cast.outcome shouldBe Outcome.Done
 
         driver.drainStack()
 

@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Behavioural net for the mtgish-tooling Aura emitter + self-regeneration emitter (PR #505).
@@ -155,14 +156,14 @@ class LeaAutogenAuraScenarioTest : FunSpec({
         driver.giveMana(p2, Color.BLACK, 1)
         val regenAbilityId = WallOfBone.script.activatedAbilities.first().id
         driver.submit(ActivateAbility(playerId = p2, sourceId = wall, abilityId = regenAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the regenerate ability -> shield up (lasts until end of turn)
 
         // Combat: the 5/5 attacks and the 1/4 Wall blocks, taking lethal (5 > 4) damage.
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(p1, listOf(attacker), p2).isSuccess shouldBe true
+        driver.declareAttackers(p1, listOf(attacker), p2).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(p2, mapOf(wall to listOf(attacker))).isSuccess shouldBe true
+        driver.declareBlockers(p2, mapOf(wall to listOf(attacker))).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
 
         // The regeneration shield replaced destruction: the Wall survives and is tapped.

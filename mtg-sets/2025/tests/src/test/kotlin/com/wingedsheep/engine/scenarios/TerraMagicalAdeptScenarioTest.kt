@@ -31,6 +31,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Terra, Magical Adept // Esper Terra (FIN #245).
@@ -127,7 +128,7 @@ class TerraMagicalAdeptScenarioTest : FunSpec({
         driver.giveColorlessMana(player, 4)
         val abilityId = TerraMagicalAdept.activatedAbilities.first().id
         driver.submit(ActivateAbility(playerId = player, sourceId = terra, abilityId = abilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         driver.bothPass()
     }
 

@@ -22,6 +22,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.matchers.types.shouldNotBeSameInstanceAs
+import com.wingedsheep.engine.core.Outcome
 
 class AIPlayerFactoryTest : FunSpec({
     fun game() = GameTestDriver().apply {
@@ -128,7 +129,7 @@ class AIPlayerFactoryTest : FunSpec({
         responses shouldBe listOf(1, 3, 1)
         driver.state shouldBe beforeCast
 
-        driver.castSpell(actor, id).isSuccess shouldBe true
+        driver.castSpell(actor, id).outcome shouldBe Outcome.Done
         driver.bothPass()
         val decision = driver.state.pendingDecision!!
         val state = driver.state

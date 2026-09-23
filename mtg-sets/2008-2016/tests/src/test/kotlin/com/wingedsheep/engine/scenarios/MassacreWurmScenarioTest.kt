@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Massacre Wurm (MBS #46) — {3}{B}{B}{B} Creature — Phyrexian Wurm 6/5.
@@ -42,7 +43,7 @@ class MassacreWurmScenarioTest : FunSpec({
         val card = putCardInHand(you, "Massacre Wurm")
         giveMana(you, Color.BLACK, 3)
         giveColorlessMana(you, 3)
-        castSpell(you, card).isSuccess shouldBe true
+        castSpell(you, card).outcome shouldBe Outcome.Done
         bothPass()
         return card
     }

@@ -41,6 +41,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for the Web-slinging [cost] keyword (CR 702.188, Marvel's Spider-Man).
@@ -199,7 +200,7 @@ class WebSlingingTest : FunSpec({
             )
         )
         io.kotest.assertions.withClue("error=${result.error} pending=${result.pendingDecision}") {
-            result.isSuccess shouldBe true
+            result.outcome shouldBe Outcome.Done
         }
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
@@ -284,7 +285,7 @@ class WebSlingingTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(bouncedPermanents = listOf(beast)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         val perm = driver.findPermanent(player, "Web Counters")
@@ -302,7 +303,7 @@ class WebSlingingTest : FunSpec({
         val normal = driver.putCardInHand(player, "Web Payoff")
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
         driver.giveMana(player, Color.GREEN, 2)
-        driver.castSpell(player, normal).isSuccess shouldBe true
+        driver.castSpell(player, normal).outcome shouldBe Outcome.Done
         // Resolve the creature spell only. Because the ETB is an intervening-'if' gated on the
         // web-slung flag (false here), the trigger is never put on the stack — no empty trigger.
         driver.bothPass()
@@ -338,7 +339,7 @@ class WebSlingingTest : FunSpec({
                 additionalCostPayment = AdditionalCostPayment(bouncedPermanents = listOf(beast)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         driver.assertLifeTotal(player, 23)
@@ -361,10 +362,10 @@ class WebSlingingTest : FunSpec({
         // Cast two 1/1 creatures — two creature entries under the player's control this turn
         // (counted per entry event, CR 400.7).
         driver.giveMana(player, Color.GREEN, 1)
-        driver.castSpell(player, c1).isSuccess shouldBe true
+        driver.castSpell(player, c1).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.giveMana(player, Color.GREEN, 1)
-        driver.castSpell(player, c2).isSuccess shouldBe true
+        driver.castSpell(player, c2).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val handBeforeEnd = driver.getHandSize(player)
@@ -388,7 +389,7 @@ class WebSlingingTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         driver.giveMana(player, Color.GREEN, 1)
-        driver.castSpell(player, c1).isSuccess shouldBe true
+        driver.castSpell(player, c1).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.passPriorityUntil(Step.END)
@@ -411,7 +412,7 @@ class WebSlingingTest : FunSpec({
 
         // Cast the gainer; on resolution its ETB "gain 5 life" triggered ability goes on the stack.
         driver.giveMana(player, Color.GREEN, 1)
-        driver.castSpell(player, gainer).isSuccess shouldBe true
+        driver.castSpell(player, gainer).outcome shouldBe Outcome.Done
         driver.bothPass()
         val trig = driver.getTopOfStack()
         trig.shouldNotBeNull()
@@ -427,7 +428,7 @@ class WebSlingingTest : FunSpec({
                 targets = listOf(ChosenTarget.Spell(trig)),
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         // The trigger was countered before it resolved — no 5 life.
@@ -444,7 +445,7 @@ class WebSlingingTest : FunSpec({
         driver.removeSummoningSickness(pinger)
         // Activating a non-mana ability keeps priority with the activator, so it stays on the stack.
         driver.submit(ActivateAbility(playerId = player, sourceId = pinger, abilityId = pingerAbilityId))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
         val abilityOnStack = driver.getTopOfStack()
         abilityOnStack.shouldNotBeNull()
         driver.state.getEntity(abilityOnStack)?.get<ActivatedAbilityOnStackComponent>().shouldNotBeNull()

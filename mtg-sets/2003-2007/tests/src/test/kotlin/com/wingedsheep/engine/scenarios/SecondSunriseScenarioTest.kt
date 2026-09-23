@@ -10,6 +10,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Second Sunrise (MRD #20) — {1}{W}{W} Instant.
@@ -45,14 +46,14 @@ class SecondSunriseScenarioTest : FunSpec({
     fun GameTestDriver.wipeBoard(caster: com.wingedsheep.sdk.model.EntityId) {
         val pyroclasm = putCardInHand(caster, "Pyroclasm")
         giveMana(caster, Color.RED, 2)
-        castSpell(caster, pyroclasm).isSuccess shouldBe true
+        castSpell(caster, pyroclasm).outcome shouldBe Outcome.Done
         settle()
     }
 
     fun GameTestDriver.castSecondSunrise(caster: com.wingedsheep.sdk.model.EntityId) {
         val sunrise = putCardInHand(caster, "Second Sunrise")
         giveMana(caster, Color.WHITE, 3)
-        castSpell(caster, sunrise).isSuccess shouldBe true
+        castSpell(caster, sunrise).outcome shouldBe Outcome.Done
         settle()
     }
 

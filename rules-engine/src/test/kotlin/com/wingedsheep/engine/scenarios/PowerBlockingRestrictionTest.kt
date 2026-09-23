@@ -7,6 +7,8 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContainIgnoringCase
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for power-based blocking restrictions.
@@ -69,7 +71,7 @@ class PowerBlockingRestrictionTest : FunSpec({
 
         // Declare Fleet-Footed Monk as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(monk), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Both players pass to move to declare blockers
         driver.bothPass()
@@ -83,7 +85,7 @@ class PowerBlockingRestrictionTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "cannot block"
         result.error shouldContainIgnoringCase "power"
     }
@@ -106,7 +108,7 @@ class PowerBlockingRestrictionTest : FunSpec({
 
         // Declare Fleet-Footed Monk as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(monk), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Both players pass to move to declare blockers
         driver.bothPass()
@@ -118,7 +120,7 @@ class PowerBlockingRestrictionTest : FunSpec({
             mapOf(lions to listOf(monk))
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("Fleet-Footed Monk cannot be blocked by creature whose power was increased by a spell") {
@@ -143,14 +145,14 @@ class PowerBlockingRestrictionTest : FunSpec({
 
         // Declare Fleet-Footed Monk as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(monk), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Player 1 passes priority, player 2 gets priority
         driver.passPriority(driver.player1)
 
         // Player 2 casts Giant Growth on Savannah Lions (+3/+3 makes it 4/4)
         val castResult = driver.castSpell(driver.player2, giantGrowth, listOf(lions))
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Both pass to resolve Giant Growth
         driver.bothPass()
@@ -168,7 +170,7 @@ class PowerBlockingRestrictionTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "cannot block"
         result.error shouldContainIgnoringCase "power"
     }
@@ -191,7 +193,7 @@ class PowerBlockingRestrictionTest : FunSpec({
 
         // Declare Fleet-Footed Monk as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(monk), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Both players pass to move to declare blockers
         driver.bothPass()
@@ -205,7 +207,7 @@ class PowerBlockingRestrictionTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
         result.error shouldContainIgnoringCase "cannot block"
     }
 
@@ -227,7 +229,7 @@ class PowerBlockingRestrictionTest : FunSpec({
 
         // Declare Savannah Lions as attacker
         val attackResult = driver.declareAttackers(driver.player1, listOf(lions), driver.player2)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // Both players pass to move to declare blockers
         driver.bothPass()
@@ -239,6 +241,6 @@ class PowerBlockingRestrictionTest : FunSpec({
             mapOf(bears to listOf(lions))
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 })

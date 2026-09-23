@@ -14,6 +14,8 @@ import com.wingedsheep.sdk.scripting.GrantActivatedAbility
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * A Realm Reborn — {4}{G}{G} Enchantment
@@ -51,14 +53,14 @@ class ARealmRebornTest : FunSpec({
         // The grant goes to OTHER permanents you control — the enchantment is excluded.
         driver.submit(
             ActivateAbility(playerId = p1, sourceId = realm, abilityId = grantedAbility)
-        ).isSuccess shouldBe false
+        ).outcome shouldNotBe Outcome.Done
 
         // Activate the granted "{T}: Add one mana of any color." on Grizzly Bears, choosing red.
         val result = driver.submit(
             ActivateAbility(playerId = p1, sourceId = bears, abilityId = grantedAbility)
         )
-        withClue("error=${result.error} isPaused=${result.isPaused}") {
-            result.isPaused shouldBe true
+        withClue("error=${result.error} isPaused=${result.outcome is Outcome.Paused}") {
+            (result.outcome is Outcome.Paused) shouldBe true
         }
 
         // "Add one mana of any color" prompts for the color.

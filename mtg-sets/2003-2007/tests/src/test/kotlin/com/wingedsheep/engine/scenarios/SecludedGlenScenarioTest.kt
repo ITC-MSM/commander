@@ -12,6 +12,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Secluded Glen.
@@ -50,14 +51,14 @@ class SecludedGlenScenarioTest : FunSpec({
         val glen = driver.putCardInHand(player, "Secluded Glen")
 
         // The reveal is an as-enters replacement, so playing the land pauses on a decision.
-        driver.playLand(player, glen).isPaused shouldBe true
+        (driver.playLand(player, glen).outcome is Outcome.Paused) shouldBe true
 
         val decision = driver.pendingDecision
         decision.shouldNotBeNull()
         decision.shouldBeInstanceOf<SelectCardsDecision>()
         decision.options shouldBe listOf(faerie)
 
-        driver.submitCardSelection(player, listOf(faerie)).isSuccess shouldBe true
+        driver.submitCardSelection(player, listOf(faerie)).outcome shouldBe Outcome.Done
 
         driver.isTapped(glen) shouldBe false
     }
@@ -71,13 +72,13 @@ class SecludedGlenScenarioTest : FunSpec({
         val peppersmoke = driver.putCardInHand(player, "Peppersmoke")
         val glen = driver.putCardInHand(player, "Secluded Glen")
 
-        driver.playLand(player, glen).isPaused shouldBe true
+        (driver.playLand(player, glen).outcome is Outcome.Paused) shouldBe true
 
         val decision = driver.pendingDecision
         decision.shouldBeInstanceOf<SelectCardsDecision>()
         decision.options shouldBe listOf(peppersmoke)
 
-        driver.submitCardSelection(player, listOf(peppersmoke)).isSuccess shouldBe true
+        driver.submitCardSelection(player, listOf(peppersmoke)).outcome shouldBe Outcome.Done
 
         driver.isTapped(glen) shouldBe false
     }
@@ -90,11 +91,11 @@ class SecludedGlenScenarioTest : FunSpec({
         driver.putCardInHand(player, "Pestermite")
         val glen = driver.putCardInHand(player, "Secluded Glen")
 
-        driver.playLand(player, glen).isPaused shouldBe true
+        (driver.playLand(player, glen).outcome is Outcome.Paused) shouldBe true
         driver.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()
 
         // An empty selection is the decline.
-        driver.submitCardSelection(player, emptyList()).isSuccess shouldBe true
+        driver.submitCardSelection(player, emptyList()).outcome shouldBe Outcome.Done
 
         driver.isTapped(glen) shouldBe true
     }
@@ -106,7 +107,7 @@ class SecludedGlenScenarioTest : FunSpec({
 
         val glen = driver.putCardInHand(player, "Secluded Glen")
 
-        driver.playLand(player, glen).isSuccess shouldBe true
+        driver.playLand(player, glen).outcome shouldBe Outcome.Done
 
         driver.pendingDecision shouldBe null
         driver.isTapped(glen) shouldBe true

@@ -17,6 +17,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Hemosymbic Mite (EOE #190).
@@ -86,7 +87,7 @@ class HemosymbicMiteTest : FunSpec({
         driver.declareAttackers(activePlayer, listOf(mite), opponent)
 
         // Target the other creature; X = Mite's power (1), so +1/+1 (Grizzly Bears 2/2 -> 3/3).
-        driver.submitTargetSelection(activePlayer, listOf(bears)).isSuccess shouldBe true
+        driver.submitTargetSelection(activePlayer, listOf(bears)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the trigger
 
         projector.getProjectedPower(driver.state, bears) shouldBe 3
@@ -126,7 +127,7 @@ class HemosymbicMiteTest : FunSpec({
             )
         )
         withClue("station activation should not error: ${result.error}") {
-            (result.isSuccess || result.isPaused) shouldBe true
+            (result.outcome is Outcome.Done || result.outcome is Outcome.Paused) shouldBe true
         }
 
         // The Mite was tapped to pay the cost, so its "becomes tapped" trigger should be on the
@@ -135,7 +136,7 @@ class HemosymbicMiteTest : FunSpec({
             ?: error("Expected a ChooseTargetsDecision from the becomes-tapped trigger after stationing")
         (decision.legalTargets[0] ?: emptyList()) shouldContain bears
 
-        driver.submitTargetSelection(activePlayer, listOf(bears)).isSuccess shouldBe true
+        driver.submitTargetSelection(activePlayer, listOf(bears)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the trigger (and the station ability)
 
         // X = Mite's power (1), so Grizzly Bears (2/2) -> 3/3.

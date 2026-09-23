@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Prickly Pair (OTJ #137) — {2}{R} 2/2 Creature — Plant Mercenary.
@@ -39,7 +40,7 @@ class PricklyPairScenarioTest : FunSpec({
 
         val pair = driver.putCardInHand(player, "Prickly Pair")
         driver.giveMana(player, Color.RED, 3)
-        driver.castSpell(player, pair).isSuccess shouldBe true
+        driver.castSpell(player, pair).outcome shouldBe Outcome.Done
         // Resolve the creature spell, then its ETB trigger.
         var guard = 0
         while (driver.stackSize > 0 && !driver.isPaused && guard++ < 10) driver.bothPass()

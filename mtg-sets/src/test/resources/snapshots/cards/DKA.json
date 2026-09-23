@@ -1145,7 +1145,7 @@
                                 },
                                 "target": {
                                     "type": "BoundVariable",
-                                    "name": "target creature that player controls"
+                                    "name": "target creature that player or that planeswalker's controller controls"
                                 }
                             }
                         ]
@@ -1160,19 +1160,32 @@
                             "optional": true,
                             "filter": {
                                 "baseFilter": {
-                                    "cardPredicates": [
-                                        "IsCreature"
-                                    ],
-                                    "controllerPredicate": {
-                                        "type": "ControlledByReferencedPlayer",
-                                        "target": {
-                                            "type": "BoundVariable",
-                                            "name": "target opponent or planeswalker"
+                                    "anyOf": [
+                                        {
+                                            "cardPredicates": [
+                                                "IsCreature"
+                                            ],
+                                            "controllerPredicate": {
+                                                "type": "ControlledByReferencedPlayer",
+                                                "target": {
+                                                    "type": "BoundVariable",
+                                                    "name": "target opponent or planeswalker"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "cardPredicates": [
+                                                "IsCreature"
+                                            ],
+                                            "controllerPredicate": {
+                                                "type": "ControlledByReferencedPlayer",
+                                                "target": "TargetController"
+                                            }
                                         }
-                                    }
+                                    ]
                                 }
                             },
-                            "id": "target creature that player controls"
+                            "id": "target creature that player or that planeswalker's controller controls"
                         }
                     ]
                 },

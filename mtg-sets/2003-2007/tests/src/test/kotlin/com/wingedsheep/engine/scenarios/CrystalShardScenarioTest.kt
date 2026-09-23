@@ -12,6 +12,8 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Crystal Shard (MRD #159) — "{3}, {T} or {U}, {T}: Return target creature to its owner's hand
@@ -49,7 +51,7 @@ class CrystalShardScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, shard, genericAbility, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         withClue("'its controller pays' points at player2, who controls the bear") {
@@ -66,7 +68,7 @@ class CrystalShardScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, shard, genericAbility, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
         d.submitYesNo(d.player2, true)
 
@@ -85,7 +87,7 @@ class CrystalShardScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, shard, genericAbility, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
         d.submitYesNo(d.player2, false)
 
@@ -104,7 +106,7 @@ class CrystalShardScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, shard, genericAbility, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         withClue("Gate.MayPay skips an unpayable cost instead of offering an impossible yes") {
@@ -121,7 +123,7 @@ class CrystalShardScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, shard, blueAbility, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         d.state.getBattlefield().contains(bear) shouldBe false
@@ -137,12 +139,12 @@ class CrystalShardScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, shard, genericAbility, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         withClue("the shard is now tapped, so the {U} half has no {T} left to pay") {
             d.submit(
                 ActivateAbility(d.player1, shard, blueAbility, targets = listOf(ChosenTarget.Permanent(other)))
-            ).isSuccess shouldBe false
+            ).outcome shouldNotBe Outcome.Done
         }
     }
 })

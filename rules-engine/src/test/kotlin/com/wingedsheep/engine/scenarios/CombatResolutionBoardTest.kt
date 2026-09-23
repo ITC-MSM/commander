@@ -18,6 +18,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Verifies the engine emits the bipartite [CombatResolutionDecision] for combat
@@ -62,7 +64,7 @@ class CombatResolutionBoardTest : FunSpec({
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
         // declareBlockers takes a Map<blocker, List<attackers>>. With multiple blockers on
         // the same attacker, the engine immediately pauses on an OrderObjectsDecision so
-        // the chooser can pick damage-assignment order; result.isPaused == true.
+        // the chooser can pick damage-assignment order; the outcome is `Outcome.Paused`.
         driver.declareBlockers(defender, mapOf(lions to listOf(tusker), centaur to listOf(tusker)))
 
         // The engine emits an OrderObjectsDecision for the blocker-order in declare-blockers.
@@ -94,7 +96,7 @@ class CombatResolutionBoardTest : FunSpec({
             decisionId = decision.id,
             edges = decision.edges.map { DamageEdgeAmount(it.id, it.amount) },
         )
-        driver.submitDecision(decision.playerId, response).isSuccess shouldBe true
+        driver.submitDecision(decision.playerId, response).outcome shouldBe Outcome.Done
     }
 
     /**
@@ -216,7 +218,7 @@ class CombatResolutionBoardTest : FunSpec({
         // Band has assigned 0 damage to the giant → trample drain must be rejected.
         val skipBlocker = CombatResolutionResponse(decision.id, planEdges(0, 0, 2))
         val skipBlockerResult = driver.submitDecision(decision.playerId, skipBlocker)
-        skipBlockerResult.isSuccess shouldBe false
+        skipBlockerResult.outcome shouldNotBe Outcome.Done
         skipBlockerResult.error shouldBe "Trample drain ${drain.id}: preceding blocker not at lethal"
 
         // Attempt 2: band cooperates partway — partner puts 2 on giant, NE drains
@@ -224,7 +226,7 @@ class CombatResolutionBoardTest : FunSpec({
         // rejected. This is the case banding alone cannot rescue.
         val belowLethal = CombatResolutionResponse(decision.id, planEdges(0, 2, 2))
         val belowLethalResult = driver.submitDecision(decision.playerId, belowLethal)
-        belowLethalResult.isSuccess shouldBe false
+        belowLethalResult.outcome shouldNotBe Outcome.Done
         belowLethalResult.error shouldBe "Trample drain ${drain.id}: preceding blocker not at lethal"
 
         // State has not advanced — the original decision is still pending.
@@ -586,7 +588,7 @@ class CombatResolutionBoardTest : FunSpec({
         )
         val afterAttacker = driver.submitDecision(decision.playerId, attackerResponse)
         afterAttacker.error shouldBe null
-        afterAttacker.isPaused shouldBe true
+        (afterAttacker.outcome is Outcome.Paused) shouldBe true
 
         // Step 2 (CR 510.1c second half): defender now sees the same shape
         // with playerId = defender, coChooserId = null. Submit the engine
@@ -743,9 +745,9 @@ class CombatResolutionBoardTest : FunSpec({
         driver.removeSummoningSickness(courser)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(attacker, listOf(courser), defender).isSuccess shouldBe true
+        driver.declareAttackers(attacker, listOf(courser), defender).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(defender, mapOf(lions to listOf(courser))).isSuccess shouldBe true
+        driver.declareBlockers(defender, mapOf(lions to listOf(courser))).outcome shouldBe Outcome.Done
 
         // No manual assignment needed — engine auto-resolves combat damage internally.
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
@@ -978,7 +980,7 @@ class CombatResolutionBoardTest : FunSpec({
             DamageEdgeAmount(edge.id, plan[edge.sourceId to edge.targetId] ?: 0)
         }
         val response = CombatResolutionResponse(decisionId = decision.id, edges = customEdges)
-        driver.submitDecision(decision.playerId, response).isSuccess shouldBe true
+        driver.submitDecision(decision.playerId, response).outcome shouldBe Outcome.Done
 
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
         val battlefield = driver.state.getBattlefield()

@@ -22,6 +22,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import java.util.UUID
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Mistform Dreamer.
@@ -102,7 +103,7 @@ class MistformDreamerTest : FunSpec({
                 abilityId = mistformDreamerAbilityId
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Both pass to resolve the ability
         driver.bothPass()

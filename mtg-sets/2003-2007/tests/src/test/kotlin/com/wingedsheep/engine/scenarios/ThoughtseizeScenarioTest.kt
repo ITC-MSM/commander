@@ -10,6 +10,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Thoughtseize.
@@ -43,7 +44,7 @@ class ThoughtseizeScenarioTest : FunSpec({
         driver.putCardInHand(victim, "Swamp")
 
         val thoughtseize = driver.putCardInHand(caster, "Thoughtseize")
-        driver.castSpell(caster, thoughtseize, listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(caster, thoughtseize, listOf(victim)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val decision = driver.pendingDecision
@@ -51,7 +52,7 @@ class ThoughtseizeScenarioTest : FunSpec({
         // The *caster* chooses, and the land in the revealed hand is not a legal pick.
         decision.playerId shouldBe caster
 
-        driver.submitCardSelection(caster, listOf(bear)).isSuccess shouldBe true
+        driver.submitCardSelection(caster, listOf(bear)).outcome shouldBe Outcome.Done
 
         driver.getGraveyardCardNames(victim) shouldContain "Grizzly Bears"
         driver.getLifeTotal(caster) shouldBe 18
@@ -71,7 +72,7 @@ class ThoughtseizeScenarioTest : FunSpec({
         val victimHandSize = driver.getHandSize(victim)
 
         val thoughtseize = driver.putCardInHand(caster, "Thoughtseize")
-        driver.castSpell(caster, thoughtseize, listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(caster, thoughtseize, listOf(victim)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Nothing to take: the hand is untouched.
@@ -91,12 +92,12 @@ class ThoughtseizeScenarioTest : FunSpec({
         val bear = driver.putCardInHand(caster, "Grizzly Bears")
 
         val thoughtseize = driver.putCardInHand(caster, "Thoughtseize")
-        driver.castSpell(caster, thoughtseize, listOf(caster)).isSuccess shouldBe true
+        driver.castSpell(caster, thoughtseize, listOf(caster)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val decision = driver.pendingDecision
         decision.shouldBeInstanceOf<SelectCardsDecision>()
-        driver.submitCardSelection(caster, listOf(bear)).isSuccess shouldBe true
+        driver.submitCardSelection(caster, listOf(bear)).outcome shouldBe Outcome.Done
 
         driver.getGraveyardCardNames(caster) shouldContain "Grizzly Bears"
         driver.getLifeTotal(caster) shouldBe 18

@@ -20,6 +20,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Emerge (CR 702.119, Eldritch Moon) — an alternative cost that bundles a creature sacrifice and a
@@ -76,7 +77,7 @@ class EmergeKeywordTest : FunSpec({
 
         val handBefore = driver.getHandSize(player)
 
-        driver.submit(emergeCast(player, gryff, courser)).isSuccess shouldBe true
+        driver.submit(emergeCast(player, gryff, courser)).outcome shouldBe Outcome.Done
 
         // CR 702.119c — the creature is sacrificed as the cost is paid, before anything resolves.
         driver.state.getZone(ZoneKey(player, Zone.GRAVEYARD)) shouldContain courser
@@ -293,7 +294,7 @@ class EmergeKeywordTest : FunSpec({
         repeat(4) { driver.putLandOnBattlefield(player, "Island") }
 
         driver.submit(emergeCast(player, gryff, birds, payment = PaymentStrategy.AutoPay))
-            .isSuccess shouldBe true
+            .outcome shouldBe Outcome.Done
 
         driver.state.getZone(ZoneKey(player, Zone.GRAVEYARD)) shouldContain birds
         driver.bothPass()
@@ -311,7 +312,7 @@ class EmergeKeywordTest : FunSpec({
 
         driver.submit(
             CastSpell(playerId = player, cardId = gryff, paymentStrategy = PaymentStrategy.FromPool)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         driver.state.getZone(ZoneKey(player, Zone.GRAVEYARD)) shouldNotContain courser
         driver.bothPass()

@@ -11,6 +11,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContainIgnoringCase
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Clammy Prowler — {3}{U} Enchantment Creature — Horror 2/5
@@ -66,12 +68,12 @@ class ClammyProwlerScenarioTest : FunSpec({
         val blockBears = driver.submitExpectFailure(
             DeclareBlockers(defender, mapOf(wall to listOf(bears)))
         )
-        blockBears.isSuccess shouldBe false
+        blockBears.outcome shouldNotBe Outcome.Done
         blockBears.error shouldContainIgnoringCase "can't be blocked"
 
         // Blocking Clammy Prowler (which is NOT unblockable) succeeds.
         val blockProwler = driver.declareBlockers(defender, mapOf(wall2 to listOf(prowler)))
-        blockProwler.isSuccess shouldBe true
+        blockProwler.outcome shouldBe Outcome.Done
     }
 
     test("Clammy Prowler attacking with no other attacker yields no legal target") {

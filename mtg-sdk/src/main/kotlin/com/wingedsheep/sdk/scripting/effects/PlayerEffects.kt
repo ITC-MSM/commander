@@ -280,13 +280,13 @@ data class TakeExtraTurnEffect(
 }
 
 /**
- * End the turn (CR 720). Used for Time Stop, Sundial of the Infinite, Discontinuity, and
+ * End the turn (CR 724.1). Used for Time Stop, Sundial of the Infinite, Discontinuity, and
  * Final Fantasy's Ultima ("Destroy all artifacts and creatures. End the turn.").
  *
- * When this resolves, in order (CR 720.1):
+ * When this resolves, in order (CR 724.1):
  *  - every spell and ability on the stack is exiled, **including the source of this effect**;
  *  - triggered abilities that would have gone on the stack from the events so far (e.g. the dies
- *    triggers from a preceding board wipe) are discarded, never put on the stack (CR 720.1c);
+ *    triggers from a preceding board wipe) are discarded, never put on the stack (CR 724.1a);
  *  - creatures and players are removed from combat;
  *  - the game skips straight to the cleanup step — the active player discards down to their
  *    maximum hand size, marked damage wears off, and "this turn" / "until end of turn" effects end;

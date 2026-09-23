@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Rock Jockey.
@@ -45,7 +46,7 @@ class RockJockeyTest : FunSpec({
 
         // Cast Rock Jockey - should succeed since no land was played
         val result = driver.castSpell(player, rockJockey)
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Resolve the spell and ETB trigger
         driver.bothPass()
@@ -65,7 +66,7 @@ class RockJockeyTest : FunSpec({
 
         // Play a land first
         val mountain = driver.putCardInHand(player, "Mountain")
-        driver.playLand(player, mountain).isSuccess shouldBe true
+        driver.playLand(player, mountain).outcome shouldBe Outcome.Done
 
         // Give mana and put Rock Jockey in hand
         driver.giveMana(player, Color.RED, 1)
@@ -74,7 +75,7 @@ class RockJockeyTest : FunSpec({
 
         // Try to cast Rock Jockey - should fail
         val result = driver.castSpell(player, rockJockey)
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("Cannot play a land after casting Rock Jockey") {
@@ -89,7 +90,7 @@ class RockJockeyTest : FunSpec({
         val rockJockey = driver.putCardInHand(player, "Rock Jockey")
 
         val castResult = driver.castSpell(player, rockJockey)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Resolve the spell (Rock Jockey enters battlefield, ETB trigger goes on stack)
         driver.bothPass()
@@ -105,6 +106,6 @@ class RockJockeyTest : FunSpec({
         // Try to play a land - should fail
         val mountain = driver.putCardInHand(player, "Mountain")
         val landResult = driver.playLand(player, mountain)
-        landResult.isSuccess shouldBe false
+        landResult.outcome shouldNotBe Outcome.Done
     }
 })

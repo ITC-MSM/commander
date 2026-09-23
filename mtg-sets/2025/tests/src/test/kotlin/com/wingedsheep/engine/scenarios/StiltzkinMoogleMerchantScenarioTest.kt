@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario test for Stiltzkin, Moogle Merchant (FIN #34) — {W} Legendary Creature — Moogle.
@@ -52,7 +53,7 @@ class StiltzkinMoogleMerchantScenarioTest : FunSpec({
                 abilityId = donateAbilityId,
                 targets = listOf(ChosenTarget.Player(opponent), ChosenTarget.Permanent(mountain)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve the ability
 
         // The opponent now controls the donated Mountain...
@@ -81,7 +82,7 @@ class StiltzkinMoogleMerchantScenarioTest : FunSpec({
                 abilityId = donateAbilityId,
                 targets = listOf(ChosenTarget.Player(opponent), ChosenTarget.Permanent(mountain)),
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // In response, the donated permanent leaves the battlefield: at resolution the control
         // change can't happen even though the opponent target is still legal.

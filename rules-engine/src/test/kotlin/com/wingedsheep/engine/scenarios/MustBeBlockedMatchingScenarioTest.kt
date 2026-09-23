@@ -7,6 +7,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Rule 509.1c requires the declaration of blockers to obey the maximum satisfiable number of
@@ -46,27 +48,27 @@ class MustBeBlockedMatchingScenarioTest : FunSpec({
         val allure1 = driver.putCardInHand(p1, "Deadly Allure")
         val allure2 = driver.putCardInHand(p1, "Deadly Allure")
         driver.giveMana(p1, Color.BLACK, 2)
-        driver.castSpell(p1, allure1, targets = listOf(groundAttacker)).isSuccess shouldBe true
+        driver.castSpell(p1, allure1, targets = listOf(groundAttacker)).outcome shouldBe Outcome.Done
         driver.bothPass()
-        driver.castSpell(p1, allure2, targets = listOf(flyingAttacker)).isSuccess shouldBe true
+        driver.castSpell(p1, allure2, targets = listOf(flyingAttacker)).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(p1, listOf(groundAttacker, flyingAttacker), p2).isSuccess shouldBe true
+        driver.declareAttackers(p1, listOf(groundAttacker, flyingAttacker), p2).outcome shouldBe Outcome.Done
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
 
         // Parking the flexible blocker on the ground attacker strands the flier: the ground
         // blocker can't reach it, so only one requirement is obeyed where two are satisfiable.
-        driver.declareBlockers(p2, mapOf(flexibleBlocker to listOf(groundAttacker))).isSuccess shouldBe false
+        driver.declareBlockers(p2, mapOf(flexibleBlocker to listOf(groundAttacker))).outcome shouldNotBe Outcome.Done
 
         // Same coverage count the other way round: flier blocked, ground attacker strandable
         // only by wasting the ground blocker — leaving it idle is illegal too.
-        driver.declareBlockers(p2, mapOf(flexibleBlocker to listOf(flyingAttacker))).isSuccess shouldBe false
+        driver.declareBlockers(p2, mapOf(flexibleBlocker to listOf(flyingAttacker))).outcome shouldNotBe Outcome.Done
 
         // The unique full-coverage assignment is legal.
         driver.declareBlockers(
             p2,
             mapOf(groundBlocker to listOf(groundAttacker), flexibleBlocker to listOf(flyingAttacker))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
     }
 })

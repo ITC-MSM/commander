@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Savior of Ollenbock (VOW #34) — {1}{W}{W} 1/2 Creature — Human Soldier, Training + a
@@ -89,7 +90,7 @@ class SaviorOfOllenbockScenarioTest : FunSpec({
         val doomBlade = driver.putCardInHand(me, "Doom Blade")
         driver.giveMana(me, Color.BLACK, 1)
         driver.giveColorlessMana(me, 1)
-        driver.castSpell(me, doomBlade, targets = listOf(savior)).isSuccess shouldBe true
+        driver.castSpell(me, doomBlade, targets = listOf(savior)).outcome shouldBe Outcome.Done
         while ((driver.stackSize > 0 || driver.pendingDecision != null) && guard++ < 60) {
             if (driver.pendingDecision != null) driver.autoResolveDecision() else driver.bothPass()
         }

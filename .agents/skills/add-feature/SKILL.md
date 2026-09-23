@@ -93,7 +93,7 @@ Hard rules while writing it — these are the engine's recurring bug classes:
   projection. No separate `*ProjectionCondition` types; use `ConditionEvaluationContext`.
 - **Continuations carry targets** — any frame wrapping `EffectTarget.ContextTarget(n)` must propagate
   `targets` / `namedTargets` / `outerTargets` into the rebuilt `EffectContext`.
-- **Last-known information** — dies/leaves triggers read `triggerLastKnownPower`,
+- **Last-known information** — dies/leaves triggers read `triggerContext.lastKnownPower`,
   `lastKnownCardDefinitionId`, `lastKnownCounters` off the `ZoneChangeEvent`; the entity is gone by the
   time the trigger resolves.
 - **Layer 613.8 dependency** — new continuous-effect families sort by trial application before timestamp.
@@ -109,7 +109,7 @@ resolution, empty/zero input, simultaneous instances, replacement interaction):
 |---|---|
 | **SDK (data)** | Pure, serializable, fully parameterized. Round-trips through serialization |
 | **Engine handler/executor** | Right executor picks it up, emits the right `GameEvent`s, returns the right `GameState`, registered in the right registry |
-| **TriggerDetector** | Detected from emitted events, on the correct path — battlefield `detectTriggers` vs `detectPhaseStepTriggers` vs `detectLeavesBattlefieldTriggers`. `TriggerIndex`'s two category maps and `TriggerMatcher.matchesTrigger` are exhaustive, so a new `EventPattern` or `GameEvent` won't compile until you place it. The compiler can't tell you *which* branch is right: an event the per-event loop should see needs a real category, not the `emptyList()` group |
+| **TriggerDetector** | Detected from emitted events, on the correct path — battlefield `detectTriggers` vs `detectPhaseStepTriggers` vs `detectLeavesBattlefieldTriggers`. `TriggerIndex`'s two category maps and `TriggerMatcher.matchesTrigger` are exhaustive, so a new `EventPattern` or `GameEvent` won't compile until you place it. The compiler can't tell you *which* branch is right: an event the per-event loop should see needs a real category, not the `emptyList()` group. Only the settle boundary (`Settler`) detects; a handler or resumer just emits the events, including across a pause |
 | **StateProjector** | Applied in the correct Rule 613 layer, reflected in projected state, dependency ordering holds |
 | **Continuations** | Player-input features pause with a `PendingDecision` and resume carrying targets/collections. `ContinuationResumerCoverageTest` fails on a frame with no registered resumer |
 | **Cleanup** | Duration-bounded state removed at the right time (end of turn/combat, source leaves) |

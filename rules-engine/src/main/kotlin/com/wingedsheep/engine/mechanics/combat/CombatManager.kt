@@ -132,6 +132,7 @@ class CombatManager(
             entities = state.entities.mapValues { (_, container) ->
                 container
                     .without<AttackingComponent>()
+                    .without<com.wingedsheep.engine.state.components.combat.BeingAttackedComponent>()
                     .without<BlockingComponent>()
                     .without<BlockedComponent>()
                     .without<DamageAssignmentComponent>()

@@ -17,6 +17,8 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Hoofprints of the Stag (LRW #21) — "Whenever you draw a card, you may put a hoofprint counter on
@@ -84,7 +86,7 @@ class HoofprintsOfTheStagScenarioTest : FunSpec({
         val spell = d.putCardInHand(me, "Test Draw Three")
         d.giveMana(me, Color.BLUE, 3)
 
-        d.castSpell(me, spell).isSuccess shouldBe true
+        d.castSpell(me, spell).outcome shouldBe Outcome.Done
         settle(d, me, yes = true)
 
         withClue("one trigger per card drawn (2007-10-01 ruling)") {
@@ -100,7 +102,7 @@ class HoofprintsOfTheStagScenarioTest : FunSpec({
         val spell = d.putCardInHand(me, "Test Draw Three")
         d.giveMana(me, Color.BLUE, 3)
 
-        d.castSpell(me, spell).isSuccess shouldBe true
+        d.castSpell(me, spell).outcome shouldBe Outcome.Done
         settle(d, me, yes = false)
 
         d.hoofprints(enchantment) shouldBe 0
@@ -114,7 +116,7 @@ class HoofprintsOfTheStagScenarioTest : FunSpec({
         d.addComponent(enchantment, CountersComponent(mapOf(CounterType.HOOFPRINT to 4)))
         d.giveMana(me, Color.WHITE, 3)
 
-        d.submit(ActivateAbility(me, enchantment, tokenAbility)).isSuccess shouldBe true
+        d.submit(ActivateAbility(me, enchantment, tokenAbility)).outcome shouldBe Outcome.Done
         d.bothPass()
 
         val token = d.getCreatures(me).singleOrNull().shouldNotBeNull()
@@ -137,7 +139,7 @@ class HoofprintsOfTheStagScenarioTest : FunSpec({
         withClue("three of four counters leaves the ability greyed out, not payable") {
             canActivate(d, me, enchantment) shouldBe false
         }
-        d.submitExpectFailure(ActivateAbility(me, enchantment, tokenAbility)).isSuccess shouldBe false
+        d.submitExpectFailure(ActivateAbility(me, enchantment, tokenAbility)).outcome shouldNotBe Outcome.Done
         d.getCreatures(me).isEmpty() shouldBe true
     }
 
@@ -155,6 +157,6 @@ class HoofprintsOfTheStagScenarioTest : FunSpec({
         d.giveMana(me, Color.WHITE, 3)
 
         canActivate(d, me, enchantment) shouldBe false
-        d.submitExpectFailure(ActivateAbility(me, enchantment, tokenAbility)).isSuccess shouldBe false
+        d.submitExpectFailure(ActivateAbility(me, enchantment, tokenAbility)).outcome shouldNotBe Outcome.Done
     }
 })

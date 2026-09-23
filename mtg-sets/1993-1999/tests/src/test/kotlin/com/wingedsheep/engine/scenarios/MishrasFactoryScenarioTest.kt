@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Mishra's Factory (ATQ #80).
@@ -45,7 +46,7 @@ class MishrasFactoryScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = factory, abilityId = animateAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val projected = projector.project(driver.state)
@@ -89,7 +90,7 @@ class MishrasFactoryScenarioTest : FunSpec({
 
         driver.submit(
             ActivateAbility(playerId = player, sourceId = factoryA, abilityId = animateAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Factory B taps to pump the Assembly-Worker (factory A).
@@ -100,7 +101,7 @@ class MishrasFactoryScenarioTest : FunSpec({
                 abilityId = pumpAbilityId,
                 targets = listOf(ChosenTarget.Permanent(factoryA))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         val projected = projector.project(driver.state)

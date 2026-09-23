@@ -222,7 +222,7 @@ private fun playRandomGame(
 /**
  * Generate a random but valid response for any pending decision.
  */
-private fun randomDecisionResponse(decision: PendingDecision, rng: Random): DecisionResponse {
+internal fun randomDecisionResponse(decision: PendingDecision, rng: Random): DecisionResponse {
     return when (decision) {
         is ChooseTargetsDecision -> {
             val targets = decision.targetRequirements.associate { req ->
@@ -325,13 +325,13 @@ private fun randomDecisionResponse(decision: PendingDecision, rng: Random): Deci
     }
 }
 
-private fun buildRandomSealedDeck(allCards: List<CardDefinition>): Deck {
-    val pool = generateSealedPool(allCards)
+internal fun buildRandomSealedDeck(allCards: List<CardDefinition>, rng: Random = Random.Default): Deck {
+    val pool = generateSealedPool(allCards, rng)
     val deckMap = buildHeuristicSealedDeck(pool)
     return Deck(deckMap.flatMap { (name, count) -> List(count) { name } })
 }
 
-private fun generateSealedPool(allCards: List<CardDefinition>): List<CardDefinition> {
+private fun generateSealedPool(allCards: List<CardDefinition>, rng: Random): List<CardDefinition> {
     val nonBasics = allCards.filter { !it.typeLine.isBasicLand }
     val commons = nonBasics.filter { it.metadata.rarity == Rarity.COMMON }
     val uncommons = nonBasics.filter { it.metadata.rarity == Rarity.UNCOMMON }
@@ -344,11 +344,11 @@ private fun generateSealedPool(allCards: List<CardDefinition>): List<CardDefinit
         fun pick(from: List<CardDefinition>): CardDefinition? {
             val available = from.filter { it.name !in usedNames }
             if (available.isEmpty()) return null
-            return available.random().also { usedNames.add(it.name) }
+            return available.random(rng).also { usedNames.add(it.name) }
         }
         repeat(11) { pick(commons)?.let { pool.add(it) } }
         repeat(3) { pick(uncommons)?.let { pool.add(it) } }
-        val rare = if (mythics.isNotEmpty() && Math.random() < 0.125) pick(mythics) else null
+        val rare = if (mythics.isNotEmpty() && rng.nextDouble() < 0.125) pick(mythics) else null
         pool.add(rare ?: pick(rares) ?: pick(uncommons) ?: pick(commons)!!)
     }
     return pool

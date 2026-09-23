@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 class YoungWolfScenarioTest : FunSpec({
 
@@ -26,7 +27,7 @@ class YoungWolfScenarioTest : FunSpec({
     fun killWithLightningBolt(driver: GameTestDriver, player: com.wingedsheep.sdk.model.EntityId, victim: com.wingedsheep.sdk.model.EntityId) {
         val bolt = driver.putCardInHand(player, "Lightning Bolt")
         driver.giveMana(player, Color.RED, 1)
-        driver.castSpell(player, bolt, listOf(victim)).isSuccess shouldBe true
+        driver.castSpell(player, bolt, listOf(victim)).outcome shouldBe Outcome.Done
         driver.bothPass()
     }
 

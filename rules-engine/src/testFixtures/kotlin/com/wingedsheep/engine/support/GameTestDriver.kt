@@ -205,7 +205,7 @@ class GameTestDriver {
      */
     fun submit(action: GameAction): ExecutionResult {
         val result = processor.process(_state, action).result
-        if (result.isSuccess || result.isPaused) {
+        if (result.outcome is Outcome.Done || result.outcome is Outcome.Paused) {
             _state = result.newState
             _events.addAll(result.events)
         }
@@ -217,7 +217,7 @@ class GameTestDriver {
      */
     fun submitSuccess(action: GameAction): ExecutionResult {
         val result = submit(action)
-        if (!result.isSuccess) {
+        if (result.outcome !is Outcome.Done) {
             throw AssertionError("Expected action to succeed but got: ${result.error}")
         }
         return result
@@ -245,7 +245,7 @@ class GameTestDriver {
      */
     fun submitExpectFailure(action: GameAction): ExecutionResult {
         val result = processor.process(_state, action).result
-        if (result.isSuccess) {
+        if (result.outcome is Outcome.Done) {
             throw AssertionError("Expected action to fail but it succeeded")
         }
         return result
@@ -268,7 +268,7 @@ class GameTestDriver {
     fun bothPass(): ExecutionResult {
         autoSubmitCombatDeclarationIfNeeded()
         var result = passPriority(state.priorityPlayerId ?: player1)
-        if (result.isSuccess && state.priorityPlayerId != null) {
+        if (result.outcome is Outcome.Done && state.priorityPlayerId != null) {
             autoSubmitCombatDeclarationIfNeeded()
             result = passPriority(state.priorityPlayerId!!)
         }
@@ -1240,7 +1240,7 @@ class GameTestDriver {
             val land = findCardInHand(playerId, landName)
             if (land != null) {
                 val result = playLand(playerId, land)
-                if (!result.isSuccess) {
+                if (result.outcome !is Outcome.Done) {
                     // May have already played a land this turn - advance to next turn
                     passPriorityUntil(Step.END)
                     bothPass()

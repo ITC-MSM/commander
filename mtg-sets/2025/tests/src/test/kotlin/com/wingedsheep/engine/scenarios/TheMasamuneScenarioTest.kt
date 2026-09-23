@@ -17,6 +17,8 @@ import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * The Masamune (FIN #264) - {3} Legendary Artifact - Equipment.
@@ -94,10 +96,10 @@ class TheMasamuneScenarioTest : ScenarioTestBase() {
                 game.advanceToPhase(Phase.COMBAT, Step.DECLARE_BLOCKERS)
 
                 withClue("Defender has an able blocker -> declining to block is illegal") {
-                    game.declareNoBlockers().isSuccess shouldBe false
+                    game.declareNoBlockers().outcome shouldNotBe Outcome.Done
                 }
                 withClue("Blocking the equipped attacker is legal") {
-                    game.declareBlockers(mapOf("Savannah Lions" to listOf("Grizzly Bears"))).isSuccess shouldBe true
+                    game.declareBlockers(mapOf("Savannah Lions" to listOf("Grizzly Bears"))).outcome shouldBe Outcome.Done
                 }
             }
 

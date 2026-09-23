@@ -308,6 +308,7 @@ class CostHandler {
                     exileCardsFromZone(
                         state,
                         controllerId,
+                        sourceId,
                         CostAtom.ExileFrom(Zone.GRAVEYARD, cost.filter, xCount),
                         choices.exileChoices,
                         manaPool,
@@ -623,20 +624,11 @@ class CostHandler {
             findMatchingCardsUnified(state, state.getZone(handZone), atom.filter, controllerId).size >= atom.count
         }
         is CostAtom.ExileFrom -> {
-            if (atom.anyPlayersZone) {
-                // "from a single graveyard" (Night Soil): affordability is per-zone, not pooled —
-                // one matching card in each of two graveyards pays nothing.
-                val perZone = state.turnOrder.map { owner ->
-                    findMatchingCardsUnified(
-                        state, state.getZone(ZoneKey(owner, atom.zone)), atom.filter, controllerId
-                    ).size
-                }
-                if (atom.singleZone) perZone.any { it >= atom.count }
-                else perZone.sum() >= atom.count
-            } else {
-                val zone = ZoneKey(controllerId, atom.zone)
-                findMatchingCardsUnified(state, state.getZone(zone), atom.filter, controllerId).size >= atom.count
-            }
+            // "from a single graveyard" (Night Soil): affordability is per-zone, not pooled —
+            // one matching card in each of two graveyards pays nothing.
+            val perZone = exileCandidatesByOwner(state, atom, controllerId, sourceId).values.map { it.size }
+            if (atom.singleZone) perZone.any { it >= atom.count }
+            else perZone.sum() >= atom.count
         }
         // CR 701.59b — a player unable to exile cards totalling N can't choose to collect evidence,
         // so the ability isn't activatable at all. The gate is the graveyard's summed mana value,
@@ -781,7 +773,7 @@ class CostHandler {
             CostPaymentResult.success(result.state, manaPool, result.events)
         }
         is CostAtom.ExileFrom ->
-            exileCardsFromZone(state, controllerId, atom, choices.exileChoices, manaPool)
+            exileCardsFromZone(state, controllerId, sourceId, atom, choices.exileChoices, manaPool)
         // Rides `exileChoices`, the same channel the client already fills for a graveyard exile
         // cost. No card carries both an ExileFrom and a CollectEvidence cost, so the two can't be
         // confused for one another.
@@ -1319,17 +1311,13 @@ class CostHandler {
                     // CR 119.4 — a player may pay life only if their life total is >= the payment.
                     life >= atom.amount
                 }
-                is CostAtom.ExileFrom ->
-                    if (atom.anyPlayersZone) {
-                        val perZone = state.turnOrder.map { owner ->
-                            findMatchingCardsUnified(
-                                state, state.getZone(ZoneKey(owner, atom.zone)), atom.filter, controllerId
-                            ).size
-                        }
-                        if (atom.singleZone) perZone.any { it >= atom.count } else perZone.sum() >= atom.count
-                    } else {
-                        findMatchingCardsUnified(state, state.getZone(ZoneKey(controllerId, atom.zone)), atom.filter, controllerId).size >= atom.count
-                    }
+                // A spell's additional cost has no source permanent, so `excludeSelf` has nothing
+                // to exclude here.
+                is CostAtom.ExileFrom -> {
+                    val perZone = exileCandidatesByOwner(state, atom, controllerId, sourceId = null)
+                        .values.map { it.size }
+                    if (atom.singleZone) perZone.any { it >= atom.count } else perZone.sum() >= atom.count
+                }
                 // CR 701.59b — see canPayAtom. An optional collect-evidence cast cost that can't be
                 // reached simply isn't offered as a second cast action.
                 //
@@ -1523,6 +1511,7 @@ class CostHandler {
     private fun exileCardsFromZone(
         state: GameState,
         controllerId: EntityId,
+        sourceId: EntityId,
         atom: CostAtom.ExileFrom,
         exileChoices: List<EntityId>,
         manaPool: ManaPool
@@ -1530,12 +1519,7 @@ class CostHandler {
         val fromZone = atom.zone
         val count = atom.count
 
-        // The owners whose copy of the zone is in the pool: everyone for "from a graveyard"
-        // (Night Soil), the payer alone otherwise.
-        val owners = if (atom.anyPlayersZone) state.turnOrder else listOf(controllerId)
-        val byOwner = owners.associateWith { owner ->
-            findMatchingCardsUnified(state, state.getZone(ZoneKey(owner, fromZone)), atom.filter, controllerId)
-        }
+        val byOwner = exileCandidatesByOwner(state, atom, controllerId, sourceId)
 
         val toExile = if (exileChoices.isNotEmpty()) {
             exileChoices.take(count)
@@ -1782,6 +1766,31 @@ class CostHandler {
     }
 
     // `internal` (not private) so the activated-ability cost-choice pause in
+    /**
+     * The cards [controllerId] may exile to pay [atom], keyed by the owner whose copy of the zone
+     * holds them — everyone for "from a graveyard" (Night Soil), the payer alone otherwise. The one
+     * candidate rule for [CostAtom.ExileFrom], shared by affordability, the activation-time pause in
+     * `ActivateAbilityHandler`, and payment validation, so the three can never disagree.
+     *
+     * [sourceId] is the permanent or card whose ability is being paid for; with
+     * [CostAtom.ExileFrom.excludeSelf] it is left out of the pool — "exile **another** creature card
+     * from your graveyard" (Gallia, Tragic Host) can't be paid with the card activating from there.
+     * Null for a spell's additional cost, which has no source to exclude.
+     */
+    internal fun exileCandidatesByOwner(
+        state: GameState,
+        atom: CostAtom.ExileFrom,
+        controllerId: EntityId,
+        sourceId: EntityId?,
+    ): Map<EntityId, List<EntityId>> {
+        val owners = if (atom.anyPlayersZone) state.turnOrder else listOf(controllerId)
+        val excluded = sourceId.takeIf { atom.excludeSelf }
+        return owners.associateWith { owner ->
+            findMatchingCardsUnified(state, state.getZone(ZoneKey(owner, atom.zone)), atom.filter, controllerId, sourceId)
+                .filter { it != excluded }
+        }
+    }
+
     // ActivateAbilityHandler can offer exactly the candidate set this matcher accepts at payment
     // time — see exileCardsFromGraveyard above. Keeps the pause and payment in lockstep instead
     // of re-deriving the filter match in two places.

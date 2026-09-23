@@ -24,6 +24,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Idol of the Deep King // Sovereign's Macuahuitl (LCI #155) — {2}{R} Artifact // Artifact — Equipment.
@@ -96,7 +97,7 @@ class IdolOfTheDeepKingScenarioTest : FunSpec({
                 abilityId = craftAbilityId(),
                 costPayment = AdditionalCostPayment(exiledCards = listOf(material))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         // Resolve the craft ability; the back face enters and its ETB attach trigger
         // asks for a target creature you control.
@@ -191,7 +192,7 @@ class IdolOfTheDeepKingScenarioTest : FunSpec({
                 abilityId = equipAbilityId(),
                 targets = listOf(ChosenTarget.Permanent(guide))
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // Re-attached to the new creature; the buff moves with it.
@@ -219,7 +220,7 @@ class IdolOfTheDeepKingScenarioTest : FunSpec({
                 costPayment = AdditionalCostPayment(exiledCards = listOf(courser))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
 
         // Nothing moved: Idol still the front face on the battlefield, Courser untouched.
         driver.state.getEntity(idol)!!.get<CardComponent>()!!.name shouldBe "Idol of the Deep King"

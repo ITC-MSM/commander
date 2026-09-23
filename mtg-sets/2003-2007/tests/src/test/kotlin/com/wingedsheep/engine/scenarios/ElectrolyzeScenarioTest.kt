@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Electrolyze: 2 damage divided among one or two targets, then draw a card. Covers both the
@@ -42,7 +43,7 @@ class ElectrolyzeScenarioTest : FunSpec({
 
         val handBefore = driver.getHandSize(caster)
         // Single target: the opponent player.
-        driver.castSpellWithTargets(caster, electrolyze, listOf(ChosenTarget.Player(opponent))).isSuccess shouldBe true
+        driver.castSpellWithTargets(caster, electrolyze, listOf(ChosenTarget.Player(opponent))).outcome shouldBe Outcome.Done
 
         resolveDistributing(driver, caster) { d -> mapOf(d.targets.first() to d.totalAmount) }
 
@@ -69,7 +70,7 @@ class ElectrolyzeScenarioTest : FunSpec({
         driver.castSpellWithTargets(
             caster, electrolyze,
             listOf(ChosenTarget.Permanent(c1), ChosenTarget.Permanent(c2))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
 
         resolveDistributing(driver, caster) { mapOf(c1 to 1, c2 to 1) }
 

@@ -15,6 +15,8 @@ import com.wingedsheep.sdk.scripting.DistributedCounterRemoval
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * BDD test for the [Costs.RemoveCounters] atom-based cost primitive.
@@ -124,7 +126,7 @@ class RemoveCountersAtomCostTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         val c1 = driver.state.getEntity(creature1)
             ?.get<CountersComponent>()?.getCount(CounterType.PLUS_ONE_PLUS_ONE) ?: 0
@@ -164,7 +166,7 @@ class RemoveCountersAtomCostTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("remove counters of any type (counterType = null, Tayam-style)") {
@@ -216,7 +218,7 @@ class RemoveCountersAtomCostTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         val after = driver.state.getEntity(target)?.get<CountersComponent>()
         after?.getCount(CounterType.PLUS_ONE_PLUS_ONE) shouldBe 0
         after?.getCount(CounterType.STUN) shouldBe 0
@@ -253,7 +255,7 @@ class RemoveCountersAtomCostTest : FunSpec({
             )
         )
 
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
         driver.state.getEntity(source)?.get<CountersComponent>()?.getCount(CounterType.CHARGE) shouldBe 0
     }
 })

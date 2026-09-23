@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Scenario tests for Restless Reef (LCI #282).
@@ -46,7 +47,7 @@ class RestlessReefScenarioTest : FunSpec({
         driver.giveColorlessMana(player, 2)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = reef, abilityId = animateAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
     }
 
@@ -56,7 +57,7 @@ class RestlessReefScenarioTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val reef = driver.putCardInHand(player, "Restless Reef")
-        driver.playLand(player, reef).isSuccess shouldBe true
+        driver.playLand(player, reef).outcome shouldBe Outcome.Done
 
         driver.isTapped(reef) shouldBe true
     }

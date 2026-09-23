@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.scripting.effects.HijackScope
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for Secret of Bloodbending.
@@ -51,7 +52,7 @@ class SecretOfBloodbendingScenarioTest : FunSpec({
         val spell = driver.putCardInHand(active, "Secret of Bloodbending")
         driver.giveMana(active, Color.BLUE, 4) // {U}{U}{U}{U}, no waterbend
 
-        driver.castSpell(active, spell, targets = listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(active, spell, targets = listOf(opponent)).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve
 
         val hijack = driver.state.getEntity(opponent)?.get<PlayerTurnHijackedComponent>()
@@ -79,7 +80,7 @@ class SecretOfBloodbendingScenarioTest : FunSpec({
                 wasWaterbendPaid = true,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass() // resolve
 
         val hijack = driver.state.getEntity(opponent)?.get<PlayerTurnHijackedComponent>()

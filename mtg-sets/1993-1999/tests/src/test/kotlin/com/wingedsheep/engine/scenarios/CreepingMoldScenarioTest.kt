@@ -5,6 +5,8 @@ import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario tests for Creeping Mold (VIS #103, reprinted in MRD) — {2}{G}{G} Sorcery.
@@ -30,7 +32,7 @@ class CreepingMoldScenarioTest : ScenarioTestBase() {
                     .build()
 
                 val gnomes = game.findPermanent("Bottle Gnomes")!!
-                game.castSpell(1, "Creeping Mold", gnomes).isSuccess shouldBe true
+                game.castSpell(1, "Creeping Mold", gnomes).outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 withClue("The targeted artifact should be destroyed") {
@@ -50,7 +52,7 @@ class CreepingMoldScenarioTest : ScenarioTestBase() {
                     .build()
 
                 val ruleOfLaw = game.findPermanent("Rule of Law")!!
-                game.castSpell(1, "Creeping Mold", ruleOfLaw).isSuccess shouldBe true
+                game.castSpell(1, "Creeping Mold", ruleOfLaw).outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 withClue("The targeted enchantment should be destroyed") {
@@ -70,7 +72,7 @@ class CreepingMoldScenarioTest : ScenarioTestBase() {
                     .build()
 
                 val island = game.findPermanent("Island")!!
-                game.castSpell(1, "Creeping Mold", island).isSuccess shouldBe true
+                game.castSpell(1, "Creeping Mold", island).outcome shouldBe Outcome.Done
                 game.resolveStack()
 
                 withClue("The targeted land should be destroyed") {
@@ -90,7 +92,7 @@ class CreepingMoldScenarioTest : ScenarioTestBase() {
 
                 val bears = game.findPermanent("Grizzly Bears")!!
                 withClue("A nonartifact creature must not be targetable") {
-                    game.castSpell(1, "Creeping Mold", bears).isSuccess shouldBe false
+                    game.castSpell(1, "Creeping Mold", bears).outcome shouldNotBe Outcome.Done
                 }
                 withClue("The creature should still be on the battlefield") {
                     game.isOnBattlefield("Grizzly Bears") shouldBe true

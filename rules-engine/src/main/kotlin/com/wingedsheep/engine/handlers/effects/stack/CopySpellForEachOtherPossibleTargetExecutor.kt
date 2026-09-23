@@ -17,6 +17,7 @@ import com.wingedsheep.engine.state.components.stack.TargetsComponent
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.CopySpellForEachOtherPossibleTargetEffect
 import kotlin.reflect.KClass
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Executor for [CopySpellForEachOtherPossibleTargetEffect] — CR 707.10d, the Zada / Mirrorwing Dragon
@@ -132,7 +133,7 @@ class CopySpellForEachOtherPossibleTargetExecutor(
                 copyTotal = candidates.size,
                 controllerId = casterId
             )
-            if (copyResult.isSuccess) {
+            if (copyResult.outcome is Outcome.Done) {
                 currentState = copyResult.newState
                 allEvents.addAll(copyResult.events)
             }

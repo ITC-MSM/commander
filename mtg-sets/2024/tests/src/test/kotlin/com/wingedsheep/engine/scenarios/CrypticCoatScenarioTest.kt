@@ -20,6 +20,7 @@ import com.wingedsheep.sdk.scripting.effects.FaceDownMode
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Cryptic Coat (MKM #50) — {2}{U} Artifact — Equipment.
@@ -117,7 +118,7 @@ class CrypticCoatScenarioTest : FunSpec({
         driver.giveMana(player, Color.BLUE, 2)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = coat, abilityId = bounceAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.state.getZone(ZoneKey(player, Zone.HAND)).contains(coat) shouldBe true
@@ -137,7 +138,7 @@ class CrypticCoatScenarioTest : FunSpec({
         driver.giveMana(player, Color.BLUE, 2)
         driver.submit(
             ActivateAbility(playerId = player, sourceId = coat, abilityId = bounceAbilityId)
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         driver.putCardOnTopOfLibrary(player, "Coat Test Bear")

@@ -12,6 +12,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Chrome Companion (EOE #236).
@@ -57,7 +59,7 @@ class ChromeCompanionTest : FunSpec({
                 targets = listOf(ChosenTarget.Card(targetCard, opponent, Zone.GRAVEYARD))
             )
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
 
         // Stack: activated ability (bottom), BecomesTapped trigger (top)
         // Resolve the gain life trigger first
@@ -86,7 +88,7 @@ class ChromeCompanionTest : FunSpec({
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
 
         val attackResult = driver.declareAttackers(activePlayer, listOf(companion), opponent)
-        attackResult.isSuccess shouldBe true
+        attackResult.outcome shouldBe Outcome.Done
 
         // BecomesTapped trigger fires when Chrome Companion is tapped during attack
         driver.bothPass()
@@ -151,7 +153,7 @@ class ChromeCompanionTest : FunSpec({
                 targets = listOf(ChosenTarget.Permanent(battlefieldCreature))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("cannot activate without paying {2}") {
@@ -179,6 +181,6 @@ class ChromeCompanionTest : FunSpec({
                 targets = listOf(ChosenTarget.Card(targetCard, opponent, Zone.GRAVEYARD))
             )
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 })

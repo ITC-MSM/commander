@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Slickshot Lockpicker (OTJ #67) — {2}{U} 2/3 Creature — Human Rogue.
@@ -59,7 +60,7 @@ class SlickshotLockpickerScenarioTest : FunSpec({
                 useAlternativeCost = true,
                 paymentStrategy = PaymentStrategy.FromPool
             )
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         driver.bothPass()
 
         // The spell was exiled after the flashback cast.

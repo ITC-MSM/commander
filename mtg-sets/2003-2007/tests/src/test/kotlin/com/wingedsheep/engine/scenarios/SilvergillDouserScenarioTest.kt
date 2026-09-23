@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.model.Deck
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Silvergill Douser (LRW #87) — "{T}: Target creature gets -X/-0 until end of turn, where X is the
@@ -43,7 +44,7 @@ class SilvergillDouserScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, douser, douseAbility, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         val after = projector.project(d.state)
@@ -62,7 +63,7 @@ class SilvergillDouserScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, douser, douseAbility, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         val after = projector.project(d.state)
@@ -81,7 +82,7 @@ class SilvergillDouserScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, douser, douseAbility, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         val after = projector.project(d.state)
@@ -99,7 +100,7 @@ class SilvergillDouserScenarioTest : FunSpec({
 
         d.submit(
             ActivateAbility(d.player1, douser, douseAbility, targets = listOf(ChosenTarget.Permanent(bear)))
-        ).isSuccess shouldBe true
+        ).outcome shouldBe Outcome.Done
         d.bothPass()
 
         val after = projector.project(d.state)

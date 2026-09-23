@@ -23,6 +23,8 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TriggerBinding
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import com.wingedsheep.engine.core.Outcome
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Gandalf the White ({3}{W}{W} Legendary Creature — Avatar Wizard 4/5):
@@ -192,7 +194,7 @@ class GandalfTheWhiteTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = legendary, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("controller may cast an artifact at instant speed with Gandalf the White") {
@@ -210,7 +212,7 @@ class GandalfTheWhiteTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = trinket, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe true
+        result.outcome shouldBe Outcome.Done
     }
 
     test("a vanilla non-legendary non-artifact creature still can't be cast at instant speed") {
@@ -229,7 +231,7 @@ class GandalfTheWhiteTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p1, cardId = bear, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     test("the static is controller-only: an opponent's legendary creature doesn't gain flash") {
@@ -250,7 +252,7 @@ class GandalfTheWhiteTest : FunSpec({
         val result = driver.submit(
             CastSpell(playerId = p2, cardId = legendary, paymentStrategy = PaymentStrategy.FromPool)
         )
-        result.isSuccess shouldBe false
+        result.outcome shouldNotBe Outcome.Done
     }
 
     // ------------------------------------------------------------------
@@ -270,7 +272,7 @@ class GandalfTheWhiteTest : FunSpec({
         driver.giveMana(p1, Color.GREEN, 2)
 
         val handBefore = driver.getHandSize(p1)
-        driver.castSpell(p1, legendary).isSuccess shouldBe true
+        driver.castSpell(p1, legendary).outcome shouldBe Outcome.Done
         driver.bothPass()  // resolve the legendary
         driver.bothPass()  // first ETB Witness draw
         driver.bothPass()  // duplicated ETB Witness draw
@@ -291,7 +293,7 @@ class GandalfTheWhiteTest : FunSpec({
         driver.giveMana(p1, Color.GREEN, 2)
 
         val handBefore = driver.getHandSize(p1)
-        driver.castSpell(p1, bear).isSuccess shouldBe true
+        driver.castSpell(p1, bear).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass()  // single ETB Witness draw
 
@@ -318,7 +320,7 @@ class GandalfTheWhiteTest : FunSpec({
         driver.giveMana(p2, Color.GREEN, 2)
 
         val handBefore = driver.getHandSize(p1)
-        driver.castSpell(p2, legendary).isSuccess shouldBe true
+        driver.castSpell(p2, legendary).outcome shouldBe Outcome.Done
         driver.bothPass()  // resolve legendary
         driver.bothPass()  // first ETB Witness draw (p1)
         driver.bothPass()  // duplicated ETB Witness draw (p1)
@@ -340,7 +342,7 @@ class GandalfTheWhiteTest : FunSpec({
         driver.giveMana(p1, Color.GREEN, 2)
 
         val p2HandBefore = driver.getHandSize(p2)
-        driver.castSpell(p1, legendary).isSuccess shouldBe true
+        driver.castSpell(p1, legendary).outcome shouldBe Outcome.Done
         driver.bothPass()
         driver.bothPass() // single (un-doubled) opponent draw
 
@@ -362,7 +364,7 @@ class GandalfTheWhiteTest : FunSpec({
         driver.giveMana(p1, Color.BLACK, 2)
 
         val handBefore = driver.getHandSize(p1)
-        driver.castSpell(p1, doomBlade, listOf(construct)).isSuccess shouldBe true
+        driver.castSpell(p1, doomBlade, listOf(construct)).outcome shouldBe Outcome.Done
         driver.bothPass()  // resolve Doom Blade — Test Construct dies
         driver.bothPass()  // first LTB Witness draw
         driver.bothPass()  // duplicated LTB Witness draw
@@ -383,7 +385,7 @@ class GandalfTheWhiteTest : FunSpec({
         // Make the legendary token by resolving a real spell, so it enters legitimately.
         val summon = driver.putCardInHand(p1, "Summon Legend")
         driver.giveMana(p1, Color.GREEN, 2)
-        driver.castSpell(p1, summon).isSuccess shouldBe true
+        driver.castSpell(p1, summon).outcome shouldBe Outcome.Done
         driver.bothPass()  // resolve Summon Legend → legendary 2/2 Spirit token
 
         // The only creature that's neither Gandalf nor the witness is the token.
@@ -395,7 +397,7 @@ class GandalfTheWhiteTest : FunSpec({
         driver.giveMana(p1, Color.BLACK, 2)
 
         val handBefore = driver.getHandSize(p1)
-        driver.castSpell(p1, doomBlade, listOf(token)).isSuccess shouldBe true
+        driver.castSpell(p1, doomBlade, listOf(token)).outcome shouldBe Outcome.Done
         driver.bothPass()  // resolve Doom Blade — the legendary token dies and is swept (704.5d)
         driver.bothPass()  // first LTB Witness draw
         driver.bothPass()  // duplicated LTB Witness draw (Gandalf, matching the token's last-known Legendary)
@@ -418,14 +420,14 @@ class GandalfTheWhiteTest : FunSpec({
         // Make the bear an artifact for as long as it's on the battlefield.
         val artifactify = driver.putCardInHand(p1, "Artifactify")
         driver.giveColorlessMana(p1, 1)
-        driver.castSpell(p1, artifactify, listOf(bear)).isSuccess shouldBe true
+        driver.castSpell(p1, artifactify, listOf(bear)).outcome shouldBe Outcome.Done
         driver.bothPass()  // resolve Artifactify — bear is now an artifact creature on the battlefield
 
         val doomBlade = driver.putCardInHand(p1, "Doom Blade")
         driver.giveMana(p1, Color.BLACK, 2)
 
         val handBefore = driver.getHandSize(p1)
-        driver.castSpell(p1, doomBlade, listOf(bear)).isSuccess shouldBe true
+        driver.castSpell(p1, doomBlade, listOf(bear)).outcome shouldBe Outcome.Done
         driver.bothPass()  // resolve Doom Blade — the (now-artifact) bear dies; in the graveyard it
                            // is a plain creature again, so only last-known info records the artifact type
         driver.bothPass()  // first LTB Witness draw
@@ -448,7 +450,7 @@ class GandalfTheWhiteTest : FunSpec({
         driver.giveMana(p1, Color.BLACK, 2)
 
         val handBefore = driver.getHandSize(p1)
-        driver.castSpell(p1, doomBlade, listOf(bear)).isSuccess shouldBe true
+        driver.castSpell(p1, doomBlade, listOf(bear)).outcome shouldBe Outcome.Done
         driver.bothPass()  // resolve Doom Blade
         driver.bothPass()  // single LTB Witness draw
 
@@ -471,7 +473,7 @@ class GandalfTheWhiteTest : FunSpec({
         driver.giveColorlessMana(p1, 2)
 
         val handBefore = driver.getHandSize(p1)
-        driver.castSpell(p1, construct).isSuccess shouldBe true
+        driver.castSpell(p1, construct).outcome shouldBe Outcome.Done
         driver.bothPass()  // resolve Test Construct ETB
         driver.bothPass()  // original ETB Witness draw
         driver.bothPass()  // duplicated by Gandalf

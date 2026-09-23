@@ -6,6 +6,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.player.ScriedOrSurveiledThisTurnComponent
 import com.wingedsheep.sdk.scripting.effects.EmitSurveiledEventEffect
 import kotlin.reflect.KClass
 
@@ -40,8 +41,11 @@ class EmitSurveiledEventExecutor : EffectExecutor<EmitSurveiledEventEffect> {
             ?.let { state.getEntity(it)?.get<CardComponent>()?.name }
             ?: "Surveil"
 
+        // Turn history for "if you've scried or surveilled this turn" — recorded here, where the
+        // event is, so the condition and the trigger can never disagree.
+        val marked = state.updateEntity(playerId) { it.with(ScriedOrSurveiledThisTurnComponent) }
         return EffectResult.success(
-            state,
+            marked,
             listOf(SurveiledEvent(playerId = playerId, count = count, sourceName = sourceName))
         )
     }

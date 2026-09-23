@@ -18,6 +18,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import com.wingedsheep.engine.core.Outcome
 
 /**
  * Tests for SelectTargetEffect — mid-resolution pipeline targeting.
@@ -109,7 +110,7 @@ class SelectTargetPipelineTest : FunSpec({
         // Add Pipeline Bolt directly to hand (avoid flaky random draw)
         val boltId = driver.putCardInHand(caster, "Pipeline Bolt")
         val castResult = driver.castSpell(caster, boltId)
-        castResult.isSuccess shouldBe true
+        castResult.outcome shouldBe Outcome.Done
 
         // Spell is on the stack — resolve it
         driver.bothPass()
