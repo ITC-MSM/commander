@@ -1023,6 +1023,9 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   and marked-damage-aware) that `target1` deals **to `target2`** is stored into that pipeline number
   variable for a following effect to read via `DynamicAmount.VariableReference` — e.g. The Last Agni Kai:
   `Fight(yours, theirs, "excess") then AddMana(RED, VariableReference("excess"))`.
+  If either fighter is no longer a creature on the battlefield when the fight happens, neither deals
+  damage (CR 701.14b) and the excess variable is 0 — this covers a `Self` fighter ("it fights"), which
+  no target re-check removes.
 - `Effects.DividedDamage(total, minTargets, maxTargets, dynamicTotal?)` — "N damage divided as you
   choose among target ..." The targets come from the ability's target requirement; pair with
   `TargetCreature(count, minCount)` (Forked Lightning, Skirk Volcanist) or, for "any number of target",
@@ -3367,6 +3370,15 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   declining and an empty hand are both no-ops rather than stuck decisions. Redshift, Rocketeer Chief's
   exhaust ability (`filter = Filters.Permanent, anyNumber = true`).
 - `incubate(n)` — make an Incubator token with N counters.
+- `empowerJace(n)` — Empower Jace N (CR 701.71a, Reality Fracture): if you control no Jace planeswalker
+  token, create the predefined `Jace` token (blue, nonlegendary, 0 loyalty, "−1: Surveil 1", "−3: Draw a
+  card"); then choose a Jace planeswalker token you control (auto-picked when there's one, a battlefield
+  choice otherwise — not targeted) and put N loyalty counters on it. `n` takes an `Int` or a
+  `DynamicAmount` ("empower Jace X, where X is the number of creatures you control" — Repurposed
+  Enforcer). Pure composition: `ConditionalEffect(YouControl(JACE_PLANESWALKER_TOKEN, negate))` →
+  `GatherCards` → `SelectFromCollection(ChooseExactly 1)` → `AddCountersToCollection(LOYALTY)`. A nontoken
+  Jace planeswalker doesn't count. Empower Jace 0 with no token leaves a 0-loyalty token for the
+  CR 704.5i state-based action.
 - `impulse(count?, expiry?)` — impulse draw: exile the top N of your library, may play those cards until `expiry` (default end of turn); played cards still pay their mana. `count` takes a plain `Int` or a `DynamicAmount` for "exile *that many* cards" (Virtue of Courage, counting off the noncombat damage just dealt via `ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT`). For the play-free variant compose with `GrantPlayWithoutPayingCostEffect` (cf. `shuffleAndExileTopPlayFree`). Irascible Wolverine (1), Annie Flash, the Veteran (2). `MayPlayExpiry` options: `EndOfTurn` (default), `Permanent` ("for as long as it remains exiled"), `UntilControllerStep(step, includeCurrentTurn?)` / the `UntilEndOfNextTurn` + `UntilNextEndStep` shorthands (turn-keyed, cleaned up at the matching cleanup), and `UntilSourceExilesAnother` — a **self-superseding** permission that persists across turns (and survives the granting source leaving play) but is revoked the moment that *same source* grants another such permission (exiles another card), so only the source's most-recently-exiled card stays playable and the earlier one remains in exile but unplayable. Requires the grant to carry a source id (falls back to `Permanent` behaviour without one); models "you may play that card until you exile another card with this creature" (**Superior Foes of Spider-Man**). `WhileYouControlSource(sourceDescription?)` is the **source-keyed** window — "you may cast it for as long as you control this creature" (**Taster of Wares**): the permission ends when the granting permanent leaves the battlefield *or* its projected controller stops being the grant's "you", so a Threaten-style steal of the source ends it just as a destroy would. It is the `MayPlayExpiry` mirror of `Duration.WhileYouControlSource` and is one-way per CR 611.2b — `GrantMayPlayFromExileExecutor` refuses to create the grant at all when the source is already gone or already stolen at resolution (the rule's Master Thief example), and `EndedDurationExpiryCheck` *deletes* the permission once the window closes rather than gating it, so regaining control never revives it. The exiled card stays exiled either way; only the permission ends. Requires a source id. Contrast `Permanent`, which deliberately survives the source leaving play. `WhileSourceOnBattlefield(sourceDescription?)` is its **controller-blind** sibling — "for as long as this permanent remains on the battlefield", closing on the source's *zone* alone. Use it when the permission is handed to a player who does not control the source: **Shared Fate** ("Each player may look at cards they exiled with this enchantment, and they may play lands and cast spells from among those cards") grants to every player at the table, so keying the window to "you control the source" would revoke every opponent's grant on the first state-based check. Because it ignores the controller, a Threaten-style steal of the source leaves the permission intact — right for a grant that stands in for a printed static ability, which keeps functioning under a new controller. Same one-way CR 611.2b machinery as `WhileYouControlSource` (never created if the source has already left; deleted rather than gated once the window closes), and likewise requires a source id.
 
   A `GrantMayPlayFromExile` also makes each granted card **visible to its grantee** (`RevealedToComponent`), additively. A card you may play is a card you may look at, and every printed card of this shape says both halves in one breath — hideaway, foretell, Shared Fate's "may look at … and they may play". Without it a card exiled face down (`MoveCollection(faceDown = FaceDownMode.HIDDEN)`, which Shared Fate's replacement uses) would leave the grantee holding a permission over an object they cannot identify.
@@ -8524,6 +8536,13 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
   Uses the ordinary server X picker and the same sorcery-speed / per-turn loyalty restrictions
   as fixed costs. Spending all loyalty is legal; the ability still resolves after its source leaves.
   The client ability menu receives `loyaltyX = true` and renders −X. Chandra Nalaar uses this shape.
+- `grantedLoyaltyAbility(±N) { ... }` — top-level builder that *returns* a loyalty ability instead of
+  adding it to the card, for "Planeswalkers you control have '[−4]: …'" — pass it to
+  `GrantActivatedAbility(ability, GroupFilter(GameObjectFilter.Planeswalker.youControl()))` (Way of the
+  Wildspeaker, Avatar of Burgeoning Echoes). The granted ability keeps every loyalty rule: sorcery
+  timing, the one-loyalty-activation-per-planeswalker-per-turn limit shared with printed abilities, and
+  the loyalty cost. The planeswalker's client ability menu lists granted loyalty abilities after its
+  printed ones, labelled with the ability's `description` (its text isn't on the host's oracle).
 
 ---
 
