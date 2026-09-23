@@ -13,6 +13,7 @@ import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.HasDealtCombatDamageToPlayerComponent
+import com.wingedsheep.engine.state.components.battlefield.PreparedComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.battlefield.WasDealtDamageThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.AttackedThisCombatComponent
@@ -430,6 +431,7 @@ internal class AffectsFilterResolver {
         StatePredicate.IsOnBattlefield -> true
         StatePredicate.IsTapped -> container.has<TappedComponent>()
         StatePredicate.IsUntapped -> !container.has<TappedComponent>()
+        StatePredicate.IsPrepared -> container.has<PreparedComponent>()
         StatePredicate.IsAttacking -> container.has<AttackingComponent>()
         StatePredicate.IsAttackingAlone -> container.has<AttackingComponent>() &&
             state.getBattlefield().none {

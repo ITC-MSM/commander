@@ -548,6 +548,7 @@ class BeginningPhaseManager(
         StatePredicate.IsOnBattlefield,
         StatePredicate.IsTapped,
         StatePredicate.IsUntapped,
+        StatePredicate.IsPrepared,
         StatePredicate.IsAttacking,
         StatePredicate.IsAttackingAlone,
         StatePredicate.IsAttackingAnOpponent,

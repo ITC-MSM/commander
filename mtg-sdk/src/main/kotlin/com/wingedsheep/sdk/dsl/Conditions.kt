@@ -1131,6 +1131,13 @@ object Conditions {
     fun SourceMatches(filter: GameObjectFilter): ConditionInterface =
         EntityMatches(EffectTarget.Self, filter)
 
+    /**
+     * If this permanent is prepared (Secrets of Strixhaven prepare). Wrap in [Not] for
+     * "if this creature isn't prepared, it becomes prepared" (Woodwork Prodigy).
+     */
+    val SourceIsPrepared: ConditionInterface =
+        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.prepared())
+
     /** If this creature is attacking. */
     val SourceIsAttacking: ConditionInterface =
         SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.attacking())

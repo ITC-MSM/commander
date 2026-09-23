@@ -68,6 +68,12 @@ class ContinuationHandler(
         registerAutoResumerModule(replacementResumer)
     }
 
+    /** Continuation types with a registered resumer, for `ContinuationResumerCoverageTest`. */
+    fun registeredAnswerTypes() = registry.registeredAnswerTypes()
+
+    /** Automatic continuation types with a registered auto-resumer, for the same coverage test. */
+    fun registeredAutomaticTypes() = registry.registeredAutomaticTypes()
+
     /**
      * Resume execution after a decision is submitted.
      *

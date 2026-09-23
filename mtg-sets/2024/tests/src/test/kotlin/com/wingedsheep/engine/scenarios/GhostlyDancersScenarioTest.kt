@@ -132,16 +132,9 @@ class GhostlyDancersScenarioTest : FunSpec({
         d.state.getEntity(roomId)!!.get<RoomComponent>()!!.isFullyUnlocked shouldBe true
     }
 
-    // NOTE: Ghostly Dancers also has the second Eerie trigger "whenever you fully unlock a Room,
-    // create a 3/1 white flying Spirit token" (Triggers.RoomFullyUnlocked, ANY binding — identical
-    // to the shipped Erratic Apparition / Gremlin Tamer). A probe showed this trigger does NOT fire
-    // off a real unlock for ANY of those cards: the unlock action emits a RoomFullyUnlockedEvent,
-    // but TriggerDetector.detectTriggers does not match the RoomFullyUnlocked trigger, so no Eerie
-    // payoff happens. That is a pre-existing engine gap (no existing test exercises the fully-unlock
-    // Eerie payoff end-to-end), out of scope for this card. The trigger is authored correctly here;
-    // when the engine gap is fixed it will fire. This test pins the part that works today: the
-    // unlock fully unlocks the Room and the event is emitted.
-    test("fully unlocking a Room emits RoomFullyUnlockedEvent (Eerie payoff blocked by a pre-existing engine gap)") {
+    // The fully-unlock half of Eerie used to be silently dropped: TriggerIndex had no category for
+    // RoomFullyUnlockedEvent, so the per-event trigger loop never looked at it.
+    test("Eerie: fully unlocking a Room creates a 3/1 white flying Spirit token") {
         val d = newDriver()
         val me = d.player1
 
@@ -160,6 +153,10 @@ class GhostlyDancersScenarioTest : FunSpec({
 
         d.state.getEntity(roomId)!!.get<RoomComponent>()!!.isFullyUnlocked shouldBe true
         ur.events.any { it::class.simpleName == "RoomFullyUnlockedEvent" } shouldBe true
+
+        val tokensBefore = d.tokenCount(me)
+        while (!d.isPaused && d.state.stack.isNotEmpty()) d.bothPass()
+        d.tokenCount(me) shouldBe tokensBefore + 1
     }
 
     test("Eerie: an enchantment entering creates a 3/1 white flying Spirit token") {

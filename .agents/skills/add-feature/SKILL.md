@@ -109,13 +109,13 @@ resolution, empty/zero input, simultaneous instances, replacement interaction):
 |---|---|
 | **SDK (data)** | Pure, serializable, fully parameterized. Round-trips through serialization |
 | **Engine handler/executor** | Right executor picks it up, emits the right `GameEvent`s, returns the right `GameState`, registered in the right registry |
-| **TriggerDetector** | Detected from emitted events, registered in `TriggerIndex`, on the correct path — battlefield `detectTriggers` vs `detectPhaseStepTriggers` vs `detectLeavesBattlefieldTriggers` |
+| **TriggerDetector** | Detected from emitted events, on the correct path — battlefield `detectTriggers` vs `detectPhaseStepTriggers` vs `detectLeavesBattlefieldTriggers`. `TriggerIndex`'s two category maps and `TriggerMatcher.matchesTrigger` are exhaustive, so a new `EventPattern` or `GameEvent` won't compile until you place it. The compiler can't tell you *which* branch is right: an event the per-event loop should see needs a real category, not the `emptyList()` group |
 | **StateProjector** | Applied in the correct Rule 613 layer, reflected in projected state, dependency ordering holds |
-| **Continuations** | Player-input features pause with a `PendingDecision` and resume carrying targets/collections |
+| **Continuations** | Player-input features pause with a `PendingDecision` and resume carrying targets/collections. `ContinuationResumerCoverageTest` fails on a frame with no registered resumer |
 | **Cleanup** | Duration-bounded state removed at the right time (end of turn/combat, source leaves) |
 | **Server DTO / masking** | New `GameEvent` → branch in `ClientEvent.kt`'s exhaustive `when`; new client-visible state → `ClientStateTransformer`; private info masked by `StateMasker` |
 | **Legal actions** | New player action enumerated by an `ActionEnumerator` — never computed client-side |
-| **Frontend** | New decision/UX → component in `web-client/src/components/decisions/`; new keyword/icon → `enums.ts`, display names, icon index |
+| **Frontend** | New decision/UX → component in `web-client/src/components/decisions/`; new keyword/icon → `enums.ts`, display names, icon index. `KeywordClientMirrorTest` / `CounterTypeClientMirrorTest` fail on an unmirrored `Keyword` / `CounterType` |
 
 Write a short trace per scenario and fix every gap before proceeding.
 

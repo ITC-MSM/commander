@@ -2,7 +2,7 @@
 
 **Set Size:** 285 cards
 **Release Date:** October 2, 2026
-**Implemented:** 146 / 285
+**Implemented:** 171 / 285
 | Section    | Total | Done |
 |------------|-------|------|
 | Extras     | 285   | 78   |
@@ -15,8 +15,8 @@
 
 > Current Scryfall data marks every FRA printing `booster: false`, so the import places all cards here. This is a metadata classification, not a claim that FRA lacks boosters. Refresh the import when those flags change; counted separately by `scripts/card-status`.
 
-- [ ] Academic Ascent
-- [ ] Aerid Konstrari
+- [x] Academic Ascent
+- [x] Aerid Konstrari
 - [x] Afterthought Sentry
 - [ ] Ajani Resolute
 - [ ] Ajani Unrelenting
@@ -37,7 +37,7 @@
 - [ ] Blossom-Blessed Angel
 - [ ] Break Under Pressure
 - [x] Budding Insurgent
-- [ ] Campus Crier
+- [x] Campus Crier
 - [ ] Carnivorous Cultivator
 - [x] Cast Away Doubt
 - [x] Chandra's Emberling
@@ -57,7 +57,7 @@
 - [ ] Danitha, Spear of Agony
 - [ ] Danitha, Sword of Hope
 - [x] Dark Matter Manipulator
-- [ ] Darklight Phoenix
+- [x] Darklight Phoenix
 - [x] Dedicated Commons
 - [x] Denzilore Fatehold
 - [x] Deserted Beach
@@ -113,15 +113,15 @@
 - [x] Haunted Ridge
 - [x] Heartstring Puller
 - [ ] Heartwood Crafter
-- [ ] Hexhaven Battalion
+- [x] Hexhaven Battalion
 - [ ] Hexhaven Dueling Arena
 - [ ] Hexhaven Invigorator
-- [ ] Hungering Puppetbeast
+- [x] Hungering Puppetbeast
 - [ ] Hunter's Axe
 - [x] Icy Reception
 - [ ] Identity Echo
 - [ ] Infinite Coursework
-- [ ] Ingris Stingerquill
+- [x] Ingris Stingerquill
 - [x] Innovative Commons
 - [ ] Inspired Tethermage
 - [x] Island
@@ -137,7 +137,7 @@
 - [ ] Kiora of Salt and Sand
 - [x] Konstrari Annex
 - [x] Konstrari Charm
-- [ ] Konstrari Improviser
+- [x] Konstrari Improviser
 - [x] Koth of the Homestead
 - [x] Koth, the Geomancer
 - [ ] Kwia Vigorbloom
@@ -165,12 +165,12 @@
 - [x] Mountain
 - [x] Multiply by Zero
 - [x] Murmuring Volume
-- [ ] No Admittance
+- [x] No Admittance
 - [ ] Null Summoner
 - [ ] Omnipresence
 - [x] Overgrown Farmland
-- [ ] Overwrite the Multiverse
-- [ ] Paradox Shaper
+- [x] Overwrite the Multiverse
+- [x] Paradox Shaper
 - [x] Perfected Theory
 - [x] Pia, Aether Ascetic
 - [x] Pia, Determined Rebuilder
@@ -181,10 +181,10 @@
 - [x] Predictive Preparations
 - [ ] Primal Witchstalker
 - [ ] Proctor of Potential
-- [ ] Proft, Consulting Detective
+- [x] Proft, Consulting Detective
 - [ ] Proft, Sinister Mastermind
 - [x] Prophesied End
-- [ ] Protege's Awakening
+- [x] Protege's Awakening
 - [ ] Prudent Fateseer
 - [ ] Puppet Crafting
 - [ ] Pyre Rhymer
@@ -196,18 +196,18 @@
 - [x] Rescue Girl, First Responder
 - [x] Restore with Empathy
 - [x] Return to the Light Realms
-- [ ] Rewrite Regrets
+- [x] Rewrite Regrets
 - [ ] Rise of the Deathbringer
 - [x] Rockfall Vale
 - [ ] Roiling Canopy
 - [x] Room of Refuge
-- [ ] Ruric Thar, Biomagus
+- [x] Ruric Thar, Biomagus
 - [ ] Ruric Thar, Magecrusher
-- [ ] Saheeli, Consul of Oversight
+- [x] Saheeli, Consul of Oversight
 - [x] Saheeli, Jewel of Avishkar
 - [x] Samut, Hazoret's Champion
 - [ ] Samut, Tyrant of Naktamun
-- [ ] Sanctum Lurker
+- [x] Sanctum Lurker
 - [x] Screeching Soulbreaker
 - [ ] Seasoned Cryomancer
 - [ ] Semester Foreseer
@@ -218,7 +218,7 @@
 - [x] Skilled Battlecarver
 - [x] Solarium Sentry
 - [ ] Solitary Cell
-- [ ] Solve for Disappointment
+- [x] Solve for Disappointment
 - [x] Something Worth Saving
 - [ ] Sphinx of False Conclusions
 - [ ] Sphinx's Approach
@@ -231,15 +231,15 @@
 - [x] Surgical Precision
 - [ ] Surveillance Phantasm
 - [x] Swamp
-- [ ] Tam's Resistance
+- [x] Tam's Resistance
 - [ ] Tam, the Possibility
 - [ ] Tarmogoyf
-- [ ] Tenured Tethermage
+- [x] Tenured Tethermage
 - [x] Terminal Criticism
 - [x] Tether Technician
 - [x] Tethermage's Advantage
 - [x] Tetsuko Umezawa, Fugitive
-- [ ] Tetsuko Umezawa, Pursuer
+- [x] Tetsuko Umezawa, Pursuer
 - [x] Teyo, Diamondblade Mage
 - [x] Teyo, Lightshield Expert
 - [ ] Thalia, the Survivor
@@ -256,7 +256,7 @@
 - [ ] Tomik, Izzet Sparkmage
 - [ ] Tomik, Orzhov Lawmage
 - [x] Transformative Commons
-- [ ] Traxos, Academy Guardian
+- [x] Traxos, Academy Guardian
 - [x] Traxos, Scourge Eternal
 - [ ] Twinned Vision
 - [x] Twisted Fates
@@ -273,7 +273,7 @@
 - [x] Vinelasher Adept
 - [ ] Violent Echoes
 - [ ] Void Extrapolator
-- [ ] Vraska's Final Mercy
+- [x] Vraska's Final Mercy
 - [ ] Vraska, Soul of Stone
 - [x] Vraska, the Cutting Glare
 - [ ] Warrior's Blades
@@ -284,13 +284,13 @@
 - [ ] Way of the Mind Sculptor
 - [x] Way of the Necromancer
 - [ ] Way of the Paradox
-- [ ] Way of the Pyromancer
+- [x] Way of the Pyromancer
 - [ ] Way of the Warlord
 - [x] Way of the Wildspeaker
 - [ ] Whiplash Wordsmith
 - [x] Winter, Team Player
 - [ ] Winter, Tormented Loner
-- [ ] Woodwork Prodigy
+- [x] Woodwork Prodigy
 - [x] Wrath of the Bloodmane
 - [x] Wrecking Gecko
 - [x] Yargle, Glutton of Urborg

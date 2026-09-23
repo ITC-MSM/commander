@@ -55,6 +55,12 @@ class ContinuationResumerRegistry {
         autoResumers[autoResumer.frameType] = autoResumer
     }
 
+    /** Every [AnswerContinuation] type with a registered resumer; read by the coverage test. */
+    fun registeredAnswerTypes(): Set<KClass<out AnswerContinuation>> = resumers.keys.toSet()
+
+    /** Every [AutomaticContinuation] type with a registered auto-resumer; read by the coverage test. */
+    fun registeredAutomaticTypes(): Set<KClass<out AutomaticContinuation>> = autoResumers.keys.toSet()
+
     /**
      * Resume a continuation using the appropriate resumer.
      *

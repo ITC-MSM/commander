@@ -154,8 +154,52 @@ class DynamicAmountEvaluator(
         // and the condition itself may not be evaluable in a display-only context either.
         is DynamicAmount.Conditional -> isDeterminable(state, amount.ifTrue, context) &&
             isDeterminable(state, amount.ifFalse, context)
+        is DynamicAmount.GreatestAmongPlayers -> isDeterminable(state, amount.inner, context)
 
-        else -> true
+        // Leaves with no entity reference to bind: they read game state, the resolution context
+        // or a pipeline slot, each of which [evaluate] answers without a missing referent. A new
+        // leaf that names an entity needs a branch of its own, like [DynamicAmount.EntityProperty].
+        is DynamicAmount.AggregateBattlefield,
+        is DynamicAmount.AggregateZone,
+        is DynamicAmount.CastChoice,
+        DynamicAmount.CastX,
+        is DynamicAmount.ContextProperty,
+        is DynamicAmount.Count,
+        is DynamicAmount.CountPlayersWith,
+        DynamicAmount.CraftedMaterialsColorCount,
+        DynamicAmount.CraftedMaterialsTotalManaValue,
+        DynamicAmount.CraftedMaterialsTotalPower,
+        DynamicAmount.CreaturesThatCrewedOrSaddledThisTurn,
+        is DynamicAmount.DevotionTo,
+        is DynamicAmount.DistinctCardTypesInCollections,
+        DynamicAmount.DistinctColorsManaSpent,
+        is DynamicAmount.DistinctEntitiesInCollections,
+        is DynamicAmount.Fixed,
+        is DynamicAmount.LargestSharedCreatureTypeCount,
+        DynamicAmount.LastKnownDamageDealtToSource,
+        is DynamicAmount.LastKnownSourceCounters,
+        is DynamicAmount.LifeTotal,
+        is DynamicAmount.ManaSpentFromSubtype,
+        is DynamicAmount.ManaSpentOnX,
+        is DynamicAmount.ManaValueSumOfCollection,
+        DynamicAmount.PermanentsSacrificedThisWay,
+        is DynamicAmount.PlayerCount,
+        is DynamicAmount.PlayerCounterCount,
+        is DynamicAmount.Speed,
+        DynamicAmount.SpellsCastLastTurn,
+        is DynamicAmount.SpellsCastThisTurn,
+        is DynamicAmount.StartingLifeTotal,
+        DynamicAmount.StationCharge,
+        is DynamicAmount.StoredCardManaValue,
+        is DynamicAmount.SubtypeEnteredUnderControlThisTurn,
+        DynamicAmount.TotalManaSpent,
+        DynamicAmount.TotalPowerSacrificedThisWay,
+        is DynamicAmount.TurnTracking,
+        is DynamicAmount.UnlockedDoors,
+        is DynamicAmount.UnspentMana,
+        is DynamicAmount.VariableReference,
+        DynamicAmount.XValue,
+        DynamicAmount.YourLifeTotal -> true
     }
 
     /**

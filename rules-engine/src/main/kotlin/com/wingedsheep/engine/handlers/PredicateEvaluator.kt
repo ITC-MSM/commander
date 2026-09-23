@@ -19,6 +19,7 @@ import com.wingedsheep.engine.state.components.battlefield.LastKnownPermanentCom
 import com.wingedsheep.engine.state.components.battlefield.DealtCombatDamageToPlayersThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.HasDealtCombatDamageToPlayerComponent
 import com.wingedsheep.engine.state.components.battlefield.WasDealtDamageThisTurnComponent
+import com.wingedsheep.engine.state.components.battlefield.PreparedComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.battlefield.SaddledComponent
 import com.wingedsheep.engine.state.components.battlefield.SolvedComponent
@@ -229,7 +230,95 @@ class PredicateEvaluator {
                     else -> false
                 }
             }
-            else -> null
+            // Not frozen on the snapshot, so unknown. A predicate the snapshot *can* answer
+            // belongs above; one it can't stays here, which keeps Not from inverting a guess.
+            is CardPredicate.AbilitySourceMatches,
+            is CardPredicate.CardTypeEqualsChosenComponent,
+            is CardPredicate.ColoredManaSymbolsAtLeast,
+            is CardPredicate.DoesNotShareCreatureTypeWithPermanentYouControl,
+            is CardPredicate.DoesNotShareLandTypeWithPermanentYouControl,
+            CardPredicate.HasActivatedAbility,
+            CardPredicate.HasAdventure,
+            is CardPredicate.HasAnyOfSubtypes,
+            is CardPredicate.HasBasicLandType,
+            CardPredicate.HasChosenColor,
+            CardPredicate.HasChosenSubtype,
+            is CardPredicate.HasColor,
+            CardPredicate.HasNoAbilities,
+            CardPredicate.HasNonManaActivatedAbility,
+            is CardPredicate.HasSubtypeFromVariable,
+            is CardPredicate.HasSubtypeInEachStoredGroup,
+            is CardPredicate.HasSubtypeInStoredList,
+            CardPredicate.HasXInManaCost,
+            CardPredicate.IsActivatedAbility,
+            CardPredicate.IsActivatedOrTriggeredAbility,
+            CardPredicate.IsBasicLand,
+            CardPredicate.IsColored,
+            CardPredicate.IsColorless,
+            CardPredicate.IsDoubleFaced,
+            CardPredicate.IsMonocolored,
+            CardPredicate.IsMulticolored,
+            CardPredicate.IsNonartifact,
+            CardPredicate.IsNoncreature,
+            CardPredicate.IsNonenchantment,
+            CardPredicate.IsNonland,
+            CardPredicate.IsTriggeredAbility,
+            is CardPredicate.ManaValueAtLeast,
+            is CardPredicate.ManaValueAtMost,
+            is CardPredicate.ManaValueAtMostColorsSpent,
+            is CardPredicate.ManaValueAtMostDynamic,
+            is CardPredicate.ManaValueAtMostEntity,
+            is CardPredicate.ManaValueAtMostEntityManaSpent,
+            CardPredicate.ManaValueAtMostX,
+            is CardPredicate.ManaValueEquals,
+            is CardPredicate.ManaValueEqualsDynamic,
+            CardPredicate.ManaValueEqualsX,
+            CardPredicate.ManaValueIsEven,
+            CardPredicate.ManaValueIsOdd,
+            is CardPredicate.NameEquals,
+            is CardPredicate.NameEqualsChosen,
+            is CardPredicate.NameEqualsChosenComponent,
+            CardPredicate.NameNotSharedWithAnotherControlledPermanent,
+            CardPredicate.NameNotSharedWithControlledRoom,
+            CardPredicate.NameNotSharedWithControlledToken,
+            is CardPredicate.NotColor,
+            is CardPredicate.NotKeyword,
+            CardPredicate.NotOfSourceChosenType,
+            is CardPredicate.NotSubtype,
+            is CardPredicate.OriginallyPrintedInSet,
+            is CardPredicate.PowerAtLeast,
+            CardPredicate.PowerAtLeastX,
+            is CardPredicate.PowerAtMost,
+            is CardPredicate.PowerAtMostEntity,
+            is CardPredicate.PowerEquals,
+            is CardPredicate.PowerEqualsDynamic,
+            CardPredicate.PowerEqualsX,
+            CardPredicate.PowerGreaterThanBase,
+            is CardPredicate.PowerGreaterThanEntity,
+            is CardPredicate.PowerLessThanEntity,
+            is CardPredicate.PowerOrToughnessAtLeast,
+            is CardPredicate.PowerOrToughnessAtMost,
+            is CardPredicate.SharesCardTypeWith,
+            CardPredicate.SharesCardTypeWithLinkedExile,
+            CardPredicate.SharesChosenColorWithSource,
+            is CardPredicate.SharesColorWith,
+            is CardPredicate.SharesColorWithPermanentYouControl,
+            CardPredicate.SharesColorWithRecipient,
+            is CardPredicate.SharesCreatureTypeWith,
+            CardPredicate.SharesCreatureTypeWithSource,
+            CardPredicate.SharesCreatureTypeWithTriggeringEntity,
+            is CardPredicate.SharesManaValueWith,
+            is CardPredicate.SharesNameWith,
+            CardPredicate.SharesNameWithLinkedExile,
+            is CardPredicate.SharesNameWithPermanentYouControl,
+            is CardPredicate.TargetsMatching,
+            is CardPredicate.TotalPowerAndToughnessAtMost,
+            is CardPredicate.ToughnessAtLeast,
+            is CardPredicate.ToughnessAtMost,
+            CardPredicate.ToughnessAtMostX,
+            is CardPredicate.ToughnessEquals,
+            is CardPredicate.ToughnessEqualsDynamic,
+            CardPredicate.ToughnessGreaterThanPower -> null
         }
     }
 
@@ -261,7 +350,21 @@ class PredicateEvaluator {
                 context.targetOpponentId?.let { controllerId == it } ?: false
             ControllerPredicate.ControlledByTargetPlayer ->
                 context.targetPlayerId?.let { controllerId == it } ?: false
-            else -> false
+            // Same resolution as the live path in [matchesControllerPredicate].
+            ControllerPredicate.ControlledByTriggeringPlayer -> {
+                val triggeringPlayer = context.triggeringPlayerId ?: context.triggeringEntityId
+                triggeringPlayer != null && controllerId == triggeringPlayer
+            }
+            is ControllerPredicate.ControlledByReferencedPlayer -> {
+                val referenced = context.resolvePlayerTarget(predicate.target)
+                    ?: resolveReferencedPlayerFromState(state, state.projectedState, predicate.target, context)
+                referenced?.let { controllerId == it } ?: false
+            }
+            // Ownership isn't frozen on a snapshot.
+            ControllerPredicate.OwnedByYou,
+            ControllerPredicate.OwnedByOpponent,
+            ControllerPredicate.OwnedByTargetPlayer,
+            ControllerPredicate.OwnedByTriggeringPlayer -> false
         }
     }
 
@@ -1148,7 +1251,14 @@ class PredicateEvaluator {
                 val triggeringPlayer = context.triggeringPlayerId ?: context.triggeringEntityId
                 card?.ownerId != null && triggeringPlayer != null && card.ownerId == triggeringPlayer
             }
-            else -> {
+            ControllerPredicate.ControlledByYou,
+            ControllerPredicate.ControlledByOpponent,
+            ControllerPredicate.ControlledByAny,
+            ControllerPredicate.ControlledByActivePlayer,
+            ControllerPredicate.ControlledByTargetOpponent,
+            ControllerPredicate.ControlledByTargetPlayer,
+            ControllerPredicate.ControlledByTriggeringPlayer,
+            is ControllerPredicate.ControlledByReferencedPlayer -> {
                 // Use projected controller if available; otherwise fall back to the base
                 // ControllerComponent or, for stack objects (spells and abilities), the
                 // controllerId stored on their stack components.
@@ -1373,6 +1483,7 @@ class PredicateEvaluator {
             // Tap state
             StatePredicate.IsTapped -> container.has<TappedComponent>()
             StatePredicate.IsUntapped -> !container.has<TappedComponent>()
+            StatePredicate.IsPrepared -> container.has<PreparedComponent>()
 
             // Combat state.
             //

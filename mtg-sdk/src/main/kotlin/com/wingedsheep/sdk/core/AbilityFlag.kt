@@ -64,6 +64,16 @@ enum class AbilityFlag(val displayName: String) {
     // ── Sacrifice restriction flags ─────────────────────────────
     CANT_BE_SACRIFICED("Can't be sacrificed"),
 
+    // ── State-based action exemptions ───────────────────────────
+    /**
+     * "Planeswalkers you control aren't put into their owners' graveyards for having 0 loyalty"
+     * (Sanctum Lurker). Exempts the permanent from the 0-loyalty state-based action (CR 704.5i),
+     * which `PlaneswalkerLoyaltyCheck` skips for it. Only that one SBA — the planeswalker still dies
+     * to destruction, sacrifice, or the legend rule, and a planeswalker that stops having the flag
+     * while at 0 loyalty is put into the graveyard the next time state-based actions are checked.
+     */
+    SURVIVES_ZERO_LOYALTY("Isn't put into its owner's graveyard for having 0 loyalty"),
+
     // ── Aura / control restriction flags ────────────────────────
     /**
      * Auras can't be put onto this permanent (CR 303.4). Enforced at Aura-cast target legality
