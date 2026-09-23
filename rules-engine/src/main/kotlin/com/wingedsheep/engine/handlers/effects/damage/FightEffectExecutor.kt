@@ -30,8 +30,20 @@ class FightEffectExecutor : EffectExecutor<FightEffect> {
         val target2Id = context.resolveTarget(effect.target2, state)
             ?: return EffectResult.error(state, "No valid second target for fight")
 
-        // Get projected power for each creature (projected state accounts for buffs/debuffs)
+        // CR 701.14b: if either creature is no longer on the battlefield or no longer a creature,
+        // neither fights or deals damage. "It fights" (Mind Meanderer) names the source, which may
+        // have left — or left and come back as a new object — before its trigger resolves.
         val projected = state.projectedState
+        val battlefield = state.getBattlefield()
+        val canFight = listOf(effect.target1 to target1Id, effect.target2 to target2Id).all { (ref, id) ->
+            id in battlefield && projected.isCreature(id) && !context.isUnavailableBattlefieldSource(ref, state)
+        }
+        if (!canFight) {
+            return EffectResult.success(state)
+                .copy(updatedStoredNumbers = effect.excessDamageVariable?.let { mapOf(it to 0) } ?: emptyMap())
+        }
+
+        // Get projected power for each creature (projected state accounts for buffs/debuffs)
         val power1 = projected.getPower(target1Id) ?: 0
         val power2 = projected.getPower(target2Id) ?: 0
 

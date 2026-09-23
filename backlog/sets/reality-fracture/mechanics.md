@@ -16,11 +16,11 @@ Look at the top cards; put any in the graveyard and the rest back in any order (
 
 Cards: Academic Ascent; Arcane Amphisbaena; Avatar of Burgeoning Echoes; Campus Crier; Chandra, Chill of Compliance; Countersculpt; Diviner of Victory; Enlightened Confidant; Eye of Jace; Fatehold Chronologist; Hexhaven Battalion; Inspired Tethermage; Jace's Machinations; Keeper of the Quiet Hour; Mindseeker Oculus; No Admittance; Overwrite the Multiverse; Plan for All Outcomes; Proctor of Potential; Protege's Awakening; Prudent Fateseer; Refute Destiny; Repurposed Enforcer; Rewrite Regrets; Semester Foreseer; Solve for Disappointment; Surveillance Phantasm; Tam's Resistance; Theorist's Proxy; Violent Echoes; Vraska's Final Mercy; Way of the Cryomancer; Way of the Deathbringer; Way of the Healer; Way of the Mentor; Way of the Mind Sculptor; Way of the Necromancer; Way of the Paradox; Way of the Pyromancer; Way of the Warlord; Way of the Wildspeaker; Your Fate Ends Here; Yuriko, Hope from the Shadows
 
-### - [ ] Empower Jace (35 cards)
+### - [x] Empower Jace (35 cards)
 
 Choose a Jace planeswalker token you control, creating one with zero loyalty and the specified two loyalty abilities first if necessary, then add the specified loyalty counters (CR 701.71).
 
-**Engine support:** Not implemented: needs reusable find-or-create composition, planeswalker token construction with loyalty abilities, and selection when multiple Jace tokens exist. This is the highest-impact shared prerequisite.
+**Engine support:** `Patterns.Mechanic.empowerJace(n)` (fixed or `DynamicAmount`) over the predefined `Jace` planeswalker token; `EmpowerJaceScenarioTest` covers creation, reuse, the multi-token choice, nontoken Jaces, and empower Jace 0. "Planeswalkers you control have '[−N]: …'" is `GrantActivatedAbility(grantedLoyaltyAbility(-N) { … }, GroupFilter(Planeswalker.youControl()))`; granted loyalty abilities appear in the planeswalker's ability menu.
 
 Cards: Academic Ascent; Arcane Amphisbaena; Avatar of Burgeoning Echoes; Campus Crier; Countersculpt; Fatehold Charm; Hexhaven Battalion; Inspired Tethermage; Jace's Machinations; Jace, Reality Sculptor; Keeper of the Quiet Hour; Mindseeker Oculus; No Admittance; Overwrite the Multiverse; Plan for All Outcomes; Protege's Awakening; Repurposed Enforcer; Rewrite Regrets; Sanctum Lurker; Solve for Disappointment; Tam's Resistance; Theorist's Proxy; Theorist's Sanctum; Violent Echoes; Vraska's Final Mercy; Way of the Cryomancer; Way of the Deathbringer; Way of the Healer; Way of the Mentor; Way of the Mind Sculptor; Way of the Necromancer; Way of the Paradox; Way of the Pyromancer; Way of the Warlord; Way of the Wildspeaker
 
@@ -337,7 +337,7 @@ These are review targets, not declarations that new effect types are necessary. 
 
 1. FRA now has all five basic land types (25 artwork variants) and the five allied slowland reprints (10 printing records). Add the remaining reprints using their earliest canonical definitions. Scryfall still marks these basic-land variants outside boosters, so their limited-deckbuilding availability remains disabled pending corrected metadata.
 2. Run `just assay-ready FRA` to identify cards that compose existing vocabulary. Implement and verify those in small related batches.
-3. Build Empower Jace as a reusable mechanic with a planeswalker-token scenario, including multiple existing Jace tokens and zero added counters.
+3. ~~Build Empower Jace~~ — done (`Patterns.Mechanic.empowerJace`).
 4. Extend loyalty activation events/history and permissions, then author their payoffs. Address the focused investigations in separate mechanic-sized changes.
 
 Use current Scryfall data for canonical printing placement, metadata and rulings when implementing each card. Neither this map nor a checked mechanic replaces the Assay differential gate or behavioral tests.

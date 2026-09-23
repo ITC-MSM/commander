@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.scripting.effects.CLASH_WON
 import com.wingedsheep.sdk.scripting.effects.ClashEffect
 import com.wingedsheep.sdk.scripting.effects.CollectionFilter
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.effects.ConditionalOnCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
@@ -44,8 +45,8 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
- * Named MTG keyword-mechanic recipes (Blight, Bolster, Explore, Forage, Gift, Incubate, Learn,
- * Recruit).
+ * Named MTG keyword-mechanic recipes (Blight, Bolster, Empower Jace, Explore, Forage, Gift, Incubate,
+ * Learn, Recruit).
  *
  * Reached through the [Patterns] index — `Patterns.Mechanic.blight(...)`. Each composes existing
  * atomic effects into the printed keyword behaviour; they live here (rather than a zone-based
@@ -423,6 +424,66 @@ object MechanicPatterns {
             )
         )
     )
+
+    // =========================================================================
+    // Empower Jace (Reality Fracture)
+    // =========================================================================
+
+    /**
+     * The permanents empower Jace can choose among: Jace planeswalker tokens (CR 701.71a). A
+     * nontoken Jace planeswalker card doesn't qualify, and neither would a token that is a Jace
+     * but not a planeswalker.
+     */
+    val JACE_PLANESWALKER_TOKEN: GameObjectFilter =
+        GameObjectFilter.Planeswalker.withSubtype("Jace").token()
+
+    /**
+     * Empower Jace N (CR 701.71a) — "If you don't control a Jace planeswalker token, create a
+     * blue Jace planeswalker token with 0 loyalty, '[−1]: Surveil 1,' and '[−3]: Draw a card.'
+     * Choose a Jace planeswalker token you control. Put N loyalty counters on it."
+     *
+     * Atomic composition, same find-or-create shape as amass:
+     * 1. create the predefined `Jace` token only when no Jace planeswalker token is controlled;
+     * 2. gather the Jace planeswalker tokens controlled *now* (which includes the one just made);
+     * 3. choose exactly one — auto-picked when there is only one, a battlefield choice otherwise
+     *    (non-targeting: the reminder text never says "target");
+     * 4. put N loyalty counters on it.
+     *
+     * The token enters with 0 loyalty and gets its counters in the same resolution, so the
+     * zero-loyalty state-based action (CR 704.5i) only sees it at 0 when N is 0.
+     *
+     * @param amount N, evaluated when the counters are placed. Creating a noncreature
+     *   planeswalker token first can't change a creature- or damage-based N.
+     */
+    fun empowerJace(amount: DynamicAmount): CompositeEffect = CompositeEffect(
+        listOf(
+            ConditionalEffect(
+                condition = Conditions.YouControl(JACE_PLANESWALKER_TOKEN, negate = true),
+                effect = CreatePredefinedTokenEffect(tokenType = "Jace")
+            ),
+            GatherCardsEffect(
+                source = CardSource.BattlefieldMatching(JACE_PLANESWALKER_TOKEN, Player.You),
+                storeAs = "empower_jaces"
+            ),
+            SelectFromCollectionEffect(
+                from = "empower_jaces",
+                selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(1)),
+                chooser = Chooser.Controller,
+                storeSelected = "empower_jace",
+                prompt = "Empower Jace ${amount.description} — choose a Jace token you control",
+                useTargetingUI = true
+            ),
+            AddCountersToCollectionEffect(
+                collectionName = "empower_jace",
+                counterType = Counters.LOYALTY,
+                amount = amount
+            )
+        ),
+        descriptionOverride = "Empower Jace ${amount.description}"
+    )
+
+    /** Empower Jace N with a fixed N — see [empowerJace]. */
+    fun empowerJace(amount: Int): CompositeEffect = empowerJace(DynamicAmount.Fixed(amount))
 
     // =========================================================================
     // Recruit Pattern (The Hobbit)

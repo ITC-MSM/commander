@@ -1931,6 +1931,18 @@ class LoyaltyAbilityBuilder(private val loyaltyCost: AbilityCost) {
     }
 }
 
+/**
+ * Build a loyalty ability to hand to another permanent — "Planeswalkers you control have
+ * '[−4]: Create a 4/4 green Beast creature token with trample.'" (Way of the Wildspeaker). Pass
+ * the result to [com.wingedsheep.sdk.scripting.GrantActivatedAbility].
+ *
+ * Distinct from [CardBuilder.loyaltyAbility], which adds the ability to the card being built;
+ * this one only returns it. The ability keeps every loyalty rule — sorcery timing, one loyalty
+ * activation per planeswalker per turn, and a loyalty-counter cost the host must be able to pay.
+ */
+fun grantedLoyaltyAbility(loyaltyChange: Int, init: LoyaltyAbilityBuilder.() -> Unit): ActivatedAbility =
+    LoyaltyAbilityBuilder(loyaltyChange).apply(init).build()
+
 // =============================================================================
 // Class Level Builder
 // =============================================================================

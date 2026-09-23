@@ -934,6 +934,36 @@ object PredefinedTokens {
     }
 
     /**
+     * Jace — the blue Jace planeswalker token created by empower Jace (CR 701.71a, Reality
+     * Fracture). Not legendary, and it enters with 0 loyalty: CR 701.71a creates it "with 0
+     * loyalty" and the same keyword action then puts N loyalty counters on it, so the recipe
+     * ([com.wingedsheep.sdk.dsl.MechanicPatterns.empowerJace]) never leaves it at zero between
+     * state-based-action checks unless N is 0.
+     *
+     * Registered so its loyalty abilities resolve through the CardRegistry by the token's
+     * `cardDefinitionId`, and so the client can render its loyalty menu from [oracleText].
+     */
+    val Jace = card("Jace") {
+        typeLine = "Planeswalker — Jace"
+        colorIdentity = "U"
+        startingLoyalty = 0
+        oracleText = "−1: Surveil 1.\n−3: Draw a card."
+
+        loyaltyAbility(-1) {
+            effect = Patterns.Library.surveil(1)
+        }
+
+        loyaltyAbility(-3) {
+            effect = Effects.DrawCards(1)
+        }
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/8/d/8d1e424f-6407-4f8c-bed2-eaf148237c81.jpg?1789738324"
+            artist = "Manuel Castañón"
+        }
+    }
+
+    /**
      * All predefined token definitions.
      * Register these in the CardRegistry so token abilities are resolved.
      */
@@ -972,6 +1002,7 @@ object PredefinedTokens {
         Moloid,
         Galactus,
         SturdyShield,
-        Axe
+        Axe,
+        Jace
     )
 }

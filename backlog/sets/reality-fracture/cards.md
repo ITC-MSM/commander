@@ -2,7 +2,7 @@
 
 **Set Size:** 285 cards
 **Release Date:** October 2, 2026
-**Implemented:** 100 / 285
+**Implemented:** 145 / 285
 | Section    | Total | Done |
 |------------|-------|------|
 | Extras     | 285   | 78   |
@@ -20,23 +20,23 @@
 - [x] Afterthought Sentry
 - [ ] Ajani Resolute
 - [ ] Ajani Unrelenting
-- [ ] Ajani's Anguish
+- [x] Ajani's Anguish
 - [x] Apex Witchstalker
-- [ ] Arcane Amphisbaena
+- [x] Arcane Amphisbaena
 - [x] Archive Arbiter
 - [x] Arni, Humble Scribe
-- [ ] Arni, Renowned Champion
+- [x] Arni, Renowned Champion
 - [x] Artifist Acumen
-- [ ] Avatar of Burgeoning Echoes
-- [ ] Awaken the Inferno
+- [x] Avatar of Burgeoning Echoes
+- [x] Awaken the Inferno
 - [x] Bestial Incursion
 - [x] Blazing Crescendo
 - [x] Blessed Ghoul
 - [ ] Bloodline Recollector
-- [ ] Bloombrute
+- [x] Bloombrute
 - [ ] Blossom-Blessed Angel
 - [ ] Break Under Pressure
-- [ ] Budding Insurgent
+- [x] Budding Insurgent
 - [ ] Campus Crier
 - [ ] Carnivorous Cultivator
 - [x] Cast Away Doubt
@@ -49,14 +49,14 @@
 - [ ] Command the Stage
 - [ ] Compel Brutality
 - [ ] Countersculpt
-- [ ] Craftwork Crusher
-- [ ] Craterclaw Colossus
+- [x] Craftwork Crusher
+- [x] Craterclaw Colossus
 - [ ] Cruel Calculations
 - [x] Cryotheory Adept
-- [ ] Curse-Marred Demon
+- [x] Curse-Marred Demon
 - [ ] Danitha, Spear of Agony
 - [ ] Danitha, Sword of Hope
-- [ ] Dark Matter Manipulator
+- [x] Dark Matter Manipulator
 - [ ] Darklight Phoenix
 - [x] Dedicated Commons
 - [x] Denzilore Fatehold
@@ -67,12 +67,12 @@
 - [ ] Draconic Visitor
 - [x] Eardrum Rattler
 - [x] Edgar, Ancient Bloodlord
-- [ ] Edgar, Moonlit Sovereign
+- [x] Edgar, Moonlit Sovereign
 - [ ] Emergency Phytomedic
 - [ ] Emrakul, the Exigent Doom
 - [ ] Enlightened Confidant
 - [ ] Entrust the Spark
-- [ ] Essence Burn
+- [x] Essence Burn
 - [x] Extended Absence
 - [ ] Extrapolate the Impossible
 - [ ] Eye of Jace
@@ -80,10 +80,10 @@
 - [x] Fatehold Annex
 - [ ] Fatehold Charm
 - [ ] Fatehold Chronologist
-- [ ] Fateshaper Aspirant
+- [x] Fateshaper Aspirant
 - [ ] Fblthp, Impossibly Lost
 - [ ] Fblthp, Knows the Way
-- [ ] Ferocity of the Hunt
+- [x] Ferocity of the Hunt
 - [ ] Flickering Hound
 - [ ] Flourishing Grapple
 - [x] Forest
@@ -96,16 +96,16 @@
 - [ ] Garruk, Curse Breaker
 - [ ] Garruk, Veiled Butcher
 - [x] Geist of Saint Thalia
-- [ ] Generous Revival
-- [ ] Germinate Recruits
+- [x] Generous Revival
+- [x] Germinate Recruits
 - [ ] Ghalta the Immovable
-- [ ] Ghalta the Unstoppable
+- [x] Ghalta the Unstoppable
 - [ ] Gideon the Oathless
 - [ ] Gideon's Memorial
-- [ ] Graft Surgeon
+- [x] Graft Surgeon
 - [x] Greenhouse Propagator
 - [ ] Grim Repriser
-- [ ] Guiding Hydra
+- [x] Guiding Hydra
 - [ ] Hall of Echoes
 - [ ] Hallway Heckler
 - [ ] Hapatra, the Desert Fang
@@ -118,7 +118,7 @@
 - [ ] Hexhaven Invigorator
 - [ ] Hungering Puppetbeast
 - [ ] Hunter's Axe
-- [ ] Icy Reception
+- [x] Icy Reception
 - [ ] Identity Echo
 - [ ] Infinite Coursework
 - [ ] Ingris Stingerquill
@@ -130,9 +130,9 @@
 - [ ] Jiang Yanggu, Alone
 - [x] Jiang Yanggu, Never Alone
 - [ ] Karn, Argent Defender
-- [ ] Karn, Gilded Guardian
-- [ ] Keeper of the Quiet Hour
-- [ ] Kindred Judgment
+- [x] Karn, Gilded Guardian
+- [x] Keeper of the Quiet Hour
+- [x] Kindred Judgment
 - [x] Kiora of Fire and Ashes
 - [ ] Kiora of Salt and Sand
 - [x] Konstrari Annex
@@ -144,14 +144,14 @@
 - [x] Last Gasp
 - [ ] Lich's Relic
 - [x] Liliana the Faultless
-- [ ] Liliana the Repentant
+- [x] Liliana the Repentant
 - [x] Living Library
 - [ ] Loot, the Anomaly
 - [ ] Loot, the Nexus
 - [x] Loyal Tutor
 - [x] Lyra, Archangel of Dawn
 - [ ] Lyra, Tolarian Archangel
-- [ ] Mabel, Bitter Recluse
+- [x] Mabel, Bitter Recluse
 - [ ] Mabel, Valley Hero
 - [x] Marwyn, the Clearcutter
 - [x] Marwyn, the Preserver
@@ -160,8 +160,8 @@
 - [x] Medic's Kitesail
 - [x] Memory Trap
 - [x] Meticulous Commons
-- [ ] Mind Meanderer
-- [ ] Mindseeker Oculus
+- [x] Mind Meanderer
+- [x] Mindseeker Oculus
 - [x] Mountain
 - [x] Multiply by Zero
 - [x] Murmuring Volume
@@ -172,7 +172,7 @@
 - [ ] Overwrite the Multiverse
 - [ ] Paradox Shaper
 - [x] Perfected Theory
-- [ ] Pia, Aether Ascetic
+- [x] Pia, Aether Ascetic
 - [x] Pia, Determined Rebuilder
 - [x] Plains
 - [ ] Plan for All Outcomes
@@ -192,7 +192,7 @@
 - [x] Rank Rat
 - [ ] Recursive Recruitment
 - [x] Refute Destiny
-- [ ] Repurposed Enforcer
+- [x] Repurposed Enforcer
 - [x] Rescue Girl, First Responder
 - [x] Restore with Empathy
 - [x] Return to the Light Realms
@@ -200,7 +200,7 @@
 - [ ] Rise of the Deathbringer
 - [x] Rockfall Vale
 - [ ] Roiling Canopy
-- [ ] Room of Refuge
+- [x] Room of Refuge
 - [ ] Ruric Thar, Biomagus
 - [ ] Ruric Thar, Magecrusher
 - [ ] Saheeli, Consul of Oversight
@@ -213,20 +213,20 @@
 - [ ] Semester Foreseer
 - [x] Shatterwing Pegasus
 - [x] Shipwreck Marsh
-- [ ] Silence the Echo
+- [x] Silence the Echo
 - [x] Simulacrum Shaper
 - [x] Skilled Battlecarver
 - [x] Solarium Sentry
 - [ ] Solitary Cell
 - [ ] Solve for Disappointment
-- [ ] Something Worth Saving
+- [x] Something Worth Saving
 - [ ] Sphinx of False Conclusions
 - [ ] Sphinx's Approach
 - [x] Stingcaster Mage
 - [x] Stingerquill Annex
 - [x] Stingerquill Charm
 - [ ] Stingerquill Voxmancer
-- [ ] Stinging Vitriol
+- [x] Stinging Vitriol
 - [x] Sureshot Sower
 - [x] Surgical Precision
 - [ ] Surveillance Phantasm
@@ -236,17 +236,17 @@
 - [ ] Tarmogoyf
 - [ ] Tenured Tethermage
 - [x] Terminal Criticism
-- [ ] Tether Technician
+- [x] Tether Technician
 - [x] Tethermage's Advantage
 - [x] Tetsuko Umezawa, Fugitive
 - [ ] Tetsuko Umezawa, Pursuer
-- [ ] Teyo, Diamondblade Mage
-- [ ] Teyo, Lightshield Expert
+- [x] Teyo, Diamondblade Mage
+- [x] Teyo, Lightshield Expert
 - [ ] Thalia, the Survivor
 - [x] The Echoverse Fulcrum
 - [ ] The Theorist, Jace Beleren
 - [x] Theoretical Necromancer
-- [ ] Theorist's Proxy
+- [x] Theorist's Proxy
 - [ ] Theorist's Sanctum
 - [x] Theorix Annex
 - [x] Theorix Charm
@@ -257,7 +257,7 @@
 - [ ] Tomik, Orzhov Lawmage
 - [x] Transformative Commons
 - [ ] Traxos, Academy Guardian
-- [ ] Traxos, Scourge Eternal
+- [x] Traxos, Scourge Eternal
 - [ ] Twinned Vision
 - [x] Twisted Fates
 - [ ] Uldaros Theorix
@@ -275,18 +275,18 @@
 - [ ] Void Extrapolator
 - [ ] Vraska's Final Mercy
 - [ ] Vraska, Soul of Stone
-- [ ] Vraska, the Cutting Glare
+- [x] Vraska, the Cutting Glare
 - [ ] Warrior's Blades
 - [ ] Way of the Cryomancer
 - [ ] Way of the Deathbringer
-- [ ] Way of the Healer
-- [ ] Way of the Mentor
+- [x] Way of the Healer
+- [x] Way of the Mentor
 - [ ] Way of the Mind Sculptor
-- [ ] Way of the Necromancer
+- [x] Way of the Necromancer
 - [ ] Way of the Paradox
 - [ ] Way of the Pyromancer
 - [ ] Way of the Warlord
-- [ ] Way of the Wildspeaker
+- [x] Way of the Wildspeaker
 - [ ] Whiplash Wordsmith
 - [x] Winter, Team Player
 - [ ] Winter, Tormented Loner
@@ -296,7 +296,7 @@
 - [x] Yargle, Glutton of Urborg
 - [x] Yargle, Goliath of Otaria
 - [ ] Yoshimaru, Beloved Companion
-- [ ] Yoshimaru, Scrappy Stray
+- [x] Yoshimaru, Scrappy Stray
 - [x] Your Fate Ends Here
 - [ ] Yuriko, Blade of the Mighty
 - [ ] Yuriko, Hope from the Shadows

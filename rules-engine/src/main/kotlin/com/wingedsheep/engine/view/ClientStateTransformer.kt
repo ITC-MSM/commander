@@ -93,6 +93,10 @@ class ClientStateTransformer(
     // Reused (with conditionEvaluator + cardRegistry) to surface each player's effective maximum
     // hand size via the shared com.wingedsheep.engine.core.MaximumHandSize source of truth.
     private val dynamicAmountEvaluator = DynamicAmountEvaluator(conditionEvaluator)
+    // Finds loyalty abilities granted by statics so the planeswalker menu can list them.
+    private val grantedAbilityUtils = com.wingedsheep.engine.legalactions.utils.CastPermissionUtils(
+        cardRegistry, com.wingedsheep.engine.handlers.PredicateEvaluator(), conditionEvaluator
+    )
 
 
     /**
@@ -1441,7 +1445,7 @@ class ClientStateTransformer(
             backFacePower = dfcBackFace(container, cardDef)?.creatureStats?.basePower,
             backFaceToughness = dfcBackFace(container, cardDef)?.creatureStats?.baseToughness,
             backFaceKeywords = dfcBackFace(container, cardDef)?.keywords ?: modalBackFace?.keywords ?: emptySet(),
-            planeswalkerAbilities = buildPlaneswalkerAbilities(cardDef, zoneKey),
+            planeswalkerAbilities = buildPlaneswalkerAbilities(state, entityId, cardDef, zoneKey),
             isRoom = cardDef?.isRoom == true,
             // `cardDef` already tracks the *displayed* face of a DFC (dfcBackFace resolves the
             // other one relative to DoubleFacedComponent.currentFace), so a defeated Siege recast
@@ -1498,23 +1502,35 @@ class ClientStateTransformer(
     }
 
     private fun buildPlaneswalkerAbilities(
+        state: GameState,
+        entityId: EntityId,
         cardDef: com.wingedsheep.sdk.model.CardDefinition?,
         zoneKey: ZoneKey
     ): List<ClientPlaneswalkerAbility>? {
         if (cardDef == null) return null
         if (zoneKey.zoneType != Zone.BATTLEFIELD) return null
         if (!cardDef.typeLine.cardTypes.contains(CardType.PLANESWALKER)) return null
-        val abilities = cardDef.script.activatedAbilities.filter { it.isPlaneswalkerAbility }
+        val printed = cardDef.script.activatedAbilities.filter { it.isPlaneswalkerAbility }
+        // Loyalty abilities granted by another permanent ("Planeswalkers you control have
+        // '[−4]: …'" — Way of the Wildspeaker) or by a resolved effect are activated through the
+        // same legal actions as printed ones, so the menu lists them too. Their text isn't on
+        // this card's oracle, so they skip the oracle lookup and use the ability's own description.
+        val granted = (
+            state.grantedActivatedAbilities.filter { it.entityId == entityId }.map { it.ability } +
+                grantedAbilityUtils.getStaticGrantedAbilitiesWithGranter(entityId, state).map { it.ability }
+            ).filter { it.isPlaneswalkerAbility }
+        val abilities = printed + granted
         if (abilities.isEmpty()) return null
         // Consumed in order, so two abilities sharing a loyalty cost (Garruk Relentless's two
         // 0-cost abilities) each take their own oracle line instead of both echoing the first.
         val oracleDescriptions = parseOracleLoyaltyLines(cardDef.oracleText)
             .mapValues { (_, lines) -> ArrayDeque(lines) }
+        val grantedIds = granted.map { it.id }.toSet()
         return abilities.mapNotNull { ability ->
             val loyaltyX = ability.cost == com.wingedsheep.sdk.scripting.AbilityCost.LoyaltyX
             val loyalty = (ability.cost as? com.wingedsheep.sdk.scripting.AbilityCost.Loyalty)?.change
                 ?: if (loyaltyX) 0 else return@mapNotNull null
-            val description = (if (loyaltyX) cardDef.oracleText.lines()
+            val description = (if (ability.id in grantedIds) null else if (loyaltyX) cardDef.oracleText.lines()
                 .firstOrNull { it.startsWith("−X:") || it.startsWith("-X:") }
                 ?.substringAfter(":")?.trim() else oracleDescriptions[loyalty]?.removeFirstOrNull())
                 ?: ability.descriptionOverride
